@@ -1,0 +1,2 @@
+- [Game-concept.md review cycle](project_game_concept_review.md) — 《弈緣》 is on round 5 of iterative /design-review; tracks history + recurring cross-mode wording gap pattern
+- [Cross-mode wording check](feedback_cross_mode_wording_check.md) — always diff new mode-scoped UI constraints against other modes' existing wording before approving; catches silent feature-gutting

@@ -1,0 +1,995 @@
+<!doctype html>
+<!--
+PROTOTYPE - NOT FOR PRODUCTION
+Question: 讓真正新手(而非歷經多輪測試的內部測試者)在教學後遊玩 2-3 場戰鬥,使用固定節奏發牌(N=2)、
+預判標記 UI、非空間取捨機制(同時只有一對正好感生效)、遠程武器空間餘裕,是否仍然會覺得運用好感度佈局
+是自然且高效的取勝方式?同時測試遮蔽地形是否會架空遠程武器提供的空間餘裕。
+Date: 2026-07-29
+Design source: design/gdd/game-concept.md — 第三、四、五輪 design-review 裁決
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>好感度—位置連鎖 v4 原型(新手驗證批次)</title>
+<style>
+  :root {
+    --cell: 64px;
+    --grid: 6;
+    --bg: #14161c;
+    --panel: #1e212b;
+    --line-pos: #3ddc84;
+    --line-neg: #ff5c5c;
+    --line-neu: #6b7280;
+    --line-suppressed: #4a4d58;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: var(--bg);
+    color: #eaeaea;
+    padding: 20px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  #hypothesis {
+    background: var(--panel);
+    border-left: 4px solid #7c8cff;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cfd3ff;
+  }
+  #instructions {
+    font-size: 12px;
+    color: #9aa0ac;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+  #weapons {
+    font-size: 12px;
+    color: #9aa0ac;
+    margin-bottom: 10px;
+  }
+  #levelSwitch { margin-bottom: 14px; }
+  #levelSwitch button.active { outline: 2px solid #fff; }
+  #main { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  #board-wrap {
+    position: relative;
+    width: calc(var(--cell) * var(--grid));
+    height: calc(var(--cell) * var(--grid));
+    background: #0c0d11;
+    border: 2px solid #333846;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(6, var(--cell));
+    grid-template-rows: repeat(6, var(--cell));
+  }
+  .cell {
+    border: 1px solid #262a35;
+    transition: background 0.1s;
+  }
+  .cell.reachable { background: rgba(124,140,255,0.12); cursor: pointer; }
+  .cell.reachable:hover { background: rgba(124,140,255,0.28); }
+  .cell.hovered-net-pos { outline: 2px solid var(--line-pos); outline-offset: -2px; }
+  .cell.hovered-net-neg { outline: 2px solid var(--line-neg); outline-offset: -2px; }
+  .cell.hovered-net-neu { outline: 2px dashed var(--line-neu); outline-offset: -2px; }
+  .cell.in-atk-range { background: rgba(255,157,124,0.10); }
+  .cell.obstacle { background: repeating-linear-gradient(45deg, #3a2f2f, #3a2f2f 6px, #2a2222 6px, #2a2222 12px); }
+
+  #overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+  .token {
+    position: absolute;
+    width: calc(var(--cell) - 10px);
+    height: calc(var(--cell) - 10px);
+    margin: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: #0c0d11;
+    cursor: pointer;
+    transition: top 0.15s, left 0.15s, transform 0.1s;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .token.player { background: #7cc8ff; }
+  .token.enemy { background: #ff9d7c; }
+  .token.selected { outline: 3px solid #fff; transform: scale(1.08); }
+  .token.dead { opacity: 0.15; pointer-events: none; }
+  .token.card-selectable { outline: 3px dashed #ffd76b; }
+  .token .hp {
+    position: absolute;
+    bottom: -14px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: #eaeaea;
+    font-weight: normal;
+  }
+  .token .rng {
+    position: absolute;
+    top: -12px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: #ffd76b;
+    font-weight: normal;
+  }
+  .token.attackable { box-shadow: 0 0 0 3px var(--line-neg); cursor: crosshair; }
+
+  #sidebar { width: 340px; }
+  .panel {
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .panel h2 { font-size: 13px; margin: 0 0 8px; color: #9aa0ac; text-transform: uppercase; letter-spacing: 0.05em; }
+  #legend div.pair-row { margin-bottom: 4px; cursor: default; padding: 2px 4px; border-radius: 3px; }
+  #legend div.pair-row.suppressed { color: #6b7280; }
+  #legend div.pair-row.card-target { cursor: pointer; background: rgba(255,215,107,0.12); }
+  #legend div.pair-row.card-target:hover { background: rgba(255,215,107,0.28); }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+  #preview .pv-line { margin-bottom: 4px; }
+  #log { height: 180px; overflow-y: auto; font-size: 12px; line-height: 1.6; }
+  #log div { border-bottom: 1px dashed #333846; padding: 3px 0; }
+  #log div.event { color: #ffd76b; font-weight: bold; }
+  #log div.dmg { color: #ff9d7c; }
+  #log div.win { color: var(--line-pos); font-weight: bold; }
+  #log div.lose { color: var(--line-neg); font-weight: bold; }
+  #log div.predict-correct { color: var(--line-pos); }
+  #log div.predict-wrong { color: var(--line-neg); }
+  button {
+    background: #7c8cff;
+    border: none;
+    color: #0c0d11;
+    font-weight: bold;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+  }
+  button.secondary { background: #3a3d47; color: #eaeaea; }
+  button.predict-btn.active { outline: 2px solid #fff; }
+  button:disabled { background: #3a3d47; color: #6b7280; cursor: not-allowed; }
+  #status { font-size: 13px; margin-bottom: 8px; color: #cfd3ff; }
+  #cardPanel.empty { color: #6b7280; }
+  #statsTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #statsTable td, #statsTable th { padding: 3px 4px; border-bottom: 1px dashed #333846; text-align: left; }
+  .badge { display:inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-left: 4px; }
+  .badge.yes { background: rgba(61,220,132,0.2); color: var(--line-pos); }
+  .badge.no { background: rgba(107,114,128,0.2); color: #9aa0ac; }
+</style>
+</head>
+<body>
+
+<h1>好感度—位置連鎖 v4(新手驗證批次,HTML 原型)</h1>
+<div id="hypothesis">
+  <strong>v4 假說(design-review 第三、四、五輪裁決要求驗證)</strong>:如果讓真正新手(非團隊內部、未接觸過本概念)在教學後遊玩 2-3 場戰鬥,
+  使用固定節奏發牌(每 2 回合)、預判標記、非空間取捨機制(同時只有一對正好感生效)、遠程武器空間餘裕,他們會覺得運用好感度佈局是自然且高效的
+  取勝方式——我們會知道這是真的,如果:(1) 預判準確率在第 2-3 場戰鬥達到 ≥80%;(2) 運用佈局的跑法比忽視佈局的跑法回合數減少 ≥20% 或零重傷;
+  (3) 觸發卡牌事件的戰鬥,陣型重複率明顯低於未觸發的戰鬥,且此差異在遮蔽地形關卡依然成立。<br/>
+  <strong>與 v3 的差異(單一批次新增,非單一變數對照)</strong>:v3 的「每 2 回合隨機翻轉」改為「每 2 回合固定發一張卡牌,牌面隨機、玩家決定是否打出與對誰打出」;
+  新增同回合正好感配對只有最近一對生效的取捨規則;新增預判標記;新增遮蔽地形關卡。
+</div>
+<div id="instructions">
+  <strong>操作方式</strong>:點選我方角色(藍色)→(可選)點選右側「預判」三個按鈕之一,標記你認為移動後的好感度淨效果→
+  棋盤上會出現可移動的格子(淡藍)與攻擊範圍提示(淡橘)→ 滑鼠移到候選格子上時即時預覽好感度連結線(綠=加成、紅=懲罰、灰=無效果/未生效)→
+  點選格子確定移動(若剛才有預判,系統會自動比對並記錄準確率)→ 點選攻擊範圍內的敵人(橘色外框)發動遠程攻擊(不需要相鄰,但遮蔽地形關卡需要視線暢通)→
+  全部行動完後按「進入敵方回合」→ 每 2 回合開始時會固定抽到一張好感度對話卡牌,可在該回合任意時間點選「使用卡牌」進入目標選取模式。<br/>
+  <strong>取捨規則</strong>:一個單位如果同時是多對「正好感」關係的一員,每回合只有距離最近的那一對會real生效(其餘正對顯示為灰色「未生效」);
+  負好感配對則永遠全部生效,不受此限制——這是本輪測試的非空間取捨機制,逼你選擇要優先靠近哪段正向關係。
+</div>
+<div id="weapons">
+  武器配置:A 弓箭(射程3) · B 彈弓(射程2) · C 投擲物(射程2) · D 槍(射程2,長柄) · E 弓箭(射程3) — 敵方 X/Y/Z 皆為近戰(射程1)
+</div>
+<div id="levelSwitch">
+  <button id="btnStandard" class="secondary">標準地形</button>
+  <button id="btnOccluded" class="secondary">遮蔽地形(視線通透度測試)</button>
+  <span style="font-size:12px;color:#9aa0ac;">目前:<span id="currentLevelLabel"></span> — 切換會重新開始本場戰鬥</span>
+</div>
+
+<div id="main">
+  <div id="board-wrap">
+    <div id="board"></div>
+    <svg id="overlay"></svg>
+  </div>
+
+  <div id="sidebar">
+    <div class="panel">
+      <div id="status">第 1 回合 · 我方行動階段</div>
+      <button id="endUnitBtn">結束此單位行動</button>
+      <button id="enemyPhaseBtn">進入敵方回合</button>
+      <button id="restartBtn" class="secondary">重新開始本場戰鬥</button>
+    </div>
+
+    <div class="panel">
+      <h2>預判模式(移動前先標記)</h2>
+      <button class="predict-btn" data-pred="pos">預測:好感加成</button>
+      <button class="predict-btn" data-pred="neg">預測:好感懲罰</button>
+      <button class="predict-btn" data-pred="neu">預測:無效果</button>
+      <div id="predictStatus" style="margin-top:6px;color:#9aa0ac;">尚未標記</div>
+    </div>
+
+    <div class="panel">
+      <h2>本回合卡牌</h2>
+      <div id="cardPanel" class="empty">本回合沒有可用卡牌。</div>
+    </div>
+
+    <div class="panel">
+      <h2>目前好感度關係</h2>
+      <div id="legend"></div>
+    </div>
+
+    <div class="panel">
+      <h2>移動預覽</h2>
+      <div id="preview">選擇角色並將滑鼠移到候選格子上,這裡會顯示預覽效果。</div>
+    </div>
+
+    <div class="panel">
+      <h2>本次 Session 統計(跨戰鬥累積,重新整理頁面會清空)</h2>
+      <div id="sessionStats"></div>
+    </div>
+
+    <div class="panel">
+      <h2>事件紀錄</h2>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRID = 6;
+const CELL = 64;
+const CARD_CADENCE = 2; // Tuning knob(暫定值)—— design-review 第五輪裁決:N 須保證典型戰鬥至少發牌 3 次,此為滿足此約束的臨時值
+const svg = document.getElementById('overlay');
+svg.setAttribute('width', GRID*CELL);
+svg.setAttribute('height', GRID*CELL);
+
+const LEVELS = {
+  standard: { obstacles: [], label: '標準地形' },
+  occluded: { obstacles: [{row:2,col:2},{row:2,col:3},{row:3,col:2}], label: '遮蔽地形(視線通透度測試)' },
+};
+
+const CARD_TEXT = {
+  flip: '既有配對翻轉——選一對已存在的好感度配對,將其極性反轉(正↔負)。',
+  new_pos: '新結好感——選兩位尚無配對關係的存活單位,建立正好感配對。',
+  new_neg: '新生嫌隙——選兩位尚無配對關係的存活單位,建立負好感配對。',
+};
+
+// Persists across "重新開始本場戰鬥"(battle restarts) within the same page load —
+// this is what lets the session stats panel compare across multiple battles.
+// Refreshing the browser page clears this; testers should not reload mid-session.
+let sessionStats = { predictionCorrect: 0, predictionTotal: 0, battles: [] };
+
+function freshState(levelType) {
+  levelType = levelType || 'standard';
+  return {
+    round: 1,
+    phase: 'player',
+    levelType,
+    obstacles: LEVELS[levelType].obstacles,
+    units: {
+      A: {id:'A', side:'player', hp:10, maxHp:10, atk:4, mov:3, range:3, weapon:'弓箭', row:0, col:1, acted:false},
+      B: {id:'B', side:'player', hp:8,  maxHp:8,  atk:5, mov:2, range:2, weapon:'彈弓', row:0, col:2, acted:false},
+      C: {id:'C', side:'player', hp:12, maxHp:12, atk:3, mov:2, range:2, weapon:'投擲物', row:0, col:3, acted:false},
+      D: {id:'D', side:'player', hp:9,  maxHp:9,  atk:4, mov:3, range:2, weapon:'槍', row:0, col:4, acted:false},
+      E: {id:'E', side:'player', hp:7,  maxHp:7,  atk:6, mov:2, range:3, weapon:'弓箭', row:0, col:0, acted:false},
+      X: {id:'X', side:'enemy',  hp:10, maxHp:10, atk:4, mov:2, range:1, row:5, col:1},
+      Y: {id:'Y', side:'enemy',  hp:10, maxHp:10, atk:4, mov:2, range:1, row:5, col:3},
+      Z: {id:'Z', side:'enemy',  hp:14, maxHp:14, atk:5, mov:1, range:1, row:5, col:5},
+    },
+    pairs: [
+      {a:'A', b:'B', sign:1},
+      {a:'C', b:'D', sign:1},
+      {a:'B', b:'E', sign:-1},
+    ],
+    selected: null,
+    hoverCell: null,
+    prediction: null,
+    pendingCard: null,
+    cardDrawnForRound: 0,
+    cardMode: false,
+    cardTargets: [],
+    cardPlayedThisBattle: false,
+    roundHistory: [],
+  };
+}
+
+let state = freshState('standard');
+
+function alive(u) { return u.hp > 0; }
+function livingPlayerUnits() { return Object.values(state.units).filter(u => u.side==='player' && alive(u)); }
+function livingEnemyUnits() { return Object.values(state.units).filter(u => u.side==='enemy' && alive(u)); }
+function manhattan(u1, u2) { return Math.abs(u1.row-u2.row) + Math.abs(u1.col-u2.col); }
+function manhattanPos(r1,c1,r2,c2) { return Math.abs(r1-r2)+Math.abs(c1-c2); }
+function chebyshev(r1,c1,r2,c2) { return Math.max(Math.abs(r1-r2), Math.abs(c1-c2)); }
+function isObstacle(r,c) { return state.obstacles.some(o=>o.row===r&&o.col===c); }
+
+// Approximate line-of-sight check (Bresenham) — used only to gate ranged attacks
+// on the occluded level. Movement pathing does NOT account for obstacles blocking
+// a path (units may only not stand ON an obstacle cell) — a known simplification,
+// acceptable at prototype standards, noted in README.
+function hasLineOfSight(r1,c1,r2,c2) {
+  let x0=c1, y0=r1, x1=c2, y1=r2;
+  let dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
+  let sx = x0<x1?1:-1, sy = y0<y1?1:-1;
+  let err = dx-dy;
+  let x=x0,y=y0;
+  const points=[];
+  let guard = 0;
+  while(!(x===x1 && y===y1) && guard < 100) {
+    points.push({row:y,col:x});
+    let e2=2*err;
+    if(e2>-dy){err-=dy;x+=sx;}
+    if(e2<dx){err+=dx;y+=sy;}
+    guard++;
+  }
+  points.push({row:y1,col:x1});
+  for (let i=1;i<points.length-1;i++){
+    if (isObstacle(points[i].row, points[i].col)) return false;
+  }
+  return true;
+}
+
+function log(msg, cls) {
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = msg;
+  const logEl = document.getElementById('log');
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Affinity delta for one side of a pair, given the *distance* between the two units
+// and the pair's sign. Reward-dominant: bonus magnitude > penalty magnitude.
+// Unchanged from v2/v3.
+function affinityDelta(sign, distance) {
+  if (sign === 1) {
+    if (distance === 1) return 3;
+    if (distance >= 3) return -1;
+    return 0;
+  } else {
+    if (distance === 1) return -1;
+    if (distance >= 3) return 2;
+    return 0;
+  }
+}
+
+function pairsFor(unitId) {
+  return state.pairs.filter(p => p.a === unitId || p.b === unitId);
+}
+function partnerOf(pair, unitId) { return pair.a === unitId ? pair.b : pair.a; }
+
+// v4 non-spatial trade-off mechanism (design-review round 3 requirement — the
+// trade-off must NOT be spatial/station-exclusivity based). Chosen instantiation:
+// "聯動半徑同回合單選,正向配對限定" — a unit may have several positive-affinity
+// pairs, but only the nearest one is active each round; negative pairs always
+// apply in full regardless (so this cap can never be used to dodge a penalty —
+// satisfies the round-5 "tie-break must not correlate with polarity" constraint
+// by construction, since the cap only ever competes among same-polarity pairs).
+// Tie-break: smaller distance wins; on exact tie, alphabetically-earlier partner
+// id wins — deterministic and fully visible to the player via the legend panel.
+function activeDeltasAt(unitId, row, col) {
+  const pairs = pairsFor(unitId);
+  const negPairs = pairs.filter(p => p.sign === -1);
+  const posPairs = pairs.filter(p => p.sign === 1);
+
+  let activePos = null, bestDist = Infinity;
+  posPairs.forEach(p => {
+    const partner = state.units[partnerOf(p, unitId)];
+    if (!alive(partner)) return;
+    const dist = manhattanPos(row, col, partner.row, partner.col);
+    if (dist < bestDist || (dist === bestDist && activePos && partnerOf(p,unitId) < partnerOf(activePos,unitId))) {
+      activePos = p; bestDist = dist;
+    } else if (!activePos) {
+      activePos = p; bestDist = dist;
+    }
+  });
+
+  const rows = [];
+  let total = 0;
+  negPairs.forEach(p => {
+    const partner = state.units[partnerOf(p, unitId)];
+    if (!alive(partner)) return;
+    const dist = manhattanPos(row, col, partner.row, partner.col);
+    const delta = affinityDelta(-1, dist);
+    total += delta;
+    rows.push({pair:p, partner, dist, delta, suppressed:false});
+  });
+  posPairs.forEach(p => {
+    const partner = state.units[partnerOf(p, unitId)];
+    if (!alive(partner)) return;
+    const dist = manhattanPos(row, col, partner.row, partner.col);
+    const isActive = activePos === p;
+    const delta = isActive ? affinityDelta(1, dist) : 0;
+    if (isActive) total += delta;
+    rows.push({pair:p, partner, dist, delta, suppressed: !isActive});
+  });
+  return {rows, total};
+}
+
+function effectiveAtk(unitId, rowOverride, colOverride) {
+  const u = state.units[unitId];
+  const row = rowOverride ?? u.row, col = colOverride ?? u.col;
+  return u.atk + activeDeltasAt(unitId, row, col).total;
+}
+
+function cellCenter(row, col) { return {x: col*CELL + CELL/2, y: row*CELL + CELL/2}; }
+
+function renderLegend() {
+  const el = document.getElementById('legend');
+  el.innerHTML = '';
+  state.pairs.forEach(p => {
+    const a = state.units[p.a], b = state.units[p.b];
+    if (!alive(a) || !alive(b)) return;
+    const dist = manhattan(a,b);
+    const aInfo = activeDeltasAt(p.a, a.row, a.col).rows.find(r => r.pair === p);
+    const suppressed = aInfo ? aInfo.suppressed : false;
+    const delta = suppressed ? 0 : affinityDelta(p.sign, dist);
+    const color = suppressed ? 'var(--line-suppressed)' : (delta > 0 ? 'var(--line-pos)' : (delta < 0 ? 'var(--line-neg)' : 'var(--line-neu)'));
+    const signLabel = p.sign === 1 ? '正好感' : '負好感';
+    const div = document.createElement('div');
+    div.className = 'pair-row' + (suppressed ? ' suppressed' : '');
+    const canPickForCard = state.cardMode && state.pendingCard && state.pendingCard.type === 'flip';
+    if (canPickForCard) div.classList.add('card-target');
+    div.innerHTML = `<span class="dot" style="background:${color}"></span>${p.a} ↔ ${p.b}(${signLabel},距離${dist})` +
+      (suppressed ? ' — 本回合未生效(同時只有最近一對正好感生效)' : `目前效果:${delta>0?'+':''}${delta}`);
+    if (canPickForCard) {
+      div.addEventListener('click', () => resolveCard(p));
+    }
+    el.appendChild(div);
+  });
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  for (let r=0; r<GRID; r++) {
+    for (let c=0; c<GRID; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (isObstacle(r,c) ? ' obstacle' : '');
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      board.appendChild(cell);
+    }
+  }
+}
+
+function reachableCells(unit) {
+  const cells = [];
+  for (let r=0; r<GRID; r++) {
+    for (let c=0; c<GRID; c++) {
+      if (isObstacle(r,c)) continue;
+      if (chebyshev(unit.row, unit.col, r, c) <= unit.mov && !(r===unit.row && c===unit.col)) {
+        const occupied = Object.values(state.units).some(u => alive(u) && u.row===r && u.col===c);
+        if (!occupied) cells.push({r,c});
+      }
+    }
+  }
+  return cells;
+}
+
+function renderTokensAndOverlay() {
+  document.querySelectorAll('.token').forEach(t => t.remove());
+  const boardWrap = document.getElementById('board-wrap');
+
+  Object.values(state.units).forEach(u => {
+    const div = document.createElement('div');
+    div.className = 'token ' + u.side + (alive(u) ? '' : ' dead');
+    if (state.selected === u.id) div.classList.add('selected');
+
+    const cardPickingUnits = state.cardMode && state.pendingCard && (state.pendingCard.type === 'new_pos' || state.pendingCard.type === 'new_neg');
+    if (cardPickingUnits && u.side === 'player' && alive(u) && !state.cardTargets.includes(u.id)) {
+      const existingKeys = new Set(state.pairs.map(p => [p.a,p.b].sort().join('-')));
+      const alreadyPaired = state.cardTargets.some(t => existingKeys.has([t,u.id].sort().join('-')));
+      if (!alreadyPaired) div.classList.add('card-selectable');
+    }
+
+    div.style.top = (u.row*CELL) + 'px';
+    div.style.left = (u.col*CELL) + 'px';
+    div.textContent = u.id;
+
+    const rng = document.createElement('div');
+    rng.className = 'rng';
+    rng.textContent = `R${u.range ?? 1}`;
+    div.appendChild(rng);
+
+    const hp = document.createElement('div');
+    hp.className = 'hp';
+    hp.textContent = `${Math.max(0,u.hp)}/${u.maxHp}`;
+    div.appendChild(hp);
+
+    if (state.selected && u.side==='enemy' && alive(u)) {
+      const sel = state.units[state.selected];
+      if (!sel.acted && manhattan(sel, u) <= sel.range && hasLineOfSight(sel.row, sel.col, u.row, u.col)) {
+        div.classList.add('attackable');
+      }
+    }
+
+    div.addEventListener('click', (e) => { e.stopPropagation(); onTokenClick(u.id); });
+    boardWrap.appendChild(div);
+  });
+
+  renderConnections();
+}
+
+function renderConnections() {
+  svg.innerHTML = '';
+  state.pairs.forEach(p => {
+    const a = state.units[p.a], b = state.units[p.b];
+    if (!alive(a) || !alive(b)) return;
+    const info = activeDeltasAt(p.a, a.row, a.col).rows.find(r => r.pair === p);
+    const suppressed = info ? info.suppressed : false;
+    const dist = manhattan(a,b);
+    const delta = suppressed ? 0 : affinityDelta(p.sign, dist);
+    const color = suppressed ? 'var(--line-suppressed)' : (delta > 0 ? 'var(--line-pos)' : (delta < 0 ? 'var(--line-neg)' : 'var(--line-neu)'));
+    const c1 = cellCenter(a.row, a.col), c2 = cellCenter(b.row, b.col);
+    drawLine(c1, c2, color, suppressed, 2);
+  });
+
+  if (state.selected && state.hoverCell) {
+    const sel = state.units[state.selected];
+    const {r, c} = state.hoverCell;
+    const {rows, total} = activeDeltasAt(sel.id, r, c);
+    const previewEl = document.getElementById('preview');
+    previewEl.innerHTML = '';
+    if (rows.length === 0) {
+      previewEl.textContent = `${sel.id} 沒有任何好感度連結。`;
+    }
+    rows.forEach(row => {
+      const color = row.suppressed ? 'var(--line-suppressed)' : (row.delta > 0 ? 'var(--line-pos)' : (row.delta < 0 ? 'var(--line-neg)' : 'var(--line-neu)'));
+      const c1 = cellCenter(r, c), c2 = cellCenter(row.partner.row, row.partner.col);
+      drawLine(c1, c2, color, true, 3);
+
+      const line = document.createElement('div');
+      line.className = 'pv-line';
+      line.innerHTML = `<span class="dot" style="background:${color}"></span>${sel.id} × ${row.partner.id}(距離${row.dist}):` +
+        (row.suppressed ? '本回合未生效(取捨規則)' : `攻擊力 ${row.delta>0?'+':''}${row.delta}`);
+      previewEl.appendChild(line);
+    });
+    const summary = document.createElement('div');
+    summary.style.marginTop = '6px';
+    summary.style.fontWeight = 'bold';
+    summary.textContent = `移動到這裡的好感度淨效果:${total>0?'+':''}${total} 攻擊力`;
+    previewEl.appendChild(summary);
+
+    const cellEl = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+    if (cellEl) {
+      cellEl.classList.add(total > 0 ? 'hovered-net-pos' : (total < 0 ? 'hovered-net-neg' : 'hovered-net-neu'));
+    }
+  }
+}
+
+function drawLine(p1, p2, color, dashed, width) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+  line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+  line.setAttribute('stroke', color.startsWith('var') ? getComputedStyle(document.documentElement).getPropertyValue(color.slice(4,-1)).trim() : color);
+  line.setAttribute('stroke-width', width || 2);
+  if (dashed) line.setAttribute('stroke-dasharray', '6,4');
+  svg.appendChild(line);
+}
+
+function renderReachable() {
+  document.querySelectorAll('.cell').forEach(c => {
+    c.classList.remove('reachable','hovered-net-pos','hovered-net-neg','hovered-net-neu','in-atk-range');
+  });
+  if (!state.selected) return;
+  const sel = state.units[state.selected];
+  if (sel.acted) return;
+  reachableCells(sel).forEach(({r,c}) => {
+    const cellEl = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+    if (cellEl) cellEl.classList.add('reachable');
+  });
+  for (let r=0;r<GRID;r++) {
+    for (let c=0;c<GRID;c++) {
+      const d = manhattanPos(sel.row, sel.col, r, c);
+      if (d <= sel.range && d > 0 && hasLineOfSight(sel.row, sel.col, r, c)) {
+        const cellEl = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        if (cellEl) cellEl.classList.add('in-atk-range');
+      }
+    }
+  }
+}
+
+function renderStatus() {
+  const st = document.getElementById('status');
+  if (state.phase === 'over-win') {
+    st.textContent = `第 ${state.round} 回合 · 勝利! (詳見下方「本次 Session 統計」)`;
+    return;
+  }
+  if (state.phase === 'over-lose') {
+    st.textContent = `第 ${state.round} 回合 · 戰敗 (詳見下方「本次 Session 統計」)`;
+    return;
+  }
+  st.textContent = `第 ${state.round} 回合 · ${state.phase === 'player' ? '我方行動階段' : '敵方行動階段'}`;
+  document.getElementById('enemyPhaseBtn').disabled = !livingPlayerUnits().every(u => u.acted) || state.phase !== 'player';
+}
+
+function renderPredictButtons() {
+  document.querySelectorAll('.predict-btn').forEach(btn => {
+    btn.classList.toggle('active', state.prediction === btn.dataset.pred);
+    btn.disabled = !state.selected || state.units[state.selected].acted;
+  });
+  const statusEl = document.getElementById('predictStatus');
+  const label = {pos:'好感加成', neg:'好感懲罰', neu:'無效果'}[state.prediction];
+  statusEl.textContent = state.prediction ? `目前預判:${label}(移動後自動比對)` : '尚未標記';
+}
+
+function renderCardPanel() {
+  const el = document.getElementById('cardPanel');
+  el.innerHTML = '';
+  if (!state.pendingCard) {
+    el.className = 'empty';
+    el.textContent = state.round % CARD_CADENCE === 0 ? '本回合卡牌已使用或跳過。' : `本回合沒有可用卡牌(每 ${CARD_CADENCE} 回合固定發一張)。`;
+    return;
+  }
+  el.className = '';
+  const desc = document.createElement('div');
+  desc.textContent = state.pendingCard.text;
+  desc.style.marginBottom = '8px';
+  el.appendChild(desc);
+
+  if (!state.cardMode) {
+    const useBtn = document.createElement('button');
+    useBtn.textContent = '使用卡牌';
+    useBtn.addEventListener('click', () => { state.cardMode = true; state.cardTargets = []; renderAll(); });
+    el.appendChild(useBtn);
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'secondary';
+    skipBtn.textContent = '這回合先不用';
+    skipBtn.addEventListener('click', () => { state.pendingCard = null; renderAll(); });
+    el.appendChild(skipBtn);
+  } else {
+    const hint = document.createElement('div');
+    hint.style.color = '#ffd76b';
+    hint.style.fontSize = '12px';
+    if (state.pendingCard.type === 'flip') {
+      hint.textContent = '請點選下方「目前好感度關係」列表中要翻轉的一對配對。';
+    } else {
+      hint.textContent = `請點選棋盤上兩位尚無配對關係的存活我方單位(已選:${state.cardTargets.join(', ') || '無'})。`;
+    }
+    el.appendChild(hint);
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'secondary';
+    cancelBtn.textContent = '取消';
+    cancelBtn.addEventListener('click', () => { state.cardMode = false; state.cardTargets = []; renderAll(); });
+    el.appendChild(cancelBtn);
+  }
+}
+
+function renderSessionStats() {
+  const el = document.getElementById('sessionStats');
+  const predRate = sessionStats.predictionTotal > 0 ? Math.round(100*sessionStats.predictionCorrect/sessionStats.predictionTotal) : null;
+  let html = `<div>預判準確率:${sessionStats.predictionTotal>0 ? `${sessionStats.predictionCorrect}/${sessionStats.predictionTotal}(${predRate}%)` : '尚無資料'} — 目標 ≥80%(第2-3場戰鬥起)</div>`;
+
+  const triggered = sessionStats.battles.filter(b => b.triggered);
+  const untriggered = sessionStats.battles.filter(b => !b.triggered);
+  const avg = arr => arr.length ? (arr.reduce((s,b)=>s+b.rate,0)/arr.length*100).toFixed(0) : null;
+  html += `<div style="margin-top:6px;">陣型重複率 — 觸發卡牌組:${triggered.length?`${avg(triggered)}%(${triggered.length}場)`:'尚無資料'} vs 未觸發組:${untriggered.length?`${avg(untriggered)}%(${untriggered.length}場)`:'尚無資料'}</div>`;
+  html += `<div style="margin-top:6px;">(目標:觸發組明顯低於未觸發組,方向性訊號即可,不要求統計顯著性)</div>`;
+
+  if (sessionStats.battles.length > 0) {
+    html += `<table id="statsTable"><tr><th>#</th><th>地形</th><th>回合數</th><th>我方陣亡</th><th>觸發卡牌</th><th>陣型重複率</th></tr>`;
+    sessionStats.battles.forEach((b,i) => {
+      html += `<tr><td>${i+1}</td><td>${LEVELS[b.levelType].label}</td><td>${b.rounds}</td><td>${b.playerDeaths}</td><td>${b.triggered?'<span class="badge yes">是</span>':'<span class="badge no">否</span>'}</td><td>${(b.rate*100).toFixed(0)}%</td></tr>`;
+    });
+    html += `</table>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderAll() {
+  renderBoard();
+  attachCellHandlers();
+  renderTokensAndOverlay();
+  renderReachable();
+  renderLegend();
+  renderStatus();
+  renderPredictButtons();
+  renderCardPanel();
+  renderSessionStats();
+  document.getElementById('currentLevelLabel').textContent = LEVELS[state.levelType].label;
+  document.getElementById('btnStandard').classList.toggle('active', state.levelType==='standard');
+  document.getElementById('btnOccluded').classList.toggle('active', state.levelType==='occluded');
+}
+
+function attachCellHandlers() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.addEventListener('mouseenter', () => {
+      if (!state.selected) return;
+      const r = parseInt(cell.dataset.row), c = parseInt(cell.dataset.col);
+      const sel = state.units[state.selected];
+      if (sel.acted) return;
+      if (!reachableCells(sel).some(rc => rc.r===r && rc.c===c)) return;
+      state.hoverCell = {r,c};
+      renderTokensAndOverlay();
+      renderReachable();
+    });
+    cell.addEventListener('mouseleave', () => {
+      state.hoverCell = null;
+      document.getElementById('preview').textContent = '選擇角色並將滑鼠移到候選格子上,這裡會顯示預覽效果。';
+      renderTokensAndOverlay();
+      renderReachable();
+    });
+    cell.addEventListener('click', () => {
+      if (!state.selected) return;
+      const r = parseInt(cell.dataset.row), c = parseInt(cell.dataset.col);
+      const sel = state.units[state.selected];
+      if (sel.acted) return;
+      if (!reachableCells(sel).some(rc => rc.r===r && rc.c===c)) return;
+
+      if (state.prediction) {
+        const {total} = activeDeltasAt(sel.id, r, c);
+        const actual = total > 0 ? 'pos' : (total < 0 ? 'neg' : 'neu');
+        const correct = actual === state.prediction;
+        sessionStats.predictionTotal++;
+        if (correct) sessionStats.predictionCorrect++;
+        const label = {pos:'好感加成', neg:'好感懲罰', neu:'無效果'};
+        log(`預判${correct?'正確':'錯誤'}:預測「${label[state.prediction]}」,實際「${label[actual]}」(淨效果 ${total>0?'+':''}${total})。`, correct?'predict-correct':'predict-wrong');
+      } else {
+        log('(此步未預判,不列入準確率統計)');
+      }
+      state.prediction = null;
+
+      sel.row = r; sel.col = c;
+      log(`${sel.id} 移動到 (${r},${c})。`);
+      state.hoverCell = null;
+      renderAll();
+    });
+  });
+}
+
+function onTokenClick(unitId) {
+  const u = state.units[unitId];
+
+  if (state.cardMode && state.pendingCard && (state.pendingCard.type === 'new_pos' || state.pendingCard.type === 'new_neg')) {
+    if (u.side !== 'player' || !alive(u)) return;
+    const existingKeys = new Set(state.pairs.map(p => [p.a,p.b].sort().join('-')));
+    if (state.cardTargets.includes(unitId)) return;
+    if (state.cardTargets.some(t => existingKeys.has([t,unitId].sort().join('-')))) { log('這兩位已經有配對關係了,請選其他人。'); return; }
+    state.cardTargets.push(unitId);
+    if (state.cardTargets.length === 2) {
+      resolveCard(state.cardTargets.slice());
+    } else {
+      renderAll();
+    }
+    return;
+  }
+
+  if (!alive(u)) return;
+  if (state.phase !== 'player') return;
+
+  if (u.side === 'player') {
+    if (u.acted) { log(`${u.id} 這回合已經行動過了。`); return; }
+    state.selected = (state.selected === unitId) ? null : unitId;
+    state.hoverCell = null;
+    state.prediction = null;
+    renderAll();
+    return;
+  }
+
+  if (u.side === 'enemy' && state.selected) {
+    const sel = state.units[state.selected];
+    if (sel.acted) return;
+    if (manhattan(sel, u) > sel.range) { log(`${sel.id}(${sel.weapon},射程${sel.range})打不到 ${u.id},太遠了。`); return; }
+    if (!hasLineOfSight(sel.row, sel.col, u.row, u.col)) { log(`${sel.id} 對 ${u.id} 沒有視線,被遮蔽地形擋住了,無法攻擊。`); return; }
+    doAttack(sel, u);
+    sel.acted = true;
+    state.selected = null;
+    checkVictory();
+    renderAll();
+  }
+}
+
+function resolveCard(payload) {
+  if (state.pendingCard.type === 'flip') {
+    const pair = payload;
+    pair.sign *= -1;
+    log(`使用卡牌:${pair.a} 與 ${pair.b} 的好感度極性反轉為${pair.sign===1?'正':'負'}。`, 'event');
+  } else {
+    const [a,b] = payload;
+    const sign = state.pendingCard.type === 'new_pos' ? 1 : -1;
+    state.pairs.push({a,b,sign});
+    log(`使用卡牌:${a} 與 ${b} 之間建立了新的${sign===1?'好感':'嫌隙'}關係。`, 'event');
+  }
+  state.cardPlayedThisBattle = true;
+  state.pendingCard = null;
+  state.cardMode = false;
+  state.cardTargets = [];
+  renderAll();
+}
+
+function doAttack(attacker, defender) {
+  const atk = effectiveAtk(attacker.id) + (Math.floor(Math.random()*3)+1);
+  const def = 3 + Math.floor(Math.random()*3);
+  const dmg = Math.max(1, atk - def);
+  defender.hp = Math.max(0, defender.hp - dmg);
+  log(`${attacker.id} 攻擊 ${defender.id}:攻擊值 ${atk} vs 防禦值 ${def} → 造成 ${dmg} 點傷害(${defender.id} 剩 ${defender.hp} HP)。`, 'dmg');
+  if (defender.hp <= 0) log(`${defender.id} 倒下了。`, 'dmg');
+}
+
+function checkVictory() {
+  if (state.phase === 'over-win' || state.phase === 'over-lose') return;
+  if (livingEnemyUnits().length === 0) {
+    state.phase = 'over-win';
+    log('所有敵人已被擊敗 — 勝利!', 'win');
+    finalizeBattleStats();
+  }
+  const deadPlayers = Object.values(state.units).filter(u => u.side==='player' && !alive(u)).length;
+  if (deadPlayers >= 3) {
+    state.phase = 'over-lose';
+    log('我方過半數陣亡 — 戰敗。', 'lose');
+    finalizeBattleStats();
+  }
+}
+
+function computeGraphKey() {
+  const living = Object.values(state.units).filter(alive);
+  const livingIds = living.map(u=>u.id).sort();
+  const adjPairs = [];
+  for (let i=0;i<living.length;i++) {
+    for (let j=i+1;j<living.length;j++) {
+      if (manhattan(living[i], living[j]) === 1) {
+        adjPairs.push([living[i].id, living[j].id].sort().join('-'));
+      }
+    }
+  }
+  adjPairs.sort();
+  return { livingKey: livingIds.join(','), graphKey: adjPairs.join(',') };
+}
+
+// 陣型重複率定義(design-review 第四、五輪裁決):「重複」= 具名單位鄰接集合與同一場戰鬥中
+// 先前某回合(存活單位集合相同者)完全相等。陣亡導致存活集合改變時,自該回合起以新集合重新
+// 建立比較基準,不與陣亡前的回合比較。
+function recordRoundFormation() {
+  const {livingKey, graphKey} = computeGraphKey();
+  const priorSameLiving = state.roundHistory.filter(h => h.livingKey === livingKey);
+  const isRepeat = priorSameLiving.some(h => h.graphKey === graphKey);
+  state.roundHistory.push({round: state.round, livingKey, graphKey, isRepeat});
+}
+
+function finalizeBattleStats() {
+  const total = state.roundHistory.length;
+  const repeats = state.roundHistory.filter(h=>h.isRepeat).length;
+  const rate = total > 0 ? repeats/total : 0;
+  const playerDeaths = Object.values(state.units).filter(u => u.side==='player' && !alive(u)).length;
+  sessionStats.battles.push({
+    triggered: state.cardPlayedThisBattle,
+    rate,
+    rounds: state.round,
+    playerDeaths,
+    levelType: state.levelType,
+  });
+  log(`戰鬥結果摘要:第 ${state.round} 回合結束 · 我方陣亡 ${playerDeaths} 人 · 本場陣型重複率 ${(rate*100).toFixed(0)}% · ${state.cardPlayedThisBattle?'本場有使用卡牌':'本場未使用卡牌'}。請記錄這行數據以便與「忽視好感度」跑法比較。`, 'win');
+}
+
+function runEnemyPhase() {
+  if (state.phase !== 'player') return;
+  if (!livingPlayerUnits().every(u => u.acted)) { log('還有我方角色尚未行動。'); return; }
+  state.phase = 'enemy';
+  renderStatus();
+
+  livingEnemyUnits().forEach(enemy => {
+    const targets = livingPlayerUnits();
+    if (targets.length === 0) return;
+    let nearest = targets[0], best = manhattan(enemy, nearest);
+    targets.forEach(t => { const d = manhattan(enemy,t); if (d < best) { best = d; nearest = t; } });
+
+    if (best <= enemy.range && hasLineOfSight(enemy.row, enemy.col, nearest.row, nearest.col)) {
+      doAttack(enemy, nearest);
+    } else {
+      let dr = Math.sign(nearest.row - enemy.row);
+      let dc = Math.sign(nearest.col - enemy.col);
+      let steps = enemy.mov;
+      while (steps > 0 && manhattan(enemy, nearest) > enemy.range) {
+        const tryMoves = [];
+        if (dr !== 0) tryMoves.push({r: enemy.row+dr, c: enemy.col});
+        if (dc !== 0) tryMoves.push({r: enemy.row, c: enemy.col+dc});
+        let moved = false;
+        for (const m of tryMoves) {
+          if (isObstacle(m.r, m.c)) continue;
+          const occupied = Object.values(state.units).some(u => alive(u) && u.row===m.r && u.col===m.c);
+          if (!occupied && m.r>=0 && m.r<GRID && m.c>=0 && m.c<GRID) {
+            enemy.row = m.r; enemy.col = m.c;
+            moved = true;
+            break;
+          }
+        }
+        if (!moved) break;
+        steps--;
+      }
+      log(`${enemy.id} 移動到 (${enemy.row},${enemy.col})。`);
+    }
+  });
+
+  checkVictory();
+  if (state.phase === 'enemy') {
+    state.round++;
+    livingPlayerUnits().forEach(u => u.acted = false);
+    state.phase = 'player';
+    recordRoundFormation();
+    maybeDrawCard();
+  }
+  renderAll();
+}
+
+function maybeDrawCard() {
+  if (state.round % CARD_CADENCE !== 0) return;
+  if (state.cardDrawnForRound === state.round) return;
+  const feasible = ['flip','new_pos','new_neg'].filter(cardFeasible);
+  state.cardDrawnForRound = state.round;
+  if (feasible.length === 0) return;
+  const type = feasible[Math.floor(Math.random()*feasible.length)];
+  state.pendingCard = {type, text: CARD_TEXT[type]};
+  log(`本回合抽到好感度對話卡牌:${CARD_TEXT[type]}`, 'event');
+}
+
+function cardFeasible(type) {
+  const livingIds = livingPlayerUnits().map(u=>u.id);
+  if (type === 'flip') return state.pairs.length > 0;
+  const existingKeys = new Set(state.pairs.map(p => [p.a,p.b].sort().join('-')));
+  for (let i=0;i<livingIds.length;i++) {
+    for (let j=i+1;j<livingIds.length;j++) {
+      const key=[livingIds[i],livingIds[j]].sort().join('-');
+      if(!existingKeys.has(key)) return true;
+    }
+  }
+  return false;
+}
+
+document.getElementById('endUnitBtn').addEventListener('click', () => {
+  if (!state.selected) { log('請先選擇一個角色。'); return; }
+  const sel = state.units[state.selected];
+  sel.acted = true;
+  log(`${sel.id} 結束行動(未攻擊)。`);
+  state.selected = null;
+  state.hoverCell = null;
+  state.prediction = null;
+  renderAll();
+});
+document.getElementById('enemyPhaseBtn').addEventListener('click', runEnemyPhase);
+document.getElementById('restartBtn').addEventListener('click', () => {
+  state = freshState(state.levelType);
+  document.getElementById('log').innerHTML = '';
+  log('重新開始本場戰鬥。');
+  recordRoundFormation();
+  renderAll();
+});
+document.querySelectorAll('.predict-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!state.selected || state.units[state.selected].acted) return;
+    state.prediction = (state.prediction === btn.dataset.pred) ? null : btn.dataset.pred;
+    renderPredictButtons();
+  });
+});
+document.getElementById('btnStandard').addEventListener('click', () => {
+  state = freshState('standard');
+  document.getElementById('log').innerHTML = '';
+  log('切換到標準地形,重新開始。');
+  recordRoundFormation();
+  renderAll();
+});
+document.getElementById('btnOccluded').addEventListener('click', () => {
+  state = freshState('occluded');
+  document.getElementById('log').innerHTML = '';
+  log('切換到遮蔽地形,重新開始。中央的斜紋格子會阻擋視線,遠程攻擊需要視線暢通才能命中。');
+  recordRoundFormation();
+  renderAll();
+});
+
+log('遊戲開始。選擇一個我方角色(藍色)開始行動。你可以先點選右側的「預判」按鈕再移動,系統會自動比對準確率。');
+recordRoundFormation();
+renderAll();
+</script>
+</body>
+</html>

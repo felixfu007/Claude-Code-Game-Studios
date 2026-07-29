@@ -1,6 +1,6 @@
 # Godot — Deprecated APIs
 
-Last verified: 2026-02-12
+Last verified: 2026-07-28
 
 If an agent suggests any API in the "Deprecated" column, it MUST be replaced
 with the "Use Instead" column.
@@ -10,6 +10,7 @@ with the "Use Instead" column.
 | Deprecated | Use Instead | Since | Notes |
 |------------|-------------|-------|-------|
 | `TileMap` | `TileMapLayer` | 4.3 | One node per layer instead of multi-layer node |
+| `AudioEffectSpectrumAnalyzer::get_tap_back_pos` | (removed, no direct replacement) | 4.7 | GDExtension-visible removal — audio visualizer code needs adjustment |
 | `VisibilityNotifier2D` | `VisibleOnScreenNotifier2D` | 4.0 | Renamed for clarity |
 | `VisibilityNotifier3D` | `VisibleOnScreenNotifier3D` | 4.0 | Renamed for clarity |
 | `YSort` | `Node2D.y_sort_enabled` | 4.0 | Property on Node2D, not a separate node |
@@ -30,6 +31,8 @@ with the "Use Instead" column.
 | `Skeleton3D` signal `bone_pose_updated` | `skeleton_updated` | 4.3 | Renamed |
 | `AnimationPlayer.method_call_mode` | `AnimationMixer.callback_mode_method` | 4.3 | Moved to base class |
 | `AnimationPlayer.playback_active` | `AnimationMixer.active` | 4.3 | Moved to base class |
+| `type_exists()` | (see current docs for replacement) | 4.7 | Deprecated — verify call sites before upgrading |
+| GDExtension `object_cast_to` | `is_class`-based cast | 4.7 | Also applies to `classdb_get_class_tag` |
 
 ## Patterns (Not Just APIs)
 
@@ -41,3 +44,4 @@ with the "Use Instead" column.
 | `Texture2D` in shader parameters | `Texture` base type | Changed in 4.4 |
 | Manual post-process viewport chains | `Compositor` + `CompositorEffect` | Structured post-processing (4.3+) |
 | GodotPhysics3D for new projects | Jolt Physics 3D | Default since 4.6; better stability |
+| Hardcoded keyboard/mouse device IDs | Query device ID at runtime | Numbering scheme changed in 4.7 — do not assume stable IDs |

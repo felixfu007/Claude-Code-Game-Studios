@@ -1,9 +1,33 @@
 # Godot — Current Best Practices
 
-Last verified: 2026-02-12 | Engine: Godot 4.6
+Last verified: 2026-07-28 | Engine: Godot 4.7.1
 
 Practices that are **new or changed** since the model's training data (~4.3).
 This supplements (not replaces) the agent's built-in knowledge.
+
+## Input (4.7)
+
+- **Keyboard/mouse device IDs were renumbered** — never hardcode a device ID; query it at runtime instead. This affects any local multiplayer or multi-device input handling code.
+
+## UI (4.7)
+
+- **Control offset transforms**: Controls can now be translated, rotated, or scaled visually without fighting container re-layout. Useful for animated UI (hover feedback, popups, tweened menus) that previously required workarounds inside containers.
+- **DrawableTexture2D**: A simpler layer above Viewport/RenderingDevice for drawing directly onto textures at runtime.
+
+## Rendering (4.7)
+
+- **AreaLight3D**: New node for real-time light from a rectangular surface — useful for interior/architectural lighting without scattering multiple point lights.
+- **Vulkan subsampled images**: Foveated rendering performance improvement, primarily relevant for XR.
+- **HDR output** supported across all platforms.
+
+## XR (4.7)
+
+- Production-ready Android XR and Steam Frame support, with improved OpenXR composition layers.
+
+## Platform (4.7)
+
+- **Android OBB support removed** — projects must use Play Asset Delivery or a split PCK instead. Audit any Android export presets that still reference OBB before upgrading.
+- **Godot Android Build Environment** reached stable release.
 
 ## GDScript (4.5+)
 

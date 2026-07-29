@@ -1,8 +1,26 @@
 # Godot — Breaking Changes
 
-Last verified: 2026-02-12
+Last verified: 2026-07-28
 
 Changes between Godot versions, focused on post-LLM-cutoff changes (4.4+).
+
+## 4.6 → 4.7 (Jul 2026 — POST-CUTOFF, HIGH RISK)
+
+| Subsystem | Change | Details |
+|-----------|--------|---------|
+| Input | Keyboard/mouse device ID numbering changed | Code that hardcodes device IDs will break. Re-verify any custom multi-device input handling. |
+| Particles | Angular velocity correction | Rotating particles render subtly differently than in 4.6 — visually re-check particle effects that use rotation. |
+| Shaders | Preprocessor restrictions tightened | Some macro patterns that compiled under 4.6 no longer compile in 4.7. Verify custom shader includes/macros. |
+| Platform | Android OBB support removed | Projects relying on legacy OBB must migrate to Play Asset Delivery or split PCK before upgrading. |
+| UI | Control offset transforms added | New ability to translate/rotate/scale a Control without fighting container layout — but test existing menus using containers, tweens, hover feedback, popups, scroll views, or custom input routing for regressions. |
+| Audio | Audio spectrum analyzer API changed | `AudioEffectSpectrumAnalyzer::get_tap_back_pos` removed (GDExtension-visible). Any audio visualizer code needs adjustment. |
+| GDExtension | `object_cast_to` / `classdb_get_class_tag` deprecated | Use `is_class`-based casts instead. |
+| Core | `type_exists()` deprecated | Check call sites before upgrading. |
+| Rendering | AreaLight3D added | New node for rectangular-surface real-time light (interior/architectural lighting) — not breaking, but relevant for lighting setups. |
+| Rendering | Vulkan subsampled images (foveated rendering) | New capability, relevant for XR performance work. |
+| XR | Production-ready Android XR / Steam Frame support | Improved OpenXR composition layers. |
+
+Sources: [Upgrading from Godot 4.6 to Godot 4.7 — Godot Engine docs](https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.7.html), [Godot 4.7, Lights, Camera, Action!](https://godotengine.org/releases/4.7/)
 
 ## 4.5 → 4.6 (Jan 2026 — POST-CUTOFF, HIGH RISK)
 
