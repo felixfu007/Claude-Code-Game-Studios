@@ -1,2 +1,4 @@
 - [Game-concept.md review cycle](project_game_concept_review.md) — 《弈緣》 is on round 5 of iterative /design-review; tracks history + recurring cross-mode wording gap pattern
 - [Cross-mode wording check](feedback_cross_mode_wording_check.md) — always diff new mode-scoped UI constraints against other modes' existing wording before approving; catches silent feature-gutting
+- [Verify punted obligations](feedback_verify_punted_obligations.md) — when a GDD punts to another file or claims a recurring item was "promoted" to tracked status, verify the file exists and the obligation is actually registered, don't trust the prose
+- [Mechanism removal sweep](feedback_mechanism_removal_sweep.md) — after a rewrite removes a mechanism/interface, grep the whole doc for its terminology; dependent rules elsewhere silently keep referencing the removed thing (happened twice in cursor-highlight-state.md)

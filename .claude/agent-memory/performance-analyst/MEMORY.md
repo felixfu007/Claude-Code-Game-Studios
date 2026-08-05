@@ -1,0 +1,1 @@
+- [Affinity Data Pool perf state](affinity_data_pool_perf.md) — round-6 settled items vs. new gaps found in 2026-08-03 audit of design/gdd/affinity-data-pool.md

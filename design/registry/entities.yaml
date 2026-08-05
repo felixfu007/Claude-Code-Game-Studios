@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-07-30"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -106,7 +106,71 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: combat_strength_read
+    status: active
+    source: design/gdd/affinity-data-pool.md
+    referenced_by:
+      - design/gdd/affinity-data-pool.md
+    variables:
+      - p
+      - t_now
+      - m_i
+      - t_i
+      - lambda_combat
+    output_range: [unbounded, unbounded]
+    expression: "Σ (m_i · λ_combat^(t_now − t_i))"
+    notes: "Recency-weighted signed sum over the global Delta Log for pair p, all
+      sources weighted 1.0. Feeds affinity-position bonus/penalty calc. Bounded
+      in practice for λ_combat<1 via convergent geometric series; unbounded only
+      at the legal edge case λ_combat=1."
+    added: 2026-07-30
+    revised: ""
+
+  - name: narrative_depth_read
+    status: active
+    source: design/gdd/affinity-data-pool.md
+    referenced_by:
+      - design/gdd/affinity-data-pool.md
+    variables:
+      - p
+      - t_now
+      - m_i
+      - t_i
+      - lambda_narrative
+      - alpha
+      - source_i
+    output_range: [unbounded, unbounded]
+    expression: "Σ (w(source_i) · m_i · λ_narrative^(t_now − t_i)), w=α for combat_card, w=1 otherwise"
+    notes: "Recency-weighted, source-discounted sum over the global Delta Log for
+      pair p. Feeds support-conversation unlock and ending-branch determination.
+      α∈(0,1) open interval per round-7 creative-director ruling (2026-07-30) —
+      weakly couples combat-optimal play to narrative outcome without fully
+      binding them. |narrative_depth_read| ≤ combat_strength_read at same λ,
+      since all weights ≤1."
+    added: 2026-07-30
+    revised: ""
+
+  - name: shape_feature_read
+    status: active
+    source: design/gdd/affinity-data-pool.md
+    referenced_by:
+      - design/gdd/affinity-data-pool.md
+    variables:
+      - p
+      - reversal_count
+      - source_distribution
+      - time_distribution
+    output_range: ["n/a — see sub-features", "n/a — see sub-features"]
+    notes: "Computed on the FULL UNWEIGHTED log for pair p — no λ, no α. Three
+      sub-features: reversal_count (int, 0 to n(p)-1), source_distribution
+      (raw counts n_cc/n_sc/n_se plus proportions — raw counts required
+      alongside proportions to distinguish 'no data yet' from 'deliberate
+      absence', per round-6 'absence as positive-weight shape feature'
+      requirement), time_distribution (span_t, spread_ratio). n(p)=0 returns
+      an explicit sentinel, not 0, for time_distribution."
+    added: 2026-07-30
+    revised: ""
 
 # Example:
 #

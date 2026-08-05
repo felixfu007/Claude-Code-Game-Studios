@@ -1,0 +1,22 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Cursor Reclaim Godot Spike (2026-08-05)"
+config/description="Throwaway technical spike for design/gdd/cursor-highlight-state.md. Verifies (1) whether Control offset-transform hover feedback is correctly hit-tested in Godot 4.7.1, and (2) instruments the mouse-reclaim mixed-input device-authority state machine for human calibration testing. See README.md."
+run/main_scene="res://scenes/OffsetTransformHoverTest.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
