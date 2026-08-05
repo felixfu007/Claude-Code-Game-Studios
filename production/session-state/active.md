@@ -1,38 +1,15 @@
 <!-- STATUS -->
-Epic:
-Feature: 好感度—位置連鎖 v4 原型(新手驗證批次)
-Task: Track A(戰鬥端)+ Track B(敘事端)皆已建好,待真人測試與 Phase 6-7 debrief/報告
+Epic: 系統設計(/map-systems → /design-system → /design-review)
+Feature: 存檔系統(含跨規則集遷移)GDD
+Task: `/design-review` 第二輪完整模式對抗性覆核完成(NEEDS REVISION,9 組阻擋,去重合併自第一輪修訂本身的 fail-open 邊界),同一 session 內完成修訂——manifest 語意驗證/完整性標記改為 fail-closed、索引鍵退役名稱治理規則、遷移回寫原始位元組保留機制(使用者裁決 B-甲)、原子置換安全序列重寫、Player Fantasy 嚴重度排序修正(使用者裁決 A2)、新增第四類拒絕原因代碼、AC-8/14 重新指派用途。`affinity-data-pool.md` 同步新增索引鍵持久化說明+AC-56(解決遺留項 S1,與 AC-47 解綁)。詳見 `design/gdd/reviews/save-system-review-log.md`。狀態仍為 Designed(待審查),**使用者已選擇下一步:開新 session,`/clear` 後執行 `/design-review design/gdd/save-system.md` 進行第三輪覆核**。Foundation 層三個系統(好感度數值池 Approved、存檔系統待第三輪覆核、單一游標/高亮狀態系統待第十一輪覆核鎖死修法)設計皆已完成多輪,可視覆核結果決定是否開始 Core 層(戰棋移動與交戰、好感度—位置連鎖、技能卡牌)
 <!-- /STATUS -->
 
-# 目前工作狀態
+**`design/gdd/save-system.md` 第一、二輪 `/design-review` + 修訂完整記錄見 `design/gdd/reviews/save-system-review-log.md`。下一輪(第三輪)待辦**:(1) 正式覆核第二輪修訂是否經得起對抗性審查(原始位元組保留機制、退役名稱治理規則、fail-closed 翻轉是否徹底);(2) 序列化格式(Resource/.tres vs 自訂格式)仍是 Open Question,留給 `/create-architecture` 階段,已鎖定 4 項硬性護欄 + 新增型別白名單版本分域為架構階段必辦項;(3) `affinity-data-pool.md` 的序列化生命週期通知介面與 AC-47 仍為 provisional(見 `systems-index.md` Cross-System Obligations Registry),第二輪**未觸及**此二項,待同步/非同步真正定案時一併處理——但該文件已就索引鍵持久化(原遺留項 S1)獨立完成同步。
 
-**概念**:好感度—位置連鎖(《弈緣》核心機制)— v1-v3 已 PROCEED,design-review 第三/四/五輪裁決要求 v4 作為進入 `/design-system` 前的硬性門檻
+**`design/gdd/cursor-highlight-state.md` 第十輪 `/design-review` + spike + 修法完整記錄見 `design/gdd/reviews/cursor-highlight-state-review-log.md`。待辦**:(1) 正式覆核鎖死修法(AC-56/57)是否經得起對抗性審查——修法跳過了審查;(2) 補測 D-pad/鍵盤方向鍵的「新按下」判定與類比搖桿是否一致(spike 只測了類比搖桿);(3) 帳本 L15/L22/L23/L10 已達自動升級門檻,列為第十一輪優先阻擋項候選。
 
-**design-review 進度**:第五輪(2026-07-29)判決 NEEDS REVISION(輕度),18 項發現(13 阻斷 + 5 建議)已全數修訂寫入 `design/gdd/game-concept.md`。creative-director 放行:不需要第六輪審查,直接進入 v4 原型。
+**`design/gdd/affinity-data-pool.md` 已於 2026-08-03 通過第七輪正式化 `/design-review`,狀態 Approved**(6 位專家並行審查 + creative-director 綜合裁決,8 項阻擋全數修訂完成)。creative-director 建議不需再跑第八輪全面審查。**2026-08-05 更新**:本文件的兩項對存檔系統的待清償義務(序列化生命週期通知介面、AC-47)因存檔系統首輪審查重新開放為 provisional——本文件本身未被回頭修改,見 `systems-index.md` Cross-System Obligations Registry。
 
-## v4 原型 — 兩軌並行
+**系統拆解**:`/map-systems` 已完成,`design/gdd/systems-index.md` 已建立,14 個系統(12 個 MVP、2 個垂直切片)。
 
-design-review 認定 v4 實際上是兩個完全不同的驗證(戰鬥端已有方向性驗證但缺外部效度;敘事端從未驗證過):
-
-### Track A — 戰鬥/位置連鎖(進行中)
-
-- **路徑**:HTML,延續 `prototypes/affinity-position-concept-v3/` 程式碼
-- **檔案**:`prototypes/affinity-position-concept-v4/prototype.html` + `README.md` — **已建好**
-- **新增機制**:預判標記 UI、固定節奏發牌(N=2,牌面隨機/玩家決定是否打出)、非空間取捨機制(同一單位同時多對正好感時只有最近一對生效)、遮蔽地形關卡(視線通透度測試)、陣型重複率自動追蹤(依觸發/未觸發卡牌分組)、跨戰鬥 session 統計面板
-- **下一步**:需要 3-5 位真正新手實際測試(教學後 2-3 場戰鬥 + 決定性探針關卡對照 + 遮蔽地形關卡),完成後回到 `/prototype` 流程 Phase 6(debrief 五問)→ Phase 7(REPORT.md)→ Phase 8(creative-director 審查,lean 模式下跳過)
-
-### Track B — 敘事軌跡系統(已建好,待真人測試)
-
-- **路徑**:Paper(故事地圖 + 模擬遊玩紀錄)
-- **檔案**:`prototypes/affinity-position-concept-v4/track-b-narrative/story-map.md` + `play-log.md` + `README.md` — **已建好**
-- **角色設計**:三人結構(甲/乙/丙,佔位代號)——甲同時對乙、丙有好感度潛力,3 次支援對話名額 + 4-5 張戰鬥卡牌必須在兩段關係間分配,製造敘事層的取捨
-- **驗證的核心問題**:round 5 design-review 的「羅曼史養成迴圈」設計測試——一名全程只對單一角色打好感度卡牌的玩家,其敘事解鎖結果應與均衡經營的玩家不同,但不應單純更多或更好;資源預算是否真的能阻止兩段關係同時達到最深交情
-- **自我模擬已發現的缺口**:`play-log.md` Session 3 發現軌跡形狀分類規則有中間地帶缺口(只定義了 5 種乾淨形狀,真實投入模式常落在查不到表的中間地帶)——`/design-system` 階段需要處理
-- **下一步**:找真人讀者實際「扮演」一輪,用 `play-log.md` 最後的五個引導問題 debrief
-
-**相關檔案**:
-- `design/gdd/game-concept.md` — 遊戲概念文件(第五輪修訂完成)
-- `design/gdd/reviews/game-concept-review-log.md` — 五輪審查完整記錄
-- `prototypes/index.md` — 原型索引(v4 完成後需更新)
-- `prototypes/affinity-position-concept-v3/` — v3 HTML 原型(PROCEED,v4 的程式碼基礎)
-- `prototypes/affinity-position-concept-v4/` — v4 Track A(本次新建)
+**概念原型歷史**(好感度—位置連鎖核心機制驗證,已於 2026-07-30 確認 PARTIALLY CONFIRMED / PROCEED,不再是進行中工作):v1-v5 全部原型與 spike 報告見 `prototypes/index.md`,細節見 `prototypes/affinity-position-concept-v5/REPORT.md`。角色規模裁決(固定 5 人主角群,不透過招募擴充)已同步修訂 `game-concept.md`。
