@@ -2,7 +2,7 @@
 
 > **Status**: Draft
 > **Created**: 2026-07-30
-> **Last Updated**: 2026-08-05(`/design-review save-system.md` 第二輪完整模式對抗性覆核後修訂——**NEEDS REVISION(9 組阻擋,去重合併自第一輪的防線缺失升級為第一輪修訂本身的 fail-open 邊界),同一 session 內完成修訂**,詳見 `design/gdd/reviews/save-system-review-log.md`;使用者裁決 A2(Player Fantasy 三級嚴重度排序以取捨聲明為準)+ B-甲(遷移回寫保留原始位元組);本輪首次觸及 `affinity-data-pool.md`——新增索引鍵持久化方式段落(`Pair` 以字串名稱持久化、退役名稱不重用)與新增 AC-56,解決原遺留項 S1,**刻意與 AC-47/序列化生命週期通知議題解綁**,該文件其餘內容與 Approved 判決不受影響;前次(第一輪)更新:MAJOR REVISION NEEDED(24 項阻擋),同一 session 內完成修訂,詳見同一份 review log;Cross-System Obligations Registry 兩列〔序列化生命週期通知介面、AC-47〕仍為「provisional」(本輪未變動,待同步/非同步真正定案),因原判定所依賴的同步阻塞式寫入決定本身被判定越權花用而降格——`affinity-data-pool.md` 本身未就此二列被回頭修改;前次更新:同日稍早,`/design-review cursor-highlight-state.md` 第十輪審查後修訂——滑鼠奪權子機制止損政策觸發,升級為 MAJOR REVISION;重新設計已於同一 session 內完成實作(重置觸發清單五項簡化為四項),待第十一輪覆核 + 已排程 spike 驗證校準值(見該 GDD Open Questions);Cross-System Obligations Registry 新增兩列〔下游預覽渲染義務、表面卸載前目標交接義務〕,並修正全域裝置狀態指示元件擁有者列的措辭(生命週期涵蓋要求,好感度視覺呈現 UI 補入候選),回應該輪 ui-programmer、ux-designer、game-designer、systems-designer、qa-lead、godot-specialist 六方審查發現;更早:2026-08-05 第九輪審查新增兩列〔表面類型標籤單一實例契約、全域裝置狀態指示元件擁有者待指派〕;2026-08-04 第八輪審查新增教學掛鉤依賴與運動無障礙孤兒義務兩列;2026-08-03,單一游標/高亮狀態系統 GDD 完成設計;另見 `/design-review affinity-data-pool.md` 第七輪審查新增的支援對話系統風險列)
+> **Last Updated**: 2026-08-05(`/design-review save-system.md` 第三輪完整模式對抗性覆核後修訂——**NEEDS REVISION(11 組阻擋,去重合併自第二輪修訂本身「規則間接縫未言明」的問題),同一 session 內完成修訂**,詳見 `design/gdd/reviews/save-system-review-log.md`;使用者裁決 D-1(創世保留)+D-2(遷移改分步執行)+D-3(自動痊癒路徑二加註完成標記與拼接前提)+D-4(一般位元腐蝕新增滾動備份)+D-5(Player Fantasy 取捨殘餘成本誠實重新計價);本輪再次觸及 `affinity-data-pool.md`——擴大索引鍵持久化範圍涵蓋 `source_i`(新增 AC-57)、修正 Open Question 5 殘留的矛盾舊敘述,該文件其餘內容與 Approved 判決不受影響;前次(第二輪)更新:NEEDS REVISION(9 組阻擋,去重合併自第一輪的防線缺失升級為第一輪修訂本身的 fail-open 邊界),同一 session 內完成修訂,詳見同一份 review log;使用者裁決 A2(Player Fantasy 三級嚴重度排序以取捨聲明為準)+ B-甲(遷移回寫保留原始位元組,第三輪修訂為創世保留);Cross-System Obligations Registry 兩列〔序列化生命週期通知介面、AC-47〕仍為「provisional」(第三輪未變動,待同步/非同步真正定案——第三輪的遷移執行模型改為分步執行〔D-2〕不影響此二列,分步執行仍是單執行緒模型,不需要序列化生命週期通知介面),因原判定所依賴的同步阻塞式寫入決定本身被判定越權花用而降格——`affinity-data-pool.md` 本身未就此二列被回頭修改;更早:2026-08-05 第一輪更新:MAJOR REVISION NEEDED(24 項阻擋),同一 session 內完成修訂,詳見同一份 review log;同日稍早,`/design-review cursor-highlight-state.md` 第十輪審查後修訂——滑鼠奪權子機制止損政策觸發,升級為 MAJOR REVISION;重新設計已於同一 session 內完成實作(重置觸發清單五項簡化為四項),待第十一輪覆核 + 已排程 spike 驗證校準值(見該 GDD Open Questions);Cross-System Obligations Registry 新增兩列〔下游預覽渲染義務、表面卸載前目標交接義務〕,並修正全域裝置狀態指示元件擁有者列的措辭(生命週期涵蓋要求,好感度視覺呈現 UI 補入候選),回應該輪 ui-programmer、ux-designer、game-designer、systems-designer、qa-lead、godot-specialist 六方審查發現;更早:2026-08-05 第九輪審查新增兩列〔表面類型標籤單一實例契約、全域裝置狀態指示元件擁有者待指派〕;2026-08-04 第八輪審查新增教學掛鉤依賴與運動無障礙孤兒義務兩列;2026-08-03,單一游標/高亮狀態系統 GDD 完成設計;另見 `/design-review affinity-data-pool.md` 第七輪審查新增的支援對話系統風險列)
 > **Source Concept**: design/gdd/game-concept.md
 
 ---
@@ -18,7 +18,7 @@
 | # | System Name | Category | Priority | Status | Design Doc | Depends On |
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 好感度數值池(Delta Log) | Core | MVP | Approved(2026-08-03,第七輪 `/design-review` 後) | design/gdd/affinity-data-pool.md | — |
-| 2 | 存檔系統(含跨規則集遷移) | Persistence | MVP | Designed(待審查——已完成第二輪 `/design-review` 修訂,待第三輪重新覆核) | design/gdd/save-system.md | — |
+| 2 | 存檔系統(含跨規則集遷移) | Persistence | MVP | Designed(待審查——已完成第三輪 `/design-review` 修訂,待第四輪重新覆核) | design/gdd/save-system.md | — |
 | 3 | 單一游標/高亮狀態系統 | Core | MVP | Designed(待審查) | design/gdd/cursor-highlight-state.md | — |
 | 4 | 戰棋移動與交戰系統(含武器射程分層) | Gameplay | MVP | Not Started | — | — |
 | 5 | 好感度—位置連鎖系統(含陣亡處理) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
