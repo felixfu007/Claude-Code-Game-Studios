@@ -9,3 +9,13 @@
 | 好感度—位置連鎖 | 2026-07-28 | Paper | PIVOT | [REPORT.md](affinity-position-concept/REPORT.md) |
 | 好感度—位置連鎖 v2 | 2026-07-28 | HTML | PIVOT(第 2 次) | [REPORT.md](affinity-position-concept-v2/REPORT.md) |
 | 好感度—位置連鎖 v3(遠程武器) | 2026-07-28 | HTML | PROCEED | [REPORT.md](affinity-position-concept-v3/REPORT.md) |
+| 好感度—位置連鎖 v4(新手驗證批次 · Track A 戰鬥端) | 2026-07-29 | HTML | PIVOT(測試場景缺陷,非機制失敗——v3 PROCEED 後的獨立驗證輪,非連續 PIVOT 鏈) | [REPORT.md](affinity-position-concept-v4/REPORT.md) |
+| 好感度—位置連鎖 v4(新手驗證批次 · Track B 敘事端) | 2026-07-29 | Paper | PROCEED(附帶條件——局內/局外好感度分離需回 design-review 裁決) | [REPORT.md](affinity-position-concept-v4/track-b-narrative/REPORT.md) |
+| 好感度—位置連鎖 v5(站位隨機化驗證批次) | 2026-07-30 | HTML | PARTIALLY CONFIRMED / PROCEED(附帶調校項——敵方強度、卡牌內容深度、角色識別度留給 /design-system) | [REPORT.md](affinity-position-concept-v5/REPORT.md) |
+
+## 中期技術/設計驗證(Spike)
+
+| 主題 | 日期 | 路徑 | 結果 | 報告 |
+| --- | --- | --- | --- | --- |
+| 戰役規模好感度模擬(design-review 第六輪硬性前置) | 2026-07-29 | Paper(手算) | CONFIRMED——不加權會產生不可達結局;指數衰減優於回溯窗口;λ 校準有取捨,需對照均衡經營策略門檻 | [README.md](affinity-campaign-simulation-2026-07-29/README.md) |
+| 單一游標/高亮狀態系統——滑鼠奪權子機制 Godot 4.7.1 引擎行為驗證(`cursor-highlight-state.md` 第十輪 spike 前置) | 2026-08-05 | Godot 4.7.1 專案 | Test 1(offset transform 命中測試)CONFIRMED SAFE;Test 2(混合輸入)重新設計驗證通過,但發現觸發點 (d) + 持續按住方向鍵/搖桿會造成完整鎖死,新阻擋項待第十一輪 `/design-review` | [README.md](cursor-reclaim-godot-spike-2026-08-05/README.md) |
