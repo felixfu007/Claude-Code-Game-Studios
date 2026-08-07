@@ -7,8 +7,8 @@
 | 編號 | 內容 | 首次出現輪次 | 處置動作狀態 | 交付物存在性 | 備註 |
 |---|---|---|---|---|---|
 | S1 | `affinity-data-pool.md` 的索引鍵持久化描述(enum 序數)與本文件 Core Rules #10(字串名稱)不一致,尚未回頭同步該文件 | R1 | **✅ R2 已解決** | 是——`affinity-data-pool.md` Dependencies 章節新增索引鍵持久化方式段落 + 新增 AC-56(見該文件第 M 節) | 依 creative-director R2 裁決,解綁與 AC-47/同步-非同步議題的錯誤綑綁,獨立處理完成,不再等待格式決策 |
-| S2 | AC-24 的浮點容差在序列化格式決定前先行斷言,格式決定後可能需要重新校準 | R1 | R2:**本輪主動延後**;R3:**再次主動延後**(仍受同一個未決的序列化格式決策閘制,無新事實);R4:**已重新評估,結論為確實無法獨立於格式決策**——二進位 Variant 序列化(`store_var`/`get_var`)理論上可達成位元完全相同的往返,JSON 等文字格式則天生無法保證雙精度浮點數的位元級往返,兩者對「容差應設多嚴」的答案本質不同,不是可先定案再套用格式的獨立問題。繼續延後有正當理由,本輪重新評估已明文記錄(回應 game-designer 審查發現,避免 Ledger 自動升級規則靜默觸發而無人注意) | 否 | qa-lead 建議項,非阻擋;R4 重新評估已完成,計數器因本輪有實質分析交付物而不視為第三次「僅改動狀態文字」的空洞延後,不觸發自動升級 |
-| S3 | 遷移鏈孤兒終止函數的歸屬未定義(誰負責維護「不再需要」的舊版本遷移函數) | R1 | R2:**本輪主動延後**;R3:**再次主動延後**(目前仍僅 1 個規則集版本,無新事實改變判斷);R4:**已重新評估,無新事實**(仍僅 1 個規則集版本)——依 Ledger 規則,下一輪(R5)若再無新事實仍將延後,但已達 3 輪觀察窗,須明確標註而非再次靜默延後 | 否 | systems-designer 建議項,非阻擋;R4 重新評估已完成並明文記錄,回應 game-designer 審查發現 |
+| S2 | AC-24 的浮點容差在序列化格式決定前先行斷言,格式決定後可能需要重新校準 | R1 | R2:本輪主動延後;R3:再次主動延後(仍受同一個未決的序列化格式決策閘制,無新事實);R4:已重新評估,結論為確實無法獨立於格式決策;**R5:已從遺留帳本畢業**——qa-lead 第五輪查證發現「交付物存在性=否」欄位與備註欄「不觸發自動升級」文字自相矛盾,且客觀已達 3 輪觀察窗。creative-director 裁決:不對本項做實質解決(確實受序列化格式閘制,屬已裁定 GDD 層無法解答的類別),但比照 S6 既有範式將其移出 Ledger、轉為 Open Questions 明確條目並綁定閘門(見 `save-system.md` Open Questions),避免第六次以上的沉默延後 | 否(格式決策本身無法在 GDD 層解決,交付物存在性欄位維持誠實填「否」) | **此項已從遺留帳本畢業**——後續追蹤移至 Open Questions 表對應列,不再需要每輪重新登記於此帳本,見 R5 裁決 |
+| S3 | 遷移鏈孤兒終止函數的歸屬未定義(誰負責維護「不再需要」的舊版本遷移函數) | R1 | R2:本輪主動延後;R3:再次主動延後(目前仍僅 1 個規則集版本,無新事實);R4:已重新評估,無新事實,已達 3 輪觀察窗須明確標註;**R5:已從遺留帳本畢業**——同 S2 理由,依 creative-director 裁決比照 S6 範式移出 Ledger、轉為 Open Questions 明確條目並綁定閘門(累積 3+ 規則集版本時重新評估) | 否(仍僅 1 個規則集版本,無法在無第二個版本存在的情況下產出有意義的交付物) | **此項已從遺留帳本畢業**——後續追蹤移至 Open Questions 表對應列,不再需要每輪重新登記於此帳本,見 R5 裁決 |
 | S4 | Player Fantasy「拒絕並告知=最值得信任的作法」語氣偏高,與文件自身嚴重度表(此為次糟類別)不完全對齊 | R1 | **✅ R2 已解決** | 是——Player Fantasy 章節依使用者裁決 A2 整段重寫,嚴重度排序與取捨聲明措辭一致化 | 隨 B6 裁決一併處理,原問題描述的矛盾已不存在;R3 對同章節的 D-5 修訂(取捨的殘餘成本)是獨立的新發現,非本項復發,見 R3-B10 |
 | S5 | `max_save_slots`、`save_write_max_duration_ms`、`migration_chain_load_time_budget_ms` 三個旋鈕皆待實測校準,目前僅有建議方向、無實際數值 | R1 | 已建立旋鈕欄位;R2 新增遷移函數複雜度上限旋鈕(免旋鈕值,契約型)、寬限上限規則、AC-46;R3 補上寬限上限規則的精確觸發條件定義(量測環境/最小間隔/最大間隔)與追蹤責任指派 | 部分——欄位存在,數值待補;R3 新增的觸發條件定義本身是交付物 | 待 UI 系統設計/`/create-architecture` 階段實測後填入起始值;寬限期規則本身已從「存在但可能無人執行」轉為「可稽核」 |
 | S6 | 主機平台是否為目標平台尚未定案,Core Rules #4/#14 的 provisional 狀態依賴此決定 | R1 | 已標記 provisional + Open Question;R3 補充:provisional 範圍限定為一般寫入路徑,遷移執行模型已於 R3 獨立定案(不再與此項綁定,見 D-2);**R4:已解決**——game-designer 發現本項依據的前提(「`game-concept.md` 僅登記 PC」)與 `.claude/docs/technical-preferences.md`(登記 PC+Console)直接矛盾,使用者裁決以後者為權威、已回頭修訂 `game-concept.md`。**主機現為既定目標平台,非待定項**——本項優先度由「平台策略定案時、無限期延後」升級為「`/create-architecture` 開始前必須解決」 | 是——`game-concept.md`/`save-system.md` 平台範圍聲明/Open Questions 皆已同步修訂 | **此項已從遺留帳本畢業,不再是懸而未決的延後項**——後續追蹤移至 Open Questions 表對應列與 `/create-architecture` 必辦項清單,不再需要每輪重新登記於此帳本 |
@@ -228,3 +228,56 @@
 **未隨此輪處理(明確記錄,非遺漏)**:序列化格式本身、`FileAccess.flush()` 的 fsync 等效行為、`DirAccess.rename()` 平台語意、型別白名單版本分域、`OS.get_thread_caller_id()`/`get_main_thread_id()`/`Resource.DEEP_DUPLICATE_ALL` 的 4.7.1 API 名稱查證、`user://` 同檔案系統前提、路徑(二)的觸發機制與狀態轉換模型、Steam Cloud 多檔案佈局互動、`max_supported_migration_depth` 數值上限、`affinity-data-pool.md` AC-47 重開——皆為 creative-director 明確提醒「在沒有引擎接觸的情況下本質上無法在 GDD 層解決」的項目,本輪未變動,且**明確要求第五輪(或任何後續 GDD 輪次)不得將上述項目再次列為阻擋**。
 
 **creative-director 第五輪退場條件建議**:第五輪**只**驗證兩件事,不開新領域:(一)本輪八項阻擋的修法本身沒有製造第九個接縫——用本輪新增的矩陣完備性檢查表機械掃描,而非自由探索;(二)矩陣完備性檢查表本身完備——每條 Core Rule 都有矩陣列或無約束宣告,每條新規則都有 AC。若通過即應 APPROVED、移交 `/create-architecture`。creative-director 判斷本輪不是天花板(所有修法皆不依賴序列化格式/fsync/rename 平台語意等已知無法在 GDD 層解答的項目),但提醒:若第五輪仍出現 5 項以上**新類別**的阻擋(而非本輪修法的接縫),才是真正的天花板訊號,屆時正確動作是接受現狀移交架構階段,而非繼續紙上迭代。
+
+---
+
+## Review — 2026-08-07 — 第五輪(完整模式對抗性重新覆核,聚焦兩項退場條件)
+
+**Verdict**: NEEDS REVISION
+**Scope signal**: XL(系統本身)| 本輪修訂工作量:**S**(與第四輪同級)
+**Specialists**: game-designer、systems-designer、godot-specialist、qa-lead、performance-analyst、security-engineer(六位並行審查,依 creative-director 第四輪建議聚焦「R4 修法本身有無製造新接縫」與「Core Rules #16 矩陣完備性檢查表本身是否完備」兩項退場條件)、creative-director(綜合裁決)
+**Blocking items**: 11(去重合併後,含 3 項嚴重度分歧裁決)| **Recommended**: 4(Ledger S2/S3 畢業 + performance-analyst 3 項併入相鄰段落——其中 1 項已因矩陣補列間接解決)
+
+**Summary**: creative-director 逐條追蹤查證後確認:本輪十一項阻擋**全部**可溯源至第四輪的具體修法或第四輪新增的矩陣完備性檢查表本身,沒有一項開新領域、沒有一項依賴已裁定「GDD 層無法解答」的項目(序列化格式/fsync/rename 平台語意/主機平台等)——六位專家守住了退場條件劃定的紀律。**性質定性**:R1「防線不存在」→R2「防線設反」→R3「接縫未言明」→R4「R3 修法自己的接縫未言明」→**R5「防呆機制建好了,但從未對自己執行過」**——十一項中五項是第四輪新增的完備性檢查表該抓卻只套用在當輪八項阻擋上、沒套用在為修那八項而寫的新條款上;一項是檢查表漏了自己(矩陣缺 #1/#2/#3/#15/#16,五位專家獨立收斂,本輪跨最多專家收斂的發現)。本輪最高優先發現由 systems-designer 與 security-engineer 從值語意/寫入責任兩個不同切面獨立收斂:Core Rules #8 頂層雜湊新納入的「遷移完成標記」欄位,第四輪只把語意寫在路徑(二)的前提清單裡,從未指派任何規則在一般路徑上實際寫入它——若只在路徑(二)執行時才寫,標記需要記錄的時機早已錯過,路徑(二)機制形同虛設。第二優先由 godot-specialist 單獨發現但查證屬實且精確:Core Rules #14 步驟零的文字只涵蓋「步驟四」,未同步涵蓋第四輪新增的步驟 4a,若中斷發生在特定時間點,會經另一條路徑重現第四輪明文要防止的「該槽後續所有寫入被步驟零永久卡住」。第三優先由 systems-designer/godot-specialist/qa-lead 從三個角度收斂於同一根因:Core Rules #15「僅供 QA/除錯用途」的開場定位與其「遷移進度查詢介面」被 States/Interactions/systems-index 登記為下游硬性義務的實際用途字面矛盾,且與 Core Rules #5 同槽重入不變量的交互從未定義,導致 AC-14b(遷移期間查詢必須成功)與 AC-59(遷移期間第二個讀寫呼叫必須被拒絕)字面上可被誤讀為互斥。security-engineer 額外發現 Core Rules #10 過渡期殘餘風險聲明低估曝險範圍——退役名稱重用若未伴隨版本躍遷,AC-41/AC-42 完全不適用,現有防線對此子情境零覆蓋,比聲明描述的「與升級前執行力相同」更嚴重。game-designer 發現 Player Fantasy 對唯讀匯出資料的技術宣稱(「與創世存底逐位元組相同」)已與 Core Rules #13/States/Interactions 第四輪跟上的泛化優先序(優先回傳 `.dat`)矛盾,以及 `systems-index.md` 第 164 列同時綁定兩項義務但關閉條件只驗證其中一項(與 creative-director 第四輪把 Registry 零登記上調為 BLOCKING 的論證同構)。qa-lead 發現 AC-61 的前提在路徑二觸發機制交付前完全不可執行,未比照 Core Rules #10/AC-51 的既有範式明文標註;以及 Ledger S2/S3 的「交付物存在性=否」欄位與備註欄「不觸發自動升級」文字自相矛盾,且客觀已達 3 輪觀察窗。performance-analyst 本輪**零 BLOCKING**——三項發現(矩陣缺 #15 的效能面向、路徑二雜湊重算耗時量級零聲明、4 倍峰值計算未言明是否涵蓋路徑二額外副本)皆判定為 fail-safe,與前三輪一致選擇不升為 BLOCKING,creative-director 對其中「矩陣缺 #15」一項的分歧予以上調(見下方裁決)。
+
+**嚴重度分歧裁決(creative-director)**:
+1. performance-analyst「矩陣缺 #15」判 RECOMMENDED vs 其餘四位判 BLOCKING → **裁決 BLOCKING**:文件自己在第四輪頒布「每條規則必須有矩陣列或無約束宣告」為硬性要求,而這條缺列在本輪確實產生實害(#15 若被逼著宣告關係,第四輪就會發現與 #5 重入不變量的互斥),不是純衛生問題。
+2. game-designer 判步驟 4a 缺 AC 為 RECOMMENDED vs systems-designer 判 BLOCKING → **裁決 BLOCKING(合併後)**:與矩陣固定順序條款缺 AC、步驟零補完行為缺 AC 合併後,不再是孤立的一條 AC,而是「檢查表未對自己執行」的證據集合。
+3. godot-specialist 判 manifest-only 重入範圍為 RECOMMENDED → **上調並併入介面分類表**:與 AC-14b/AC-59 互斥是同一個「介面分類未定義」根因,一次修完避免 R6 生出第三個同類問題。
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 修訂內容 |
+|---|---|---|
+| R5-B1 | 遷移完成標記寫入責任與值語意全面未定義,路徑(二)機制實質形同虛設(本輪最高優先,systems-designer+security-engineer+game-designer 三方獨立收斂) | Core Rules #13 新增「遷移完成標記的寫入責任與值語意」段落:寫入責任指派給階段 B 每一次一般遷移回寫;非追加型區塊恆為顯式 `null`;路徑(二)拼接後不更新此標記(錨定創世遷移點);新增 AC-62(單獨竄改此欄位觸發 `DATA_CORRUPTED`)、AC-63(驗證寫入責任確實履行) |
+| R5-B2 | Core Rules #14 步驟零文字未涵蓋步驟 4a,經另一路徑重現永久卡死風險(godot-specialist) | 步驟零文字改為「依序」補完 4a(若 `.prev.bak` 存在則先刪除)與步驟四本身;新增 AC-66 驗證修正後行為 |
+| R5-B3 | Core Rules #15 定位自相矛盾+與 #5 同槽重入不變量交互未定義,AC-14b 與 AC-59 字面互斥(systems-designer+godot-specialist+qa-lead 合併) | Core Rules #15 拆分為甲類(診斷,QA-only)/乙類(可觀測狀態,生產介面);新增介面分類表(6 種介面 × 生產/診斷、是否受重入約束、是否須套用 #8/#9);Core Rules #5 重入規則明確排除 manifest-only/進度查詢/唯讀存取三個豁免介面 |
+| R5-B4 | AC-59「該槽處理中」缺結構化定義,與 Core Rules #6 四類代碼命名空間關係未定(systems-designer+qa-lead) | Core Rules #5 新增「該槽處理中」結果性質段落,比照 AC-4「無資料」既有範式定義為獨立、非錯誤、可與四類拒絕代碼明確區分的結果;新增 AC-67 |
+| R5-B5 | Core Rules #16 矩陣完備性檢查表自我違反,#1/#2/#3/#15/#16 缺列或無約束宣告(五位專家獨立收斂,本輪跨最多專家收斂發現) | 矩陣新增 7 列/宣告(#1↔#8、#2↔#5、#3↔#4、#6 無約束宣告、#15 甲/乙兩類各一列、#16 自我豁免宣告) |
+| R5-B6 | Core Rules #13 唯讀介面優先序兩處破口:(a) Player Fantasy 技術宣稱與實際優先序矛盾;(b) `.prev.bak`/`.pre_migration.bak` 優先順序未定義(game-designer) | Player Fantasy 措辭改為泛用「依優先序回傳當下可安全解析的最新完好內容」,殘餘風險論證擴大涵蓋三種可能來源;Core Rules #13 明訂 `.prev.bak` 優先於 `.pre_migration.bak`;AC-39 同步更新 |
+| R5-B7 | 第四輪新增條款缺專屬 AC 三處:步驟 4a、Core Rules #8 固定順序規範、步驟零補完行為(systems-designer+game-designer) | 新增 AC-64(步驟 4a 具體行為)、AC-65(固定順序對容器迭代變動的免疫性)、AC-66(步驟零正確涵蓋 4a,與 R5-B2 共用) |
+| R5-B8 | AC-61 前提在路徑二觸發機制交付前完全不可執行,未比照 Core Rules #10/AC-51 既有範式標註(qa-lead) | AC-61 新增不可執行狀態聲明,併入 Ledger S8 追蹤 |
+| R5-B9 | Core Rules #10 過渡期殘餘風險聲明低估曝險——退役名稱重用若未伴隨版本躍遷,AC-41/42 完全不適用,現有防線零覆蓋(security-engineer) | 過渡期殘餘風險聲明新增「曝險範圍的精確化」段落,明確區分伴隨/未伴隨版本躍遷兩種子情境的實際覆蓋率差異,同步更新 Ledger S12 引用 |
+| R5-B10 | `systems-index.md` 第 164 列雙義務單關閉條件,「不得允許無告知重試」義務可被靜默視為已清償(game-designer,理由與 creative-director 第四輪把 Registry 零登記上調 BLOCKING 同構) | 第 164 列拆分為兩列,各自獨立的關閉條件 |
+| R5-B11 | Ledger S2/S3 欄位自相矛盾(「交付物存在性=否」vs 備註「不觸發升級」),客觀已達 3 輪觀察窗(qa-lead) | 比照 Ledger S6 既有範式,S2/S3 從 Ledger 畢業,移入 Open Questions 並各自綁定明確閘門(序列化格式定案時/累積 3+ 規則集版本時) |
+
+**Recommended revisions applied(同批完成)**:
+- Core Rules #13 路徑(二)雜湊重算義務新增耗時量級聲明(未估算,留待架構階段,不預先假設可在互動時間尺度內完成)(performance-analyst)
+- Tuning Knobs 4 倍峰值計算新增路徑(二)範圍聲明(若不另外持有中繼拷貝則峰值相同,但此假設未經驗證)(performance-analyst)
+- 新增「Completeness Execution Record」完備性執行紀錄表(16 條 Core Rules × 三件套執行狀態、67 條 AC × 可執行性標註)——creative-director 指定此表為本輪移交條件本身,不是宣告要做而是把執行結果寫進文件,使本文件從「經過五輪專家抽樣審查」升級為「經過一次構造上窮盡的完備性檢查」
+
+**creative-director 對本輪終止條件的重新校準**:嚴格按第四輪判準(5 項以上**新類別**阻擋)——不是天花板,0 項新類別,11/11 全部溯源。但阻擋數 24→9→11→8→11 非單調,creative-director 指出接縫產生率約 1:1,以「找不到問題的一輪」為終止條件在此比率下不可達,改採「找到的問題若不修,不會讓實作者建錯東西的一輪」——本輪 5 項屬此類(已修),6 項屬追蹤性資產(已一併修)。**建議修訂完成後無條件移交 `/create-architecture`,不安排第六輪 `/design-review`**,理由:完備性執行紀錄表使本輪從「專家抽樣」升級為「構造上窮盡」,遞迴在不動點被執行後收斂,而非因為停手。
+
+**Prior verdict resolved**:是——第四輪 NEEDS REVISION 的 8 組阻擋已於第四輪同一 session 全數修訂(見上方第四輪記錄),第五輪針對這些修訂本身與矩陣完備性檢查表本身的對抗性覆核發現新的 11 組阻擋(全部源自第四輪的具體修法或檢查表自身,非新設計缺陷),已於本輪(同一 session)全數處理完成。
+
+**未隨此輪處理(明確記錄,非遺漏)**:序列化格式本身、`FileAccess.flush()` 的 fsync 等效行為、`DirAccess.rename()` 平台語意、型別白名單版本分域、三組 Godot API 名稱查證、`user://` 同檔案系統前提、路徑(二)的觸發機制與狀態轉換模型、Steam Cloud 多檔案佈局互動、`max_supported_migration_depth` 數值上限、`affinity-data-pool.md` AC-47 重開——皆為 creative-director 明確提醒「在沒有引擎接觸的情況下本質上無法在 GDD 層解決」的項目,本輪未變動。AC-24 浮點容差(原 Ledger S2)、遷移鏈孤兒終止函數歸屬(原 Ledger S3)已從 Ledger 畢業並移入 Open Questions,各自綁定明確閘門,非遺漏。
+
+---
+
+## Approval — 2026-08-07 — 使用者裁決:核准,跳過第六輪
+
+第五輪 11 項阻擋已於同一 session 內全數修訂完成(見上方第五輪記錄)。creative-director 建議修訂完成後無條件移交 `/create-architecture`、不再安排第六輪 `/design-review`,理由:本輪新增的「Completeness Execution Record」完備性執行紀錄表(16 條 Core Rules × 三件套執行狀態、67 條 AC × 可執行性標註)使本文件從「經過五輪專家抽樣審查」升級為「經過一次構造上窮盡的完備性檢查」,遞迴在自身的不動點被實際執行後收斂,繼續紙上迭代預期只會找到追蹤性級的新接縫。
+
+**使用者裁決**:採納 creative-director 建議,核准本文件跳過第六輪 `/design-review`,狀態由 Designed 改為 **Approved**。`design/gdd/systems-index.md` 對應列與 Progress Tracker 已同步更新(Design docs reviewed/approved 各由 1 增至 2)。
+
+**移交條件自我檢驗(供 `/create-architecture` 階段參照)**:依 creative-director 第五輪裁決第七節列出的三個可驗證訊號——(1)架構階段回頭對本 GDD 提出的問題應全部落在既有 Open Questions 列之內(序列化格式、fsync、rename 平台語意、主機平台、白名單分域、路徑二觸發機制、Steam Cloud、`user://`、三組 API 名稱查證,以及本輪新畢業的 AC-24 浮點容差、孤兒遷移函數歸屬);(2)Completeness Execution Record 應在架構階段被實際引用查核規則約束;(3)R5-B1 遷移完成標記的寫入時機決定不應在架構階段被重開。若架構階段前期出現三個以上「這條規則讀不出該怎麼實作」的回頭詢問,應視為本次核准過早的訊號,回頭補一輪 `/design-review`。

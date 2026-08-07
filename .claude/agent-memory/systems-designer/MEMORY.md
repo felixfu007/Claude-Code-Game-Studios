@@ -1,0 +1,1 @@
+- [Yiyuan cross-review pattern](project_yiyuan_cross_review_pattern.md) — 《弈緣》GDD 反覆失敗模式(跨文件宣稱未查證、完備性表格粒度不夠深);save-system.md 第五輪仍有 begin/end 失敗路徑等缺口
