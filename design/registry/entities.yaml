@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: "2026-07-30"
+last_updated: "2026-08-09"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -112,28 +112,35 @@ formulas:
     source: design/gdd/affinity-data-pool.md
     referenced_by:
       - design/gdd/affinity-data-pool.md
+      - design/gdd/game-concept.md   # 獨特賣點「敘事可達性硬性約束」references it by name
     variables:
       - p
+      - t_query
       - t_now
       - m_i
       - t_i
       - lambda_combat
     output_range: [unbounded, unbounded]
-    expression: "Σ (m_i · λ_combat^(t_now − t_i))"
+    expression: "combat_strength_read(p, t_query=t_now) = Σ (m_i · λ_combat^(t_query − t_i)), over records with t_i ≤ t_query"
     notes: "Recency-weighted signed sum over the global Delta Log for pair p, all
-      sources weighted 1.0. Feeds affinity-position bonus/penalty calc. Bounded
-      in practice for λ_combat<1 via convergent geometric series; unbounded only
-      at the legal edge case λ_combat=1."
+      sources weighted 1.0 (source-insensitive — see AC-11). Feeds
+      affinity-position bonus/penalty calc. Bounded in practice for λ_combat<1
+      via convergent geometric series; unbounded only at the legal edge case
+      λ_combat=1. Accepts an optional historical t_query parameter (defaults to
+      t_now); age_i = t_query − t_i."
     added: 2026-07-30
-    revised: ""
+    revised: "2026-08-09"
 
   - name: narrative_depth_read
     status: active
     source: design/gdd/affinity-data-pool.md
     referenced_by:
       - design/gdd/affinity-data-pool.md
+      - design/gdd/game-concept.md    # 獨特賣點「敘事可達性硬性約束」references it by name
+      - design/gdd/systems-index.md   # Cross-System Obligations Registry row citing it by name
     variables:
       - p
+      - t_query
       - t_now
       - m_i
       - t_i
@@ -141,15 +148,23 @@ formulas:
       - alpha
       - source_i
     output_range: [unbounded, unbounded]
-    expression: "Σ (w(source_i) · m_i · λ_narrative^(t_now − t_i)), w=α for combat_card, w=1 otherwise"
+    expression: "narrative_depth_read(p, t_query=t_now) = Σ (w(source_i) · m_i · λ_narrative^(t_query − t_i)), w=α for combat_card, w=1 otherwise, over records with t_i ≤ t_query"
     notes: "Recency-weighted, source-discounted sum over the global Delta Log for
       pair p. Feeds support-conversation unlock and ending-branch determination.
       α∈(0,1) open interval per round-7 creative-director ruling (2026-07-30) —
       weakly couples combat-optimal play to narrative outcome without fully
-      binding them. |narrative_depth_read| ≤ combat_strength_read at same λ,
-      since all weights ≤1."
+      binding them. CORRECTION (2026-08-09, per affinity-data-pool.md Formulas
+      公式二 output-range note, round-2 /design-review): the per-item bound
+      |w(source_i)·m_i·λ^age| ≤ |m_i·λ^age| does NOT generalize to
+      |narrative_depth_read| ≤ |combat_strength_read| overall — when records of
+      opposite sign are discounted unevenly, the discount can WEAKEN
+      cancellation and make the discounted sum larger in absolute value than the
+      full-weight sum (documented counterexample: same-age m=+10 combat_card
+      (α=0.3) and m=−10 support_conversation (w=1.0) → full-weight sum = 0,
+      discounted sum = −7, |−7| > |0|). This registry entry previously asserted
+      the disproven inequality; removed."
     added: 2026-07-30
-    revised: ""
+    revised: "2026-08-09"
 
   - name: shape_feature_read
     status: active
@@ -158,19 +173,71 @@ formulas:
       - design/gdd/affinity-data-pool.md
     variables:
       - p
+      - t_query
       - reversal_count
       - source_distribution
       - time_distribution
+      - source_polarity
+      - total_churn
+      - segment_profile
+      - source_absence
+      - low_confidence
+      - c_now
     output_range: ["n/a — see sub-features", "n/a — see sub-features"]
-    notes: "Computed on the FULL UNWEIGHTED log for pair p — no λ, no α. Three
-      sub-features: reversal_count (int, 0 to n(p)-1), source_distribution
-      (raw counts n_cc/n_sc/n_se plus proportions — raw counts required
-      alongside proportions to distinguish 'no data yet' from 'deliberate
-      absence', per round-6 'absence as positive-weight shape feature'
-      requirement), time_distribution (span_t, spread_ratio). n(p)=0 returns
-      an explicit sentinel, not 0, for time_distribution."
+    notes: "Computed on the FULL UNWEIGHTED log for pair p (records with
+      t_i ≤ t_query) — no λ, no α. SEVEN sub-features as of round 5-7
+      /design-review (this entry previously listed only 3 — corrected
+      2026-08-09): 3a reversal_count (int, 0 to n(p)-1); 3b source_distribution
+      (raw counts n_cc/n_sc/n_se plus proportions p_cc/p_sc/p_se — raw counts
+      required alongside proportions to distinguish 'no data yet' from
+      'deliberate absence', per round-6 'absence as positive-weight shape
+      feature' requirement); 3c time_distribution (span_c, spread_ratio —
+      denominator is the campaign-tick counter c_now, NOT the global write
+      counter t_now; this entry previously said 'span_t', which was the
+      pre-round-1 design superseded for spread_ratio instability reasons); 3d
+      source_polarity (net_cc/net_sc/net_se, signed sums per source); 3e
+      total_churn (Σ|m_i|, optionally split per source); 3f segment_profile
+      (Q equal-width campaign-tick segments of [c_i_min,c_i_max], each with
+      count_k/net_k/churn_k — carries a low_confidence flag); 3g source_absence
+      (per-source three-state: active/absent_pending/absent_confirmed, gated on
+      c_now vs Tuning Knob M). n(p, t_query)=0 returns an explicit sentinel
+      (null), not 0, for time_distribution and segment_profile;
+      source_absence is the one sub-feature that does NOT sentinel on
+      n(p)=0 (still computes active/absent_pending/absent_confirmed from
+      c_now vs M)."
     added: 2026-07-30
-    revised: ""
+    revised: "2026-08-09"
+
+  - name: predictive_read
+    status: active
+    source: design/gdd/affinity-data-pool.md
+    referenced_by:
+      - design/gdd/affinity-data-pool.md
+    variables:
+      - p
+      - t_query
+      - t_last
+      - w_new
+      - m_new
+      - t_new
+      - lambda
+    output_range: [unbounded, unbounded]
+    expression: "read(t_query) = λ^(t_query − t_last) · read(t_last) + Σ (w_new · m_new · λ^(t_query − t_new)) — this is 公式四 (Formula 4) in affinity-data-pool.md, the predictive/hypothetical read"
+    notes: "NEW (2026-08-09, previously entirely unregistered). Recursive
+      closed-form rewrite of formula 一/二 that supports 'what-if' queries for
+      the game-concept.md-mandated '預判模式' (prediction mode) feature —
+      evaluates the read value AS IF one or more hypothetical, not-yet-written
+      records existed, without actually writing them (pure function, no side
+      effects). t_last is the pair's most recent actually-written record's
+      t_i (or := t_query when n(p)=0, to avoid NaN). Multiple hypothetical
+      records in one call must be assigned strictly increasing virtual t_new
+      values, not shared. This is the ONLY caller-facing exemption to the
+      't_query must not exceed t_now' rule — formulas 一/二/三 remain strictly
+      bound by that rule. Requires at least one hypothetical record per call
+      (a zero-hypothetical call is rejected as invalid input, not routed
+      here)."
+    added: 2026-08-09
+    revised: 2026-08-10
 
 # Example:
 #

@@ -1,0 +1,1 @@
+- [affinity-data-pool.md cross-file drift pattern](project_affinity_data_pool_cross_file_drift.md) — recurring same-session drift; verify round-number attribution independently of substance when checking cross-file propagation edits.

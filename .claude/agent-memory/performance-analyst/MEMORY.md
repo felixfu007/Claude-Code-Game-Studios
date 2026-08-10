@@ -1,1 +1,1 @@
-- [Affinity Data Pool perf state](affinity_data_pool_perf.md) — round-6 settled items vs. new gaps found in 2026-08-03 audit of design/gdd/affinity-data-pool.md
+- [Affinity Data Pool perf state](affinity_data_pool_perf.md) — O(n_pair) guarantee status + gaps found through round-11 audit (2026-08-10) of design/gdd/affinity-data-pool.md
