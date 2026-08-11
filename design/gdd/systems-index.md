@@ -20,7 +20,7 @@
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 好感度數值池(Delta Log) | Core | MVP | Approved(2026-08-10 第十二輪核准,見下方註記) | design/gdd/affinity-data-pool.md | 戰棋移動與交戰系統(2026-08-10 第九輪新增,窄介面依賴——僅需「陣亡通知」單一方法的呼叫契約,不需等待該系統其餘設計定案;不透過好感度—位置連鎖系統轉接以避免循環依賴,見 `affinity-data-pool.md` Dependencies) |
 | 2 | 存檔系統(含跨規則集遷移) | Persistence | MVP | Needs Revision | design/gdd/save-system.md | — |
-| 3 | 單一游標/高亮狀態系統 ⛔ | Core | MVP | Needs Revision | design/gdd/cursor-highlight-state.md | — |
+| 3 | 單一游標/高亮狀態系統 | Core | MVP | Needs Revision | design/gdd/cursor-highlight-state.md | — |
 | 4 | 戰棋移動與交戰系統(含武器射程分層) | Gameplay | MVP | Not Started | — | 單一游標/高亮狀態系統(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統已被 `cursor-highlight-state.md` 施加至少 5 條硬性義務,但依賴圖從未登記) |
 | 5 | 好感度—位置連鎖系統(含陣亡處理) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
 | 6 | 技能卡牌系統(含好感度對話卡牌) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
@@ -33,7 +33,7 @@
 | 13 | 敘事解鎖與結局分支系統 | Narrative | Vertical Slice | Not Started | — | 好感度數值池、章節/戰役結構 |
 | 14 | 活棋盤地形演變系統 | Gameplay | Vertical Slice | Not Started | — | 戰棋移動與交戰系統、章節/戰役結構 |
 
-⛔ **硬性閘門(2026-08-07 新增,回應對抗性覆核發現)**:單一游標/高亮狀態系統有一個已用 spike 實測證實成立的缺陷(持續按住方向鍵/搖桿造成滑鼠奪權永久鎖死,見 `cursor-highlight-state.md` Known Confirmed Defects 節),第十輪同日修法經第十一輪判定不成立並正確撤回,撤回後無任何暫行防線。**在此缺陷完成重新設計並通過至少一輪完整對抗性審查之前,本系統不得進入垂直切片、不得將 Status 標記為 Approved**——即使本系統其餘部分通過覆核轉為 CONCERNS 或以上判決,此閘門仍獨立生效,不隨整體 Verdict 解除。
+**（原硬性閘門,2026-08-11 第十二輪降級為建議事項,不再是 ⛔ 硬性阻擋)**:單一游標/高亮狀態系統有一個已用 spike 實測證實成立的缺陷(持續按住方向鍵/搖桿造成滑鼠奪權永久鎖死,見 `cursor-highlight-state.md` Known Confirmed Defects 節),第十輪同日修法經第十一輪判定不成立並正確撤回,撤回後無任何暫行防線。**使用者裁決:因《弈緣》為回合制戰棋、不需要即時操作反應,此缺陷對玩家體驗影響有限,原「解決前不得 Approved、不得進垂直切片」的硬性閘門降級為一般建議事項**——本系統不再因此缺陷被阻擋進度。子機制重新設計暫停,待手把硬體到位且有明確理由時再重啟,詳見 `cursor-highlight-state.md` Known Confirmed Defects 節與 Open Questions。
 
 ---
 

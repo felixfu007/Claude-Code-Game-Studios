@@ -6,6 +6,8 @@
 > 2. **方向鍵/搖桿持續按住期間,重置觸發點 (d)(原 (e))是否可能造成滑鼠永久無法奪權**(Core Rules #3「累積起點的重置時機」明文登記為「已知殘留風險」,取決於未經驗證的引擎逐幀事件派發頻率)。
 > **日期**:2026-08-05
 > **執行者**:人類測試者於 Godot Editor 手動執行(本 agent 的環境沒有安裝 Godot,無法自行執行驗證)
+>
+> **第二輪補測(2026-08-11 新增,不更動上方原始框架文字)**:第十輪同日直接寫入的修法(否決資格限縮為「新按下」的那一影格 + 保險上限,AC-56/57)已於 2026-08-06 第十一輪對抗性審查判定該修法本身不成立並**撤回**(引用未測試 API、新增未登記隱藏狀態、三輸入來源一致性未驗證)。撤回是正確決定,但撤回後**沒有留下任何暫行防線**——缺陷(持續按住方向鍵/搖桿導致滑鼠奪權永久鎖死)本身維持 100% 可重現、未緩解,已登記於 `design/gdd/cursor-highlight-state.md` 的「Known Confirmed Defects」節,且該節明文規定「必須先經過至少一次完整對抗性審查才可寫入規則本體,不得重演同日修法的例外處理方式」。在提交下一輪對抗性審查之前,本輪先用這份 harness 讓真人測試者驗證 GDD 已登記的候選修法方向(依 `InputEventKey.echo`/`is_action_pressed(action, allow_echo=false)` 過濾同影格否決資格)在 D-pad、類比搖桿、鍵盤三種輸入來源上分別是否有效,不假設一致。詳見下方「Test 2 第二輪補測(2026-08-11)」章節(程序 B2-B5)。
 
 ---
 
@@ -158,6 +160,65 @@ prototypes/cursor-reclaim-godot-spike-2026-08-05/
 
 ---
 
+### Test 2 第二輪補測(2026-08-11)——候選修法方向驗證
+
+**背景**:第十輪同日修法(Edge Cases「同一影格雙裝置」否決資格限縮為「新按下」+ `mouse_reclaim_veto_max_consecutive_frames` 保險上限)已於第十一輪對抗性審查判定不成立並撤回。撤回本身是正確決定(引用的 `Input.is_action_just_pressed()` 從未被本 spike 實際測試、新增的保險上限計數器是未被 Core Rules #1/AC-1 承認的隱藏狀態欄位、三種輸入來源一致性假設未驗證),但撤回後**沒有留下任何暫行防線**——缺陷維持 100% 可重現。GDD `Known Confirmed Defects` 節登記的候選方向(未定案)是:改用本 harness 已記錄但第一輪未採用的 per-event 欄位(`InputEventKey.echo`,對應 `is_action_pressed(action, allow_echo=false)`),對齊本系統既有的緩衝架構(`_input` 收集離散事件,而非逐幀輪詢 `Input` 單例狀態)過濾同影格否決資格。這個方向**尚未經過對抗性審查**,也尚未用真實硬體測過。本輪在把它寫回 GDD 規則本體之前,先用這份 harness 驗證。
+
+**harness 新增了什麼**:
+
+- 一個可即時切換、不需重開場景的下拉選單「Same-frame veto eligibility」,搭配下方一行文字標籤(對應 `_veto_filter_mode_label`)顯示目前生效的模式:
+  - **Mode 1(對照組,`CURRENT_BEHAVIOR`)**:重現目前 GDD 規則本體實際的行為——同影格內任何一個合格的鍵盤/手把 `ui_*` 動作都會否決滑鼠奪權,不論是不是 echo/重複觸發。這是第一輪 spike 已經測過、證實會鎖死的行為。
+  - **Mode 2(候選修法,`ECHO_FILTERED_CANDIDATE`)**:只有 `is_action_pressed(action, allow_echo=false)` 判定為「非 echo/非重複」的事件才具否決資格。**注意**:Godot 的 echo 旗標只存在於 `InputEventKey`,`InputEventJoypadButton`/`InputEventJoypadMotion` 沒有這個概念——這代表 Mode 2 對 D-pad/類比搖桿是否真的改變行為,是程序 B4/B5 要驗證的問題,harness 本身**不預設答案**。
+- 「Held state / event rate」那一行,現在依 `InputEvent` 子類別(`InputEventKey`/`InputEventJoypadButton`/`InputEventJoypadMotion`)拆開顯示各自的 `events/last1s`,不只是第一輪的合併總數——可以直接在畫面上看出三種輸入來源持續按住時的事件派發頻率差異,不需要只靠肉眼數 log 行數。
+
+**執行前提**:每個程序開始前,先確認畫面上「Same-frame veto eligibility」下拉選單與其下方文字標籤顯示的模式正確,避免測錯模式導致結果誤判。
+
+#### 程序 B2——Mode 1(對照組)下,D-pad 持續按住是否鎖死(補測第一輪承諾但未執行的部分)
+
+第一輪程序 B 只實際測試了類比搖桿(步驟 6-7 的 D-pad/鍵盤留待補測,見 README 第一輪「發現」章節)。本程序先補齊 D-pad 在**現行行為(Mode 1)**下的結果,作為程序 B4 的比較基準。
+
+1. 確認下拉選單停在 **Mode 1: current behavior (control group)**。
+2. 重複程序 A 步驟 1-2,讓 `device_authority = KEYBOARD_GAMEPAD`。
+3. 改用**手把 D-pad 按鈕**(不是類比搖桿),持續按住某一方向不放至少 5-10 秒。
+4. 在持續按住的同時,把滑鼠一次性快速移動一段明顯超過 `reclaim_threshold_px` 的距離。
+5. 觀察並記錄(比照第一輪程序 B 的觀察項目):`reclaim_progress` 是否鋸齒狀被打回、事件記錄裡 `VETOED` 訊息出現的頻率(看 `[Xms]` 時間戳間隔)、`device_authority` 在整段持續按住期間有沒有任何一刻變回 `MOUSE`、以及「Held state / event rate」該方向那一行的 `[D-pad=...]` 數字。
+
+**判定標準**:
+- 若 5-10 秒內 `device_authority` 完全沒有變回 `MOUSE` 過 → D-pad 持續按住同樣會造成完整鎖死,與第一輪已證實的類比搖桿結果一致。
+- 若 `device_authority` 有變回 `MOUSE` 過(即使中間出現過幾次 VETOED)→ D-pad 與類比搖桿在 Mode 1 下表現不一致,這本身是需要記錄的發現,不要假設兩者相同。
+
+#### 程序 B3——切到 Mode 2(候選修法),鍵盤持續按住的鎖死是否解除
+
+1. 把下拉選單切到 **Mode 2: echo-filtered candidate fix**(不需要重開場景,確認下方文字標籤已更新為 Mode 2 的描述)。
+2. 重複程序 A 步驟 1-2,讓 `device_authority = KEYBOARD_GAMEPAD`。
+3. 用**鍵盤方向鍵**持續按住某一方向不放至少 5-10 秒。
+4. 在持續按住的同時,把滑鼠一次性快速移動一段明顯超過 `reclaim_threshold_px` 的距離。
+5. 觀察並記錄:`device_authority` 是否在按住期間的某一刻(理想上應該很快)變回 `MOUSE`;事件記錄裡鍵盤事件的 `is_echo=` 欄位是否如預期在第一次按下之後變成 `true`;「Held state / event rate」該方向那一行的 `[Key=...]` 數字與同樣測試在 Mode 1 下觀察到的數字是否不同(注意這個數字顯示的是「進入緩衝的合格事件數」,不是「具否決資格的事件數」,兩者在 Mode 2 下可能不同——實際是否解除鎖死,以事件記錄裡的 `VETOED`/`AUTHORITY CHANGE` 訊息為準,不要只看這個數字)。
+
+**判定標準**:
+- 若鍵盤持續按住期間,`device_authority` 能夠成功變回 `MOUSE`(奪權主張不再被逐幀否決)→ 候選修法對鍵盤這個輸入來源有效,鎖死解除。
+- 若鍵盤持續按住期間仍然鎖死(`device_authority` 全程未變回 `MOUSE`)→ 候選修法對鍵盤無效,需要回頭重新檢討修法方向,不能只因為理論上 echo 過濾「應該」有效就直接寫回 GDD。
+
+#### 程序 B4——切到 Mode 2,D-pad 持續按住行為是否改變
+
+1. 確認下拉選單維持在 **Mode 2: echo-filtered candidate fix**。
+2. 重複程序 B2 步驟 2-5,但這次用 D-pad,在 Mode 2 下測試。
+3. 逐項比較這次(Mode 2)與程序 B2(Mode 1)的觀察結果:`device_authority` 有沒有變回 `MOUSE` 過、VETOED 頻率、「Held state / event rate」的 `[D-pad=...]` 數字。
+
+**判定標準**:**這一題沒有預設答案**。GDD 已經指出 Godot 的 echo 旗標只存在於 `InputEventKey`,理論上 Mode 2 對 D-pad 應該是 no-op(行為與 Mode 1 相同,因為 D-pad 事件的 `pressed_no_echo` 預期恆為 `true`)。但「理論上應該 no-op」不等於「實測證實 no-op」——如實記錄 Mode 1/Mode 2 下 D-pad 的行為是否真的相同。若不同,這是需要進一步追查的意外發現,不要用理論推測取代實測結果。
+
+#### 程序 B5——切到 Mode 2,類比搖桿持續按住行為是否改變
+
+1. 確認下拉選單維持在 **Mode 2: echo-filtered candidate fix**。
+2. 重複第一輪程序 B 步驟 2-5(類比搖桿版本),這次在 Mode 2 下測試。
+3. 逐項比較這次(Mode 2)與第一輪程序 B(Mode 1,已證實鎖死、`events/last1s ≈ 60`)的觀察結果。
+
+**判定標準**:同程序 B4——**不預設答案**。理論上類比搖桿事件同樣沒有 echo 概念,`pressed_no_echo` 預期恆為 `true`,Mode 2 對搖桿可能是 no-op(鎖死問題不會因為切到 Mode 2 而解除,甚至代表候選修法完全無法緩解最初證實鎖死的那個輸入來源),但**必須實測確認**,不能只憑這個推論就寫回 GDD 判定候選修法「對搖桿無效」。
+
+**本節四個程序(B2-B5)都沒有「正確答案」讓你去對——這正是第二輪補測存在的原因**。無論結果是「候選修法對三種輸入來源都有效」「只對鍵盤有效、D-pad/搖桿不變」或其他組合,如實記錄下 Mode 1/Mode 2 在三種輸入來源上的實際差異,交回下一輪 `/design-review`,由完整對抗性審查決定候選修法是否可以正式寫回 GDD 規則本體、需要調整,或需要另尋方向——比照 `Known Confirmed Defects` 節的明文規定,不得再次略過對抗性審查直接寫入規則本體。
+
+---
+
 ## 已知簡化(相對於 GDD 正式規格)
 
 - **沒有依表面類型分表的門檻常數表**——GDD 的 `mouse_reclaim_threshold_px_by_surface_type` 是每個表面類型各自一個常數,本 harness 只有一個合成的「表面」,`reclaim_threshold_px` 是單一可即時調整的數值,用於程序 C 的粗略手感校準,不是最終每個表面各自的校準結果。
@@ -182,6 +243,8 @@ prototypes/cursor-reclaim-godot-spike-2026-08-05/
 
 **已完成(2026-08-05,人類測試者於 Godot 4.7.1 Editor 執行)**——兩個測試皆已執行,結果已回報並寫回 `design/gdd/cursor-highlight-state.md` 與 review log。
 
+**本輪(第二輪補測)部分完成(2026-08-11,非工程背景真人測試者以口語觀察方式執行)**——鍵盤路徑(Mode 1/Mode 2 各測一次)已完成,發現一個新的、原本測試計畫沒有預期到的現象(反方向零門檻豁免造成「搶到又立刻彈回」),詳見上方「Test 2 第二輪補測(2026-08-11)」章節結論。**D-pad(程序 B2/B4)、類比搖桿 Mode 2(程序 B5)因測試者手邊無任何手把硬體,完全未執行**,不是「測了沒事」,是「沒測」——待測試者取得手把後補測,見 Open Questions 新增列。
+
 ## 發現
 
 ### Test 1(Control offset transform 命中測試)—— 結論:**風險不成立**
@@ -205,3 +268,22 @@ prototypes/cursor-reclaim-godot-spike-2026-08-05/
 **追加:同日修法**——使用者考量已投入的時間成本,裁決簡化處理、不等第十一輪完整對抗性審查,同日直接採用建議修法:Edge Cases「同一影格雙裝置」固定優先序規則的否決資格限縮為「新按下」的那一影格(對應 `Input.is_action_just_pressed()`/類比搖桿軸值剛跨越死區),持續按住不再具否決資格;另加 `mouse_reclaim_veto_max_consecutive_frames` 保險上限,新增 AC-56/57。**此修法尚未經對抗性審查**,且尚未驗證 D-pad/鍵盤的「新按下」判定是否與本 spike 已測試的類比搖桿表現一致——若要更嚴謹地收尾這個 spike,下一步應該是**用同一份 harness 補測 D-pad 與鍵盤方向鍵**,確認修法後三種輸入來源皆不再鎖死。
 
 **回填位置**:`design/gdd/cursor-highlight-state.md` Open Questions、Core Rules #3、Edge Cases、Tuning Knobs、Acceptance Criteria(AC-56/57);`design/gdd/reviews/cursor-highlight-state-review-log.md`「Spike 結果回報」章節。
+
+### Test 2 第二輪補測(2026-08-11)—— 結論:**鍵盤路徑部分完成(非正式測試);D-pad/類比搖桿因硬體不可得,完全未測**
+
+**測試條件的誠實揭露**:本輪由真人測試者(非工程背景,不具備逐行讀 log 的能力)在 Godot Editor 中執行,採用**憑肉眼觀察、口語描述**的方式回報結果,不是像 2026-08-05 第一輪那樣逐行核對時間戳與事件記錄。以下結論的精確度低於第一輪,但現象本身清楚、可重現,足以作為下一輪 `/design-review` 的輸入。**測試者手邊沒有任何手把(候借、PS/Xbox 控制器、Steam 控制器皆無)**,程序 B2(D-pad + Mode 1)、B4(D-pad + Mode 2)、B5(搖桿 + Mode 2)三項**完全未執行**,不是「測了沒發現問題」,是「沒有硬體可以測」——下方 Open Questions 已新增一列明確登記這個缺口,待測試者取得手把後補測,不得被後續讀者誤讀為「已驗證 D-pad 沒問題」。
+
+**已完成的測試(鍵盤,對應程序 B3 的變體 + Mode 1 對照)**:
+
+1. **Mode 1(對照組)+ 持續按住鍵盤方向鍵 + 甩滑鼠**:黃色高亮方塊「抖動一下」,過程中方塊確實移動了一格(證實滑鼠瞬間搶到過控制權),但**緊接著又立刻跳回去跟著鍵盤方向鍵**——不是像第一輪測到的類比搖桿那樣完全鎖死 5-10 秒動彈不得,鍵盤持續按住並沒有讓滑鼠完全無法插手。
+2. **Mode 2(候選修法:echo 過濾)+ 同樣操作**:測試者回報「跟測試 A 一樣」——肉眼看不出差異,同樣是「抖動一下、移動一格、又立刻彈回鍵盤方向」。
+
+**判定與新發現(比原本要驗證的問題更進一步)**:
+
+- 鍵盤路徑**不會**重現類比搖桿那種完全鎖死——這點與第 0 節 godot-specialist 查證報告的技術推論吻合(OS 層級 key-repeat 送出事件的間隔,比類比搖桿逐影格連續送出事件要疏,中間有空隙讓滑鼠有機會插入)。
+- 但鍵盤路徑存在**另一個未被登記過的問題**:滑鼠即使成功瞬間搶到控制權(方塊確實移動了一格),**下一瞬間又被鍵盤秒搶回去**——這不是本輪原本要驗證的觸發點 (d) 同影格否決造成的,而是 Core Rules #3「滑鼠→鍵盤/手把反方向零門檻豁免」這條規則本身的必然結果:只要玩家手指還按著方向鍵不放,鍵盤/手把的每一次重複觸發訊號,都會用零門檻立即把控制權從滑鼠手上搶回去。**Mode 1/Mode 2 表現一致這件事本身就是關鍵證據**——這證實了問題不是出在本輪測試的「同影格否決過濾邏輯」上,候選修法(echo 過濾)對這個新問題**沒有作用**,因為它從未觸及反方向零門檻豁免這條規則。
+- 從玩家角度描述這個現象:滑鼠移動看起來像是「搶到了,但又立刻被彈開」,不是「完全沒反應」——但體感上兩者可能一樣令人挫折,都是「滑鼠感覺不聽使喚」。這是否要算進「持續按住鎖死」這個已知缺陷的範圍內,或是一個需要獨立登記的新缺陷,留給下一輪 `/design-review` 裁決。
+
+**未完成/待補**:D-pad(Mode 1、Mode 2)、類比搖桿(Mode 2)——全部因無手把硬體而未執行,見上方「測試條件的誠實揭露」。第一輪已確認的類比搖桿 Mode 1(現行行為)結果(完全鎖死)維持不變、不需重測。
+
+**回填位置**:`design/gdd/cursor-highlight-state.md` 的 `Known Confirmed Defects` 節與 Open Questions——見下一節。

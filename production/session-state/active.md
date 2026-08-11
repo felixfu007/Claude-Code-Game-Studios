@@ -1,7 +1,7 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
 Feature: 存檔系統 + 好感度數值池 + 游標高亮狀態 + game-concept 的跨文件一致性收斂
-Task: `affinity-data-pool.md` 已於 2026-08-10 標記為 **Approved**——第十一輪(完整模式六專家 + creative-director)找到 6 項 BLOCKING 並修訂完成,第十二輪(目標型,systems-designer + qa-lead)覆核修法本身、無一項被推翻,使用者核准標記 Approved。`systems-index.md`(第 1 列 Status + Progress Tracker approved 計數)、`affinity-data-pool.md` 標頭、`design/gdd/reviews/affinity-data-pool-review-log.md`(新增 APPROVED 狀態更新條目)皆已同步。**review-log 已補登第九/十/十一/十二輪,traceability 缺口已關閉。** D-1、F2-1、F2-2、「終止路徑漏第四支」等既有遺留項為非本文件範圍內的跨文件缺口,不影響本次核准,留待下一步處理。**尚未 commit。**
+Task: `cursor-highlight-state.md` 第十二輪 `/design-review`(完整模式五專家 + creative-director)於 2026-08-11 完成——判 MAJOR REVISION NEEDED(範圍限滑鼠奪權子機制)。使用者裁決:因《弈緣》為回合制、此手感問題影響有限、子機制已投入七輪,**原硬性閘門降級為一般建議事項,候選修法(echo 過濾)正式停止投入不再尋替代方案,子機制重新設計暫停待手把硬體到位**。已落地:`cursor-highlight-state.md`(Known Confirmed Defects 新增證據強度欄 E1/E2/E3、標頭新增第十二輪摘要、Open Questions 硬體缺口列改為正式待辦)、`systems-index.md`(移除 ⛔ 符號、硬性閘門說明改寫)、`design/gdd/reviews/cursor-highlight-state-review-log.md`(新增第十二輪完整記錄 + 持久遺留帳本 L28)。五位專家與 creative-director 挖出的 3 項未落地的純推理發現(目標瞬移風險、視窗邊界累積量缺口、視覺過渡態缺口)已完整記錄在 review log,留待未來若重啟此子機制設計時參考,不寫入 GDD 正式規則章節。`affinity-data-pool.md` 於 2026-08-10 標記 Approved 的狀態不受本輪影響,維持不變(見下方舊段落)。**尚未 commit。**
 <!-- /STATUS -->
 
 ## 第十二輪目標型複核 + 落地修訂 — 2026-08-10(同一 session,接續第十一輪)
