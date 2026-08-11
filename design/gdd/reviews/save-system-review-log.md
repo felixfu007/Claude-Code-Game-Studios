@@ -281,3 +281,41 @@
 **使用者裁決**:採納 creative-director 建議,核准本文件跳過第六輪 `/design-review`,狀態由 Designed 改為 **Approved**。`design/gdd/systems-index.md` 對應列與 Progress Tracker 已同步更新(Design docs reviewed/approved 各由 1 增至 2)。
 
 **移交條件自我檢驗(供 `/create-architecture` 階段參照)**:依 creative-director 第五輪裁決第七節列出的三個可驗證訊號——(1)架構階段回頭對本 GDD 提出的問題應全部落在既有 Open Questions 列之內(序列化格式、fsync、rename 平台語意、主機平台、白名單分域、路徑二觸發機制、Steam Cloud、`user://`、三組 API 名稱查證,以及本輪新畢業的 AC-24 浮點容差、孤兒遷移函數歸屬);(2)Completeness Execution Record 應在架構階段被實際引用查核規則約束;(3)R5-B1 遷移完成標記的寫入時機決定不應在架構階段被重開。若架構階段前期出現三個以上「這條規則讀不出該怎麼實作」的回頭詢問,應視為本次核准過早的訊號,回頭補一輪 `/design-review`。
+
+---
+
+## Review — 2026-08-11 — 第六輪(完整模式對抗性覆核,聚焦四項既有殘留缺口)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Scope signal**: L(六位專家原始評估;security-engineer 意外發現的完整性鏈條缺口經使用者核准擴大範圍後,實際落地範圍與原 L 一致,未升級為 XL——因 D-1 選擇 A+ 而非 B2,不新增持久化結構)
+**Specialists**: systems-designer、security-engineer、narrative-director、godot-specialist、game-designer、qa-lead(六位並行審查,分別聚焦四項缺口)、creative-director(綜合裁決)
+**Blocking items**: 10(B1-B10,見下方逐項)| **Recommended**: 3(Player Fantasy「殘餘成本」段落可讀性、Open Questions 架構階段清單提取、Completeness Execution Record 逐義務檢查試行——皆未落地,列為未來輪次參考)
+
+**背景**:本輪處理三項自 2026-08-09 `/review-all-gdds` 起長期擱置的跨文件殘留缺口(D-1、F2-1、F2-2)以及「三路終止漏第四支」(遷移語意成功但 Core Rules #13 回寫因 I/O 失敗未完成,`end` 永不呼叫,原權杖永久卡死問題原樣重現)。六位專家並行審查,systems-designer/security-engineer 聚焦第四路徑,narrative-director 聚焦 D-1,godot-specialist 聚焦 F2-1,game-designer 聚焦 F2-2,qa-lead 橫向掃描四者的 AC 覆蓋與 Completeness Execution Record 同步風險。
+
+**Summary**:six 位專家逐一交出具體修法草案,四項缺口的方向皆收斂,無使用者裁決陷入僵局的分歧。**security-engineer 意外發現的伴生缺口是本輪最重要的技術發現**:Core Rules #8 的雜湊涵蓋範圍被四輪修訂寫到極其精確,卻從未定義雜湊輸入的**來源**——若取自「寫入後讀回的磁碟位元組」而非「寫入前已驗證的記憶體資料」,一次磁碟已滿造成的截斷寫入會被如實雜湊、manifest 與 payload 永久自洽,Core Rules #8 兩層雜湊防線對此完全無感,不需要任何攻擊者。同時 Core Rules #14「確保內容完整寫入並 flush」從未指定任何檢查機制,`store_*`/flush 失敗訊號若未被實際檢查,序列可能靜默把截斷內容 rename 扶正。qa-lead 獨立發現 Completeness Execution Record 表二本身已存在一處實證矛盾(標題於第八輪已改為「68 條」,結尾結果句卻仍寫「65 條」「63 條」),是本文件自身的三件套漏一件實例。
+
+**creative-director 綜合裁決核心論點**:(1)第四路徑與完整性鏈條缺口雖共用觸發情境,但缺陷類別不同,立為獨立議題但同輪處理(第四路徑「保證呼叫 end」的成立前提依賴完整性鏈條缺口的修法,分輪會讓新增 AC 從誕生當天就懸空);(2)D-1 修正 narrative-director 對「終局快照」方案的成本估算——該方案會讓揭露義務對 `source_absence` 實質消失(不是被滿足,是無從觸發),提出第三方向 A+(終局判定 + 過程中誠實告知)補回這個損失,成本僅一條登記義務,遠低於承認可逆性+凍結旁表(B2)需要新增一級持久化區塊的代價;(3)F2-1 駁回 godot-specialist 原提的「消費者導向」判準(以「是否有下游讀取」判斷管轄範圍),改為「登記制」(以共用列舉登記為唯一判準),理由是消費者導向判準會讓管轄範圍隨未來下游設計選擇悄悄改變,重演本文件招牌失敗模式;(4)F2-1 與 F2-2 必須共用同一個「暫停選單內讀檔」情境定義,錨點為 `save-system.md` Core Rules #5「觸發情境限制」——在此定義下兩者字面矛盾不成立(讀檔的真實序列必經非互動式載入過場、原表面必然卸載,不是「暫停→返回原畫面」路徑)。
+
+**本輪使用者裁決(三項)**:
+1. D-1 修法方向 → **選擇 A+(終局判定 + 過程中誠實告知,creative-director 傾向選項)**:`source_absence` 移出 game-concept.md「單調不可逆」豁免清單,僅得於戰役終局判定當下呼叫一次判定互斥獨佔內容,戰役中途得以可逆的事實呈現現況但不得宣稱永久關閉。
+2. 處理範圍 → **選擇擴大為五項(creative-director 建議)**:security-engineer 發現的完整性鏈條缺口(雜湊輸入來源、寫入失敗偵測義務)同輪一併處理,獨立編號但不另開新輪。
+3. 下一輪覆核模式 → **選擇目標型覆核,3 位專家(creative-director 建議)**:systems-designer(第四路徑與完整性鏈條修法的形式一致性)、qa-lead(AC 覆蓋、Completeness Execution Record 同步、F2-1×F2-2 情境定義是否真的被兩邊共用)、godot-specialist(`_input` 讓路機制與表面登記判準的引擎可行性)。附退場條件:若目標型覆核發現任一項修法製造了新接縫,即升級為完整模式重跑。
+
+**本輪修訂內容(10 項阻擋全數於同一 session 內修訂完成)**:
+
+| # | 阻擋項摘要 | 修訂內容 |
+|---|---|---|
+| B1 | Core Rules #8 雜湊輸入來源全文未定義,可能讓截斷寫入被誤判成功;Core Rules #13/#14「確保完整寫入」缺乏具體檢查機制 | Core Rules #8 新增「雜湊輸入來源定案」段落(寫入前記憶體資料,非讀回位元組);Core Rules #14 步驟 1 新增「確保」的具體定義(主動檢查返回值,失敗即中止);Core Rules #13 階段 A 明文繼承此義務;新增 AC-74、AC-75 |
+| B2 | Core Rules #5 三路終止漏第四支(遷移成功但回寫 I/O 失敗,`end` 永不呼叫) | 新增路徑(四),保證呼叫 `end`(前提繫於 Core Rules #4 現行同步阻塞模型,已明文標注並綁定 Open Questions/Ledger S6);槽狀態維持「待遷移」,不新增拒絕原因代碼;新增 AC-73;新增重複失敗可觀察性義務(AC-76)+ Interactions 最低呈現契約新增條款 |
+| B3 | AC-10 合併「進程終止」與「注入寫入失敗」,掩蓋兩者依賴不同保證機制的事實 | 拆分為 AC-10a(進程終止)/AC-10b(寫入失敗注入);耐久性範圍聲明同步修正引用對象 |
+| B4 | Dependencies 章節三處落差(「兩條路徑」與 Core Rules #5 本體「四條路徑」不同步、「無上游依賴」與 begin/end 強制呼叫矛盾、與游標系統零登記依賴) | 生命週期通知段落改寫為四條路徑完整描述;「Foundation 層」措辭修正區分「定案依賴」與「執行期呼叫依賴」;新增對游標系統的資訊性交叉引用(非呼叫依賴) |
+| B5 | Completeness Execution Record 表一 #5/#8/#13/#14 列未反映新增 AC;表二標題「68 條」與結尾結果句「65 條/63 條」既存不同步 | 表一四列同步新增 AC 編號與範圍聲明;表二標題改為「73 條」(AC-10 拆分淨增 1 + AC-73~76 四條);新增 K 節;結尾結果句修正為「73 條中 70 條可執行,3 條(AC-51、AC-61、AC-71)不可執行」 |
+| B6 | cursor-highlight-state.md AC-23(暫停選單操作不竄改游標狀態)與 Core Rules #7(任何具懸停/游標目標表面皆受管轄)真矛盾 | Core Rules #7 新增「管轄範圍判準」(登記制:以共用列舉登記為唯一判準)+ 暫停選單/彈出對話框明文排除;AC-23 保留不動,補範圍註記(保證的是「無耦合」而非「本系統執行了保存/還原」);新增 AC-60 |
+| B7 | 本系統 `_input` 級緩衝與暫停選單原生 focus 系統搶輸入事件,順序未定義 | Edge Cases 暫停選單條款新增「成立機制」段落,複用觸發點 (c) 失焦「不運算+重新播種」模式一般化至暫停/模態期間;具體讓路手段(`SceneTree.paused`+`process_mode`)委派 `/create-architecture`,新增 Open Questions 列;新增 AC-59 |
+| B8/B9 | 存檔載入後陳舊游標目標無人標記失效;F2-1/F2-2 缺乏共用情境定義,有交互矛盾風險 | Core Rules #7「表面卸載前的目標交接義務」觸發情境明文擴充涵蓋存檔讀取;分列甲(舊表面存在時讀檔)/乙(無舊表面時讀檔,複用 Core Rules #6 初始狀態)兩種情境;責任歸屬呼叫方系統(戰棋移動與交戰系統),不歸屬存檔系統或游標系統本身;新增「時機點的安全窗口」段落以 `save-system.md` Core Rules #5「觸發情境限制」為共用情境定義錨點,明文說明 AC-23 與本節修法為何不矛盾;`systems-index.md` Cross-System Obligations Registry 第 165 列同步擴充;`save-system.md` Dependencies 新增資訊性交叉引用(見 B4) |
+| B10 | D-1:`game-concept.md` 把 `source_absence` 與 `total_churn`/`reversal_count` 一併列為「單調不可逆」豁免特徵,但前者是即時查詢、可被玩家事後翻轉,前提不成立 | `game-concept.md`「範圍排除與揭露義務」新增 D-1 修法段落(移出豁免清單,終局判定 + 過程中誠實告知);`affinity-data-pool.md` 3g 段落新增「可逆性明文承認」+ AC-54 補範圍聲明 + 新增 AC-80;`systems-index.md` Cross-System Obligations Registry 新增列 |
+
+**Prior verdict resolved**:是——第五輪 11 項阻擋已於第五輪同一 session 全數修訂完成並移交(2026-08-07 核准跳過第六輪),本輪處理的是移交後、2026-08-09 `/review-all-gdds` 發現且長期擱置的跨文件殘留缺口,非第五輪範圍內的回歸。
+
+**未隨此輪處理(明確記錄,非遺漏)**:Recommended 三項(Player Fantasy「殘餘成本」段落拆分、Open Questions 架構階段清單提取、Completeness Execution Record 逐義務檢查試行)——creative-director 建議留待本輪修法穩定後單獨進行,避免在同一輪疊加高風險的可讀性重構;F2-3(存檔管理 UI 未被登記為正式系統)、F2-4(第 164 列承接名單不含暫停/存檔流程)、F2-5(硬性閘門範圍未涵蓋存檔管理 UI 槽瀏覽器)、F2-6(第 171 列已過期的三分級告知舊文案)——`/review-all-gdds` 2026-08-09 報告的 Warning 級發現,本輪未觸及,留待下一輪或相關下游系統設計時處理。
