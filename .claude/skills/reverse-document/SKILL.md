@@ -133,6 +133,15 @@ Based on type, use appropriate template:
 - Identify **what's missing** (edge cases not handled, gaps in design)
 - Flag **follow-up work** (balance tuning, missing features)
 
+## Phase 5b: Permanent Lockout Event Check (mandatory, do not skip)
+
+**Added 2026-08-12, round 10 of `/design-review save-system.md`** — same check as `/design-system`'s "5a-ter" and `/quick-design`'s redirect-to-full-pipeline bullet, closing the same gap for this skill's write path. Reverse-documented code can just as easily reveal an already-implemented mechanic that permanently forecloses a relationship-affinity source for a specific character pairing (e.g. a party-member-leaves event, a one-time consumable, a chapter gate) as a freshly-authored one can.
+
+Before Phase 6, ask: **Does the drafted document describe any mechanic that makes it permanently impossible to trigger a specific relationship-affinity source for a specific character pairing** (see `design/gdd/affinity-data-pool.md` §3g's registry for the existing pattern)?
+
+- **If no**: proceed to Phase 6, no further action.
+- **If yes**: before writing the file, (1) add a row to `affinity-data-pool.md` §3g's registry; (2) confirm `game-concept.md` D-1's generalized rule covers it without modification, or flag a `/design-review` round if it doesn't; (3) note the confirmation result in the draft shown to the user in Phase 6.
+
 ## Phase 6: Show Draft and Request Approval
 
 **Collaborative protocol**:

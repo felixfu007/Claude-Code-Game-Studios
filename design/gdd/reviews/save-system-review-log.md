@@ -451,3 +451,36 @@ R8 曾判定「阻擋數 24→…→5,缺陷面已幾乎完全移出設計內容
 ### 第十輪退場條件
 
 **目標型,2 位專家(qa-lead、systems-designer)**,只驗證本輪三項修訂本身有無新接縫。**驗證準則沿用 R9**:若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED;若又出現落在 Core Rule 本體/AC 斷言的新發現 → 不自動視為序列失敗,但須明確評估該發現是否需要新專家視角,兩者皆否才維持目標型直接修訂。**與 R8 的差異**:R8 錯誤地把「稽核表誤判掛零」等同於「文件已收斂」;R9 起,「掛零」的定義明確為「Core Rule 本體與全部 AC 斷言皆無新發現的邏輯矛盾」,不只是稽核表。
+
+---
+
+## Review — 2026-08-12 — 第十輪(目標型,2 位專家,依第九輪退場條件)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Scope signal**: XL(系統本身,不變)| 本輪修訂工作量:**S**(全部落在 `.claude/skills/` 流程檔案,零 GDD 規則文字變動)
+**Specialists**: qa-lead、systems-designer(第九輪指定的目標型兩位)
+**Blocking-now**: **1**(systems-designer 發現)| **Advisory**: 5(qa-lead 3 項、systems-designer 2 項)| **Defer-to-calibration**: 1
+
+**背景**:兩位專家的背景任務通知第一次回傳時皆為空/不完整(qa-lead 回傳單句內部自白、systems-designer 完全無 `<result>`),依既有處理模式以 `SendMessage` 請兩者重新完整貼出結論,第二次皆完整取得。
+
+**Summary**:第九輪三項修法(AC-75/#14 步驟零拆分、cursor AC-62 四元組修正、`/quick-design` 新增檢查)本身**皆未被推翻**——兩位專家對其核心斷言(檔案狀態邏輯、欄位語意、重試行為)逐一查證後確認正確。找到的多數發現是文件精確度層級的 ADVISORY(第三個未命名的子情境、引用先例不夠精確等),不影響任何 GIVEN/WHEN/THEN 的結論。
+
+**本輪唯一 BLOCKING-NOW(systems-designer)**:第九輪 D3/R9-3 建立的「封鎖成因強制檢查」機制,只覆蓋 `/design-system`(5a-ter)與 `/quick-design`(新增條款)兩個管道,但本專案實際可寫入 `design/gdd/*.md` 的 skill 還有 `/reverse-document`(直接反向工程既有程式碼產生 GDD,零封鎖成因檢查、零指向 3g 登記處)——同一類缺口的第三個實例,與 R9-3 同型。qa-lead 獨立發現 `/design-review` 本身(此專案實際新增規則最主要的管道)也缺同一檢查,但因其超出本輪「只驗證第九輪三項修法」的明訂範圍,判為 ADVISORY;systems-designer 另以較低信心發現 `/brainstorm`(可寫入 `game-concept.md`,D-1 的所在地)同樣缺乏交叉引用,判為 DEFER-TO-CALIBRATION。
+
+**使用者裁決**:三個缺口(`/reverse-document`、`/design-review`、`/brainstorm`)一次修,不分批——理由:三者性質相同,分開修只會讓下一輪重新發現同一類問題,比照 `/quick-design` 的既有修法模式(引用 5a-ter 的檢查內容,不重新發明)一次寫入成本低廉。
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 修訂內容 |
+|---|---|---|
+| R10-1 | `/reverse-document` 可寫入 `design/gdd/*.md`,零封鎖成因檢查(BLOCKING,同 R9-3 類) | 新增 Phase 5b「Permanent Lockout Event Check」,插於 Phase 5(草稿)與 Phase 6(核准請求)之間,內容比照 5a-ter |
+| R10-2 | `/design-review` 本身(修訂 GDD 規則文字最主要的管道)缺同一檢查(qa-lead ADVISORY,使用者裁決一併處理) | Phase 5「若使用者選擇〔A〕現在修訂」流程新增強制段落,修訂任何新增/改寫封鎖成因規則的阻擋項時,套用 5a-ter 同款檢查 |
+| R10-3 | `/brainstorm` 可寫入 `game-concept.md`(D-1 通則所在文件),零交叉引用(systems-designer DEFER,使用者裁決一併處理) | 新增步驟 4b:修訂既有 `game-concept.md` 若觸及 D-1 段落,須確認與 3g 登記處相容,否則需開一輪 `/design-review` |
+
+**未隨此輪處理**:見文首「架構階段待辦清單」。本輪三項發現皆為流程檔案(`.claude/skills/`),不影響 save-system.md/cursor-highlight-state.md/affinity-data-pool.md 本身的任何規則文字或 AC。
+
+**是否升級為完整模式**:不升級。發現仍全數落在 qa-lead/systems-designer 已部署的專業範圍(流程/skill 完整性稽核),修法直接複用既有 5a-ter 模式,無新視角訊號。
+
+### 第十一輪退場條件
+
+**目標型,2 位專家(qa-lead、systems-designer)**,只驗證本輪三項流程檔案修訂有無新接縫(例如是否還有第五個管道遺漏、5a-ter 措辭在四個不同 skill 情境下是否皆準確適用)。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`。

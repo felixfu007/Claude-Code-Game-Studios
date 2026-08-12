@@ -1,7 +1,7 @@
 # 存檔系統(含跨規則集遷移)
 
-> **Status**: Needs Revision — 第九輪 `/design-review`(2026-08-12)已完成,3 項 BLOCKING 同輪修訂完成。**完整逐輪修訂歷史(第一輪至今)見 `design/gdd/reviews/save-system-review-log.md`**——本標頭自 2026-08-12 起不再複述逐輪細節,只保留當前狀態摘要,避免與 review-log 重複記載而失去同步(此為本文件過去多輪反覆栽過的失敗模式)。
-> **當前狀態摘要**:AC 總數維持 **76**(第九輪未新增 AC,三項修訂皆為既有 AC/規則文字的內部拆分或補漏)。**第九輪三項阻擋,對象皆為第八輪自己新寫的規則文字/AC 斷言本身的邏輯錯誤**(步驟零失敗的檔案狀態斷言自相矛盾、cursor AC-62 四元組漏欄位、affinity 登記處被 `/quick-design` 繞過)——第八輪「已完全移出設計內容」的收斂判讀經第九輪證明為過早,但三項皆為局部修法、不影響 R7/R8 的修法方向,亦不需要新專家視角,故維持目標型直接修訂,未升級為完整模式。下一輪覆核範圍:目標型,**2 位專家(qa-lead、systems-designer)**,只驗證本輪三項修訂本身,不開新領域。若第十輪零 BLOCKING-NOW(定義見 review-log 第九輪條目「第十輪退場條件」),依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`。
+> **Status**: Needs Revision — 第十輪 `/design-review`(2026-08-12)已完成,1 項 BLOCKING 同輪修訂完成。**完整逐輪修訂歷史(第一輪至今)見 `design/gdd/reviews/save-system-review-log.md`**——本標頭自 2026-08-12 起不再複述逐輪細節,只保留當前狀態摘要,避免與 review-log 重複記載而失去同步(此為本文件過去多輪反覆栽過的失敗模式)。
+> **當前狀態摘要**:AC 總數維持 **76**(第九、十輪皆未新增 AC)。**第十輪的唯一 BLOCKING 不在 save-system.md 本身**——它是第九輪 `/quick-design` 修法的同類缺口(`/reverse-document` 同樣可寫入 GDD 卻缺封鎖成因檢查),連同兩個較弱的同類缺口(`/design-review` 自身、`/brainstorm`)一併於 `.claude/skills/` 三個流程檔案修訂,未觸及本文件或 `cursor-highlight-state.md`/`affinity-data-pool.md` 的任何規則文字或 AC。下一輪覆核範圍:目標型,**2 位專家(qa-lead、systems-designer)**,只驗證本輪三項流程檔案修訂本身,不開新領域。若第十一輪零 BLOCKING-NOW(定義見 review-log 第十輪條目「第十一輪退場條件」),依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`。
 > **Author**: 使用者 + agents
 > **Last Updated**: 2026-08-12
 > **Implements Pillar**: 支柱二(關係即戰場)的持久化承載層——本系統不新增任何玩法規則,但任何規則集遷移失敗都直接等同好感度歷史遺失,因此實質承載 Player Fantasy 承諾一(資料本體永久保留)的持久化保證,不是與美學支柱無關的純基礎設施

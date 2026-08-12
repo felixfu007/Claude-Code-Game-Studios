@@ -293,6 +293,8 @@ Present the assessment to the user. If UNREALISTIC, offer to adjust the MVP defi
    This section is the seed of the art bible — it captures the "everything must
    move" decision before it can be forgotten between sessions.
 
+4b. **If this brainstorm session is revising an existing `game-concept.md` rather than authoring a fresh one** (added 2026-08-12, round 10 of `/design-review save-system.md`, DEFER-TO-CALIBRATION note — lower-confidence than the checks in `/design-system`/`/quick-design`/`/reverse-document`/`/design-review`, since concept-level rewrites have historically gone through full `/design-review`, but flagged since this skill has Write access to the one file holding the D-1 generalized lockout rule): check whether the revision touches the "範圍排除與揭露義務"/D-1 section. If it does, do not silently rewrite it — confirm the change is still compatible with `affinity-data-pool.md` §3g's registry (every registered lockout cause must remain covered without modification, per §3g's own maintenance protocol rule 二), and flag a `/design-review` round if it isn't.
+
 5. Use `AskUserQuestion` for write approval:
 - Prompt: "Game concept is ready. May I write it to `design/gdd/game-concept.md`?"
 - Options: `[A] Yes — write it` / `[B] Not yet — revise a section first`
