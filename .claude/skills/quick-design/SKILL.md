@@ -282,6 +282,16 @@ Redirect to the full pipeline if any of the following are true:
 - The change introduces new player-facing mechanics that affect the
   game's MDA aesthetic balance
 - Implementation is likely to exceed one week of work
+- The change introduces any mechanic that makes it permanently impossible to
+  trigger a specific relationship-affinity source for a specific character
+  pairing (added 2026-08-12, round 9 of `/design-review save-system.md` —
+  this is the same check as `/design-system`'s mandatory "5a-ter: Permanent
+  Lockout Event Check"; a `/quick-design` "Addition" is exactly the kind of
+  small, 1-2-state change that could otherwise introduce a new lockout cause
+  without ever touching `design/gdd/affinity-data-pool.md` §3g's registry or
+  its maintenance protocol, defeating the registry's completeness guarantee
+  through this adjacent, sanctioned path). If in doubt, ask the same question
+  5a-ter asks before proceeding.
 
 In those cases: "This change has grown beyond quick-spec scope. I recommend
 using `/design-system` to author a full GDD for this."
