@@ -518,6 +518,36 @@ R8 曾判定「阻擋數 24→…→5,缺陷面已幾乎完全移出設計內容
 
 **留待之後(ADVISORY,未隨此輪處理)**:`/brainstorm` 4b 借用「DEFER-TO-CALIBRATION」這個 Phase 0b 專有詞彙但實際執行力道與強制動作同級,措辭有混淆風險;`/brainstorm` 4b 未採用另兩處「If no / If yes」明確分支格式。
 
+### 第十二輪退場條件
+
+**目標型,2 位專家(qa-lead、systems-designer)**,只驗證本輪兩項修訂(`review-all-gdds` Phase 7b、`design-review` 失敗路徑拆分)本身有無新接縫。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`(3 項 DEFER + 2 項 ADVISORY 殘留不影響此判定)。
+
+---
+
+## Review — 2026-08-12 — 第十二輪(目標型,2 位專家,依第十一輪退場條件)
+
+**Verdict**: **APPROVED**
+**Scope signal**: S(全部落在 `.claude/skills/` 流程檔案,零 GDD 規則文字變動,本輪零修訂)
+**Specialists**: qa-lead、systems-designer(第十一輪指定的目標型兩位)
+**Blocking-now**: **0** | **Defer-to-calibration**: 3(新增,見下)| **Advisory**: 4(2 項延續自第十一輪未處理項 + 2 項本輪新增)
+
+**Summary**:兩位專家平行驗證第十一輪兩項修訂(`review-all-gdds` Phase 7b「Quick-Fix Execution Flow」、`design-review` 失敗路徑拆分)本身,均未發現任何邏輯矛盾、自我推翻的規則,或會讓下游走錯路的缺口。systems-designer 額外查核 `consistency-check`/`propagate-design-change`/`map-systems`/`architecture-decision` 四個候選,確認五條 GDD 寫入路徑(`/design-system`、`/quick-design`、`/reverse-document`、`/design-review`、`/review-all-gdds`)目前仍是封閉集合,無第六條遺漏路徑。追蹤了 R11-1→R11-2 的完整轉單鏈(`/review-all-gdds` quick-fix 偵測到鎖死 → 轉 `/design-review [gdd-path]` → 若非 game-concept.md 則依新分支再轉 `/design-review design/gdd/game-concept.md`),確認單向、可終止、無循環依賴。
+
+**新增 DEFER-TO-CALIBRATION**(3 項,未隨此輪處理):
+1. Phase 7b「拒絕/轉單」分支(範圍超標、偵測到鎖死)沒有留痕指示,只有「成功寫入」分支有(qa-lead)
+2. quick-fix 寫入成功後,`systems-index.md` 可能已存在的過期「Needs Revision」狀態未被同步復原機制(qa-lead)
+3. quick-fix 若牽涉跨 GDD 關係(源頭是 `/review-all-gdds` 的跨文件檢查),轉單去單檔 `/design-review [gdd-path]` 在此邊界情境下範圍可能不夠精準(systems-designer)
+
+**新增 ADVISORY**(2 項):Phase 7b 步驟 5「或後補 append」是死分支(Phase 6 必然先寫入,前半支恆不成立)且未定義 append 格式;`consistency-check` 持有 `Edit` 權限但目前未用於改寫 GDD 規則內容(非缺口,未來若擴充需記得補檢查)。
+
+**是否升級為完整模式**:不升級。零 BLOCKING-NOW,無需修訂。
+
+**使用者裁決**:本輪驗證對象是流程 skill 檔案而非重讀 `save-system.md` 全文本身;雖然 `save-system.md` 本文的規則內容已連續三輪(R10/R11/R12)零新 BLOCKING-NOW,使用者選擇不因此直接宣告 `save-system.md` Approved,而是**另開一輪直接重讀 `save-system.md` 全文本身**(而非流程檔案)作為更嚴謹的收斂確認。系統狀態維持現況(`systems-index.md` 未變更)。
+
+### 第十三輪退場條件
+
+**與前四輪不同**:第十三輪應直接對 `design/gdd/save-system.md` 全文執行 `/design-review`(重讀 GDD 本身,不是流程 skill 檔案),驗證內容本身是否收斂。若判定 APPROVED(或零新 BLOCKING-NOW)→ 更新 `systems-index.md` 狀態為 Approved、移交 `/create-architecture`。建議 `/clear` 後於新 session 執行 `/design-review design/gdd/save-system.md`。
+
 **post-revision 自我核對(grep 掃描)**:對「review round itself is the escalation」「Apply quick fix」兩個關鍵短語做全庫 grep,確認修改前僅各出現在 `design-review/SKILL.md`、`review-all-gdds/SKILL.md` 一處,無其他檔案殘留舊措辭需要同步。
 
 ### 第十二輪退場條件
