@@ -682,6 +682,34 @@ the source of truth). Verify:
 - Dependencies are listed with interfaces
 - Acceptance criteria are testable
 
+### 5a-ter: Permanent Lockout Event Check
+
+**Mandatory question, do not skip.** This project has a cross-system registry of
+"玩法結構事件使某好感度來源對某配對永久不可寫入" (a gameplay-structural event that
+permanently forecloses one of the game's relationship-tracking sources for a given
+pairing) — the authoritative list lives in `design/gdd/affinity-data-pool.md`
+Section 3g "全作用域封鎖成因登記處" (added 2026-08-12, round 8, per D4). It exists
+because this exact obligation was designed as a one-time audit with no mechanism
+requiring future systems to report back when they introduce a new instance —
+the failure mode this check exists to close is a player discovering, only at the
+campaign's ending, that a relationship path was silently closed off long ago and
+the game never said so.
+
+Before finalizing this GDD, ask directly:
+
+> "Does [system-name] introduce any mechanic that makes it permanently impossible
+> to trigger a specific relationship-affinity source for a specific character
+> pairing once some condition occurs (a character permanently leaving the party,
+> a one-time/consumable item being spent, a chapter-locked event window closing,
+> etc.)? This is different from a temporary or recoverable restriction — the
+> question is whether the source becomes **structurally, permanently** unavailable."
+
+- If **no**: note "Permanent lockout check: N/A — no such mechanic introduced" in the GDD and move on.
+- If **yes**: this GDD **must**, in the same session:
+  1. Add a row to `affinity-data-pool.md` 3g's registry table (source, affected pairing pattern, this GDD's owning rule/section, today's date).
+  2. Confirm whether `game-concept.md` D-1 修正一's generalized rule ("任何使來源 X 對配對 p 永久不可寫入的玩法結構事件…") covers this new instance **without modification**. If it does not, this is not a fixable footnote — stop and flag it for a `/design-review` round on `game-concept.md`, per the registry's maintenance protocol (二): a generalized rule that needs a patch for every new instance isn't actually general.
+  3. Record the confirmation result (covered without modification / needed a `/design-review` round) — this becomes part of that round's review-log entry per the registry's protocol.
+
 ### 5a-bis: Creative Director Pillar Review
 
 **Review mode check** — apply before spawning CD-GDD-ALIGN:
