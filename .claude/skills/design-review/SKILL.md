@@ -240,6 +240,8 @@ If NEEDS REVISION or MAJOR REVISION NEEDED, options:
 
 Work through all blocking items, asking for design decisions only where you cannot resolve the issue from the GDD and existing docs alone. Group all design-decision questions into a single multi-tab `AskUserQuestion` before making any edits — do not interrupt mid-revision for each blocker individually.
 
+**Post-revision self-verification (grep pass) — mandatory, before declaring the round done:** For every fix that renamed, recounted, or redefined something (a status name, a path/branch count, a term, a cross-reference), `Grep` the whole repo for the *old* value/phrasing and confirm every hit was updated or has an explicit, deliberate reason to remain (e.g. a historical log entry that should keep the old name). This step costs no subagent — it's a direct tool call in the current session, done before any specialist budget is spent re-discovering the same miss next round. This exists because the project's single most expensive recurring failure has been a fix landing in one place while a same-fact reference elsewhere (a table row, a registry entry, a count in a different section) was never touched, and the miss wasn't caught until an entire subsequent multi-specialist round rediscovered it. Report the grep pass results (what was checked, what was found stale and fixed, what was confirmed clean) alongside the summary table below — don't skip silently even when it finds nothing.
+
 After all revisions are complete, show a summary table (blocker → fix applied) and use `AskUserQuestion` for a **post-revision closing widget**:
 
 - Prompt: "Revisions complete — [N] blockers resolved. What next?"
