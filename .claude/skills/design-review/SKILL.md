@@ -19,6 +19,26 @@ Extract `--depth [full|lean|solo]` if present. Default is `full` when no flag is
 
 ---
 
+## Phase 0b: Severity Triage & Stop-Loss Policy
+
+**Governs every phase below.** Multi-agent adversarial review has no natural floor — specialists instructed to "find problems" will keep finding smaller and smaller ones indefinitely. This policy exists to stop diminishing-returns rounds from consuming unbounded review cycles and tokens on a single document.
+
+**Every finding — from this skill's own analysis (Phases 2-3) and from every specialist in Phase 3b — must be sorted into exactly one bucket before it reaches Phase 4's output:**
+
+| Bucket | Definition | Handling |
+|---|---|---|
+| **BLOCKING-NOW** | A logic contradiction, a rule that defeats its own stated purpose, or a gap that would cause a downstream system/programmer to build the wrong thing if left unresolved. This is the *only* bucket that can produce a `NEEDS REVISION`/`MAJOR REVISION NEEDED` verdict or trigger a re-review round. | Resolve this round. |
+| **DEFER-TO-CALIBRATION** | Numeric tuning values, performance budgets, engine/API behavior that needs real engine contact to confirm, serialization-format-dependent decisions — anything that is cheap to correct later without touching the document's logic. | Log as a single-line Open Questions entry. Do not debate in-session; do not let it block a verdict. |
+| **ADVISORY** | Wording precision, example clarity, minor cross-reference tidiness — true but not load-bearing. | Batch-record in one pass (one combined write, not one exchange per item). Never deep-dive an individual advisory item. |
+
+**Escalation gate (replaces ad-hoc "discover a new seam" judgment calls):** A targeted re-review escalates to full multi-specialist mode **only if at least one finding is BLOCKING-NOW and is a genuine design-content defect** (the design itself is wrong) rather than a **propagation failure** (a correct prior fix that just wasn't copied to every place it needed to be — stale cross-reference, unsynced count, matrix row not updated). Propagation failures, however numerous, are fixed directly without escalating; they don't indicate the design is unsound, only that the last edit was incomplete.
+
+**Convergence / stop-declaration rule:** Track verdicts across rounds in the document's review-log. **The moment two consecutive rounds (of any depth — solo, lean, targeted, or full) produce zero new BLOCKING-NOW findings**, declare `APPROVED` and stop further review rounds on this document, even if a DEFER-TO-CALIBRATION or ADVISORY backlog remains open. Remaining items stay visible in Open Questions / the Ledger for whoever picks the document back up (architecture phase, implementation, a future balance pass) — they are not lost, just no longer grounds to keep spending review cycles on a document that has stopped producing real findings.
+
+When reporting a verdict, always state which bucket drove it, e.g. "NEEDS REVISION — 2 BLOCKING-NOW (design-content), 3 propagation failures (fixed same round, no escalation), 5 DEFER-TO-CALIBRATION logged to Open Questions."
+
+---
+
 ## Phase 1: Load Documents
 
 Read the target design document in full. Read CLAUDE.md to understand project context and standards. Read related design documents referenced or implied by the target doc (check `design/gdd/` for related systems).
@@ -114,7 +134,15 @@ Issue all Task calls simultaneously. Do NOT spawn one at a time.
 > Your job is NOT to validate this design — your job is to find problems.
 > Challenge the design choices from your domain expertise. What is wrong,
 > underspecified, likely to cause problems, or missing entirely?
-> Be specific and critical. Disagreement with the main review is welcome."
+> Be specific and critical. Disagreement with the main review is welcome.
+>
+> For every finding, classify it per the project's severity-triage policy
+> (see Phase 0b): BLOCKING-NOW (logic contradiction / self-defeating rule /
+> would cause a downstream build error if unresolved), DEFER-TO-CALIBRATION
+> (numeric tuning, engine/API facts needing real engine contact, format-
+> dependent), or ADVISORY (wording/precision only). Don't let ADVISORY items
+> consume the same depth of write-up as BLOCKING-NOW ones — one line each,
+> batched, is enough."
 
 **Additional instructions per agent type:**
 
@@ -154,18 +182,22 @@ Re-review: [Yes — prior verdict was X on YYYY-MM-DD / No — first review]
 - ✓ enemy-definition-data.md — exists
 - ✗ loot-system.md — NOT FOUND (file does not exist yet)
 
-### Required Before Implementation
-[Numbered list — blocking issues only. Each item tagged with source agent.]
+### Required Before Implementation (BLOCKING-NOW)
+[Numbered list — logic contradictions / self-defeating rules / would cause a
+downstream build error. Each item tagged with source agent and, if a
+re-review, marked [design-content defect] or [propagation failure] per the
+Phase 0b escalation gate.]
 
-### Recommended Revisions
-[Numbered list — important but not blocking. Source-tagged.]
+### Deferred to Calibration
+[Numbered list — numeric tuning, engine/API facts, format-dependent items.
+Log as one-line Open Questions entries; do not expand into debate here.]
+
+### Advisory (batched, not deep-dived)
+[One line per item — wording precision, minor cross-reference tidiness.]
 
 ### Specialist Disagreements
 [Any cases where agents disagreed with each other or with the main review.
 Present both sides — do not silently resolve.]
-
-### Nice-to-Have
-[Minor improvements, low priority.]
 
 ### Senior Verdict [creative-director]
 [Creative director's synthesis and overall assessment.]
@@ -180,6 +212,11 @@ systems touched, and whether new ADRs are required.
 Label clearly: "Rough scope signal: M (producer should verify before sprint planning)"
 
 ### Verdict: [APPROVED / NEEDS REVISION / MAJOR REVISION NEEDED]
+[State which bucket drove the verdict per Phase 0b, e.g. "2 BLOCKING-NOW
+(design-content), 3 propagation failures (fixed same round, no escalation),
+5 DEFER-TO-CALIBRATION logged to Open Questions." If this is the second
+consecutive round with zero new BLOCKING-NOW findings, say so explicitly and
+apply the convergence rule: APPROVED regardless of open DEFER/ADVISORY items.]
 ```
 
 This skill is read-only — no files are written during Phase 4.
@@ -240,10 +277,15 @@ If yes, append an entry in this format:
 ## Review — [YYYY-MM-DD] — Verdict: [APPROVED / NEEDS REVISION / MAJOR REVISION NEEDED]
 Scope signal: [S/M/L/XL]
 Specialists: [list]
-Blocking items: [count] | Recommended: [count]
-Summary: [2-3 sentence summary of key findings from creative-director verdict]
+Blocking-now: [count] (design-content: [n] / propagation: [n]) | Deferred: [count] | Advisory: [count]
+Summary: [2-3 sentence summary of key findings — keep to a short paragraph or
+a table; do not carry forward a full prior-round narrative each time. Older
+rounds' full write-ups live in git history, not in this file — see the
+compaction note at the top of this log.]
 Prior verdict resolved: [Yes / No / First review]
 ```
+
+**Log compaction**: once a round's findings have been resolved and superseded by at least one later round, collapse its `Summary` prose down to the Revision-list table only (keep table rows — they're the load-bearing record of what changed and why) and drop the paragraph-length narrative. Full history remains recoverable from git; the live file should only carry as much prose as the *current* round needs to make sense.
 
 ---
 
