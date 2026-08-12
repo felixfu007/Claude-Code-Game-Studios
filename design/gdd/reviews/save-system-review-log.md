@@ -484,3 +484,42 @@ R8 曾判定「阻擋數 24→…→5,缺陷面已幾乎完全移出設計內容
 ### 第十一輪退場條件
 
 **目標型,2 位專家(qa-lead、systems-designer)**,只驗證本輪三項流程檔案修訂有無新接縫(例如是否還有第五個管道遺漏、5a-ter 措辭在四個不同 skill 情境下是否皆準確適用)。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`。
+
+---
+
+## Review — 2026-08-12 — 第十一輪(目標型,2 位專家,依第十輪退場條件)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Scope signal**: XL(系統本身,不變)| 本輪修訂工作量:**S**(全部落在 `.claude/skills/` 流程檔案,零 GDD 規則文字變動)
+**Specialists**: qa-lead、systems-designer(第十輪指定的目標型兩位)
+**Blocking-now**: **2**(design-content defect,兩位專家各自獨立收斂一項)| **Defer-to-calibration**: 3 | **Advisory**: 2
+
+**Summary**:第十輪三項修法(`/reverse-document` Phase 5b、`/design-review` 新段落、`/brainstorm` 4b)本身的核心判準措辭與邏輯結構皆查證通過、未被推翻。但兩位專家的排查範圍比第十輪更廣,各自獨立找到第十輪自己遺漏的缺口:
+
+**R11-1(qa-lead + systems-designer 雙方獨立收斂,BLOCKING-NOW)**:`/review-all-gdds` Phase 7 的「Apply quick fix: [W-XX] in [gdd-name].md」選項是一條真正存在、對 `design/gdd/*.md` 有具名寫入能力的**第五條路徑**,但全文(640 行)未定義這個選項實際如何套用——沒有草稿、沒有核准流程、沒有寫入步驟,遑論封鎖成因檢查。比前三個已修補的缺口更根本:那三處至少複製了 5a-ter 的完整結構,這裡連寫入流程本身都未定義。同時發現 `allowed-tools` 缺少 `Edit`。
+
+**R11-2(qa-lead 發現,BLOCKING-NOW)**:第十輪寫入 `/design-review` 的新段落,失敗路徑措辭「確認 D-1 涵蓋此實例…或註記本輪 review 本身即為升級」在最常見用例(本輪審查目標並非 `game-concept.md` 本身)下有歧義,可能被誤讀為允許同輪內自行修補 `game-concept.md` D-1,直接違反 5a-ter「不得自行修補,須停下標記另開一輪」的核心防呆邏輯——屬於「a rule that defeats its own stated purpose」。
+
+**是否升級為完整模式**:**不升級**。兩項發現皆落在 qa-lead/systems-designer 已部署的專業範圍內(skill 寫入路徑排查、規則文字失敗路徑推導),修法方向清楚(複製 5a-ter 執行結構 / 拆分兩支判斷),無新視角訊號。
+
+**使用者裁決**:同輪修訂,但僅修 2 項 BLOCKING-NOW;3 項 DEFER-TO-CALIBRATION 與 2 項 ADVISORY 留待之後(理由:先聚焦在真正的缺陷上,DEFER/ADVISORY 依 Phase 0b 本可不阻擋收斂)。
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 修訂內容 |
+|---|---|---|
+| R11-1 | `/review-all-gdds` Phase 7 quick-fix 選項零執行流程定義、零封鎖成因檢查(第五條寫入路徑) | 新增「Phase 7b: Quick-Fix Execution Flow」,定義草稿→封鎖成因檢查(同 5a-ter 判準)→核准→寫入→記錄五步驟;`allowed-tools` 補上 `Edit` |
+| R11-2 | `/design-review` 新段落失敗路徑措辭在非 game-concept.md 目標情境下有歧義,可能誤讀為允許同輪自行修補 D-1 | 拆分為「本輪目標即 game-concept.md 本身」(可同輪修 D-1)/「本輪目標是其他 GDD」(不得自行修補,須停下標記另開一輪 `/design-review design/gdd/game-concept.md`)兩支明確判斷 |
+
+**留待之後(DEFER-TO-CALIBRATION,未隨此輪處理)**:
+- `/reverse-document` Phase 5b 的「否」分支未要求把 N/A 結論寫入草稿(5a-ter 有此要求,可稽核性小缺口)。
+- `/brainstorm` 4b 觸發條件「是否觸及 D-1 段落」窄於實際風險面——`game-concept.md` 另有「寫入來源封閉性」「系統觸發寫入的獨立約束」「陣亡情境兌現方式」三段同主題但非 D-1 命名的區塊,理論上可被繞過(有 R11-2 修好後的 design-review 通用檢查作 backstop,緩解但未消除)。
+- `/consistency-check` 持有 `Edit` 權限但未在任何已定義 Phase 中用於改寫 GDD 正文——概念性描述與實際執行有落差,目前非現存缺口。
+
+**留待之後(ADVISORY,未隨此輪處理)**:`/brainstorm` 4b 借用「DEFER-TO-CALIBRATION」這個 Phase 0b 專有詞彙但實際執行力道與強制動作同級,措辭有混淆風險;`/brainstorm` 4b 未採用另兩處「If no / If yes」明確分支格式。
+
+**post-revision 自我核對(grep 掃描)**:對「review round itself is the escalation」「Apply quick fix」兩個關鍵短語做全庫 grep,確認修改前僅各出現在 `design-review/SKILL.md`、`review-all-gdds/SKILL.md` 一處,無其他檔案殘留舊措辭需要同步。
+
+### 第十二輪退場條件
+
+**目標型,2 位專家(qa-lead、systems-designer)**,只驗證本輪兩項修訂(`review-all-gdds` Phase 7b、`design-review` 失敗路徑拆分)本身有無新接縫。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED、移交 `/create-architecture`(3 項 DEFER + 2 項 ADVISORY 殘留不影響此判定,留給下游或未來校準)。

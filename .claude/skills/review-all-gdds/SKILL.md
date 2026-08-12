@@ -3,7 +3,7 @@ name: review-all-gdds
 description: "Holistic cross-GDD consistency and game design review. Reads all system GDDs simultaneously and checks for contradictions between them, stale references, ownership conflicts, formula incompatibilities, and game design theory violations (dominant strategies, economic imbalance, cognitive overload, pillar drift). Run after all MVP GDDs are written, before architecture begins."
 argument-hint: "[focus: full | consistency | design-theory | since-last-review]"
 user-invocable: true
-allowed-tools: Read, Glob, Grep, Write, Bash, AskUserQuestion, Task
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash, AskUserQuestion, Task
 model: opus
 ---
 
@@ -607,6 +607,22 @@ Build the option list dynamically — only include options that apply:
 Assign letters A, B, C… only to included options. Mark the most pipeline-advancing option as `(recommended)`.
 
 Never end the skill with plain text. Always close with this widget.
+
+### Phase 7b: Quick-Fix Execution Flow (mandatory whenever a quick-fix option is selected)
+
+**Added 2026-08-12, round 11 of `/design-review save-system.md`** — before this round, "Apply quick fix" was listed as a closing-widget option with no defined execution: no draft step, no approval step, no write step, and no permanent lockout check. That made it the one path into `design/gdd/*.md` this project's other four write-capable skills (`/design-system`, `/quick-design`, `/reverse-document`, `/design-review`) had already closed. This phase defines that execution so the option is no longer a dead end.
+
+When the user selects an "Apply quick fix: [W-XX] in [gdd-name].md" option:
+
+1. **Draft**: Read the target GDD section named in the Warning item. Show the exact before/after text change in conversation — this must be a small, targeted edit matching the "30-second edit / brief addition" scope the Warning was flagged with. If the fix turns out to need more than a localized text change, stop and say: "This isn't a quick fix — it needs `/design-review [gdd-path]` for a proper pass," and do not proceed with Phase 7b.
+2. **Permanent Lockout Event Check (mandatory, same criterion as `/design-system`'s 5a-ter)**: Does the drafted change make it permanently impossible to trigger a specific relationship-affinity source for a specific character pairing (see `design/gdd/affinity-data-pool.md` §3g's registry)?
+   - **If no**: proceed to step 3.
+   - **If yes**: this is not a quick fix — stop, do not write, and tell the user this Warning item needs to go through `/design-review [gdd-path]` instead, where the full 5a-ter-equivalent registry/D-1 confirmation flow applies.
+3. **Approval**: Use `AskUserQuestion` — "Apply this fix to `design/gdd/[gdd-name].md`?" Options: `[A] Yes — write it` / `[B] Skip this one` / `[C] Show me more context first`.
+4. **Write**: On approval, use `Edit` with the section heading included in `old_string` for uniqueness (same rule as `/design-system` Section 4, step 7). Confirm the write.
+5. **Record**: Note the applied fix in the session state extract (Phase 6's `## Session Extract` block, or a follow-up append if that block was already written) so the fix isn't lost from the audit trail.
+
+If multiple quick-fix options were selected, repeat steps 1–5 for each one in turn — do not batch drafts across GDDs.
 
 ---
 
