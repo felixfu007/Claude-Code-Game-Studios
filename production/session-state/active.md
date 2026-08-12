@@ -2,6 +2,8 @@
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
 Feature: 存檔系統 + 好感度數值池 + 游標高亮狀態 + game-concept 的跨文件一致性收斂
 Task: `save-system.md` 第七輪 `/design-review`(原目標型三專家,因觸發第六輪自訂升級條件擴大為完整模式七專家 + creative-director 綜合裁決)於 2026-08-12 完成並已 commit——判 NEEDS REVISION,7 項 BLOCKING(去重後)全數同輪修訂完成:B1(第四終止路徑未傳播至六處,含新查獲的 Dependencies 表最陳舊殘留)、B2(cursor 端 F2-1/F2-2 修法缺乏可歸因驗證,新增 AC-61/62/63)、B3(AC-68/73 引用不存在的診斷能力,Core Rules #15 新增第四項診斷介面+AC-78)、B4(AC-10a 方法論宣稱矛盾,完備性表拆列)、B5(Core Rules #14「確保」範圍結構性排除步驟四,AC-75 逐步驟列舉)、**B6**(路徑四保護等級低於資料已損毀的槽——使用者裁決 U-1 甲案,延伸唯讀介面+新增 AC-77+復原前景語句)、**B7**(陣亡配對 `source_absence_cc` 實為 D-1 修法「非單調不可逆」全稱宣稱的反例,跨三份文件——使用者裁決 U-2 丙案,通則化可逆性判定+角色語言陳述不用關閉語言+新增 AC-81 反面測試)。另 U-3(乙案,完備性執行紀錄表升級觸發條件改寫為可稽核)已對本輪自身生效,9 條新增義務逐義務核對 8 條齊全、1 條(Core Rules #8 操作原子性)誠實登記為無法用 AC 驗證、指派架構階段程式碼審查。落地檔案:`save-system.md`、`cursor-highlight-state.md`、`game-concept.md`、`affinity-data-pool.md`、`systems-index.md`、`design/gdd/reviews/save-system-review-log.md`(第七輪完整條目+Ledger S13)。**下一輪覆核建議**:目標型,3 位專家(qa-lead/systems-designer/narrative-director),聚焦(1)本輪修訂有無新接縫、(2)逐字查證本輪每一句「已修訂/已登記」宣稱(本輪第二次抓到前輪宣稱不實的殘留)、(3)B7 通則化修法是否涵蓋非陣亡情境,若三點通過建議 APPROVED 移交 `/create-architecture`。**已 commit。**
+
+**流程變更(2026-08-12,同一 session,使用者要求)**:因多輪 `/design-review` 消耗 token 過多且討論發散,已對 `/design-review` skill 新增 Phase 0b「嚴重度分類 + 止損政策」(BLOCKING-NOW / DEFER-TO-CALIBRATION / ADVISORY 三分類、只有真設計缺陷才升級完整模式、連續兩輪無新 BLOCKING-NOW 即宣告 APPROVED),對未來所有系統的審查自動生效。同時壓縮 `save-system-review-log.md`(96KB→57KB,-41%,決策表格與 Ledger 完整保留,僅精簡散文敘述)+ `save-system.md` 標頭(純沿革敘事移除,重規範內容留待文件穩定後再處理,避免中途機械改寫誤刪範圍聲明)。已 commit(`4bd4d22`)。
 <!-- /STATUS -->
 
 ## 第十二輪目標型複核 + 落地修訂 — 2026-08-10(同一 session,接續第十一輪)
