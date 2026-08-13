@@ -377,3 +377,36 @@ Prior verdict resolved: 是——第九輪 11 項阻擋項於同一 session 內�
 **Prior verdict resolved**: 是——第十三輪四項 BLOCKING-NOW 已於本輪(第十四輪)驗證並全數修訂完成。
 
 **尚未 commit。**
+
+---
+
+## Review — 2026-08-13 — 第十五輪(目標型,2 位專家,依第十四輪自身建議與使用者裁決範圍)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Review target**: GDD body(targeted-at-content——僅驗證第十四輪四項修訂本身〔路徑四措辭修正、AC-59 範圍排除、Core Rules #7 乙分支子情境區分、AC-61/62/63a GIVEN 改寫〕有無新接縫,範圍與第十四輪相同,不重新審查已收斂的核心架構其餘部分,不觸及已凍結的滑鼠奪權子機制)
+**Scope signal**: S(純規則文字/AC 措辭修訂,無新增依賴、無新公式)
+**Specialists**: systems-designer、qa-lead(兩位平行,依第十四輪自身建議與使用者裁決範圍執行)
+**Blocking-now**: 1(design-content: 0 / propagation: 1)| Deferred: 0 | Advisory: 3(1 已修、2 未落地)
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 分類 | 修訂內容 |
+|---|---|---|---|
+| 1 | AC-63b 的 GIVEN 仍以「與 AC-63a 相同」指名前置狀態,與 AC-61 第十四輪修訂後宣稱的「AC-62/AC-63a/AC-63b 各自獨立陳述 GIVEN 前置狀態」字面矛盾——第十四輪 grep 自核只搜尋了「AC-61 情境」這個特定字串,未涵蓋 AC-63b 內部指向 AC-63a 的同構殘留 | propagation(第十四輪已在 AC-62/AC-63a 建立的「直接陳述、不以 AC 編號指名」修法,未同步套用到 AC-63b) | AC-63b 的 GIVEN 改寫為直接陳述狀態本身(鏡射 AC-63a 的既有陳述方式),不再以「與 AC-63a 相同」指名 |
+
+**ADVISORY(1 項已同輪處理,2 項未落地)**:
+- [已修] Core Rules #7 丙分支「與 `save-system.md` 路徑四的關係」段落的第十四輪修訂註記,以行號(第 76/78/290 行)引用 `save-system.md`,牴觸 `.claude/rules/design-docs.md`「無行號自我引用」規則——已改為穩定指標引用(Core Rules #5 路徑〔四〕/ Interactions『重複回寫失敗須主動告知』第一級)。
+- [未落地] AC-63a 路徑四子句「並非對路徑四本身無感」與「確實會收到、也確實需要知道」語意輕微重複,不影響可測性,未修改。
+- [未落地] AC-59 範圍排除段落可選擇性補一句指向 Core Rules #7(`:162`)說明暫停期間非存讀檔類主動呼叫的處置依據,目前僅能從 Core Rules #7 反推;不影響可測性,未修改。
+
+**post-revision grep 自我核對(Phase 5 強制步驟)**:掃描「AC-61 情境」「與 AC-63a 相同」「第 76/78/290 行」「對呼叫方透明」——修正 2 處(AC-63b GIVEN、Core Rules #7 丙分支行號引用);確認清潔:其餘全部命中(標頭第 4-5 行、AC-61/62/63a 自身的說明性括號註記、`systems-index.md` 第 166 列)皆為引號包裹的歷史性描述(說明「已修正的舊措辭」),非現行主張,符合本文件既有的修訂註記慣例。
+
+**Permanent Lockout Event Check**:本輪一項修訂為 AC 前置狀態陳述方式的措辭修正,未引入任何使特定配對的特定好感度來源永久無法被觸發的規則(本文件本身不涉及好感度配對機制)。不適用。
+
+**收斂性判讀**:第十四輪(4 項 BLOCKING-NOW,已修)與本輪(1 項 BLOCKING-NOW,已修)皆屬「驗證第十三/十四輪局部修訂本身」這個子範圍的驗證輪,**尚未達到「連續兩輪零新 BLOCKING-NOW」**——本輪找到 1 項新發現,零發現連續計數重新歸零。核心架構收斂狀態不受本輪影響(本輪聚焦局部修訂驗證,非核心架構重新審查)。
+
+**下一輪待辦(第十六輪退場條件)**:建議目標型,1-2 位專家(systems-designer、qa-lead 為主),只驗證本輪唯一一項修訂本身(AC-63b GIVEN 改寫)有無新接縫,範圍限縮至本輪。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則(本輪與第十六輪皆為聚焦同一子範圍的驗證輪),可視此子範圍為收斂,連同已確認零發現的核心架構其餘部分,一併宣告 APPROVED、移交 `/create-architecture`(滑鼠奪權子機制凍結狀態獨立於此判定)。**建議 `/clear` 後於新 session 執行。**
+
+**Prior verdict resolved**: 是——第十四輪四項 BLOCKING-NOW 已於本輪(第十五輪)驗證並全數修訂完成。
+
+**尚未 commit。**

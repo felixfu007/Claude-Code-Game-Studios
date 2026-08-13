@@ -1,9 +1,11 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
-Feature: 存檔系統(已 Approved)+ 游標高亮狀態(下一步待辦)+ 好感度數值池(已 Approved)+ game-concept 的跨文件一致性收斂
+Feature: 存檔系統(已 Approved)+ 游標高亮狀態(第十五輪已完成,下一步待辦)+ 好感度數值池(已 Approved)+ game-concept 的跨文件一致性收斂
 Task: **`design/gdd/save-system.md` 第十五輪已完成並正式宣告 APPROVED(2026-08-13)**——security-engineer 複核第十四輪 SE-3 修訂,發現 1 項 propagation 型機械同步缺口(Core Rules #16 矩陣「#1↔#8」列殘留舊版「四個元素」描述,已修正為五元素),使用者裁決此類機械同步缺口視為收尾而非需再開一輪的新接縫,合併第十四/十五輪滿足 Phase 0b 收斂門檻。**存檔系統移交 `/create-architecture`**,`systems-index.md` 狀態欄已同步為 Approved。詳見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目。
 
-**下一步(待辦)**:`design/gdd/cursor-highlight-state.md` 第十四輪目標型複核——依第十三輪(2026-08-13,同一 session,已完成 4 項 BLOCKING-NOW 修訂,見下方獨立段落)退場條件,派 systems-designer + qa-lead 兩位專家,只驗證第十三輪四項修訂本身(暫停/模態範圍澄清、AC-62 範圍縮限、與 save-system.md 路徑四的對齊、AC-60 拆分)有無新接縫,不重審已收斂的核心架構其餘部分,不觸及已凍結的滑鼠奪權子機制。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 APPROVED、更新 `systems-index.md`、移交 `/create-architecture`。**建議 `/clear` 後於新 session 執行 `/design-review design/gdd/cursor-highlight-state.md`。**
+**`design/gdd/cursor-highlight-state.md` 第十五輪已完成(2026-08-13,新 session,尚未 commit)**:目標型 2 位專家平行(systems-designer、qa-lead),依第十四輪自身建議範圍,只驗證第十四輪四項修訂本身(路徑四措辭修正、AC-59 範圍排除、Core Rules #7 乙分支子情境區分、AC-61/62/63a GIVEN 改寫)有無新接縫。找到 **1 項 BLOCKING-NOW**(propagation failure)——AC-63b 的 GIVEN 仍以「與 AC-63a 相同」指名前置狀態,與 AC-61 第十四輪修訂後宣稱的「各自獨立陳述」字面矛盾(第十四輪 grep 自核只搜尋「AC-61 情境」,未涵蓋此同構殘留)——已改寫為直接陳述,不再以 AC 編號指名。另修正 1 項 ADVISORY(Core Rules #7 丙分支路徑四段落的行號自我引用,已改為穩定指標引用)。post-revision grep 自核通過。**核心架構收斂狀態不受影響;F2-1/F2-2 局部修訂子範圍尚未達成連續兩輪零發現(第十四輪 4 項、本輪 1 項,皆已修,收斂計數重新歸零)。** review-log 第十五輪條目已寫入,GDD 標頭已同步。
+
+**下一步(待辦)**:`design/gdd/cursor-highlight-state.md` 第十六輪目標型複核——依第十五輪退場條件,派 systems-designer + qa-lead 兩位專家,只驗證本輪(第十五輪)唯一一項修訂(AC-63b GIVEN 改寫)本身有無新接縫,不重審已收斂的核心架構其餘部分,不觸及已凍結的滑鼠奪權子機制。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則(第十五、十六輪皆聚焦同一子範圍)宣告 APPROVED、更新 `systems-index.md`、移交 `/create-architecture`。**建議 `/clear` 後於新 session 執行 `/design-review design/gdd/cursor-highlight-state.md`。**
 
 **`design/gdd/cursor-highlight-state.md` 第十三輪(2026-08-13,同一 session,尚未 commit)**:目標型 3 位專家(systems-designer、qa-lead、godot-specialist),只驗證第十二輪之後新增、從未經本文件自身專家團隊審查過的局部修訂(F2-1/F2-2 相關的 Core Rules #7 新規則與 AC-59~63),明文排除已凍結的滑鼠奪權子機制。找到 4 項 BLOCKING-NOW(暫停/模態「不更新任何狀態欄位」宣稱與 F2-2 甲/丙分支矛盾、AC-62 跨路徑等價斷言對「甲→乙」子情境不成立、Core Rules #7 丙分支/AC-63 未對齊 save-system.md 路徑四、AC-60 裝置權威宣稱為假),全數修訂完成,並拆分 AC-63 為 63a/63b。核心架構收斂計數因本輪新發現而重新起算(第十二輪零發現,第十三輪 4 項已修)。完整記錄見 `design/gdd/reviews/cursor-highlight-state-review-log.md` 第十三輪條目。
 
