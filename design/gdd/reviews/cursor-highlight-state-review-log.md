@@ -410,3 +410,33 @@ Prior verdict resolved: 是——第九輪 11 項阻擋項於同一 session 內�
 **Prior verdict resolved**: 是——第十四輪四項 BLOCKING-NOW 已於本輪(第十五輪)驗證並全數修訂完成。
 
 **尚未 commit。**
+
+---
+
+## Review — 2026-08-13 — 第十六輪(目標型,2 位專家,依第十五輪自身建議範圍)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Review target**: GDD body(targeted-at-content——僅驗證第十五輪唯一一項修訂〔AC-63b GIVEN 改寫〕本身有無新接縫,不重新審查已收斂的核心架構其餘部分,不觸及已凍結的滑鼠奪權子機制)
+**Scope signal**: S(純措辭/指標引用修訂,無新增依賴、無新公式)
+**Specialists**: systems-designer、qa-lead(兩位平行,依第十五輪自身建議範圍執行)
+**Blocking-now**: 1(design-content: 0 / propagation: 1)| Deferred: 0 | Advisory: 0
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 分類 | 修訂內容 |
+|---|------|------|------|
+| 1 | AC-63b 的 **WHEN** 子句仍以「同樣明文排除路徑四」倚賴 AC-63a 才能解讀——比較詞「同樣」無指標,未如 AC-63a 般指向 Core Rules #7「與 `save-system.md` 路徑四的關係」段落這個唯一權威來源,是第十五輪 GIVEN 子句修法的同類缺陷殘留於相鄰 WHEN 子句(qa-lead 發現) | propagation | 補上對 Core Rules #7 該段落的指標引用,不重述定義本身,比照 AC-63a 既有模式與 `.claude/rules/design-docs.md` 單一定義來源規則 |
+
+systems-designer 平行審查 GIVEN 子句本身、AC-63a/63b 分支的互斥完整性、跨文件傳播(`systems-index.md` 第 166 列)三項,皆判零發現。
+
+**post-revision grep 自我核對(Phase 5 強制步驟)**:全庫掃描「同樣明文排除路徑四」「與 AC-63a 相同」「各自獨立陳述的 GIVEN」——修正處已同步;其餘命中(標頭歷史記錄、AC-63a/AC-61 自身既有的說明性括號註記)皆為引號包裹的歷史性描述,非現行主張。`systems-index.md` 第 166 列僅泛稱「AC-61/62/63a/63b」不重述 GIVEN/WHEN 內容,不受此修訂影響。
+
+**Permanent Lockout Event Check**:本輪修訂為 AC 內部指標引用的措辭補完,未引入任何使特定配對的特定好感度來源永久無法被觸發的規則(本文件本身不涉及好感度配對機制)。不適用。
+
+**收斂性判讀與使用者裁決**:第十五輪(1 項 BLOCKING-NOW,propagation,已修)與本輪(1 項 BLOCKING-NOW,propagation,已修)皆屬「AC-63b 相關傳播缺陷」這個子範圍的驗證輪,字面上仍未達到「連續兩輪零新 BLOCKING-NOW」的 Phase 0b 收斂門檻。**使用者於本輪审查後主動提出實質性質疑**:連續三輪(14→15→16)發現的項目已收斂到「AC 是否以指標引用 canonical 段落、而非重述定義」這個層級的文件自我指涉精確度問題,不影響任何實際執行行為;相對於《弈緣》作為回合制戰棋的實際風險,繼續逐輪追這類措辭層級發現已不成比例。使用者裁決:**明文覆蓋 Phase 0b 的字面收斂門檻,就此宣告文件整體 Approved,不再開第十七輪**。核心架構規則本身已在多輪中反覆驗證健全,本輪起真正剩下的落差性質上屬於 ADVISORY 等級的文件精確度,不是設計正確性問題。滑鼠奪權子機制維持第十二輪裁決(降級為一般建議事項、暫停重新設計),不影響本次 Approved 判定。
+
+**Prior verdict resolved**: 是——第十五輪唯一一項 BLOCKING-NOW 已於本輪(第十六輪)驗證並修訂完成;本輪自身新發現的 1 項 propagation 缺陷已同輪修訂,經使用者裁決收斂,不再等待字面兩輪掛零門檻。
+
+**本文件狀態自本輪起正式為 Approved,移交 `/create-architecture`。**
+
+**尚未 commit。**
