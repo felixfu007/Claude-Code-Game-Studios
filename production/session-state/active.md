@@ -1,7 +1,15 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
-Feature: 存檔系統(已 Approved)+ 游標高亮狀態(第十六輪已完成,已 Approved)+ 好感度數值池(已 Approved)+ game-concept 的跨文件一致性收斂
-Task: **`design/gdd/save-system.md` 第十五輪已完成並正式宣告 APPROVED(2026-08-13)**——security-engineer 複核第十四輪 SE-3 修訂,發現 1 項 propagation 型機械同步缺口(Core Rules #16 矩陣「#1↔#8」列殘留舊版「四個元素」描述,已修正為五元素),使用者裁決此類機械同步缺口視為收尾而非需再開一輪的新接縫,合併第十四/十五輪滿足 Phase 0b 收斂門檻。**存檔系統移交 `/create-architecture`**,`systems-index.md` 狀態欄已同步為 Approved。詳見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目。
+Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,新 GDD `tactical-combat-system.md` 骨架已建立)** + game-concept 的跨文件一致性收斂
+Task: **`design/gdd/tactical-combat-system.md`(戰棋移動與交戰系統,含武器射程分層)`/design-system` 進行中(2026-08-13,新 session,使用者已示意今天在此停下)**——Section A(Overview)、B(Player Fantasy)、C(Detailed Design:Core Rules 1-8/States/Interactions)、D(Formulas:公式一傷害/公式二敵方縮放/公式三可達格,已 spawn systems-designer)、E(Edge Cases:視線幾何/最小射程/陣亡佔位釋放/預判即時性/禁止友軍互攻/地形動態邊界)、F(Dependencies)**皆已核准寫入**。尚未寫入:G(Tuning Knobs)、Visual/Audio Requirements、UI Requirements、H(Acceptance Criteria)、Open Questions。review mode 未設定,依預設採 lean。
+
+**已知待補項(留給 Tuning Knobs/後續節或下游系統)**:`Φ`(好感度—位置修正)合法值域待好感度—位置連鎖系統設計時聲明並回填;`enemy_advantage_pct` 起始建議 0.20,待該系統加成幅度定案後交叉校準;武器射程分層三個起始 tier(近戰1/中程2起/遠程至4)的精確數值待 Tuning Knobs 校準;移動路徑非唯一時的路徑選擇規則留待 UI Requirements/`/create-architecture`;戰鬥中途地形動態改變的情境留待系統 #14 設計時確認是否存在。
+
+**下一步**:於新 session(或本 session 稍後)繼續執行 `/design-system 戰棋移動與交戰系統(含武器射程分層)`——skill 會偵測 `tactical-combat-system.md` 已完成的 6 節,從 Section G Tuning Knobs 接續。**務必先貼出草稿文字再問核准**(本輪 authoring 兩度違反此協議,已被使用者當場糾正)。
+
+**`design/gdd/save-system.md` 第十五輪已完成並正式宣告 APPROVED(2026-08-13)**——security-engineer 複核第十四輪 SE-3 修訂,發現 1 項 propagation 型機械同步缺口(Core Rules #16 矩陣「#1↔#8」列殘留舊版「四個元素」描述,已修正為五元素),使用者裁決此類機械同步缺口視為收尾而非需再開一輪的新接縫,合併第十四/十五輪滿足 Phase 0b 收斂門檻。**存檔系統移交 `/create-architecture`**,`systems-index.md` 狀態欄已同步為 Approved。詳見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目。
+
+(以下為歷史紀錄,見更早 Task 欄)
 
 **`design/gdd/cursor-highlight-state.md` 第十六輪已完成並正式宣告 APPROVED(2026-08-13,同一 session,尚未 commit)**:目標型 2 位專家平行(systems-designer、qa-lead),只驗證第十五輪唯一一項修訂(AC-63b GIVEN 改寫)有無新接縫。qa-lead 找到 **1 項 BLOCKING-NOW**(propagation)——AC-63b 的 WHEN 子句仍以「同樣明文排除路徑四」倚賴 AC-63a 才能解讀,未如 AC-63a 般指向 Core Rules #7 canonical 段落——已補上指標引用,同輪修訂完成。**使用者於本輪後提出實質性質疑**:連續三輪(14→15→16)發現的項目已收斂到「AC 是否以指標引用取代重述定義」這個文件自我指涉精確度層級,不影響任何實際執行行為,相對《弈緣》回合制戰棋的實際風險已不成比例,**主動要求就此收斂、明文覆蓋 Phase 0b「連續兩輪零新 BLOCKING-NOW」的字面門檻,宣告 Approved,不再開第十七輪**。已完成:GDD 標頭 Status 改為 Approved(記錄使用者覆蓋理由)、review-log 第十六輪條目寫入(記錄收斂裁決)、`systems-index.md` 第 3 列狀態欄改為 Approved、Progress Tracker「Design docs approved」計數更新為 3(好感度數值池、存檔系統、單一游標/高亮狀態系統皆已 Approved)。滑鼠奪權子機制維持第十二輪裁決(降級為一般建議事項、暫停重新設計),不影響此次 Approved 判定。**下一步待使用者指示**——三份系統 GDD 皆已 Approved,可能的方向:移交 `/create-architecture`、或處理仍未落地的跨文件遺留項(D-1、F2-1/F2-2 殘留 DEFER/ADVISORY、`systems-index.md` 標頭內部分行號自我引用)。**尚未 commit。**
 
