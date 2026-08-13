@@ -31,3 +31,14 @@ paths:
   or dictionary file that stores definitions itself would just add one more place
   that fact needs to stay in sync; a pointer-only index does not have this problem
   because there is nothing in it to go stale except the pointer's target path.
+- **No line-number self-references**: never point to another passage in a design
+  doc, `systems-index.md`, or a `*-review-log.md` by line number (e.g. "見下方第
+  151 列", "see line 295"). Documents in this family grow and get edited by many
+  rounds of `/design-review`; line numbers drift within the same session and are
+  routinely stale by the next round (confirmed recurring: `systems-index.md`'s
+  own header referenced "第 151/171 列" and "第 151/153 列" for rows that had
+  already moved to different line numbers by the time those references were
+  checked). Point to the target instead by a stable handle: the row's obligation
+  keyword/subject (e.g. "見 Cross-System Obligations Registry『序列化生命週期
+  通知介面』列"), a Core Rules/AC number, or a section heading — none of these
+  shift when unrelated content is inserted above them.

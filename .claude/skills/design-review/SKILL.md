@@ -33,7 +33,9 @@ Extract `--depth [full|lean|solo]` if present. Default is `full` when no flag is
 
 **Escalation gate (replaces ad-hoc "discover a new seam" judgment calls):** A targeted re-review escalates to full multi-specialist mode **only if at least one finding is BLOCKING-NOW and is a genuine design-content defect** (the design itself is wrong) rather than a **propagation failure** (a correct prior fix that just wasn't copied to every place it needed to be — stale cross-reference, unsynced count, matrix row not updated). Propagation failures, however numerous, are fixed directly without escalating; they don't indicate the design is unsound, only that the last edit was incomplete.
 
-**Convergence / stop-declaration rule:** Track verdicts across rounds in the document's review-log. **The moment two consecutive rounds (of any depth — solo, lean, targeted, or full) produce zero new BLOCKING-NOW findings**, declare `APPROVED` and stop further review rounds on this document, even if a DEFER-TO-CALIBRATION or ADVISORY backlog remains open. Remaining items stay visible in Open Questions / the Ledger for whoever picks the document back up (architecture phase, implementation, a future balance pass) — they are not lost, just no longer grounds to keep spending review cycles on a document that has stopped producing real findings.
+**Convergence / stop-declaration rule:** Track verdicts across rounds in the document's review-log. **The moment two consecutive rounds *whose review scope includes the target document's own body text* (full-mode, lean-mode, or a targeted review scoped to the GDD's Core Rules/Formulas/Edge Cases/Acceptance Criteria content) produce zero new BLOCKING-NOW findings**, declare `APPROVED` and stop further review rounds on this document, even if a DEFER-TO-CALIBRATION or ADVISORY backlog remains open. Remaining items stay visible in Open Questions / the Ledger for whoever picks the document back up (architecture phase, implementation, a future balance pass) — they are not lost, just no longer grounds to keep spending review cycles on a document that has stopped producing real findings.
+
+**Convergence scope guard — a round whose review target was process/tooling files (`.claude/skills/**`, other automation), not the GDD's own body, does not count toward this streak, no matter how many rounds in a row it produces zero BLOCKING-NOW.** Convergence on the audit apparatus and convergence on the document's own rule content are orthogonal — zero findings in the former says nothing about the latter. Concrete precedent: `save-system.md` rounds 10-12 converged to zero BLOCKING-NOW three rounds running while reviewing only `.claude/skills/*` process files; round 13 finally re-read the GDD body itself and found 7 new BLOCKING-NOW that had sat untouched the whole time. Before declaring APPROVED on the convergence rule, explicitly state in the verdict which of the last two qualifying rounds re-read the document body (not just "two rounds ago" — confirm both were body-scoped).
 
 When reporting a verdict, always state which bucket drove it, e.g. "NEEDS REVISION — 2 BLOCKING-NOW (design-content), 3 propagation failures (fixed same round, no escalation), 5 DEFER-TO-CALIBRATION logged to Open Questions."
 
@@ -283,6 +285,7 @@ Use a third `AskUserQuestion`:
 If yes, append an entry in this format:
 ```
 ## Review — [YYYY-MM-DD] — Verdict: [APPROVED / NEEDS REVISION / MAJOR REVISION NEEDED]
+Review target: [GDD body (full/lean/targeted-at-content) / process-files-only — see Phase 0b convergence scope guard; only the former counts toward the two-round convergence streak]
 Scope signal: [S/M/L/XL]
 Specialists: [list]
 Blocking-now: [count] (design-content: [n] / propagation: [n]) | Deferred: [count] | Advisory: [count]
