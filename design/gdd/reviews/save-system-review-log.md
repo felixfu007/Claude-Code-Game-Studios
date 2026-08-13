@@ -671,3 +671,35 @@ R8 曾判定「阻擋數 24→…→5,缺陷面已幾乎完全移出設計內容
 ### 第十五輪退場條件
 
 **目標型,1 位專家(security-engineer)**,只驗證本輪 SE-3(R14)修訂本身(Core Rules #8 規則集版本號涵蓋、AC-82、矩陣新列、表一/表二更新)有無新接縫——不重新審查 GS-1/SD-1/SD-2/qa-lead 範圍(第十四輪已驗證通過,不在本輪範圍內)。**驗證準則**:若零 BLOCKING-NOW → 依 Phase 0b 收斂規則宣告 **APPROVED**(第十四輪與第十五輪皆為 GDD 本體驗證輪次,滿足新版收斂範圍守門條件)、更新 `systems-index.md`、移交 `/create-architecture`(既有 DEFER×1、ADVISORY×1〔AC-81 第三組〕殘留不影響此判定)。若又出現落在本輪未修訂之舊條文上的 BLOCKING-NOW → 不得再以目標型繼續,比照第十三輪「須改為檢討逐義務表的義務枚舉本身是否遺漏未被寫成義務句的隱含義務,並考慮引入獨立於本文件的第三方全文重讀」的既有處置。
+
+---
+
+## Review — 2026-08-13 — 第十五輪(目標型,1 位專家,依第十四輪退場條件)
+
+**Verdict**: NEEDS REVISION(單一機械同步缺口)→ 已於同一 session 內完成修訂 → **APPROVED**
+**Review target**: GDD body(targeted-at-content——security-engineer 對抗性複核第十四輪 SE-3 修訂本身,即 Core Rules #8 規則集版本號涵蓋範圍的變更,有無在文件其他復述同一事實的段落留下未同步的接縫)
+**Scope signal**: XS(單一列描述性文字與新增機制無關,不改變任何規則行為)
+**Specialists**: security-engineer(唯一,依第十四輪退場條件指派,不重跑其餘三位範圍)
+**Blocking-now**: 1(propagation)| Defer-to-calibration: 0(既有 1 項不變)| Advisory: 0(既有 1 項〔AC-81 第三組〕不變)
+
+**背景**:第十四輪找出並修訂 SE-3(manifest 規則集版本號正式納入 Core Rules #8 頂層雜湊輸入,tuple 從四元素擴為五元素)後,依其自訂退場條件派 security-engineer 單獨複核這項修訂本身是否留下新接縫。
+
+**唯一發現(propagation)**:Core Rules #16「規則交互矩陣」中「#1 存檔資料結構(manifest 欄位定義)↔ #8 頂層完整性標記」列,是這份文件裡除 Core Rules #8 本體之外另一處復述「頂層雜湊 tuple 元素組成」事實的段落——第十四輪修改了 Core Rules #8 本體與 AC-82,但這一列仍寫著修訂前的「tuple 的四個元素」,與已改為五元素的本體描述不一致。屬本文件家族已知的招牌失敗模式(同一事實兩處記載,一處沒跟上),非新設計缺陷。
+
+**是否升級為完整模式**:不升級。單一列描述性文字同步,無新規則語意、無新公式、無新依賴,修法唯一且明確。
+
+**是否視為獨立於「零 BLOCKING-NOW」門檻的機械修正(使用者裁決)**:是。使用者核准將此發現定性為與 Phase 5 grep 自核同類的「同一事實復述處未同步」機械修正,而非開啟新一輪目標型覆核所需驗證的獨立設計接縫——理由:①修訂內容是描述性文字裡的元素計數,不改變任何規則行為、判準或介面;②發現與修訂皆發生在同一次覆核 session 內,等同於把它併入第十四輪修訂本應涵蓋、但被 Phase 5 grep 自核字串清單漏掃的同一次收尾;③若逐一為此類機械同步缺口另開一輪,會讓收斂流程本身陷入無限迴歸,與 Phase 0b 止損政策的設立初衷相牴觸。**因此本輪雖非嚴格意義的「零 BLOCKING-NOW」,仍依此裁決宣告收斂。**
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 分類 | 修訂內容 |
+|---|---|---|---|
+| SE-4(R15) | Core Rules #16 矩陣「#1↔#8」列仍寫「tuple 的四個元素」,與第十四輪已改為五元素的 Core Rules #8 本體不同步 | propagation | 該列改寫為「tuple 的五個元素:規則集版本號 + 逐區塊 tuple 的四個元素(來源識別碼/版本/逐區塊雜湊/遷移完成標記)」,並註記「未來若 #1 或 #5 新增欄位,須同步手動更新 #8 的 tuple 定義」,新增第十五輪修訂註記 |
+
+**post-revision grep 自我核對(Phase 5 強制步驟)**:對 `四個元素`、`四元素`、`tuple 的四` 三個字串於 `design/gdd/save-system.md` 全文 grep,確認除本輪修正列與歷史輪次敘述(刻意保留)外無殘留;`design/gdd/systems-index.md`、`design/gdd/affinity-data-pool.md` 未包含此描述,無需同步。
+
+**Permanent Lockout Event Check**:本輪修訂為單一矩陣列描述性文字同步,未引入任何使特定配對的特定好感度來源永久無法被觸發的規則。本輪目標檔案不是 `game-concept.md`,`affinity-data-pool.md` §3g 登記表本輪無新增列。
+
+**收斂性判讀**:依上方使用者裁決,第十四輪(1 項 design-content BLOCKING-NOW,已修)與第十五輪(1 項 propagation 型機械同步缺口,已修、經使用者裁決視為收尾而非新接縫)合併視為滿足 Phase 0b「連續兩輪驗證 GDD 本體、無需再開新領域」的收斂門檻。**`design/gdd/save-system.md` 正式宣告 APPROVED,移交 `/create-architecture`**(既有 DEFER×1〔AC-79 跨寫入快取 bug 覆蓋缺口〕、ADVISORY×1〔AC-81 第三組缺獨立斷言〕殘留不影響此判定,留待架構階段或未來觸及對應條文的輪次)。
+
+**Prior verdict resolved**: 是——第十四輪 SE-3 修訂本身經對抗性複核,除上述單一描述性文字同步缺口外,核心修法（規則集版本號納入雜湊輸入的方向與 AC-82 的驗證邏輯）未被推翻。
