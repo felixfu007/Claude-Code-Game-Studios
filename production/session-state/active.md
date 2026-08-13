@@ -1,6 +1,6 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
-Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,新 GDD `tactical-combat-system.md` 骨架已建立)** + game-concept 的跨文件一致性收斂
+Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,`tactical-combat-system.md` 已完成 6/8 節,下一節 Tuning Knobs)** + game-concept 的跨文件一致性收斂
 Task: **`design/gdd/tactical-combat-system.md`(戰棋移動與交戰系統,含武器射程分層)`/design-system` 進行中(2026-08-13,新 session,使用者已示意今天在此停下)**——Section A(Overview)、B(Player Fantasy)、C(Detailed Design:Core Rules 1-8/States/Interactions)、D(Formulas:公式一傷害/公式二敵方縮放/公式三可達格,已 spawn systems-designer)、E(Edge Cases:視線幾何/最小射程/陣亡佔位釋放/預判即時性/禁止友軍互攻/地形動態邊界)、F(Dependencies)**皆已核准寫入**。尚未寫入:G(Tuning Knobs)、Visual/Audio Requirements、UI Requirements、H(Acceptance Criteria)、Open Questions。review mode 未設定,依預設採 lean。
 
 **已知待補項(留給 Tuning Knobs/後續節或下游系統)**:`Φ`(好感度—位置修正)合法值域待好感度—位置連鎖系統設計時聲明並回填;`enemy_advantage_pct` 起始建議 0.20,待該系統加成幅度定案後交叉校準;武器射程分層三個起始 tier(近戰1/中程2起/遠程至4)的精確數值待 Tuning Knobs 校準;移動路徑非唯一時的路徑選擇規則留待 UI Requirements/`/create-architecture`;戰鬥中途地形動態改變的情境留待系統 #14 設計時確認是否存在。
