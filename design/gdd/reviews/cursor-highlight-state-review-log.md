@@ -347,4 +347,33 @@ Prior verdict resolved: 是——第九輪 11 項阻擋項於同一 session 內�
 
 **Prior verdict resolved**: N/A——本輪驗證對象是第十二輪之後才新增、從未被審查過的內容,非驗證第十二輪本身的修訂(第十二輪核心架構部分已確認零新發現,不受本輪影響)。
 
+---
+
+## Review — 2026-08-13 — 第十四輪(目標型,2 位專家,依第十三輪自身建議與使用者裁決範圍)
+
+**Verdict**: NEEDS REVISION → 已於同一 session 內完成修訂
+**Review target**: GDD body(targeted-at-content——僅驗證第十三輪四項修訂本身〔暫停/模態範圍澄清、AC-62 範圍縮限、路徑四對齊、AC-60 拆分〕有無新接縫,不重新審查已收斂的核心架構其餘部分,不觸及已凍結的滑鼠奪權子機制)
+**Scope signal**: S(純規則文字/AC 措辭修訂,無新增依賴、無新公式;其中 1 項需在 `save-system.md` 側核對但未修改該文件任何規則邏輯)
+**Specialists**: systems-designer、qa-lead(兩位平行,依第十三輪自身建議與使用者裁決範圍執行)
+**Blocking-now**: 4(design-content: 4 / propagation: 0)| Deferred: 4 | Advisory: 5
+
+**Revision list(blocker → fix applied,同一 session 內完成)**:
+
+| # | 阻擋項摘要 | 分類 | 修訂內容 |
+|---|---|---|---|
+| 1 | Core Rules #7 丙分支「路徑四對呼叫方透明」宣稱,經直接核對 `save-system.md` 第 76/78/290 行證實為假(該文件要求第一次發生即回傳可區分結構化結果、下游 UI 須主動告知) | design-content | 修正措辭:分支路由結論(走甲/乙、不落入丙分支)不變,但明文承認呼叫方會收到可區分結果、`save-system.md` 賦予其獨立告知義務,不再宣稱「透明」「不需要知道」 |
+| 2 | AC-59「完全相同/不竄改狀態」斷言未隨 Edge Cases 修訂 1 的範圍收斂同步,與 AC-63b(丙分支原目標已失效時的正確行為)直接矛盾 | design-content | 新增「範圍排除」段落,明文排除暫停期間發生甲/丙分支主動改標的情境 |
+| 3 | AC-62 新造術語(乙-直接路徑/甲→乙路徑)僅存在於 AC 層,Core Rules #7 情境(乙)規則本體仍對整個乙分支維持無條件的「完全相同的程式碼路徑」宣稱,與 AC-62「與甲→乙路徑的區隔」矛盾 | design-content | Core Rules #7 情境(乙)新增「乙分支兩個子情境的區分」段落,回寫術語與裝置權威差異說明 |
+| 4 | AC-61「各自獨立可建構」宣稱與 AC-62/AC-63a 實際仍以「AC-61 情境」指名前置狀態的字面矛盾,牴觸 Testing Standards「Isolation」原則 | design-content | AC-62/AC-63a 的 GIVEN 改寫為直接陳述狀態本身,不再以 AC 編號指名 |
+
+**post-revision grep 自我核對(Phase 5 強制步驟)**:掃描「AC-61 情境」「對呼叫方透明」「不需要知道路徑四」「完全相同的程式碼路徑」,找到 2 處本輪修訂未同步的傳播失敗(同一輪內遺漏,非新設計缺陷)——AC-62「與新開局路徑的等價性斷言」段落仍以「AC-61 情境」指名甲→乙路徑、AC-63a WHEN 子句仍複述修訂前的「路徑四對呼叫方透明」舊措辭——皆已直接修正為與本輪 Core Rules #7/AC-62 GIVEN 一致的文字。`systems-index.md` Cross-System Obligations Registry 第 166 列同步更新,移除「對呼叫方透明」舊措辭。重新掃描確認無殘留。
+
+**Permanent Lockout Event Check**:本輪四項修訂皆為暫停/存檔載入交接的規則文字與跨文件對齊,未引入任何使特定配對的特定好感度來源永久無法被觸發的規則(本文件本身不涉及好感度配對機制)。不適用。
+
+**收斂性判讀**:核心架構收斂狀態不受本輪影響——本輪聚焦驗證第十三輪的四項局部修訂,不是核心架構的重新審查,不重新起算或視為核心架構收斂輪。第十三輪與本輪皆屬「第十三輪新增局部規則」這個子範圍的驗證輪,尚未達到「連續兩輪零新 BLOCKING-NOW」(本輪找到 4 項,已修)。
+
+**下一輪待辦(第十五輪退場條件)**:建議目標型,1-2 位專家(systems-designer、qa-lead 為主),只驗證本輪四項修訂本身(路徑四措辭修正、AC-59 範圍排除、Core Rules #7 乙分支子情境區分、AC-61/62/63a GIVEN 改寫)有無新接縫,範圍與本輪相同,不觸及凍結區。若零 BLOCKING-NOW → 依 Phase 0b 收斂規則(本輪與第十五輪皆為聚焦同一子範圍的驗證輪),可視此子範圍為收斂,連同已確認零發現的核心架構其餘部分,一併宣告 APPROVED、移交 `/create-architecture`(既有 DEFER×4、ADVISORY×5 殘留不影響此判定;滑鼠奪權子機制凍結狀態獨立於此判定)。**建議 `/clear` 後於新 session 執行。**
+
+**Prior verdict resolved**: 是——第十三輪四項 BLOCKING-NOW 已於本輪(第十四輪)驗證並全數修訂完成。
+
 **尚未 commit。**
