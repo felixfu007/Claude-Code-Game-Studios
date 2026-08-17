@@ -841,11 +841,13 @@ docs/MULTI-STAGE-DOCUMENT-WORKFLOW.md → content merged into context-management
 2. **Run `/start`** once if you haven't used it — it now correctly identifies
    your stage and skips onboarding steps you've already done.
 
-3. **Check `production/session-state/`** exists and is gitignored:
+3. **Check `production/session-state/`** exists:
    ```bash
    ls production/session-state/
-   cat .gitignore | grep session-state
    ```
+   Note: `session-state/` is **tracked**, not gitignored — `active.md` is the
+   cross-session handoff record that `session-start.sh` reads to restore context,
+   so it belongs in version control. Only `session-logs/` is gitignored.
 
 4. **Test hook execution** — if you're on Windows, verify the new hooks run
    without errors in Git Bash:
