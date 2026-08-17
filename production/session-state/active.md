@@ -1,9 +1,9 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
-Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,`tactical-combat-system.md` 已完成 7/8 必要節 + Tuning Knobs,下一節 Visual/Audio Requirements)** + game-concept 的跨文件一致性收斂
-Task: **`design/gdd/tactical-combat-system.md`(戰棋移動與交戰系統,含武器射程分層)`/design-system` 進行中(2026-08-13,新 session,使用者已示意今天在此停下)**——Section A(Overview)、B(Player Fantasy)、C(Detailed Design:Core Rules 1-8/States/Interactions)、D(Formulas:公式一傷害/公式二敵方縮放/公式三可達格,已 spawn systems-designer)、E(Edge Cases:視線幾何/最小射程/陣亡佔位釋放/預判即時性/禁止友軍互攻/地形動態邊界)、F(Dependencies)**皆已核准寫入**。尚未寫入:G(Tuning Knobs)、Visual/Audio Requirements、UI Requirements、H(Acceptance Criteria)、Open Questions。review mode 未設定,依預設採 lean。
+Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-review` 第二輪修訂已完成,2026-08-17(三),等待第三輪覆核)** + game-concept 的跨文件一致性收斂
+Task: **`design/gdd/tactical-combat-system.md` `/design-review` 第二輪(完整模式,7 位專家 + creative-director)已完成並修訂(2026-08-17(三))**——判 NEEDS REVISION,5 項 BLOCKING-NOW(設計內容缺陷:B-1 對角視線穿角慣例、B-2 敵方威脅範圍不可讀、B-3 陣亡通知回傳值補救分支自我否定、B-4「殺招」致死時序矛盾、B-5 單位是否遮蔽視線未定義)+ D-1(「反擊」孤兒名詞裁決:保留詞條、界定範圍歸屬未來 #6/角色被動)+ 傳播失敗 4 項 + AC 完整性缺口 9 項,全數同輪修訂完成。新增 Formulas 公式四(`threat_range_formula`)+ UI Requirements §1a(威脅範圍疊加圖)+ AC-21(AC 總數 20→21)。grep 自核已執行並額外抓到 1 處「反擊」殘留同步修正。`design/registry/entities.yaml` 已同步新增 `threat_range_formula` 條目。**尚未 commit**,使用者已選定:commit 後 `/clear`,新 session 執行第三輪 `/design-review`(建議縮小為目標型:qa-lead、godot-specialist、ux-designer 三位,範圍限定本輪修訂觸及章節)。
 
-**已知待補項(留給 Tuning Knobs/後續節或下游系統)**:`Φ`(好感度—位置修正)合法值域待好感度—位置連鎖系統設計時聲明並回填;`enemy_advantage_pct` 起始建議 0.20,待該系統加成幅度定案後交叉校準;武器射程分層三個起始 tier(近戰1/中程2起/遠程至4)的精確數值待 Tuning Knobs 校準;移動路徑非唯一時的路徑選擇規則留待 UI Requirements/`/create-architecture`;戰鬥中途地形動態改變的情境留待系統 #14 設計時確認是否存在。
+**第一輪(2026-08-17(二))** 6 項 BLOCKING-NOW + 3 項傳播失敗,已同輪修訂完成,經第二輪覆核確認站得住腳(零推翻)。
 
 **Section G(Tuning Knobs)已於 2026-08-13 核准寫入**——5 個本系統擁有的旋鈕(`enemy_advantage_pct` 0.20、武器射程分層、`base_mp` 4、`terrain_cost` 三階 1/2/3、`max_occlusion_ratio` 0.25)+ 2 個指標引用(`Φ_max` 歸 #5、`player_baseline_stat` 無歸屬)+ 跨系統校準義務(`enemy_advantage_pct` × `Φ_max` 不得獨立校準)。使用者裁決 R-G1~R-G4 全採推薦案。**同輪解決一項內部矛盾**:Core Rules #3(「中程 min≈2」)與 Edge Cases(「三層皆以 1 為下界」)互斥,定案為混合型(近戰 1,1 / 中程 1,2 / 遠程 **2**,4),**Core Rules #3 與 Edge Cases 兩處敘述皆已同步修正**(提選項時只點出 Edge Cases、漏講 Core Rules #3 也需改,寫入時補上)。
 

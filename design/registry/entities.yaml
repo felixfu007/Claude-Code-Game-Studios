@@ -294,6 +294,24 @@ formulas:
     added: 2026-08-17
     revised: ""
 
+  - name: threat_range_formula
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/combat-hud.md           # #10 尚未設計 — 讀取本公式輸出以渲染威脅範圍疊加圖
+    variables:
+      - reachable_set
+      - min_range
+      - max_range
+    output_range: [0, grid_tile_count]   # 集合基數;可為空集合(理論邊界)
+    expression: "{ t ∈ Grid : ∃ r ∈ reachable_set(e), manhattan_distance(r,t) ∈ [min_range(e), max_range(e)] }"
+    notes: "定義見 tactical-combat-system.md Formulas 公式四(2026-08-17 第二輪
+      /design-review 新增,回應 BLOCKING-NOW B-2)。刻意不檢查視線 — 寧可高估
+      危險範圍也不要低估,理由見該 GDD 公式四『視線的刻意省略』段落。"
+    added: 2026-08-17
+    revised: ""
+
 # Example:
 #
 # formulas:

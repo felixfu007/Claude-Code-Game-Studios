@@ -1,0 +1,18 @@
+---
+name: project-tactical-combat-review
+description: 《弈緣》tactical-combat-system.md (戰棋移動與交戰系統) is on round 2 of iterative /design-review; round 2 ux-designer pass found enumerated-checklist drift as the recurring failure mode (same as [[feedback_root_cause_sibling_sweep]] cases elsewhere).
+metadata:
+  type: project
+---
+
+`design/gdd/tactical-combat-system.md` — round 1 (2026-08-17) found 6 BLOCKING-NOW + 3 propagation failures, all fixed same round. Round 2 ux-designer adversarial pass (2026-08-17) re-examined Visual/Audio Requirements and UI Requirements fresh (not just verifying round-1 fixes).
+
+**Round-1 fixes verified complete and correctly integrated** (not just present): UI Requirements §1 turn-level flag overview (回合層級剩餘旗標總覽), UI Requirements §6 gamepad-parity operation list (+主動結束該單位行動), Visual/Audio §5 拒絕音 (+旗標已用過), Visual/Audio §6.1 non-color checklist (+單位當前狀態三態). All check out.
+
+**Round-2 ux-designer findings (fresh adversarial pass), recurring pattern = enumerated-list drift**:
+1. UI Requirements §6's gamepad-parity operation list (`選取單位、逐格檢視、路徑預覽、預判、確認攻擊、主動結束該單位行動、取消`) is missing **確認移動** (confirm-move) as a named operation — the exact same list that round 1 already had to patch once (for 結束行動). Same list, second undetected gap. Textbook [[feedback_root_cause_sibling_sweep]] case: fixing the one item flagged doesn't sweep the rest of the list.
+2. Visual/Audio §6.1's non-color-differentiation enumeration (`適用範圍`) omits terrain cost tiers (平地/森林/山地), the base occlusion marker (§1.4, distinct from the LoS-blocked attack-overlay third state in §1.3), unit faction (敵/我), and unit type/weapon-range identity — all of which the doc elsewhere declares must be visually distinguishable. Recommended fix direction: convert §6.1 from an enumerated whitelist to a blanket principle ("applies to every state distinction defined anywhere in this document, list below is illustrative not exhaustive") since the enumerated-list pattern has now drifted twice in two rounds.
+3. UI Requirements §1's 格位資訊面板 minimum-fields list (地形種類/terrain_cost/遮蔽/佔位單位之陣營-HP-當前狀態) omits the occupying unit's weapon type/range or class identity. Since this panel is the doc's own declared *sole* mechanism for reading board state ("唯一機制"), and Player Fantasy's core promise is full pre-move calculability, a player cannot compute whether a tile is safe from a specific enemy's ranged attack without this field. Flagged BLOCKING-NOW as a self-defeating gap relative to the doc's own stated goal, not merely cosmetic.
+4. DEFER (appropriately, but currently unregistered as OQ): whether navigating cursor to a different unit while a prior unit has an uncommitted/pending order implicitly cancels that order, or requires explicit Cancel first — genuine interaction-flow ambiguity, silent in the doc, not bucketed into the doc's own "punted items" table like similar UI-flow questions are elsewhere.
+5. DEFER: turn-level overview (finding closing round-1 #5) is silent on whether it's interactive (click-to-jump-cursor) or passive-readout; if later made interactive, that interaction must be added to the §6 list (see finding 1's pattern) — recommend scoping explicitly now.
+6. R-VA1 乙案 (遠程盲區 shares "range outside" visual treatment) — doc is genuinely honest here (§6.3 explicitly says "與本項的原則相反, 已知並接受的取捨", gated on OQ-13 playtest). Only critique: the "trivially derivable geometry" justification only covers a player reading their own unit's blind zone, not the compounding cost of reading multiple enemy ranged units' blind zones at once while positioning several allies — recommend widening OQ-13's playtest test case to that scenario specifically.
