@@ -1,11 +1,33 @@
 <!-- STATUS -->
 Epic: 系統設計(/map-systems → /design-system → /design-review → /review-all-gdds)
-Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,`tactical-combat-system.md` 已完成 6/8 節,下一節 Tuning Knobs)** + game-concept 的跨文件一致性收斂
+Feature: 存檔系統(已 Approved)+ 游標高亮狀態(已 Approved)+ 好感度數值池(已 Approved)+ **戰棋移動與交戰系統(`/design-system` 進行中,`tactical-combat-system.md` 已完成 7/8 必要節 + Tuning Knobs,下一節 Visual/Audio Requirements)** + game-concept 的跨文件一致性收斂
 Task: **`design/gdd/tactical-combat-system.md`(戰棋移動與交戰系統,含武器射程分層)`/design-system` 進行中(2026-08-13,新 session,使用者已示意今天在此停下)**——Section A(Overview)、B(Player Fantasy)、C(Detailed Design:Core Rules 1-8/States/Interactions)、D(Formulas:公式一傷害/公式二敵方縮放/公式三可達格,已 spawn systems-designer)、E(Edge Cases:視線幾何/最小射程/陣亡佔位釋放/預判即時性/禁止友軍互攻/地形動態邊界)、F(Dependencies)**皆已核准寫入**。尚未寫入:G(Tuning Knobs)、Visual/Audio Requirements、UI Requirements、H(Acceptance Criteria)、Open Questions。review mode 未設定,依預設採 lean。
 
 **已知待補項(留給 Tuning Knobs/後續節或下游系統)**:`Φ`(好感度—位置修正)合法值域待好感度—位置連鎖系統設計時聲明並回填;`enemy_advantage_pct` 起始建議 0.20,待該系統加成幅度定案後交叉校準;武器射程分層三個起始 tier(近戰1/中程2起/遠程至4)的精確數值待 Tuning Knobs 校準;移動路徑非唯一時的路徑選擇規則留待 UI Requirements/`/create-architecture`;戰鬥中途地形動態改變的情境留待系統 #14 設計時確認是否存在。
 
-**下一步**:於新 session(或本 session 稍後)繼續執行 `/design-system 戰棋移動與交戰系統(含武器射程分層)`——skill 會偵測 `tactical-combat-system.md` 已完成的 6 節,從 Section G Tuning Knobs 接續。**務必先貼出草稿文字再問核准**(本輪 authoring 兩度違反此協議,已被使用者當場糾正)。
+**Section G(Tuning Knobs)已於 2026-08-13 核准寫入**——5 個本系統擁有的旋鈕(`enemy_advantage_pct` 0.20、武器射程分層、`base_mp` 4、`terrain_cost` 三階 1/2/3、`max_occlusion_ratio` 0.25)+ 2 個指標引用(`Φ_max` 歸 #5、`player_baseline_stat` 無歸屬)+ 跨系統校準義務(`enemy_advantage_pct` × `Φ_max` 不得獨立校準)。使用者裁決 R-G1~R-G4 全採推薦案。**同輪解決一項內部矛盾**:Core Rules #3(「中程 min≈2」)與 Edge Cases(「三層皆以 1 為下界」)互斥,定案為混合型(近戰 1,1 / 中程 1,2 / 遠程 **2**,4),**Core Rules #3 與 Edge Cases 兩處敘述皆已同步修正**(提選項時只點出 Edge Cases、漏講 Core Rules #3 也需改,寫入時補上)。
+
+**Visual/Audio Requirements 已於 2026-08-13 核准寫入**——6 小節(範圍/狀態視覺化、傷害回饋、預判三態、陣亡回饋、音效、無障礙)。使用者裁決 **R-VA1 乙案**:遠程盲區**不另設獨立視覺狀態**,與「範圍外」共用處理;連帶處理三處(1.2 記錄取捨與待 playtest 驗證、1.3 補「LoS 第三態 vs 盲區併入範圍外」的刻意差異說明、6.3 無障礙項收窄為只涵蓋遮蔽地形並明文豁免盲區+緩解措施)。`art-director` 已諮詢,並由其發現一項介面缺口(公式三不回傳不可達成因)。
+
+**UI Requirements 已於 2026-08-17 核准寫入**——7 小節(游標即檢視、移動範圍與不可達成因、路徑預覽與選路規則、攻擊確認與傷害拆解面板、預判 UI 生命週期、輸入/合法性閘/取消、歸屬聲明)。使用者裁決全採推薦案:**R-UI1 甲案**(公式三新增 `ignore_occupancy` 布林參數,UI 取差集區分「移動力不足」vs「被佔位擋死」,三集合互斥且窮盡)、**R-UI2 甲案**(等成本多路徑三層決定性 tie-break:成本 → 最少轉彎 → 固定方位優先序 上>右>下>左,無殘留平手)、**R-UI3 甲案**(確認/預判面板完整拆解 `ATK−DEF±Φ`、`Φ=0` 亦不得隱藏;結算飄字只顯總數+`Φ` 方向標記)。**同輪連帶修訂四處**(全部是為避免過期交叉引用):Formulas 公式三新增參數段+變數表列+邊界行為列、公式三「單位被完全包圍」列的「建議 UI 區分」改為已定案指標、Edge Cases「移動路徑非唯一時的顯示」末句改為指標引用、Visual/Audio 1.1 介面缺口警告框改為「已關閉」、Visual/Audio 2「具體 HUD 排版留待 UI Requirements」改為已定案指標。grep 自核已執行(`UI Requirements|留待|待補|待.*階段`),殘留的「留待/待補」皆為真實未決項(#5 的 `Φ` 值域、#14 戰鬥中途地形、動效節奏、已確認行動可否撤銷)。**須發 📌 UX Flag**(本節有實質 UI 需求,Pre-Production 須跑 `/ux-design`,故事引用 UX spec 而非 GDD)。
+
+**Acceptance Criteria 已於 2026-08-17 核准寫入**(`qa-lead` 諮詢,高風險節強制)——**19 條**(Logic 13 / Integration 6,全部 BLOCKING gate)。使用者先裁決三項顆粒度限制(**R-AC1** 涵蓋型別限 Logic+Integration、UI/Visual 留給 `/ux-design`;**R-AC2** 每條 Core Rule/公式一條 AC、邊界值收在向量表;**R-AC3** 禁止型規則各自成條),理由是本專案的招牌失敗模式是傳播失敗而非覆蓋不足(save-system 79 條/15 輪、cursor-highlight 63 條/16 輪)。**我核過 qa-lead 草案並修正其 3 處錯誤**:AC-1 曼哈頓公式第二項變數打錯、AC-12 向量輸入與期望值不符、AC-5 缺「中程打相鄰格」向量。**AC 節末附「明確不寫的項目與承接方」表,即本節的範圍聲明**,供下輪 review 判定未涵蓋項是刻意排除而非疏漏。
+
+**Open Questions 已於 2026-08-17 核准寫入**——18 項(A 跨系統 4 / B 美術UX 4 / C 本文件未定案 4 / D playtest 3 / E 規則不可測 3)。編號為穩定識別碼、依主題分組故組內不必然連續。**阻擋下游的兩項**:OQ-2(`player_baseline_stat` 全專案無擁有 GDD,公式二無法實作)、OQ-10(無「不可通行」地形層級,關卡設計無從表達牆壁水域)。
+
+**⚠️ 本輪最大變動:OQ-9 行動經濟當場裁決,使用者兩軸皆選乙案(與我的推薦相反)**——順序自由(**可攻擊後再移動**)+ 可暫緩(移動旗標與攻擊旗標獨立,回合內任意時機使用)。連帶落地五處:**新增 Core Rules #9「行動經濟」**(雙旗標、順序自由、皆非強制、可暫緩、各限一次不可拆分、預判不消耗旗標、未用旗標不累積)、**States and Transitions 表重寫**(「可行動」成為複合狀態)、**UI Requirements 第 1 節**(格位資訊面板不得只顯示二元狀態,須讀得出剩餘旗標)、**新增 AC-19**(9 組向量,含「先攻擊後移動」專門攔截甲案實作)、**Tuning Knobs 射程分層新增校準前提變更警告**——順序自由使遠程可「打完就退」,近身盲區只再懲罰「回合開始時已被貼身」、不再懲罰「主動進場開火」,遠程分層可能偏強,`max_range=4`/`base_mp=4` 須在首次可玩建置重新檢視(已登記 **OQ-18**)。
+
+**Phase 5 已完成(2026-08-17)**:
+- **5a 自檢**:0 佔位符;AC-1~19 編號連續;OQ 18 項;Core Rules 1~9;11 個 `##` 節齊備;舊三態敘述 0 殘留。檔案 804→約 830 行。
+- **5a-ter 永久封鎖事件檢查(強制)**:**答案為「是」**——陣亡構成永久封鎖成因,但**已在冊**(登記處第 1 列,2026-08-12 第七輪登記),本輪未新增成因,故依維護協定(二),`game-concept.md` D-1 通則無須確認亦無須修改。**查核撈到兩件未做完的事並已修**:(a) 協定(一)要求的「該系統 GDD Dependencies 回指本表」從未兌現,已補;(b) **真實權威歸屬缺口**——登記處第 1 列的「權威定義處」只指向 `affinity-data-pool.md` Core Rules #2/AC-63(定義「陣亡後不可寫入」),但使其**永久**的是 `tactical-combat-system.md` States 表的「終態、無復活機制」宣稱;**該列的永久性倚賴一份它沒有指向的文件**。使用者裁決甲案,已在登記處第 1 列補上指向本文件的交叉指標 + 「若引入復活機制須同輪回頭修訂本列」的提醒。**注意:此為對已 Approved 的 `affinity-data-pool.md` 的修改(僅補交叉引用,未動任何規則文字)。**
+- **5a-bis creative-director 支柱覆核**:依 lean 模式跳過(非 PHASE-GATE)。
+- **5b entity registry**:`design/registry/entities.yaml` 新增 **3 條 formulas**(`damage_formula`、`enemy_stat_scaling`、`reachable_tile_formula`)+ **6 條 constants**(`enemy_advantage_pct`、`base_mp`、`terrain_cost`、`max_occlusion_ratio`、`weapon_range_tiers`、**`player_baseline_stat`**),`last_updated` 改 2026-08-17。**`player_baseline_stat` 刻意以自創的 `status: unowned` 登記**(現有 schema 只有 active/deprecated),讓這個孤兒在資料層可見、且 active/deprecated 兩種 grep 都不會誤判;`source` 欄留空並加 YAML 註解說明。**`referenced_by` 含 5 個尚未存在的預期檔名**(`affinity-position-chain.md`、`combat-hud.md`、`skill-card-system.md`、`living-board-terrain.md`、`tutorial-system.md`)——好處是那些系統設計時 Phase 2 會自動 grep 到約束,壞處是檔名若不同則指標失效,已向使用者明講並獲核准。結構已用 grep 驗證(13 條目、縮排一致、12 active + 1 unowned)。
+- **5c systems-index**:第 4 列狀態 `Not Started → Designed` + GDD 路徑 + 📌 UX Flag 註記;第 5 列補**雙向依賴**警告(#5 同時是本系統上游,`Φ_max` × `enemy_advantage_pct` 硬性交叉校準);Progress Tracker `Design docs started` 3→4、`MVP systems designed` 3/12→4/12(`Design docs approved` 維持 3,本系統尚未 Approved)。
+- **GDD 標頭**:Status 改為 **Designed**(明文標注尚未經 `/design-review`、不得移交 `/create-architecture`)+ 諮詢過的 specialist 清單 + 5a-ter 結果 + UX Flag + 下一步。
+
+**下一步(待使用者指示)**:先 commit(依既有慣例,`/clear` 前必須 commit),然後於**全新 session** 執行 `/design-review design/gdd/tactical-combat-system.md`。**不得與 `/design-system` 同一 session 執行**。建議開場即告知 review:本文件為首次審查(無既往輪次)、lean 模式、AC 節帶有明文範圍聲明表(UI/Visual 型 AC 為刻意排除)、且 Core Rules #9 與其五處連帶修訂是本文件最年輕、最未經檢驗的部分,應優先驗證。
+
+(以下為本輪之前的歷史紀錄)**下一步(已完成)**:繼續執行 `/design-system 戰棋移動與交戰系統(含武器射程分層)`,從 **Acceptance Criteria** 接續(本系統屬 Combat 類別,依 skill 規定此節為**必填**且須諮詢 `art-director`,不得留 `[To be designed]`)。其後:UI Requirements → Acceptance Criteria(高風險節,lean 模式下仍強制諮詢 `qa-lead`)→ Open Questions → Phase 5 收尾。**務必先貼出草稿文字再問核准**(此協議在本 GDD 的 authoring 過程中已被違反兩次,皆由使用者當場糾正)。
 
 **`design/gdd/save-system.md` 第十五輪已完成並正式宣告 APPROVED(2026-08-13)**——security-engineer 複核第十四輪 SE-3 修訂,發現 1 項 propagation 型機械同步缺口(Core Rules #16 矩陣「#1↔#8」列殘留舊版「四個元素」描述,已修正為五元素),使用者裁決此類機械同步缺口視為收尾而非需再開一輪的新接縫,合併第十四/十五輪滿足 Phase 0b 收斂門檻。**存檔系統移交 `/create-architecture`**,`systems-index.md` 狀態欄已同步為 Approved。詳見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目。
 

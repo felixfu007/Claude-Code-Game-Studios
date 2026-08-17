@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: "2026-08-09"
+last_updated: "2026-08-17"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -239,6 +239,61 @@ formulas:
     added: 2026-08-09
     revised: 2026-08-10
 
+  - name: damage_formula
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/affinity-position-chain.md   # #5 尚未設計 — 其 Φ 輸出為本公式輸入
+    variables:
+      - ATK
+      - DEF
+      - Phi
+    output_range: [0, unbounded]
+    expression: "max(0, ATK − DEF + Φ)"
+    notes: "定義見 tactical-combat-system.md Formulas 公式一。零隨機:無命中/爆擊
+      判定。下界硬夾 0(無最低傷害地板)。上界待 #5 聲明 Φ_max 後才能收斂 —
+      見該 GDD Open Questions OQ-1。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: enemy_stat_scaling
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+    variables:
+      - player_baseline_stat
+      - enemy_advantage_pct
+    output_range: [0, unbounded]
+    expression: "ceil(player_baseline_stat × (1 + enemy_advantage_pct))"
+    notes: "定義見 tactical-combat-system.md Formulas 公式二。無條件進位,非四捨
+      五入(round 會在小基準值靜默吃掉優勢)。輸入 player_baseline_stat 目前
+      無擁有 GDD — 見該 GDD Open Questions OQ-2,此公式在該項解決前無法實作。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: reachable_tile_formula
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/combat-hud.md           # #10 尚未設計 — 讀取本公式輸出以渲染移動範圍
+      - design/gdd/living-board-terrain.md # #14 尚未設計 — 其地形變化須符合 terrain_cost 結構
+    variables:
+      - origin
+      - MP
+      - terrain_cost
+      - occupied
+      - ignore_occupancy
+    output_range: [1, grid_tile_count]   # 集合基數;恆非空(至少含 origin)
+    expression: "{ t ∈ Grid : accumulated_cost(origin,t) ≤ MP(u) ∧ occupied(t) = false }"
+    notes: "定義見 tactical-combat-system.md Formulas 公式三。occupied() 不含查詢
+      單位自身。ignore_occupancy=true 僅供 UI 標示不可達成因,不得作為移動合法性
+      依據(見該 GDD AC-14)。"
+    added: 2026-08-17
+    revised: ""
+
 # Example:
 #
 # formulas:
@@ -270,7 +325,94 @@ formulas:
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: enemy_advantage_pct
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/affinity-position-chain.md   # #5 — 硬性交叉校準義務,不得獨立調整
+    value: 0.20
+    unit: ratio
+    notes: "安全範圍 [0, 1.0)。與 #5 的 Φ_max 強耦合 — 兩者必須滿足『Φ 可提供的
+      實際加成 ≥ 本值造成的數值差』,否則「以弱勝強」機制錨點失效。定義與校準
+      義務見 tactical-combat-system.md Tuning Knobs #1 與「跨系統校準義務」。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: base_mp
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/skill-card-system.md    # #6 — 「額外移動力」類卡牌效果須與此對齊
+    value: 4
+    unit: tiles
+    notes: "安全範圍 [3, 6]。見 tactical-combat-system.md Tuning Knobs #3。#6 的
+      額外移動力效果在雙旗標行動經濟下語意待定 — 見該 GDD OQ-4。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: terrain_cost
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/living-board-terrain.md  # #14 — 地形演變須產出符合本階層的資料
+    value: "平地 1 / 森林 2 / 山地 3"
+    unit: mp_per_tile
+    notes: "三階,硬性下限 ≥1(資料寫入時驗證)。目前無「不可通行」層級 — 見
+      tactical-combat-system.md OQ-10(此為阻擋關卡設計的待決項)。定義見該 GDD
+      Tuning Knobs #4。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: max_occlusion_ratio
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+    value: 0.25
+    unit: ratio
+    notes: "安全範圍 [0, 0.5]。對關卡設計的硬性約束:單一戰場中標記為遮蔽的格子
+      佔比上限。定義見 tactical-combat-system.md Tuning Knobs #5。"
+    added: 2026-08-17
+    revised: ""
+
+  - name: weapon_range_tiers
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/combat-hud.md      # #10 — 須渲染三層射程疊加圖
+      - design/gdd/tutorial-system.md # #12 — 須教過遠程近身盲區
+    value: "近戰 (1,1) / 中程 (1,2) / 遠程 (2,4)"
+    unit: manhattan_distance
+    notes: "(min_range, max_range)。遠程 min=2 產生近身盲區,是全文唯一抑制遠程
+      優勢的機制。行動經濟改採順序自由後其力度已被削弱 — 見
+      tactical-combat-system.md OQ-18。結構性質見 Core Rules #3,數值見
+      Tuning Knobs #2。"
+    added: 2026-08-17
+    revised: ""
+
+  # ⚠️ 非標準 status:此項在全專案沒有任何 GDD 擁有它,但已被 enemy_stat_scaling
+  #    當作輸入使用。刻意登記於此,使 /consistency-check 與 /review-all-gdds
+  #    能在資料層看見這個缺口,而非只存在於某份 GDD 的 Open Questions 裡。
+  #    指派擁有者後,請將 status 改為 active 並填入 source。
+  - name: player_baseline_stat
+    status: unowned
+    source: ""    # 無擁有 GDD — 這正是本條目要標記的問題
+    referenced_by:
+      - design/gdd/tactical-combat-system.md   # 公式二以本值為輸入
+    value: null
+    unit: stat_points
+    notes: "我方單位 HP/攻擊/防禦的基準數值表。enemy_stat_scaling 以本值為輸入,
+      但 systems-index.md 的 14 個系統中沒有任何一個擁有它 — 候選是尚未存在的
+      角色/單位系統。**在指派擁有者之前,公式二無法實作。** 見
+      tactical-combat-system.md Open Questions OQ-2(標記為阻擋 /create-architecture
+      的項目)。"
+    added: 2026-08-17
+    revised: ""
 
 # Example:
 #

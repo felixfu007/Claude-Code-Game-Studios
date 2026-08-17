@@ -22,8 +22,8 @@
 | 1 | 好感度數值池(Delta Log) | Core | MVP | Approved(2026-08-10 第十二輪核准,見下方註記) | design/gdd/affinity-data-pool.md | 戰棋移動與交戰系統(2026-08-10 第九輪新增,窄介面依賴——僅需「陣亡通知」單一方法的呼叫契約,不需等待該系統其餘設計定案;不透過好感度—位置連鎖系統轉接以避免循環依賴,見 `affinity-data-pool.md` Dependencies) |
 | 2 | 存檔系統(含跨規則集遷移) | Persistence | MVP | Approved(2026-08-13 第十五輪核准,見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目) | design/gdd/save-system.md | — |
 | 3 | 單一游標/高亮狀態系統 | Core | MVP | Approved(2026-08-13 第十六輪核准,使用者裁決收斂,見 `design/gdd/reviews/cursor-highlight-state-review-log.md` 第十六輪條目) | design/gdd/cursor-highlight-state.md | — |
-| 4 | 戰棋移動與交戰系統(含武器射程分層) | Gameplay | MVP | Not Started | — | 單一游標/高亮狀態系統(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統已被 `cursor-highlight-state.md` 施加至少 5 條硬性義務,但依賴圖從未登記) |
-| 5 | 好感度—位置連鎖系統(含陣亡處理) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
+| 4 | 戰棋移動與交戰系統(含武器射程分層) | Gameplay | MVP | **Designed(2026-08-17 `/design-system` 完成全部必要節 + Visual/Audio + UI + Open Questions;尚未經 `/design-review`)**<br>📌 **UX Flag**:本系統有實質 UI 需求。Pre-Production 須先跑 `/ux-design` 產出 UX spec,**再**寫 epic;實作故事引用 `design/ux/[screen].md`,不得直接引用本 GDD | design/gdd/tactical-combat-system.md | 單一游標/高亮狀態系統(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統已被 `cursor-highlight-state.md` 施加至少 5 條硬性義務,但依賴圖從未登記);**好感度—位置連鎖系統(#5)的 `Φ` 輸出(2026-08-17 新增的反向依賴,見下方第 5 列註記)** |
+| 5 | 好感度—位置連鎖系統(含陣亡處理) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統。**⚠️ 雙向依賴(2026-08-17 補登):本系統同時是戰棋移動與交戰系統的上游——後者的傷害公式以本系統的 `Φ`(好感度—位置修正)為輸入,且 `Φ_max` 與 `enemy_advantage_pct` 負有硬性交叉校準義務(不得各自獨立調整)。本系統設計時須與 `tactical-combat-system.md` Dependencies 及 Open Questions OQ-1/OQ-15 對齊** |
 | 6 | 技能卡牌系統(含好感度對話卡牌) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
 | 7 | 章節/戰役結構 | Narrative | MVP | Not Started | — | 存檔系統、好感度數值池(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統須呼叫 `affinity-data-pool.md` 的「前進戰役刻度」介面,但依賴圖從未登記) |
 | 8 | 支援對話系統 | Narrative | MVP | Not Started | — | 好感度數值池、章節/戰役結構 |
@@ -190,10 +190,10 @@
 | Metric | Count |
 |--------|-------|
 | Total systems identified | 14 |
-| Design docs started | 3 |
+| Design docs started | 4(2026-08-17 更新——新增戰棋移動與交戰系統) |
 | Design docs reviewed | 3(2026-08-09 重新核算——三份系統 GDD 皆已經歷至少一輪 `/design-review` 與本輪 `/review-all-gdds`) |
 | Design docs approved | 3(2026-08-13 更新——好感度數值池〔第十一、十二輪〕、存檔系統〔第十五輪〕、單一游標/高亮狀態系統〔第十六輪,使用者裁決收斂〕皆已核准 Approved,見 Systems Enumeration 第 1-3 列。此計數追蹤的是「目前無待清償 Blocking」的系統數,不是「曾經通過某一輪 /design-review」的歷史計數) |
-| MVP systems designed | 3/12 |
+| MVP systems designed | 4/12(2026-08-17 更新——戰棋移動與交戰系統已 Designed,尚未 Approved) |
 | Vertical Slice systems designed | 0/2 |
 
 ---
