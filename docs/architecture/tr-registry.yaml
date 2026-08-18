@@ -25,9 +25,148 @@
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
 version: 1
-last_updated: ""
+last_updated: "2026-08-18"
 
-requirements: []
+requirements:
+  # ─── 戰棋移動與交戰系統 (tactical-combat-system.md) ──────────────────────────
+  - {id: TR-tactical-001, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "棋盤須為有限邊界的方格網、整數座標(Grid\\B 列舉需要邊界表示法)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-002, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "地形須有兩個正交逐格屬性(terrain_cost>=1、遮蔽布林值),並有載入時驗證", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-003, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "逐單位 schema:HP/ATK/DEF/MP/陣營/武器分層/兩個行動旗標/存活狀態", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-004, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "player_baseline_stat(公式二輸入)全專案無擁有系統(OQ-2)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-005, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "武器資料表需要載入時的結構性與組成性驗證(AC-3、AC-23)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-006, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "reachable_set(u, ignore_occupancy) 須為單一函式;移動合法性只能用集合 A,不得用 B(AC-14)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-007, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "移動展開須為考慮成本的 Dijkstra 類演算法,不可用 BFS", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-008, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "reachable_set 須為有界前緣展開、MP 耗盡時提前終止,不得先展開全盤再過濾", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-009, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "雙 Dijkstra 掃描的移動範圍刷新須壓進 16.6ms 影格預算(未驗證假設)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-010, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "threat_range_all(E) 成本為 N 倍單位成本;敵方單位數上限無擁有者;效能測試須以格數x敵數兩軸參數化(OQ-16)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-011, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "游標即檢視使盤面查詢成為高頻路徑(逐輸入事件,而非逐回合)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-012, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "跨幀攤分計算須靠版本比對與協程宿主生命週期防衛保證合法安全", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-013, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "occupied(tile) 須為邏輯資料結構,絕不可由節點樹或動畫狀態導出", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-014, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "查詢輸出須等於從頭重算;過期輸出絕不可用於接受下一個玩家輸入", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-015, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "合成查詢原子性:並存疊加圖與 N 敵聯集須共用同一份快照", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-016, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "結算步不可重入、單幀、禁 await/call_deferred(),含卡死防衛", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-017, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "結算步內部子結構①②a②b(唯讀)②c③④須被保留;③永遠覆蓋②b的預測", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-018, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "Φ須在①快照並由③/②b重用;參照型別回傳須明確複製或用 duplicate_deep()", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-019, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "視線須為純格狀幾何 Bresenham 類演算法,並有完整定義的跨角規則", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-020, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "曼哈頓距離用於射程/移動(專案通用),Bresenham幾何用於視線,絕不混用", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-021, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "決定性三層 tie-break 選路;移動動畫須精確走過預覽路徑", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-022, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "全部公式與選路須決定性,含跨引擎tick;集合型輸出須用集合相等而非序列相等", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-023, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "陣亡處理須保證對好感度數值池的通知恰好一次、陣營閘控、非接受回傳時重試", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-024, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "游標目標失效回傳值須被檢查;過期目標須保留持久化的延後重驗狀態", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-025, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "輸入閘控委派給游標系統的有效性旗標,須在面板更新/確認鍵處理前查詢", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-026, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "全手把平權為每個操作皆須滿足的原則;與 Godot 4.7 裝置ID重新編號有交集", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-027, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "需要回饋事件契約/列舉,以區分拒絕、靜默、與合法0傷害結算(OQ-17)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-028, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "疊加圖架構須支援同時合成,每個狀態須有非色彩通道,繪製呼叫數<1000", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-029, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "疊加圖實作須提供可查詢的計算後格集合 getter 供測試用,而非依賴 _draw() 輸出", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-030, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "傷害路徑須回傳完整拆解(ATK/DEF/Φ/結果/預計剩餘HP),須容忍不設上限的Φ", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-031, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "預判模式須可證明零寫入、絕不快取、每次游標進入重算、為物理獨立元件", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-032, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "呈現層與邏輯層須以有序視覺事件佇列解耦;邏輯絕不等待動畫", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-033, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "回合邊界的行動旗標重置須為獨立事件,不得是狀態轉換的副作用", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-034, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "沒有任何系統擁有全域回合結構(階段轉換、勝負判定時機),儘管Core Rules#9消費它", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-035, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "需要回合層級的名冊查詢介面供戰鬥HUD渲染;持久化vs可切換面板未定案(OQ-21)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-036, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "威脅範圍介面須在一次呼叫內同時回傳扁平聯集與逐敵拆分兩個切面", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-037, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "enemy_stat_scaling 須用 ceil() 絕不四捨五入;驗證須拒絕 enemy_advantage_pct>=1.0", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-038, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "max_occlusion_ratio<=0.25 需要一個關卡資料驗證閘門(工具鏈決策)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-039, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "缺乏戰鬥中地形變更的重算觸發規則(OQ-3);無不可通行地形層級(OQ-10)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-040, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "戰鬥內狀態的存讀檔持久化(board_version、佔位表、行動旗標、結算進度)完全未定義", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-041, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "專案中不存在任何AI/遭遇系統,儘管Core Rules#9要求敵方回合須有決策邏輯", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-042, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "供給系統#5的站位/鄰接介面無資料形狀定案;Φ_max交叉校準義務未定義", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-043, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "系統#6(技能卡牌)效果掛鉤須滿足同步契約;可行性尚未確認(OQ-4)", created: 2026-08-18, revised: "", status: active}
+
+  # ─── 好感度數值池 (affinity-data-pool.md) ────────────────────────────────────
+  - {id: TR-affinity-001, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "Delta Log schema固定為5個具型別欄位(pair、m_i、t_i、c_i、source_i),append-only,須用具型別類別", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-002, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "須提供依配對索引的儲存,查詢複雜度O(n_p+m)——GDD層級已定案契約,非架構師可自由裁量", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-003, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "所有Dictionary鍵須為值型別,絕不可為Object/Resource參照(GDScript參照相等陷阱)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-004, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "兩個彼此獨立的全域單調計數器(t_now、戰役刻度),皆為衍生值,不得另存", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-005, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "獨立的戰役刻度標記列表;c_now(t_query)不得由Delta Log的最大c_i推導", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-006, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "獨立的陣亡標記表,讀寫皆須O(1),不得影響逐配對查詢複雜度保證", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-007, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "陣亡通知介面:單一方法、陣營閘控、Foundation對Gameplay的反向依賴,不透過系統#5轉接", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-008, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "同結算步內陣亡通知與卡牌寫入的相對呼叫順序會翻轉寫入合法性,順序須決定性", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-009, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "前進戰役刻度為獨立介面,呼叫方恰有一處,於戰鬥/章節開始時呼叫", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-010, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "附加記錄介面恰有3個呼叫點;公開方法中僅2個會改變狀態,不存在刪除/修改/清空/重排", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-011, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "寫入端驗證須fail-loud、不自動糾正,涵蓋7類明文列出的拒絕情境", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-012, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "三個讀取函數加公式四皆須為純函數/零副作用、決定性,並有0^0:=1慣例", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-013, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "讀取回傳簽章須攜帶t_query/n(p,t_query),另附僅供QA用的診斷輸出", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-014, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "序列化生命週期介面須為權杖式(非布林),支援並行重疊視窗", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-015, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "權杖集合需要逐權杖的逾時/存活偵測(非整批清空),且權杖ID永不重新發放", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-016, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "若架構階段選擇背景執行緒序列化,權杖集合本身須執行緒安全(全專案唯一此類義務)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-017, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "存檔系統須無損往返3份結構(Delta Log、刻度標記、陣亡標記表)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-018, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "Pair鍵與source_i一律以字串名稱持久化,非enum序數;退役名稱永久保留、CI可檢查", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-019, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "本系統是反序列化語意驗證規則的唯一權威(欄位值域加5條跨結構不變量)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-020, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "記憶化是硬性介面契約(非優化建議),供每回合假設性AI站位評估使用;兩快取模式不得混用", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-021, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "讀取進入點須有依函數性質分流的條件式預設查詢時點(t_death(p) vs t_now)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-022, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "公式四假設性記錄契約:嚴格遞增的虛擬t_new,是t_query<=t_now規則的唯一合法豁免", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-023, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "全作用域封鎖成因登記處目前僅為文件層表格、無執行期查詢API,架構階段須決定是否升級", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-affinity-024, system: affinity-data-pool, gdd: design/gdd/affinity-data-pool.md, requirement: "選配的寫入事件通知信號(entry_appended)明文為實作慣例決策,非已承諾契約", created: 2026-08-18, revised: "", status: active}
+
+  # ─── 存檔系統 (save-system.md) ───────────────────────────────────────────────
+  - {id: TR-save-001, system: save-system, gdd: design/gdd/save-system.md, requirement: "序列化格式未定案(Resource/.tres vs 自訂二進位 vs JSON),連鎖影響型別白名單、浮點往返、表示法決定論", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-002, system: save-system, gdd: design/gdd/save-system.md, requirement: "型別白名單須在任何實例化之前完成閘控;範圍(扁平聯集vs依版本分域)未定案", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-003, system: save-system, gdd: design/gdd/save-system.md, requirement: "manifest加版本化區塊結構,每區塊各自版本化,manifest攜帶單一單調遞增規則集版本號", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-004, system: save-system, gdd: design/gdd/save-system.md, requirement: "每槽多檔案佈局:.dat/.bak/.prev.bak/.pre_migration.bak/.tmp,槽與槽完全隔離", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-005, system: save-system, gdd: design/gdd/save-system.md, requirement: "一般寫入路徑為同步阻塞單執行緒,狀態provisional且已逾越自訂解決期限(主機平台早已定案)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-006, system: save-system, gdd: design/gdd/save-system.md, requirement: "遷移模型獨立決定:分步執行,每次一個版本躍遷,仍為單執行緒", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-007, system: save-system, gdd: design/gdd/save-system.md, requirement: "同槽重入不變量:拒絕同槽第二個並行呼叫並回傳處理中;逐槽進行中標記須無條件釋放", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-008, system: save-system, gdd: design/gdd/save-system.md, requirement: "跨系統權杖式序列化生命週期介面(消費自好感度數值池),涵蓋4條終止路徑各自保證", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-009, system: save-system, gdd: design/gdd/save-system.md, requirement: "路徑四強保證僅在I/O失敗以回傳碼(而非未分類例外)回報時成立", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-010, system: save-system, gdd: design/gdd/save-system.md, requirement: "結構化機器可讀的結果須能區分成功/4類拒絕代碼/無資料/槽處理中/遷移成功但回寫失敗", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-011, system: save-system, gdd: design/gdd/save-system.md, requirement: "完整讀取路徑檢查順序已鎖定:完整性→版本→型別白名單→語意驗證/遷移", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-012, system: save-system, gdd: design/gdd/save-system.md, requirement: "雙讀取路徑成本輪廓不同:manifest-only(不觸發遷移,豁免重入拒絕)vs完整讀取(觸發遷移,僅限非互動)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-013, system: save-system, gdd: design/gdd/save-system.md, requirement: "兩層加密雜湊鏈(逐區塊加頂層),固定規範順序,與寫入當下容器順序無關", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-014, system: save-system, gdd: design/gdd/save-system.md, requirement: "雜湊輸入須為寫入前、同一次序列化操作產生的記憶體資料,絕不可是寫入後讀回的位元組", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-015, system: save-system, gdd: design/gdd/save-system.md, requirement: "每一次寫入/flush/rename/刪除呼叫的成功與否須被實際檢查;flush()可檢查性在4.7.1未經確認", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-016, system: save-system, gdd: design/gdd/save-system.md, requirement: "跨平台原子置換是已鎖定的六步驟行為序列,不留架構階段自由裁量", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-017, system: save-system, gdd: design/gdd/save-system.md, requirement: "讀取端回復規則須採精確檔名比對,絕不可用萬用字元/前綴比對", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-018, system: save-system, gdd: design/gdd/save-system.md, requirement: "遭拒存檔的唯讀存取入口,依命中的備份層級分三級告知誠實程度", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-019, system: save-system, gdd: design/gdd/save-system.md, requirement: "耐久性邊界:flush僅指引擎緩衝區沖刷,非硬體層級落盤;真正斷電耐久性可能需要GDExtension", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-020, system: save-system, gdd: design/gdd/save-system.md, requirement: "存檔位置須在user://,.tmp與目標檔須位於同一檔案系統(rename原子性前提)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-021, system: save-system, gdd: design/gdd/save-system.md, requirement: "遷移函數須為純函數、O(該區塊自身筆數);後置條件檢查須逐步驟執行", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-022, system: save-system, gdd: design/gdd/save-system.md, requirement: "語意驗證器為fail-closed:manifest列出無對應驗證器宣告的區塊本身即視為DATA_CORRUPTED", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-023, system: save-system, gdd: design/gdd/save-system.md, requirement: "持久化的enum一律以字串名稱加對照表表示;退役名稱永久保留,須有CI可強制的重用檢查", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-024, system: save-system, gdd: design/gdd/save-system.md, requirement: "遷移完成標記的寫入責任分散於3種寫入路徑類型;須被涵蓋於頂層雜湊輸入", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-025, system: save-system, gdd: design/gdd/save-system.md, requirement: "可觀測性介面分兩類:診斷用(僅QA)vs生產用(進度查詢,豁免重入拒絕)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-026, system: save-system, gdd: design/gdd/save-system.md, requirement: "效能量測儀器化:三桶一般寫入耗時、六桶遷移讀取耗時、加性下限成本模型、無界重跑鏈風險", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-027, system: save-system, gdd: design/gdd/save-system.md, requirement: "重複回寫失敗計數逐槽獨立、不持久化,於成功回寫或槽被覆寫時歸零", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-028, system: save-system, gdd: design/gdd/save-system.md, requirement: "巢狀Resource深層複製紀律需要duplicate_deep(DEEP_DUPLICATE_ALL)——確切enum名稱未經查證", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-029, system: save-system, gdd: design/gdd/save-system.md, requirement: "維運層級重跑須以創世存底重跑加append-only拼接方式和解,重用標準寫入管線", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-save-030, system: save-system, gdd: design/gdd/save-system.md, requirement: "雲端存檔同步(Steam Cloud)與多檔案原子性的互動未定義", created: 2026-08-18, revised: "", status: active}
+
+  # ─── 單一游標/高亮狀態系統 (cursor-highlight-state.md) ───────────────────────
+  - {id: TR-cursor-001, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "全域狀態恰為3個已認定的頂層欄位;擁有節點生命週期須涵蓋所有使用本系統的畫面", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-002, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "表面類型標籤須為單一集中定義的共用enum;實作位置與擁有者未定案", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-003, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "同一標籤在任一時刻至多一個掛載實例;需要一個註冊/發現機制", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-004, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "裝置權威分類須依原始InputEvent子類別,絕不可讀取.device/裝置ID", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-005, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "Input Map約束:除非語意上為懸停/游標移動,ui_* action不得綁定滑鼠輸入", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-006, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "須緩衝整幀InputEvent並在收集完成後才裁決;須掛在_input(),絕不可用_unhandled_input()", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-007, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "專案層級Agile Event Flushing必須保持關閉——整個一幀一批次假設依賴於此", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-008, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "四個行為者的決定性同幀執行順序;需要具體的process_priority數值", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-009, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "滑鼠奪權門檻數學:逐表面類型像素常數、淨位移非路徑總和、根視窗座標空間", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-010, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "累積器須依裝置權威加OS焦點閘控;須掛NOTIFICATION_APPLICATION_FOCUS_*", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-011, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "已知確認、尚未修復的永久鎖死缺陷(持續按住方向輸入);已降級為建議項但架構層面仍未解決", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-012, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "寫入介面設定新目標:雙輸入簽章,不含碰撞箱幾何,自動清除有效性旗標", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-013, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "寫入介面標記待重新解析:須回傳結構化的已套用/已過期結果,絕不靜默", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-014, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "讀取介面:有效性旗標查詢加裝置權威查詢,兩者拒絕回饋須可區分", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-015, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "卸載前目標交接義務,涵蓋存檔讀取整批替換的三個分支", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-016, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "全域每裝置待機指示元件須存在於每個畫面;現有候選擁有者皆為畫面範圍、無一符合", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-017, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "原生游標須在權威非滑鼠時隱藏,唯一例外是連續漸變的奪權回饋——連續透明度動畫在4.7.1可能不受支援", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-018, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "全鍵盤/手把平權;已註冊表面不得使用原生Control焦點/懸停主題(4.6雙焦點分離)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-cursor-019, system: cursor-highlight-state, gdd: design/gdd/cursor-highlight-state.md, requirement: "交接視覺延遲硬性上限(最多1幀)與奪權收斂上限,皆需要幀精準量測機制", created: 2026-08-18, revised: "", status: active}
+
+  # ─── game-concept.md (跨系統) ─────────────────────────────────────────
+  - {id: TR-concept-001, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "活棋盤場景架構模型未定案:原地替換規則資料vs整場切換場景", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-002, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "存檔格式須從初始設計就內建跨規則集版本遷移能力", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-003, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "若地形資料採Resource子類別,深層複製紀律須與存檔格式一併設計", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-004, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "即時預覽重算範圍已鎖定:逐格候選預覽O(n),全盤O(n^2)重算僅於落子確定時執行一次", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-005, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "棋盤格高亮不得依賴原生Control焦點/懸停主題;單一游標格狀態源一般化至所有UI表面", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-006, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "裝置權威為兩層機制:ui_* action為權威閘門,原始InputEvent子類別做裝置分類", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-007, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "初始游標狀態需要呼叫方注入初始落點的介面,不由游標系統自行決定", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-008, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "4.7 shader前處理器限制收緊,可能影響好感度連線發光效果", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-009, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "MVP驗收協議1需要正式的預判標記狀態加遙測管道,比對標記與實際結算結果", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-010, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "MVP驗收協議2/5需要逐回合可序列化的具名存活單位鄰接圖快照", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-011, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "5張手工MVP關卡需要一套工具鏈量測4項空間指標,且須能在地形演變後重跑", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-012, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "專案級forbidden pattern:禁止連線功能、禁止程序化地形生成", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-013, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "戰鬥結算需要可查詢的淨聯動總分聚合值,要求決定性、可重現的結算以支援A/B對照", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-concept-014, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "專案級forbidden pattern:戰鬥結算路徑絕不可使用RNG", created: 2026-08-18, revised: "", status: active}
 
 # --- EXAMPLE ENTRIES (remove when first real entries are added) ---
 #

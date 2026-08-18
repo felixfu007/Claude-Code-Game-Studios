@@ -124,3 +124,18 @@ Task: 第四輪審查與修訂完成、ADR-0001 已建立;待第五輪(須新 se
 
 - `systems-index.md` 標頭部分歷史段落仍有行號式自我引用,與 `.claude/rules/design-docs.md` 的「禁止行號自我引用」規則相衝。
 - ADR-0001 的 Verification Required 有 6 項待實機確認(含 `queue_free()` 幀尾語意、型別化 Dictionary 編譯、同幀可見性順序保證)。
+
+---
+
+## Session Extract — /architecture-review 2026-08-18
+
+- **Verdict**: FAIL — advisory, not a hard stop. 3 Foundation-layer GDDs (好感度數值池、存檔系統、單一游標/高亮狀態系統), all Approved at design layer, have **zero** ADR coverage each.
+- **Requirements**: 130 total(戰棋 43、好感度 24、存檔 30、游標 19、game-concept.md 跨系統 14) — 5 covered、16 partial、109 gaps。
+- **New TR-IDs registered**: 130(`docs/architecture/tr-registry.yaml` 首次填入實際條目,此前為空)。
+- **GDD revision flags**: None — no verified engine reality contradicts a GDD assumption(數項為「未驗證」而非「已推翻」,見下方待查證清單)。
+- **Top ADR gaps**(依 Foundation-before-Feature 排序,完整清單見報告):
+  1. 好感度數值池資料結構與並發契約(24 項需求零覆蓋,含專案唯一已宣告的執行緒安全義務)
+  2. 存檔系統序列化格式與型別安全(格式本身仍是 Open Question,下游近 1/3 需求卡在此處)
+  3. 存檔系統原子寫入與遷移執行模型(寫入並發模型 `provisional` 已逾期——主機平台已定案)
+- **Report**: `docs/architecture/architecture-review-2026-08-18.md`(另見 `docs/architecture/traceability-index.md` 全量矩陣、`docs/architecture/tr-registry.yaml` 穩定 ID)。
+- **本輪新增待查證清單(godot-specialist 諮詢,非 revision flag,是 verification item)**:`FileAccess.flush()` 是否有可檢查回傳值(傾向無)、GDScript 是否有 fsync 等效物(傾向無)、`duplicate_deep()` 的確切 enum 成員名稱(未知)、cursor 系統「Agile Event Flushing」單幀批次保證(未驗證)。**新風險旗標**:4.6 雙焦點系統(滑鼠/觸控 vs 鍵盤/手把焦點分離)影響**所有** Control 選單畫面,不只戰棋游標系統本身——待 UI 系統(#9/#10/#11)設計時留意。
