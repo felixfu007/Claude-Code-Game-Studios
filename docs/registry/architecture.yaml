@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-18"
+last_updated: "2026-08-18"   # round-2 /architecture-review 補登 3 項專案級 forbidden pattern(TR-concept-012/-014)
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -780,6 +780,71 @@ forbidden_patterns:
       rejects all subsequent autosaves for that slot as a non-error "busy" result, with
       no player-visible failure and no automatic recovery.
     adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: 2026-08-18
+
+  # ─── 專案級身分/範圍裁決(來源為 game-concept.md,無專屬 ADR)────────────────
+  # 以下 3 項的 adr: 欄為 none —— 它們不是某一份 ADR 的推論,而是 game-concept.md
+  # 層級的專案身分/範圍裁決,約束所有現有與未來的 ADR。由 /architecture-review
+  # 登記(檔頭的 WRITTEN BY 慣例例外),因為兩輪架構審查皆發現它們缺席,而等一份
+  # 「專屬 ADR」才登記等於讓約束在無人看守的狀態下繼續存在。
+  # 未來若有 ADR 正式承接其中任一項,把 adr: 改為該 ADR 路徑並保留 gdd: 欄。
+
+  - pattern: rng_in_combat_settlement
+    status: active
+    description: >
+      No RNG anywhere on the combat settlement path — no dice rolls, no random events,
+      no probabilistic outcomes deciding combat results. Also no probability-driven
+      permadeath.
+    why: >
+      game-concept.md 支柱一 ("核心戰鬥不依賴隨機判定"), 支柱三 ("確定性代價,而非隨機
+      懲罰") and 反支柱 ("不會有隨機骰子/隨機事件決定戰鬥結果" / "不會有靠機率造成的
+      永久角色死亡") make this an identity-level decision, not a tuning preference. It is
+      also a hard prerequisite for the determinism contracts in tactical-combat-system.md
+      (TR-tactical-022) and for the A/B-comparable settlement required by TR-concept-013.
+      THE ONE SANCTIONED EXCEPTION, which is not on the settlement path: the affinity
+      dialogue card's FACE is random while its DEAL RHYTHM is fixed (game-concept.md
+      第三輪 creative-director 裁決, 2026-07-29) — randomness in what is OFFERED to the
+      player, never in how a settlement RESOLVES. An implementer who reads only the ban
+      will collide with that ruling and not know which to trust; that is why it is
+      spelled out here.
+    adr: none — 專案級身分裁決,不源自任何單一 ADR
+    gdd: design/gdd/game-concept.md
+    tr: TR-concept-014
+    registered_by: /architecture-review 2026-08-18 (round 2)
+    added: 2026-08-18
+
+  - pattern: networking_features
+    status: active
+    description: >
+      No networking, multiplayer, or online features of any kind. Single-player only.
+    why: >
+      game-concept.md 玩家人數 = 單人, 連線需求 = 無(單機遊戲). Registering this keeps a
+      future ADR from casually introducing a networked assumption (leaderboards, cloud
+      state authority, telemetry-as-dependency) that would invalidate the single-threaded,
+      sync-blocking save model in ADR-0004. Note this is distinct from TR-save-030's
+      unresolved Steam Cloud question — cloud SAVE SYNC is a platform-provided file-level
+      service, not a networking feature of this game.
+    adr: none — 專案級範圍裁決,不源自任何單一 ADR
+    gdd: design/gdd/game-concept.md
+    tr: TR-concept-012
+    registered_by: /architecture-review 2026-08-18 (round 2)
+    added: 2026-08-18
+
+  - pattern: procedural_terrain_generation
+    status: active
+    description: >
+      Board terrain and its evolution are hand-authored and story-triggered. Never
+      generate terrain procedurally or randomly.
+    why: >
+      game-concept.md 程序化系統 = 無明確程序化生成需求(棋盤演變為手工設計的劇情觸發,
+      而非隨機生成). This is what makes the 5 hand-built MVP levels measurable against the
+      4 spatial metrics (TR-concept-011), and what lets the living-board terrain evolution
+      be a save-migration problem (TR-concept-001/002) rather than a seed-reproducibility
+      problem.
+    adr: none — 專案級範圍裁決,不源自任何單一 ADR
+    gdd: design/gdd/game-concept.md
+    tr: TR-concept-012
+    registered_by: /architecture-review 2026-08-18 (round 2)
     added: 2026-08-18
 
 # Example:

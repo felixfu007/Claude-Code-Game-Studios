@@ -234,11 +234,41 @@ Feature 層:
 
 ### 低成本修補項(不需要新 ADR)
 
-| # | 項目 |
-|---|---|
-| R1 | **`TR-concept-012`/`-014` 的兩項專案級 forbidden pattern 仍未登記**。首輪即指出,本輪查證仍然缺席——`docs/registry/architecture.yaml` 現有 38 項立場中,無任何 RNG / networking / procedural terrain 相關條目(以 grep `rng|random|procedural|程序化|連線|network|multiplayer` 全檔零命中確認)。應登記:禁止連線功能、禁止程序化地形生成、戰鬥結算路徑禁用 RNG |
-| R2 | C1~C5 五項銜接缺口的調和(四份 ADR 皆 `Proposed`,現在改動成本最低) |
-| R3 | E1(payload 不得含 `Callable`/`Signal`/`RID`)、E3(新增 `modules/core-scripting.md`)、ADR-0002 的 Post-Cutoff 欄措辭 |
+| # | 項目 | 狀態 |
+|---|---|---|
+| R1 | **`TR-concept-012`/`-014` 的兩項專案級 forbidden pattern 未登記**。首輪即指出,本輪查證仍然缺席——`docs/registry/architecture.yaml` 原 38 項立場中,無任何 RNG / networking / procedural terrain 相關條目(以 grep `rng|random|procedural|程序化|連線|network|multiplayer` 全檔零命中確認) | ✅ **本輪已完成**,見下方「本輪後續處置」 |
+| R2 | C1~C5 五項銜接缺口的調和(四份 ADR 皆 `Proposed`,現在改動成本最低) | 部分 — C2/C4/C5 ✅ 已修正;**C1/C3 仍待處理** |
+| R3 | E1(payload 不得含 `Callable`/`Signal`/`RID`)、E3(新增 `modules/core-scripting.md`)、ADR-0002 的 Post-Cutoff 欄措辭 | ❌ 待處理 |
+
+---
+
+## 本輪後續處置(審查後同 session 執行,使用者逐項核准)
+
+### 已完成
+
+**R1 — 3 項專案級 forbidden pattern 已登記** 至 `docs/registry/architecture.yaml`:
+`rng_in_combat_settlement`、`networking_features`、`procedural_terrain_generation`。
+Registry 累計 38 → **41 項**(forbidden_patterns 10 → 13)。
+
+兩項刻意的規則例外,已在登記處明文記錄:
+- 這三項的 `adr:` 欄為 `none` —— 它們源自 `game-concept.md`,不是任何 ADR 的推論。registry 檔頭定義 `adr:` 為「the authoritative source」,故新增 `gdd:`/`tr:`/`registered_by:` 三欄並在區塊註解說明,是該慣例的明文例外。**未來若有 ADR 正式承接其中任一項,把 `adr:` 改為該 ADR 路徑並保留 `gdd:` 欄。**
+- registry 檔頭的 `WRITTEN BY: /architecture-decision` 慣例,本次由 `/architecture-review` 寫入 —— 理由是這三項已連續兩輪審查缺席,而「等一份專屬 ADR 才登記」等於讓約束在無人看守的狀態下繼續存在。
+- `rng_in_combat_settlement` 的 `why:` 欄刻意寫入**唯一豁免**(好感度對話卡牌「發牌節奏固定、牌面隨機」,`game-concept.md` 第三輪 creative-director 裁決)。不寫的話,實作卡牌系統的人會直接撞上該裁決而不知該相信哪一份文件。
+
+**順帶修正的過期宣稱**:`.claude/docs/technical-preferences.md` 的 `## Forbidden Patterns` 節原寫「None configured yet」,而 registry 當時已有 10 項。已改為指向 registry 為權威清單,並就地列出 3 項專案級裁決(它們在任何 ADR `Accepted` 之前就已生效,實作者需要能直接查到)。
+
+**C2 已修正** — `adr-0003` 機制六:`validator` 回傳型別統一為 `ImportResult`(原寫 `ValidationResult`)。
+**C4 已修正** — `adr-0004` 機制一:正式拍板 `write_temp()` 底層使用 `FileAccess.store_buffer()`,並引用 `breaking-changes.md` 已確認的 `bool` 回傳。
+**C5 已修正** — `adr-0004` 機制五:標題改為「沿用 ADR-0001 的一般性原則;`RefCounted` 特有路徑未經單獨驗證」,並補一段說明兩種宿主失效路徑的差異,明訂 Verification Required 第 5 項的煙霧測試須涵蓋「`await` 期間宿主參照被釋放」這個 `RefCounted` 專屬情境。
+
+### 仍待處理:C1 與 C3
+
+兩者都會**新增或改變 ADR 的決策內容**,屬 `/architecture-decision` 的領域而非審查的領域,故刻意不在審查 session 內執行:
+
+| | 建議解 | 為何留待 ADR 修訂 session |
+|---|---|---|
+| **C1** `TOKEN_TIMEOUT_MS` 無人擁有 | **由 ADR-0004 接下**:只有它掌握遷移鏈深度上界,擁有資訊的一方才有能力定這個數。ADR-0002 改為明文「本值由 ADR-0004 依鏈深度 × 每步讓出成本 + I/O 上界推導」 | 需新增一段推導論證,是撰寫工作而非修正工作 |
+| **C3** `Mutex` 條件前提已消失 | **保留為縱深防禦**,但 ADR-0002 明文交叉引用 ADR-0004:「背景執行緒序列化已被排除;本 `Mutex` 是未來 `AsyncSaveIOBackend` 翻轉的前置準備,非當前執行模型的必要條件」 | 牽動 ADR-0002 的 Alternative 5 論證,須連同重讀 |
 
 ---
 

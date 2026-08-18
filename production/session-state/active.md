@@ -195,3 +195,13 @@ Task: ADR-0002/0003/0004 已撰寫、registry 已更新;**尚未 commit**;下一
 - **仍未修補(首輪即指出)**:`TR-concept-012`/`-014` 的兩項專案級 forbidden pattern **仍未登記**於 `docs/registry/architecture.yaml`(38 項立場中 grep `rng|random|procedural|程序化|連線|network|multiplayer` 全檔零命中)。最低成本的一項修補。
 - **Pre-gate**:四項全缺(`tests/unit`、`tests/integration`、`.github/workflows/tests.yml`、`design/accessibility-requirements.md`、`design/ux/interaction-patterns.md`)→ `/gate-check pre-production` 不可執行,須先 `/test-setup` + `/ux-design`。
 - **Report**: `docs/architecture/architecture-review-2026-08-18-round2.md`(`traceability-index.md` 全部 130 列已重建;`docs/consistency-failures.md` 不存在,依 skill 規定未建立,故 C1~C5 僅存於報告)。
+
+### 審查後處置(同 session,使用者逐項核准)
+
+- **R1 已完成**:3 項專案級 forbidden pattern 登記至 `docs/registry/architecture.yaml` —— `rng_in_combat_settlement`、`networking_features`、`procedural_terrain_generation`。Registry 累計 **38 → 41**(forbidden_patterns 10 → 13)。兩項規則例外已明文記錄:(a) `adr:` 欄為 `none` + 新增 `gdd:`/`tr:`/`registered_by:` 欄(來源是 `game-concept.md`,非任何 ADR);(b) 本次由 `/architecture-review` 而非 `/architecture-decision` 寫入 registry。RNG 那條刻意寫入唯一豁免(好感度卡牌「節奏固定、牌面隨機」),避免實作者撞上 GDD 第三輪裁決時不知該信哪份文件。
+- **順帶修正**:`.claude/docs/technical-preferences.md` 的 `## Forbidden Patterns` 節原寫「None configured yet」(registry 當時已有 10 項)—— 已改為指向 registry 並就地列出 3 項專案級裁決。
+- **C2/C4/C5 已修正**:C2 `adr-0003` 驗證器回傳型別統一為 `ImportResult`;C4 `adr-0004` 拍板 `write_temp()` 用 `FileAccess.store_buffer()`(引用已確認的 `bool` 回傳);C5 `adr-0004` 收斂「沿用 ADR-0001 已驗證先例」措辭並明訂煙霧測試須涵蓋 `RefCounted` 專屬情境。
+- **C1/C3 仍待處理**(刻意留給乾淨 session,因為兩者會新增/改變 ADR 決策內容,屬 `/architecture-decision` 領域):
+  - **C1** 建議由 **ADR-0004 接下** `TOKEN_TIMEOUT_MS`(只有它掌握遷移鏈深度上界),ADR-0002 改為明文委派並註明推導方式。
+  - **C3** 建議 **保留 `Mutex` 為縱深防禦**,ADR-0002 明文交叉引用 ADR-0004「背景執行緒已排除,此鎖為未來 `AsyncSaveIOBackend` 翻轉的前置準備」。
+- **R3 未處理**:E1(payload 不得含 `Callable`/`Signal`/`RID`,須補 ADR-0003 Validation Criteria)、E3(新增 `docs/engine-reference/godot/modules/core-scripting.md`)、ADR-0002 Post-Cutoff 欄措辭。

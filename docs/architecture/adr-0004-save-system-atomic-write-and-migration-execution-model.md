@@ -94,6 +94,15 @@ class_name SyncBlockingSaveIOBackend extends SaveIOBackend
 # 現行實作:呼叫執行緒等待每一步完成才返回。內部使用 FileAccess/DirAccess
 # (`DirAccess.rename_absolute()`/`remove_absolute()` 回傳 `Error` 列舉——確切方法名稱
 # 待驗證,見 Engine Compatibility 第 2 項),見機制三的六步驟序列。
+#
+# write_temp() 底層一律使用 `FileAccess.store_buffer()`,不用 `store_var()`
+# (2026-08-18 第二輪 /architecture-review 補上此拍板,原為 ADR-0003/0004 之間的銜接空白 C4):
+#   (a) 輸入已是 ADR-0003 機制二產出的 PackedByteArray,再過一層 Variant 編碼是多餘的;
+#   (b) `store_buffer()` 自 4.4 起回傳 `bool` 已由 breaking-changes.md 4.3→4.4 表格逐名
+#       明文確認——這是本專案少數已查證(而非訓練資料印象)的引擎事實,正好滿足機制三
+#       「每一步驟的成功與否須被實際檢查」的前提,不必倚賴任何待驗證假設。
+#   ADR-0003 的 Risks 表原已提醒「若呼叫 store_var()/store_buffer() 須檢查 bool 回傳值」,
+#   但兩份 ADR 先前都沒有真正拍板用哪一個;此處正式定案。
 ```
 
 **決策**:延續 GDD Core Rules #4 的現行(provisional)決定——一般寫入為同步阻塞、單執行緒假設。**但**上層邏輯(機制三/四/五/六)一律透過 `SaveIOBackend` 抽象存取檔案系統,不直接呼叫 `FileAccess`/`DirAccess`。**理由**:GDD Open Question 9 明文要求在 `/create-architecture` 開始前確認同步阻塞模型在**已確認的目標主機平台**(`.claude/docs/technical-preferences.md`:PC、Console)上是否成立,但本 ADR 撰寫時專案文件未指定具體主機型號/SDK,無法實際驗證。本 ADR 不假裝這個驗證已經完成,也不在缺乏具體平台資訊的情況下貿然改用一個未經任何主機平台驗證的非同步設計(那同樣是缺乏依據的猜測,只是猜測的方向不同)。可替換的 `SaveIOBackend` 邊界讓這個懸而未決的驗證項目,將來只需要新增一個 `AsyncSaveIOBackend`(方法簽章可能需要改為回傳 `Signal`/接受 `Callable` 回呼,屆時另需修訂本 ADR)實作,不需要重寫機制三以上的任何邏輯——上層的六步驟序列、分步遷移狀態機、權杖消費時機皆與 I/O 是否同步無關,只依賴「每一步驟的成功與否可以被檢查」這個更弱的前提。
@@ -185,7 +194,9 @@ func run_chain(initial_data: Dictionary, from_version: int, to_version: int, mig
 
 **執行模型**:`run_chain()` 每次只執行一個版本躍遷(`v→v+1`),每完成一步後 `await _scene_tree.process_frame`,再繼續下一步——**允許引擎渲染新影格、更新忙碌指示、輪詢輸入**,對應 GDD Core Rules #5「分步執行」的核心要求。每一步執行完畢後,依序套用 Core Rules #12 結構性後置條件檢查與(僅在抵達目標版本後)Core Rules #7 語意驗證(呼叫 `SaveBlockRegistry.get_validator(source_id).call(data)`,見 ADR-0003 機制六)——任一檢查失敗立即回傳 `MIGRATION_FAILED`/`SEMANTIC_VALIDATION_FAILED`,不繼續後續步驟。
 
-**跨幀 `await` 的宿主生命週期約束(沿用 ADR-0001 已驗證的先例)**:`SteppedMigration` 實例在 `run_chain()` 的整個執行期間(可能橫跨數個至數十個影格,取決於遷移鏈深度)必須維持存活——呼叫端(機制四的 `_read_full_with_migration`)不得在 `await` 期間釋放持有 `SteppedMigration` 的參照。每次 `await` 恢復後應以 `is_instance_valid()`(或等效防衛)確認 `_scene_tree` 仍有效,理由與 ADR-0001 機制一「跨幀計算主體的生命週期約束」相同:GDScript 協程若在 `await` 期間其宿主被釋放,恢復時的行為是靜默丟失或執行期錯誤,而非本 ADR 定義的明確結果。
+**跨幀 `await` 的宿主生命週期約束(沿用 ADR-0001 的一般性原則;`RefCounted` 特有路徑未經單獨驗證)**:`SteppedMigration` 實例在 `run_chain()` 的整個執行期間(可能橫跨數個至數十個影格,取決於遷移鏈深度)必須維持存活——呼叫端(機制四的 `_read_full_with_migration`)不得在 `await` 期間釋放持有 `SteppedMigration` 的參照。每次 `await` 恢復後應以 `is_instance_valid()`(或等效防衛)確認 `_scene_tree` 仍有效,理由與 ADR-0001 機制一「跨幀計算主體的生命週期約束」相同:GDScript 協程若在 `await` 期間其宿主被釋放,恢復時的行為是靜默丟失或執行期錯誤,而非本 ADR 定義的明確結果。
+
+**措辭修正(2026-08-18 第二輪 `/architecture-review` 發現 C5,`godot-specialist` 逐字比對 ADR-0001 原文後提出)**:本段標題原寫「沿用 ADR-0001 **已驗證的**先例」,該措辭超出 ADR-0001 實際驗證過的範圍。ADR-0001 機制一驗證的是**一般性**原則——「跨幀計算的宿主必須有涵蓋整場戰鬥的生命週期」——它**未區分** `RefCounted` 與 `Node` 兩種宿主的失效路徑,而兩者的觸發條件不同:`Node` 的釋放來自顯式 `queue_free()`(程式碼審查搜得到),`RefCounted` 的釋放來自參照計數歸零(**沒有任何顯式呼叫可供搜尋**,「意外少掉一個參照」因此更難在審查中被發現)。本 ADR 選 `RefCounted`(見 Alternative 2 的拒絕理由)本身仍是合理的架構一致性選擇,但這個更細的風險不應被「已有先例」這句話吸收掉——Engine Compatibility Verification Required 第 5 項的獨立煙霧測試建議因此**不因既有先例而降級**,且該測試須明確涵蓋「`await` 期間宿主參照被釋放」這個 `RefCounted` 專屬情境,而非只驗證跨幀恢復點的一般行為。
 
 **觸發情境限制**(GDD 明文):`run_chain()` 只能從下游 UI 指定的**非互動式載入過場**情境呼叫——不得在互動情境(例如存檔槽瀏覽器懸停預覽)直接呼叫。互動情境須改用 ADR-0003 機制三步驟 1(僅讀取 manifest,不觸發此狀態機)。**本 ADR 不在程式碼層級強制這個呼叫慣例**(GDScript 沒有「僅限特定呼叫情境」的語言機制)——這是下游 UI 系統設計時的義務,本 ADR 只保證存在一條較輕量的替代路徑(manifest-only)供互動情境使用,讓「不小心呼叫錯介面」的後果止於「效能較差」而非「資料損毀」。
 

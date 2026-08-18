@@ -130,7 +130,11 @@ Core Rules #7(擴充)要求每個持久化資料區塊的來源系統宣告其�
 # ─── save_block_registry.gd ──────────────────────────────────
 class_name SaveBlockRegistry extends RefCounted
 
-# validator: Callable(Dictionary) -> ValidationResult — 純函式,不修改任何狀態,
+# validator: Callable(Dictionary) -> ImportResult — 純函式,不修改任何狀態,
+# (2026-08-18 第二輪 /architecture-review 修正 C2:本行原寫 `ValidationResult`,但唯一的
+#  具體驗證器 AffinityDataPool.validate_semantics()(ADR-0002 Key Interfaces)回傳
+#  `ImportResult`,ADR-0004 機制五亦以該型別消費。統一採用 ADR-0002 已定案的型別名,
+#  避免同一介面在三份 ADR 之間有兩個名字。)
 # 僅檢查傳入的 payload Dictionary 是否滿足該區塊的欄位值域與跨結構不變量。
 func register(source_id: String, validator: Callable) -> void
 func get_validator(source_id: String) -> Variant   # Callable 或 null(未登記)
