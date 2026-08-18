@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-08-18"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +43,42 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: board_version
+    status: active
+    owner_system: tactical-combat-system
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    interface: "Board.board_version (read-only int, monotonic). Query results carry the version they were computed against; a result is valid iff result.version == board.board_version."
+    write_access: board-only
+    notes: "Increments ONLY at committed settlement boundaries. Must NOT increment on read-only operations (cursor movement, overlay toggle, prediction marker) — those are zero-write per tactical-combat-system.md Core Rules #8/#10."
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: occupied
+    status: active
+    owner_system: tactical-combat-system
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    interface: "Board.is_occupied(tile: Vector2i) -> bool / Board.occupant_of(tile: Vector2i) -> int. Backed by a sparse Dictionary[Vector2i, int] (value = unit_id)."
+    write_access: board-only
+    notes: "Synced on ANY event changing a unit's logical position or alive state (death at settlement step 4, movement logical completion — non-exhaustive), atomically with the board_version increment. Never derived from scene-tree existence or visual/animation state."
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: settlement_in_progress
+    status: active
+    owner_system: tactical-combat-system
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    interface: "Board.settlement_in_progress (read-only bool). True from settlement step 1 start until step 4 completion."
+    write_access: board-only
+    notes: "While true, ALL player input is rejected with explicit feedback (not queued). Must not remain true across two consecutive _process frames — if it does, push_error(); that state means a never-resuming await has permanently deadlocked input."
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
 
 # Example:
 #
@@ -71,7 +106,44 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: query_result_versioning
+    status: active
+    pattern: shared_resource
+    producer: tactical-combat-system
+    consumers:
+      - battle-hud                # renders overlays; must check is_stale() before accepting input
+      - affinity-position-linkage # reads adjacency/placement queries (system #5, Not Started)
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    signal_signature: "QueryResult.version: int + QueryResult.is_stale(board: Board) -> bool"
+    notes: >
+      EVERY outbound query of tactical-combat-system returns a result carrying the
+      board_version it was computed against. Consumers must not accept player input
+      based on a result whose is_stale() is true. Result containers are always newly
+      allocated — never references into Board's internal storage.
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - contract: composite_query_consistency
+    status: active
+    pattern: shared_resource
+    producer: tactical-combat-system
+    consumers:
+      - battle-hud
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    signal_signature: "QueryResult.assert_same_version(results: Array[QueryResult]) -> bool"
+    notes: >
+      Any set of query outputs merged into ONE picture for the player — the co-visible
+      movement-range and threat-range overlays required by tactical-combat-system.md
+      UI §1a, and threat_range_all(E)'s N-enemy union — counts as a single query and
+      must share one board_version. Stitching results from different versions produces
+      a picture corresponding to no real board state.
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
 
 # Example:
 #
@@ -131,7 +203,55 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: grid_occupancy_storage
+    status: active
+    api: "Dictionary[Vector2i, int]  # sparse, value = unit_id"
+    not: "dense 2D array / PackedInt32Array; scene-tree lookup (get_node / has_node)"
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    reason: >
+      Sparse storage does not require a board-size upper bound, which is still undecided
+      (tactical-combat-system.md OQ-16). Units are far sparser than tiles on a tactics
+      board. Vector2i is a valid, O(1) Dictionary key in Godot 4.x with stable hashing
+      semantics across 4.3-4.7.
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: query_snapshot_identity
+    status: active
+    api: "monotonic board_version int stamp, incremented at committed settlement boundaries"
+    not: "deep-copied BoardSnapshot object; per-frame batch recomputation"
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    reason: >
+      Core Rules #11 confines all board mutation to settlement boundaries and makes
+      settlement non-re-entrant, so the board is effectively immutable BETWEEN boundaries.
+      A snapshot therefore needs only an identity stamp, not a copy — cost is one int
+      compare instead of a per-query deep copy on the high-frequency cursor-as-view path.
+      CAVEAT: this rests on Core Rules #11 holding. If system #6 (skill cards) later
+      proves it cannot satisfy the synchronous-effect contract, re-evaluate the
+      explicit-snapshot alternative documented in the ADR.
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: line_of_sight_computation
+    status: active
+    api: "pure grid geometry (Bresenham-type), per tactical-combat-system.md Edge Cases"
+    not: "PhysicsServer raycast / RayCast2D/3D nodes"
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    reason: >
+      Physics-based LOS would couple logical LOS state to physics-body existence in the
+      scene tree — contradicting the placement-ownership rule — and would risk violating
+      AC-9's determinism guarantee (physics-step-dependent results are exactly the
+      implicit state that AC forbids). Also makes the Jolt-default change (4.6) irrelevant
+      to this system.
+    referenced_by:
+      - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
 
 # Example:
 #
@@ -157,7 +277,78 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: node_tree_derived_occupancy
+    status: active
+    description: >
+      Never derive occupied(tile) by querying whether a unit object exists at that
+      coordinate in the scene/node tree. Use the logical Dictionary only.
+    why: >
+      queue_free() defers actual node removal to end-of-frame. A unit that dies at
+      settlement step 4 still hangs in the scene tree during that same settlement step,
+      so a node-tree-derived occupancy check reports the tile as still occupied —
+      directly violating tactical-combat-system.md AC-7(c)'s same-settlement-step
+      release requirement. This is stable engine behaviour, not a version quirk, which
+      is exactly why it is easy to miss.
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+
+  - pattern: animation_driven_logical_state
+    status: active
+    description: >
+      Never drive logical state updates (occupancy, HP, action flags) from animation or
+      Tween completion, and never read visual/animation state as an input to any rule
+      decision. Logical state is the sole authority.
+    why: >
+      Binding logical position to a Tween's finished signal makes every query during the
+      animation (potentially hundreds of ms) read stale occupancy. Conversely, the death
+      fade-out is cosmetic — overlays must be authoritative over it, not wait for it.
+      See tactical-combat-system.md Core Rules #11.
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+
+  - pattern: deferred_calls_in_settlement_path
+    status: active
+    description: >
+      Within the settlement step, any call that mutates occupied or board_version must
+      not go through call_deferred() or a CONNECT_DEFERRED signal connection.
+    why: >
+      Godot's deferred mechanism reschedules the call to a later safe point in the frame
+      rather than executing it synchronously — effectively injecting a yield point into
+      the middle of a settlement step that is contractually atomic. Unlike an accidental
+      await, this leaves NO 'await' keyword at the call site, so code review cannot catch
+      it by searching. Must be an explicit review checklist item.
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+
+  - pattern: returning_internal_container_references
+    status: active
+    description: >
+      A query result must never carry a reference to Board's internal storage — every
+      container field must be newly allocated during the computation.
+    why: >
+      Dictionary/Array are reference types in GDScript. If a result holds a reference to
+      board's live occupancy, then even when the version stamp correctly marks the result
+      stale, a caller that bypasses is_stale() sees retroactively mutated data. The
+      version-stamp mechanism cannot defend this bypass — it governs WHICH data to use,
+      not whether that data is a shared mutable object.
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+
+  - pattern: relying_on_container_iteration_order
+    status: active
+    description: >
+      Never treat Dictionary/Array native iteration order as a stable output ordering.
+      Consumers needing a stable sequence must explicitly sort by a fixed key (e.g. y
+      then x).
+    why: >
+      Godot Dictionary preserves insertion order but is not key-sorted; two semantically
+      identical sets computed via different code paths can have different insertion
+      orders. This is why tactical-combat-system.md AC-9 asserts SET equality rather than
+      sequence equality for set-valued outputs — sequence comparison would produce false
+      failures.
+    adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
 
 # Example:
 #
