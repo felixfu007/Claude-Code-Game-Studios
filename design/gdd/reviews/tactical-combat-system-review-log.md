@@ -12,6 +12,8 @@ Review target: **GDD body**(完整模式,全文覆核)。**計入 Phase 0b 兩�
 Scope signal: **L,偏 XL 邊界**(依賴 8 項、公式 4 條、跨系統硬契約 2 條、對外查詢介面 6 個、AC 24 條;B-1/B-3 的修法直接產生 `/create-architecture` 階段的架構級約束,且本輪裁決將外移一份專屬 ADR)
 Specialists: `game-designer`、`systems-designer`、`qa-lead`、`ux-designer`、`gameplay-programmer`、`performance-analyst`、`godot-specialist`(7 位平行)+ `creative-director` 資深綜整。依 Phase 0b 升級門檻(第三輪 7 項 BLOCKING-NOW 全為設計內容缺陷)升級為完整模式。
 Blocking-now: **6**(design-content: 6 / propagation: 0)| Deferred: 3 | Advisory: 3(含 2 項由專家原評 BLOCKING 降級)
+Findings by location: **native-design 0 / review-added 15(原始計數)** —— **accretion signal: FIRED**
+  (2026-08-18 追記:此欄依 Phase 0b 新增的「accretion escalation rule」補登。本輪為該規則的**成立事由與第一次執行**——`creative-director` 診斷出「零發現落在原生設計、100% 落在審查自己新增的材料」這個分佈,使用者裁決採選項 B 把治理層外移至 **ADR-0001**。該規則現已寫入 `/design-review` Phase 0b,並要求**每一輪**都記錄此欄,使訊號可被計算而非需要有人從頭重新診斷——本專案正是因為沒有這欄,讓同一個分佈連續三輪未被辨識。)
 
 **Summary**:原始發現 15 項,`creative-director` 去重後為 6 項——重複的部分全部指向**同一根樑**。四位專家(`game-designer` 疊加圖失效觸發、`gameplay-programmer` 結算步可重入、`systems-designer` `occupied` 寫入時點只錨定陣亡、`ux-designer` 淡出與佔位釋放同格衝突)從四個角度撞到同一個文件從未回答的問題:**盤面權威狀態何時才准改變、一次改變的單位是什麼**——合併為 B-1,以新增 Core Rules #11 一次解決。另兩位(`game-designer` 橫向並存疊加圖、`systems-designer` 縱向多敵聯集)證明 Core Rules #10(b) 把原子性綁在「一次查詢」上,卻從未定義查詢由子查詢組成或多查詢被合併判讀時的原子單位——合併為 B-2。`godot-specialist` **零 BLOCKING-NOW**(四個引擎面查核角度全數通過 4.7.1 版本核對)。
 

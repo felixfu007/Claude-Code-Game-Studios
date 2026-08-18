@@ -318,8 +318,12 @@ fi
     echo "=== Doc Consistency Check ==="
     printf '%s' "$FINDINGS"
     echo "============================="
-    echo "Cross-file fact agreement. [ERROR] = two docs contradict each other."
-    echo "[warn] = needs human judgement. Escape hatch: SKIP_DOC_CONSISTENCY=1"
+    # NOTE: this legend deliberately avoids the literal marker strings. An earlier
+    # version spelled them out, so `... | grep -c '\[ERROR\]'` counted the legend
+    # itself and reported a finding on a clean repo — the output has to be safely
+    # greppable, because grepping it is exactly how anyone will consume it.
+    echo "Cross-file fact agreement. ERROR-level = two docs contradict each other."
+    echo "warn-level = needs human judgement. Escape hatch: SKIP_DOC_CONSISTENCY=1"
 } >&2
 
 if [ "$MODE" = "gate" ] && [ "$HAS_ERR" = "1" ]; then

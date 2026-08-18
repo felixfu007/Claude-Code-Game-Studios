@@ -37,7 +37,20 @@ Extract `--depth [full|lean|solo]` if present. Default is `full` when no flag is
 
 **Convergence scope guard — a round whose review target was process/tooling files (`.claude/skills/**`, other automation), not the GDD's own body, does not count toward this streak, no matter how many rounds in a row it produces zero BLOCKING-NOW.** Convergence on the audit apparatus and convergence on the document's own rule content are orthogonal — zero findings in the former says nothing about the latter. Concrete precedent: `save-system.md` rounds 10-12 converged to zero BLOCKING-NOW three rounds running while reviewing only `.claude/skills/*` process files; round 13 finally re-read the GDD body itself and found 7 new BLOCKING-NOW that had sat untouched the whole time. Before declaring APPROVED on the convergence rule, explicitly state in the verdict which of the last two qualifying rounds re-read the document body (not just "two rounds ago" — confirm both were body-scoped).
 
-When reporting a verdict, always state which bucket drove it, e.g. "NEEDS REVISION — 2 BLOCKING-NOW (design-content), 3 propagation failures (fixed same round, no escalation), 5 DEFER-TO-CALIBRATION logged to Open Questions."
+**Accretion escalation rule — when the findings are all in material this skill itself added, MOVE the material instead of patching it again.** Every round, before writing the verdict, tally where the BLOCKING-NOW findings actually landed:
+
+- **native design** — content that existed before any `/design-review` round touched this document (its original Core Rules, formulas, Edge Cases, and the ACs written with it), versus
+- **review-added** — rules, ACs, formulas, and sections that *previous rounds of this skill* introduced as fixes.
+
+**If a round produces BLOCKING-NOW findings and ZERO of them land in native design, that is the accretion signal.** It means the design itself has converged and what has not converged is a *governance layer* — and, critically, that layer is usually in the wrong document. Reactive general rules written mid-review tend to generalize the *symptom* rather than the *cause*, and they leave a tell: they must repeatedly disclaim what they do **not** cover. Every disclaimer is a boundary, and adversarial specialists will find every boundary, round after round. Patching produces another rule with another boundary; the treadmill does not terminate on its own.
+
+**Required action on the signal:** do not write a fourth patch. Identify what the accreted material actually is — most often an *architecture* decision (data ownership, atomicity, lifecycle, scheduling) wearing a design-rule costume — and move it to its proper home: an ADR via `/architecture-decision`, or a dedicated document. Leave in the GDD only the **player-observable obligation**, pointing to the new home for the mechanism. State explicitly in the verdict that the accretion signal fired and what was moved. Record the one-way revision direction in both documents: the GDD's obligations may force a mechanism change, never the reverse.
+
+**Concrete precedent (`tactical-combat-system.md`, round 4, 2026-08-18):** 15 raw findings, deduped to 6 BLOCKING-NOW. Native-design findings: **0** — Core Rules #1–#4/#7/#8, formulas 1–3 and AC-1..AC-19 had produced no findings for four consecutive rounds. All 15 landed on review-added material (公式四, UI §1/§1a, Core Rules #10, AC-20/21/22). Round 3's Core Rules #10 was exactly the failure mode above: written reactively to unify three earlier one-off patches, it generalized "query output must be correct" (symptom) instead of "when may the board state change" (cause), and had to disclaim three separate times what it did not cover — redraw timing, its single sync anchor, and read-vs-write scope. Six specialists probed those three boundaries from six angles and all six found give. Remedy: the mechanisms of #10(b)/(c) plus a new Core Rules #11 were moved to **ADR-0001**, leaving player-observable obligations in the GDD. **Next-round verification criterion:** if findings still land in the governance layer, the misplacement is unresolved; only findings in native design mean the design itself still has problems.
+
+**Do not confuse this with the convergence rule.** Convergence asks *"has this document stopped producing findings?"* Accretion asks *"are the findings still about the document's own subject matter?"* A document can fail convergence indefinitely while its actual design is sound — that is precisely the state this rule exists to detect and exit.
+
+When reporting a verdict, always state which bucket drove it, e.g. "NEEDS REVISION — 2 BLOCKING-NOW (design-content), 3 propagation failures (fixed same round, no escalation), 5 DEFER-TO-CALIBRATION logged to Open Questions." Also state the native-design/review-added split, and whether the accretion signal fired.
 
 ---
 
@@ -289,6 +302,14 @@ Review target: [GDD body (full/lean/targeted-at-content) / process-files-only �
 Scope signal: [S/M/L/XL]
 Specialists: [list]
 Blocking-now: [count] (design-content: [n] / propagation: [n]) | Deferred: [count] | Advisory: [count]
+Findings by location: native-design [n] / review-added [n] — accretion signal: [FIRED / not fired]
+  (Per Phase 0b's accretion escalation rule. "review-added" = material introduced by
+  previous rounds of this skill. Zero native-design findings alongside non-zero
+  review-added findings means the signal FIRED: move the accreted material to an ADR
+  or dedicated doc rather than patching it again. Record this split EVERY round — it
+  is what makes the signal computable instead of a judgment call someone has to
+  rediscover from scratch, which is how it went unnoticed for three rounds on
+  tactical-combat-system.md.)
 Summary: [2-3 sentence summary of key findings — keep to a short paragraph or
 a table; do not carry forward a full prior-round narrative each time. Older
 rounds' full write-ups live in git history, not in this file — see the
