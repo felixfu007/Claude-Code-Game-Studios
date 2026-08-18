@@ -24,7 +24,7 @@ Proposed
 | Field | Value |
 |-------|-------|
 | **Depends On** | `docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md`(消費其 `SaveFormat` 位元組緩衝區、`ReadRejection` 列舉——本 ADR 擴充該列舉新增 `MIGRATION_FAILED`/`SEMANTIC_VALIDATION_FAILED`——以及 `SaveBlockRegistry` 驗證器登記表);`docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md`(消費其權杖式序列化生命週期介面 `begin_non_atomic_window()`/`end_non_atomic_window()`) |
-| **Enables** | 存檔系統相關 story 的完整實作(`/create-stories`/`/dev-story`)——`TR-save-*` 30 項需求至此全數有 ADR 覆蓋;好感度視覺呈現 UI / 未來存檔管理 UI 的設計(消費本 ADR 定義的結構化結果型別與可觀測性介面) |
+| **Enables** | 存檔系統相關 story 的完整實作(`/create-stories`/`/dev-story`)——`TR-save-*` 30 項需求至此為 **22 項完整涵蓋、7 項部分涵蓋、1 項缺口**(`TR-save-030` 雲端同步;2026-08-18 第二輪 `/architecture-review` 獨立推導,本欄原宣稱「全數有 ADR 覆蓋」不成立);好感度視覺呈現 UI / 未來存檔管理 UI 的設計(消費本 ADR 定義的結構化結果型別與可觀測性介面) |
 | **Blocks** | 任何觸及實際存檔讀寫、遷移鏈執行、跨系統生命週期通知消費的 story |
 | **Ordering Note** | 本 ADR 是 `TR-save-*` 系列的最後一份、也是最複雜的一份——依賴前兩份 ADR 的位元組格式與資料結構決策,把 `save-system.md` Core Rules #4~#16 的並發/狀態機/檔案 I/O 義務對應到具體實作。GDD Open Question 9(一般寫入的同步阻塞模型是否在確認的主機平台上仍成立)在本 ADR 內**維持現行 GDD 決策(同步阻塞)但包一層可替換抽象**(見機制一)——不等待具體主機 SDK 確認,理由與範圍見機制一 |
 
@@ -407,7 +407,7 @@ func migration_progress(slot: int) -> Variant                                  #
 
 ### Positive
 
-- **`TR-save-*` 30 項需求至此全數有 ADR 覆蓋**——好感度數值池、序列化格式、原子寫入與遷移執行模型三份 ADR 合起來完整回答存檔系統的架構層問題。
+- **`TR-save-*` 30 項需求至此為 22 項完整涵蓋、7 項部分涵蓋、1 項缺口**——好感度數值池、序列化格式、原子寫入與遷移執行模型三份 ADR 合起來回答了存檔系統絕大部分的架構層問題。**2026-08-18 第二輪 `/architecture-review` 修正**:本行原宣稱「全數有 ADR 覆蓋」不成立。`TR-save-030`(雲端存檔同步 × 多檔案原子性)為缺口——本 ADR 的 Requirements Addressed 表雖列出該項,同格說明文字自陳「本 ADR 不解決此問題」;另 `TR-save-005/-015/-019/-021/-026/-028/-029` 為部分涵蓋,其中 `-026`(三桶/六桶耗時儀器化 + 加性下限成本模型)缺口最實質,機制十提供的是遷移呼叫計數器而非耗時儀器。詳見 `docs/architecture/architecture-review-2026-08-18-round2.md`。
 - **GDD 密度最高、對抗性審查最頻繁的規則群(六步驟原子置換、四條終止路徑),在本 ADR 中都有明確對應的程式碼結構**——降低了「規則傳播到實作時遺漏某個分支」的風險(這正是 GDD 自身審查過程中至少三次實際發生過的失敗模式)。
 - **同步/非同步的懸而未決,被限縮到單一檔案的抽象邊界**,不阻塞其餘架構決策定案,也不需要靠猜測具體主機 SDK 細節來強行定案。
 - **與 ADR-0001 的跨幀 `await` 先例、ADR-0002/0003 的 DI 慣例一致**,不引入新的架構風格。
@@ -473,7 +473,7 @@ func migration_progress(slot: int) -> Variant                                  #
 3. **四條終止路徑的獨立驗證**:分別構造遷移成功、Core Rules #6 拒絕、回寫 I/O 失敗三種情境(路徑三因結構性無法主動觸發,見機制六說明,不納入本項),驗證 `AffinityDataPool.end_non_atomic_window()` 皆在對應時機被呼叫、且不多不少一次。
 4. **逐槽重入的黑箱測試**:同一槽並行發起兩次完整讀取,驗證後者立即回傳 `slot_busy()`、不排隊、不啟動第二個狀態機;不同槽並行不受影響。
 5. **鎖釋放的完整性測試**:構造 `_run_migration_pipeline()` 內部各分支(成功/拒絕/I/O 失敗),驗證每一種分支結束後 `SaveSlotLock` 皆已釋放該槽(可透過立即嘗試 `try_acquire()` 驗證回傳 `true`)。
-6. **後續 `/architecture-review`** 判定本 ADR 與 ADR-0001/0002/0003 無衝突,且對 `save-system.md` 的完整涵蓋(全部 30 項 `TR-save-*`)無缺口。
+6. **後續 `/architecture-review`** 判定本 ADR 與 ADR-0001/0002/0003 無衝突,且對 `save-system.md` 的涵蓋無缺口。**2026-08-18 第二輪執行結果:衝突面通過**(無阻塞級衝突;但發現 5 項銜接缺口 C1~C5,其中 C1 `TOKEN_TIMEOUT_MS` 孤兒義務、C4 `write_temp()` 底層呼叫未拍板、C5「沿用 ADR-0001 已驗證先例」措辭超出實際驗證範圍,三者皆與本 ADR 直接相關);**涵蓋面未通過**——1 項缺口 + 7 項部分涵蓋,見上方 Consequences 的修正說明。
 
 **反向驗證**:若六步驟序列的某個分支被遺漏或實作有誤,會表現為特定失敗注入情境下的檔案系統終態不符合 GDD Edge Cases 定義的三種允許結局之一——第 2 項測試會直接攔截。若鎖釋放邏輯有誤(例如某條分支忘記回傳導致函式提前結束),會表現為該槽此後所有操作恆為「處理中」——第 5 項測試逐分支驗證會攔截。
 

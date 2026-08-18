@@ -163,3 +163,35 @@ Task: ADR-0002/0003/0004 已撰寫、registry 已更新;**尚未 commit**;下一
   3. 存檔系統原子寫入與遷移執行模型(寫入並發模型 `provisional` 已逾期——主機平台已定案)
 - **Report**: `docs/architecture/architecture-review-2026-08-18.md`(另見 `docs/architecture/traceability-index.md` 全量矩陣、`docs/architecture/tr-registry.yaml` 穩定 ID)。
 - **本輪新增待查證清單(godot-specialist 諮詢,非 revision flag,是 verification item)**:`FileAccess.flush()` 是否有可檢查回傳值(傾向無)、GDScript 是否有 fsync 等效物(傾向無)、`duplicate_deep()` 的確切 enum 成員名稱(未知)、cursor 系統「Agile Event Flushing」單幀批次保證(未驗證)。**新風險旗標**:4.6 雙焦點系統(滑鼠/觸控 vs 鍵盤/手把焦點分離)影響**所有** Control 選單畫面,不只戰棋游標系統本身——待 UI 系統(#9/#10/#11)設計時留意。
+
+---
+
+## Session Extract — /architecture-review 2026-08-18(第二輪)
+
+- **Verdict**: FAIL — advisory。唯一硬阻塞:**單一游標/高亮狀態系統 19 項需求零涵蓋**(Foundation 層,設計層已於第十六輪 Approved)。次級阻塞:4 份 ADR 全為 `Proposed`,無一 `Accepted`,整條依賴鏈目前無法進入實作。
+- **Requirements**: 130 total — **50 covered(38%)、24 partial(18%)、56 gaps(43%)**。首輪為 5/16/109。
+  - affinity 24 → 22 ✅ / 2 ⚠️ / **0 ❌**(ADR-0002 達零缺口,最接近可 `Accepted`)
+  - save 30 → 22 ✅ / 7 ⚠️ / 1 ❌
+  - tactical 43 → 5 / 11 / 27 · cursor 19 → 0 / 0 / **19** · concept 14 → 1 / 4 / 9
+- **New TR-IDs registered**: None。以 `git diff 890046b..HEAD -- design/gdd/` 查證 4 份系統 GDD 兩輪之間零變動,130 項基線沿用,無新增/改寫/棄用;`tr-registry.yaml` 僅加註核對日期。
+- **GDD revision flags**: None — 全部引擎項目皆為「未驗證」而非「已推翻」,無系統需標 `Needs Revision`。
+- **獨立推翻的涵蓋宣稱**:三處文件(ADR-0004 Enables/Consequences/Validation、`systems-index.md`、`technical-preferences.md`)宣稱「全部 30 項 `TR-save-*` 皆有 ADR 覆蓋」——**不成立**,實為 22/7/1。`TR-save-030`(雲端同步)被列在 ADR-0004 的 Requirements Addressed 表內,但同格文字自陳「本 ADR 不解決此問題」。**三處已於本輪一併修正**。
+  - 反向:我方原懷疑 ADR-0001 仍活用 `duplicate_deep()`(grep 2 處命中)——**逐行核對後推翻**,兩處分別在已拒絕的 Alternative 1 與「本方案不複製盤面故不相關」的聲明裡。`godot-specialist` 獨立得到同一結論(REFUTED)。教訓:grep 命中 ≠ 實際使用。
+- **跨 ADR**:無阻塞級衝突、**無依賴循環**(依賴圖為 `{0001,0002} → 0003 → 0004` 一條乾淨的鏈)。5 項銜接缺口待調和(四份皆 `Proposed`,現在成本最低):
+  - **C1** `TOKEN_TIMEOUT_MS` **無人擁有** — ADR-0002 明文委派給「存檔系統 ADR」,ADR-0004 明文退回「該系統的職責,非本系統補償」。而 ADR-0004 的分步遷移跨越「數個至數十個影格」,正是 ADR-0002 自己預測會誤判為逾時回收的情境。
+  - **C2** 同一驗證器兩個回傳型別名:ADR-0003 宣告 `-> ValidationResult`,ADR-0002 實作 `-> ImportResult`。
+  - **C3** `TR-affinity-016` 的條件前提已被 ADR-0004 判為「否」(不引入背景執行緒 + 主執行緒斷言),但 ADR-0002 的無條件 `Mutex` 仍宣稱是「專案唯一執行緒安全義務」。建議保留為縱深防禦但明文交叉引用。
+  - **C4** `write_temp()` 底層用 `store_buffer()` 還是 `store_var()` 無任何 ADR 拍板(專家發現;`store_buffer()` 回傳 `bool` 已 CONFIRMED)。
+  - **C5** ADR-0004「沿用 ADR-0001 **已驗證的**跨幀生命週期約束」措辭超出 ADR-0001 實際範圍——後者未區分 `RefCounted`(參照計數歸零)與 `Node`(顯式 `queue_free()`)兩種失效路徑。
+- **引擎**:棄用 API **零命中**;4/4 有 Engine Compatibility 章節;版本一致(4.7.1);無 post-cutoff API 衝突。
+  - 專家**經查證**僅 3 項:`store_*` 回傳 `bool`(CONFIRMED)、`Time.get_ticks_msec()` 為建議 API(CONFIRMED)、ADR-0001 未用 `duplicate_deep()`(REFUTED)。其餘全為訓練資料印象,既有「待驗證」標記恰當,無一可升級為「已確認」。
+  - **新風險 E1**:`Callable`/`Signal`/`RID` 不是 `Object` 衍生類,**不受 `allow_objects=false` 管控** → ADR-0003「白名單結構性不存在」的論證隱含「payload 只含原生 Variant」前提,須補 Validation Criteria。
+  - **新風險 E3**:`docs/engine-reference/godot/modules/` **無 core/scripting 文件**,而四份 ADR 的 HIGH Knowledge Risk 項整批落在此空白(序列化/雜湊/檔案 I/O/並發原語)。建議新增 `modules/core-scripting.md`。
+  - **E4 優先度**:`@abstract` 語法是四份 ADR 裡信心度最低、且寫錯會**整檔案編譯失敗**的賭注,優先度應高於 `HashingContext`/`DirAccess` 方法名。
+- **Top ADR gaps**:
+  1. **單一游標裝置權威輸入架構**(`TR-cursor-001`~`-019`)—— 唯一 FAIL 成因,Engine Risk **HIGH**
+  2. 戰棋盤面演算法層(可達格/威脅範圍/視線)—— Engine Risk LOW
+  3. 回合結構擁有權 + 缺席的 AI/遭遇系統 —— 全專案無人認領回合結構
+- **仍未修補(首輪即指出)**:`TR-concept-012`/`-014` 的兩項專案級 forbidden pattern **仍未登記**於 `docs/registry/architecture.yaml`(38 項立場中 grep `rng|random|procedural|程序化|連線|network|multiplayer` 全檔零命中)。最低成本的一項修補。
+- **Pre-gate**:四項全缺(`tests/unit`、`tests/integration`、`.github/workflows/tests.yml`、`design/accessibility-requirements.md`、`design/ux/interaction-patterns.md`)→ `/gate-check pre-production` 不可執行,須先 `/test-setup` + `/ux-design`。
+- **Report**: `docs/architecture/architecture-review-2026-08-18-round2.md`(`traceability-index.md` 全部 130 列已重建;`docs/consistency-failures.md` 不存在,依 skill 規定未建立,故 C1~C5 僅存於報告)。

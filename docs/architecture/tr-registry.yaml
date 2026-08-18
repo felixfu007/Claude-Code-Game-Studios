@@ -25,7 +25,7 @@
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
 version: 1
-last_updated: "2026-08-18"
+last_updated: "2026-08-18"   # 第二輪 /architecture-review 核對:130 項基線不變,無新增/改寫/棄用 TR-ID
 
 requirements:
   # ─── 戰棋移動與交戰系統 (tactical-combat-system.md) ──────────────────────────
