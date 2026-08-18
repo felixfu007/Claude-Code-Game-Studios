@@ -80,6 +80,54 @@ state_ownership:
     added: 2026-08-18
     revised: ""
 
+  - state: affinity_delta_log
+    status: active
+    owner_system: affinity-data-pool
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    interface: "AffinityDataPool.append_record(pair, m, source) -> WriteRejection (write); AffinityDataPool.combat_strength_read/narrative_depth_read/shape_feature_read/speculative_read (read). Backed by Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]."
+    write_access: affinity-data-pool-only (via append_record; writers are skill-card, support-conversation, and chapter/campaign-structure systems calling this single method)
+    notes: "Append-only. t_now/campaign tick are derived, cached values, never persisted independently. Per-pair indexed for O(n_p+m) query complexity — see affinity_pair_key_representation below."
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: affinity_death_marks
+    status: active
+    owner_system: affinity-data-pool
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    interface: "AffinityDataPool.notify_death(character: AffinityTypes.Character) -> DeathNotifyResult (write, idempotent-reject on duplicate). Backed by Dictionary[AffinityTypes.Character, int]."
+    write_access: affinity-data-pool-only (via notify_death; sole legitimate caller is tactical-combat-system, a reverse Foundation←Gameplay dependency — must NOT be relayed through affinity-position-linkage, see affinity_death_notification below)
+    notes: "Not incremented alongside the global write counter (t_now) — records t_now's current value at the moment of death, unchanged. Relative call order vs. append_record() in the same settlement step determines write legality (Core Rules #2 of affinity-data-pool.md) and is tactical-combat-system's decision to make, not this system's."
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: affinity_serialization_tokens
+    status: active
+    owner_system: affinity-data-pool
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    interface: "AffinityDataPool.begin_non_atomic_window() -> int / end_non_atomic_window(token: int) -> EndTokenResult. Backed by Dictionary[int, int] (token id -> issue timestamp), Mutex-guarded unconditionally."
+    write_access: affinity-data-pool-only (mutated only via begin/end; sole intended caller is save-system)
+    notes: "Non-empty token set ⇒ all affinity-data-pool write methods reject with SERIALIZATION_WINDOW_ACTIVE. Multiple concurrent tokens are legal (unlike tactical-combat-system's single-flag settlement_in_progress) — supports save-system's multi-slot parallel-operation allowance. Token IDs are a monotonically increasing int, never reused."
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: save_slot_reentrancy_lock
+    status: active
+    owner_system: save-system
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    interface: "SaveSlotLock.try_acquire(slot: int) -> bool / release(slot: int) -> void. Backed by Dictionary[int, bool], in-memory only."
+    write_access: save-system-only (via the single-entry/single-release function structure, see forbidden pattern early_return_between_lock_acquire_and_release)
+    notes: "Per-slot, not persisted (process restart clears all locks — no stale-lock-across-sessions risk). Gates full-read and ordinary-write interfaces only; manifest-only, migration-progress-query, and read-only-access interfaces are explicitly exempt (see Core Rules #15 classification table in ADR-0004 mechanism 10). Distinct from and independent of affinity_serialization_tokens above — two separate locks protecting two separate resources, with asymmetric failure severity (this lock has no timeout/liveness fallback, unlike the affinity token set)."
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: 2026-08-18
+    revised: ""
+
 # Example:
 #
 # state_ownership:
@@ -142,6 +190,96 @@ interfaces:
       a picture corresponding to no real board state.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - contract: affinity_death_notification
+    status: active
+    pattern: direct_call
+    producer: tactical-combat-system    # caller — reverse Foundation←Gameplay dependency
+    consumers:
+      - affinity-data-pool
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    signal_signature: "AffinityDataPool.notify_death(character: AffinityTypes.Character) -> DeathNotifyResult"
+    notes: >
+      A single synchronous, unbuffered, unqueued method call. tactical-combat-system's
+      death-settlement flow must call this directly — NOT relayed through
+      affinity-position-linkage, which would create a Foundation↔Gameplay cycle (see
+      systems-index.md dependency graph). The relative call order between this and
+      affinity-data-pool's append_record() within the same settlement step determines
+      write legality (affinity-data-pool.md Core Rules #2) — tactical-combat-system's
+      death-settlement design must pin down and document that order; affinity-data-pool
+      does not arbitrate it.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - contract: affinity_serialization_lifecycle
+    status: active
+    pattern: direct_call
+    producer: affinity-data-pool
+    consumers:
+      - save-system
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    signal_signature: "AffinityDataPool.begin_non_atomic_window() -> int / end_non_atomic_window(token: int) -> EndTokenResult"
+    notes: >
+      Token-based, NOT a boolean flag — supports multiple concurrent non-atomic windows
+      (save-system's per-slot parallel operations, see save-system.md Core Rules #2/AC-59).
+      save-system must call begin_non_atomic_window() before any window during which
+      affinity-data-pool data is not fully written/restored, and end_non_atomic_window()
+      with the SAME token when that window closes on every exit path (success, failure,
+      and abort) — see affinity-data-pool.md Core Rules #6 for the three termination
+      paths. Distinct in mechanism from tactical-combat-system's settlement_in_progress
+      (single boolean reject-gate) despite similar reject-style intent — do not conflate
+      the two patterns when designing future lifecycle-gated state.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - contract: save_block_validator_registration
+    status: active
+    pattern: direct_call
+    producer: "each data-owning system (e.g. affinity-data-pool)"
+    consumers:
+      - save-system
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    signal_signature: "SaveBlockRegistry.register(source_id: String, validator: Callable) — validator: Callable(Dictionary) -> ValidationResult, pure, no state mutation"
+    notes: >
+      Every persisted data block's owning system MUST expose a pure validate_semantics()
+      function and register it against its source_id at startup, before any save read can
+      occur. If a manifest lists a block with no registered validator, save-system treats
+      this as DATA_CORRUPTED (fail-closed, per save-system.md Core Rules #7) — the block's
+      own hash/type-safety checks passing is not sufficient. affinity-data-pool.md
+      satisfies this via AffinityDataPool.validate_semantics() (added retroactively to
+      ADR-0002 per this ADR). Future data-owning systems (chapter/campaign structure,
+      living-board terrain evolution, etc.) must do the same when designed.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+      - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+    revised: ""
+
+  - contract: save_io_backend_abstraction
+    status: active
+    pattern: shared_resource
+    producer: save-system
+    consumers:
+      - save-system   # internal — AtomicReplace/SteppedMigration/etc. all consume via this boundary, not FileAccess/DirAccess directly
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    signal_signature: "SaveIOBackend (@abstract): write_temp/rename_file/delete_file/file_exists/read_file. SyncBlockingSaveIOBackend extends SaveIOBackend is the current concrete implementation."
+    notes: >
+      All save-system disk access goes through this abstraction, never directly through
+      FileAccess/DirAccess in higher-level logic (atomic-replace sequence, stepped
+      migration, token consumption). This exists specifically because save-system.md
+      Open Question 9 (whether Core Rules #4's sync-blocking model holds on the confirmed
+      console target platform) is unresolved pending unspecified console SDK details — a
+      future AsyncSaveIOBackend can be substituted without rewriting the atomic-replace
+      sequence, migration state machine, or lifecycle-token consumption logic, which only
+      depend on "each step's success can be checked," not on synchronicity itself.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
     added: 2026-08-18
     revised: ""
 
@@ -234,6 +372,212 @@ api_decisions:
       explicit-snapshot alternative documented in the ADR.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: affinity_data_pool_ownership
+    status: active
+    api: "dependency-injected plain RefCounted instance, constructed once at campaign start, passed by reference to consuming systems"
+    not: "Autoload singleton"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      .claude/docs/coding-standards.md requires dependency injection over singletons for
+      unit-testability. An Autoload would force tests to reset global state between
+      cases; a DI instance can be freshly `new`'d per test with no scene-tree dependency.
+      Precedent for future data-layer systems (e.g. save-system) considering the same
+      ownership question — default to DI unless a concrete reason forces Autoload.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: affinity_pair_key_representation
+    status: active
+    api: "enum Pair (10 fixed members) wrapped in class_name AffinityTypes, constructed via AffinityTypes.pair_of(a, b) canonical lookup"
+    not: "runtime-normalized Array[Character] composite key"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      Array is technically usable as a GDScript Dictionary key (content-based hash/equality,
+      not reference-based), but a mutable container used as a key is a known risk pattern —
+      if the same Array instance is later mutated elsewhere, it silently corrupts the hash
+      bucket. An explicit enum is an int under the hood, immutable by construction, and the
+      canonical constructor hides the 10-combination lookup from callers. See also
+      forbidden pattern mutable_container_as_dictionary_key below.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: affinity_serialization_token_type
+    status: active
+    api: "monotonically increasing int, never reused (_next_token_id counter)"
+    not: "RefCounted object identity as token"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      Object-identity tokens risk the same GDScript reference-equality pitfall already
+      flagged project-wide (see affinity-data-pool.md TR-affinity-003), and produce
+      unreadable diagnostic/log output (memory addresses or get_instance_id() instead of
+      a stable, printable id). A monotonic int has neither problem and is consistent with
+      the project's existing preference for value-type keys (see grid_occupancy_storage
+      and affinity_pair_key_representation above).
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: affinity_persistence_format
+    status: active
+    api: "format-agnostic Dictionary via to_dict()/from_dict() adapter methods and export_state()/import_state()"
+    not: "Resource subclass + ResourceSaver/ResourceLoader"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      save-system's serialization format (TR-save-001) is still an Open Question. Choosing
+      Resource/.tres here would pre-commit that decision and directly conflict if
+      save-system later picks JSON or a custom binary format (e.g. for hash-chain byte
+      control, see TR-save-013/014). The Dictionary contract lets save-system pick any
+      container format without requiring changes to this ADR or affinity-data-pool code.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_serialization_format
+    status: active
+    api: "var_to_bytes(value) -> PackedByteArray / bytes_to_var(bytes, false) -> Variant  # binary Variant serialization"
+    not: "Resource subclass + ResourceSaver/ResourceLoader; JSON"
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    reason: >
+      ResourceLoader.load()'s standard path has no type-filter parameter and instantiates
+      any class declared in the file — Core Rules #9's deserialization type whitelist is
+      "near-unenforceable" through it without a custom ResourceFormatLoader. bytes_to_var
+      with allow_objects=false structurally refuses to decode any Object/Resource instance,
+      eliminating the type-whitelist problem at the engine level rather than requiring
+      app-level whitelist maintenance. JSON was rejected for float round-trip loss
+      (conflicts with save-system.md AC-24's tolerance assumption) and weaker type fidelity.
+      Resolves save-system.md Open Question 3 and 4 (whitelist version-domain scope becomes
+      moot since no custom types exist at all).
+    referenced_by:
+      - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_manifest_buffer_layout
+    status: active
+    api: "each data block independently serialized into its own PackedByteArray via var_to_bytes(), nested as a Dictionary value inside the outer manifest structure"
+    not: "single flat var_to_bytes()/store_var() call serializing manifest metadata and all block payloads together"
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    reason: >
+      A flat single-call serialization would force the manifest-only read path (save-
+      system.md Core Rules #5, TR-save-012) to recursively decode every block payload,
+      directly violating its "does not deserialize any data block" requirement. The
+      layered-buffer design lets the outer decode stop after reading manifest metadata
+      (ruleset_version, block_manifest, top_level_hash) without touching any block's
+      PackedByteArray content — this is also what makes Core Rules #16's locked read-order
+      (top-level hash → version compare → per-block hash → type-whitelist decode →
+      semantic validation) achievable at the format level rather than via extra flow-
+      control logic pretending steps happen in order.
+    referenced_by:
+      - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_hash_algorithm
+    status: active
+    api: "SHA-256 via HashingContext(HashingContext.HASH_SHA256)"
+    not: "CRC32, MD5, or other checksum/hash below save-system.md Core Rules #8's explicit strength requirement"
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    reason: >
+      save-system.md Core Rules #8 explicitly requires "SHA-256 or equivalent strength" —
+      not a free architecture-stage choice. CRC32-class checksums have known collision
+      blind spots for certain multi-bit-flip patterns even under an accidental-corruption
+      (non-adversarial) threat model. Computation cost is negligible at the project's
+      estimated save-slot size (tens of KB), so there is no performance reason to choose
+      a weaker algorithm than the GDD's locked floor.
+    referenced_by:
+      - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_validator_registry_ownership
+    status: active
+    api: "SaveBlockRegistry as a dependency-injected RefCounted instance, constructed once and passed to consumers"
+    not: "static class / static Dictionary holding registered validators"
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    reason: >
+      Consistent with the project's established DI-over-singleton preference (see
+      affinity_pool_ownership above and .claude/docs/coding-standards.md) — a fresh,
+      empty registry instance can be constructed per unit test to exercise "block with no
+      registered validator → DATA_CORRUPTED" without needing to reset any global static
+      state between test cases.
+    referenced_by:
+      - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_write_execution_model
+    status: active
+    api: "synchronous blocking write (current), routed through the SaveIOBackend abstraction (see save_io_backend_abstraction interface)"
+    not: "directly implementing an unverified async write model without confirmed target-console SDK details"
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    reason: >
+      save-system.md Core Rules #4's sync-blocking, single-thread-assumption write model is
+      still provisional pending confirmation on the project's confirmed console target
+      platform (technical-preferences.md: PC, Console — no specific console model named).
+      Switching to async now would be an equally unverified guess in the opposite
+      direction, and would directly contradict the GDD's current explicit text (a GDD
+      rewrite is not this ADR's authority to make unilaterally). The SaveIOBackend boundary
+      confines this open question's blast radius to one file.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_migration_execution_model
+    status: active
+    api: "stepped state machine using await scene_tree.process_frame between version-transition steps, on a plain RefCounted (SteppedMigration)"
+    not: "Node + _process(delta) driving one step per frame"
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    reason: >
+      Reuses ADR-0001's already-verified cross-frame await lifecycle pattern rather than
+      introducing a new scene-tree-coupling mechanism. Consistent with the project's
+      RefCounted-based, DI-friendly ownership style established in ADR-0002/0003 — avoids
+      the added risk surface of dynamically attaching/detaching a Node to the scene tree
+      purely to get per-frame ticks.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_reentrancy_release_pattern
+    status: active
+    api: "single-entry/single-release function structure — acquire the per-slot lock, delegate to an inner function that exhaustively returns a result for every known branch, release unconditionally as the function's last statement, no early return in between"
+    not: "try/finally-style cleanup (GDScript has no such mechanism)"
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    reason: >
+      GDScript has no exception/finally mechanism, so "unconditional release" must be
+      achieved structurally. This pattern guarantees release survives any branch expressible
+      as a return value; the only unguarded gap is a genuinely unclassified runtime error
+      that aborts the calling function before reaching the release statement — an accepted,
+      GDD-acknowledged residual risk category (save-system.md Core Rules #5 path 三), not a
+      gap this pattern claims to close. See forbidden pattern
+      early_return_between_lock_acquire_and_release below.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: save_repeated_failure_counter_persistence
+    status: active
+    api: "in-memory Dictionary[int, int], process-lifetime only"
+    not: "persisting the count into the manifest"
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    reason: >
+      save-system.md Core Rules #5 explicitly decided against persistence — this counter
+      serves same-session disclosure needs only. Persisting it would make it a fifth field
+      the ADR-0003 top-level integrity hash tuple must cover, a cost the GDD judges to
+      exceed the benefit.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
     added: 2026-08-18
     revised: ""
 
@@ -348,6 +692,94 @@ forbidden_patterns:
       sequence equality for set-valued outputs — sequence comparison would produce false
       failures.
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+    added: 2026-08-18
+
+  - pattern: autoload_singleton_for_testable_data_layers
+    status: active
+    description: >
+      Data-layer systems that need extensive unit-test coverage of edge cases (validation
+      rules, invariant checks) must not be implemented as Autoload singletons. Use a
+      dependency-injected plain instance instead.
+    why: >
+      .claude/docs/coding-standards.md requires "dependency injection over singletons"
+      for testability. Autoload forces every test case to reset global state before and
+      after running to stay isolated; a DI instance can be freshly constructed per test
+      with no scene-tree dependency. affinity-data-pool.md's Acceptance Criteria section
+      alone requires dozens of independent, deterministic edge-case tests — Autoload would
+      make each one carry global-state cleanup boilerplate.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+
+  - pattern: mutable_container_as_dictionary_key
+    status: active
+    description: >
+      Never use a mutable container (Array, Dictionary) as a Dictionary key, even though
+      GDScript supports content-based hashing/equality for them. Use an enum, int, String,
+      or other immutable value type instead — construct one via a canonical-normalization
+      helper function if the natural key shape is a composite (e.g. an unordered pair of
+      entities).
+    why: >
+      If the same Array/Dictionary instance used as a key is later mutated through any
+      reference to it, the key's hash silently changes underneath the containing
+      Dictionary, corrupting its hash bucket — a bug class that reproduces the reference-
+      equality/mutability trap already flagged project-wide for GDScript (see
+      affinity-data-pool.md TR-affinity-003), just via a different container.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+
+  - pattern: enum_value_positional_string_conversion
+    status: active
+    description: >
+      Never convert an enum value to its string name via positional indexing (e.g.
+      `EnumName.keys()[value]`). Use `EnumName.find_key(value)` for value→name lookup and
+      `EnumName[name_string]` (guarded by a validity check) for name→value lookup.
+    why: >
+      GDScript enums are runtime Dictionary-like objects; `find_key()`/`enum[name]` do
+      value-based/key-based lookup that stays correct even if enum members are ever
+      assigned non-contiguous or reordered underlying int values. Positional `keys()[value]`
+      indexing silently breaks the moment that assumption stops holding — a risk directly
+      relevant to any persisted enum (see affinity-data-pool.md TR-affinity-018's
+      string-name persistence requirement, which this pattern serves).
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: 2026-08-18
+
+  - pattern: resource_based_save_payload
+    status: active
+    description: >
+      Never use a Resource subclass to hold data that must pass through the save system's
+      serialization path. Provide a plain Dictionary (via a to_dict()/from_dict()-style
+      adapter, see affinity-data-pool.md's pattern) as the persisted representation
+      instead, even if the same data is held as a Resource in memory during gameplay.
+    why: >
+      save-system.md's chosen serialization mechanism (var_to_bytes()/bytes_to_var() with
+      allow_objects=false, see save_serialization_format above) structurally refuses to
+      decode any Object/Resource-derived instance — this is the entire basis of the
+      project's type-whitelist security argument (save-system.md Core Rules #9). A future
+      system (e.g. the not-yet-designed living-board terrain-evolution system, which
+      game-concept.md already flags as likely to use Resource subclasses for gameplay
+      convenience) that hands a raw Resource to the save system's write path would fail to
+      serialize at all, or — worse, if some other path bypasses this check — reintroduce
+      the exact type-instantiation attack surface this format choice was picked to avoid.
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    added: 2026-08-18
+
+  - pattern: early_return_between_lock_acquire_and_release
+    status: active
+    description: >
+      Never place a `return` statement between acquiring a per-resource reentrancy lock
+      and its matching unconditional release. Structure the guarded logic as a single
+      inner call that exhaustively returns a result for every known branch, with the
+      acquire/release pair in the outer function containing no other exit point.
+    why: >
+      GDScript has no try/finally or exception-unwinding mechanism, so "release must
+      happen unconditionally" cannot be enforced by the language — it can only be
+      guaranteed by never giving the function a code path that skips the release
+      statement. save-system.md Core Rules #5's R13 finding demonstrates the concrete
+      cost of getting this wrong: a leaked per-slot lock (distinct from and more severe
+      than the affinity-data-pool token leak, which has a timeout fallback) silently
+      rejects all subsequent autosaves for that slot as a non-error "busy" result, with
+      no player-visible failure and no automatic recovery.
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
     added: 2026-08-18
 
 # Example:
