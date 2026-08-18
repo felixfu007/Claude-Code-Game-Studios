@@ -1,12 +1,36 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: 設計階段(Core Layer GDD + 首份 ADR)
-Feature: 戰棋移動與交戰系統
-Task: 第四輪審查與修訂完成、ADR-0001 已建立;待第五輪(須新 session)
+Epic: 架構階段(Foundation 層 ADR 系列)
+Feature: 好感度數值池 + 存檔系統
+Task: ADR-0002/0003/0004 已撰寫、registry 已更新;**尚未 commit**;下一步待裁示(見下方待處理清單)
 <!-- /STATUS -->
 
-**最後更新**:2026-08-18 —— 第四輪 `/design-review` + `/architecture-decision`(ADR-0001)
+**最後更新**:2026-08-18 —— `/architecture-decision`(ADR-0002、ADR-0003、ADR-0004,同一 session 連續撰寫)
+
+## Session Extract — /architecture-decision 2026-08-18(ADR-0002~0004)
+
+**本 session 的工作已於整理進度後 commit 並推送**(commit 訊息見 `git log`)——但本檔案先前段落(第四輪 `/design-review` 那節)記載的「已 commit、工作區乾淨」屬**當時**狀態,不保證任何後續時點仍成立;下一位接手者(或新 session)一律應先實跑 `git status` 確認,不可從任何文件敘述推斷工作區狀態。
+
+- **ADR-0002「好感度數值池資料結構與並發契約」**(新增檔案):per-pair 索引 `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]`、獨立戰役刻度標記列表/陣亡標記表、單調遞增 int 權杖 + 無條件 Mutex 保護的序列化生命週期、依賴注入擁有模式(非 Autoload)。覆蓋 `affinity-data-pool.md` 全部 24 項 `TR-affinity-*`。經 `godot-specialist` 驗證修訂(共用列舉需集中包裝於 `AffinityTypes` 才能跨檔編譯,原始草稿的裸列舉會編譯失敗)。
+- **ADR-0003「存檔系統序列化格式與型別安全」**(新增檔案):選定 `var_to_bytes()`/`bytes_to_var(bytes, false)` 二進位 Variant 序列化(取代 Resource/.tres 與 JSON),理由是型別白名單問題在引擎層級結構性消除。逐區塊獨立 `PackedByteArray` 緩衝區的 manifest 分層結構、雙層 SHA-256 雜湊鏈、`SaveBlockRegistry` 驗證器登記表(依賴注入)。**回填修訂 ADR-0002**:新增 `AffinityDataPool.validate_semantics()` 純函式,`import_state()` 內部改為呼叫它。經 `godot-specialist` 驗證修訂 2 項 BLOCKING(誤植不存在的 `get_var(true,false)` 雙參數形式、誤植不存在的「記憶體內 FileAccess」路徑,皆已改為 `var_to_bytes()`/`bytes_to_var()`)。
+- **ADR-0004「存檔系統原子寫入與遷移執行模型」**(新增檔案):可替換 `SaveIOBackend` 抽象(現行實作同步阻塞,因主機平台 SDK 細節未知、無法驗證是否需要非同步——維持 GDD 現行決定但包一層可替換邊界)、Core Rules #14 六步驟原子置換序列(含 Step 0 分支邏輯)、`await scene_tree.process_frame` 跨幀讓出的分步遷移狀態機(沿用 ADR-0001 已驗證的宿主生命週期約束)、單一進入/單一釋放的逐槽重入鎖結構(GDScript 無 try/finally 下唯一能保證無條件釋放的方法)、序列化生命週期權杖消費(4 條終止路徑,3 條結構性保證、1 條 GDD 自陳殘留風險)。經 `godot-specialist` 驗證修訂 2 項 BLOCKING(誤引 ADR-0002/0003 為 `@abstract` 先例——全專案實際從未用過;機制一程式碼區塊的 `@abstract` 語法與專案唯一已查證範例互斥,已改為安全形式)。**`TR-save-*` 系列至此全部 30 項需求皆有 ADR 覆蓋。**
+
+**Registry 更新**(`docs/registry/architecture.yaml`):三份 ADR 合計新增 7 項 state_ownership、6 項 interfaces(累計)、15 項 api_decisions(累計)、10 項 forbidden_patterns(累計)——逐項來源見各 ADR 自身的 GDD Requirements Addressed 與本次 registry diff。所有新增皆已依 skill 流程逐項向使用者確認後才寫入。
+
+**跨檔同步(本 session 一併完成,回應本專案最昂貴的「一處改、他處未同步」失敗模式)**:
+- `.claude/docs/technical-preferences.md` Architecture Decisions Log:新增 ADR-0002/0003/0004 三條,並加註 registry 累計 38 項、全部 4 份皆 `Proposed` 尚無 `Accepted`。
+- `docs/architecture/traceability-index.md`:**刻意不逐列改寫 54 個涵蓋標記**——涵蓋判定須由獨立於撰寫脈絡的 `/architecture-review` 重新推導。改為在涵蓋率總覽加註過期聲明(明列三份 ADR 各自宣稱涵蓋的 TR-ID 範圍,並標明「這是 ADR 自身的宣稱,不是已驗證的涵蓋結論」)、缺口清單第 1–3 項標記為已撰寫、存檔系統節標題移除已成假的「全部需求皆為缺口」字樣。
+- `design/gdd/systems-index.md`:標頭新增本輪 ADR 系列記載;Cross-System Obligations Registry「序列化生命週期通知介面」列移除已成假的「序列化格式仍是 Open Question」宣稱(ADR-0003 已定案);Progress Tracker 新增 4 列 ADR 指標。
+
+**待處理清單**:
+1. **`/architecture-review` 必須在全新 session 執行**——本 session(撰寫 ADR 的同一 session)不得自行驗證,審查代理須獨立於撰寫脈絡。這也是 `traceability-index.md` 逐列標記唯一的正當更新途徑。
+2. **ADR 缺口清單剩餘 3 項尚未動筆**:第 4(單一游標裝置權威輸入架構,`TR-cursor-001~019`)、5(戰棋盤面演算法層,`TR-tactical-002~010` 等)、6(回合結構擁有權 + 缺席的 AI/遭遇系統,`TR-tactical-034/-041`)。
+3. **全部 4 份 ADR 皆為 `Proposed`,無一 `Accepted`**——依 `docs/CLAUDE.md`「Never skip `Accepted` — stories referencing a `Proposed` ADR are auto-blocked」,目前尚無任何 ADR 可支撐 story 實作。`Accepted` 的前置條件與裁決者本專案文件未明訂,需使用者裁示。
+4. ADR-0004 機制七「路徑二(維運層級重跑)」的具體觸發機制/程序仍留給 `/create-architecture` 或維運工具鏈決定,本 ADR 只保證資料前提成立——非本次遺漏,是 GDD 自身的既有裁決。
+5. 多項 Engine Compatibility Verification Required 項目(`@abstract` 語法、`DirAccess.rename()` 平台行為、`FileAccess.flush()` 可檢查性、`OS.get_thread_caller_id()`/`get_main_thread_id()` API 名稱)皆待 `/create-architecture` 階段取得 Godot 執行環境後實機驗證——本 session 全程無 Godot 執行環境可用,所有引擎層級判斷皆為 `godot-specialist` 訓練資料推測 + 對照 `docs/engine-reference/godot/` 既有文件,已在各 ADR 的 Engine Compatibility 表逐項標註信心等級。
+
+---
 
 **本 session 全部工作已 commit,工作區乾淨。** 三個 commit:
 - `d5a482f` 第四輪修訂(6 項 BLOCKING-NOW + 2 補項)
