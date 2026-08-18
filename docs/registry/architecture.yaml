@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-18"   # round-2 /architecture-review 補登 3 項專案級 forbidden pattern(TR-concept-012/-014)
+last_updated: "2026-08-18"   # ADR-0005 登記 14 項立場(3 state / 2 interface / 5 api / 4 forbidden);此前為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -128,6 +128,61 @@ state_ownership:
     added: 2026-08-18
     revised: ""
 
+
+  - state: cursor_target
+    status: active
+    owner_system: cursor-highlight-state
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    interface: "CursorState.get_current_target() -> CursorTarget (NEWLY ALLOCATED COPY, never the internal instance). CursorTarget is a value-semantics object: {surface: CursorTypes.SurfaceType, id: int, is_valid: bool}. Compare with target.equals(other), NEVER with == (RefCounted == compares identity, not field values)."
+    write_access: cursor-highlight-state-only (via set_target / mark_pending_reresolve / handoff_before_unload)
+    notes: "Board coordinates are encoded to int via CursorTypes.encode_tile(coord, board_width) so `id` has ONE type across all surfaces — this is what makes equals() type-independent, which mark_pending_reresolve()'s race guard fully depends on. Only surfaces registered in CursorTypes.SurfaceType fall under this field's jurisdiction (cursor-highlight-state.md AC-60); unregistered surfaces may still transfer device authority — that is correct behaviour, not an exception."
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: cursor_device_authority
+    status: active
+    owner_system: cursor-highlight-state
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    interface: "CursorState.get_device_authority() -> CursorTypes.Authority (UNINITIALIZED | MOUSE | KEYBOARD_GAMEPAD)"
+    write_access: cursor-highlight-state-only (only via arbitrate_frame, or set_target with from_ui_action == true)
+    notes: >
+      GLOBAL and orthogonal to cursor_target (cursor-highlight-state.md Core Rules #4) —
+      a surface-registration boundary constrains cursor_target only, never this field.
+      Classified from the raw InputEvent SUBCLASS; the device ID is never read (see
+      forbidden pattern reading_input_event_device_id). Same-frame two-device conflicts
+      resolve by FIXED PRIORITY: KEYBOARD_GAMEPAD always beats MOUSE — 100% deterministic,
+      never dependent on engine queue order. Only NAVIGATION-class ui_* actions and
+      threshold-passing mouse motion have standing to claim authority; CONFIRM-class
+      actions do not.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - state: mouse_reclaim_accumulator
+    status: active
+    owner_system: cursor-highlight-state
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    interface: "MouseReclaimPolicy.reclaim_progress() -> float (0.0-1.0). GDD calls this value `reclaim_progress`. Read by the self-drawn progressive-feedback cursor node's modulate.a."
+    write_access: MouseReclaimPolicy-only (via evaluate / reset)
+    notes: >
+      THIRD top-level field of cursor-highlight-state.md Core Rules #1
+      (`accumulated_net_displacement_px`), owned by the swappable MouseReclaimPolicy
+      rather than sitting directly on CursorState.
+      WARNING — THIS SUB-MECHANISM IS FROZEN: the user ruled in the GDD's round 12
+      (2026-08-11) that the mouse-reclaim redesign is SUSPENDED and candidate fixes are
+      no longer pursued, pending gamepad hardware. Two CONFIRMED, UNFIXED defects live
+      inside ThresholdMouseReclaimPolicy: (E1, spike-log verified, 100% reproducible)
+      holding an analog stick permanently locks out mouse reclaim; (E2, verbal
+      observation) a successful reclaim is instantly stolen back by the reverse-direction
+      zero-threshold exemption. ADR-0005 mechanism 8 does NOT mitigate either — it only
+      confines the fix radius to one file. Do not treat this entry as a working contract.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
 # Example:
 #
 # state_ownership:
@@ -283,6 +338,55 @@ interfaces:
     added: 2026-08-18
     revised: ""
 
+
+  - contract: cursor_target_write
+    status: active
+    pattern: method_call
+    producer: cursor-highlight-state
+    consumers:
+      - tactical-combat-system    # sets initial target (Core Rules #6); marks stale on unit death/move
+      - save-system               # handoff branches 甲/乙/丙 across screen teardown (ADR-0004 read path)
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    signal_signature: "set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult"
+    notes: >
+      mark_pending_reresolve MUST NEVER be silent: if `expected` does not equal the
+      currently-held target (the player navigated away in the meantime), it returns
+      STALE_NOT_APPLIED and the player's valid target is left untouched. Callers must not
+      assume "called once == problem solved" — they must re-detect and retry.
+      These ACTIVE write calls are NOT gated by the arbitration-suspended flag: save-load
+      branches 甲 (mark before old surface teardown) and 丙 (set new target before
+      returning) can legitimately fire while a pause menu is still on screen. Only the
+      PASSIVE arbitration path is suspended. Branch 丙 RECOMPUTES a target per Core Rules
+      #6 — it does not restore the pre-pause target (AC-63b).
+      All three handoff branches pass from_ui_action = false: device authority never
+      shifts on a system-initiated retarget.
+    added: 2026-08-18
+    revised: ""
+
+  - contract: cursor_surface_registration
+    status: active
+    pattern: method_call
+    producer: cursor-highlight-state
+    consumers:
+      - tactical-combat-system    # BOARD_TILE
+      - affinity-visual-ui        # RELATION_MINIMAP_NODE (system #9, Not Started)
+      - battle-hud                # CARD_SLOT (system #10, Not Started)
+      - support-conversation-ui   # DIALOGUE_CHOICE (system #11, Not Started)
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    signal_signature: "register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult  |  unregister(surface) -> RegisterResult  |  get_surface(surface) -> Node|null  |  registered_surfaces_sorted() -> Array[CursorTypes.SurfaceType]"
+    notes: >
+      ONE mounted instance per tag at any instant: register() on an occupied tag returns
+      DUPLICATE_TAG_REJECTED and does NOT overwrite — fail-loud, matching ADR-0002's
+      DUPLICATE_DEATH_NOTIFICATION idempotency convention.
+      Any traversal of registered surfaces MUST go through registered_surfaces_sorted()
+      (ordered by the enum's underlying int), never by iterating the internal Dictionary —
+      see forbidden pattern relying_on_container_iteration_order (ADR-0001).
+      Registration also carries the mechanism-14 obligation: every registered surface's
+      root Control must set focus_mode = FOCUS_NONE **and** must not carry a built-in
+      mouse-hover theme state (see forbidden pattern
+      native_control_hover_or_focus_on_registered_surface).
+    added: 2026-08-18
+    revised: ""
 # Example:
 #
 # interfaces:
@@ -597,6 +701,126 @@ api_decisions:
     added: 2026-08-18
     revised: ""
 
+
+  - purpose: cursor_input_buffering_mount_point
+    status: active
+    api: "_input(event) buffers into Array[InputEvent]; _process() calls arbitrate_frame(events) once per frame"
+    not: "_unhandled_input(); per-event immediate arbitration; arbitrating inside _input()"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      CORRECTNESS REQUIREMENT, NOT STYLE (cursor-highlight-state.md Core Rules #3
+      implementation constraint, escalated to a blocker in GDD round 9).
+      _unhandled_input() only receives events NOT consumed by a Control's own GUI handling
+      via accept_event(). A focused Control whose built-in focus navigation consumes
+      ui_up / ui_down means that event NEVER REACHES the buffer at all — an OMISSION, not a
+      reordering, which no buffering architecture can repair. godot-specialist CONFIRMED
+      _input() is the correct mount point, and confirmed the dispatch phase order
+      (_input -> GUI/accept_event -> _shortcut_input -> _unhandled_input), so an Autoload's
+      _input() is structurally guaranteed to precede any accept_event() consumption.
+      Arbitration sits in _process() rather than _input() because process_priority does NOT
+      govern _input() dispatch order — only _process/_physics_process. The four-actor
+      deterministic ordering (see cursor_actor_process_priority_ladder) is therefore only
+      achievable in the _process phase.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: cursor_device_classification
+    status: active
+    api: "match on InputEvent SUBCLASS (InputEventKey / InputEventJoypadButton / InputEventJoypadMotion -> KEYBOARD_GAMEPAD; InputEventMouseMotion / InputEventMouseButton -> MOUSE)"
+    not: "event.device / any device-ID based classification"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      Two-layer mechanism (cursor-highlight-state.md Core Rules #3): the ui_* action is the
+      AUTHORITY GATE (an event mapping to no ui_* action is not grounds for an authority
+      shift); the InputEvent subclass is the CLASSIFICATION MEANS inside that gate.
+      Reading the subclass instead of the device ID gives this system STRUCTURAL IMMUNITY to
+      Godot 4.7's keyboard/mouse device-ID renumbering (breaking-changes.md 4.6->4.7) —
+      confirmed by godot-specialist in the round-1 /architecture-review.
+      Also sidesteps the -1 sentinel trap (InputEvent.device can return -1 for some
+      synthetic events, GDD round 11). DOWNSTREAM WARNING: anything reading the device ID
+      for debug/logging must handle -1.
+      KNOWN UNDEFINED PATH: ui_* actions synthesised via Input.action_press() have no
+      backing InputEvent to classify; per GDD guidance this does NOT change current
+      authority, pending a real downstream need.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: cursor_actor_process_priority_ladder
+    status: active
+    api: "process_priority — arbiter (CursorStateHost Autoload) = -100; registered surfaces = 0; global visual layer = 50; downstream readers = 100"
+    not: "relying on scene-tree order; relying on _input() dispatch order; relying on CanvasLayer.layer for update ordering"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      Lower process_priority runs first, so the arbiter necessarily updates the three
+      top-level fields before ANY reader runs — making
+      max_handoff_visual_latency_frames = 1 (GDD-locked) a SAME-FRAME guarantee rather than
+      a barely-met bound.
+      process_priority (update order) and CanvasLayer.layer (draw stacking) are TWO
+      INDEPENDENT concepts; these numbers refer only to the former.
+      UNVERIFIED PREMISE (ADR-0005 Verification Required #2, risk HIGH): that all _input()
+      calls for a frame complete before that frame's _process(). godot-specialist:
+      LIKELY-BUT-UNVERIFIED, mid-high confidence, training-data impression only — the
+      project's engine reference has ZERO coverage of process_priority. Supporting
+      inference: the Agile Event Flushing setting would have no meaning if the main loop
+      did not batch input before the processing phase. VERIFY ON DAY ONE of implementation.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: cursor_visual_carrier_split
+    status: active
+    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only. Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer, modulate.a = MouseReclaimPolicy.reclaim_progress()"
+    not: "animating the native OS pointer's alpha; asserting Input.mouse_mode to validate progressive feedback"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      cursor-highlight-state.md round-5 Open Question flagged that the native pointer may
+      not support per-frame continuous alpha in 4.7.1, and that the carrier choice changes
+      how AC-31 can be validated. This decision picks the option that HOLDS UNDER BOTH
+      verification outcomes: if the native pointer turns out to support continuous alpha,
+      the self-drawn carrier is still the superior option and this ADR needs no revision.
+      Marginal cost is near zero because the global CanvasLayer already exists for the
+      per-device idle indicator (TR-cursor-016).
+      AC-31'S ASSERTION TARGET IS THEREFORE FIXED: the self-drawn node's visible /
+      modulate.a — NOT Input.mouse_mode, which degenerates to vacuously true for
+      progressive feedback under this design (the GDD predicted this correctly).
+      Input.mouse_mode assertions remain valid for the binary suppression of the native
+      pointer (Core Rules #5); the two are distinct validation targets.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
+
+  - purpose: cursor_arbitration_suspension_gate
+    status: active
+    api: "explicit boolean flag, driven by CursorStateHost.suspend_arbitration() / resume_arbitration(); plus NOTIFICATION_APPLICATION_FOCUS_IN/_OUT"
+    not: "SceneTree.paused; process_mode as the arbitration gate"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      cursor-highlight-state.md round-6 Open Question asked whether SceneTree.paused +
+      process_mode covers every popup in the project. The GDD ANSWERS ITSELF in AC-60,
+      which uses "an unregistered surface that does NOT make SceneTree.paused true"
+      (non-modal settings sidebar, achievement toast) as its test scenario. Since the
+      document already establishes such surfaces exist, gating on SceneTree.paused would
+      build on a judgement known to be incomplete. The explicit flag does not need that
+      Open Question answered — which is why ADR-0005 downgrades it from a blocker.
+      COST: callers must remember to call it. Covered by AC-59, but a test can only cover
+      known call sites — this is an accepted, documented trade.
+      SCOPE (GDD round-13 clarification, MUST be preserved): the flag gates ONLY the
+      passive arbitration path. set_target() / mark_pending_reresolve() MUST NEVER check it
+      — see interface contract cursor_target_write.
+      While suspended, the accumulator does not compute AT ALL for the whole out-of-focus
+      period; on refocus it resets and reseeds at the current mouse position (GDD trigger
+      point (c), round-10 rewrite) — there is no possibility of it silently crossing the
+      threshold in the background.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+    revised: ""
 # Example:
 #
 # api_decisions:
@@ -847,6 +1071,87 @@ forbidden_patterns:
     registered_by: /architecture-review 2026-08-18 (round 2)
     added: 2026-08-18
 
+
+  - pattern: logic_in_cursor_autoload_shell
+    status: active
+    description: >
+      CursorStateHost (the Autoload) must stay a pure lifetime/mount shell. Never put state
+      fields or arbitration logic on it — every public method is a one-line forward to the
+      dependency-injected CursorState instance.
+    why: >
+      This shell is the ONLY reason ADR-0005 does not need an exception to
+      autoload_singleton_for_testable_data_layers (ADR-0002). cursor-highlight-state.md has
+      66+ Acceptance Criteria, nearly all of them pure-logic edge cases (state-machine
+      transitions, same-frame arbitration, race guards, four reset trigger points). They are
+      testable via CursorState.new() with no scene tree and no global-state cleanup ONLY as
+      long as the logic lives in CursorState. Move any decision into the shell and every one
+      of those tests reacquires global-state cleanup boilerplate — which is exactly the cost
+      the ADR-0002 ban exists to prevent. Detection signal: a unit test that suddenly needs
+      add_child() or a global reset means logic has leaked into the shell.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+
+  - pattern: unhandled_input_for_device_authority
+    status: active
+    description: >
+      Never mount the cursor system's device-authority arbitration buffer on
+      _unhandled_input(). It must be _input().
+    why: >
+      _unhandled_input() only receives events not already consumed by a Control's GUI
+      handling via accept_event(). A focused Control whose built-in focus navigation
+      consumes ui_up / ui_down means that event NEVER ENTERS the buffer — an OMISSION, not a
+      reordering, and no buffering architecture can repair an event that never arrived. This
+      would falsify cursor-highlight-state.md's core "100% deterministic, testable" claim.
+      Escalated to a blocker in GDD round 9; godot-specialist CONFIRMED _input() is correct
+      in the round-1 /architecture-review and re-confirmed the dispatch phase order in the
+      ADR-0005 Step 5.5 validation.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+
+  - pattern: reading_input_event_device_id
+    status: active
+    description: >
+      Never classify an input device by InputEvent.device (or any device-ID value). Classify
+      by the InputEvent SUBCLASS. Debug/logging code that does read the device ID must
+      handle the -1 sentinel.
+    why: >
+      Godot 4.7 CHANGED keyboard/mouse device-ID numbering (breaking-changes.md 4.6->4.7:
+      "Code that hardcodes device IDs will break"), and deprecated-apis.md lists "Hardcoded
+      keyboard/mouse device IDs" as a forbidden pattern in its own right. Subclass-based
+      classification gives structural immunity rather than version-dependent correctness.
+      Additionally InputEvent.device can return -1 ("no specific device") for some synthetic
+      events — a trap registered in cursor-highlight-state.md round 11 specifically as an
+      ADR-authoring warning item.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
+
+  - pattern: native_control_hover_or_focus_on_registered_surface
+    status: active
+    description: >
+      A registered cursor surface's root Control must satisfy BOTH conditions: (1)
+      focus_mode = Control.FOCUS_NONE, and (2) no built-in mouse-hover theme state — it must
+      not be a Button or any node type carrying a hover StyleBox, or that StyleBox must be
+      explicitly cleared. Highlight visuals read CursorState only, never any native
+      focus/hover state.
+    why: >
+      Godot 4.6 split mouse/touch focus from keyboard/gamepad focus (dual-focus). If board
+      tiles relied on native focus/hover theming, the two could render simultaneously —
+      reproducing cursor-highlight-state.md's highest-risk documented failure ("two
+      highlights at once"). Ruled by godot-specialist + creative-director in GDD round 4 and
+      generalised to ALL hover/cursor-target surfaces in round 5.
+      CONDITION (2) IS NOT REDUNDANT (godot-specialist, ADR-0005 Step 5.5): focus_mode has
+      only ever governed keyboard/gamepad focus. Native mouse-hover visuals are driven by
+      mouse_entered/mouse_exited plus the node's internal state machine — a SEPARATE
+      PIPELINE. The 4.6 split changed which focus channels share state, NOT which property
+      disables mouse hover. So focus_mode = FOCUS_NONE most likely closes only ONE of the two
+      pipelines: a hover-themed root Control would draw native hover independently of all
+      cursor-system logic, even when that logic is perfectly correct. Confirm via ADR-0005
+      Verification Required #9 (set FOCUS_NONE on a Button, check whether hover still draws).
+      SCOPE: applies to REGISTERED surfaces. Unregistered surfaces (non-modal sidebars,
+      toasts) may use native focus — AC-60 says so explicitly, and directional navigation
+      there may still shift device authority, which is correct because authority is global.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-18
 # Example:
 #
 # forbidden_patterns:

@@ -48,7 +48,7 @@
 
 <!-- Add patterns that should never appear in this project's codebase -->
 
-**權威清單在 `docs/registry/architecture.yaml` 的 `forbidden_patterns` 節(目前 13 項)。**
+**權威清單在 `docs/registry/architecture.yaml` 的 `forbidden_patterns` 節(目前 17 項)。**
 以下 3 項是**專案級身分/範圍裁決**,來源為 `design/gdd/game-concept.md` 而非任何 ADR,
 因此在任何 ADR 被 `Accepted` 之前就已生效,寫在這裡供實作時直接查閱:
 
@@ -63,10 +63,13 @@
 - **`procedural_terrain_generation`** — 棋盤地形與其演變一律手工設計、劇情觸發,
   絕不程序化/隨機生成。
 
-其餘 10 項為 ADR-0001~0004 各自推導出的實作級禁令(節點樹推導佔位、動畫驅動邏輯狀態、
-結算路徑 `call_deferred()`、回傳內部容器參照、依賴容器迭代順序、可測試資料層用 Autoload、
-可變容器當 Dictionary 鍵、enum 位置索引字串轉換、Resource 承載存檔 payload、
-取鎖與釋放之間提前 return)——詳見 registry 各條的 `why:` 欄與對應 ADR。
+其餘 14 項為 ADR-0001~0005 各自推導出的實作級禁令。ADR-0001~0004 的 10 項:節點樹推導佔位、
+動畫驅動邏輯狀態、結算路徑 `call_deferred()`、回傳內部容器參照、依賴容器迭代順序、
+可測試資料層用 Autoload、可變容器當 Dictionary 鍵、enum 位置索引字串轉換、
+Resource 承載存檔 payload、取鎖與釋放之間提前 return。**ADR-0005 新增 4 項(游標系統)**:
+游標 Autoload 薄殼加邏輯、用 `_unhandled_input()` 做裝置權威裁定、讀取 `InputEvent.device` 
+裝置 ID、已註冊游標表面使用原生 Control hover/focus(注意:此項需**兩個**條件,`focus_mode = 
+FOCUS_NONE` 單獨不足——它不關 Control 主題內建的滑鼠 hover 管線)。詳見 registry 各條的 `why:` 欄。
 
 ## Allowed Libraries / Addons
 
@@ -80,8 +83,9 @@
 - **ADR-0002 — 好感度數值池資料結構與並發契約** (`docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md`) — **Proposed**, 2026-08-18. Per-pair indexed `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` satisfying the GDD-locked `O(n_p + m)` query contract; campaign-tick marker list and death-marker table as structurally independent stores; monotonic-int serialization-lifecycle tokens under unconditional `Mutex` (the project's only declared thread-safety obligation); dependency-injected ownership, not Autoload. Covers all 24 `TR-affinity-*` requirements of `design/gdd/affinity-data-pool.md`. Registry: 3 state-ownership, 2 interface contracts, 4 API decisions, 3 forbidden patterns.
 - **ADR-0003 — 存檔系統序列化格式與型別安全** (`docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md`) — **Proposed**, 2026-08-18. Resolves `save-system.md` Open Question 3: binary Variant serialization via `var_to_bytes()`/`bytes_to_var(bytes, false)`, rejecting `Resource`/`.tres` and JSON — this makes Core Rules #9's deserialization type whitelist *structurally unnecessary* (no custom `Object` can be produced) rather than app-maintained, and moots Open Question 4. Layered per-block `PackedByteArray` buffers enabling the manifest-only read path; two-layer SHA-256 hash chain in canonical `source_id` order. Retrofits ADR-0002 with `validate_semantics()`. Registry: 1 interface contract, 4 API decisions, 1 forbidden pattern.
 - **ADR-0004 — 存檔系統原子寫入與遷移執行模型** (`docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md`) — **Proposed**, 2026-08-18. Swappable `SaveIOBackend` abstraction (sync-blocking implementation today) confining `save-system.md` Open Question 9's unresolved console-SDK dependency to one file; Core Rules #14's locked six-step atomic-replace sequence including Step 0 branch logic; stepped migration state machine via `await scene_tree.process_frame`, reusing ADR-0001's verified cross-frame lifecycle constraint; single-entry/single-release per-slot reentrancy lock (the only way to guarantee unconditional release given GDScript has no `try`/`finally`). **Coverage of the 30 `TR-save-*` requirements independently re-derived by the 2026-08-18 round-2 `/architecture-review`: 22 covered, 7 partial, 1 gap (`TR-save-030`, cloud-save sync) — the earlier "completes all 30" claim did not hold.** Registry: 1 state-ownership, 1 interface contract, 4 API decisions, 1 forbidden pattern.
+- **ADR-0005 — 單一游標/高亮狀態系統:裝置權威輸入架構** (`docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`) — **Proposed**, 2026-08-18. Closes the round-2 `/architecture-review`'s **sole FAIL cause** (19/19 uncovered, Foundation layer). Autoload thin shell (`CursorStateHost`) as lifetime host + dependency-injected `CursorState` core — satisfies the GDD's cross-screen lifetime requirement without needing an exception to ADR-0002's `autoload_singleton_for_testable_data_layers` ban. Full-frame `_input()` buffering with arbitration in `_process()` (because `process_priority` governs `_process` only, never `_input()` dispatch); four-actor priority ladder −100/0/50/100 making the ≤1-frame handoff a same-frame guarantee. Device classification by `InputEvent` subclass, never `.device` — structural immunity to 4.7's device-ID renumbering. Explicit suspend flag instead of `SceneTree.paused` (the GDD's own AC-60 establishes non-pausing surfaces exist). One Autoload-owned `CanvasLayer` resolves **both** the ownerless per-device idle indicator (TR-cursor-016) and the self-drawn continuous-alpha carrier (TR-cursor-017). Frozen mouse-reclaim sub-mechanism isolated behind a swappable `MouseReclaimPolicy` — mirroring ADR-0004's `SaveIOBackend` treatment of OQ-9. **Self-declared coverage: 16 of 19 complete, 3 partial (`TR-cursor-009`/`-010`/`-011`, all inside the user-frozen sub-mechanism) — explicitly does NOT claim 19/19**, pending independent `/architecture-review`. Registry: 3 state-ownership, 2 interface contracts, 5 API decisions, 4 forbidden patterns.
 
-> **Registry 累計**:41 項立場(7 state-ownership、6 interface contracts、15 API decisions、**13** forbidden patterns)。其中 3 項 forbidden pattern 為 2026-08-18 第二輪 `/architecture-review` 補登的**專案級身分/範圍裁決**(`rng_in_combat_settlement`、`networking_features`、`procedural_terrain_generation`,對應 `TR-concept-012`/`-014`)——來源為 `game-concept.md` 而非任何 ADR,故 `adr:` 欄記為 `none` 並附 `gdd:` 欄,是 registry 檔頭「`adr:` 為權威來源」慣例的明文例外。全部 4 份 ADR 皆為 `Proposed`,無任何一份達 `Accepted`——依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被自動阻擋。**2026-08-18 第二輪 `/architecture-review` 已獨立驗證完畢**:判定 FAIL(130 項需求 50 ✅ / 24 ⚠️ / 56 ❌);無阻塞級跨 ADR 衝突,但有 5 項銜接缺口待調和(C1 `TOKEN_TIMEOUT_MS` 無人擁有、C2 驗證器回傳型別名不一致、C3 執行緒條件已解未回傳、C4 `write_temp()` 底層呼叫未拍板、C5 措辭超出上游驗證範圍);棄用 API 零命中。唯一硬阻塞為單一游標/高亮狀態系統 19 項需求零涵蓋。詳見 `docs/architecture/architecture-review-2026-08-18-round2.md`。
+> **Registry 累計**:55 項立場(10 state-ownership、8 interface contracts、20 API decisions、**17** forbidden patterns)——其中 14 項為 ADR-0005 新增。其中 3 項 forbidden pattern 為 2026-08-18 第二輪 `/architecture-review` 補登的**專案級身分/範圍裁決**(`rng_in_combat_settlement`、`networking_features`、`procedural_terrain_generation`,對應 `TR-concept-012`/`-014`)——來源為 `game-concept.md` 而非任何 ADR,故 `adr:` 欄記為 `none` 並附 `gdd:` 欄,是 registry 檔頭「`adr:` 為權威來源」慣例的明文例外。全部 5 份 ADR 皆為 `Proposed`,無任何一份達 `Accepted`——依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被自動阻擋。**2026-08-18 第二輪 `/architecture-review` 已獨立驗證完畢**:判定 FAIL(130 項需求 50 ✅ / 24 ⚠️ / 56 ❌);無阻塞級跨 ADR 衝突,但有 5 項銜接缺口待調和(C1 `TOKEN_TIMEOUT_MS` 無人擁有、C2 驗證器回傳型別名不一致、C3 執行緒條件已解未回傳、C4 `write_temp()` 底層呼叫未拍板、C5 措辭超出上游驗證範圍);棄用 API 零命中。唯一硬阻塞為單一游標/高亮狀態系統 19 項需求零涵蓋。詳見 `docs/architecture/architecture-review-2026-08-18-round2.md`。**該硬阻塞已由同日撰寫的 ADR-0005 處理**(自陳 16 完整 / 3 部分,3 項部分全落在使用者已凍結的滑鼠奪權子機制)——涵蓋判定須由全新 session 的 `/architecture-review` 獨立重新推導,尚未執行。
 
 ## Engine Specialists
 

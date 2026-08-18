@@ -205,3 +205,18 @@ Task: ADR-0002/0003/0004 已撰寫、registry 已更新;**尚未 commit**;下一
   - **C1** 建議由 **ADR-0004 接下** `TOKEN_TIMEOUT_MS`(只有它掌握遷移鏈深度上界),ADR-0002 改為明文委派並註明推導方式。
   - **C3** 建議 **保留 `Mutex` 為縱深防禦**,ADR-0002 明文交叉引用 ADR-0004「背景執行緒已排除,此鎖為未來 `AsyncSaveIOBackend` 翻轉的前置準備」。
 - **R3 未處理**:E1(payload 不得含 `Callable`/`Signal`/`RID`,須補 ADR-0003 Validation Criteria)、E3(新增 `docs/engine-reference/godot/modules/core-scripting.md`)、ADR-0002 Post-Cutoff 欄措辭。
+
+---
+
+## Session Extract — /architecture-decision ADR-0005 2026-08-18
+
+- **產出**:`docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`(**Proposed**,718 行)—— 關閉第二輪 `/architecture-review` 的**唯一 FAIL 成因**(單一游標/高亮狀態系統 19/19 零涵蓋,Foundation 層)。
+- **自陳涵蓋:16 完整 / 3 部分**(`TR-cursor-009`/`-010`/`-011`,全落在使用者第十二輪已凍結的滑鼠奪權子機制)。**刻意不宣稱 19/19** —— 不重蹈 ADR-0004 被抓到的宣稱膨脹。涵蓋判定待全新 session 的 `/architecture-review` 獨立重推。
+- **使用者三項裁決**:(1) Autoload 薄殼 + DI 核心(而非純 Autoload / 純 DI);(2) 一份 ADR 涵蓋 19 項並隔離凍結子機制;(3) 待機指示由 Autoload 薄殼兼任宿主。
+- **核心洞見**:三個看似無關的缺口(TR-cursor-001 生命週期宿主、-016 待機指示無主、-017 連續 alpha 載體)共用同一個答案 —— 都需要「生命週期跨所有畫面且能承載視覺節點的宿主」。GDD 找不到 -016 的擁有者,是因為它一直在畫面範圍的候選裡找,而正確答案在畫面範圍之外。
+- **關鍵引擎判斷**:`process_priority` **只管 `_process`,不管 `_input()` 派發順序** → 裁決必須放 `_process()`,四行為者階梯 −100/0/50/100,讓 ≤1 影格交接成為**同幀**保證。
+- **`godot-specialist` Step 5.5 驗證發現(已據此修訂)**:`focus_mode = FOCUS_NONE` **只關鍵盤/手把焦點,不關 Control 主題內建的滑鼠 hover 管線**(兩條獨立管線;4.6 雙焦點拆的是焦點通道,不是新增滑鼠開關)。機制十四原本只有一項條件 → **已改為兩項**(加:根 Control 不得帶內建 hover 主題 / 須清空 hover-focus StyleBox),新增 Verification Required 第 9 項最小 spike。
+- **參考庫涵蓋率缺口(本 ADR 新發現,比 ADR-0004 的 `core-scripting` 缺口更嚴重)**:ADR-0005 的 **8 項核心引擎依賴中 6 項在 `docs/engine-reference/godot/` 完全零命中**(`process_priority`、Autoload、`focus_mode`/`FOCUS_NONE`、`accept_event`、`CanvasLayer`、`Input.mouse_mode`),另 2 項(`_input`、`mouse_filter`)只在**落後一個大版本**的 4.6 文件裡。ADR 已明文承認機制五/六/十四的正確性依據**弱於**本專案其他 ADR 的平均水準。**建議新增 `modules/` 一份涵蓋 Node 生命週期與輸入派發語意的文件。**
+- **實作第一天應先跑的 4 項驗證**(成本極低、後果全有全無):`process_priority` 前提幀精準測試、Agile Event Flushing 鍵名 `has_setting()` 查詢、`Button` 設 `FOCUS_NONE` 後是否仍畫 hover、`@abstract` 最小檔案語法。
+- **Registry**:41 → **55 項**(3 state-ownership、2 interface contracts、5 API decisions、4 forbidden patterns)。新增 forbidden pattern:`logic_in_cursor_autoload_shell`、`unhandled_input_for_device_authority`、`reading_input_event_device_id`、`native_control_hover_or_focus_on_registered_surface`。
+- **仍未處理**:C1(`TOKEN_TIMEOUT_MS` 無人擁有)、C3(`Mutex` 條件已解未回傳)、R3(E1 payload 不得含 `Callable`/`Signal`/`RID`、E3 `modules/core-scripting.md`、ADR-0002 Post-Cutoff 措辭)。5 份 ADR 全為 `Proposed`,無一 `Accepted` —— 引用它們的 story 仍會被自動阻擋。
