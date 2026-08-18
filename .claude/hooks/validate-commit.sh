@@ -98,4 +98,20 @@ if [ -n "$WARNINGS" ]; then
     echo -e "=== Commit Validation Warnings ===$WARNINGS\n================================" >&2
 fi
 
+# Cross-file documentation drift gate.
+# Runs in --gate mode: BLOCKS the commit on high-confidence contradictions
+# (e.g. a GDD header and systems-index.md disagreeing about approval status,
+# a placeholder claiming no ADRs exist when they do, active.md claiming
+# uncommitted work when the tree is clean). Heuristic findings only warn.
+# This project's most expensive recurring failure is a fact updated in one
+# place and left stale in another; blocking here stops new drift from landing.
+# Escape hatch: SKIP_DOC_CONSISTENCY=1
+if [ -f ".claude/hooks/validate-doc-consistency.sh" ]; then
+    bash .claude/hooks/validate-doc-consistency.sh --gate
+    DOC_RC=$?
+    if [ "$DOC_RC" -eq 2 ]; then
+        exit 2
+    fi
+fi
+
 exit 0

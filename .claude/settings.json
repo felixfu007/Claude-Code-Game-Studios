@@ -45,6 +45,11 @@
             "type": "command",
             "command": "bash .claude/hooks/detect-gaps.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate-doc-consistency.sh",
+            "timeout": 20
           }
         ]
       }
