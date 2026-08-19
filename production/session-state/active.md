@@ -72,7 +72,7 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
 1. **5 份 ADR 全為 `Proposed`。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
-2. **`/gate-check pre-production` 目前不可執行**,**五項** pre-gate 全缺(2026-08-19 實測確認):`tests/unit/`、`tests/integration/`、`.github/workflows/tests.yml`、`design/accessibility-requirements.md`、`design/ux/interaction-patterns.md`。
+2. **`/gate-check pre-production` 仍不可執行,但已從 5 缺降為 2 缺**(2026-08-19 `/test-setup` 後實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml` 已建立;❌ `design/accessibility-requirements.md`、❌ `design/ux/interaction-patterns.md` 仍缺,由 `/ux-design` 補。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
 
@@ -304,7 +304,7 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 - **引擎**: 棄用 API 零命中(主審與 `godot-specialist` 各自獨立比對);5 份 ADR 版本一致 4.7.1;參考庫自相矛盾(breaking-changes 標 4.5 HIGH vs VERSION 標 LOW)仍開;`modules/` 8 份仍停 4.6
 - **引擎專家覆核**: **已執行**(使用者明文核准)—— R5-1~R5-5 全部 CONFIRMED,R5-1 由該專家升為 BLOCKING、R5-3 升為中高,R5-6 為其自行發現
 - **Top ADR gaps**: 戰棋盤面演算法層(25 項 ❌)、回合結構擁有權 + AI/遭遇系統、`TR-save-030` 雲端同步
-- **Pre-gate**: 五項全缺,`/gate-check pre-production` 不可執行
+- **Pre-gate**: 五項全缺,`/gate-check pre-production` 不可執行(**已於同日 `/test-setup` 補足其中三項,見上方第二節**)
 - **Report**: docs/architecture/architecture-review-2026-08-19-round5.md
 
 ---
@@ -344,3 +344,44 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 1. **全新 session 跑第六輪 `/architecture-review`** —— 依本次約定,範圍限縮為「這 17 項是否確實關閉」,不再全域重推 130 項需求。
 2. Day-1 spike 由六項增為**七項**(新增 VR #15 `Callable.is_valid()`)。
 3. 與架構軌零依賴、pre-gate 五項全缺:`/test-setup`(補三項)、`/ux-design`(補兩項)。
+
+---
+
+## Session Extract — /test-setup 2026-08-19
+
+**成果**:pre-gate 五項補足三項(`tests/unit/`、`tests/integration/`、`.github/workflows/tests.yml`)。
+
+### 兩項先前未被發現的文件矛盾(本次實測抓到)
+
+| 矛盾 | 兩側說法 | 裁決 |
+|---|---|---|
+| **測試框架** | `technical-preferences.md:43` 寫 `GUT`;`coding-standards.md:64` 的 CI 指令寫 `tests/gdunit4_runner.gd` —— **兩者是不相容的框架**,選錯則每個測試檔都要重寫 | **使用者裁決採 GdUnit4**。判 `GUT` 為範本預設值:同區塊其餘欄位皆為未設定佔位符,而 CI 指令具體到檔名。`technical-preferences.md` 已更正 |
+| **測試證據落點** | `tests/evidence/`(test-setup、smoke-check 兩處)vs `production/qa/evidence/`(coding-standards + create-epics/create-stories/dev-story/story-done/gate-check 共六處) | 採 **`production/qa/evidence/`**(六比二,且 coding-standards 每 session 載入)。此為對 `/test-setup` 範本的明文偏離,已記於 `tests/README.md` |
+
+### 修正的一項範本缺陷
+
+`/test-setup` 的 Godot runner 範本在跑完測試後**無條件 `quit(0)`** —— 那會讓「測試失敗」的 CI
+依然顯示綠燈,比沒有 CI 更危險。已改為傳遞實際結果,且回傳值無法判讀時**一律視為失敗**。
+
+### 建立的檔案
+
+`tests/README.md`、`tests/gdunit4_runner.gd`、`tests/unit/.gdignore_placeholder`、
+`tests/integration/.gdignore_placeholder`、`tests/smoke/critical-paths.md`、
+`tests/unit/harness/harness_selfcheck_test.gd`、`production/qa/evidence/.gitkeep`、
+`.github/workflows/tests.yml`。
+
+### 兩個必須被記住的暫時狀態
+
+1. **CI 守衛**:`project.godot` 不存在時跳過測試並直接成功。**綠燈不代表測試通過**
+   (Summary 會明文印出這句)。移除條件:專案建立 + GdUnit4 安裝 + 首次真實綠燈確認。
+   這不是「關掉失敗的測試」——現在還沒有測試可跑,而長期紅燈會訓練所有人忽略 CI。
+2. **六項未驗證**(無 Godot 執行環境,全數未實測):GdUnit4 CLI 入口路徑、
+   `gdUnit4-action@v1` 對 4.7.1 的支援、`run_tests()` 回傳型別、GdUnit4 對 4.7.1 的整體相容性、
+   `GdUnitTestSuite` 基底類別名稱、`assert_failure()` 的 API 形狀。
+   **六項的失敗方向全部被安排在會被看見的那一側,沒有一項會造成假綠燈。**
+
+### 下一步
+
+`/ux-design` 補剩餘兩項 pre-gate(`design/accessibility-requirements.md`、
+`design/ux/interaction-patterns.md`)。注意 `cursor-highlight-state.md` 登記的孤兒義務
+——運動無障礙需求先前口頭轉交至一個不存在的檔案(第五輪審查報告第 351 行起)。

@@ -1,0 +1,3 @@
+# 整合測試放這裡 —— 一個系統一個子目錄。
+# 跨系統互動、存檔讀取往返、多系統狀態一致性。
+# 規則見 .claude/docs/coding-standards.md 的 Testing Standards 節。
