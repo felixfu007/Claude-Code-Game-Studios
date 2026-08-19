@@ -2,11 +2,13 @@
 
 ## Status
 
-Proposed
+**Proposed**
+
+> **2026-08-19 修訂(銜接缺口 C1/C3,不改動任何機制決策)**:連續三輪 `/architecture-review` 判定為仍開的兩項跨 ADR 銜接缺口。**C1** —— `TOKEN_TIMEOUT_MS` 的**定值責任**已由 ADR-0004 明文接下(該 ADR 掌握遷移鏈深度上界與兩階段回寫最壞 I/O 時間,本 ADR 對兩者一無所知);本 ADR 仍擁有逾時**機制**的執行(機制七逐權杖惰性清除),但不擁有那個數字。**C3** —— `TR-affinity-016` 是條件式需求,其條件(「若選擇背景執行緒序列化」)已由 ADR-0004 判為「否」;`Mutex` 決策**不變**,但理由由「必要」改為**縱深防禦**,措辭不再宣稱它是「全專案唯一已成立的執行緒安全義務」。兩項皆為措辭與擁有權澄清,**未新增、未移除、未改變任何資料結構或介面契約**。
 
 ## Date
 
-2026-08-18
+2026-08-18(初版) / 2026-08-19(C1/C3 銜接缺口修訂)
 
 ## Engine Compatibility
 
@@ -245,6 +247,10 @@ signal entry_appended(pair: AffinityTypes.Pair, record: AffinityRecord)
 - **「操作進行中」判準**:`_serialization_tokens` 非空 ⇔ 寫入方法(`append_record`/`advance_campaign_tick`/`notify_death`)一律拒絕(`SERIALIZATION_WINDOW_ACTIVE`)——與 ADR-0001 的 `settlement_in_progress` 拒絕式輸入閘門精神一致,但機制上是獨立的多權杖集合而非單一布林,滿足 `save-system.md` Core Rules #2 允許多槽並行操作的前提(見 GDD Core Rules #6「為何不能是布林旗標或裸計數」段落)。
 - **逐權杖惰性逾時清除**(`TR-affinity-015`,不使用獨立 `Timer` 節點輪詢):`begin_non_atomic_window`/`end_non_atomic_window`/任一寫入方法呼叫時,先檢查 `_serialization_tokens` 中是否有任何 `issue_time` 早於 `Time.get_ticks_msec() - TOKEN_TIMEOUT_MS`(Tuning Knob,待校準,GDD 未定案具體值——本 ADR 亦不定案,留給實測)的殘留權杖;若有,將其從 `_serialization_tokens` 移除、加入 `_reclaimed_tokens`(短期保留識別碼,供上方 `TIMED_OUT_RECLAIMED` 判斷用;`_reclaimed_tokens` 本身也需要一個更長的次要逾時上限以避免無限成長,建議值同樣留待實測,不在本 ADR 定案)。**理由選擇惰性檢查而非專屬 `Timer`**:本系統的讀寫呼叫頻率(每次好感度事件、每次戰役刻度推進)已足夠密集,足以驅動逾時清除,額外常駐一個 `Timer` 節點的 `_process`/訊號成本是不必要的重複開銷,且會讓本系統重新產生「需要掛在場景樹上」的依賴,與機制一的 DI-only 擁有模式衝突。
 - **無條件 Mutex 保護**(`TR-affinity-016`):`_serialization_tokens`(以及 `_reclaimed_tokens`)的所有讀寫皆由 `_token_mutex` 保護,不論存檔系統最終選擇同步阻塞式寫入或背景執行緒序列化。**理由**:GDD 條件句「若架構階段選擇背景執行緒序列化,須明確以 Mutex 保護」把決定權交給本 ADR,而存檔系統執行模型 ADR 尚未撰寫——若本 ADR 選擇「條件式加 Mutex」,等於讓本 ADR 的並發正確性論證懸空等待一個尚未存在的 ADR,且未來若真的選擇背景執行緒,需要回頭修改本 ADR 與已寫好的程式碼。無條件加 Mutex 的成本可忽略(集合規模上界是「同時存在的非原子視窗發起者數」,遠小於 Delta Log),換來的是本 ADR 現在就能宣告完整、不需要任何未來的條件式修訂。
+
+**2026-08-19 修訂 —— C3 銜接缺口:條件已解,但保留為縱深防禦**(第二輪 `/architecture-review` 提出,第三、四輪重申仍開):`TR-affinity-016` 是**條件式**需求(「**若**架構階段選擇背景執行緒序列化,須明確以 `Mutex` 保護」)。該條件此後已由 **ADR-0004 判為「否」**——`SaveIOBackend` 的現行實作為**同步阻塞式**,不引入任何背景執行緒,且該 ADR 明文加上主執行緒斷言。因此本節原本的措辭「**全專案唯一已宣告的執行緒安全義務**」現在容易被誤讀為「專案內存在跨執行緒競爭」——實際上**目前不存在**。
+
+**決策不變:`Mutex` 保留,理由改為縱深防禦而非必要性。** 理由:(i) 移除它需要修改本 ADR 與未來已寫好的程式碼,而 ADR-0004 的 `SaveIOBackend` **本來就是為了將來可替換而設計的抽象**(該 ADR 明文把主機 SDK 的非同步 I/O 列為未解決的 Open Question 9);若日後替換為背景執行緒實作,`Mutex` 已在位。(ii) 保留的成本可忽略(見上),移除的收益趨近於零,而移除後再加回來要重新推導一次並發正確性論證。**但本 ADR 不再宣稱這是「已成立的執行緒安全義務」——它是一個目前無競爭對手的鎖。** 見 `docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md` 機制五/`SaveIOBackend`。
 - **鎖定模式:單一進入點取鎖,逾時清除以「假設已持鎖」的私有輔助函式實作**(2026-08-18 `godot-specialist` 驗證發現,回應對「機制七是否會有巢狀 `lock()` 呼叫」的查核)——`begin_non_atomic_window`/`end_non_atomic_window`/每個寫入方法皆在**公開進入點**呼叫一次 `_token_mutex.lock()`,惰性逾時清除邏輯抽成私有的 `_sweep_timed_out_tokens_unlocked()`,**只假設鎖已持有、自己絕不呼叫 `lock()`/`unlock()`**,只能從已持鎖的區塊內呼叫。**理由**:`godot-specialist` 查核時本專案無 Godot 執行環境可實測、亦無對應模組參考文件,無法確認 4.7.1 的 `Mutex` 是否為可重入鎖(同執行緒重複 `lock()` 是否死結)——訓練資料傾向判斷是可重入,但這是**未經專案驗證**的假設(見上方 Engine Compatibility 表 Verification Required 第 4 項)。此鎖定模式讓正確性**不依賴這個未驗證的答案**:不論 `Mutex` 是否可重入,「只有一個地方真正呼叫 `lock()`」的設計都不會死結,也不會在得知答案前留下一個可能錯的假設。
 - **`entry_appended` 訊號**(`TR-affinity-024`):`append_record()` 成功時 emit,供好感度視覺呈現 UI 等下游做反應式更新。GDD 明文此為「實作慣例決策,非已承諾的契約」——本 ADR 選擇加入,理由是 Godot 訊號機制是慣用的反應式更新原語,成本(一次 emit)可忽略,但**下游系統不得假設此訊號的存在會被其他 ADR 或未來重構保留**——若 UI 系統設計時發現不需要它,可以忽略不連接,不構成對本契約的違反。
 
@@ -448,7 +454,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 |---|---|
 | **存檔系統 ADR 最終選擇的並發模型比背景執行緒更複雜**(例如多執行緒池而非單一背景執行緒),使單一 `Mutex` 不足以保護所有存取路徑 | 本 ADR 的 Mutex 保護範圍明確界定為 `_serialization_tokens`/`_reclaimed_tokens` 本身;若存檔系統 ADR 引入更複雜的並發模型觸及 `_records`/`_death_marks`/`_campaign_tick_marks` 本身的並發存取(目前 GDD 未預期此情境——這些結構的寫入方皆為遊戲邏輯執行緒),須回頭重新評估本 ADR |
 | **`_records`/`_death_marks`/`_campaign_tick_marks` 本身未加鎖**:本 ADR 假設寫入(`append_record` 等)只發生在主執行緒/遊戲邏輯執行緒,唯有序列化的**讀取**(`export_state()`)可能發生在背景執行緒——若這個假設不成立(例如未來某系統嘗試在背景執行緒呼叫 `append_record`),會產生資料競爭 | 本 ADR 的隱含前提已於此處明文記載:唯一可能的背景執行緒存取路徑是存檔系統的**唯讀**匯出,且該路徑受 `_token_mutex` 保護的「非原子視窗期間拒絕寫入」規則保護(視窗開啟時所有寫入方法皆拒絕)——只要存檔系統遵守「匯出前必先 `begin_non_atomic_window()`」的契約,`export_state()` 執行期間不會有並行寫入,不需要對 `_records` 本身額外加鎖。若未來出現本 ADR 未預期的背景寫入路徑,須回頭重新評估 |
-| **`TOKEN_TIMEOUT_MS` 未定案**,若設得過短,會誤將仍在合法進行中的慢速操作(例如大型遷移的最後一步)判定為逾時回收,造成 `end_non_atomic_window` 回傳非預期的 `TIMED_OUT_RECLAIMED` 而非 `RELEASED` | 具體數值留待存檔系統 ADR 或實測校準(GDD 本身也未定案此值);`TIMED_OUT_RECLAIMED` 本身被設計為非故障結果,呼叫方(存檔系統)可自行決定如何處理,不會導致資料損毀 |
+| **`TOKEN_TIMEOUT_MS` 未定案**,若設得過短,會誤將仍在合法進行中的慢速操作(例如大型遷移的最後一步)判定為逾時回收,造成 `end_non_atomic_window` 回傳非預期的 `TIMED_OUT_RECLAIMED` 而非 `RELEASED` | **2026-08-19 修訂(C1 銜接缺口關閉)**:此值的**定值責任已由 ADR-0004 明文接下**(見該 ADR 機制六「C1 銜接缺口」段落),不再是本表原本模糊的「留待存檔系統 ADR 或實測校準」——該模糊措辭與 ADR-0004 上一版的「非本系統補償」互相推諉,使本值連續三輪 `/architecture-review` 被判為**孤兒義務**。定值依據是遷移鏈深度上界 × 幀預算 + 兩階段回寫最壞 I/O 時間 × 安全係數,**只有 ADR-0004 掌握這些量**。本系統仍擁有逾時**機制**的執行(機制七的逐權杖惰性清除),但不擁有那個數字。`TIMED_OUT_RECLAIMED` 本身被設計為非故障結果,呼叫方可自行決定如何處理,不會導致資料損毀 |
 | **`AffinityTypes.Pair` 的 10 個成員在角色系統定案實際命名前只是佔位符**,若角色系統設計時發現主角規模政策變動(理論上已由 `game-concept.md` 主角群規模裁決鎖定 5 人,但仍是一個交叉文件的相依) | 若角色數量變動,`Pair`/`Character` enum 需要重新生成(10 對 → 其他組合數),`AffinityTypes.pair_of()` 的查表邏輯集中在單一函式,重新生成的影響範圍侷限,不擴散到呼叫端邏輯 |
 | **全域 `class_name` 命名碰撞**(2026-08-18 `godot-specialist` 驗證發現,低風險前瞻性提醒):`class_name` 註冊是專案級扁平命名空間,`AffinityRecord`/`HypotheticalEntry`/`AffinityReadResult`/`ShapeFeatureResult`/`AffinityDataPool`/`AffinityTypes` 六個全域類別名稱未來可能與其他系統或第三方 addon 的類別名稱碰撞 | 六個名稱皆帶 `Affinity` 字首(`AffinityTypes` 包裝三個共用 enum,避免了原草稿 `Pair`/`Character`/`Source` 這類過於通用、碰撞風險較高的裸命名),目前 `src/` 為空、無碰撞對象;此為一次性命名慣例,無需額外機制 |
 
@@ -471,7 +477,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 | TR-affinity-013 | 回傳簽章攜帶 `t_query`/`n(p)`,QA 診斷輸出獨立 | `AffinityReadResult`/`ShapeFeatureResult` 的 `t_query`/`n_pair`/`c_now` 為正式欄位;`diagnostic_visited_count` 明文標記 QA-only(機制六) |
 | TR-affinity-014 | 序列化生命週期為權杖式,支援並行重疊視窗 | `begin_non_atomic_window()`/`end_non_atomic_window()`,`_serialization_tokens: Dictionary[int, int]` 支援任意數量同時存在的權杖 |
 | TR-affinity-015 | 逐權杖逾時偵測,非整批清空,ID 永不重新發放 | `_next_token_id` 只增不減;惰性逾時清除依 `issue_time` 逐一判斷,移入 `_reclaimed_tokens` 而非清空整個集合(機制七) |
-| TR-affinity-016 | 若背景執行緒序列化,權杖集合須執行緒安全 | `_token_mutex` 無條件保護 `_serialization_tokens`/`_reclaimed_tokens`,不等待存檔系統執行模型 ADR(機制七、Alternative 5) |
+| TR-affinity-016 | 若背景執行緒序列化,權杖集合須執行緒安全 | `_token_mutex` 無條件保護 `_serialization_tokens`/`_reclaimed_tokens`,不等待存檔系統執行模型 ADR(機制七、Alternative 5)。**2026-08-19 修訂(C3)**:該條件式需求的條件此後已由 ADR-0004 判為「否」(同步阻塞式 `SaveIOBackend` + 主執行緒斷言),`Mutex` 因此由「必要」降為**縱深防禦**——決策不變、措辭修正,見機制七的 C3 段落 |
 | TR-affinity-017 | 存檔須無損往返 3 份結構 | `export_state()`/`import_state()` 涵蓋 `records`/`campaign_tick_marks`/`death_marks` 三者(機制八) |
 | TR-affinity-018 | `Pair`/`source_i` 以字串名稱持久化,退役名稱永久保留 | `to_dict()`/`from_dict()` 以字串名稱轉換;退役名稱治理規則明訂為存檔系統職責(依 GDD Dependencies 原文),本系統只提供轉換原語(機制八) |
 | TR-affinity-019 | 本系統為反序列化語意驗證規則唯一權威 | `validate_semantics()` 純函式實作逐欄位值域 + 5 條跨結構不變量檢查,回傳結構化 `ImportResult`(機制八);`import_state()` 內部呼叫此函式,通過才替換內部狀態(2026-08-18 回填修訂,見 ADR-0003) |
@@ -488,7 +494,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 - **Load Time**:`import_state()` 需要 `O(n_total)` 重建 `_t_now` 快取與執行跨結構不變量檢查,發生於存檔讀取時,非每幀路徑,不構成影格預算風險。
 - **Network**:不適用(單人遊戲)。
 
-**明確未定案**:`_records` 的實際規模上界(取決於好感度對話卡牌觸發頻率、支援對話/劇情事件節奏,皆為其他系統未定案的旋鈕,見 GDD Tuning Knobs);`TOKEN_TIMEOUT_MS` 的具體數值。
+**明確未定案**:`_records` 的實際規模上界(取決於好感度對話卡牌觸發頻率、支援對話/劇情事件節奏,皆為其他系統未定案的旋鈕,見 GDD Tuning Knobs);`TOKEN_TIMEOUT_MS` 的具體數值——**但其定值責任與推導規則自 2026-08-19 起由 ADR-0004 擁有(C1),不再是無主項**。
 
 ## Migration Plan
 

@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-19"   # /architecture-decision 修訂 ADR-0005(F1/F5 BLOCKING + F2/F3/F4 + N1~N4,共 9 項):新增 2 interface / 2 api / 2 forbidden,並就地修訂既有 2 項 api_decisions(revised: 2026-08-19)。ADR-0005 現為 20 項立場(3 state / 4 interface / 7 api / 6 forbidden);此前 2026-08-18 登記 14 項(3/2/5/4),更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-19b"  # /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -165,10 +165,17 @@ state_ownership:
     status: active
     owner_system: cursor-highlight-state
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
-    interface: "MouseReclaimPolicy.reclaim_progress() -> float (0.0-1.0). GDD calls this value `reclaim_progress`. Read by the self-drawn progressive-feedback cursor node's modulate.a."
+    interface: "MouseReclaimPolicy.reclaim_progress() -> float (0.0-1.0), the DECISION value. GDD calls it `reclaim_progress`. The self-drawn progressive-feedback cursor node does NOT bind modulate.a to it directly — it holds a separate PRESENTATION value `_presented_alpha` (rising: synced immediately; falling: converged via move_toward(); trigger (d): snapped) and assigns THAT to modulate.a. Seed position readable via diagnostic_seed_position() (QA-only)."
     write_access: MouseReclaimPolicy-only (via evaluate / reset)
     notes: >
       THIRD top-level field of cursor-highlight-state.md Core Rules #1
+      REVISED 2026-08-19b (round-4 /architecture-review flagged this field as not synced
+      with ADR-0005 fix F3, and ADR-0005's own round-4 revision R4-3 changed it again).
+      OLD VALUE of `interface:` was "Read by the self-drawn progressive-feedback cursor
+      node's modulate.a" — a direct bind, abolished by F3 (it violated AC-41 for reset
+      triggers a/b/c). The R4-3 revision then split the smoother by DIRECTION: rising is
+      synced immediately (GDD requires alpha == 100% AT the frame the threshold is crossed —
+      a rate-limited rise makes that mathematically impossible), only falling is rate-limited.
       (`accumulated_net_displacement_px`), owned by the swappable MouseReclaimPolicy
       rather than sitting directly on CursorState.
       WARNING — THIS SUB-MECHANISM IS FROZEN: the user ruled in the GDD's round 12
@@ -182,7 +189,7 @@ state_ownership:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-08-19b"
 # Example:
 #
 # state_ownership:
@@ -347,7 +354,7 @@ interfaces:
       - tactical-combat-system    # sets initial target (Core Rules #6); marks stale on unit death/move
       - save-system               # handoff branches 甲/乙/丙 across screen teardown (ADR-0004 read path)
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
-    signal_signature: "set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult"
+    signal_signature: "PUBLIC GATED ENTRIES (5): arbitrate_device_authority(events: Array[InputEvent]) -> void  |  apply_buffered_navigation(events: Array[InputEvent]) -> void  |  set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult  ||  PRIVATE UNGATED: _write_target_internal(target: CursorTarget) -> void  ||  CTOR: _init(reclaim, registry, mouse_position_provider: Callable)"
     notes: >
       mark_pending_reresolve MUST NEVER be silent: if `expected` does not equal the
       currently-held target (the player navigated away in the meantime), it returns
@@ -357,19 +364,54 @@ interfaces:
       branches 甲 (mark before old surface teardown) and 丙 (set new target before
       returning) can legitimately fire while a pause menu is still on screen. Only the
       PASSIVE arbitration path is suspended. Branch 丙 RECOMPUTES a target per Core Rules
-      #6 — it does not restore the pre-pause target (AC-63b).
+      #6 ONLY WHEN THE ORIGINAL TARGET IS NO LONGER VALID — CORRECTED 2026-08-19b (round-4,
+      TR-cursor-015 gap b). AC-63b's actual wording is conditional: "if the original target
+      is still valid after the cancellation (surface not torn down, the entity it points to
+      still exists), it MAY be re-set directly to the original value, no recomputation
+      needed; only when the original target has become invalid is Core Rules #6 used."
+      ADR-0005's previous unconditional "recompute" NARROWED a GDD obligation, which breaks
+      its own Ordering Note constraint. Validity determination belongs to the CALLER (this
+      system does not understand game-entity semantics). What is NOT optional: the caller
+      must actively re-set something — the cursor must never return to an interactive screen
+      still in the pending-reresolve state.
       All three handoff branches pass from_ui_action = false: device authority never
       shifts on a system-initiated retarget.
+      ADDED 2026-08-19b (round-4, TR-cursor-015 gap a): branches 甲 and 乙 must ALSO reset
+      the mouse-reclaim accumulator to 0 and re-seed it at the current mouse position, via
+      _reclaim.reset(pos, ResetTrigger.SURFACE_HANDOFF). GDD Core Rules #7 F2-2 states this
+      explicitly and ADR-0005 was silent on it through two revisions. SURFACE_HANDOFF is a
+      FIFTH ResetTrigger value sourced from Core Rules #7, NOT a fifth trigger point of Core
+      Rules #3 (which has exactly four) — branch 甲 does not change the target, so reusing
+      TARGET_CHANGED would lie to the presentation layer. Presentation treatment is the same
+      as (a)/(b)/(c): converge, never snap.
       REVISED 2026-08-19 (ADR-0005 fix N4): both SetTargetResult and MarkResult gained a
-      REJECTED_REENTRANT value. All four mutating calls (arbitrate_frame, set_target,
-      mark_pending_reresolve, handoff_before_unload) are now guarded by an internal
+      REJECTED_REENTRANT value. Mutating calls are guarded by an internal
       _mutation_in_progress flag — a call made reentrantly from within a handler of this
       system's own target_changed()/device_authority_changed() signals (see interface
       contract cursor_state_change_signals) is rejected with REJECTED_REENTRANT rather than
       mutating state or re-emitting. Callers needing to chain a write from inside a signal
       handler must use call_deferred() instead of calling synchronously.
+      REVISED 2026-08-19b (ADR-0005 round-4 fixes R4-1, R4-4, and new finding B):
+      (1) arbitrate_frame() NO LONGER EXISTS. It is split into arbitrate_device_authority()
+      (GDD step 1, priority -100) and apply_buffered_navigation() (GDD step 3, priority -25
+      on the CursorNavigationApplier child node) — see api decision
+      cursor_actor_process_priority_ladder. FIVE public entries are now gated, not four.
+      (2) The two void-returning entries CANNOT return REJECTED_REENTRANT; their gate
+      semantics are "no-op, no field write, no signal", plus an increment of a QA-only
+      diagnostic_reentrant_rejection_count so a reentrant hit is visible in tests rather
+      than fully silent. The three value-returning entries are unchanged.
+      (3) THE GATE MUST NOT BE APPLIED TO INTERNAL WRITES. All actual mutation of _target
+      goes through a PRIVATE _write_target_internal(), which does NOT check the flag — if
+      apply_buffered_navigation() reused the public set_target() it would be rejected by its
+      own gate and the buffered navigation write would never take effect (round-4 R4-4).
+      Public entries must never call one another; see forbidden pattern
+      public_cursor_write_entry_calling_another.
+      (4) CursorState._init() gained a THIRD parameter, mouse_position_provider: Callable.
+      F2 changed evaluate() to take the current mouse position, but CursorState is a
+      RefCounted with no scene tree and therefore had no way to obtain it — the arbitration
+      path and the handoff path were both left dangling. Both now use this one channel.
     added: 2026-08-18
-    revised: "2026-08-19"
+    revised: "2026-08-19b"
 
   - contract: cursor_surface_registration
     status: active
@@ -447,8 +489,15 @@ interfaces:
       ImmediateMouseReclaimPolicy isolation-testing substitution in Validation Criteria #8),
       the presentation node's connection to the OLD instance does not transfer — the code
       performing the swap must explicitly reconnect reset_triggered on the new instance.
+      REVISED 2026-08-19b (round-4): ResetTrigger gained a FIFTH value, SURFACE_HANDOFF,
+      emitted by handoff branches 甲/乙 (TR-cursor-015 gap a). Its source rule is GDD Core
+      Rules #7 F2-2, NOT Core Rules #3 — #3 still has exactly four trigger points, and the
+      enum must not be read as claiming otherwise. Presentation treatment of SURFACE_HANDOFF
+      is identical to (a)/(b)/(c): converge, never snap. Only (d) VETOED_SAME_FRAME snaps.
+      Also revised: the presentation-side smoother this signal feeds is now DIRECTION-SPLIT
+      (rising immediate, falling rate-limited) — see api decision cursor_visual_carrier_split.
     added: 2026-08-19
-    revised: ""
+    revised: "2026-08-19b"
 # Example:
 #
 # interfaces:
@@ -766,7 +815,7 @@ api_decisions:
 
   - purpose: cursor_input_buffering_mount_point
     status: active
-    api: "_input(event) buffers into Array[InputEvent]; _process() calls arbitrate_frame(events) once per frame"
+    api: "_input(event) buffers into Array[InputEvent]; the _process phase drains it in TWO calls on TWO nodes — arbitrate_device_authority(events) at priority -100 (GDD step 1) and apply_buffered_navigation(events) at priority -25 on the CursorNavigationApplier child node (GDD step 3, and the buffer's last consumer, so it owns the clear()). REVISED 2026-08-19b (R4-1); the single arbitrate_frame() call no longer exists"
     not: "_unhandled_input(); per-event immediate arbitration; arbitrating inside _input()"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
@@ -781,13 +830,17 @@ api_decisions:
       _input() is structurally guaranteed to precede any accept_event() consumption.
       Arbitration sits in _process() rather than _input() because process_priority does NOT
       govern _input() dispatch order — only _process/_physics_process. The deterministic
-      ordering (see cursor_actor_process_priority_ladder — REVISED 2026-08-19 from a 4-tier
-      to a 5-tier ladder, ADR-0005 fix F1) is therefore only achievable in the _process
-      phase.
+      ordering (see cursor_actor_process_priority_ladder — 4-tier -> 5-tier on 2026-08-19
+      per ADR-0005 fix F1, then 5-tier -> 6-tier on 2026-08-19b per round-4 fix R4-1) is
+      therefore only achievable in the _process phase.
+      REVISED 2026-08-19b (round-4 R4-1): the single arbitrate_frame() drain became two
+      calls on two nodes (-100 authority, -25 buffered navigation). The mount point itself
+      (_input(), never _unhandled_input()) is UNCHANGED — only what the _process phase does
+      with the buffer changed.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-08-19b"
 
   - purpose: cursor_device_classification
     status: active
@@ -814,8 +867,8 @@ api_decisions:
 
   - purpose: cursor_actor_process_priority_ladder
     status: active
-    api: "process_priority — arbiter (CursorStateHost Autoload, device-authority resolution + buffered navigation-class write, ONE atomic call) = -100; caller active retag (mark_pending_reresolve()/set_target() for non-ui_*-triggered game-semantic events) = -50; registered surfaces = 0; global visual layer (incl. mechanism 13a unregistered-surface hover check) = 50; downstream readers, INCLUDING confirm-action interpretation = 100"
-    not: "relying on scene-tree order; relying on _input()/_unhandled_input() dispatch order (process_priority does not govern either); interpreting confirm-class ui_* actions outside _process(); calling caller-retag writes directly from _physics_process() (process_priority orders the _process chain and the _physics_process chain SEPARATELY — no cross-chain guarantee); relying on CanvasLayer.layer for update ordering"
+    api: "process_priority, SIX actors (REVISED 2026-08-19b, round-4 R4-1) — (1) device-authority resolution, CursorStateHost Autoload, arbitrate_device_authority() = -100 [GDD step 1]; (2) caller active retag, mark_pending_reresolve()/set_target() for non-ui_*-triggered game-semantic events = -50 [GDD step 2]; (3) buffered navigation-class write, CursorNavigationApplier child node, apply_buffered_navigation() + buffer clear = -25 [GDD step 3]; (4) registered surfaces = 0; (5) global visual layer (incl. mechanism 13a unregistered-surface hover check) = 50; (6) downstream readers INCLUDING confirm-action interpretation = 100 [GDD step 4]. Actors 4 and 5 are pure readers and are not part of the GDD four-step sequence"
+    not: "relying on scene-tree order; relying on _input()/_unhandled_input() dispatch order (process_priority does not govern either); interpreting confirm-class ui_* actions outside _process(); calling caller-retag writes directly from _physics_process() (process_priority orders the _process chain and the _physics_process chain SEPARATELY — no cross-chain guarantee); USING call_deferred() TO DEFER A RETAG INTO _process() (round-4 R4-6 — flush timing relative to the _process chain is unverified; see forbidden pattern call_deferred_for_cursor_retarget_deferral); FUSING device-authority resolution and buffered navigation write into one call (round-4 R4-1 — that is exactly what produced the 1&3 -> 2 -> 4 ordering the GDD forbids); PUTTING A DUAL-ROLE (2)+(6) SYSTEM ON ONE NODE (round-4 R4-7; see forbidden pattern single_node_for_nonadjacent_cursor_actor_roles); relying on CanvasLayer.layer for update ordering"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
       REVISED 2026-08-19 (ADR-0005 fix F1, BLOCKING). OLD VALUE (round-2 architecture-review
@@ -838,6 +891,23 @@ api_decisions:
       order within that single call — the only externally-observable ordering requirement
       is caller-retag-after-arbiter, before-confirm-read, which the new -50 tier plus the
       downstream constraint now provides.
+      OVERTURNED 2026-08-19b (round-4 R4-1, HIGH / treated as BLOCKING): the paragraph
+      immediately above is WRONG and is kept only as a record. Fusing steps 1 and 3 yields
+      an actual order of 1&3 -> 2 -> 4, the reverse of the GDD's explicit 1 -> 2 -> 3 -> 4,
+      and the GDD calls that ordering direction "a hard behavioural requirement". The old
+      defence addressed OBSERVABILITY but not PRECEDENCE. Concrete difference: when a caller
+      set_target(A) (step 2) and a buffered ui_right navigation write (step 3) occur in the
+      same frame, last-writer-wins — under the fused order the caller retag overwrites the
+      navigation write, so THE PLAYER'S DIRECTION-KEY INPUT FOR THAT FRAME IS SWALLOWED
+      WHOLE; under the GDD order the navigation write computes on top of the retag and wins.
+      Also, AC-52's stated verification method is "code review first — confirm the node
+      execution order matches the four-step sequence", which the fused version fails.
+      NEW VALUE (6 tiers): step 3 moves out of -100 onto a dedicated CursorNavigationApplier
+      child node at -25, strictly between the caller-retag tier (-50) and registered
+      surfaces (0). Two nodes are structurally required: process_priority is a PER-NODE
+      property, so one node cannot occupy both -100 and -25, and an EXTERNAL system's
+      execution (-50) sits between them. Buffer-clear responsibility moves to -25 (the
+      frame's last consumer).
       Lower process_priority runs first, so the arbiter necessarily updates the three
       top-level fields before ANY reader runs — making
       max_handoff_visual_latency_frames = 1 (GDD-locked) a SAME-FRAME guarantee rather than
@@ -850,14 +920,23 @@ api_decisions:
       project's engine reference has ZERO coverage of process_priority. Supporting
       inference: the Agile Event Flushing setting would have no meaning if the main loop
       did not batch input before the processing phase. VERIFY ON DAY ONE of implementation.
+      REVISED 2026-08-19b (round-4 R4-1): the drain is now TWO calls on TWO nodes. The
+      "collect the whole frame, then arbitrate" premise is unaffected — both calls sit in
+      the same frame's _process phase, both after all _input(). What DID change: a new
+      intermediate state exists between -100 and -25 ("authority resolved, navigation not
+      yet applied"). If _arbitration_suspended flips true in that window, the authority
+      decision for that frame stands (not rolled back) while the navigation write is dropped
+      (suspend_arbitration() clears the buffer). Deliberately accepted — device authority is
+      a global field whose transfer is not bounded by screen edges; deferring the authority
+      decision to -25 instead would directly re-violate the GDD's four-step sequence.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: "2026-08-19"
+    revised: "2026-08-19b"
 
   - purpose: cursor_visual_carrier_split
     status: active
-    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only, WITH an exception when device authority != MOUSE and the hovered control is not part of a registered surface (see api decision cursor_unregistered_surface_hover_visibility, ADR-0005 fix N3). Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer, holding _presented_alpha, converged toward MouseReclaimPolicy.reclaim_progress() via move_toward() each frame — modulate.a = _presented_alpha (no longer a direct bind)"
+    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only, WITH an exception when device authority != MOUSE and the hovered control is not part of a registered surface (see api decision cursor_unregistered_surface_hover_visibility, ADR-0005 fix N3). Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer holding _presented_alpha, assigned to modulate.a (never a direct bind to the decision value). REVISED 2026-08-19b (round-4 R4-3) — the smoother is DIRECTION-SPLIT: RISING is synced immediately to reclaim_progress(); FALLING is rate-limited via move_toward(1.0 / max(reclaim_visual_convergence_max_frames, 1)); reset trigger (d) VETOED_SAME_FRAME snaps instantly. Rate-limiting the rise is FORBIDDEN"
     not: "animating the native OS pointer's alpha; asserting Input.mouse_mode to validate progressive feedback; binding modulate.a directly to reclaim_progress() (see below)"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
@@ -888,10 +967,26 @@ api_decisions:
       Also revised to add the N3 native-visibility exception (see api decision
       cursor_unregistered_surface_hover_visibility) — Input.mouse_mode was previously an
       unconditional binary switch on device authority alone.
+      REVISED AGAIN 2026-08-19b (round-4 R4-3, HIGH / treated as BLOCKING): the F3 smoother
+      rate-limited BOTH directions. GDD Core Rules #3 requires alpha "proportional to the
+      movement progress — 0% invisible, 100% AT THE MOMENT the threshold is reached,
+      simultaneously with the authority transfer", and the convergence-cap rule's scope is
+      textually limited to "resets not directly caused by player mouse action" — i.e. the
+      FALLING direction only. The GDD never rate-limits the RISE. With
+      reclaim_visual_convergence_max_frames effectively >= 2 (a value of 1 means single-frame
+      snap, self-contradictory), max_step <= 0.5, while the GDD's provisional 50-100px
+      threshold is crossed in 2-3 frames at ordinary mouse speeds — so _presented_alpha was
+      STRUCTURALLY INCAPABLE of reaching 1.0 at the crossing frame. A purely mathematical
+      violation, dependent on no unverified engine behaviour. godot-specialist's summary,
+      kept verbatim: the F3 fix "solved the falling direction's lie while reintroducing the
+      same class of presented-vs-judgment desync on the rise — just in the other direction."
+      CONSEQUENCE FOR MEASUREMENT: diagnostic_reclaim_progress_history must now count ONLY
+      DESCENDING RUNS when validating the convergence cap; counting rising samples would
+      misread "immediate sync" as a cap violation.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: "2026-08-19"
+    revised: "2026-08-19b"
 
   - purpose: cursor_arbitration_suspension_gate
     status: active
@@ -922,8 +1017,8 @@ api_decisions:
 
   - purpose: cursor_action_class_classification
     status: active
-    api: "InputMap.event_is_action(event, action_name) checked against a fixed list of navigation actions (ui_up/ui_down/ui_left/ui_right) and confirm actions (ui_accept/ui_cancel) to derive CursorTypes.ActionClass"
-    not: "inferring ActionClass from the InputEvent subclass alone (that is device classification, a separate axis — see cursor_device_classification); hardcoding action-name string comparisons without going through InputMap"
+    api: "InputMap.event_is_action(event, action_name) checked against an EXPLICIT THREE-WAY PARTITION of every ui_* action (REVISED 2026-08-19b, round-4 R4-5): NAVIGATION_ACTIONS (ui_up/ui_down/ui_left/ui_right) | CONFIRM_ACTIONS (ui_accept/ui_cancel) | ACKNOWLEDGED_OTHER_ACTIONS (engine built-ins explicitly reviewed and ruled non-navigational: ui_focus_next, ui_focus_prev, ui_page_up, ui_page_down, ui_home, ui_end, ui_select, ui_menu — a starting point, to be completed against the project's actual InputMap). CursorStartupValidator check (c) walks InputMap.get_actions() and reports UI_ACTION_UNCLASSIFIED, with the offending action name, for any ui_* action matching none of the three"
+    not: "inferring ActionClass from the InputEvent subclass alone (that is device classification, a separate axis — see cursor_device_classification); hardcoding action-name string comparisons without going through InputMap; SILENTLY FALLING THROUGH TO OTHER FOR AN UNRECOGNISED ui_* ACTION (round-4 R4-5)"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
       ADR-0005 fix N1 (round-3 architecture-review, godot-specialist finding). Mechanism 6's
@@ -936,10 +1031,35 @@ api_decisions:
       action_get_events(), already confirmed stable 4.5->4.7 by godot-specialist in GDD
       round 10; this call was independently confirmed stable and un-deprecated by
       godot-specialist during the ADR-0005 revision validation.
+      REVISED 2026-08-19b (round-4 R4-5, MEDIUM-HIGH): the N1 fix used a CLOSED six-item
+      hardcoded list while the GDD defines "navigation-class ui_* action" SEMANTICALLY and
+      OPEN-ENDEDLY ("an action that semantically means 'move the cursor'"). Consequence: any
+      future ui_* action that is semantically navigational — project-custom, or an engine
+      built-in like ui_focus_next / ui_page_up being enabled — is SILENTLY classed as OTHER,
+      loses its right to contest device authority, and NO startup or runtime check catches
+      it. Inconsistent with this ADR's own never-silent discipline (mechanism 10's split
+      queries, mechanism 7(b)'s has_setting() guard). Validator check (a) does walk every
+      ui_* action, but verifies an entirely different property (mouse misbinding) and does
+      no classification cross-check.
+      WHY AN EXPLICIT THREE-WAY PARTITION RATHER THAN "report anything unmatched": the
+      latter would flag dozens of engine built-ins at startup — noise loud enough that an
+      implementer would simply switch the check off, producing something worse than silence.
+      The partition forces each ui_* action to be classified by a human ONCE; forgetting to
+      classify a newly added one fails at load. Same principle as mechanism 7(b): make the
+      unverified state expose itself at runtime instead of defaulting silently.
+      UNVERIFIED SEMANTICS (round-4, Verification Required #13, HIGH): whether
+      InputMap.event_is_action() filters InputEventKey.echo. If it does not, every repeat
+      event from a HELD direction key classifies as NAVIGATION — i.e. authority is contested
+      every frame, feeding straight into reset trigger (d) and the E1 permanent-lockup
+      defect. ADR-0005 deliberately does NOT pre-add an echo filter: the correct handling is
+      coupled to the FROZEN reclaim sub-mechanism, and guessing now would amount to making a
+      design ruling inside the frozen scope. Also confirmed-by-design: event_is_action()
+      necessarily returns false for InputEventMouseMotion (mouse contests authority via the
+      mechanism-8 threshold path, not the action path).
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
-    revised: ""
+    revised: "2026-08-19b"
 
   - purpose: cursor_unregistered_surface_hover_visibility
     status: active
@@ -967,6 +1087,36 @@ api_decisions:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
+    revised: ""
+
+  - purpose: token_timeout_ms_ownership
+    status: active
+    api: "TOKEN_TIMEOUT_MS is OWNED BY ADR-0004 (save-system atomic write & migration execution model). Value is not fixed here; the DERIVATION RULE is: TOKEN_TIMEOUT_MS >= SAFETY_FACTOR * (MAX_MIGRATION_CHAIN_DEPTH * FRAME_BUDGET_MS + WORST_CASE_TWO_PHASE_REWRITE_MS), with SAFETY_FACTOR >= 10"
+    not: "ADR-0002 fixing this value (it has no knowledge of migration-chain depth or rewrite I/O cost); leaving it as 'to be calibrated by whoever gets there first'"
+    adr: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    reason: >
+      C1 INTEGRATION GAP, open since the 2026-08-18 round-2 /architecture-review and
+      re-flagged in rounds 3 and 4; CLOSED 2026-08-19b. Previously an ORPHANED OBLIGATION:
+      ADR-0002's Risks table delegated the value to "the save-system ADR", while ADR-0004's
+      termination-path (three) comment pushed it back as "that system's responsibility, not
+      this system's to compensate for". Both ADRs pointed at each other, so nobody owned a
+      parameter whose misconfiguration fails SILENTLY.
+      OWNERSHIP FOLLOWS INFORMATION: the only scenario ADR-0002's lazy token-timeout sweep
+      can misfire on is "a legitimate but very long non-atomic window", and ONLY ADR-0004
+      knows how long that can be — chain depth (mechanism 5, currently 1, +1 per SaveFormat
+      version) times the per-step await scene_tree.process_frame interval, plus mechanism 7's
+      two-phase rewrite I/O. ADR-0002 does not know a migration chain exists.
+      ASYMMETRIC COSTS drive SAFETY_FACTOR >= 10: too short means a legitimate operation is
+      misreported as TIMED_OUT_RECLAIMED (ADR-0002's own stated risk); too long only means a
+      leaked token lingers. Bias heavily toward too long.
+      SPLIT OF DUTIES: ADR-0002 still owns the timeout MECHANISM (mechanism 7's per-token
+      lazy sweep); ADR-0004 owns the NUMBER. Conflating the two is what created the orphan.
+      MANDATORY RECOMPUTE: every SaveFormat version bump changes MAX_MIGRATION_CHAIN_DEPTH
+      and requires recalculation — enforced by ADR-0004 Validation Criteria #7.
+    referenced_by:
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-19b"
     revised: ""
 # Example:
 #
@@ -1352,6 +1502,76 @@ forbidden_patterns:
       validation).
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
+
+  - pattern: public_cursor_write_entry_calling_another
+    status: active
+    description: >
+      Inside CursorState, one _mutation_in_progress-gated PUBLIC entry
+      (arbitrate_device_authority / apply_buffered_navigation / set_target /
+      mark_pending_reresolve / handoff_before_unload) calling ANOTHER public gated entry —
+      most temptingly, apply_buffered_navigation() reusing set_target() to perform its
+      buffered navigation write. All actual _target mutation must instead go through the
+      PRIVATE, UNGATED _write_target_internal().
+    why: >
+      ADR-0005 round-4 fix R4-4 (HIGH, godot-specialist finding beyond the lead reviewer's
+      five items). The N4 reentrancy gate was specified as covering every mutating call. But
+      the arbitration path must itself write a target, and if it did so via the public
+      set_target(), the flag it had already set on entry would make its own gate reject the
+      call — SO THE BUFFERED NAVIGATION WRITE WOULD NEVER TAKE EFFECT, silently, in the
+      normal path. The gate designed to prevent reentrancy would have deadlocked the system
+      against itself. The previous ADR revision never stated whether internal writes went
+      through public or private paths, leaving implementers to pick the broken option.
+      Same structural reasoning as ADR-0004's single-entry/single-release per-slot lock:
+      with no try/finally in GDScript, "the flag is set exactly once and cleared exactly
+      once" is only guaranteeable if entries never nest.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-19b"
+
+  - pattern: call_deferred_for_cursor_retarget_deferral
+    status: active
+    description: >
+      A downstream system whose retag trigger originates in _physics_process() using
+      call_deferred() to push mark_pending_reresolve()/set_target() into _process(). The
+      ONLY sanctioned deferral is a plain flag, checked and executed at the top of that
+      system's own _process().
+    why: >
+      ADR-0005 round-4 fix R4-6. The previous revision listed call_deferred() alongside the
+      flag route as an equivalent option, but the two are NOT equivalent: the flush point of
+      a deferred call RELATIVE TO THE _process CHAIN was never verified by this project. If
+      it lands after the _process chain, or on the following frame, that frame's confirm read
+      (actor 6, priority 100) happens BEFORE the retag (actor 2, priority -50) — reopening
+      precisely the AC-52 ordering hole that fixes F1 and R4-1 were written to close. An
+      unverified scheduling assertion must not sit inside the fix for an ordering defect.
+      If someone later verifies the flush point, this pattern may be lifted — but the
+      verification must happen first, in that order.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-19b"
+
+  - pattern: single_node_for_nonadjacent_cursor_actor_roles
+    status: active
+    description: >
+      A system holding TWO NON-ADJACENT roles on the cursor process_priority ladder — in
+      practice actor (2) caller-active-retag at -50 and actor (6) downstream-reader /
+      confirm-interpretation at 100 — implementing both on ONE node and relying on statement
+      order inside a single _process() to sequence them. Such a system MUST split into two
+      nodes (e.g. main node at 100 for the read role, a thin child at -50 for the retag role,
+      mirroring how this system itself handles CursorNavigationApplier).
+      Statement-order merging REMAINS VALID for ADJACENT roles with no other actor between.
+    why: >
+      ADR-0005 round-4 fix R4-7, and a PARTIAL CORRECTION of the fix direction the round-4
+      report adopted. godot-specialist correctly overturned the lead reviewer's "the priority
+      ladder has no solution" — process_priority governs only cross-node _process() ordering,
+      never statement order inside a function, so merged roles CAN be sequenced in one node.
+      But that conclusion does not hold for THIS pair: actors (3) at -25 (this system's own
+      buffered navigation write) and (4) at 0 (registered surfaces) sit BETWEEN them. A
+      single node at 100 defers the retag until after actor (3) — the caller's semantic
+      change (e.g. unit death) loses to the navigation write, inverting GDD step 2 -> 3. A
+      single node at -50 advances the confirm read to before actor (3), inverting step 3 -> 4.
+      Either placement violates one leg of the four-step sequence. The tactical-combat system
+      holding both roles is close to inevitable, and neither the previous actor table nor the
+      architecture diagram said a word about it.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-19b"
 # Example:
 #
 # forbidden_patterns:

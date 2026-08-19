@@ -2,11 +2,13 @@
 
 ## Status
 
-Proposed
+**Proposed**
+
+> **2026-08-19 修訂(銜接缺口 C1/C6 + 一處殘留過度宣稱,不改動任何機制決策)**:**C1** —— 本 ADR 接下 `TOKEN_TIMEOUT_MS` 的定值責任(機制六新增「C1 銜接缺口」段落,定死推導規則而非具體毫秒數;新增 Validation Criteria 第 7 項的版本連動測試)。此前本 ADR 與 ADR-0002 各自把它推給對方,連續三輪 `/architecture-review` 判為**孤兒義務**。**C6** —— `Related Decisions` 新增回指 ADR-0005 機制十一並明文寫出義務歸屬(游標交接義務歸呼叫方,不歸存檔系統),避免本 ADR 在被單方面宣稱交接的狀態下逕行 `Accepted`。**另修正**:`Related Decisions` 最後一行殘留「`TR-save-*` 至此全數覆蓋」——那是第二輪 `/architecture-review` 推翻的過度宣稱在本檔案的**第四處**,`1c3d5d0` 只改了第 27/421 兩行,漏改此處;現已改為與其一致的「22 完整 / 7 部分 / 1 缺口」。**三項皆為擁有權與措辭修正,未新增、未移除、未改變任何機制、介面或檔案格式決策。**
 
 ## Date
 
-2026-08-18
+2026-08-18(初版) / 2026-08-19(C1/C6 銜接缺口修訂 + 殘留過度宣稱更正)
 
 ## Engine Compatibility
 
@@ -227,8 +229,29 @@ func _run_migration_pipeline(slot: int) -> ReadResult:
     return ReadResult.success(chain_result.data)
     # 路徑(三)——非本函式的任何分支:若本函式本身因未分類的執行期錯誤而未能
     # 正常返回(見機制四「真正的例外」段落),此權杖永不被釋放,依賴
-    # affinity-data-pool.md 自身的逐權杖逾時後備機制(該系統的職責,非本系統補償)。
+    # affinity-data-pool.md 自身的逐權杖逾時後備機制。
+    # 2026-08-19 修訂(C1):上一版此處寫「該系統的職責,非本系統補償」——**機制的執行**
+    # 確實在該系統,但 TOKEN_TIMEOUT_MS 這個**參數的定值責任**已由本 ADR 接下,見下方
+    # 「C1 銜接缺口」段落。兩者不是同一件事,上一版把它們混為一談才造成孤兒義務。
 ```
+
+**2026-08-19 修訂 —— C1 銜接缺口:`TOKEN_TIMEOUT_MS` 的擁有權由本 ADR 接下**(第二輪 `/architecture-review` 提出,第三、四輪重申仍開):此值先前是**孤兒義務**——ADR-0002 的 Risks 表明文把它委派給「存檔系統 ADR」,而本 ADR 上一版的路徑(三)註解卻寫「該系統的職責,非本系統補償」,兩份 ADR 各自把它推給對方,結果是全專案無人擁有一個會**靜默誤判**的參數。
+
+**決策:本 ADR 接下 `TOKEN_TIMEOUT_MS` 的定值責任。** 理由是資訊在誰手上——ADR-0002 的權杖逾時判定會誤傷的唯一情境,就是「一個合法但耗時很長的非原子視窗」,而**只有本 ADR 知道那個視窗最長能有多長**:它等於分步遷移鏈的深度上界 × 每步的 `await scene_tree.process_frame` 間隔(機制五),再加上機制七兩階段回寫的 I/O 時間。ADR-0002 對這兩個量一無所知,它連遷移鏈存不存在都不知道。
+
+**定值規則(不定死具體毫秒數,定死推導方式)**:
+
+```
+TOKEN_TIMEOUT_MS ≥ SAFETY_FACTOR × (MAX_MIGRATION_CHAIN_DEPTH × FRAME_BUDGET_MS
+                                     + WORST_CASE_TWO_PHASE_REWRITE_MS)
+```
+
+- `MAX_MIGRATION_CHAIN_DEPTH` —— 本 ADR 機制五的遷移鏈深度上界(目前為 1,`SaveFormat` 只有一個版本;每新增一個版本即 +1)。
+- `FRAME_BUDGET_MS` —— 16.6(`technical-preferences.md` 的 60fps 幀預算);低階硬體掉幀時實際值更大,由 `SAFETY_FACTOR` 吸收。
+- `WORST_CASE_TWO_PHASE_REWRITE_MS` —— 機制七 Phase A + Phase B 的最壞 I/O 時間,**待實測**(機制十的儀器化涵蓋此量測)。
+- `SAFETY_FACTOR` —— 建議 ≥ 10。逾時過短的後果是合法操作被誤判為 `TIMED_OUT_RECLAIMED`(ADR-0002 自陳的風險);逾時過長的後果只是洩漏的權杖多躺一會兒。**兩側代價嚴重不對稱,應大幅偏向過長。**
+
+**單向修訂義務**:每次 `SaveFormat` 版本 +1(遷移鏈深度增加),本 ADR 的實作者**必須**回頭重算此值。已列入下方 Validation Criteria。ADR-0002 的 Risks 表已同步改為指向本節。
 
 **與 `SaveSlotLock`(機制四)的獨立性**:本系統自己的逐槽重入旗標,**不**享有與 affinity 端權杖相同的殘留風險豁免——機制四已經用「單一結束出口」的結構保證無條件釋放。兩者是**兩個獨立的鎖**,保護的對象不同(本系統的槽狀態 vs. affinity-data-pool 的 Delta Log),失效後果的嚴重度也不對稱:affinity 端權杖洩漏只封鎖 affinity 寫入,且有逾時後備;本系統自己的槽鎖若洩漏,會讓該槽在本行程剩餘生命週期內所有自動存檔以「該槽處理中」的非錯誤結果被靜默拒絕、且沒有任何後備逾時機制——這正是 GDD 判定為 BLOCKING 而非殘留風險的理由,也是機制四把它做成結構性保證(而非依賴紀律)的原因。
 
@@ -484,6 +507,7 @@ func migration_progress(slot: int) -> Variant                                  #
 3. **四條終止路徑的獨立驗證**:分別構造遷移成功、Core Rules #6 拒絕、回寫 I/O 失敗三種情境(路徑三因結構性無法主動觸發,見機制六說明,不納入本項),驗證 `AffinityDataPool.end_non_atomic_window()` 皆在對應時機被呼叫、且不多不少一次。
 4. **逐槽重入的黑箱測試**:同一槽並行發起兩次完整讀取,驗證後者立即回傳 `slot_busy()`、不排隊、不啟動第二個狀態機;不同槽並行不受影響。
 5. **鎖釋放的完整性測試**:構造 `_run_migration_pipeline()` 內部各分支(成功/拒絕/I/O 失敗),驗證每一種分支結束後 `SaveSlotLock` 皆已釋放該槽(可透過立即嘗試 `try_acquire()` 驗證回傳 `true`)。
+7. **`TOKEN_TIMEOUT_MS` 的定值與版本連動測試(2026-08-19 修訂新增,C1)**:斷言實際採用的 `TOKEN_TIMEOUT_MS` ≥ 機制六定值規則算出的下界;並於 `SaveFormat` 版本 +1 時,以一個會失敗的測試強制實作者回頭重算(例如把 `MAX_MIGRATION_CHAIN_DEPTH` 寫成常數並斷言它等於 `SaveFormat` 的版本數 − 1)。**沒有這道測試,C1 的擁有權宣告會在第二次遷移版本上線時靜默失效。**
 6. **後續 `/architecture-review`** 判定本 ADR 與 ADR-0001/0002/0003 無衝突,且對 `save-system.md` 的涵蓋無缺口。**2026-08-18 第二輪執行結果:衝突面通過**(無阻塞級衝突;但發現 5 項銜接缺口 C1~C5,其中 C1 `TOKEN_TIMEOUT_MS` 孤兒義務、C4 `write_temp()` 底層呼叫未拍板、C5「沿用 ADR-0001 已驗證先例」措辭超出實際驗證範圍,三者皆與本 ADR 直接相關);**涵蓋面未通過**——1 項缺口 + 7 項部分涵蓋,見上方 Consequences 的修正說明。
 
 **反向驗證**:若六步驟序列的某個分支被遺漏或實作有誤,會表現為特定失敗注入情境下的檔案系統終態不符合 GDD Edge Cases 定義的三種允許結局之一——第 2 項測試會直接攔截。若鎖釋放邏輯有誤(例如某條分支忘記回傳導致函式提前結束),會表現為該槽此後所有操作恆為「處理中」——第 5 項測試逐分支驗證會攔截。
@@ -495,4 +519,5 @@ func migration_progress(slot: int) -> Variant                                  #
 - `docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md` — 機制六消費其權杖式生命週期介面。
 - `docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md` — 機制三/八延伸其 `SaveFormat`/`ReadRejection`/`SaveBlockRegistry`。
 - `docs/registry/architecture.yaml` — 本 ADR 完成後將登記的新增立場。
-- **`TR-save-*` 系列至此三份 ADR(0002 附帶、0003、0004)全數覆蓋,`docs/architecture/traceability-index.md`「需要 ADR 的已知缺口」清單第 2/3 項至此完成。**
+- `docs/architecture/adr-0005-cursor-device-authority-input-architecture.md` — **2026-08-19 修訂新增(C6 銜接缺口關閉)**。該 ADR 機制十一(跨畫面交接生命週期,甲/乙/丙三分支)在本 ADR 定義的讀檔生命週期節點上動作。**義務歸屬明文如下,避免被誤讀為本 ADR 有未履行的義務**:`cursor-highlight-state.md` Core Rules #7 把游標交接義務歸給**呼叫方**(戰棋系統),**不**歸給存檔系統——本 ADR 不呼叫游標系統的任何介面,也不需要知道它存在(本 ADR 與 ADR-0005 皆宣稱不理解遊戲實體語意)。前三輪 `/architecture-review` 實測本 ADR 全文對「游標」/「cursor」零命中,判定為「不是矛盾,但 ADR-0004 不宜在被單方面宣稱交接的狀態下逕行 `Accepted`」——本條目即為該判定的處置。**本 ADR 讀檔路徑的四條終止路徑(機制六)是呼叫方判斷該走甲/乙/丙哪一分支的輸入**,其中路徑〔四〕(遷移成功但回寫失敗)依 `cursor-highlight-state.md` 第十三輪裁決**不落入丙分支**,呼叫方仍走甲/乙前進路徑。
+- **`TR-save-*` 系列的涵蓋狀態**:**22 項完整 / 7 項部分 / 1 項缺口**(`TR-save-030` 雲端同步)——見上方 ADR Dependencies 的 `Enables` 欄與 Consequences 的同一修正。**2026-08-19 修訂**:本行原寫「至此三份 ADR 全數覆蓋」,與同檔第 27 行、第 421 行已於 `1c3d5d0` 修正的「22/7/1」互相矛盾——那是第二輪 `/architecture-review` 推翻的同一個過度宣稱在本檔案的**第四處**,前次修正漏改。`docs/architecture/traceability-index.md`「需要 ADR 的已知缺口」清單第 2/3 項至此完成(此半句成立,指的是缺口清單的項次,不是 TR 涵蓋率)。

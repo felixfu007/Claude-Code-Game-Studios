@@ -3,12 +3,38 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: ADR-0005 已完成 F1~F5+N1~N4 全部 9 項修訂;下一步為全新 session 跑第四輪 /architecture-review 獨立驗證
+Task: ADR-0005 已完成第二次修訂(R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實),C1/C3/C6 三項跨 ADR 銜接缺口一併關閉;下一步為全新 session 跑第五輪 /architecture-review 獨立驗證
 <!-- /STATUS -->
 
-**最後更新**:2026-08-19 —— `/architecture-decision` 修訂 ADR-0005,處理第三輪 `/architecture-review` 判定的全部 9 項待修訂(F1/F5 BLOCKING、F2/F3/F4、N1~N4)。**本次修訂尚未提交 git**。2026-08-18 的 3 個提交此前已推送完畢。
+**最後更新**:2026-08-19 —— `/architecture-decision` **第二次修訂 ADR-0005**,處理第四輪 `/architecture-review` 的 R4-1~R4-7 共 7 項發現 + `TR-cursor-015` 兩項落差,並一併關閉自第二輪起懸置的跨 ADR 銜接缺口 **C1/C3/C6**(改動 ADR-0002 與 ADR-0004)。另修正 ADR-0004 第四處殘留的過度宣稱。詳見下方「Session Extract — `/architecture-decision` 第二次修訂」。
 
-### 2026-08-19 ADR-0005 修訂摘要(本次工作)
+### 本次核對出的三項新事實(不在第四輪的 7 項清單內)
+
+1. **四個重置觸發點裡有三個沒有呼叫點** —— `ResetTrigger` 列舉在第一次修訂建立了 (a)(b)(c)(d),但全文只有 (c) 真的有 `_reclaim.reset()` 呼叫位置。與 `-015`(a) 漏掉「甲/乙分支重置為 0」是**同一根因**:補了列舉與訊號,沒補呼叫點地圖。已於機制二的列舉逐值標註呼叫點。
+2. **`CursorState` 拿不到滑鼠座標** —— F2 把 `evaluate()` 改收「目前滑鼠座標」,但它是 `RefCounted`、不在場景樹上,全文唯一取得座標的方式在機制九的 `CursorStateHost`。建構子新增 `mouse_position_provider: Callable`(單元測試可直接注入常數 lambda,Validation Criteria #2 仍成立)。
+3. **ADR-0004 第 498 行第四處「全數覆蓋」** —— `TR-save-* 系列至此三份 ADR 全數覆蓋`,與同檔第 27/421 行已在 `1c3d5d0` 改成的「22/7/1」矛盾。已修正。
+
+### 2026-08-19 ADR-0005 第二次修訂摘要(本次工作)
+
+| 項 | 修法 |
+|---|---|
+| **R4-2**(BLOCKING) | `diagnostic_seed_position()` 改標 `@abstract`,實作下放子類別。基底讀子類別欄位是純靜態閱讀即可 100% 確認的編譯期錯誤 |
+| **R4-1**(視同 BLOCKING) | `arbitrate_frame()` 拆為 `arbitrate_device_authority()`(−100)+ `apply_buffered_navigation()`(**新增 −25 子節點 `CursorNavigationApplier`**)。梯子五→**六**行為者,定序自 1&3→2→4 改為 GDD 的 1→2→3→4。緩衝清空責任移到 −25 |
+| **R4-3**(視同 BLOCKING) | 平滑器改為**上升立即同步、只對下降(且非觸發點 (d))限速**。原版對上升也限速 → 結構上不可能在跨門檻當下達 100% |
+| **R4-4** | 明文區分五個掛閘門的公開入口 vs 不掛閘門的私有 `_write_target_internal()`;公開入口**不得互相呼叫**。另補:兩個回傳 `void` 的入口不可能回傳 `REJECTED_REENTRANT`,其閘門語意為 no-op + 診斷計數 |
+| **R4-5** | `ui_*` action 改為**明文三分割**(NAVIGATION / CONFIRM / 明文承認的 OTHER)+ 機制七 (c) 載入期 `UI_ACTION_UNCLASSIFIED` 驗證。不採「未命中即回報」是因為會把數十個引擎內建報成噪音,反而被關掉 |
+| **R4-6** | 刪除 `call_deferred()` 路線,只留旗標路線 |
+| **R4-7** | **部分修正第四輪採納的修法方向** —— 陳述順序只對**相鄰**角色成立;②與⑥之間隔著③④,雙角色系統**必須拆兩個節點** |
+| **`-015`(a)** | 新增第五個 `ResetTrigger` 值 `SURFACE_HANDOFF`(來源 Core Rules #7,非 #3 的四點),甲/乙分支呼叫 |
+| **`-015`(b)** | 丙分支自無條件「重新計算」改回 GDD 的條件式:原目標仍有效得直接沿用,僅失效才依 Core Rules #6 重算 |
+
+**跨 ADR**:C1 由 ADR-0004 接下 `TOKEN_TIMEOUT_MS`(定死推導規則 + 版本連動測試,不定死毫秒數);C3 ADR-0002 的 `Mutex` 保留為**縱深防禦**、措辭不再宣稱是唯一已成立的執行緒安全義務;C6 ADR-0004 補回指 ADR-0005 機制十一並寫明義務歸呼叫方。
+
+**Registry**:61 → **65** 項(新增 4:1 api + 3 forbidden;就地修訂 7 項,`revised: 2026-08-19b`)。實測各節 10 state / 10 interface / 23 api / 22 forbidden。
+
+> **未執行 `godot-specialist` 驗證(Step 5.5)** —— 本 session 的環境設定明文禁止在使用者未要求的情況下呼叫 Agent 工具。第三、四輪的紀錄顯示該驗證每次都抓到主審漏掉的東西(N1~N4、R4-4),**這是本次修訂與前兩次相比缺少的一道關卡**,已列為下方待辦。
+
+### 2026-08-19 ADR-0005 第一次修訂摘要
 
 逐項處理第三輪審查的 9 項待修訂,並經 `godot-specialist` 對修法本身做第二輪技術驗證(7 項確認 SOUND,2 項標記 UNVERIFIABLE-FLAG-AS-RISK 已登記為 Verification Required):
 
@@ -38,9 +64,9 @@ Task: ADR-0005 已完成 F1~F5+N1~N4 全部 9 項修訂;下一步為全新 sessi
 | **專案階段** | 架構階段(Technical Setup → Pre-Production 之間) |
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
-| **架構登記處** | **55 項立場**(10 state-ownership、8 interface contracts、20 API decisions、17 forbidden patterns) |
-| **需求涵蓋** | 130 項 TR:**61 ✅ / 34 ⚠️ / 35 ❌**(第三輪 `/architecture-review` 判定,已計入 ADR-0005) |
-| **最新審查判定** | **CONCERNS**(2026-08-19 第三輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**35 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
+| **架構登記處** | **65 項立場**(10 state-ownership、10 interface contracts、23 API decisions、22 forbidden patterns)—— 2026-08-19 第二次修訂後實測 |
+| **需求涵蓋** | 130 項 TR:**65 ✅ / 33 ⚠️ / 32 ❌**(第四輪 `/architecture-review` 判定)。**第二次修訂後的分佈未經獨立推導,待第五輪** |
+| **最新審查判定** | **CONCERNS**(2026-08-19 第四輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除,游標系統該輪為 13 ✅ / 6 ⚠️ / 0 ❌。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
 | **實作** | `src/` 為空,尚無任何程式碼 |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
@@ -67,8 +93,8 @@ Task: ADR-0005 已完成 F1~F5+N1~N4 全部 9 項修訂;下一步為全新 sessi
 
 ## 三、下一步(建議順序)
 
-1. ~~全新 session 跑 `/architecture-review`~~ —— **✅ 已於 2026-08-19 完成**,判定 CONCERNS。ADR-0005 自陳 16/3 被推翻為 11/8,零缺口成立。見下方「Session Extract 第三輪」。
-2. **全新 session 修 ADR-0005 的 9 項待修訂** —— **F1/F5 為 BLOCKING,修好前該 ADR 不得進 `Accepted`**。屬 `/architecture-decision` 領域。建議與 C1/C3/C6 一併處理(5 份 ADR 皆 `Proposed`,現在改動成本最低)。
+1. ~~全新 session 跑 `/architecture-review`~~ —— **✅ 第三、四輪皆已於 2026-08-19 完成**,兩輪皆判 CONCERNS。第三輪推翻 ADR-0005 自陳 16/3 為 11/8;第四輪重推為 13/6,並抓到「修法本身引入新缺陷」的新模式。**第五輪待跑(針對第二次修訂)。**
+2. ~~全新 session 修 ADR-0005 的 9 項待修訂 + C1/C3/C6~~ —— **✅ 已於 2026-08-19 完成兩輪**(第一次修訂處理 F1~F5+N1~N4;第二次修訂處理第四輪的 R4-1~R4-7 + `-015` 兩項落差 + C1/C3/C6)。**下一步是全新 session 跑第五輪 `/architecture-review`。**
 3. **`/test-setup`** —— 與架構軌零依賴,可平行推進;是 pre-gate 的硬需求(5 項中的 3 項)。
 4. **`/ux-design`** —— pre-gate 剩餘 2 項(`accessibility-requirements.md`、`interaction-patterns.md`)。注意 `cursor-highlight-state.md` 已登記一項**孤兒義務**:運動無障礙需求(奪權門檻可調整性、瞄準輔助)先前口頭轉交至一個**不存在的檔案**。
 5. **剩餘 2 份 ADR**(第三輪判定此為投入產出比最高的單一動作 —— 第一項一次移動 35 項 ❌ 中的大部分):戰棋盤面演算法層(可達格/威脅範圍/視線,`TR-tactical-002`~`-010`、`-019`~`-021`、`-037`~`-039`);回合結構擁有權 + 缺席的 AI/遭遇系統(`TR-tactical-034`、`-041`)—— **全專案無人認領回合結構**,而 `tactical-combat-system.md` Core Rules #9 明文要求敵方回合消費這些查詢。
@@ -77,7 +103,11 @@ Task: ADR-0005 已完成 F1~F5+N1~N4 全部 9 項修訂;下一步為全新 sessi
 
 ## 四、待處理清單
 
-### A. 跨 ADR 銜接缺口(C2/C4/C5 已修;C1/C3 自第二輪仍開,C6 為第三輪新增)
+### A. 跨 ADR 銜接缺口 —— **✅ C1/C3/C6 已於 2026-08-19 第二次修訂關閉,C2/C4/C5 早前已修。本節六項全數關閉**
+
+> 以下三段保留原始描述供追溯,**處置結果**:C1 —— ADR-0004 接下 `TOKEN_TIMEOUT_MS`(機制六新增推導規則 `TOKEN_TIMEOUT_MS ≥ SAFETY_FACTOR × (鏈深上界 × 幀預算 + 兩階段回寫最壞 I/O)`,`SAFETY_FACTOR ≥ 10`;Validation Criteria 新增版本連動測試;registry 新增 `token_timeout_ms_ownership`)。C3 —— ADR-0002 的 `Mutex` 保留為縱深防禦,措辭改為不再宣稱是唯一已成立的執行緒安全義務,並明文交叉引用 ADR-0004 已把條件判為「否」。C6 —— ADR-0004 `Related Decisions` 補回指 ADR-0005 機制十一,寫明游標交接義務歸呼叫方而非存檔系統。**三者皆未改動任何機制決策,只動擁有權與措辭。**
+
+#### (原始描述,已關閉)
 
 - **C6(第三輪新增,低嚴重度)**:ADR-0005 宣稱機制十一與 ADR-0004 的存檔讀取路徑「直接交接」,但實測 **ADR-0002/0003/0004 對「游標」/「cursor」零命中**。不是矛盾(GDD Core Rules #7 把義務歸給呼叫方戰棋系統,而非存檔系統 —— 兩者皆宣稱不理解遊戲實體語意),但 ADR-0004 不宜在單方面被宣稱交接的狀態下逕行 `Accepted`。**建議解:ADR-0004 的 `Related Decisions` 補一句指回 ADR-0005 機制十一並說明義務歸屬。**
 
@@ -237,6 +267,23 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 
 ### 仍未處理(使用者本輪未選擇)
 
-- registry `state: mouse_reclaim_accumulator` 的 `interface:` 仍寫直綁 `modulate.a`(F3 已廢除),`revised:` 空白
-- ADR-0005 Consequences 仍留「19 項全部有機制支撐(其中 3 項為部分)」的舊自陳
-- `systems-index.md` 第 28 列游標 GDD 狀態維持 `Approved`
+- ~~registry `state: mouse_reclaim_accumulator` 的 `interface:` 仍寫直綁 `modulate.a`~~ —— **✅ 已修**(`revised: 2026-08-19b`,並同步 R4-3 的方向拆分)
+- ~~ADR-0005 Consequences 仍留「19 項全部有機制支撐(其中 3 項為部分)」的舊自陳~~ —— **✅ 已刪除**
+- `systems-index.md` 第 28 列游標 GDD 狀態維持 `Approved` —— **仍未處理**(需使用者裁決,見下方)
+
+---
+
+## Session Extract — `/architecture-decision` 第二次修訂 2026-08-19
+
+### 本次的一項方法論調整
+
+第四輪抓到的模式是**修法本身引入新缺陷**(R4-2/R4-3/R4-4 三項皆為第一次修訂新產生,不存在於初版)。本次修訂因此對每一項修法額外自問「這個修法會不會製造下一個 R4-x」,答案寫進各機制的修訂標記段落——例如機制十三的三點自問(`_pending_snap` 分支順序、`>=` vs `>`、量測對象隨之改變)、機制五對「拆節點製造的新中間狀態」的明文接受與理由、機制十的「公開入口不得互相呼叫」紀律。**這不保證有效,但至少讓下一輪審查有東西可以直接反駁。**
+
+### 兩處我主動偏離既有判定的地方(下一輪審查應優先檢視)
+
+1. **R4-7 —— 部分推翻第四輪採納的修法方向。** 該輪 `godot-specialist` 推翻主審初判(「優先序梯無解」)、提出「同節點內陳述順序即可」,主審採納。**該推翻的前提正確**(`process_priority` 管不到函式內部),**但結論在②+⑥ 這組角色上不成立** —— 兩者之間隔著③(−25)與④(0),單節點方案不論設 −50 或 100,都會各自違反四步序列的一段。本次改為「相鄰角色可合併、不相鄰必須拆節點」。
+2. **`SURFACE_HANDOFF` 新增為第五個 `ResetTrigger` 值。** 沒有複用 `TARGET_CHANGED`,理由是兩者來源規則不同(Core Rules #7 vs #3),且甲分支**目標並未改變**,複用會對訂閱訊號的呈現層說謊。代價是列舉值多一個,可能被誤讀為「Core Rules #3 有五個觸發點」——已在列舉註解與 registry 兩處明文否認。
+
+### 未執行的一道關卡
+
+**`godot-specialist` 技術驗證(skill Step 5.5)未跑** —— 本 session 環境設定明文禁止在使用者未要求的情況下呼叫 Agent 工具。第三、四兩輪的紀錄顯示該驗證每次都抓到主審漏掉的項目(第三輪 N1~N4、第四輪 R4-4),**這是本次修訂與前兩次相比少掉的一道關卡**。第五輪審查應對本次修法的引擎假設特別加壓,尤其:`add_child()` 建立的子節點其 `process_priority` 是否確實獨立於父節點參與同一條 `_process` 鏈排序(本次修訂的**全部**定序論證都押在這件事上,而參考庫對 `process_priority` 本來就零命中)。
