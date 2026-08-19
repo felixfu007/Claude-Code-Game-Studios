@@ -3,10 +3,10 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: ADR-0005 已完成第二次修訂(R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實),C1/C3/C6 三項跨 ADR 銜接缺口一併關閉;下一步為全新 session 跑第五輪 /architecture-review 獨立驗證
+Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R5-6 + S-1~S-5 + Step 5.5 新發現 A/B/2b/D/F/G,共 17 項);下一步為全新 session 跑第六輪 /architecture-review —— 範圍限縮為「這 17 項是否確實關閉」,不再全域重推 130 項需求
 <!-- /STATUS -->
 
-**最後更新**:2026-08-19 —— `/architecture-decision` **第二次修訂 ADR-0005**,處理第四輪 `/architecture-review` 的 R4-1~R4-7 共 7 項發現 + `TR-cursor-015` 兩項落差,並一併關閉自第二輪起懸置的跨 ADR 銜接缺口 **C1/C3/C6**(改動 ADR-0002 與 ADR-0004)。另修正 ADR-0004 第四處殘留的過度宣稱。詳見下方「Session Extract — `/architecture-decision` 第二次修訂」。
+**最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
 
 ### 本次核對出的三項新事實(不在第四輪的 7 項清單內)
 
@@ -64,9 +64,9 @@ Task: ADR-0005 已完成第二次修訂(R4-1~R4-7 + TR-cursor-015 兩項落差 +
 | **專案階段** | 架構階段(Technical Setup → Pre-Production 之間) |
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
-| **架構登記處** | **65 項立場**(10 state-ownership、10 interface contracts、23 API decisions、22 forbidden patterns)—— 2026-08-19 第二次修訂後實測 |
-| **需求涵蓋** | 130 項 TR:**65 ✅ / 33 ⚠️ / 32 ❌**(第四輪 `/architecture-review` 判定)。**第二次修訂後的分佈未經獨立推導,待第五輪** |
-| **最新審查判定** | **CONCERNS**(2026-08-19 第四輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除,游標系統該輪為 13 ✅ / 6 ⚠️ / 0 ❌。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
+| **架構登記處** | **68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測。ADR-0005 佔 26 項(3/5/7/11) |
+| **需求涵蓋** | 130 項 TR:**68 ✅ / 30 ⚠️ / 32 ❌**(第五輪 `/architecture-review` 判定);游標系統 15 ✅ / 4 ⚠️ / 0 ❌。**第三次修訂後的分佈未經獨立推導,待第六輪** |
+| **最新審查判定** | **CONCERNS**(2026-08-19 第五輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL。三個 Foundation 層系統合計 73 項需求**僅 1 項缺口**(`TR-save-030` 雲端同步) |
 | **實作** | `src/` 為空,尚無任何程式碼 |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
@@ -306,3 +306,41 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 - **Top ADR gaps**: 戰棋盤面演算法層(25 項 ❌)、回合結構擁有權 + AI/遭遇系統、`TR-save-030` 雲端同步
 - **Pre-gate**: 五項全缺,`/gate-check pre-production` 不可執行
 - **Report**: docs/architecture/architecture-review-2026-08-19-round5.md
+
+---
+
+## Session Extract — /architecture-decision 第三次修訂 ADR-0005 2026-08-19(**約定為最後一次全面修訂**)
+
+**輸入**:第五輪 `/architecture-review` 的 R5-1~R5-6 + `godot-specialist` 自行發現 S-1~S-5,共 11 項。
+**流程差異**:本次**在寫入前先跑 `godot-specialist` Step 5.5 覆核**(使用者明文授權呼叫 Agent)。第二次修訂缺的就是這道關卡,結果第五輪抓出一項 BLOCKING。**這次覆核再抓出 6 項,其中 4 項是本次修法自己新產生的** —— 這道關卡有效。
+
+### 17 項處置
+
+| 項 | 修法 |
+|---|---|
+| **R5-1**(BLOCKING) | 乙分支 `SURFACE_HANDOFF` 無合法呼叫路徑。根因是**私有路徑地圖只畫了一格**。私有路徑 1 → **4**(`_write_target_internal(target, reset_policy)`、`_mark_pending_reresolve_internal()`、`_validate_target_writable()`、`_safe_mouse_position()`);新增乙分支專用公開入口 `handoff_after_mount(target)`,與甲的 `handoff_before_unload()` 成對 |
+| **同源缺陷**(第五輪未點名) | 甲分支 `handoff_before_unload()` 依機制十一要呼叫**公開的** `mark_pending_reresolve()` → 被自己的重入閘門鎖死。與 R4-4 同形狀,**第四輪只修了三處中的一處** |
+| **發現 A**(Step 5.5) | 兩條 reset 路徑未明文互斥 → 乙分支會在同一次寫入內連發 `SURFACE_HANDOFF` + `TARGET_CHANGED`。明文要求 `if`/`elif`,並登記為 forbidden pattern |
+| **發現 B**(Step 5.5) | 我在私有層種回公開層剛否決的 boolean trap(GDScript 無呼叫端具名引數)→ 改用 `TargetResetPolicy` enum |
+| **發現 2b**(Step 5.5) | `handoff_after_mount()` 的前置驗證無處可放 → 新增 `_validate_target_writable()`。專家判定這是「本次批量修法最可能製造的下一個 R5-x」 |
+| **發現 D**(Step 5.5) | `reseed_reclaim_on_focus_regained()` 掛不掛閘門未定案 → 納入第七個掛閘門入口(`void` + 診斷計數)。順帶釐清 `_notification()` **不可能**打斷執行中的公開入口(單執行緒非搶佔、鏈上無 `await`);真風險是下游在 `target_changed()` 處理函式內呼叫 `resume_arbitration()` 造成的跨方法雙重重置 |
+| **R5-6 + 發現 F** | **一個修法一次關掉兩個**:機制十三之二的 hover 判定由**黑名單反轉為白名單**。失敗方向從「錯誤顯示原生指標(違反 Core Rules #5 硬性規則)」翻轉為「錯誤隱藏(僅 AC-60 便利性失效)」。連帶:不需把 `mouse_filter` 約束推給下游;非 `Control` 表面的不適用問題一併消失。機制十四改為**按節點型別分流**,不強制統一型別 |
+| **R5-3** | `_reclaim` 唯一擁有者為 `CursorState`(私有、無 getter);Host 與呈現層各走一條轉發;滑鼠座標三條路徑收成一條(`get_viewport().get_mouse_position()` 全專案只准出現一次) |
+| **R5-2** | ② 由 −50 改為 **−60**,區間改開區間;統一「同 `process_priority` 無 tie-break」立場 → 六個架構強制值必須兩兩相異 |
+| **S-1 + 發現 G** | 新增 `_safe_mouse_position()` 每次取值前 `is_valid()`;注入形式由 lambda 改為**具名方法綁定**。**但 `is_valid()` 對已釋放綁定物件的偵測行為未查證** → 新增 VR #15 + Day-1 spike |
+| **S-2 / S-3 / S-4 / S-5** | `Input.mouse_mode` 賦值前守衛(第四輪已建議、第二次修訂未採納)/ `_notification()` 派發為**樹序**不是優先序序,明文區辨 / `_reclaim` 無執行期熱替換管道,替換即重建 `CursorState` / Risks 明列本 ADR 引入的 10 個 `class_name` |
+| **R5-4 / R5-5** | ADR-0005 Validation Criteria 重新編號為 **1~19**(原跳過 #12);ADR-0004 第 6/7 項順序調正 / Architecture Diagram 同步 `UI_ACTION_UNCLASSIFIED`、−60、新介面、白名單判定 |
+
+### 介面帳(誠實記錄)
+
+`CursorState` 公開入口 **5 → 7**、私有路徑 **1 → 4**、生命週期類寫入入口 **1 → 2**。Requirements 第 10 項「2 個寫入方法」指 GDD Core Rules #2 的雙寫入,**該項未被擴大**;被擴大的是本 ADR 自己為承載 Core Rules #7 而設的類別。
+
+### Registry
+
+**65 → 68 項**(逐節實測 10 state / 11 interface / 23 api / 24 forbidden),ADR-0005 佔 **26** 項(3/5/7/11)。新增 3 項、就地修訂 8 項(皆 `revised: 2026-08-19c`)。
+
+### 待辦
+
+1. **全新 session 跑第六輪 `/architecture-review`** —— 依本次約定,範圍限縮為「這 17 項是否確實關閉」,不再全域重推 130 項需求。
+2. Day-1 spike 由六項增為**七項**(新增 VR #15 `Callable.is_valid()`)。
+3. 與架構軌零依賴、pre-gate 五項全缺:`/test-setup`(補三項)、`/ux-design`(補兩項)。

@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-19b"  # /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -166,7 +166,7 @@ state_ownership:
     owner_system: cursor-highlight-state
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     interface: "MouseReclaimPolicy.reclaim_progress() -> float (0.0-1.0), the DECISION value. GDD calls it `reclaim_progress`. The self-drawn progressive-feedback cursor node does NOT bind modulate.a to it directly — it holds a separate PRESENTATION value `_presented_alpha` (rising: synced immediately; falling: converged via move_toward(); trigger (d): snapped) and assigns THAT to modulate.a. Seed position readable via diagnostic_seed_position() (QA-only)."
-    write_access: MouseReclaimPolicy-only (via evaluate / reset)
+    write_access: MouseReclaimPolicy-only (via evaluate / reset). The MouseReclaimPolicy INSTANCE is owned solely by CursorState (private _reclaim, NO getter, must not leak) — REVISED 2026-08-19c, R5-3.
     notes: >
       THIRD top-level field of cursor-highlight-state.md Core Rules #1
       REVISED 2026-08-19b (round-4 /architecture-review flagged this field as not synced
@@ -176,6 +176,21 @@ state_ownership:
       triggers a/b/c). The R4-3 revision then split the smoother by DIRECTION: rising is
       synced immediately (GDD requires alpha == 100% AT the frame the threshold is crossed —
       a rate-limited rise makes that mathematically impossible), only falling is rate-limited.
+      REVISED 2026-08-19c (round-5 R5-3, MEDIUM-HIGH): the round-5 review found the
+      MouseReclaimPolicy instance had THREE consumers each assuming a different access path
+      — CursorState (ctor-injected private field), CursorStateHost (mechanism 9 called
+      _reclaim.reset() directly, as if it were the host's own field, contradicting "the shell
+      holds no state" and edging into forbidden pattern logic_in_cursor_autoload_shell), and
+      the self-drawn node (subscribed to reclaim.reset_triggered with no stated provenance).
+      CursorState has no getter, so two of the three were structurally impossible.
+      SETTLED: CursorState is the SOLE owner. The host forwards via the new public entry
+      reseed_reclaim_on_focus_regained(); the presentation node subscribes to CursorState's
+      forwarded signal reclaim_reset_triggered and reads CursorState.reclaim_progress().
+      See forbidden pattern external_access_to_cursor_reclaim_instance.
+      ALSO SETTLED (S-4): _reclaim is injected ONLY at CursorState._init(); there is NO
+      runtime hot-swap channel. "Replacement" means rebuilding CursorState, so no stale
+      signal connections can survive. A future restart of the frozen sub-mechanism that
+      needs hot-swap must add an explicit disconnect() step and revise this entry.
       (`accumulated_net_displacement_px`), owned by the swappable MouseReclaimPolicy
       rather than sitting directly on CursorState.
       WARNING — THIS SUB-MECHANISM IS FROZEN: the user ruled in the GDD's round 12
@@ -410,8 +425,32 @@ interfaces:
       F2 changed evaluate() to take the current mouse position, but CursorState is a
       RefCounted with no scene tree and therefore had no way to obtain it — the arbitration
       path and the handoff path were both left dangling. Both now use this one channel.
+      REVISED 2026-08-19c (round-5 R5-1, BLOCKING, plus three Step-5.5 findings):
+      (1) SEVEN public entries are now gated, not five. Added handoff_after_mount(target)
+      -> SetTargetResult (branch 乙, R5-1) and reseed_reclaim_on_focus_regained() -> void
+      (R5-3). Round 5 proved branch 乙 had NO LEGAL CALL PATH to emit SURFACE_HANDOFF: it
+      reused the generic set_target(), whose path is "reset only if the target actually
+      changed, with TARGET_CHANGED". All three readings failed (caller touching the private
+      _reclaim; set_target() distinguishing the branch from from_ui_action, which is false
+      for both 乙 and 丙; set_target() emitting SURFACE_HANDOFF unconditionally, which would
+      misfire on 丙 and on ordinary retargets), and a fourth problem existed: if 乙's
+      computed target equals the current one, no reset fired at all — the GDD-mandated
+      zeroing silently did not happen.
+      (2) FOUR private paths, not one: _write_target_internal(target, reset_policy),
+      _mark_pending_reresolve_internal(expected), _validate_target_writable(target),
+      _safe_mouse_position(). The second closes a defect of the SAME SHAPE as R4-4 that
+      round 4 left unfixed: handoff_before_unload() (branch 甲) was specified as "calls
+      mark_pending_reresolve()", but both are gated public entries — 甲 would be rejected by
+      its own gate. The third closes the "handoff_after_mount() has nowhere to put its
+      validation" gap (godot-specialist ranked it the most likely next R5-x).
+      (3) The reset policy is an ENUM (TargetResetPolicy { CONDITIONAL_ON_CHANGE,
+      UNCONDITIONAL }), deliberately NOT a bool: GDScript has no call-site named arguments,
+      so _write_target_internal(t, true) is unreadable at the call site — the same boolean
+      trap this ADR had just rejected at the public level.
+      (4) The two reset paths inside _write_target_internal() MUST be if/elif, never two
+      independent ifs — see forbidden pattern independent_ifs_for_cursor_target_reset_policy.
     added: 2026-08-18
-    revised: "2026-08-19b"
+    revised: "2026-08-19c"
 
   - contract: cursor_surface_registration
     status: active
@@ -435,7 +474,52 @@ interfaces:
       root Control must set focus_mode = FOCUS_NONE **and** must not carry a built-in
       mouse-hover theme state (see forbidden pattern
       native_control_hover_or_focus_on_registered_surface).
+      REVISED 2026-08-19c (round-5 Step-5.5 finding F, MEDIUM-HIGH): register() takes a
+      generic Node, but the mechanism-14 obligation above (focus_mode, hover StyleBox) only
+      means anything for Control. If BOARD_TILE is implemented as Node2D/Area2D — the common
+      tactical-board approach — mechanism 14 is not "risky" for it, it is INAPPLICABLE. Two
+      revisions follow. (1) The root node type is NOT constrained to Control: Control and its
+      subclasses carry both mechanism-14 conditions as hard requirements; non-Control roots
+      are structurally exempt (no focus_mode, no theme StyleBox, not in the GUI focus/hover
+      pipeline, so neither second-highlight path exists). Forcing a uniform type would
+      upgrade a presentation constraint into an architectural limit on how the tactical board
+      is built, which belongs to the not-yet-written tactical algorithm-layer ADR.
+      (2) mouse_filter is deliberately NOT constrained on registered surfaces — after the
+      allowlist inversion (see api decision cursor_unregistered_surface_hover_visibility) it
+      no longer affects any decision this system makes.
+      SEE ALSO: the SECOND, structurally independent registration table added in the same
+      revision — interface contract cursor_native_pointer_exception_registration.
     added: 2026-08-18
+    revised: "2026-08-19c"
+
+  - contract: cursor_native_pointer_exception_registration
+    status: active
+    pattern: method_call
+    producer: cursor-highlight-state
+    consumers:
+      - settings-ui               # non-modal settings sidebar (AC-60's own example, Not Started)
+      - notification-toast        # achievement toast (AC-60's own example, Not Started)
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    signal_signature: "register_native_pointer_exception(node: Control) -> RegisterResult  |  unregister_native_pointer_exception(node: Control) -> RegisterResult  |  is_native_pointer_exception(node: Node) -> bool"
+    notes: >
+      ADDED 2026-08-19c (ADR-0005 round-5 fixes R5-6 + Step-5.5 finding F). The SECOND
+      registration table on CursorSurfaceRegistry, structurally independent of the first
+      (cursor_surface_registration) — they do not share a tag space.
+      PURPOSE: after mechanism 13a's hover test was inverted from a denylist to an allowlist,
+      any unregistered surface that wants the AC-60 carve-out (native mouse pointer stays
+      visible while keyboard/gamepad holds authority) must register itself here. Not
+      registering means the native pointer stays hidden on that surface.
+      WHY TWO TABLES AND NOT ONE TABLE WITH A FLAG: the two have different lifetime owners.
+      Registered surfaces are governed by this system's registry (one instance per
+      SurfaceType tag, enum-keyed). AC-60 exception surfaces are explicitly OUTSIDE this
+      system's jurisdiction — arbitrarily many, untagged, free to come and go. Merging them
+      would produce a "not governed, but listed in the governance table" contradiction and
+      would pollute the iteration semantics of registered_surfaces_sorted().
+      TYPE IS Control, not Node: a non-Control node never appears in
+      gui_get_hovered_control()'s return value, so registering one would be meaningless.
+      FAILURE DIRECTION IS DELIBERATE: a missing or unmatched registration costs only AC-60's
+      convenience; the previous denylist form failed toward violating Core Rules #5.
+    added: "2026-08-19c"
     revised: ""
 
   - contract: cursor_state_change_signals
@@ -485,10 +569,10 @@ interfaces:
       way to tell which reset caused a given zeroing, which is exactly what caused the
       original F3 defect (direct modulate.a = reclaim_progress() binding, violating AC-41
       for triggers a/b/c).
-      LIFETIME GOTCHA: if the injected MouseReclaimPolicy instance is swapped (e.g. the
-      ImmediateMouseReclaimPolicy isolation-testing substitution in Validation Criteria #8),
-      the presentation node's connection to the OLD instance does not transfer — the code
-      performing the swap must explicitly reconnect reset_triggered on the new instance.
+      LIFETIME GOTCHA — SUPERSEDED 2026-08-19c (R5-3 + S-4): the old text said the code
+      performing a swap must explicitly reconnect reset_triggered on the new instance. There
+      is no runtime swap channel: _reclaim is injected only at CursorState._init(), so
+      "replacement" means rebuilding CursorState and the question does not arise.
       REVISED 2026-08-19b (round-4): ResetTrigger gained a FIFTH value, SURFACE_HANDOFF,
       emitted by handoff branches 甲/乙 (TR-cursor-015 gap a). Its source rule is GDD Core
       Rules #7 F2-2, NOT Core Rules #3 — #3 still has exactly four trigger points, and the
@@ -496,8 +580,17 @@ interfaces:
       is identical to (a)/(b)/(c): converge, never snap. Only (d) VETOED_SAME_FRAME snaps.
       Also revised: the presentation-side smoother this signal feeds is now DIRECTION-SPLIT
       (rising immediate, falling rate-limited) — see api decision cursor_visual_carrier_split.
+      REVISED 2026-08-19c (round-5 R5-3): the presentation node does NOT subscribe to this
+      signal on the MouseReclaimPolicy instance — it has no access to that instance. It
+      subscribes to CursorState's FORWARDED signal reclaim_reset_triggered(trigger), which
+      CursorState connects to _reclaim.reset_triggered inside _init() and re-emits verbatim.
+      The producer of the abstract-class-level signal is unchanged; what changed is the only
+      legal subscription channel. NOTE: the whole forward chain runs synchronously inside
+      _mutation_in_progress == true (GDScript signals dispatch on the same call stack), so a
+      handler must never call back into a write entry — see forbidden pattern
+      cursor_state_write_from_own_signal_handler. The specified handler only sets a bool.
     added: 2026-08-19
-    revised: "2026-08-19b"
+    revised: "2026-08-19c"
 # Example:
 #
 # interfaces:
@@ -867,7 +960,7 @@ api_decisions:
 
   - purpose: cursor_actor_process_priority_ladder
     status: active
-    api: "process_priority, SIX actors (REVISED 2026-08-19b, round-4 R4-1) — (1) device-authority resolution, CursorStateHost Autoload, arbitrate_device_authority() = -100 [GDD step 1]; (2) caller active retag, mark_pending_reresolve()/set_target() for non-ui_*-triggered game-semantic events = -50 [GDD step 2]; (3) buffered navigation-class write, CursorNavigationApplier child node, apply_buffered_navigation() + buffer clear = -25 [GDD step 3]; (4) registered surfaces = 0; (5) global visual layer (incl. mechanism 13a unregistered-surface hover check) = 50; (6) downstream readers INCLUDING confirm-action interpretation = 100 [GDD step 4]. Actors 4 and 5 are pure readers and are not part of the GDD four-step sequence"
+    api: "process_priority, SIX actors (REVISED 2026-08-19b, round-4 R4-1) — (1) device-authority resolution, CursorStateHost Autoload, arbitrate_device_authority() = -100 [GDD step 1]; (2) caller active retag, mark_pending_reresolve()/set_target() for non-ui_*-triggered game-semantic events = -60 (REVISED 2026-08-19c, round-5 R5-2: reference value moved from -50, and the permitted range is the OPEN interval -100 < x < -25 — both endpoints excluded) [GDD step 2]; (3) buffered navigation-class write, CursorNavigationApplier child node, apply_buffered_navigation() + buffer clear = -25 [GDD step 3]; (4) registered surfaces = 0; (5) global visual layer (incl. mechanism 13a unregistered-surface hover check) = 50; (6) downstream readers INCLUDING confirm-action interpretation = 100 [GDD step 4]. Actors 4 and 5 are pure readers and are not part of the GDD four-step sequence"
     not: "relying on scene-tree order; relying on _input()/_unhandled_input() dispatch order (process_priority does not govern either); interpreting confirm-class ui_* actions outside _process(); calling caller-retag writes directly from _physics_process() (process_priority orders the _process chain and the _physics_process chain SEPARATELY — no cross-chain guarantee); USING call_deferred() TO DEFER A RETAG INTO _process() (round-4 R4-6 — flush timing relative to the _process chain is unverified; see forbidden pattern call_deferred_for_cursor_retarget_deferral); FUSING device-authority resolution and buffered navigation write into one call (round-4 R4-1 — that is exactly what produced the 1&3 -> 2 -> 4 ordering the GDD forbids); PUTTING A DUAL-ROLE (2)+(6) SYSTEM ON ONE NODE (round-4 R4-7; see forbidden pattern single_node_for_nonadjacent_cursor_actor_roles); relying on CanvasLayer.layer for update ordering"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
@@ -929,14 +1022,31 @@ api_decisions:
       (suspend_arbitration() clears the buffer). Deliberately accepted — device authority is
       a global field whose transfer is not bounded by screen edges; deferring the authority
       decision to -25 instead would directly re-violate the GDD's four-step sequence.
+      REVISED 2026-08-19c (round-5 R5-2, MEDIUM): actor (2) was written as "-50 (any value
+      between -100 and -25 satisfies the ordering)" — a CLOSED-interval reading. Taking the
+      endpoint -25 puts actor (2) at the same priority as CursorNavigationApplier, at which
+      point actor (3)'s own rule ("must be strictly between (2) and (4)") becomes
+      unsatisfiable. The two rows cross-read to the right answer, but the literal text
+      permits a configuration that breaks the four-step ordering.
+      SETTLED: reference value -60 (clear of both endpoints, so a downstream +/-10 tweak
+      cannot collide), range stated as the open interval.
+      ALSO SETTLED — the ADR's two inconsistent statements about EQUAL priorities: "lower
+      number runs first" holds ONLY BETWEEN DISTINCT VALUES; for equal values this ADR
+      assumes NO tie-break whatsoever (godot-specialist's highest rating for the
+      "same-priority bucket is stably ordered by registration" belief is IMPRESSION, with no
+      official doc or project reference-library support — it must not be promoted to
+      verified). Therefore the six architecturally-mandated priority values MUST BE PAIRWISE
+      DISTINCT; this is a precondition of the ordering guarantee, not a suggestion. Actors
+      (4)=0 and (5)=50 stay safe because both are pure readers outside the four-step
+      sequence.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: "2026-08-19b"
+    revised: "2026-08-19c"
 
   - purpose: cursor_visual_carrier_split
     status: active
-    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only, WITH an exception when device authority != MOUSE and the hovered control is not part of a registered surface (see api decision cursor_unregistered_surface_hover_visibility, ADR-0005 fix N3). Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer holding _presented_alpha, assigned to modulate.a (never a direct bind to the decision value). REVISED 2026-08-19b (round-4 R4-3) — the smoother is DIRECTION-SPLIT: RISING is synced immediately to reclaim_progress(); FALLING is rate-limited via move_toward(1.0 / max(reclaim_visual_convergence_max_frames, 1)); reset trigger (d) VETOED_SAME_FRAME snaps instantly. Rate-limiting the rise is FORBIDDEN"
+    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only, WITH an exception when device authority != MOUSE and the hovered control IS ON THE EXPLICITLY-REGISTERED AC-60 EXCEPTION ALLOWLIST (REVISED 2026-08-19c, round-5 R5-6 — was 'is not part of a registered surface'; see api decision cursor_unregistered_surface_hover_visibility). Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer holding _presented_alpha, assigned to modulate.a (never a direct bind to the decision value). REVISED 2026-08-19b (round-4 R4-3) — the smoother is DIRECTION-SPLIT: RISING is synced immediately to reclaim_progress(); FALLING is rate-limited via move_toward(1.0 / max(reclaim_visual_convergence_max_frames, 1)); reset trigger (d) VETOED_SAME_FRAME snaps instantly. Rate-limiting the rise is FORBIDDEN"
     not: "animating the native OS pointer's alpha; asserting Input.mouse_mode to validate progressive feedback; binding modulate.a directly to reclaim_progress() (see below)"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
@@ -1063,7 +1173,7 @@ api_decisions:
 
   - purpose: cursor_unregistered_surface_hover_visibility
     status: active
-    api: "Viewport.gui_get_hovered_control() checked each frame (on the priority=50 global visual layer node) against CursorSurfaceRegistry.is_part_of_registered_surface() — if the hovered control is NOT part of a registered surface, Input.mouse_mode is temporarily forced to MOUSE_MODE_VISIBLE even when device authority != MOUSE"
+    api: "REVISED 2026-08-19c (round-5 R5-6 + Step-5.5 finding F) — the test is an ALLOWLIST, not a denylist. Viewport.gui_get_hovered_control() is checked each frame (on the priority=50 global visual layer node) against CursorSurfaceRegistry.is_native_pointer_exception(); Input.mouse_mode is forced to MOUSE_MODE_VISIBLE only when the hovered control IS on the explicitly-registered AC-60 exception list. Everything else stays MOUSE_MODE_HIDDEN. Assignment is guarded by `if Input.mouse_mode != desired` (S-2). OLD VALUE: 'if the hovered control is NOT part of a registered surface, force VISIBLE' — is_part_of_registered_surface() no longer exists"
     not: "treating Input.mouse_mode as a pure function of device authority alone"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
@@ -1084,9 +1194,30 @@ api_decisions:
       Runs on the same CanvasLayer node/single _process() as the mechanism-13 presentation
       smoother (not a separate node) specifically to avoid same-priority (=50) sibling
       ordering being undefined.
+      REVISED 2026-08-19c (round-5 R5-6 MEDIUM-HIGH + Step-5.5 finding F): the denylist form
+      had two independent failure paths, BOTH ending in "native pointer wrongly shown",
+      i.e. a direct violation of Core Rules #5. (R5-6) gui_get_hovered_control() does not
+      return MOUSE_FILTER_IGNORE nodes, so a registered surface with an IGNORE anywhere on
+      its ancestor chain — a common click-through pattern for decorative backdrops — could
+      never be matched. (F) register() takes a generic Node, and the whole of mechanism 14
+      plus the ancestor-chain test only mean anything for Control; a BOARD_TILE implemented
+      as Node2D/Area2D was never in the GUI hover pipeline at all.
+      INVERTING TO AN ALLOWLIST changes the FAILURE DIRECTION: any lookup or registration
+      failure now ends in "native pointer wrongly hidden", which costs only AC-60's
+      convenience carve-out. Core Rules #5 is a hard rule and AC-60 is the exception clause,
+      so fail-safe must lean to the hard rule. Both failure paths close at once, and no
+      mouse_filter constraint has to be pushed onto downstream systems.
+      COST, RECORDED HONESTLY: this mechanism's automatic reach SHRINKS — previously every
+      unregistered surface got the carve-out for free, now only explicitly registered ones
+      do, so downstream carries one new registration obligation (see interface contract
+      cursor_native_pointer_exception_registration). This does NOT breach the ADR's
+      one-way-revision constraint: mechanism 13a is not a GDD obligation, it is ADR-0005's
+      own invention for reconciling a GDD-internal tension, and the GDD never required the
+      carve-out to apply AUTOMATICALLY.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
+    revised: "2026-08-19c"
     revised: ""
 
   - purpose: token_timeout_ms_ownership
@@ -1524,8 +1655,17 @@ forbidden_patterns:
       Same structural reasoning as ADR-0004's single-entry/single-release per-slot lock:
       with no try/finally in GDScript, "the flag is set exactly once and cleared exactly
       once" is only guaranteeable if entries never nest.
+      EXTENDED 2026-08-19c (round-5 R5-1): round 4 fixed only ONE of three sites of this
+      shape. handoff_before_unload() (branch 甲) was specified as "calls
+      mark_pending_reresolve()" — both gated public entries, so 甲 would have been rejected
+      by its own gate and the pending-reresolve mark would never have been applied.
+      handoff_after_mount() (branch 乙, added in the same revision) would have hit the same
+      wall had it borrowed set_target() for its validation. The rule now covers SEVEN public
+      entries and FOUR private paths; no public entry may call another, and every entry has
+      a private path available so it never needs to.
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-19b"
+    revised: "2026-08-19c"
 
   - pattern: call_deferred_for_cursor_retarget_deferral
     status: active
@@ -1572,6 +1712,50 @@ forbidden_patterns:
       architecture diagram said a word about it.
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-19b"
+
+  - pattern: external_access_to_cursor_reclaim_instance
+    status: active
+    description: >
+      Any code outside CursorState holding, reading, or calling the MouseReclaimPolicy
+      instance directly — including CursorStateHost calling _reclaim.reset(...), and the
+      self-drawn presentation node connecting to reclaim.reset_triggered or calling
+      reclaim.reclaim_progress(). CursorState owns the instance privately and exposes NO
+      getter. The only legal channels are CursorState's own forwards:
+      reseed_reclaim_on_focus_regained(), reclaim_progress(), and the forwarded signal
+      reclaim_reset_triggered.
+    why: >
+      ADR-0005 round-5 fix R5-3 (MEDIUM-HIGH). The round-5 review found THREE consumers each
+      assuming a DIFFERENT access path to the same instance, with no getter anywhere in the
+      interface — two of the three were structurally impossible, and one of those
+      (CursorStateHost picking which ResetTrigger to fire) is arbitration logic sitting in
+      the Autoload shell, edging into logic_in_cursor_autoload_shell. Keeping the instance
+      private also collapses the mouse-coordinate access paths from three to one:
+      get_viewport().get_mouse_position() may appear EXACTLY ONCE in the project, in the line
+      that constructs mouse_position_provider. This ADR repeatedly criticises discipline-only
+      guarantees elsewhere; leaving the instance reachable would be the same defect.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-19c"
+
+  - pattern: independent_ifs_for_cursor_target_reset_policy
+    status: active
+    description: >
+      Implementing the two reset paths inside _write_target_internal(target, reset_policy)
+      as two independent `if` statements instead of if/elif — i.e. letting UNCONDITIONAL
+      (SURFACE_HANDOFF) and "target actually changed" (TARGET_CHANGED) both fire in the same
+      write. The two paths are MUTUALLY EXCLUSIVE by contract.
+    why: >
+      ADR-0005 round-5, godot-specialist Step-5.5 finding A. Handoff branch 乙 calls with
+      UNCONDITIONAL and normally DOES change the target — the common case, not an edge case.
+      Two independent ifs therefore call _reclaim.reset() twice in one write, emitting
+      reset_triggered with two different trigger values. Validation Criteria #15 asserts
+      branch 乙 carries SURFACE_HANDOFF and not TARGET_CHANGED; with a double emission,
+      whether that test passes depends on whether the subscriber reads the first or the last
+      signal — an implementation detail. This is the same failure shape this ADR keeps
+      hitting: the mechanism did not say "exclusive", the most natural implementation filled
+      the gap, and it filled it wrong. Validation Criteria #15c (exactly one emission) is the
+      automated floor.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-19c"
 # Example:
 #
 # forbidden_patterns:
