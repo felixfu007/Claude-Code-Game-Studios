@@ -287,3 +287,22 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 ### 未執行的一道關卡
 
 **`godot-specialist` 技術驗證(skill Step 5.5)未跑** —— 本 session 環境設定明文禁止在使用者未要求的情況下呼叫 Agent 工具。第三、四兩輪的紀錄顯示該驗證每次都抓到主審漏掉的項目(第三輪 N1~N4、第四輪 R4-4),**這是本次修訂與前兩次相比少掉的一道關卡**。第五輪審查應對本次修法的引擎假設特別加壓,尤其:`add_child()` 建立的子節點其 `process_priority` 是否確實獨立於父節點參與同一條 `_process` 鏈排序(本次修訂的**全部**定序論證都押在這件事上,而參考庫對 `process_priority` 本來就零命中)。
+
+---
+
+## Session Extract — /architecture-review 第五輪 2026-08-19
+
+- **Verdict**: CONCERNS(第三、四輪亦為 CONCERNS)
+- **Requirements**: 130 總數 — 68 covered / 30 partial / 32 gaps(第四輪 65/33/32)
+- **游標系統**: 15 完整 / 4 部分 / 0 缺口(第四輪 13/6/0)。⚠️ = -009、-011(凍結子機制)、-015(R5-1)、-017(R5-6)
+- **第四輪 9 項處置**: **8 項完整關閉**(R4-1~R4-7 全數 + `-015`(b)),只有 `-015`(a) 只關甲分支
+- **New TR-IDs registered**: None(5 份 GDD 自第二輪起零改動,130 項基線未動)
+- **GDD revision flags**: None(引擎現實層面);第三輪的兩處設計文件內部張力維持開啟,其中 Core Rules #5 vs AC-60 那項因 R5-6 而多了一個技術層理由
+- **本輪 6 項新發現**: R5-1(**BLOCKING** — 乙分支 `SURFACE_HANDOFF` 無合法呼叫路徑,與自己的 Validation Criteria #16 矛盾,需新增介面面)、R5-6(中高 — `MOUSE_FILTER_IGNORE` 使機制十三之二誤判)、R5-3(中高 — `MouseReclaimPolicy` 三方持有無管道)、R5-2(中)、R5-4/R5-5(低)。另 `godot-specialist` 自行發現 S-1~S-5
+- **跨 ADR**: **C1/C3/C6 全部關閉 — 五輪來第一次零懸置銜接缺口**。ADR-0004 第四處「TR-save-* 全數覆蓋」過度宣稱亦已清除(至此四處全清)
+- **Registry**: 65 項逐節實測(10/10/23/22),依 `adr:` 欄 13/12/6/8/23/3(none),ADR-0005 佔 23(3/4/7/9)—— **與檔頭及 technical-preferences 完全對帳,零落差**(四輪來第一次)
+- **引擎**: 棄用 API 零命中(主審與 `godot-specialist` 各自獨立比對);5 份 ADR 版本一致 4.7.1;參考庫自相矛盾(breaking-changes 標 4.5 HIGH vs VERSION 標 LOW)仍開;`modules/` 8 份仍停 4.6
+- **引擎專家覆核**: **已執行**(使用者明文核准)—— R5-1~R5-5 全部 CONFIRMED,R5-1 由該專家升為 BLOCKING、R5-3 升為中高,R5-6 為其自行發現
+- **Top ADR gaps**: 戰棋盤面演算法層(25 項 ❌)、回合結構擁有權 + AI/遭遇系統、`TR-save-030` 雲端同步
+- **Pre-gate**: 五項全缺,`/gate-check pre-production` 不可執行
+- **Report**: docs/architecture/architecture-review-2026-08-19-round5.md

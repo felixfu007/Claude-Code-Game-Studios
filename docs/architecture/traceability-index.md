@@ -1,30 +1,31 @@
 # 架構追溯索引
 
-最後更新:2026-08-19(第四輪 `/architecture-review` 於 ADR-0005 修訂後重推 19 列游標需求;其餘 111 列自第三輪起零改動,依構造沿用)
+最後更新:2026-08-19(**第五輪** `/architecture-review` 於 ADR-0005 **第二次修訂**後重推 19 列游標需求 + 3 列 `TR-concept-*` 傳播列;5 份 GDD 自第二輪起零改動,其餘 108 列依構造沿用。本輪含 `godot-specialist` 對抗性覆核)
 引擎:Godot 4.7.1
 
 ## 涵蓋率總覽
 
-| 狀態 | 首輪(ADR-0001) | 第二輪(ADR-0001~0004) | 第三輪(ADR-0001~0005) | **第四輪(ADR-0005 修訂後)** |
-|---|---|---|---|---|
-| ✅ 已涵蓋 | 5(4%) | 50(38%) | 61(47%) | **65(50%)** |
-| ⚠️ 部分涵蓋 | 16(12%) | 24(18%) | 34(26%) | **33(25%)** |
-| ❌ 缺口 | 109(84%) | 56(43%) | 35(27%) | **32(25%)** |
-| 需求總數 | 130 | 130 | 130 | **130** |
+| 狀態 | 首輪(ADR-0001) | 第二輪(ADR-0001~0004) | 第三輪(ADR-0001~0005) | 第四輪(第一次修訂後) | **第五輪(第二次修訂後)** |
+|---|---|---|---|---|---|
+| ✅ 已涵蓋 | 5(4%) | 50(38%) | 61(47%) | 65(50%) | **68(52%)** |
+| ⚠️ 部分涵蓋 | 16(12%) | 24(18%) | 34(26%) | 33(25%) | **30(23%)** |
+| ❌ 缺口 | 109(84%) | 56(43%) | 35(27%) | 32(25%) | **32(25%)** |
+| 需求總數 | 130 | 130 | 130 | 130 | **130** |
 
 | GDD | 層級 | GDD 狀態 | 需求數 | ✅ | ⚠️ | ❌ |
 |---|---|---|---|---|---|---|
 | affinity-data-pool.md | Foundation | Approved | 24 | 22 | 2 | 0 |
 | save-system.md | Foundation | Approved | 30 | 22 | 7 | 1 |
-| cursor-highlight-state.md | Foundation | Approved | 19 | **13** | **6** | **0** |
-| tactical-combat-system.md | Core | **未 Approved** | 43 | 5 | **13** | **25** |
-| game-concept.md(跨系統) | — | — | 14 | **3** | **5** | **6** |
+| cursor-highlight-state.md | Foundation | Approved | 19 | **15** | **4** | **0** |
+| tactical-combat-system.md | Core | **未 Approved** | 43 | 5 | 13 | 25 |
+| game-concept.md(跨系統) | — | — | 14 | **4** | **4** | 6 |
 
 > 逐列標記由 `/architecture-review` **獨立於 ADR 撰寫脈絡**重新推導,不採信 ADR 自身「Requirements Addressed」表的宣稱。
 >
 > - **第二輪**(2026-08-18):7 項 `TR-save-*` 降為 ⚠️、`TR-save-030` 判為 ❌ —— 推翻三份文件「30 項全覆蓋」的宣稱。
 > - **第三輪**(2026-08-19):19 項 `TR-cursor-*` 全部由 ❌ 轉出。**ADR-0005 自陳 16 完整 / 3 部分,獨立重推為 11 完整 / 8 部分** —— `-001`/`-008`/`-015`/`-017`/`-019` 五項由 ✅ 降為 ⚠️,其中 `-008`(違反 AC-52 的定序缺口)與 `-010`(失焦當幀緩衝事件仍被裁定)為 **BLOCKING** 級。`TR-tactical-024`/`-025` 因 ADR-0005 機制十定案介面側而由 ❌ 升為 ⚠️。5 份 GDD 自第二輪以來零修改,130 項基線未動。詳見 `architecture-review-2026-08-19.md`。
 > - **第四輪**(2026-08-19,ADR-0005 修訂後):`-010`/`-019` 由 ⚠️ 升 ✅ → **13 完整 / 6 部分 / 0 缺口**。修訂關閉第三輪 9 項中的 6 項(F5 兩項 BLOCKING 之一徹底解決),但 **F1 只關一半**(步驟二/三仍與 GDD 四步序列相反,R4-1),且**修法本身引入 3 項新缺陷**(R4-2 `diagnostic_seed_position()` 讀取未宣告識別符、R4-3 呈現層平滑器對上升方向也限速、R4-4 重入閘門可能鎖死 `arbitrate_frame()` 自己)。`TR-cursor-015` 的兩項落差因未被第三輪編號而完全未處理。5 份 GDD 與 ADR-0001~0004 自第三輪以來 git 改動數皆為 0,其餘 108 列依構造不動。**另修正第三輪的傳播遺漏**:`TR-concept-005`/`-006`/`-007` 三列在 ADR-0005 已存在的情況下仍留著第二輪的「架構層 ADR 未見」判定,本輪重推為 ✅/⚠️/✅。詳見 `architecture-review-2026-08-19-round4.md`。
+> - **第五輪**(2026-08-19,ADR-0005 **第二次修訂**後,含 `godot-specialist` 對抗性覆核):`-001`/`-008` 由 ⚠️ 升 ✅、`-017` 由 ✅ 降 ⚠️ → **15 完整 / 4 部分 / 0 缺口**;`TR-concept-006` 由 ⚠️ 升 ✅。**第四輪 9 項中 8 項完整關閉**(R4-1~R4-7 全數 + `-015`(b)),**只有 `-015`(a) 只關甲分支**。本輪 6 項新發現:**R5-1(BLOCKING)** 乙分支的 `SURFACE_HANDOFF` 在目前介面形狀下無任何合法呼叫路徑,且與本 ADR 自己的 Validation Criteria #16 互相矛盾;**R5-6(中高)** `gui_get_hovered_control()` 對 `MOUSE_FILTER_IGNORE` 使機制十三之二可能誤判而恢復原生指標;**R5-3(中高)** `MouseReclaimPolicy` 實例被 Host/CursorState/自繪節點三方持有但取得管道從未定義;R5-2/R5-4/R5-5(中~低)。另有 `godot-specialist` 自行發現 S-1~S-5。**跨 ADR 銜接缺口 C1/C3/C6 全部關閉——這是五輪來第一次零懸置銜接缺口**;registry 65 項逐節實測與三份文件完全對帳,零落差。詳見 `architecture-review-2026-08-19-round5.md`。
 
 本檔案是 `docs/architecture/architecture-review-2026-08-19.md`(及前兩輪)背後的逐條細節。供 story 引用的穩定 TR-ID 在 `docs/architecture/tr-registry.yaml`(該檔案的需求文字較精簡,完整文字與涵蓋理由以本檔案為準)。
 ---
@@ -153,23 +154,23 @@
 
 | TR-ID | 需求 | 領域 | 涵蓋情形 |
 |---|---|---|---|
-| TR-cursor-001 | 全域狀態恰為 3 個已認定的頂層欄位;擁有節點的生命週期須涵蓋所有使用本系統的畫面(Autoload 類機制) | 資料/架構 | ⚠️ 部分——機制一 Autoload 薄殼 + DI 核心。**第四輪**:第三輪的條件式待決已由修訂補上 `diagnostic_seed_position()` 關閉,方向正確;但該方法寫在抽象基底 `MouseReclaimPolicy` 內卻 `return _seed`,而 `_seed` 只宣告於子類別 `ThresholdMouseReclaimPolicy` → **編譯期錯誤**(R4-2,BLOCKING,修法一行)。關閉本項的機制本身不成立,故維持 ⚠️ |
+| TR-cursor-001 | 全域狀態恰為 3 個已認定的頂層欄位;擁有節點的生命週期須涵蓋所有使用本系統的畫面(Autoload 類機制) | 資料/架構 | ⚠️ 部分——機制一 Autoload 薄殼 + DI 核心。**第四輪**:第三輪的條件式待決已由修訂補上 `diagnostic_seed_position()` 關閉,方向正確;但該方法寫在抽象基底 `MouseReclaimPolicy` 內卻 `return _seed`,而 `_seed` 只宣告於子類別 `ThresholdMouseReclaimPolicy` → **編譯期錯誤**(R4-2,BLOCKING,修法一行)。關閉本項的機制本身不成立,故維持 ⚠️。**第五輪:R4-2 完整關閉,升為 ✅**——`diagnostic_seed_position()` 已改標 `@abstract`、實作下放 `ThresholdMouseReclaimPolicy`,基底只留簽章;Key Interfaces 與機制八兩處文字現已一致(第四輪點名的「一處無主體、一處有主體」矛盾消失);`ImmediateMouseReclaimPolicy` 亦被要求實作,診斷契約對所有策略一致。三頂層欄位的計數論證不變 → **✅ 已涵蓋** |
 | TR-cursor-002 | 「表面類型」標籤須為單一集中定義的共用 enum;實作位置與擁有者未定案 | 資料 | ✅ 已涵蓋——機制二 `CursorTypes` 包裝類別,沿用 ADR-0002 已查證的 `AffinityTypes` 先例。**關掉自 GDD 第四輪起懸置的問題** |
 | TR-cursor-003 | 同一標籤在任一時刻至多一個掛載實例;需要一個註冊/發現機制 | 資料/UI 架構 | ✅ 已涵蓋——機制三 `register()` 對已占用標籤回傳 `DUPLICATE_TAG_REJECTED` 不覆寫;迭代經 `registered_surfaces_sorted()` |
 | TR-cursor-004 | 裝置權威分類須依原始 `InputEvent` 子類別,絕不可讀取 `.device`/裝置 ID | 輸入/引擎 | ✅ 已涵蓋——機制四 `classify()` 純子類別 match,結構性不觸及 `.device`。引擎專家 **CONFIRMED** 與 4.7 裝置 ID 重編號無交集 |
 | TR-cursor-005 | Input Map 約束:除非語意上為懸停/游標移動,`ui_*` action 不得綁定滑鼠輸入;須於載入時驗證 | 輸入/設定驗證 | ✅ 已涵蓋——機制七(a) `CursorStartupValidator`;執行期重新綁定明文排除(專案尚無該系統) |
 | TR-cursor-006 | 須緩衝整幀的 `InputEvent` 並在收集完成後才裁決;須掛在 `_input()`,絕不可用 `_unhandled_input()` | 輸入/引擎架構 | ✅ 已涵蓋——機制五 `_input()` 只 append、`_process()` 統一裁決。引擎專家 **CONFIRMED** `_input()` 為正確做法 |
 | TR-cursor-007 | 專案層級「Agile Event Flushing」必須保持關閉——整個一幀一批次的假設依賴於此 | 引擎/建置設定 | ✅ 已涵蓋——機制七(b) 載入期驗證 + `has_setting()` 防衛(鍵不存在回報 UNKNOWN 而非通過)。**參考庫對鍵字串零命中,防衛設計因此正確** |
-| TR-cursor-008 | 四個行為者的決定性同幀執行順序;需要具體的 `process_priority` 數值 | 時序/引擎架構 | **⚠️ 部分**——**第四輪**:F1 只關一半。機制六已補第②行為者(呼叫方主動改標,−50)與對下游的明文約束,AC-52 的 THEN 面成立;但步驟三(緩衝內導覽寫入)仍融在 −100,實際定序為 **1&3 → 2 → 4**,與 GDD 明文的 1→2→3→4 相反,且 GDD 稱該定序方向為硬性行為要求(R4-1,視同 BLOCKING;②→③ 這組無任何測試涵蓋)。N1/N4 已關閉,但衍生 R4-4(重入閘門可能鎖死 `arbitrate_frame()` 自己)、R4-5(`ActionClass` 白名單靜默降級)、R4-6(`call_deferred()` 路線不等價) |
+| TR-cursor-008 | 四個行為者的決定性同幀執行順序;需要具體的 `process_priority` 數值 | 時序/引擎架構 | **⚠️ 部分**——**第四輪**:F1 只關一半。機制六已補第②行為者(呼叫方主動改標,−50)與對下游的明文約束,AC-52 的 THEN 面成立;但步驟三(緩衝內導覽寫入)仍融在 −100,實際定序為 **1&3 → 2 → 4**,與 GDD 明文的 1→2→3→4 相反,且 GDD 稱該定序方向為硬性行為要求(R4-1,視同 BLOCKING;②→③ 這組無任何測試涵蓋)。N1/N4 已關閉,但衍生 R4-4(重入閘門可能鎖死 `arbitrate_frame()` 自己)、R4-5(`ActionClass` 白名單靜默降級)、R4-6(`call_deferred()` 路線不等價)。**第五輪:R4-1 完整關閉,升為 ✅**——`arbitrate_frame()` 已拆為 `arbitrate_device_authority()`(−100,步驟一,不碰目標欄位、不清緩衝)與 `apply_buffered_navigation()`(−25,步驟三,兼任緩衝最後消費者),後者掛在 `CursorStateHost` 於 `_ready()` 內 `add_child()` 的專屬子節點 `CursorNavigationApplier`;定序改為 ①−100 → ②−50 → ③−25 → ⑥100,即 GDD 明文的 1→2→3→4。R4-4/R4-5/R4-6/R4-7 四項同機制發現一併關閉;Validation Criteria 新增 9b(②→③,第四輪指出的無測試涵蓋區)與 9c(節點優先序靜態斷言)。**且本輪獨立推導確認 ADR 對第四輪 R4-7 修法方向的部分推翻是對的**(單節點不論設 −50 或 100 都會違反四步序列的一段)。殘留 R5-2(② 的建議區間端點 −25 與 ③ 的固定值相撞)為措辭欠明確,兩列可交叉讀出正確解,不足以推翻機制成立 → **✅ 已涵蓋** |
 | TR-cursor-009 | 滑鼠奪權門檻數學:逐表面類型的像素常數、淨位移非路徑總和、根視窗座標空間 | 輸入/資料驗證 | ⚠️ 部分,**判定與 ADR 一致**——**第四輪**:F2 已關閉(`evaluate()` 改收目前滑鼠座標、策略內部持 `_seed` 相減,結構性杜絕路徑總和;單一根 Viewport 假設已明文寫入 Constraints)。門檻數學本身仍在使用者裁決凍結中,不因介面修好而變完整。引擎專家更正:機制八的淨位移全程停留在 viewport 座標系,**不受 `CanvasLayer` 變換影響**,VR #11 應拆項 |
 | TR-cursor-010 | 累積器須依裝置權威 + OS 焦點閘控;須掛 `NOTIFICATION_APPLICATION_FOCUS_*`;暫停/彈窗讓出機制留待架構階段 | 時序/引擎 | **✅ 已涵蓋(第四輪由 ⚠️ 升)**——F5 完整關閉:機制五 `_process()` 補上 `_arbitration_suspended` 檢查,機制九四個進出點(`suspend_arbitration()`/`resume_arbitration()`/FOCUS_OUT/FOCUS_IN)全數 `_frame_events.clear()`。修訂另自行補上一項相鄰缺口(`resume_arbitration()` 原未比照 FOCUS_IN 重新播種)。N2 已登記為 Verification Required #10 並排入 Day-1 spike |
 | TR-cursor-011 | **已知確認、尚未修復的永久鎖死缺陷(持續按住方向輸入)**;已降級為建議項但架構層面仍未解決 | 輸入/架構風險 | ⚠️ 部分,**刻意如此,判定與 ADR 一致**——機制八隔離在單一檔案,明文不宣稱已緩解/不宣稱降低嚴重度/不宣稱構成圍堵。使用者第十二輪裁決:重新設計暫停、待手把硬體 |
 | TR-cursor-012 | 寫入介面「設定新目標」:雙輸入簽章,不含碰撞箱幾何,自動清除有效性旗標 | 跨系統 API | ✅ 已涵蓋——機制十 `set_target(target, from_ui_action) -> SetTargetResult`;幾何查詢自 GDD 第九輪起已不存在 |
 | TR-cursor-013 | 寫入介面「標記待重新解析」:須回傳結構化的已套用/已過期結果,絕不靜默 | 跨系統 API | ✅ 已涵蓋——機制十 `mark_pending_reresolve(expected) -> MarkResult`,`STALE_NOT_APPLIED` 為明確回傳值 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢(閘控確認動作)+ 裝置權威查詢(閘控滑鼠點擊確認),兩者拒絕回饋須可區分 | 跨系統 API/UI | ✅ 已涵蓋——機制十刻意分兩個獨立查詢而非合併布林。論證正確:兩種拒絕的正確補救動作相反 |
-| TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙分支 | 跨系統/生命週期 | ⚠️ 部分——機制十一涵蓋甲/乙/丙三分支與 `from_ui_action=false`,但**漏掉 GDD Core Rules #7 明訂的「累積位移量於甲/乙兩分支皆重置為 0」**;丙分支寫成無條件重算,GDD 允許原目標仍有效時直接沿用。**第四輪:兩項完全未處理**——第三輪未把它們編為 F/N 項,修訂 session 依 9 項清單作業因而漏掉。丙分支的收窄牴觸本 ADR 自己 Ordering Note 的單向修訂約束 |
+| TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙分支 | 跨系統/生命週期 | ⚠️ 部分——機制十一涵蓋甲/乙/丙三分支與 `from_ui_action=false`,但**漏掉 GDD Core Rules #7 明訂的「累積位移量於甲/乙兩分支皆重置為 0」**;丙分支寫成無條件重算,GDD 允許原目標仍有效時直接沿用。**第四輪:兩項完全未處理**——第三輪未把它們編為 F/N 項,修訂 session 依 9 項清單作業因而漏掉。丙分支的收窄牴觸本 ADR 自己 Ordering Note 的單向修訂約束。**第五輪:落差 (b) 完整關閉,落差 (a) 只關甲分支 → 維持 ⚠️**。(b) 丙分支已改為 GDD AC-63b 原文的條件式沿用,有效性判定歸呼叫方,正確。(a) 新增第五個 `ResetTrigger` 值 `SURFACE_HANDOFF`,**但只有甲分支有合法呼叫點**(`handoff_before_unload()` 是專屬方法);**乙分支重用通用的 `set_target(target, from_ui_action)`,結構上無法發出 `SURFACE_HANDOFF`**——`_reclaim` 是 `CursorState` 私有欄位且無 getter(呼叫方拿不到),`from_ui_action` 對乙/丙分支同樣傳 `false`(無法分辨),而 `_write_target_internal()` 已明訂只發 `TARGET_CHANGED` 且僅在目標確實改變時發。三種讀法皆不成立:無條件發 → 丙分支誤發;發 `TARGET_CHANGED` → 本 ADR 自己的 Validation Criteria #16 必然失敗;乙分支算出的目標恰等於當下目標 → GDD 強制的歸零靜默不發生。**`godot-specialist` 判為 BLOCKING**(需新增介面面,非一行修法)。R5-1 |
 | TR-cursor-016 | **全域每裝置待機指示元件須存在於每個畫面**;現有候選擁有者皆為畫面範圍,無一符合 | UI/擁有權缺口 | ✅ 已涵蓋——機制十二 Autoload 持有的全域 `CanvasLayer`。**結構性關掉擁有權缺口**:成因是需求本身排除了任何畫面範圍擁有者。視覺樣式仍留 `/art-bible` |
-| TR-cursor-017 | 原生游標須在權威≠滑鼠時隱藏,唯一例外是連續漸變的奪權回饋——**連續透明度動畫在 4.7.1 可能不受原生游標支援** | 引擎能力/UI | ⚠️ 部分——原生指標二元隱藏已涵蓋。**第四輪**:F3 已加呈現層平滑器 + `reset_triggered` 訊號(方向正確,觸發點 (d) 正確 snap),N3 已由機制十三之二處理且正確地把設計裁決退回 GDD;但 `move_toward()` **對上升方向同樣限速**,而 GDD 要求「達到門檻的當下透明度達 100%」且收斂上限的管轄範圍原文只涵蓋重置造成的下降 → 常見門檻(50–100px)與常見滑鼠速度下**結構上必然違反**(R4-3,視同 BLOCKING) |
+| TR-cursor-017 | 原生游標須在權威≠滑鼠時隱藏,唯一例外是連續漸變的奪權回饋——**連續透明度動畫在 4.7.1 可能不受原生游標支援** | 引擎能力/UI | ⚠️ 部分——原生指標二元隱藏已涵蓋。**第四輪**:F3 已加呈現層平滑器 + `reset_triggered` 訊號(方向正確,觸發點 (d) 正確 snap),N3 已由機制十三之二處理且正確地把設計裁決退回 GDD;但 `move_toward()` **對上升方向同樣限速**,而 GDD 要求「達到門檻的當下透明度達 100%」且收斂上限的管轄範圍原文只涵蓋重置造成的下降 → 常見門檻(50–100px)與常見滑鼠速度下**結構上必然違反**(R4-3,視同 BLOCKING)。**第五輪:R4-3 完整關閉(上升立即同步、只對下降限速、`_pending_snap` 分支排最前),但發現新失效路徑 → 維持 ⚠️**。`gui_get_hovered_control()` 對設 `MOUSE_FILTER_IGNORE` 的節點不回傳該節點(`godot-specialist` 印象-高信心);若任一已註冊表面的根節點或其祖先鏈上任一節點因其他理由設為 `IGNORE`,`is_part_of_registered_surface()` 永遠比對不到 → 機制十三之二誤判「滑鼠在未登記表面上」→ **在應隱藏原生指標時將其恢復可見**,違反 Core Rules #5。機制十四對已註冊表面只約束 `focus_mode` 與 hover 主題兩項,**未約束 `mouse_filter`**,此配置為本 ADR 目前所允許(R5-6,中高)。**判定說明**:此降級為本輪判斷取捨——缺陷屬條件式,第六輪若認為不足以降級可據此推翻 |
 | TR-cursor-018 | 全鍵盤/手把平權;已註冊表面不得使用原生 Control 焦點/懸停主題(4.6 雙焦點分離) | 平台/輸入 | ✅ 已涵蓋——機制十四**兩項**條件(`FOCUS_NONE` **加上**根 Control 不得帶內建 hover 主題)。引擎專家覆核同意兩條管線獨立、同意「不移除只降級」。**仍為專案級風險,不限本系統** |
 | TR-cursor-019 | 交接視覺延遲硬性上限(最多 1 幀)與奪權收斂上限,皆需要幀精準的量測機制 | 時序/UI | **✅ 已涵蓋(第四輪由 ⚠️ 升)**——交接延遲 ≤1 幀的儀器(`diagnostic_last_authority_change_frame`)原本即正確;F4 已關閉,`diagnostic_reclaim_progress_history` 改為取樣自繪節點的 `_presented_alpha`(呈現值),與 `reclaim_visual_convergence_max_frames` 所約束的對象一致 |
 
@@ -184,7 +185,7 @@
 | TR-concept-003 | 若地形資料採 Resource 子類別,深層複製紀律(`duplicate_deep()`)須與存檔格式一併設計,不得事後補救 | 資料/引擎能力 | ⚠️ 部分 — ADR-0003 機制一拒絕 Resource 作為存檔格式,存檔側不再曝險;地形資料本身是否採 Resource 子類別隨 TR-concept-001 未決 |
 | TR-concept-004 | 即時預覽重算範圍已鎖定:逐格候選預覽僅為 O(n)(移動單位涉及的配對),全盤 O(n²) 重算僅於落子確定時執行一次 | 效能/跨系統 | ⚠️ 部分——ADR-0001 的結算邊界機制可作為「落子時重算一次」的觸發依據,但 O(n) 預覽範圍界定本身未定案 |
 | TR-concept-005 | 棋盤格高亮不得依賴原生 Control 焦點/懸停主題;單一游標格狀態源須一般化至所有具懸停目標的 UI 表面 | 輸入/平台平權 | ✅ 已涵蓋(**第四輪修正第三輪的傳播遺漏**)——ADR-0005 機制十四(`FOCUS_NONE` + 根 Control 不得帶內建 hover 主題,兩項條件)封住原生 focus/hover 兩條管線;一般化由機制二 `CursorTypes.SurfaceType` 列舉 + 機制三登記制承載。第三輪已引入 ADR-0005 卻未回頭重推本列(理由欄仍留第二輪的「架構層 ADR 未見」) |
-| TR-concept-006 | 裝置權威為兩層機制:`ui_*` action 為權威閘門,原始 InputEvent 子類別做裝置分類;Input Map 絕不可讓 `ui_*` 綁滑鼠 | 輸入/平台需求 | ⚠️ 部分(**第四輪修正第三輪的傳播遺漏**)——兩層機制由 ADR-0005 機制四(裝置分類,結構性不讀 `.device`)+ 機制四之二(`ActionClass` 語意分類)承載,Input Map 約束由機制七(a) 載入期驗證;但語意分類是硬編碼六項白名單,新增導覽類 action 會靜默降級為 `OTHER` 且無任何驗證攔截(R4-5) |
+| TR-concept-006 | 裝置權威為兩層機制:`ui_*` action 為權威閘門,原始 InputEvent 子類別做裝置分類;Input Map 絕不可讓 `ui_*` 綁滑鼠 | 輸入/平台需求 | ⚠️ 部分(**第四輪修正第三輪的傳播遺漏**)——兩層機制由 ADR-0005 機制四(裝置分類,結構性不讀 `.device`)+ 機制四之二(`ActionClass` 語意分類)承載,Input Map 約束由機制七(a) 載入期驗證;但語意分類是硬編碼六項白名單,新增導覽類 action 會靜默降級為 `OTHER` 且無任何驗證攔截(R4-5)。**第五輪:R4-5 完整關閉,升為 ✅**——機制四之二已改為 `NAVIGATION_ACTIONS` / `CONFIRM_ACTIONS` / `ACKNOWLEDGED_OTHER_ACTIONS` 明文三分割,機制七新增 (c) 分類完整性驗證:遍歷全部 `ui_*` action,三份皆未命中即回報 `UI_ACTION_UNCLASSIFIED` **並附帶 action 名稱**,不靜默降級。ADR 並明文交代為何採三分割而非「未命中即回報」(後者會把數十個引擎內建 action 全報成待分類,噪音大到會被關掉,反而比靜默更糟) → **✅ 已涵蓋** |
 | TR-concept-007 | 初始游標狀態(純手把、首次輸入前)需要呼叫方注入初始落點的介面,不由游標系統自行決定 | 跨系統/輸入 | ✅ 已涵蓋(**第四輪修正第三輪的傳播遺漏**)——ADR-0005 機制十 `set_target(target, from_ui_action)` 即為呼叫方注入介面(`from_ui_action=false` 時裝置權威不變),機制十一乙分支明文複用 Core Rules #6 的初始目標設定流程 |
 | TR-concept-008 | 4.7 shader 前處理器限制收緊,可能影響好感度連線發光效果 | 引擎能力(渲染)/效能 | ❌ 缺口——引擎專家已收窄範圍,若無共用 shader include 則機率低 |
 | TR-concept-009 | MVP 驗收協議 1 需要正式的預判標記狀態 + 遙測管道,比對標記與實際結算結果 | 跨系統/遙測/狀態 | ⚠️ 部分——「實際結算」的比較基準須錨定 ADR-0001 的已提交結算邊界事件,但遙測管道本身是缺口 |
@@ -206,10 +207,12 @@
 2. ~~存檔系統序列化格式與型別安全(TR-save-001、-002 及其下游)~~ → **已撰寫**:`adr-0003-save-system-serialization-format-and-type-safety.md`(Proposed)
 3. ~~存檔系統原子寫入與遷移執行模型(其餘 TR-save-*)~~ → **已撰寫**:`adr-0004-save-system-atomic-write-and-migration-execution-model.md`(Proposed)——但**未達無缺口**,見第 3a 項
 3a. **存檔系統殘留缺口**(本輪新增):`TR-save-030`(雲端存檔同步 × 多檔案原子性)為 ❌,無任何 ADR 涵蓋;`TR-save-005/-015/-019/-021/-026/-028/-029` 為 ⚠️,其中 `-026`(耗時儀器化三桶/六桶 + 加性下限成本模型)缺口最實質。多數可於 `/create-architecture` 或 ADR-0004 修訂時收攏,`-030` 依 GDD 明文須待平台策略定案
-4. ~~單一游標裝置權威輸入架構(TR-cursor-001 至 -019)~~ → **已撰寫**:`adr-0005-cursor-device-authority-input-architecture.md`(Proposed)——第三輪獨立重推 11 ✅ / 8 ⚠️ / **0 ❌**(見第 4a 項);**2026-08-19 修訂後第四輪重推為 13 ✅ / 6 ⚠️ / 0 ❌,新增 7 項待修訂,見第 4b 項**
+4. ~~單一游標裝置權威輸入架構(TR-cursor-001 至 -019)~~ → **已撰寫**:`adr-0005-cursor-device-authority-input-architecture.md`(Proposed)——第三輪獨立重推 11 ✅ / 8 ⚠️ / **0 ❌**(見第 4a 項);第一次修訂後第四輪重推為 13 ✅ / 6 ⚠️ / 0 ❌(見第 4b 項);**第二次修訂後第五輪重推為 15 ✅ / 4 ⚠️ / 0 ❌,第四輪 9 項中 8 項完整關閉,新增 6 項待修訂,見第 4c 項**
 4a. **ADR-0005 待修訂項**(第三輪新增,共 9 項):**F1(BLOCKING)** 機制六的四行為者非 GDD 的「四方完整定序」,呼叫方主動改標被排到確認讀取之後,違反 AC-52,且修法需新增對下游系統的掛載紀律約束;**F5(BLOCKING)** `_process()` 未檢查 `_arbitration_suspended` + 四個進出點未清空 `_frame_events`(不依賴任何引擎假設的確定性漏洞);**F2** `MouseReclaimPolicy` 對累積起點的擁有權自相矛盾、參數命名邀請 GDD 禁止的路徑總和;**F3** 呈現層平滑器缺失,對重置觸發點 (a)(b)(c) 必然違反 AC-41(修法會擴充「三方法契約」);**F4** 收斂上限量測儀器量錯對象(隨 F3 解決);**N1** `ActionClass` 語意分類機制缺失且該 `InputMap` 依賴漏列於涵蓋率表;**N2** `_notification()` 時序未列 Verification Required;**N3** `Input.mouse_mode` 全域性與 AC-60 未登記表面 carve-out 未調和;**N4** 輪詢 vs 訊號推送未定案且無重入閘門。**F1/F5 修好前不得進 `Accepted`**
 
 4b. **ADR-0005 第四輪待修訂項**(2026-08-19 修訂後重推,共 7 項 + `-015` 兩項落差):**R4-1** F1 只關一半——步驟三仍融在 −100,實際定序 1&3 → 2 → 4,與 GDD 明文的四步序列相反,且 ②→③ 這組無任何測試涵蓋(視同 BLOCKING);**R4-2** `diagnostic_seed_position()` 寫在抽象基底卻 `return _seed`,而 `_seed` 只宣告於子類別 → 編譯期錯誤(**BLOCKING**,一行修法);**R4-3** F3 平滑器對上升方向也限速,結構上無法滿足「達到門檻的當下透明度達 100%」(視同 BLOCKING);**R4-4** N4 重入閘門可能鎖死 `arbitrate_frame()` 內部的導覽寫入(引擎專家額外發現);**R4-5** `ActionClass` 硬編碼白名單無完整性驗證,新增導覽類 action 會靜默降級;**R4-6** `call_deferred()` 路線與旗標路線不等價,可重開 F1 剛關的洞;**R4-7** ②/⑤ 角色重疊未討論(可用單一 `_process()` 內陳述順序解決,屬文件缺口)。另 **`TR-cursor-015` 的兩項落差**(甲/乙分支累積位移量未重置為 0、丙分支收窄 GDD 允許的沿用路徑)因第三輪未編號而完全未處理。詳見 `architecture-review-2026-08-19-round4.md`
+
+4c. **ADR-0005 第五輪待修訂項**(2026-08-19 第二次修訂後重推,共 6 項 + 專家 S-1~S-5)。**先記第四輪 9 項的處置:8 項完整關閉**——R4-1(拆 −25 子節點 `CursorNavigationApplier`,四步序列逐步對齊)、R4-2(`@abstract` + 實作下放)、R4-3(上升立即同步、只對下降限速)、R4-4(明文公開入口 vs `_write_target_internal()`)、R4-5(三分割 + 機制七 (c))、R4-6(刪 `call_deferred()` 並與機制十 N4 的用法做對照表區辨)、R4-7(相鄰可合併/不相鄰須拆節點,**本 ADR 對第四輪修法方向的部分推翻經本輪獨立推導確認為對的**)、`-015`(b);**只有 `-015`(a) 只關甲分支**。**本輪 6 項新發現**:**R5-1(BLOCKING)** 乙分支的 `SURFACE_HANDOFF` 在目前介面形狀下無任何合法呼叫路徑(`set_target()` 只有兩參數、`from_ui_action` 對乙/丙同傳 `false`、`_reclaim` 私有無 getter),且與本 ADR 自己的 Validation Criteria #16 直接矛盾——**需新增介面面,非一行修法**;**R5-6(中高)** `gui_get_hovered_control()` 對 `MOUSE_FILTER_IGNORE` 節點不回傳該節點,而機制十四未約束 `mouse_filter` → 機制十三之二可能在應隱藏時恢復原生指標,違反 Core Rules #5;**R5-3(中高)** `MouseReclaimPolicy` 實例被 `CursorState`(建構子)、`CursorStateHost`(機制九直呼 `_reclaim.reset()`)、自繪節點(機制十三 `connect()`)三方持有,取得管道從未定義,且機制九那條路徑逼近 forbidden pattern `logic_in_cursor_autoload_shell`;**R5-2(中)** ② 的建議區間端點 −25 與 ③ 的固定值相撞;**R5-4/R5-5(低)** ADR-0005 Validation Criteria 跳過 #12、ADR-0004 為 3,4,5,7,6、Architecture Diagram 未同步機制七 (c)。**專家自行發現**:S-1 `mouse_position_provider` 只在建構時檢查一次(中)、S-3 `_notification()` 派發為樹序非優先序、ADR 未明講(中)、S-2/S-4/S-5(低)。詳見 `architecture-review-2026-08-19-round5.md`
 5. 戰棋盤面演算法層(可達格/威脅範圍/視線)(TR-tactical-002 至 -010、-019 至 -021、-037 至 -039)—— **尚未動筆**
 6. 回合結構擁有權 + 缺席的 AI/遭遇系統(TR-tactical-034、-041)—— **尚未動筆**
 
