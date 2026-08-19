@@ -610,8 +610,13 @@ After completing the review and writing approved files, present:
 2. **Pre-gate checklist**: Check whether these exist via Glob and mark each ✅ or ❌:
    - `tests/unit/` and `tests/integration/` directories — if ❌: run `/test-setup`
    - `.github/workflows/tests.yml` — if ❌: run `/test-setup`
-   - `design/accessibility-requirements.md` — if ❌: run `/ux-design`
-   - `design/ux/interaction-patterns.md` — if ❌: run `/ux-design`
+   - `design/ux/accessibility-requirements.md` — if ❌: author it from
+     `.claude/docs/templates/accessibility-requirements.md` (WORKFLOW-GUIDE Step 3.5).
+     **No skill authors this file**; `/ux-design` only reads it. ⚠️ CHECK THE PATH:
+     rounds 1–5 of this review all reported this file missing while checking
+     `design/accessibility-requirements.md` (no `ux/`) — the project has kept it under
+     `design/ux/` since 2026-08-06. Corrected 2026-08-19.
+   - `design/ux/interaction-patterns.md` — if ❌: run `/ux-design patterns`
    Present ❌ items as required steps before gate-check. Do not offer `/gate-check`
    as an option if any item is ❌ — offer the missing skill to run instead.
 3. **Rerun trigger**: "Re-run `/architecture-review` after each new ADR is written

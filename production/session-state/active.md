@@ -72,7 +72,7 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
 1. **5 份 ADR 全為 `Proposed`。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
-2. **`/gate-check pre-production` 仍不可執行,但已從 5 缺降為 2 缺**(2026-08-19 `/test-setup` 後實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml` 已建立;❌ `design/accessibility-requirements.md`、❌ `design/ux/interaction-patterns.md` 仍缺,由 `/ux-design` 補。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
+2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側 17 處引用已於 2026-08-19 統一修正,該檔的 Tier 亦已定案為 **Standard**;❌ `design/ux/interaction-patterns.md` 為唯一真正缺少者,由 `/ux-design patterns` 補。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
 
@@ -385,3 +385,33 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 `/ux-design` 補剩餘兩項 pre-gate(`design/accessibility-requirements.md`、
 `design/ux/interaction-patterns.md`)。注意 `cursor-highlight-state.md` 登記的孤兒義務
 ——運動無障礙需求先前口頭轉交至一個不存在的檔案(第五輪審查報告第 351 行起)。
+
+---
+
+## ⚠️ 更正紀錄 — 五輪審查的同一個誤報(2026-08-19 發現)
+
+**`design/ux/accessibility-requirements.md` 自 2026-08-06 起就存在**(5609 bytes,含 Motor Accessibility 矩陣與三個 Open Questions),但**第一~五輪 `/architecture-review` 全部報「❌ 不存在」**。
+
+**根因是路徑分裂,不是檔案缺失**:
+
+| 路徑 | 使用者 |
+|---|---|
+| `design/ux/accessibility-requirements.md`(**檔案實際所在**) | `design/CLAUDE.md`、三份 GDD、`systems-index.md`、兩份 cross-review、review log、ux-designer agent memory |
+| `design/accessibility-requirements.md`(**框架側查的**) | 8 個框架檔共 17 處:gate-check ×4、ux-design ×3、team-ui ×3、create-architecture ×2、WORKFLOW-GUIDE ×2、ux-review ×1、architecture-review ×1、workflow-catalog.yaml ×1 |
+
+**已修**:17 處框架引用全部改為 `design/ux/`(2026-08-19)。`architecture-review` 的 pre-gate 檢查另加一行明文警告,寫明前五輪誤報此項。
+
+**另修一項相關的錯誤宣稱**:gate-check、create-architecture(兩處)、architecture-review 共四處寫「run `/ux-design` 來產生 accessibility-requirements.md」——**`/ux-design` 的模式表從來沒有這個輸出**,它只讀不寫。正確做法是依 `.claude/docs/templates/accessibility-requirements.md` 撰寫(WORKFLOW-GUIDE Step 3.5)。四處已更正並明文標註「無任何 skill 產出此檔」。
+
+> **給下一輪審查的提醒**:歷史審查報告(round1~5)內的 pre-gate 表格**未修改**——那是當時的紀錄,改了等於竄改歷史。但其中對本項的判定是錯的,重讀時請以本節為準。
+
+### Tier 已定案:Standard(2026-08-19 使用者裁決)
+
+該檔原本 Tier 寫「待定」,理由是系統樣本不足。定案 **Standard** 的核心理由:專案早已散落承諾的項目(全手把對等、禁 hover-only、不僅靠色彩、全套重新綁定)**實際上就落在 Standard 這一層**,定案不是新增義務,是把已有承諾收斂成可被檢查的層級;降到 Basic 會讓 Tier 宣告低於實際承諾,升到 Comprehensive 則無資源支撐(無專職無障礙工程師、未聘顧問)。
+
+**定案立刻產生兩項對現有設計的約束,已寫入該檔並登記為 Open Questions**:
+
+1. **「不存在無法延長或關閉的限時輸入」** vs 好感度對話卡牌的**固定發牌節奏**(`game-concept.md` 第三輪裁決)——是否構成限時輸入**尚未釐清,不得預設為不衝突**,須在支援對話系統設計時回答。
+2. **全平台完整輸入重新綁定**——「輸入設定/重新綁定」系統**尚未列入 `systems-index.md`**,本 Tier 使它由可選變為必要,下次系統盤點必須納入。
+
+另登記(不構成新約束):滑鼠奪權 E1 缺陷(類比搖桿持續按住永久鎖死)高度命中動作無障礙——切換式輔助裝置的持續觸發模式正好會踩中。子機制維持凍結,但**重啟其重新設計時必須把本 Tier 的動作無障礙要求列為輸入條件**。
