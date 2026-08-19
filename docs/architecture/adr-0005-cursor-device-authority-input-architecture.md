@@ -4,9 +4,11 @@
 
 **Proposed**
 
+> **2026-08-19 修訂**:回應第三輪 `/architecture-review`(`docs/architecture/architecture-review-2026-08-19.md`,全新 session 獨立推導)判定的 9 項待修訂——**F1、F5 為 BLOCKING**(修好前不得進 `Accepted`),F2/F3/F4 為高/中,N1~N4 為 `godot-specialist` 於該輪額外發現。本次修訂已逐項處理全部 9 項,並經 `godot-specialist` 對修法本身的技術假設做第二輪驗證(見各機制內「F1/F2/…/N4 修訂」標記段落)。**本次修訂不改動任何其餘機制的既有決策**,也不重啟滑鼠奪權子機制的凍結重新設計(機制八的門檻數學本身仍是使用者裁決暫停的範圍)。修訂結果須待**全新 session** 的第四輪 `/architecture-review` 獨立驗證,本 ADR 不自陳此次修訂已使涵蓋率達 19/19。
+
 ## Date
 
-2026-08-18
+2026-08-18(初版) / 2026-08-19(修訂,見上方 Status)
 
 ## Engine Compatibility
 
@@ -17,7 +19,7 @@
 | **Knowledge Risk** | **HIGH** —— 4.7 為訓練截止(2026-01)後發布,且本 ADR 的兩個核心領域(Input、UI)在 4.6 與 4.7 各有一項直接相關的變更 |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`current-best-practices.md`、`deprecated-apis.md`、`modules/input.md`、`modules/ui.md` |
 | **Post-Cutoff APIs Used** | 無新 API 依賴。本 ADR 依賴的機制(`_input()`、`_process()` + `process_priority`、`InputEvent` 子類別、`InputMap.get_actions()`/`action_get_events()`、`ProjectSettings.get_setting()`、`Input.mouse_mode`、`CanvasLayer`、`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT`)皆為 4.4 前既有機制。**但本 ADR 刻意避開兩項 post-cutoff 變更的影響面**:(a) 4.7 鍵盤/滑鼠**裝置 ID 重新編號** —— 機制四結構性地從不讀取 `.device`(見機制四);(b) 4.6 **雙焦點系統** —— 機制十四禁止已註冊表面使用原生 Control focus/hover(這正是 GDD 第四輪裁決的成因) |
-| **Verification Required** | 見下方「Verification Required 明細」—— 共 9 項。其中第 1 項(參考文件版本落後與涵蓋率缺口)與第 9 項(`FOCUS_NONE` 涵蓋範圍)為本 ADR 撰寫/驗證過程中新發現,不屬 GDD 既有 Open Questions |
+| **Verification Required** | 見下方「Verification Required 明細」—— 共 **12** 項(原 9 項 + 2026-08-19 修訂新增 3 項:#10 `_notification()` 時序、#11 `CanvasLayer` 恆等變換假設、#12 `@abstract`+`signal` 語法組合)。其中第 1 項(參考文件版本落後與涵蓋率缺口)、第 9 項(`FOCUS_NONE` 涵蓋範圍)、第 10~12 項為本 ADR 撰寫/驗證過程中新發現,不屬 GDD 既有 Open Questions |
 
 ### ⚠️ 參考文件版本落差(本 ADR 撰寫時發現,尚未被任何文件追蹤)
 
@@ -42,8 +44,11 @@
 | `Input.mouse_mode` | 機制十三 | **零命中** |
 | `_input()` | 機制五 | 僅 `modules/input.md`(**4.6,版本落後**) |
 | `mouse_filter` | 機制十四 | 僅 `modules/ui.md`(**4.6,版本落後**) |
+| `InputMap.event_is_action()`(2026-08-19 修訂新增,N1) | 機制四之二(`ActionClass` 語意分類,機制六仲裁資格判定的輸入依賴——第三輪審查發現此依賴原本完全不在本表) | **零命中**(與 `get_actions()`/`action_get_events()` 同系列 API,已由第十輪 `godot-specialist` 覆核為穩定,但本表此前漏列) |
+| `Viewport.gui_get_hovered_control()`(2026-08-19 修訂新增,N3) | 機制十三之二(未登記表面 hover 時暫時恢復原生指標) | **零命中** |
+| `CanvasLayer` 座標變換與 `get_viewport().get_mouse_position()` 的互動(2026-08-19 修訂新增,F2)——本 ADR 明文假設全域游標/待機指示 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉) | 機制八(F2 座標空間)、機制十三/十三之二 | **零命中**——`godot-specialist` 於本次修訂驗證中標記 **UNVERIFIABLE-FLAG-AS-RISK** |
 
-**8 項核心依賴中 6 項在專案參考庫完全沒有記錄,另 2 項只存在於落後一個大版本的文件裡。** 這不是本 ADR 的缺失,是專案引擎參考庫的結構性缺口——但它直接決定了本 ADR 的引擎判斷**有多少比例只能來自訓練資料印象而非查證**。ADR-0004 的第二輪審查已就 `modules/core-scripting.md`(序列化/雜湊/檔案 I/O/並發原語)提出同一類建議;本 ADR 再新增一項:**`modules/` 需要一份涵蓋 Node 生命週期與輸入派發語意的文件**(`process_priority`、`_input`/`_unhandled_input`/`_gui_input` 的派發鏈與 `accept_event()`、Autoload 語意、`CanvasLayer`、`focus_mode` 在雙焦點下的行為)。在那之前,機制五/六/十四的正確性依據**弱於**本專案其他 ADR 的平均水準,這一點必須被明文承認而不是藏在「Verification Required」的清單長度裡。
+**11 項核心依賴中 9 項在專案參考庫完全沒有記錄,另 2 項只存在於落後一個大版本的文件裡**(原為 8 項中 6+2,本次修訂新增 3 項,全部零命中)。這不是本 ADR 的缺失,是專案引擎參考庫的結構性缺口——但它直接決定了本 ADR 的引擎判斷**有多少比例只能來自訓練資料印象而非查證**。ADR-0004 的第二輪審查已就 `modules/core-scripting.md`(序列化/雜湊/檔案 I/O/並發原語)提出同一類建議;本 ADR 再新增一項:**`modules/` 需要一份涵蓋 Node 生命週期與輸入派發語意的文件**(`process_priority`、`_input`/`_unhandled_input`/`_gui_input` 的派發鏈與 `accept_event()`、Autoload 語意、`CanvasLayer`、`focus_mode` 在雙焦點下的行為)。在那之前,機制五/六/十四的正確性依據**弱於**本專案其他 ADR 的平均水準,這一點必須被明文承認而不是藏在「Verification Required」的清單長度裡。
 
 ### Verification Required 明細
 
@@ -56,10 +61,13 @@
 | 5 | **Steam 疊加層是否觸發 `NOTIFICATION_APPLICATION_FOCUS_IN`** —— GDD AC-30 依賴此通知涵蓋 alt-tab / 最小化 / Steam 疊加層三情境,但 Steam 疊加層常以應用程式內 swapchain 層級掛鉤,不一定產生 OS 層焦點轉移 | GDD Open Question(第四輪) | 中 —— 若不觸發,機制九需備援偵測路徑 |
 | 6 | **`InputMap.get_actions()`/`action_get_events()` 於 headless 載入後能正確反映「引擎內建預設綁定 + 專案自訂覆寫」的合併結果** | GDD Open Question —— **已於第十輪由 `godot-specialist` 覆核關閉**(此二 API 於 4.5→4.6→4.7 穩定、未變更、未棄用) | 低 —— 保留登記供追溯 |
 | 7 | **暫停/模態的讓路手段** —— GDD Open Question 問「`SceneTree.paused` + `process_mode` 是否足以涵蓋專案內全部彈出情境」。**本 ADR 機制九不採用 `SceneTree.paused` 作為判準**(見機制九的拒絕理由),因此此 Open Question 對本 ADR 的實作可行性不再構成阻擋;仍須於 `/create-architecture` 盤點彈窗情境以確認機制九的顯式旗標有被正確呼叫 | GDD Open Question(第六輪) | 低(已被機制九降級) |
+| 10 | **`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT` 相對 `process_priority`(`_process()` 執行序)的時序完全未定義**——若 FOCUS_IN 在部分節點 `_process()` 已跑完、部分未跑的中途觸發,`force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 可能讓部分下游在同影格讀到新舊混合的視覺狀態 | 第三輪 `/architecture-review`(**N2**,godot-specialist 於該輪額外發現) | 中——印象等級(信心度偏高),參考庫零涵蓋 |
+| 11 | **`CanvasLayer` 全程維持恆等變換的假設**(機制八 F2 座標空間修訂、機制十三之二 N3 修訂共同依賴)——`get_viewport().get_mouse_position()` 回傳的是 viewport 座標,若承載自繪游標/待機指示/hover 判定的 `CanvasLayer` 帶有非恆等變換,座標計算會脫節 | 本次修訂新增(**godot-specialist** 於本次驗證標記 **UNVERIFIABLE-FLAG-AS-RISK**) | 高——若不成立,機制八的淨位移計算與機制十三/十三之二的座標判定同時失準 |
+| 12 | **`@abstract` 類別內同時宣告 `signal` 與多個 `@abstract func`(機制八 F3 修訂新增 `reset_triggered` 訊號)是否有語法限制** | 本次修訂新增(**godot-specialist** 標記 **UNVERIFIABLE-FLAG-AS-RISK**,與既有 `@abstract` 語法賭注同一風險等級) | 高——寫錯屬編譯期錯誤,擋下整個檔案 |
 | 9 | **`focus_mode = FOCUS_NONE` 是否也排除 Control 主題內建的滑鼠 hover 繪製** —— `godot-specialist` 判斷**大概率不排除**(兩條獨立管線)。最小 spike:`Button` 設 `FOCUS_NONE` 後滑鼠懸停是否仍畫 hover 主題。決定機制十四第 2 項條件是硬性要求或防禦性建議 | **本 ADR Step 5.5 驗證新發現** | **高** —— 若不排除,單靠 `focus_mode` 的機制十四只封住兩條管線中的一條,原決策已據此修訂 |
 | 8 | **`InputEvent.device` 於某些合成事件回傳 `-1` sentinel** —— GDD 第十一輪明文登記為「ADR 撰寫時的警告項」。本 ADR 機制四結構性不讀取 `.device`,不受影響;**但下游若為除錯/記錄用途讀取裝置 ID 須留意此值**,已列為機制四的明文警告 | GDD Open Question(第十一輪) | 低(本系統結構性免疫) |
 
-**實作第一天的驗證排程建議**(`godot-specialist` Step 5.5 建議):第 **2**(`process_priority` 不涵蓋 `_input()` 與批次前提)、**3**(Agile Event Flushing 鍵名)、**9**(`FOCUS_NONE` 是否也關 hover 主題)三項,加上機制八的 `@abstract` 語法(承 ADR-0004 Verification Required 6/6a),應在實作**第一天**先跑掉,不要留到整合測試後期。理由:四者的驗證成本都極低(一次幀精準測試、一次 `has_setting()` 查詢、一個 `Button` 懸停 spike、一個最小 `@abstract` 檔案),但後果都是**全有全無**——`@abstract` 寫錯是整檔案編譯失敗;`process_priority` 前提不成立會讓機制六整個定序失效;`FOCUS_NONE` 只關一半會讓機制十四在某些節點型別上失效;Agile Flushing 鍵名寫錯會讓機制七的驗證靜默通過,製造假的安全感。**先跑這四項,可以在寫任何正式程式碼之前就知道有沒有需要回頭修訂本 ADR。**
+**實作第一天的驗證排程建議**(`godot-specialist` Step 5.5 建議,2026-08-19 修訂新增第 11/12 項):第 **2**(`process_priority` 不涵蓋 `_input()` 與批次前提)、**3**(Agile Event Flushing 鍵名)、**9**(`FOCUS_NONE` 是否也關 hover 主題)、**11**(`CanvasLayer` 恆等變換假設)、**12**(`@abstract` 類別內含 `signal` 的語法組合,擴充自 ADR-0004 Verification Required 6/6a 的既有 `@abstract` 語法賭注)五項,應在實作**第一天**先跑掉,不要留到整合測試後期。理由:五者的驗證成本都極低(一次幀精準測試、一次 `has_setting()` 查詢、一個 `Button` 懸停 spike、一個放在 `CanvasLayer` 底下的座標比對測試、一個最小 `@abstract`+`signal` 檔案),但後果都是**全有全無**——`@abstract`/`signal` 組合寫錯是整檔案編譯失敗;`process_priority` 前提不成立會讓機制六整個定序失效;`FOCUS_NONE` 只關一半會讓機制十四在某些節點型別上失效;`CanvasLayer` 變換假設不成立會讓機制八的淨位移與機制十三之二的 hover 判定同時脫節;Agile Flushing 鍵名寫錯會讓機制七的驗證靜默通過,製造假的安全感。**先跑這五項,可以在寫任何正式程式碼之前就知道有沒有需要回頭修訂本 ADR。**
 
 **已由 GDD spike 實測關閉、本 ADR 不再重複登記**:Control offset transforms 的命中測試風險(第九輪 `prototypes/cursor-reclaim-godot-spike-2026-08-05/` Test 1 於 4.7.1 Editor 實測 translate/rotate/scale 三模式,`_gui_input` 路由與 `get_global_rect()` 皆正確跟隨視覺變換,無脫節)。
 
@@ -95,6 +103,8 @@
 - **既有架構立場**(`docs/registry/architecture.yaml`,41 項):`autoload_singleton_for_testable_data_layers`、`enum_value_positional_string_conversion`、`mutable_container_as_dictionary_key`、`relying_on_container_iteration_order`、`returning_internal_container_references` 五項 forbidden pattern 與本 ADR 直接相關。
 - **全手把平權**(`.claude/docs/technical-preferences.md`):所有 UI 須同等支援滑鼠 hover/click 與 d-pad/類比搖桿導覽,主機無游標,不得有 hover-only 互動。
 - **子機制凍結**:滑鼠奪權(Core Rules #3 空間門檻)的重新設計已由使用者明文暫停,不得在本 ADR 內重啟設計。
+- **單一根 Viewport 假設(2026-08-19 修訂新增,F2)**:機制八的滑鼠淨位移計算、機制十三/十三之二的原生指標判定與 hover 查詢,全程假設專案只有一個根 Viewport,滑鼠座標一律取自 `get_viewport().get_mouse_position()`,承載自繪游標/待機指示的 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉)。若未來引入分割畫面或多個獨立 Viewport,此假設須重新驗證(見 Verification Required 第 11 項)。
+- **下游確認動作判讀的執行位置(2026-08-19 修訂新增,F1)**:任何下游系統解讀確認類 `ui_*` action 並查詢本系統狀態時,該判讀邏輯必須落在該系統自己的 `_process()`——若觸發來源是 `_physics_process()` 或其他回呼,呼叫方須自行轉呼叫延後至 `_process()`,不得直接在 `_physics_process()`/`_input()`/`_unhandled_input()` 內完成判讀(`process_priority` 只排序 `_process`/`_physics_process` 各自的鏈,兩鏈之間、以及 `_input()`/`_unhandled_input()` 相對兩鏈皆無排序保證,`godot-specialist` 本次修訂驗證明確指出此點)。
 
 ### Requirements
 
@@ -108,6 +118,7 @@
 8. **交接視覺延遲 ≤ 1 影格**(`max_handoff_visual_latency_frames`,GDD 已定案為 1),需要幀精準量測機制。
 9. **原生視覺抑制**(Core Rules #5):失去權威的裝置其原生視覺須被抑制;已註冊表面不得使用原生 Control focus/hover。
 10. **結構化介面**:2 個寫入方法、2 個讀取查詢,拒絕回饋須在感知上可區分。
+11. **確認動作判讀的執行位置(2026-08-19 修訂新增,F1,AC-52)**:任何下游系統解讀確認類 `ui_*` action 並查詢本系統狀態(`is_current_target_valid()`/`get_device_authority()`)時,判讀邏輯必須在該系統自己的 `_process()` 執行,絕不可掛 `_input()`/`_unhandled_input()`——這是 GDD 四步完整定序(裝置權威判定 → 呼叫方主動改標呼叫 → 緩衝內導覽類 `ui_*` 寫入 → 緩衝內確認類 `ui_*` 讀取)成立的必要條件,是正確性要求,不是風格偏好。
 
 ## Decision
 
@@ -133,7 +144,7 @@ var _reclaim: MouseReclaimPolicy               # 第三個頂層欄位的擁有�
 >
 > **這仍然滿足「恰 3 個頂層欄位」**:欄位數未增未減,第三個欄位的**型別**由裸 `float` 變為一個封裝它的物件。GDD 明文的意圖是「此欄位必須被承認、不得是隱藏狀態」——`_reclaim` 是公開宣告的欄位,累積量透過 `reclaim_progress()` 可查詢,不是隱藏狀態。
 >
-> **但這是一個需要驗證的形狀變更**:GDD **AC-1** 要求對公開方法行為做窮盡檢視、確認不存在未被承認的第四個欄位。該 AC 的測試必須針對本 ADR 的形狀執行(`CursorState` 的 3 個欄位 + `MouseReclaimPolicy` 內部的累積量與起點),**不得**假設原 GDD 措辭下的扁平三純量形狀。若 AC-1 的窮盡檢視認定「策略物件內部另有累積起點」構成第四個未承認欄位,則本 ADR 須回頭把起點也明文列入契約(建議做法:`MouseReclaimPolicy` 增設 `diagnostic_seed_position() -> Vector2` 使其可查詢,而非改回扁平形狀)。
+> **但這是一個需要驗證的形狀變更**:GDD **AC-1** 要求對公開方法行為做窮盡檢視、確認不存在未被承認的第四個欄位。該 AC 的測試必須針對本 ADR 的形狀執行(`CursorState` 的 3 個欄位 + `MouseReclaimPolicy` 內部的累積量與起點),**不得**假設原 GDD 措辭下的扁平三純量形狀。~~若 AC-1 的窮盡檢視認定「策略物件內部另有累積起點」構成第四個未承認欄位,則本 ADR 須回頭把起點也明文列入契約~~ **2026-08-19 修訂已補上**(F2 修法的必然結果——`_seed` 現在確定是 `MouseReclaimPolicy` 的內部欄位,見機制八):`diagnostic_seed_position() -> Vector2` 已加入介面契約。第三輪 `/architecture-review` 因此條件未解而將 TR-cursor-001 由 ✅ 降為 ⚠️,本次修訂視為一併關閉,惟涵蓋判定仍須待獨立 `/architecture-review` 確認。
 
 # ─── cursor_state_host.gd ────────────────────────────────────
 # Autoload。只負責四件事,不含任何裁定邏輯:
@@ -170,6 +181,15 @@ enum SurfaceType {
 enum Authority { UNINITIALIZED, MOUSE, KEYBOARD_GAMEPAD }
 
 enum ActionClass { NAVIGATION, CONFIRM, OTHER }   # 見機制六:僅 NAVIGATION 具主張權威資格
+
+# 2026-08-19 修訂新增(F2/F3)——GDD Core Rules #3 四個累積起點重置觸發點 (a)(b)(c)(d) 的具名列舉,
+# 取代先前僅以散文字母指稱。機制八 reset() 與 reset_triggered 訊號皆以此列舉溝通。
+enum ResetTrigger {
+    AUTHORITY_TRANSFER,      # (a) 裝置權威任一方向轉移
+    TARGET_CHANGED,          # (b) 目前高亮目標改變
+    FOCUS_LOST_REGAINED,     # (c) 失焦全程不運算,復焦重新播種
+    VETOED_SAME_FRAME,       # (d) 同影格達門檻但被鍵盤/手把導覽類動作否決——唯一允許呈現層單影格瞬間歸零的觸發點(AC-41b)
+}
 ```
 
 **決策**:表面類型列舉定案在 `cursor_types.gd`,包裝於 `class_name CursorTypes` 之下,**不使用裸的全域 enum**。
@@ -236,6 +256,29 @@ static func classify(event: InputEvent) -> CursorTypes.Authority:
 
 **已知未定義路徑**(GDD 第八輪登記,不在本 ADR 解決範圍):若 `ui_*` action 由 `Input.action_press()`/`action_release()` 程式化合成觸發(除錯工具、未來的無障礙輔助),背後沒有真正的 `InputEvent` 實例可供分類。本 ADR 依 GDD 建議方向處理:`classify()` 收不到事件的路徑**不改變目前裝置權威**(比照 AC-6 精神),待有實際下游需求時補正式規則。
 
+### 機制四之二:動作語意分類 —— `ActionClass`(2026-08-19 修訂新增,N1)
+
+```gdscript
+# 機制四的 classify() 只做裝置類別分類,不做動作語意分類。但機制六「僅 NAVIGATION 類
+# ui_* 具主張裝置權威資格」需要另一層判定——第三輪 /architecture-review 發現本 ADR
+# 完全沒給這個機制,且該依賴不在核心依賴涵蓋率表裡(N1)。
+const NAVIGATION_ACTIONS: Array[StringName] = [&"ui_up", &"ui_down", &"ui_left", &"ui_right"]
+const CONFIRM_ACTIONS: Array[StringName] = [&"ui_accept", &"ui_cancel"]
+
+static func classify_action(event: InputEvent) -> CursorTypes.ActionClass:
+    for action in NAVIGATION_ACTIONS:
+        if InputMap.event_is_action(event, action):
+            return CursorTypes.ActionClass.NAVIGATION
+    for action in CONFIRM_ACTIONS:
+        if InputMap.event_is_action(event, action):
+            return CursorTypes.ActionClass.CONFIRM
+    return CursorTypes.ActionClass.OTHER
+```
+
+**決策**:以 `InputMap.event_is_action(event, action_name)` 對照固定的導覽類/確認類 action 名單判定 `ActionClass`,獨立於機制四的裝置類別 `classify()`——一個事件同時經過兩層分類(裝置類別 + 動作語意),互不取代。`InputMap.event_is_action()` 與本 ADR 已使用、經第十輪 `godot-specialist` 覆核穩定的 `InputMap.get_actions()`/`action_get_events()` 同系列,`godot-specialist` 本次修訂驗證確認**穩定、無棄用風險**,已補登記於上方核心依賴涵蓋率表(此前遺漏正是 N1 指出的問題本身)。
+
+**理由**:機制六仲裁只允許「鍵盤/手把的 NAVIGATION 類 `ui_*` action」與「滑鼠達門檻位移」兩類事件主張裝置權威,確認類與其他非導覽類 action 結構性被排除在仲裁範圍外(GDD Core Rules #3「確認類動作與裝置權威的關係」)。這道判定若不獨立於 `classify()` 明文定案,`arbitrate_frame()` 的「僅 NAVIGATION 具資格」規則會變成沒有具體實作依據的空話。
+
 ### 機制五:整幀緩衝掛 `_input()`,裁決在 `_process()`
 
 ```gdscript
@@ -249,24 +292,39 @@ func _input(event: InputEvent) -> void:
     _frame_events.append(event)
 
 func _process(_delta: float) -> void:
-    if _frame_events.is_empty():
+    # 2026-08-19 修訂(F5,BLOCKING):原版本沒有比照 _input() 檢查 _arbitration_suspended——
+    # 若同影格內 _input() 已 append 事件之後 _arbitration_suspended 才變 true,原版本仍會裁定
+    # 那批事件。這個競窗 100% 確定存在,不依賴任何未驗證引擎行為(第三輪 godot-specialist
+    # 對抗性覆核 CONFIRMED)。
+    if _arbitration_suspended or _frame_events.is_empty():
         return
     _state.arbitrate_frame(_frame_events)   # 機制六:一次原子化裁定
     _frame_events.clear()
 ```
 
+**F5 修法範圍(2026-08-19 修訂,BLOCKING)**:上方 `_process()` 已補上 `_arbitration_suspended` 檢查。**另一半修法在機制九**——`suspend_arbitration()`、`resume_arbitration()`、`NOTIFICATION_APPLICATION_FOCUS_OUT`、`NOTIFICATION_APPLICATION_FOCUS_IN` **四個進出點,原版本沒有任何一個呼叫 `_frame_events.clear()`**,暫停期間緩衝區內的殘留事件會一直躺著,直到下次 `_process()`(可能已是復焦後的影格)被誤裁定,與復焦當下的新事件混在一起處理——違反 GDD 觸發點 (c)「失焦期間完全不運算」與機制九自己宣稱的「暫停期間被動裁定路徑不參與」。四個進出點的具體修法見機制九。
+
 **掛 `_input()`、禁 `_unhandled_input()`**(GDD Core Rules #3 實作架構約束,第九輪升級為阻擋項):`_unhandled_input()` 只會收到 Control 自身 GUI 處理(透過 `accept_event()`)未消費的事件。若一個聚焦中的 Control 其內建焦點導覽邏輯消費了 `ui_up`/`ui_down`,該事件會**完全不抵達**緩衝區——這是**遺漏**而非重排序,緩衝架構本身無法補救一個從未進入緩衝區的事件,足以推翻 GDD 最核心的「100% 決定性測試」宣稱。`godot-specialist` 於首輪 `/architecture-review` **CONFIRMED** `_input()` 為正確做法。
 
 **為何裁決在 `_process()` 而非 `_input()` 的最後一次呼叫**:GDD 要求「整幀事件收集完畢後才統一裁定」,但 `_input()` 本身無法知道自己是不是這一影格的最後一次呼叫。**關鍵引擎事實:`process_priority` 只管 `_process`/`_physics_process`,不管 `_input()` 的派發順序**——因此「四行為者的決定性同幀執行順序」(TR-cursor-008)只可能建立在 `_process` 階段。把裁決移到 `_process()` 讓正確性建立在一個可用 `process_priority` 精確控制的階段,而不是建立在 `_input()` 跨節點派發順序這個未經驗證的引擎行為上(列為 Verification Required 第 2 項——需確認的是「該影格全部 `_input()` 完成後才進入 `_process()`」這個更弱的前提,而非派發順序本身)。
 
-### 機制六:四行為者的決定性同幀定序 —— 具體 `process_priority` 數值
+### 機制六:五行為者的決定性同幀定序 —— 具體 `process_priority` 數值(2026-08-19 修訂,F1,BLOCKING)
+
+**第三輪 `/architecture-review` 判定(F1,BLOCKING)**:本表原版本列的是**節點渲染更新序**(①②③④),**不是** GDD Core Rules #2 明文定案的「四方完整定序」——**裝置權威判定 → 呼叫方主動改標呼叫 → 緩衝內導覽類 `ui_*` 寫入 → 緩衝內確認類 `ui_*` 讀取**(AC-52)。原表裡根本沒有「呼叫方主動改標」這個行為者的位置,而「確認動作判讀由誰執行、掛在哪裡」原版本從未定義——若下游系統在自己的 `_input()`/`_unhandled_input()` 裡直接處理確認動作,該讀取會發生在同影格 `_process()` **開始之前**,連「裁定者先跑」這個最基本保證都不成立,違反 AC-52(該 AC 此前也不在 Validation Criteria 清單裡,已於下方補齊)。
+
+**修法**(新增第二個行為者「呼叫方主動改標」,並把「確認動作判讀」的執行位置提升為對下游系統的明文約束,而非只是本系統內部的一條紀律):
 
 | 行為者 | 節點 | `process_priority` | 職責 |
 |---|---|---|---|
-| ① 裁定者 | `CursorStateHost`(Autoload) | **−100** | 消化該影格緩衝事件,更新 3 個頂層欄位 |
-| ② 已註冊表面 | 各 `CursorSurface` | **0**(預設) | 讀取狀態,渲染自己的高亮/待重新解析視覺 |
-| ③ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 待機指示、奪權漸進回饋載體(機制十二/十三) |
-| ④ 下游讀取方 | 戰鬥 HUD、好感度視覺 UI、支援對話 UI | **100** | 讀取游標目標更新自己的呈現 |
+| ① 裁定者 | `CursorStateHost`(Autoload) | **−100** | 消化該影格緩衝事件,**同一次原子呼叫內**完成裝置權威判定(GDD 四步序列步驟一)與套用緩衝內導覽類 `ui_*` 目標寫入(步驟三)——見下方「為何步驟一、三可安全同一次呼叫完成」 |
+| ②(新增)呼叫方主動改標 | 任何因遊戲語意事件(非 `ui_*` 觸發,例如單位死亡)需呼叫 `mark_pending_reresolve()`/`set_target()` 的下游系統,於**該系統自己的節點** `_process()` | **−50**(架構強制;−100 與 0 之間任一值皆滿足排序,此為參考值) | GDD 四步序列步驟二 |
+| ③ 已註冊表面 | 各 `CursorSurface` | **0**(預設) | 讀取狀態,渲染自己的高亮/待重新解析視覺 |
+| ④ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 待機指示、奪權漸進回饋載體、機制十三之二的 hover 判定(機制十二/十三,同一節點單一 `_process()` 內完成,避免與其他 priority=50 節點的同層排序未定義問題) |
+| ⑤(新增)下游讀取方(含確認動作判讀) | 戰鬥 HUD、好感度視覺 UI、支援對話 UI,於**該系統自己的節點** `_process()` | **100** | 讀取游標目標更新自己的呈現;**GDD 四步序列步驟四**——任何解讀確認類 `ui_*` action 並查詢 `is_current_target_valid()`/`get_device_authority()` 的邏輯必須落在此處,絕不可掛 `_input()`/`_unhandled_input()`(見 Requirements 第 11 項、Constraints「下游確認動作判讀的執行位置」) |
+
+**為何步驟一、三(裝置權威判定、緩衝內導覽類寫入)可安全同一次 `arbitrate_frame()` 呼叫完成**:兩者皆為本系統內部運算,呼叫方(②)看不到、也不需要看到兩者之間的中間狀態——`arbitrate_frame()` 本就是先決定本影格裝置權威、再依權威決定是否套用緩衝內的導覽類目標變更,這正是它作為單一原子函式存在的理由。真正需要外部可觀察順序保證的,是②(呼叫方主動改標)必須發生在①之後、⑤(確認讀取)之前——這正是新增的 −50 優先序與對⑤的明文約束要解決的問題,不需要把①拆成兩次 `_process()` 呼叫。
+
+**`process_priority` 只排序同一種回呼各自的鏈,不跨鏈**(`godot-specialist` 本次修訂驗證新增澄清,**BLOCKING 修法的必要前提**):`process_priority` 分別排序 `_process()` 鏈與 `_physics_process()` 鏈,**兩鏈之間彼此無排序保證**;`_input()`/`_unhandled_input()` 更完全不受 `process_priority` 管轄。因此:(a) 若②的觸發來源是某系統的 `_physics_process()`(例如物理碰撞判定角色死亡),該系統**不得**在 `_physics_process()` 內直接呼叫 `mark_pending_reresolve()`,必須將呼叫轉移到自己的 `_process()`(例如設一個旗標,`_process()` 開頭檢查並執行,或使用 `call_deferred()` 排入下一次 `_process()`)——直接在 `_physics_process()` 呼叫不受本表任何優先序保證約束;(b) ⑤的「絕不可掛 `_input()`/`_unhandled_input()`」不是本系統一廂情願的紀律要求,而是**唯一能讓 process_priority 的排序保證真正生效**的必要條件——`godot-specialist` 明確指出:即使替 `_unhandled_input()` 也編一個優先序數字,`process_priority` 依然管不到它,只有明文禁止才能堵住這個路徑。
 
 **`process_priority`(更新順序)與 `CanvasLayer.layer`(繪製疊放順序)是兩個獨立概念**,本表指的一律是前者;機制十二/十三那層 CanvasLayer 的 `layer` 值另行設定,不與本表數值混用(`godot-specialist` Step 5.5 建議明確分開標注以降低下游誤讀)。**Godot 的 `process_priority` 是數值小者先執行**,因此裁定者(−100)必然早於任何讀取方。這讓「交接視覺延遲 ≤ 1 影格」(`max_handoff_visual_latency_frames` = 1,GDD 已定案)成為**同一影格內即完成**的更強保證,而非勉強達標。
 
@@ -314,30 +372,50 @@ func validate() -> Array[ValidationFailure]   # 空陣列 = 全數通過
 
 ```gdscript
 # ─── mouse_reclaim_policy.gd ─────────────────────────────────
+# 2026-08-19 修訂(F2、F3):三方法簽章改版,新增一個訊號。詳見下方「F2 修法」「F3 修法」。
 @abstract
 class_name MouseReclaimPolicy extends RefCounted
 
-# 回傳本影格滑鼠是否取得有效的奪權主張資格
+# F3 新增:呈現層(機制十三)訂閱此訊號以判斷本次歸零是否為觸發點 (d)(唯一允許瞬間歸零者)。
+signal reset_triggered(trigger: CursorTypes.ResetTrigger)
+
+# F2 修訂:改收「目前滑鼠螢幕座標」(根視窗座標,見 Constraints「單一根 Viewport 假設」),
+# 淨位移由實作內部以 current_mouse_position.distance_to(_seed) 計算,不再由呼叫方算好傳入。
+# 回傳本影格滑鼠是否取得有效的奪權主張資格。
 @abstract
-func evaluate(mouse_motion_net_delta: Vector2, surface: CursorTypes.SurfaceType) -> bool:
+func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool:
     pass
-# GDD 稱此值為 `reclaim_progress`(0.0~1.0),供機制十三的漸進回饋載體讀取
+# GDD 稱此值為 `reclaim_progress`(0.0~1.0),供機制十三的呈現層平滑器讀取(不再直綁 modulate.a,見機制十三)
 @abstract
 func reclaim_progress() -> float:
     pass
-# 四個重置觸發點 (a)(b)(c)(d) 的統一入口
+# F2/F3 修訂:新增 trigger 參數,標明四個重置觸發點 (a)(b)(c)(d) 中的哪一個(CursorTypes.ResetTrigger),
+# 供內部記錄 seed 之餘,亦透過 reset_triggered 訊號通知呈現層。
 @abstract
-func reset(seed_position: Vector2) -> void:
+func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void:
     pass
+# 2026-08-19 修訂新增(回應 TR-cursor-001 的條件式涵蓋——見機制一「第三個頂層欄位的歸屬」註記:
+# AC-1 窮盡檢視若認定累積起點是未被承認的第四欄位,本 ADR 須補一個可查詢的 getter)。
+# QA/測試專用,下游業務邏輯不得依賴,比照機制十五 diagnostic_* 慣例。
+func diagnostic_seed_position() -> Vector2:
+    return _seed
 
 # ─── threshold_mouse_reclaim_policy.gd ───────────────────────
 # 現行實作:GDD Core Rules #3 的表面類型固定像素門檻。
 # ⚠️ 本檔案內含兩項 GDD 已確認、尚未修復的缺陷(見 Consequences → Risks)。
 # ⚠️ 本子機制的重新設計已由使用者於 GDD 第十二輪明文暫停,待手把硬體。
 class_name ThresholdMouseReclaimPolicy extends MouseReclaimPolicy
+
+var _seed: Vector2   # F2 修訂新增:起點內部化,evaluate() 不再依賴呼叫方算好的淨位移
 ```
 
-**決策**:滑鼠奪權的門檻數學、累積器、四個重置觸發點、漸進回饋進度值,全部封裝在 `MouseReclaimPolicy` 的單一實作檔內,`CursorState` 只透過三個方法與它互動。
+**F2 修法(2026-08-19 修訂)**:原簽章 `evaluate(mouse_motion_net_delta: Vector2, surface) -> bool` 對「誰持有累積起點」自相矛盾——`reset(seed_position)` 暗示策略物件持有起點,`evaluate(net_delta)` 卻暗示呼叫方已算好淨位移,兩種語意各沾一半。第三輪 `/architecture-review` 指出**最危險的是參數命名本身**:`arbitrate_frame()` 手上只有 `InputEventMouseMotion`,看到 `_net_delta` 這個參數名、且每幀被呼叫一次,最自然的實作就是累加 `event.relative`——那正好是 GDD Core Rules #3 明文禁止的**路徑總和**(禁止理由:路徑總和會讓原地抖動在零淨位移下也能跨過門檻)。修法:`evaluate()` 改收**目前滑鼠螢幕座標**(而非位移量),策略內部以自己持有的 `_seed`(由 `reset()` 播種)相減計算淨位移,`reset(seed_position)` 的語意因此自洽,且結構性杜絕路徑總和的實作路徑。座標空間的明文假設見 Constraints「單一根 Viewport 假設」——`godot-specialist` 本次驗證標記此假設本身 **UNVERIFIABLE-FLAG-AS-RISK**(承載自繪游標的 `CanvasLayer` 若非恆等變換會使座標脫節),已列入 Verification Required 第 11 項。
+
+**F3 修法(2026-08-19 修訂,見機制十三的呈現層平滑器實作)**:GDD 是兩個值的模型——`reclaim_progress` 本身必須立即反映全部四個重置觸發點,但**呈現層透明度**對觸發點 (a)(b)(c) 不得單影格瞬間歸零,必須在 `reclaim_visual_convergence_max_frames` 內收斂,觸發點 (d) 才是**唯一**允許同影格瞬間歸零的例外(AC-41b)。原版本的 `modulate.a` 直綁 `reclaim_progress()`,對 (a)(b)(c) 必然違反 AC-41,且三方法契約沒有任何管道讓呈現層知道這次歸零是哪個觸發點造成的。修法:新增 `reset_triggered` 訊號,呈現層(機制十三)訂閱後才知道該 snap 還是漸退。
+
+**⚠️ 契約寬度的誠實記錄(回應 F3 對 Validation Criteria #8 的動搖)**:本 ADR 原自陳「機制八的隔離邊界只有三個方法寬」。修訂後隔離邊界是**三個方法 + 一個訊號 + 一個新增的診斷查詢**——`evaluate`/`reclaim_progress`/`reset` 三者的**方法數量**不變,但 `reset()` 的參數面拓寬(新增 `trigger`),且新增 `reset_triggered` 訊號與 `diagnostic_seed_position()`。這是**連動修訂**,不是措辭澄清——已同步修正 Validation Criteria #8 的措辭(見下方)。若未來替換 `_reclaim` 實例(例如切換至 `ImmediateMouseReclaimPolicy` 做隔離測試),呼叫方須自行重新訂閱新實例的 `reset_triggered`——訊號連接不隨物件替換自動轉移(`godot-specialist` 本次驗證提醒)。
+
+**決策**:滑鼠奪權的門檻數學、累積器、四個重置觸發點、漸進回饋進度值,全部封裝在 `MouseReclaimPolicy` 的單一實作檔內,`CursorState` 只透過上述介面與它互動。
 
 **理由**:GDD 第十二輪(2026-08-11)使用者裁決把此子機制的硬性閘門降級為建議事項、**重新設計暫停**、候選修法(`InputEventKey.echo` 過濾)正式標記為不再追加投入,待取得手把硬體。同時**兩項已確認缺陷維持未修復**:
 
@@ -360,19 +438,33 @@ class_name ThresholdMouseReclaimPolicy extends MouseReclaimPolicy
 # ─── cursor_state_host.gd(承機制一/五)──────────────────────
 var _arbitration_suspended: bool = false
 
-func suspend_arbitration() -> void      # 暫停選單/模態 UI 開啟時呼叫
-func resume_arbitration() -> void       # 關閉時呼叫,內部觸發 _reclaim.reset(當下滑鼠座標)
+# 2026-08-19 修訂(F5,BLOCKING):四個進出點原版本沒有任何一個呼叫 _frame_events.clear()——
+# 暫停期間緩衝區的殘留事件會一直躺著,直到下次 _process()(可能已是復焦後的影格)被誤裁定。
+# 四者現在全部清空緩衝區,搭配機制五 _process() 新增的 _arbitration_suspended 檢查,
+# 兩處合起來才是完整修法。
+func suspend_arbitration() -> void:      # 暫停選單/模態 UI 開啟時呼叫
+    _arbitration_suspended = true
+    _frame_events.clear()
+
+func resume_arbitration() -> void:       # 關閉時呼叫
+    _arbitration_suspended = false
+    _frame_events.clear()
+    _reclaim.reset(get_viewport().get_mouse_position(), CursorTypes.ResetTrigger.FOCUS_LOST_REGAINED)
 
 func _notification(what: int) -> void:
     match what:
         NOTIFICATION_APPLICATION_FOCUS_OUT:
             _arbitration_suspended = true
+            _frame_events.clear()
         NOTIFICATION_APPLICATION_FOCUS_IN:
             _arbitration_suspended = false
-            _reclaim.reset(get_viewport().get_mouse_position())  # 觸發點 (c):復焦重新播種
+            _frame_events.clear()
+            _reclaim.reset(get_viewport().get_mouse_position(), CursorTypes.ResetTrigger.FOCUS_LOST_REGAINED)  # 觸發點 (c):復焦重新播種
             _state.force_redraw_current_authority()               # AC-30
             _state.reapply_native_cursor_visibility()             # 機制十三
 ```
+
+**`resume_arbitration()` 一併補上 `_reclaim.reset()`(2026-08-19 修訂新增)**:原版本只有 `_notification()` 的 FOCUS_IN 分支重新播種累積起點,`resume_arbitration()`(呼叫方主動關閉暫停選單時呼叫)沒有對應動作——但暫停/模態的關閉不透過 OS 焦點通知,若不比照處理,關閉選單瞬間的累積起點會停留在選單開啟前的過期座標,與觸發點 (a)(裝置權威轉移)的既有精神矛盾。此為本次修訂中發現的相鄰缺口,一併修正。
 
 **決策**:暫停/模態期間的讓路採**顯式旗標** `_arbitration_suspended`,由呼叫方以 `suspend_arbitration()`/`resume_arbitration()` 驅動,**不以 `SceneTree.paused` 或 `process_mode` 作為判準**。
 
@@ -388,11 +480,19 @@ func _notification(what: int) -> void:
 
 ```gdscript
 # ─── 寫入(2 個方法,對應 GDD Core Rules #2)──────────────────
-enum SetTargetResult { APPLIED, SURFACE_NOT_REGISTERED, INVALID_SURFACE_TYPE }
-enum MarkResult { APPLIED, STALE_NOT_APPLIED, NO_CURRENT_TARGET }
+# 2026-08-19 修訂(N4):新增 REJECTED_REENTRANT,見下方「N4 修法」。
+enum SetTargetResult { APPLIED, SURFACE_NOT_REGISTERED, INVALID_SURFACE_TYPE, REJECTED_REENTRANT }
+enum MarkResult { APPLIED, STALE_NOT_APPLIED, NO_CURRENT_TARGET, REJECTED_REENTRANT }
+
+# 2026-08-19 修訂新增(N4):狀態變更推播訊號,不帶payload——訂閱方以下方既有查詢方法重新讀取,
+# 避免持有可能漂移的複本(比照 get_current_target() 回傳複本、不回傳內部參照的既有紀律)。
+signal target_changed()
+signal device_authority_changed()
+
+var _mutation_in_progress: bool = false   # N4 重入閘門,見下方「N4 修法」
 
 # TR-cursor-012:雙輸入簽章(目標識別 + 是否由裝置 ui_* action 觸發),不含碰撞箱幾何。
-# 有效性旗標自動翻回有效。
+# 有效性旗標自動翻回有效。訊號於狀態完全寫定後才發出(見下方)。
 func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult
 
 # TR-cursor-013:競態防呆 —— 傳入的 expected 與當下實際持有的目標不符即回傳
@@ -404,6 +504,10 @@ func is_current_target_valid() -> bool                  # 閘控確認動作
 func get_device_authority() -> CursorTypes.Authority     # 閘控滑鼠點擊確認
 func get_current_target() -> CursorTarget                # 回傳新配置的複本,見下方
 ```
+
+**N4 修法(2026-08-19 修訂新增,下游更新機制的正式定案)**:機制六的四/五層 `process_priority` 假設下游系統每影格輪詢 `_process()` 讀取游標狀態,但 GDD 66+ 條驗收標準裡不少要求「狀態一變就要反映」,更自然對應訊號推送而非輪詢。本 ADR 正式決定:**輪詢與訊號並存**——`process_priority` 的優先序仍是下游讀取的**時序保證**(交接在同一影格內完成,見機制六),`target_changed()`/`device_authority_changed()` 是**額外的立即通知**,供不想每幀輪詢的下游系統訂閱,訊號不攜帶資料,一律回頭呼叫既有查詢方法取得目前值。
+
+**重入閘門**:`arbitrate_frame()`、`set_target()`、`mark_pending_reresolve()`、`handoff_before_unload()` 四者皆受 `_mutation_in_progress` 保護——進入時檢查該旗標,若已為真(代表本次呼叫是從本系統剛發出的訊號處理函式內回頭呼叫寫入介面,即重入),**一律回傳 `REJECTED_REENTRANT`,不執行任何狀態變更、不再次發出訊號**,比照 ADR-0001 `settlement_in_progress` 的 reject-on-input 模式。四者進入時皆先設 `_mutation_in_progress = true`,完成全部欄位寫定、且訊號已發出後才設回 `false`。呼叫方若需要在訊號處理函式內串聯狀態變更,應以 `call_deferred()` 延後到下一影格,不得期待同步生效。**`godot-specialist` 本次驗證確認**:GDScript 訊號預設同步派發於同一呼叫堆疊(`CONNECT_DEFERRED` 會延後至該影格 idle 處理,反而破壞本系統仰賴的同影格保證,不是本案的替代方案);本問題屬單執行緒重入,**正確工具是純布林旗標**,不應比照 ADR-0002 引入 `Mutex`(`Mutex` 針對跨執行緒競爭,是不同的問題模型)。
 
 **`get_current_target()` 回傳複本而非內部參照**:沿用 `returning_internal_container_references` forbidden pattern(ADR-0001 登記)。`CursorTarget` 是 `RefCounted`,回傳內部實例會讓呼叫方持有一個會被本系統就地變更的物件——即使 `CursorTarget` 設計為不可變,「不可變」是紀律而非結構保證,回傳複本讓它成為結構保證。
 
@@ -442,14 +546,67 @@ func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult
 ### 機制十三:原生游標二元隱藏 + 自繪載體承擔連續 alpha
 
 **決策**:
-- **原生 OS/引擎滑鼠指標**:僅二元顯示/隱藏,透過 `Input.mouse_mode`(權威為滑鼠時 `MOUSE_MODE_VISIBLE`,否則 `MOUSE_MODE_HIDDEN`)。
-- **奪權漸進回饋的連續透明度**:由機制十二那層 CanvasLayer 上的**自繪替代游標節點**承擔,其 `modulate.a` 讀取 `MouseReclaimPolicy.reclaim_progress()`。
+- **原生 OS/引擎滑鼠指標**:僅二元顯示/隱藏,透過 `Input.mouse_mode`(權威為滑鼠時 `MOUSE_MODE_VISIBLE`,否則 `MOUSE_MODE_HIDDEN`,**N3 修訂新增一項例外,見下方機制十三之二**)。
+- **奪權漸進回饋的連續透明度**:由機制十二那層 CanvasLayer 上的**自繪替代游標節點**承擔,**2026-08-19 修訂(F3)**:不再直綁 `modulate.a = reclaim_progress()`,改由呈現層平滑器逐幀收斂。
+
+**F3 修法 —— 呈現層平滑器(2026-08-19 修訂,取代原直接綁定)**:
+
+```gdscript
+# ─── 自繪替代游標節點(位於機制十二的 CanvasLayer,priority = 50)──
+var _presented_alpha: float = 0.0
+var _pending_snap: bool = false
+
+func _ready() -> void:
+    reclaim.reset_triggered.connect(_on_reset_triggered)   # 見機制八 F3
+
+func _on_reset_triggered(trigger: CursorTypes.ResetTrigger) -> void:
+    if trigger == CursorTypes.ResetTrigger.VETOED_SAME_FRAME:   # 觸發點 (d),AC-41b 的唯一例外
+        _pending_snap = true
+
+func _process(_delta: float) -> void:
+    var target := reclaim.reclaim_progress()
+    if _pending_snap:
+        _presented_alpha = target       # 同影格瞬間歸零,不經收斂
+        _pending_snap = false
+    else:
+        var max_step := 1.0 / float(max(reclaim_visual_convergence_max_frames, 1))
+        _presented_alpha = move_toward(_presented_alpha, target, max_step)   # (a)(b)(c):收斂,不瞬跳
+    modulate.a = _presented_alpha
+```
+
+**理由**:GDD 是兩個值的模型——`reclaim_progress()` 本身必須立即反映全部四個重置觸發點(不因呈現層考量延遲判定),但**呈現層透明度**對觸發點 (a)(b)(c) 不得單影格瞬間歸零,須於 `reclaim_visual_convergence_max_frames` 內收斂,觸發點 (d) 才是唯一允許瞬間歸零的例外(AC-41b)。原版本 `modulate.a` 直綁判定值,對 (a)(b)(c) 必然違反 AC-41 且無法區分是哪個觸發點造成的歸零。`move_toward()` 是 Godot 對「目標值持續變動、非到達即停」情境的正確慣用工具(`godot-specialist` 本次修訂驗證確認,優於每幀重啟的 `Tween`)。**若 `_reclaim` 實例被替換**(例如 Validation Criteria #8 的 `ImmediateMouseReclaimPolicy` 隔離測試),呼叫方須重新對新實例呼叫 `reset_triggered.connect()`——訊號連接不隨物件替換自動轉移。
 
 **理由**:GDD 第五輪 Open Question 指出「原生指標若實際上不支援逐幀連續 alpha 動畫(4.7.1 下未經驗證),需改用下游自繪的替代游標圖形」,並指出此載體選擇會連動影響 AC-31 的驗證方式(`Input.mouse_mode` 斷言可能對自繪方案退化為恆真)與 Core Rules #5 抑制義務的掛載對象。
 
 **本 ADR 直接選擇自繪載體,不等驗證結果**——理由不是悲觀,而是**自繪方案在兩種驗證結果下都成立**,而原生方案只在其中一種下成立。既然機制十二已經因為 TR-cursor-016 建立了那層 CanvasLayer,自繪載體的邊際成本接近零。這讓 Verification Required 第 4 項從阻擋項降為資訊項:若實測證實原生指標支援連續 alpha,本 ADR **不需要**修訂(自繪仍是上位方案)。
 
 **AC-31 的驗證掛載點因此定案**:斷言對象是自繪節點的 `visible`/`modulate.a`,**不是** `Input.mouse_mode`——後者在自繪方案下對漸進回饋確實退化為恆真,GDD 的預判正確。`Input.mouse_mode` 的斷言仍用於驗證原生指標的二元抑制(Core Rules #5),兩者是兩個不同的驗證目標。
+
+### 機制十三之二:未登記表面 hover 時暫時恢復原生指標(2026-08-19 修訂新增,N3)
+
+**問題**(第三輪 `/architecture-review` 引擎專家額外發現):`Input.mouse_mode` 是**全域**設定(整個應用程式視窗),依裝置權威切換;但裝置權威是全域欄位,與玩家當下實際把滑鼠移到哪個表面無關。GDD AC-60 明文允許「未登記表面」(例如非模態設定側欄)使用原生 hover、不受本系統管轄——但手把持權威時原生指標全域隱藏,玩家想用滑鼠點這類側欄時,側欄自己的 hover 樣式仍會畫出來(`mouse_entered`/`mouse_exited` 不依賴游標可見性),玩家卻完全看不到滑鼠指標在哪。這是真實體感落差,原版本未處理也未承認。
+
+**決策**:與機制十三的自繪載體同一節點(CanvasLayer,priority = 50,單一 `_process()` 內完成,避免與其他同層節點的排序未定義問題——`godot-specialist` 本次驗證提醒同層級同優先序節點無 tie-break 保證),新增每影格 hover 檢查:
+
+```gdscript
+func _process(_delta: float) -> void:
+    # ...(機制十三的呈現層平滑器邏輯,見上方)...
+    _reapply_native_cursor_visibility_with_unregistered_surface_exception()
+
+func _reapply_native_cursor_visibility_with_unregistered_surface_exception() -> void:
+    if _state.get_device_authority() == CursorTypes.Authority.MOUSE:
+        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+        return
+    var hovered := get_viewport().gui_get_hovered_control()
+    if hovered != null and not _registry.is_part_of_registered_surface(hovered):
+        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE   # AC-60 例外:未登記表面,暫時恢復
+    else:
+        Input.mouse_mode = Input.MOUSE_MODE_HIDDEN    # Core Rules #5 一般規則
+```
+
+`CursorSurfaceRegistry` 新增查詢方法 `is_part_of_registered_surface(node: Node) -> bool`(沿祖先鏈比對已註冊表面節點)。`Viewport.gui_get_hovered_control()` 為既有穩定 API,`godot-specialist` 本次驗證確認回傳 `null` 代表無懸停對象、成本為 O(1) 快取查詢,逐幀呼叫無虞。
+
+**理由**:AC-60 已明文把未登記表面排除在本系統管轄之外——恢復該類表面上的原生指標可見性,是**落實**該排除條款的自然結果,而非違反 Core Rules #5(Core Rules #5 的隱藏義務隱含的管轄範圍是本系統登記制內的表面)。**未查證項**:此互動屬 GDD 兩處設計文件內部張力之一(第三輪 `/architecture-review` 判定,Core Rules #5 全域隱藏 vs. Core Rules #7/AC-60 未登記表面例外此前從未被調和),本 ADR 提出的是一個技術層面自洽的解法,但**不越權替 GDD 做設計裁決**——若 creative-director 或使用者認為此行為不符合 Core Rules #5 的精神(例如認為短暫顯示指標仍會造成「兩種視覺線索同時存在」的觀感混淆),應回頭修訂 GDD 明文裁決,屆時本機制須配合調整或移除。
 
 ### 機制十四:已註冊表面禁用原生 Control focus/hover
 
@@ -478,7 +635,11 @@ func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult
 # 供 TR-cursor-019 的兩個硬性上限量測。診斷用,下游業務邏輯不得依賴。
 var diagnostic_last_authority_change_frame: int   # Engine.get_process_frames()
 var diagnostic_last_target_change_frame: int
-var diagnostic_reclaim_progress_history: Array[float]   # 供收斂上限驗證
+# 2026-08-19 修訂(F4):原版本取樣 MouseReclaimPolicy.reclaim_progress()(判定值,依 GDD
+# 必須瞬間歸零),但 reclaim_visual_convergence_max_frames 約束的是「呈現層透明度」——量錯
+# 對象,無法驗證這個上限。F3 修法後機制十三的自繪節點有了獨立於判定值的呈現值(_presented_alpha),
+# 本欄位改為取樣它。
+var diagnostic_reclaim_progress_history: Array[float]   # 取樣自繪節點每幀實際 modulate.a(即 _presented_alpha),非 reclaim_progress()
 ```
 
 `max_handoff_visual_latency_frames`(GDD 已定案為 **1**)與 `reclaim_visual_convergence_max_frames`(嚴格大於 0,見 AC-46b)兩個上限都需要幀精準量測。機制六的 `process_priority` 定序讓交接在**同一影格**內完成,量測應驗證這個更強的保證,而非僅驗證 ≤1。
@@ -529,8 +690,15 @@ var diagnostic_reclaim_progress_history: Array[float]   # 供收斂上限驗證
         │  focus_mode = FOCUS_NONE ⚠️    │   │  戰鬥 HUD (#10)                │
         │  棋盤格 / 迷你地圖節點 /       │   │  好感度視覺呈現 UI (#9)         │
         │  卡牌槽位 / 對話選項           │   │  支援對話 UI (#11)              │
-        │  單標籤單實例 (機制三)         │   │  讀游標目標更新自己的呈現        │
+        │  單標籤單實例 (機制三)         │   │  讀游標目標更新自己的呈現;      │
+        │                                │   │  ⚠️確認動作判讀須在此(F1)      │
         └───────────────────────────────┘   └────────────────────────────────┘
+
+        ┌───────────────────────────────────────────────────────────────────┐
+        │ (新增,F1) 呼叫方主動改標 (priority = -50) —— 例如戰棋系統偵測單位死亡  │
+        │  於自己的 _process() 呼叫 mark_pending_reresolve()/set_target()      │
+        │  ⚠️ 觸發來源若為 _physics_process(),須自行轉呼叫延後至 _process()     │
+        └───────────────────────────────────────────────────────────────────┘
 
   載入期一次性:CursorStartupValidator
     ├ Input Map:ui_* action 不得綁定滑鼠(除非語意為懸停/游標移動)
@@ -551,8 +719,10 @@ class_name CursorTypes extends RefCounted
 enum SurfaceType { BOARD_TILE, RELATION_MINIMAP_NODE, CARD_SLOT, DIALOGUE_CHOICE }
 enum Authority { UNINITIALIZED, MOUSE, KEYBOARD_GAMEPAD }
 enum ActionClass { NAVIGATION, CONFIRM, OTHER }
+enum ResetTrigger { AUTHORITY_TRANSFER, TARGET_CHANGED, FOCUS_LOST_REGAINED, VETOED_SAME_FRAME }   # 2026-08-19 修訂新增(F2/F3)
 static func encode_tile(coord: Vector2i, board_width: int) -> int
 static func decode_tile(id: int, board_width: int) -> Vector2i
+static func classify_action(event: InputEvent) -> ActionClass   # 2026-08-19 修訂新增(N1,機制四之二)
 
 # ─── cursor_target.gd ────────────────────────────────────────
 class_name CursorTarget extends RefCounted
@@ -563,13 +733,31 @@ func equals(other: CursorTarget) -> bool
 static func make(surface: CursorTypes.SurfaceType, id: int) -> CursorTarget
 static func invalidated(from: CursorTarget) -> CursorTarget
 
+# ─── mouse_reclaim_policy.gd(2026-08-19 修訂——F2/F3 簽章改版,見機制八)──
+@abstract
+class_name MouseReclaimPolicy extends RefCounted
+signal reset_triggered(trigger: CursorTypes.ResetTrigger)
+@abstract
+func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool:
+    pass
+@abstract
+func reclaim_progress() -> float:
+    pass
+@abstract
+func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void:
+    pass
+func diagnostic_seed_position() -> Vector2   # 2026-08-19 修訂新增,關閉 TR-cursor-001 條件式涵蓋
+
 # ─── cursor_state.gd(DI 核心,單元測試直接 new()）────────────
 class_name CursorState extends RefCounted
 func _init(reclaim: MouseReclaimPolicy, registry: CursorSurfaceRegistry) -> void
 
+signal target_changed()                            # 2026-08-19 修訂新增(N4)
+signal device_authority_changed()                  # 2026-08-19 修訂新增(N4)
+
 func arbitrate_frame(events: Array[InputEvent]) -> void
-func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult
-func mark_pending_reresolve(expected: CursorTarget) -> MarkResult
+func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult   # 新增 REJECTED_REENTRANT(N4)
+func mark_pending_reresolve(expected: CursorTarget) -> MarkResult               # 新增 REJECTED_REENTRANT(N4)
 func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult
 func is_current_target_valid() -> bool
 func get_device_authority() -> CursorTypes.Authority
@@ -577,10 +765,18 @@ func get_current_target() -> CursorTarget          # 新配置的複本
 func force_redraw_current_authority() -> void      # AC-30
 func reapply_native_cursor_visibility() -> void    # Core Rules #5
 
+# ─── cursor_surface_registry.gd ──────────────────────────────
+class_name CursorSurfaceRegistry extends RefCounted
+func register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult
+func unregister(surface: CursorTypes.SurfaceType) -> RegisterResult
+func get_surface(surface: CursorTypes.SurfaceType) -> Node
+func registered_surfaces_sorted() -> Array[CursorTypes.SurfaceType]
+func is_part_of_registered_surface(node: Node) -> bool   # 2026-08-19 修訂新增(N3,機制十三之二)
+
 # ─── cursor_state_host.gd(Autoload 薄殼,無裁定邏輯）─────────
 class_name CursorStateHost extends Node
-func suspend_arbitration() -> void
-func resume_arbitration() -> void
+func suspend_arbitration() -> void      # 2026-08-19 修訂:內部亦呼叫 _frame_events.clear()(F5)
+func resume_arbitration() -> void       # 2026-08-19 修訂:內部亦呼叫 _frame_events.clear() + _reclaim.reset()(F5)
 # 全部公開 API 為對 _state 的一行轉發,不新增任何判斷邏輯。
 ```
 
@@ -632,6 +828,7 @@ func resume_arbitration() -> void
 - **凍結的子機制被隔離在單一檔案**(機制八),未來重啟重新設計不需要動到其他四個機制。
 - **對兩項 post-cutoff breaking change 結構性免疫**:4.7 裝置 ID 重新編號(機制四從不讀 `.device`)、4.6 雙焦點(機制十四禁用原生 focus/hover)。
 - **`process_priority` 定序讓交接在同一影格內完成**,比 GDD 定案的 ≤1 影格上限更強。
+- **2026-08-19 修訂關閉第三輪 `/architecture-review` 判定的兩項 BLOCKING 缺陷**(F1 定序違反 AC-52、F5 兩個確定性程式漏洞)與三項高/中缺陷(F2 介面自相矛盾且邀請被禁止的實作、F3 呈現層平滑器缺失、F4 量測儀器量錯對象),外加引擎專家額外發現的四項(N1 動作語意分類機制缺失、N2 通知時序未定義、N3 未登記表面指標可見性落差、N4 下游更新機制未定案)。修訂連帶關閉了機制一自陳待決的 TR-cursor-001 條件式涵蓋。
 
 ### Negative
 
@@ -640,6 +837,8 @@ func resume_arbitration() -> void
 - **棋盤座標須經 int 編碼**(機制三):呼叫方多一次 `encode_tile()`/`decode_tile()`。換得的是 `CursorTarget` 真正的值語意與型別無關的相等判定。
 - **`TR-cursor-009/-010/-011` 僅為部分涵蓋**:機制八提供了隔離邊界與三方法契約,但**門檻數學本身的正確性未被本 ADR 保證**——它承載的是一個帶著兩項已確認缺陷、且重新設計已暫停的子機制。這是刻意的、經使用者裁決的狀態,不是本 ADR 的遺漏。
 - **`@abstract` 語法賭注**:機制八的 `MouseReclaimPolicy` 是本專案第二處使用 `@abstract`(ADR-0004 為第一處),沿用同一個未經確認的語法形式。若寫錯是編譯期錯誤,會擋下整個檔案。
+- **F1 修法對下游系統新增了架構義務**(2026-08-19 修訂新增):任何解讀確認類 `ui_*` action 的下游系統,現在**必須**在自己的 `_process()` 執行判讀、絕不可掛 `_input()`/`_unhandled_input()`,且若觸發來源是 `_physics_process()` 須自行轉呼叫延後。`process_priority` 無法強制這條規則被遵守(它管不到 `_input()`/`_unhandled_input()`/跨鏈排序)——這條約束的落實完全依賴程式碼審查,已登記為 forbidden pattern 候選(見 Registry 更新提案),但這代表**本 ADR 自身無法提供結構性保證**,是本系統目前唯一一處正確性完全依賴紀律而非引擎機制的地方。
+- **N4 的訊號推送新增了重入語意的學習成本**:下游若在 `target_changed()`/`device_authority_changed()` 處理函式內同步呼叫寫入介面,會被 `REJECTED_REENTRANT` 拒絕而非排入佇列——呼叫方須改用 `call_deferred()`,這是一個容易被忽略、直到實測才會發現的行為差異。
 
 ### Risks
 
@@ -654,6 +853,10 @@ func resume_arbitration() -> void
 | **模組參考文件落後一個大版本** | 本 ADR 的引擎判斷一律以 `breaking-changes.md` 為準。列為 Verification Required 第 1 項,建議 technical-director 排入模組文件 4.7 更新 |
 | **`focus_mode = FOCUS_NONE` 只關掉鍵盤/手把焦點,不關掉 Control 主題內建的滑鼠 hover 繪製**(`godot-specialist` Step 5.5 驗證發現,判斷為大概率成立) | 機制十四已據此修訂為**兩項**條件(第 2 項:已註冊表面根 Control 不得帶內建 hover 主題,或須清空其 hover/focus StyleBox)。Verification Required 第 9 項的最小 spike 成本極低,應優先執行。**若只實作第 1 項條件,本系統會在某些節點型別上重現 GDD 明訂的最高風險失敗情境「兩種高亮同時存在」,且該失敗與本系統邏輯是否正確完全無關** |
 | **薄殼被後續開發者加入邏輯** | 登記為 forbidden pattern 候選 `logic_in_cursor_autoload_shell`,由程式碼審查攔截 |
+| **下游系統在 `_input()`/`_unhandled_input()` 判讀確認動作(2026-08-19 修訂新增,F1)**——`process_priority` 無法強制這條規則,完全依賴紀律 | 登記為 forbidden pattern 候選 `confirm_action_read_in_unhandled_input`,由程式碼審查攔截;違反時的具體症狀(確認讀取先於裁定者完成)已明文記錄於機制六,便於審查者辨識 |
+| **`CanvasLayer` 承載自繪游標/待機指示/hover 判定,若帶非恆等變換會使座標計算脫節(2026-08-19 修訂新增,F2/N3)** | `godot-specialist` 標記 **UNVERIFIABLE-FLAG-AS-RISK**,已列 Verification Required 第 11 項為 Day-1 spike。緩解措施是明文約束該 `CanvasLayer` 全程維持恆等變換,不做為長期解法 |
+| **`@abstract` 類別內含 `signal` 的語法組合未經確認(2026-08-19 修訂新增,F3)** | 與既有 `@abstract` 語法賭注同一風險等級,已併入 Verification Required 第 12 項與 Day-1 spike 排程 |
+| **下游在訊號處理函式內同步呼叫寫入介面被 `REJECTED_REENTRANT` 拒絕而非預期生效(2026-08-19 修訂新增,N4)** | 已於 Consequences → Negative 明文記錄行為差異;`set_target()`/`mark_pending_reresolve()` 的回傳值本就要求呼叫方檢查,`REJECTED_REENTRANT` 沿用既有「絕不靜默」紀律,可在整合測試階段及早發現 |
 
 ## GDD Requirements Addressed
 
@@ -666,24 +869,24 @@ func resume_arbitration() -> void
 | TR-cursor-005 | Input Map 約束:`ui_*` action 不得綁定滑鼠(除非語意為懸停/游標移動);須載入時驗證 | 機制七 (a):`CursorStartupValidator` 遍歷 `InputMap.get_actions()`/`action_get_events()`(已由 GDD 第十輪覆核為穩定 API);執行期重新綁定明文排除 |
 | TR-cursor-006 | 須緩衝整幀 `InputEvent` 並收集完成後才裁決;須掛 `_input()`,絕不可 `_unhandled_input()` | 機制五:`_input()` 只 append 不裁定,`_process()` 統一 `arbitrate_frame()`;`_unhandled_input()` 的遺漏風險(被 `accept_event()` 消費的事件永不抵達緩衝區)明文記錄為拒絕理由 |
 | TR-cursor-007 | 專案層級 Agile Event Flushing 必須保持關閉 | 機制七 (b):載入期驗證 + `has_setting()` 防衛(鍵不存在回報 UNKNOWN,不視為通過) |
-| TR-cursor-008 | 四行為者的決定性同幀執行順序;需要具體 `process_priority` 數值 | 機制六:裁定者 −100、已註冊表面 0、全域視覺層 50、下游讀取方 100。**關鍵前提**:`process_priority` 不管 `_input()`,只管 `_process` —— 這正是裁決移到 `_process()` 的理由 |
-| TR-cursor-009 | 滑鼠奪權門檻數學:逐表面類型像素常數、淨位移非路徑總和、根視窗座標空間 | **⚠️ 部分** —— 機制八提供隔離邊界與三方法契約(`evaluate`/`reclaim_progress`/`reset`),門檻數學封裝於 `ThresholdMouseReclaimPolicy`。**子機制重新設計已由使用者裁決暫停**,本 ADR 不保證門檻數學本身的正確性 |
-| TR-cursor-010 | 累積器須依裝置權威 + OS 焦點閘控;須掛 `NOTIFICATION_APPLICATION_FOCUS_*`;暫停/彈窗讓出機制留待架構階段 | 機制九:焦點通知已掛載,失焦全程不運算、復焦 `reset()` 重新播種;**暫停讓出改採顯式旗標,不採 `SceneTree.paused`**(拒絕理由見機制九)。累積器本身的閘控 ⚠️ 隨機制八部分 |
+| TR-cursor-008 | 四行為者的決定性同幀執行順序;需要具體 `process_priority` 數值 | **2026-08-19 修訂(F1,BLOCKING)**:機制六改為**五**行為者——裁定者 −100(裝置權威判定+緩衝內導覽類寫入)、呼叫方主動改標 −50(新增)、已註冊表面 0、全域視覺層 50、下游讀取方 100(含確認動作判讀,新增明文約束「絕不可掛 `_input()`/`_unhandled_input()`」)。原版本違反 AC-52(確認讀取可能發生在裁定者之前),現已補上呼叫方改標與確認讀取的明文定序,並記錄 `process_priority` 不跨 `_process`/`_physics_process` 兩鏈的前提 |
+| TR-cursor-009 | 滑鼠奪權門檻數學:逐表面類型像素常數、淨位移非路徑總和、根視窗座標空間 | **⚠️ 部分,子機制重新設計仍由使用者裁決暫停**——**2026-08-19 修訂(F2)**:`evaluate()` 簽章改收目前滑鼠座標而非位移量,策略內部持有 `_seed` 自行計算淨位移,結構性杜絕 GDD 明文禁止的路徑總和實作(原簽章的參數命名邀請此錯誤);根視窗座標空間假設已明文寫入 Constraints,並列為 Verification Required 第 11 項(`CanvasLayer` 恆等變換) |
+| TR-cursor-010 | 累積器須依裝置權威 + OS 焦點閘控;須掛 `NOTIFICATION_APPLICATION_FOCUS_*`;暫停/彈窗讓出機制留待架構階段 | **2026-08-19 修訂(F5,BLOCKING)**:機制九補上 `_process()` 對 `_arbitration_suspended` 的檢查,且 suspend/resume/FOCUS_OUT/FOCUS_IN 四個進出點全數呼叫 `_frame_events.clear()`——原版本兩個確定性漏洞(競窗 100% 存在、緩衝殘留)已修正。累積器本身的閘控 ⚠️ 仍隨機制八部分(子機制凍結) |
 | TR-cursor-011 | **已知確認、尚未修復的永久鎖死缺陷(持續按住方向輸入)**;已降級為建議項但架構層面仍未解決 | **⚠️ 部分,且刻意如此** —— 機制八把缺陷隔離在單一檔案,**明文不宣稱已緩解**。使用者第十二輪裁決:重新設計暫停、候選修法停止投入、待手把硬體 |
 | TR-cursor-012 | 寫入介面「設定新目標」:雙輸入簽章,不含碰撞箱幾何,自動清除有效性旗標 | 機制十:`set_target(target, from_ui_action) -> SetTargetResult`;幾何查詢自 GDD 第九輪門檻改錨定表面類型常數後已完全不存在 |
 | TR-cursor-013 | 寫入介面「標記待重新解析」:須回傳結構化的已套用/已過期結果,絕不靜默 | 機制十:`mark_pending_reresolve(expected) -> MarkResult`,`STALE_NOT_APPLIED` 為明確回傳值;競態判定依賴機制三的 `CursorTarget.equals()` 值語意 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢 + 裝置權威查詢,兩者拒絕回饋須可區分 | 機制十:刻意分為**兩個獨立查詢**而非一個合併布林 —— 兩種拒絕的正確補救動作相反(等待重新解析 vs 移動滑鼠取回權威),合併會讓呼叫方結構上無法產生可區分回饋 |
 | TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙分支 | 機制十一:`handoff_before_unload()` + 三分支呼叫慣例;丙分支明文為「依 Core Rules #6 重新計算」而非「還原舊目標」(AC-63b);三分支 `from_ui_action` 一律 `false`,裝置權威不隨交接重置 |
 | TR-cursor-016 | **全域每裝置待機指示元件須存在於每個畫面**;現有候選擁有者皆為畫面範圍,無一符合 | 機制十二:`CursorStateHost` 持有的全域 `CanvasLayer` 為宿主。**缺口成因是需求本身排除了畫面範圍擁有者**,機制一建立的 Autoload 是本專案第一個跨所有畫面的實體。視覺樣式仍留 `/art-bible` |
-| TR-cursor-017 | 原生游標須在權威≠滑鼠時隱藏,唯一例外是連續漸變的奪權回饋 —— **連續透明度動畫在 4.7.1 可能不受原生游標支援** | 機制十三:原生指標僅二元 `Input.mouse_mode`;連續 alpha 由機制十二 CanvasLayer 上的自繪載體承擔。**選了在兩種驗證結果下都成立的方案**,故 Verification Required 第 4 項降為資訊項。AC-31 驗證掛載點定案為自繪節點的 `modulate.a` |
+| TR-cursor-017 | 原生游標須在權威≠滑鼠時隱藏,唯一例外是連續漸變的奪權回饋 —— **連續透明度動畫在 4.7.1 可能不受原生游標支援** | **2026-08-19 修訂(F3/F4/N3)**:機制十三原版本 `modulate.a` 直綁判定值,對觸發點 (a)(b)(c) 必然違反 AC-41——已改為呈現層平滑器(`_presented_alpha` 逐幀 `move_toward()` 收斂,僅觸發點 (d) 瞬間歸零),由新增的 `reset_triggered` 訊號驅動;機制十五的收斂上限診斷欄位同步改為取樣呈現值而非判定值(F4)。另新增機制十三之二:未登記表面 hover 時暫時恢復原生指標(N3),處理 `Input.mouse_mode` 全域性與 AC-60 未登記表面例外的落差。AC-31 驗證掛載點仍為自繪節點的 `modulate.a` |
 | TR-cursor-018 | 全鍵盤/手把平權;已註冊表面不得使用原生 Control 焦點/懸停主題(4.6 雙焦點分離) | 機制十四(2026-08-18 Step 5.5 後修訂為**兩項**條件):`focus_mode = FOCUS_NONE`(關鍵盤/手把焦點通道)**加上**根 Control 不得帶內建 hover 主題 / 須清空 hover-focus StyleBox(關滑鼠 hover 管線)——`focus_mode` 單獨**不足以**涵蓋此需求,兩者是獨立管線。高亮只讀 `CursorState`。**未註冊表面仍可用原生 focus**(GDD AC-60 明文承認),且其上的方向鍵導覽仍會轉移裝置權威 —— 這是正確行為,裝置權威是全域的 |
-| TR-cursor-019 | 交接視覺延遲硬性上限(最多 1 幀)與奪權收斂上限,皆需幀精準量測機制 | 機制十五:`diagnostic_last_authority_change_frame` 等三個 QA-only 診斷欄位;機制六的定序讓交接在**同一影格**完成,量測應驗證這個更強保證 |
+| TR-cursor-019 | 交接視覺延遲硬性上限(最多 1 幀)與奪權收斂上限,皆需幀精準量測機制 | 機制十五:`diagnostic_last_authority_change_frame` 等三個 QA-only 診斷欄位;機制六的定序讓交接在**同一影格**完成,量測應驗證這個更強保證。**2026-08-19 修訂(F4)**:`diagnostic_reclaim_progress_history` 原量測判定值(量錯對象),已改為量測機制十三呈現層的實際 `modulate.a` |
 
-**涵蓋結論(本 ADR 自陳,待獨立 `/architecture-review` 驗證)**:19 項中 **16 項完整涵蓋**、**3 項部分涵蓋**(`TR-cursor-009`/`-010`/`-011`,全部落在使用者已裁決暫停的滑鼠奪權子機制)。**本 ADR 明文不宣稱 19/19 無缺口** —— 這正是第二輪 `/architecture-review` 在 ADR-0004 身上抓到的宣稱膨脹模式,不重蹈。
+**涵蓋結論(2026-08-19 修訂後,本 ADR 自陳,待獨立 `/architecture-review` 驗證)**:第三輪 `/architecture-review` 獨立推導本 ADR 修訂前為 **11 完整 / 8 部分 / 0 缺口**(推翻本 ADR 原自陳的 16/3),並判定 F1/F5 為 BLOCKING、F2/F3/F4 為高/中、N1~N4 為額外發現,共 9 項待修訂。**本次修訂已逐項處理全部 9 項**(見上方各 TR-ID 列的「2026-08-19 修訂」標記),並額外補上 TR-cursor-001 的條件式涵蓋(`diagnostic_seed_position()`,F2 修法的必然結果)。**本 ADR 不自陳此次修訂後的涵蓋分佈**——涵蓋判定必須由獨立、全新 session 的 `/architecture-review` 重新推導,而非由撰寫/修訂本 ADR 的同一 session 自評。這正是第二輪 `/architecture-review` 在 ADR-0004 身上抓到、第三輪又在本 ADR 自己身上（16/3 → 11/8）抓到第二次的宣稱膨脹模式,本次修訂刻意不再重蹈第三次。
 
 ## Performance Implications
 
-- **CPU**:`_input()` 每事件僅一次 `Array.append`,O(1)。`arbitrate_frame()` 對該影格事件數線性,而一影格內的輸入事件數是個位數量級(滑鼠移動事件最密,約每影格 1–2 個)。`classify()` 為常數次 `is` 判定。`MouseReclaimPolicy.evaluate()` 為一次 `Vector2` 距離計算 + 一次表面類型查表,O(1)。**全部落在每影格路徑,但總量遠低於 16.6ms 預算的任何可觀比例。**
+- **CPU**:`_input()` 每事件僅一次 `Array.append`,O(1)。`arbitrate_frame()` 對該影格事件數線性,而一影格內的輸入事件數是個位數量級(滑鼠移動事件最密,約每影格 1–2 個)。`classify()` 為常數次 `is` 判定,**2026-08-19 修訂新增**`classify_action()` 為常數次 `InputMap.event_is_action()` 查詢(N1)。`MouseReclaimPolicy.evaluate()` 為一次 `Vector2` 距離計算 + 一次表面類型查表,O(1)。**2026-08-19 修訂新增**:機制十三的呈現層平滑器每影格一次 `move_toward()`(F3);機制十三之二每影格一次 `gui_get_hovered_control()` O(1) 快取查詢(N3)。**全部落在每影格路徑,但總量遠低於 16.6ms 預算的任何可觀比例。**
 - **Memory**:`_frame_events` 每影格清空,峰值與單影格事件數成正比。`CursorSurfaceRegistry` 上界為 `SurfaceType` 成員數(目前 4)。`diagnostic_reclaim_progress_history` 為診斷用,須有上界(建議環形緩衝,具體大小留實作)。
 - **Load Time**:`CursorStartupValidator.validate()` 遍歷全部 `ui_*` action 一次,發生於啟動,非每幀路徑。
 - **Draw Calls**:機制十二/十三的全域 CanvasLayer 新增至多 2 個繪製元素(待機指示、自繪游標),對 `<1000` 的專案預算(`technical-preferences.md`)無實質影響。
@@ -697,15 +900,18 @@ func resume_arbitration() -> void
 
 ## Validation Criteria
 
-1. **GDD Acceptance Criteria 章節 A~L 全部分類的向量通過** —— 這是本 ADR 機制是否真的支撐 GDD 義務的直接證據。特別關鍵:AC-2(恆一高亮不變式,含未初始化狀態)、AC-12(交接延遲 ≤1 影格)、AC-15/16(未初始化狀態與設定初始目標的正交性)、AC-20(同幀雙裝置固定優先序)、AC-59(暫停期間不裁定,且**排除**主動 API 路徑)、AC-60(登記制排除,且**不**斷言裝置權威)、AC-61/63a/63b(甲/乙/丙三分支)。
+1. **GDD Acceptance Criteria 章節 A~L 全部分類的向量通過** —— 這是本 ADR 機制是否真的支撐 GDD 義務的直接證據。特別關鍵:AC-2(恆一高亮不變式,含未初始化狀態)、AC-12(交接延遲 ≤1 影格)、AC-15/16(未初始化狀態與設定初始目標的正交性)、AC-20(同幀雙裝置固定優先序)、**AC-52(2026-08-19 修訂新增——GDD 四步完整定序,原版本此清單漏列,正是第三輪 F1 判定 BLOCKING 的理由之一)**、AC-59(暫停期間不裁定,且**排除**主動 API 路徑)、AC-60(登記制排除,且**不**斷言裝置權威)、AC-61/63a/63b(甲/乙/丙三分支)、AC-41/41b(2026-08-19 修訂新增——F3 呈現層收斂與觸發點 (d) 瞬間歸零例外)。
 2. **`CursorState` 可在無場景樹的情況下 `new()` 並完整測試** —— 這是機制一分離設計的存在理由。若任何 AC 的測試需要一個活著的場景樹或需要清理全域狀態,機制一的分離就失敗了,應回頭檢查是否有邏輯洩漏進 `CursorStateHost`。
 3. **`_unhandled_input()` 的反向驗證**:刻意構造一個聚焦中的 Control 消費 `ui_up`,驗證掛 `_input()` 的緩衝區**仍然收到**該事件。這直接驗證機制五拒絕 `_unhandled_input()` 的理由成立,而非只是相信文件。
 4. **同幀仲裁的決定性測試**:同一組事件以不同順序餵入 `arbitrate_frame()`,驗證結果完全相同(固定優先序不依賴輸入順序)。這是 GDD「100% 決定性測試」宣稱的直接兌現。
 5. **`process_priority` 定序的幀精準驗證**:斷言裁定者的欄位更新與讀取方的讀取發生在同一影格,且前者先於後者(以 `Engine.get_process_frames()` 為時基)。
 6. **`CursorStartupValidator` 的三種失敗案例各自測試**,包含 `AGILE_FLUSHING_SETTING_KEY_UNKNOWN` —— 刻意以錯誤鍵名建構,驗證回報 UNKNOWN 而非靜默通過。
 7. **`mark_pending_reresolve()` 的競態測試**:傳入與當下不符的 `expected`,驗證回傳 `STALE_NOT_APPLIED` 且當下合法目標未被誤標記。
-8. **`MouseReclaimPolicy` 替換測試**:以 `ImmediateMouseReclaimPolicy` 替換後,機制六/九/十/十三的全部測試仍通過 —— 驗證機制八的隔離邊界真的只有三個方法寬。
-9. **後續 `/architecture-review`**(須於**全新 session** 執行)判定本 ADR 與 ADR-0001~0004 無衝突,且對 19 項 `TR-cursor-*` 的涵蓋為 16 完整 / 3 部分(不宣稱無缺口)。
+8. **`MouseReclaimPolicy` 替換測試**:以 `ImmediateMouseReclaimPolicy` 替換後,機制六/九/十/十三的全部測試仍通過 —— 驗證機制八的隔離邊界(**2026-08-19 修訂措辭**:三個方法 + 一個訊號,不再宣稱「只有三個方法寬」,見機制八 F3 修法的誠實記錄)。**新增檢查項**:替換後,呈現層是否已重新對新實例呼叫 `reset_triggered.connect()`——若忘記重連,漸退收斂測試會靜默失敗(讀到舊實例的訊號,或完全收不到)。
+9. **F1 定序測試(2026-08-19 修訂新增,BLOCKING 修法的直接驗證)**:構造「呼叫方主動改標(priority −50)」與「下游確認讀取(priority ≥0)」同影格皆觸發的情境,斷言確認讀取讀到的是改標**之後**的狀態,而非改標前的舊值——直接驗證 AC-52 修法生效,而非只是相信文件。另構造一個下游系統故意在自己的 `_unhandled_input()` 判讀確認動作的反例,驗證此為 forbidden pattern 審查應攔截的情況(此測試驗證的是規則本身合理,不是驗證引擎會自動阻止——引擎不會)。
+10. **F5 暫停/復焦緩衝清空測試(2026-08-19 修訂新增)**:構造「`_input()` 已 append 事件之後、同影格內 `_arbitration_suspended` 才變 true」的時序,斷言 `_process()` 不裁定該批事件;另構造暫停期間累積殘留事件、復焦後驗證 `_frame_events` 為空、不與復焦當下新事件混合處理。
+11. **N4 重入測試(2026-08-19 修訂新增)**:在 `target_changed()`/`device_authority_changed()` 的處理函式內同步呼叫 `set_target()`,斷言回傳 `REJECTED_REENTRANT`、狀態未被變更、訊號未被重複發出。
+12. **後續 `/architecture-review`**(須於**全新 session** 執行)判定本 ADR 與 ADR-0001~0004 無衝突,且對 19 項 `TR-cursor-*` 的涵蓋由獨立審查重新推導——本 ADR 不預先自陳修訂後的涵蓋分佈(見 GDD Requirements Addressed 涵蓋結論)。
 
 **反向驗證(本 ADR 若錯了會如何顯現)**:若機制一的分離不徹底(邏輯洩漏進 Autoload 薄殼),會表現為某些 AC 的單元測試開始需要 `add_child()` 或全域狀態清理 —— 驗證條件 2 會直接攔截。若機制六的 `_process` 定序前提不成立(`_input()` 未在 `_process()` 前全數完成),會表現為同幀仲裁結果隨事件抵達時序漂移 —— 驗證條件 4 會攔截,但**只在多次執行下才會顯現**,因此該測試須重複執行而非單次通過即算過。若機制十三的自繪載體未正確讀取 `reclaim_progress()`,會表現為漸進回饋視覺與判定值脫節(玩家看到指標淡入但奪權未發生,或反之)—— 這是 GDD Player Fantasy 明訂要消除的「探測性輸入後仍不確定」失敗情境本身。
 

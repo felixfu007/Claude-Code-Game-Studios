@@ -3,10 +3,29 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 第三輪 /architecture-review 已完成(CONCERNS);下一步為全新 session 修 ADR-0005 的 F1/F5
+Task: ADR-0005 已完成 F1~F5+N1~N4 全部 9 項修訂;下一步為全新 session 跑第四輪 /architecture-review 獨立驗證
 <!-- /STATUS -->
 
-**最後更新**:2026-08-19 —— 第三輪 `/architecture-review`(獨立驗證 ADR-0005)。2026-08-18 的 3 個提交**已推送完畢**(`main` 與 `origin/main` 同步,已實跑 `git log @{u}..HEAD` 查證)。
+**最後更新**:2026-08-19 —— `/architecture-decision` 修訂 ADR-0005,處理第三輪 `/architecture-review` 判定的全部 9 項待修訂(F1/F5 BLOCKING、F2/F3/F4、N1~N4)。**本次修訂尚未提交 git**。2026-08-18 的 3 個提交此前已推送完畢。
+
+### 2026-08-19 ADR-0005 修訂摘要(本次工作)
+
+逐項處理第三輪審查的 9 項待修訂,並經 `godot-specialist` 對修法本身做第二輪技術驗證(7 項確認 SOUND,2 項標記 UNVERIFIABLE-FLAG-AS-RISK 已登記為 Verification Required):
+
+- **F1(BLOCKING)**:機制六由四行為者改為五行為者,新增「呼叫方主動改標」(priority −50),下游確認動作判讀提升為明文架構約束(必須在 `_process()`,絕不可掛 `_input()`/`_unhandled_input()`)。補上 `process_priority` 不跨 `_process`/`_physics_process` 兩鏈的前提說明。
+- **F5(BLOCKING)**:`_process()` 補上 `_arbitration_suspended` 檢查;suspend/resume/FOCUS_OUT/FOCUS_IN 四個進出點全數補 `_frame_events.clear()`。
+- **F2**:`MouseReclaimPolicy.evaluate()` 改收目前滑鼠座標而非位移量,策略內部持有 `_seed` 自算淨位移,結構性杜絕路徑總和實作。新增「單一根 Viewport」明文假設。
+- **F3**:新增 `reset_triggered` 訊號 + 呈現層平滑器(`move_toward()` 收斂,僅觸發點 (d) 瞬間歸零),取代原本直綁 `modulate.a`。誠實記錄 Validation Criteria #8 契約寬度已從「三方法」變為「三方法+一訊號」。
+- **F4**:機制十五診斷欄位改採樣呈現值而非判定值。
+- **N1**:新增機制四之二 `classify_action()`(`InputMap.event_is_action()`),補入核心依賴涵蓋率表。
+- **N2**:新增 Verification Required #10(`_notification()` 時序未定義)。
+- **N3**:新增機制十三之二——未登記表面 hover 時暫時恢復原生指標,並明文承認此為技術層解法、不越權替 GDD 做設計裁決。
+- **N4**:`CursorState` 新增 `target_changed()`/`device_authority_changed()` 訊號(正式採訊號推送),新增 `_mutation_in_progress` 重入閘門與 `REJECTED_REENTRANT` 回傳值,比照 ADR-0001 `settlement_in_progress`。
+- **附帶關閉**:TR-cursor-001 的條件式涵蓋(F2 修法的必然結果,新增 `diagnostic_seed_position()`)。
+
+**新增 Verification Required 3 項(共 12 項)**、**Requirements 新增第 11 項**、**Constraints 新增 2 項**。ADR 本身明文聲明**不自陳修訂後的涵蓋分佈**——留給獨立 session 的第四輪 `/architecture-review` 重新推導,避免重蹈第三輪抓到的自陳膨脹模式(16/3 → 11/8)第三次發生。
+
+**待辦**:(1) Registry 更新提案待使用者核准(見下方);(2) 全新 session 跑第四輪 `/architecture-review`;(3) 本次修訂與 registry 更新待 commit。
 
 > **本檔案是現況快照,不是流水帳。** 歷史細節在 `docs/architecture/architecture-review-*.md`、`design/gdd/reviews/*.md` 與 git history;此處只保留「下一個 session 需要知道什麼」。
 

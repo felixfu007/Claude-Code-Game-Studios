@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-18"   # ADR-0005 登記 14 項立場(3 state / 2 interface / 5 api / 4 forbidden);此前為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-19"   # /architecture-decision 修訂 ADR-0005(F1/F5 BLOCKING + F2/F3/F4 + N1~N4,共 9 項):新增 2 interface / 2 api / 2 forbidden,並就地修訂既有 2 項 api_decisions(revised: 2026-08-19)。ADR-0005 現為 20 項立場(3 state / 4 interface / 7 api / 6 forbidden);此前 2026-08-18 登記 14 項(3/2/5/4),更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -360,8 +360,16 @@ interfaces:
       #6 — it does not restore the pre-pause target (AC-63b).
       All three handoff branches pass from_ui_action = false: device authority never
       shifts on a system-initiated retarget.
+      REVISED 2026-08-19 (ADR-0005 fix N4): both SetTargetResult and MarkResult gained a
+      REJECTED_REENTRANT value. All four mutating calls (arbitrate_frame, set_target,
+      mark_pending_reresolve, handoff_before_unload) are now guarded by an internal
+      _mutation_in_progress flag — a call made reentrantly from within a handler of this
+      system's own target_changed()/device_authority_changed() signals (see interface
+      contract cursor_state_change_signals) is rejected with REJECTED_REENTRANT rather than
+      mutating state or re-emitting. Callers needing to chain a write from inside a signal
+      handler must use call_deferred() instead of calling synchronously.
     added: 2026-08-18
-    revised: ""
+    revised: "2026-08-19"
 
   - contract: cursor_surface_registration
     status: active
@@ -386,6 +394,60 @@ interfaces:
       mouse-hover theme state (see forbidden pattern
       native_control_hover_or_focus_on_registered_surface).
     added: 2026-08-18
+    revised: ""
+
+  - contract: cursor_state_change_signals
+    status: active
+    pattern: signal
+    producer: cursor-highlight-state
+    consumers:
+      - tactical-combat-system    # or any downstream reader that prefers push over polling _process()
+      - battle-hud
+      - affinity-visual-ui
+      - support-conversation-ui
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    signal_signature: "target_changed()  |  device_authority_changed()"
+    notes: >
+      ADR-0005 fix N4. Payload-free by design: subscribers re-query via the existing
+      get_current_target() / get_device_authority() getters rather than holding a value
+      carried on the signal — this mirrors the existing discipline of returning copies, not
+      internal references (forbidden pattern returning_internal_container_references,
+      ADR-0001), applied to signal payloads instead of return values.
+      Emitted synchronously (Godot signals dispatch in the same call stack by default) only
+      AFTER all field mutations for that call are fully committed. Godot's process_priority
+      ladder (cursor_actor_process_priority_ladder) remains the TIMING guarantee (same-frame
+      handoff); these signals are an ADDITIONAL immediate-notification channel for systems
+      that don't want to poll every frame — polling and push coexist, neither replaces the
+      other.
+      Reentrancy: see forbidden pattern cursor_state_write_from_own_signal_handler. Do not
+      connect with CONNECT_DEFERRED — that would push dispatch to end-of-frame idle
+      processing and break the same-frame guarantees this system depends on.
+    added: 2026-08-19
+    revised: ""
+
+  - contract: mouse_reclaim_reset_triggered_signal
+    status: active
+    pattern: signal
+    producer: cursor-highlight-state
+    consumers:
+      - cursor-highlight-state    # the presentation-layer self-drawn cursor node (mechanism 13)
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    signal_signature: "reset_triggered(trigger: CursorTypes.ResetTrigger)"
+    notes: >
+      ADR-0005 fix F3. Declared on the @abstract MouseReclaimPolicy base class, emitted
+      inside every concrete reset() implementation. Lets the presentation layer distinguish
+      trigger (d) (same-frame veto, the ONLY reset point AC-41b allows to snap the visible
+      alpha to zero instantly) from triggers (a)/(b)/(c) (must converge within
+      reclaim_visual_convergence_max_frames, never snap — AC-41). Without this signal the
+      three-method contract (evaluate/reclaim_progress/reset) gave the presentation layer no
+      way to tell which reset caused a given zeroing, which is exactly what caused the
+      original F3 defect (direct modulate.a = reclaim_progress() binding, violating AC-41
+      for triggers a/b/c).
+      LIFETIME GOTCHA: if the injected MouseReclaimPolicy instance is swapped (e.g. the
+      ImmediateMouseReclaimPolicy isolation-testing substitution in Validation Criteria #8),
+      the presentation node's connection to the OLD instance does not transfer — the code
+      performing the swap must explicitly reconnect reset_triggered on the new instance.
+    added: 2026-08-19
     revised: ""
 # Example:
 #
@@ -718,9 +780,10 @@ api_decisions:
       (_input -> GUI/accept_event -> _shortcut_input -> _unhandled_input), so an Autoload's
       _input() is structurally guaranteed to precede any accept_event() consumption.
       Arbitration sits in _process() rather than _input() because process_priority does NOT
-      govern _input() dispatch order — only _process/_physics_process. The four-actor
-      deterministic ordering (see cursor_actor_process_priority_ladder) is therefore only
-      achievable in the _process phase.
+      govern _input() dispatch order — only _process/_physics_process. The deterministic
+      ordering (see cursor_actor_process_priority_ladder — REVISED 2026-08-19 from a 4-tier
+      to a 5-tier ladder, ADR-0005 fix F1) is therefore only achievable in the _process
+      phase.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
@@ -751,10 +814,30 @@ api_decisions:
 
   - purpose: cursor_actor_process_priority_ladder
     status: active
-    api: "process_priority — arbiter (CursorStateHost Autoload) = -100; registered surfaces = 0; global visual layer = 50; downstream readers = 100"
-    not: "relying on scene-tree order; relying on _input() dispatch order; relying on CanvasLayer.layer for update ordering"
+    api: "process_priority — arbiter (CursorStateHost Autoload, device-authority resolution + buffered navigation-class write, ONE atomic call) = -100; caller active retag (mark_pending_reresolve()/set_target() for non-ui_*-triggered game-semantic events) = -50; registered surfaces = 0; global visual layer (incl. mechanism 13a unregistered-surface hover check) = 50; downstream readers, INCLUDING confirm-action interpretation = 100"
+    not: "relying on scene-tree order; relying on _input()/_unhandled_input() dispatch order (process_priority does not govern either); interpreting confirm-class ui_* actions outside _process(); calling caller-retag writes directly from _physics_process() (process_priority orders the _process chain and the _physics_process chain SEPARATELY — no cross-chain guarantee); relying on CanvasLayer.layer for update ordering"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
+      REVISED 2026-08-19 (ADR-0005 fix F1, BLOCKING). OLD VALUE (round-2 architecture-review
+      FAIL cause; round-3 architecture-review found this table described NODE RENDER UPDATE
+      ORDER, not GDD Core Rules #2's mandated 4-step commit order — arbiter=-100, registered
+      surfaces=0, global visual=50, downstream readers=100, with NO actor at all for "caller
+      active retag" and no rule for where confirm-action interpretation must live): the old
+      4-tier table had no slot for the GDD's step 2 ("caller active retag call", e.g. a unit
+      dying) and never defined where confirm-class ui_* interpretation must execute — if a
+      downstream system read is_current_target_valid() from its own _input()/
+      _unhandled_input(), that read could happen BEFORE _process() even starts, violating
+      AC-52 (a same-frame accept on a target the caller just invalidated).
+      NEW VALUE (5 tiers): adds a -50 tier for caller active retag, and elevates "confirm
+      reads must be in _process(), never _input()/_unhandled_input()" from an internal
+      discipline (see forbidden pattern unhandled_input_for_device_authority, which only
+      covered THIS system's own buffer) to an explicit constraint ON DOWNSTREAM SYSTEMS —
+      see forbidden pattern confirm_action_read_in_unhandled_input. Device-authority
+      resolution and buffered navigation-class writes remain fused in one atomic
+      arbitrate_frame() call at -100 because nothing observable depends on their relative
+      order within that single call — the only externally-observable ordering requirement
+      is caller-retag-after-arbiter, before-confirm-read, which the new -50 tier plus the
+      downstream constraint now provides.
       Lower process_priority runs first, so the arbiter necessarily updates the three
       top-level fields before ANY reader runs — making
       max_handoff_visual_latency_frames = 1 (GDD-locked) a SAME-FRAME guarantee rather than
@@ -770,12 +853,12 @@ api_decisions:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-08-19"
 
   - purpose: cursor_visual_carrier_split
     status: active
-    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only. Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer, modulate.a = MouseReclaimPolicy.reclaim_progress()"
-    not: "animating the native OS pointer's alpha; asserting Input.mouse_mode to validate progressive feedback"
+    api: "native pointer: Input.mouse_mode, BINARY visible/hidden only, WITH an exception when device authority != MOUSE and the hovered control is not part of a registered surface (see api decision cursor_unregistered_surface_hover_visibility, ADR-0005 fix N3). Continuous progressive-reclaim alpha: a SELF-DRAWN cursor node on the CursorStateHost's global CanvasLayer, holding _presented_alpha, converged toward MouseReclaimPolicy.reclaim_progress() via move_toward() each frame — modulate.a = _presented_alpha (no longer a direct bind)"
+    not: "animating the native OS pointer's alpha; asserting Input.mouse_mode to validate progressive feedback; binding modulate.a directly to reclaim_progress() (see below)"
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     reason: >
       cursor-highlight-state.md round-5 Open Question flagged that the native pointer may
@@ -790,10 +873,25 @@ api_decisions:
       progressive feedback under this design (the GDD predicted this correctly).
       Input.mouse_mode assertions remain valid for the binary suppression of the native
       pointer (Core Rules #5); the two are distinct validation targets.
+      REVISED 2026-08-19 (ADR-0005 fix F3, F4, N3). OLD VALUE: modulate.a directly bound to
+      reclaim_progress() (the round-3 architecture-review found this necessarily violates
+      AC-41 for reset triggers a/b/c, which must converge over
+      reclaim_visual_convergence_max_frames rather than snap — direct binding snaps every
+      time). NEW VALUE: an indirection layer (_presented_alpha) that converges toward
+      reclaim_progress() via move_toward(), snapping only on trigger (d) — see interface
+      contract mouse_reclaim_reset_triggered_signal for how the presentation node learns
+      which trigger fired. The mechanism-15 diagnostic field
+      diagnostic_reclaim_progress_history must sample _presented_alpha (the presented
+      value), NOT reclaim_progress() (the judgment value) — sampling the wrong one was
+      exactly the F4 defect (measuring the wrong instrument for the
+      reclaim_visual_convergence_max_frames bound).
+      Also revised to add the N3 native-visibility exception (see api decision
+      cursor_unregistered_surface_hover_visibility) — Input.mouse_mode was previously an
+      unconditional binary switch on device authority alone.
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-08-19"
 
   - purpose: cursor_arbitration_suspension_gate
     status: active
@@ -820,6 +918,55 @@ api_decisions:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
+    revised: ""
+
+  - purpose: cursor_action_class_classification
+    status: active
+    api: "InputMap.event_is_action(event, action_name) checked against a fixed list of navigation actions (ui_up/ui_down/ui_left/ui_right) and confirm actions (ui_accept/ui_cancel) to derive CursorTypes.ActionClass"
+    not: "inferring ActionClass from the InputEvent subclass alone (that is device classification, a separate axis — see cursor_device_classification); hardcoding action-name string comparisons without going through InputMap"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      ADR-0005 fix N1 (round-3 architecture-review, godot-specialist finding). Mechanism 6's
+      arbitration rule ("only NAVIGATION-class ui_* actions may contest device authority")
+      had no stated implementation mechanism at all — classify() (cursor_device_classification)
+      only does device-type matching, not action-semantic matching, and this dependency was
+      missing from the ADR's own core-dependency coverage table despite being as load-bearing
+      as classify() itself.
+      InputMap.event_is_action() is in the same API family as InputMap.get_actions()/
+      action_get_events(), already confirmed stable 4.5->4.7 by godot-specialist in GDD
+      round 10; this call was independently confirmed stable and un-deprecated by
+      godot-specialist during the ADR-0005 revision validation.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-19
+    revised: ""
+
+  - purpose: cursor_unregistered_surface_hover_visibility
+    status: active
+    api: "Viewport.gui_get_hovered_control() checked each frame (on the priority=50 global visual layer node) against CursorSurfaceRegistry.is_part_of_registered_surface() — if the hovered control is NOT part of a registered surface, Input.mouse_mode is temporarily forced to MOUSE_MODE_VISIBLE even when device authority != MOUSE"
+    not: "treating Input.mouse_mode as a pure function of device authority alone"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      ADR-0005 fix N3 (round-3 architecture-review, godot-specialist finding). Input.mouse_mode
+      is a WINDOW-GLOBAL switch, but cursor-highlight-state.md AC-60 explicitly carves
+      unregistered surfaces (e.g. a non-modal settings sidebar) out of this system's
+      jurisdiction and permits them to use native hover. Without this exception, a player
+      with gamepad authority who tries to use the mouse on an allowed unregistered surface
+      sees the sidebar's own hover style render with no visible cursor at all to explain why
+      hovering worked — Core Rules #5's global hide and AC-60's carve-out were never
+      reconciled before this fix.
+      THIS IS A TECHNICAL RESOLUTION, NOT A GDD OVERRIDE: it is presented as consistent with
+      AC-60's carve-out (restoring visibility on jurisdiction the GDD already excludes), not
+      as a reinterpretation of Core Rules #5. If creative-director or the user judges this
+      still conflicts with Core Rules #5's intent, the GDD must be revised and this mechanism
+      adjusted or removed accordingly — ADR-0005 does not claim authority to settle this
+      design question unilaterally.
+      Runs on the same CanvasLayer node/single _process() as the mechanism-13 presentation
+      smoother (not a separate node) specifically to avoid same-priority (=50) sibling
+      ordering being undefined.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-19
     revised: ""
 # Example:
 #
@@ -1152,6 +1299,59 @@ forbidden_patterns:
       there may still shift device authority, which is correct because authority is global.
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
+
+  - pattern: confirm_action_read_in_unhandled_input
+    status: active
+    description: >
+      Any downstream system that interprets a confirm-class ui_* action (e.g. ui_accept)
+      against cursor-highlight-state's exposed state (is_current_target_valid(),
+      get_device_authority()) must do so from that system's own _process() — never from
+      _input() or _unhandled_input(), and never directly from _physics_process() without
+      deferring the call into _process(). This generalizes the existing
+      unhandled_input_for_device_authority pattern (which only covers this system's OWN
+      _input() buffer) to every DOWNSTREAM consumer of this system's state.
+    why: >
+      ADR-0005 fix F1 (BLOCKING, round-3 architecture-review). GDD Core Rules #2's mandated
+      4-step same-frame order is: device-authority resolution -> caller active retag call ->
+      buffered navigation-class ui_* write -> buffered confirm-class ui_* read (AC-52). If a
+      downstream system reads is_current_target_valid() from its own _input()/
+      _unhandled_input(), that read executes BEFORE this system's _process() (priority -100)
+      even starts — no process_priority number can fix this, because process_priority does
+      not govern _input()/_unhandled_input() dispatch at all, only the separate _process and
+      _physics_process chains. Enforcement is therefore structurally impossible for the
+      engine to guarantee; this pattern exists specifically so code review has something
+      concrete to check for. See api decision cursor_actor_process_priority_ladder for the
+      full 5-tier ordering this pattern is part of.
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-19
+
+  - pattern: cursor_state_write_from_own_signal_handler
+    status: active
+    description: >
+      Never call set_target(), mark_pending_reresolve(), handoff_before_unload(), or
+      arbitrate_frame() synchronously from within a handler connected to this same system's
+      own target_changed() / device_authority_changed() signals. These four calls are
+      guarded by an internal _mutation_in_progress flag and will return REJECTED_REENTRANT
+      (added to both SetTargetResult and MarkResult) rather than mutate state or re-emit if
+      called while a mutation is already in flight. Callers needing to chain a write from
+      inside a signal handler must use call_deferred() to push it to the next frame.
+    why: >
+      ADR-0005 fix N4. The ADR formally adopted signal push (target_changed()/
+      device_authority_changed(), see interface contract cursor_state_change_signals) in
+      addition to the existing process_priority-based polling, since many GDD acceptance
+      criteria require "state change must be reflected immediately" rather than "reflected
+      by next _process()". Godot signals dispatch SYNCHRONOUSLY in the same call stack by
+      default (CONNECT_DEFERRED would break the same-frame guarantees this system depends
+      on, so it is not a valid workaround) — a handler that calls back into a write method
+      mid-mutation would reenter arbitrate_frame()/set_target() before the triggering call
+      has finished committing its own field writes. This mirrors ADR-0001's
+      settlement_in_progress reject-on-input gate for the same class of problem. This is a
+      single-threaded same-stack reentrancy problem, NOT a cross-thread contention problem —
+      do not reach for Mutex (ADR-0002's tool for a different problem); a plain boolean guard
+      is the correct, idiomatic GDScript pattern here (godot-specialist, ADR-0005 revision
+      validation).
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: 2026-08-19
 # Example:
 #
 # forbidden_patterns:
