@@ -72,7 +72,7 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
 1. **5 份 ADR 全為 `Proposed`。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
-2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側 17 處引用已於 2026-08-19 統一修正,該檔的 Tier 亦已定案為 **Standard**;❌ `design/ux/interaction-patterns.md` 為唯一真正缺少者,由 `/ux-design patterns` 補。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
+2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側 17 處引用已於 2026-08-19 統一修正,該檔的 Tier 亦已定案為 **Standard**;✅ `design/ux/interaction-patterns.md` **已於 2026-08-19 由 `/ux-design patterns` 建立**(15 個模式)。**pre-gate 五項至此全部具備**——但 `/gate-check pre-production` 仍不保證通過:閘門另有 ADR `Accepted`、UX 規格覆蓋等條件,且本檔尚未經 `/ux-review` 驗證。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
 
@@ -415,3 +415,43 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 2. **全平台完整輸入重新綁定**——「輸入設定/重新綁定」系統**尚未列入 `systems-index.md`**,本 Tier 使它由可選變為必要,下次系統盤點必須納入。
 
 另登記(不構成新約束):滑鼠奪權 E1 缺陷(類比搖桿持續按住永久鎖死)高度命中動作無障礙——切換式輔助裝置的持續觸發模式正好會踩中。子機制維持凍結,但**重啟其重新設計時必須把本 Tier 的動作無障礙要求列為輸入條件**。
+
+---
+
+## Session Extract — /ux-design patterns 2026-08-19
+
+**產出**:`design/ux/interaction-patterns.md`,**15 個模式**,478+ 行,零佔位符。**pre-gate 最後一項補齊。**
+
+### 一處對 skill 流程的偏離(已記錄於文件 Overview)
+
+patterns 模式的 Phase 1 設計是「從既有 UX 規格萃取模式」,但**既有規格是零份**。改從**已 Approved 的 GDD 行為規格**萃取——主要是戰棋 GDD UI Requirements §1~§7 加上游標 GDD Core Rules。這反而更穩:模式的權威來源是已收斂的行為契約,不是別人的版面選擇。
+
+### 15 個模式
+
+| 類別 | 模式 |
+|---|---|
+| 導覽 3 | P-N1 游標即檢視、P-N2 單一高亮不變式、P-N3 取消/返回(零狀態寫入) |
+| 輸入 2(全域約束) | P-I1 裝置權威交接、P-I2 全手把對等(**無例外**) |
+| 資料呈現 5 | P-D1 三態範圍疊加圖、P-D2 並存疊加圖、P-D3 決定性路徑預覽、P-D4 回合層級總覽查詢、P-D5 結算飄字 |
+| 回饋與模態 5 | P-F1 未解析態、P-F2 可區分的拒絕回饋、P-F3 非色彩單一通道禁令(**無例外**)、P-M1 確認面板、P-M2 預判模式 |
+
+### 抽出的三條通則(寫進 Overview,供本庫未涵蓋的新情境套用)
+
+1. **顯示與結算必須一致,且「零/空」不得被隱藏** —— P-D1/P-D3/P-D5/P-M1 四者的共同根,全部指向「玩家事後才發現系統跟他看到的不一樣」。
+2. **用生命週期做區隔,比用外觀做區隔更穩固** —— P-M2 的核心洞見。玩家快速操作時不看外觀差異,但「這東西只在我停在候選格時存在」是身體記得住的。
+3. **結構保證優於紀律要求** —— P-I2 寫成原則而非清單(該清單兩輪內漏兩項)、P-F2 拆成兩個獨立查詢而非合併布林、P-N2 靠單一狀態源而非各表面自律。**優先問「怎麼讓錯誤的實作寫不出來」,而不是「怎麼提醒實作者不要寫錯」。**
+
+### 交叉核對抓到的兩處自身涵蓋缺口(已登記為 Gaps)
+
+1. **字幕(含說話者標示)與字級可調** —— 無障礙 Tier Standard 的基準要求,本庫 **15 個模式一項都沒碰到**。它們是呈現能力而非互動模式,落在尚未設計的系統裡,但 **Tier 已經承諾了,不能因為沒人做就當作不存在**。
+2. **空狀態(Empty State)** —— P-F1 要求「未解析態」與「空狀態」必須可區分,但**本庫從未定義空狀態長什麼樣**。只定義兩者之一,「必須可區分」就無從驗證。
+
+### 七項 Open Questions(文件內)
+
+art bible 未執行(影響全部 15 個模式的外觀,其中 P-D2 並存疊加圖最關鍵)、無 player journey、**好感度對話卡牌固定發牌節奏是否構成 Tier 禁止的限時輸入**、戰棋 OQ-21/OQ-6/OQ-11、滑鼠奪權 E1/E2 凍結缺陷。
+
+### 下一步
+
+1. **`/ux-review design/ux/interaction-patterns.md`** —— 本檔尚未驗證。**Pre-Production 閘門要求關鍵規格有審查判定。**
+2. `/ux-design [畫面]` —— 目前**零份**畫面 UX 規格。
+3. **維護規則已寫進文件末尾**:每次產出新畫面規格後回頭檢查是否用了本庫沒有的互動;若有,**先登記為新模式再實作**。
