@@ -204,7 +204,7 @@ state_ownership:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: "2026-08-19b"
+    revised: "2026-08-19c"
 # Example:
 #
 # state_ownership:
@@ -996,10 +996,10 @@ api_decisions:
       Also, AC-52's stated verification method is "code review first — confirm the node
       execution order matches the four-step sequence", which the fused version fails.
       NEW VALUE (6 tiers): step 3 moves out of -100 onto a dedicated CursorNavigationApplier
-      child node at -25, strictly between the caller-retag tier (-50) and registered
+      child node at -25, strictly between the caller-retag tier (-60, see R5-2 below) and registered
       surfaces (0). Two nodes are structurally required: process_priority is a PER-NODE
       property, so one node cannot occupy both -100 and -25, and an EXTERNAL system's
-      execution (-50) sits between them. Buffer-clear responsibility moves to -25 (the
+      execution (-60) sits between them. Buffer-clear responsibility moves to -25 (the
       frame's last consumer).
       Lower process_priority runs first, so the arbiter necessarily updates the three
       top-level fields before ANY reader runs — making
@@ -1096,7 +1096,7 @@ api_decisions:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: "2026-08-19b"
+    revised: "2026-08-19c"
 
   - purpose: cursor_arbitration_suspension_gate
     status: active
@@ -1218,7 +1218,6 @@ api_decisions:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
     revised: "2026-08-19c"
-    revised: ""
 
   - purpose: token_timeout_ms_ownership
     status: active
@@ -1679,7 +1678,7 @@ forbidden_patterns:
       flag route as an equivalent option, but the two are NOT equivalent: the flush point of
       a deferred call RELATIVE TO THE _process CHAIN was never verified by this project. If
       it lands after the _process chain, or on the following frame, that frame's confirm read
-      (actor 6, priority 100) happens BEFORE the retag (actor 2, priority -50) — reopening
+      (actor 6, priority 100) happens BEFORE the retag (actor 2, priority -60) — reopening
       precisely the AC-52 ordering hole that fixes F1 and R4-1 were written to close. An
       unverified scheduling assertion must not sit inside the fix for an ordering defect.
       If someone later verifies the flush point, this pattern may be lifted — but the
@@ -1691,10 +1690,10 @@ forbidden_patterns:
     status: active
     description: >
       A system holding TWO NON-ADJACENT roles on the cursor process_priority ladder — in
-      practice actor (2) caller-active-retag at -50 and actor (6) downstream-reader /
+      practice actor (2) caller-active-retag at -60 and actor (6) downstream-reader /
       confirm-interpretation at 100 — implementing both on ONE node and relying on statement
       order inside a single _process() to sequence them. Such a system MUST split into two
-      nodes (e.g. main node at 100 for the read role, a thin child at -50 for the retag role,
+      nodes (e.g. main node at 100 for the read role, a thin child at -60 for the retag role,
       mirroring how this system itself handles CursorNavigationApplier).
       Statement-order merging REMAINS VALID for ADJACENT roles with no other actor between.
     why: >
@@ -1706,7 +1705,7 @@ forbidden_patterns:
       buffered navigation write) and (4) at 0 (registered surfaces) sit BETWEEN them. A
       single node at 100 defers the retag until after actor (3) — the caller's semantic
       change (e.g. unit death) loses to the navigation write, inverting GDD step 2 -> 3. A
-      single node at -50 advances the confirm read to before actor (3), inverting step 3 -> 4.
+      single node at -60 advances the confirm read to before actor (3), inverting step 3 -> 4.
       Either placement violates one leg of the four-step sequence. The tactical-combat system
       holding both roles is close to inevitable, and neither the previous actor table nor the
       architecture diagram said a word about it.

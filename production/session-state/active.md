@@ -3,7 +3,7 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R5-6 + S-1~S-5 + Step 5.5 新發現 A/B/2b/D/F/G,共 17 項);下一步為全新 session 跑第六輪 /architecture-review —— 範圍限縮為「這 17 項是否確實關閉」,不再全域重推 130 項需求
+Task: 第六輪 /architecture-review 已完成(CONCERNS,零 BLOCKING)—— 17 項中 16 項完整關閉、R5-2 只關一半;新增 R6-1~R6-13,其中 R6-1~R6-5 已於該 session 修補完畢,R6-6~R6-13 待 /architecture-decision 第四次修訂(使用者已裁決另開 session)
 <!-- /STATUS -->
 
 **最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
@@ -64,9 +64,9 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 | **專案階段** | 架構階段(Technical Setup → Pre-Production 之間) |
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
-| **架構登記處** | **68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測。ADR-0005 佔 26 項(3/5/7/11) |
-| **需求涵蓋** | 130 項 TR:**68 ✅ / 30 ⚠️ / 32 ❌**(第五輪 `/architecture-review` 判定);游標系統 15 ✅ / 4 ⚠️ / 0 ❌。**第三次修訂後的分佈未經獨立推導,待第六輪** |
-| **最新審查判定** | **CONCERNS**(2026-08-19 第五輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL。三個 Foundation 層系統合計 73 項需求**僅 1 項缺口**(`TR-save-030` 雲端同步) |
+| **架構登記處** | **68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
+| **需求涵蓋** | 130 項 TR:**68 ✅ / 30 ⚠️ / 32 ❌**(第五輪 `/architecture-review` 判定);游標系統 15 ✅ / 4 ⚠️ / 0 ❌。**第三次修訂後的分佈至今仍未被獨立推導** —— 第六輪為範圍限縮審查、明文未重推,待**第七輪** |
+| **最新審查判定** | **CONCERNS**(2026-08-19 **第六輪**,範圍限縮、**零 BLOCKING**;第三~六輪皆 CONCERNS)。第六輪判定第三次修訂的 17 項中 16 項完整關閉,新增 R6-1~R6-13(5 項已修、8 項待第四次修訂)。以下涵蓋數字仍為**第五輪**的,第六輪未重推 —— **CONCERNS**(2026-08-19 第五輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL。三個 Foundation 層系統合計 73 項需求**僅 1 項缺口**(`TR-save-030` 雲端同步) |
 | **實作** | `src/` 為空,尚無任何程式碼 |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
@@ -93,10 +93,12 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 
 ## 三、下一步(建議順序)
 
+> **⚠️ 本節為 2026-08-18 撰寫的舊清單,已被檔案末尾「Session Extract — /architecture-review 第六輪」的「下一步」取代。** 第 1~4 項全部完成(第三~六輪審查、三次 ADR-0005 修訂、`/test-setup`、`/ux-design patterns` + accessibility Tier 定案)。保留原文供追溯,**規劃時請以末尾那份為準**。
+
 1. ~~全新 session 跑 `/architecture-review`~~ —— **✅ 第三、四輪皆已於 2026-08-19 完成**,兩輪皆判 CONCERNS。第三輪推翻 ADR-0005 自陳 16/3 為 11/8;第四輪重推為 13/6,並抓到「修法本身引入新缺陷」的新模式。**第五輪待跑(針對第二次修訂)。**
 2. ~~全新 session 修 ADR-0005 的 9 項待修訂 + C1/C3/C6~~ —— **✅ 已於 2026-08-19 完成兩輪**(第一次修訂處理 F1~F5+N1~N4;第二次修訂處理第四輪的 R4-1~R4-7 + `-015` 兩項落差 + C1/C3/C6)。**下一步是全新 session 跑第五輪 `/architecture-review`。**
-3. **`/test-setup`** —— 與架構軌零依賴,可平行推進;是 pre-gate 的硬需求(5 項中的 3 項)。
-4. **`/ux-design`** —— pre-gate 剩餘 2 項(`accessibility-requirements.md`、`interaction-patterns.md`)。注意 `cursor-highlight-state.md` 已登記一項**孤兒義務**:運動無障礙需求(奪權門檻可調整性、瞄準輔助)先前口頭轉交至一個**不存在的檔案**。
+3. ~~**`/test-setup`**~~ —— **✅ 已於 2026-08-19 完成**,補齊 pre-gate 五項中的三項。注意 CI 帶暫時性守衛,綠燈不代表測試通過。
+4. ~~**`/ux-design`**~~ —— **✅ 已於 2026-08-19 完成**(`interaction-patterns.md` 15 個模式;`accessibility-requirements.md` 一直都存在、Tier 定案 Standard)。原文:pre-gate 剩餘 2 項(`accessibility-requirements.md`、`interaction-patterns.md`)。注意 `cursor-highlight-state.md` 已登記一項**孤兒義務**:運動無障礙需求(奪權門檻可調整性、瞄準輔助)先前口頭轉交至一個**不存在的檔案**。
 5. **剩餘 2 份 ADR**(第三輪判定此為投入產出比最高的單一動作 —— 第一項一次移動 35 項 ❌ 中的大部分):戰棋盤面演算法層(可達格/威脅範圍/視線,`TR-tactical-002`~`-010`、`-019`~`-021`、`-037`~`-039`);回合結構擁有權 + 缺席的 AI/遭遇系統(`TR-tactical-034`、`-041`)—— **全專案無人認領回合結構**,而 `tactical-combat-system.md` Core Rules #9 明文要求敵方回合消費這些查詢。
 
 ---
@@ -506,3 +508,51 @@ art bible 未執行(影響全部 15 個模式的外觀,其中 P-D2 並存疊加�
 ### 對第六輪的影響
 
 P0-3 必須先落地才跑第六輪,否則會第六次踩同一顆雷。**現已落地。**
+
+---
+
+## Session Extract — /architecture-review 第六輪(範圍限縮)2026-08-19
+
+- **Verdict**: **CONCERNS**(第三~六輪皆為 CONCERNS)。**本輪零 BLOCKING** —— 第五輪唯一的 BLOCKING(R5-1)經 `godot-specialist` 逐一展開七個公開入口 × 四條私有路徑的呼叫圖後判定**核心修法成立**,這是本輪最重要的正面結論
+- **範圍**:依 2026-08-19 與使用者的約定,**未重推 130 項需求**。因此 `traceability-index.md` 與 `tr-registry.yaml` **本輪零改動**;引用涵蓋分佈仍須沿用第五輪的 130 項 68 ✅ / 30 ⚠️ / 32 ❌ 與游標 15/4/0。**第三次修訂後的分佈至今仍未被獨立推導**
+- **17 項處置**:**16 項完整關閉,1 項只關一半**(R5-2)。R5-1 / 同源缺陷 / 發現 A、B、2b、D / R5-6+F / R5-3 / S-1~S-5 / R5-4 / R5-5 全數關閉,逐項覈實依據見報告第一節
+- **New TR-IDs registered**: None(GDD 自第二輪起零改動)
+- **GDD revision flags**: None(本輪未重驗;第三輪登記的兩處設計文件內部張力維持開啟)
+- **本輪 13 項發現**:R6-1(−50 殘留 13 處,R5-2 只關一半)、R6-5(**高** —— registry YAML 重複鍵)、R6-2、R6-3、R6-4 —— **此 5 項已於本 session 修補**;R6-6(中高 —— `handoff_before_unload(surface)` 參數懸空)、R6-7(中高 —— 乙分支同值寫入時 `is_valid` 翻轉無訊號涵蓋,根因是 `equals()` 語意未定案)、R6-8(中 —— 機制六⑤「同一節點」與機制十二/十三「兩個元素」矛盾)、R6-9(中 —— 「兩兩相異」只管角色不管實例)、R6-10(中 —— `reseed_reclaim_on_focus_regained()` 掛閘門的反方向失敗未討論)、R6-11(中 —— `_safe_mouse_position()` fallback 製造靜默凍結)、R6-12(低中 —— 第五輪的 `add_child()` 前設優先序建議掉件)、R6-13(低 —— 第二張登記表共用 enum + 無自動反登記)—— **此 8 項需改動 ADR 決策內容,留給第四次修訂**
+- **引擎專家覆核**: **已執行**(使用者明文核准)。任務一 4 項**全部 CONFIRMED,無一 REFUTED**;主審的 R6-1 與 R6-2 定義域被判過窄,各補一層(R6-1 漏 ADR 第 427 行且**完全未查 registry 那一側**的 6 處;R6-2 底下藏著結構性的 R6-5)。R6-5~R6-13 為該專家自行發現
+- **Registry**: **修後零落差** —— 逐節實測 10/11/23/24 = 68,依 `adr:` 欄 13/12/6/8/**26**/3(none),ADR-0005 佔 26(3/5/7/11),與檔頭及 `technical-preferences.md` 三處計數完全一致
+- **引擎**: 棄用 API 零命中。專家加強論證:第三次修訂相對第二次修訂**沒有引入任何新的引擎 API 面**(新增全是 GDScript 語言層構造),故第五輪的零命中結論可結構性繼承
+- **Pre-gate**: **五項全備**(依 P0-3 以檔名 glob,前五輪的誤報未再發生)。但 `/gate-check pre-production` 仍不保證通過:ADR `Accepted` 0/5、畫面 UX 規格 0 份、`interaction-patterns.md` 未經 `/ux-review`
+- **Report**: `docs/architecture/architecture-review-2026-08-19-round6.md`
+
+### 模式警示(第四次一致,且本輪有新的診斷)
+
+第三輪抓自陳膨脹;第四、五、六輪抓到的**都是修法本身引入新缺陷**。第三次修訂在寫入前跑了 Step 5.5 覆核(該關卡當場抓出 6 項、其中 4 項是該次修法自己新產生的)——**這道關卡有效,但不充分**:本輪 9 項新發現裡 **7 項出自第三次修訂自身**。覆核抓到的是「R5-1 的骨架不完整」,沒抓到「補完骨架後**甲分支的簽章沒跟著重新設計**」(R6-6)與「同一次修訂新增的**正交性宣告**讓 `is_valid` 翻轉失去訊號涵蓋」(R6-7)。
+
+**`godot-specialist` 的建議(本輪採納,寫進第四次修訂的作業要求)**:下一次修法的自問應改為 **「這個修法會不會讓某個既有簽章、既有正交性宣告變得不成立」**,而不只是「這個修法會不會製造下一個 R-x」。前者管修法對周邊的**回頭影響**,後者只管修法本身 —— 而連續三輪的缺陷全都出在回頭影響那一側。
+
+### 本輪修補的 5 項(純文件/登記處,零機制改動)
+
+| 項 | 檔案 | 改動 |
+|---|---|---|
+| R6-1 | ADR-0005 ×7、`architecture.yaml` ×6 | `−50` → `−60`。**registry 的殘留比 ADR 的更該修** —— `description:` 欄是程式碼審查者實際拿去比對的規則文字。4 處歷史敘述刻意保留(2 處在 ADR、2 處在 registry 的 `kept only as a record` 段落) |
+| R6-5 | `architecture.yaml` | 刪除 `cursor_unregistered_surface_hover_visibility` 的重複 `revised:` 鍵。寬鬆解析器會採後者(空字串)靜默抹掉 c 戳記,嚴格解析器直接拋錯 |
+| R6-2 | `architecture.yaml` ×2 | `mouse_reclaim_accumulator`、`cursor_visual_carrier_split` 的 `revised:` 由 `2026-08-19b` 改為 `c`。兩者**內文都已更新**,只有結構化欄位沒跟上 |
+| R6-3 | ADR-0005 | 涵蓋歷史表補第五輪(15/4/0)與第三次修訂兩列;表題由「第四輪修訂後」改為「第三次修訂後」 |
+| R6-4 | `.claude/docs/technical-preferences.md` | `Mutex` 摘要句改為縱深防禦措辭。**專家判定此項影響面被主審低估** —— 該檔由 `CLAUDE.md` 以 `@` 引入,已撤回的宣稱會注入每一個 session 的系統脈絡 |
+
+### 未修、留待裁決的一項措辭
+
+`.claude/docs/technical-preferences.md` 的 ADR-0002 條目寫 "Covers all 24 `TR-affinity-*` requirements",而第五輪獨立推導為 22 ✅ / 2 ⚠️ / **0 缺口**。零缺口成立,故此句勉強可辯護,與 ADR-0004 被連續清除四次的「全數覆蓋」過度宣稱(該處實為 22/7/**1**,有真缺口)嚴重度不同。**建議下次修訂時一併改為「24 項零缺口(其中 2 項部分涵蓋,成因在他系統)」。**
+
+### 下一步
+
+1. **`/architecture-decision` 第四次修訂 ADR-0005** —— R6-6~R6-13 共 8 項。使用者已裁決另開 session。**寫入前必須跑 Step 5.5,且自問改為上述新版本。** 關於「第三次修訂為最後一次全面修訂」的約定:本輪判定不被違反(約定的是最後一次**全面**修訂,這 8 項是點狀、有明確清單的修訂)
+2. **`/ux-review design/ux/interaction-patterns.md`** —— 與架構軌零依賴,可平行推進
+3. 戰棋盤面演算法層 ADR(一次移動 25 項 ❌ 中的大部分)
+4. 回合結構擁有權 + AI/遭遇系統 ADR
+5. **(自第三輪起第四次提出)建立 `docs/consistency-failures.md`** —— 六輪下來的同型別重複已足夠:自陳膨脹 ×1、修法引入新缺陷 ×3、散文改了但結構化欄位/示意圖/歷史表沒跟著改 ×4
+
+### 給第七輪的交代
+
+**本輪的範圍限縮是一次性的,不建立慣例。** 第三次修訂後的 19 項 `TR-cursor-*` 涵蓋分佈至今未被獨立推導;若第四次修訂後仍不重推,ADR-0005 會在「連續兩次修訂未經涵蓋驗證」的狀態下逼近 `Accepted`。**第七輪範圍建議**:R6-6~R6-13 是否關閉 **+ 游標 19 項涵蓋分佈重推(不可再延後)**。130 項全域重推可維持沿用,前提是 GDD 仍零改動。
