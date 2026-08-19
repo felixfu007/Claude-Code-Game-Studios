@@ -607,15 +607,20 @@ After completing the review and writing approved files, present:
 
 1. **Immediate actions**: List the top 3 ADRs to create (highest-impact gaps first,
    Foundation layer before Feature layer)
-2. **Pre-gate checklist**: Check whether these exist via Glob and mark each ✅ or ❌:
+2. **Pre-gate checklist**: Check whether these exist and mark each ✅ or ❌.
+   **Glob by FILENAME, never by the hardcoded path below** — glob `**/<basename>` first.
+   If the file is found at a path other than the one written here, mark it ✅ **with the
+   actual path** and raise the path mismatch as a separate finding. **Never mark it ❌.**
+   A ❌ is valid only when the filename appears nowhere in the repository. Rounds 1–5 of
+   this review failed exactly this check — they reported `accessibility-requirements.md`
+   missing while looking at `design/accessibility-requirements.md` (no `ux/`), and the
+   project had kept it under `design/ux/` since 2026-08-06. "Not at the path I checked"
+   is not "does not exist."
    - `tests/unit/` and `tests/integration/` directories — if ❌: run `/test-setup`
    - `.github/workflows/tests.yml` — if ❌: run `/test-setup`
    - `design/ux/accessibility-requirements.md` — if ❌: author it from
      `.claude/docs/templates/accessibility-requirements.md` (WORKFLOW-GUIDE Step 3.5).
-     **No skill authors this file**; `/ux-design` only reads it. ⚠️ CHECK THE PATH:
-     rounds 1–5 of this review all reported this file missing while checking
-     `design/accessibility-requirements.md` (no `ux/`) — the project has kept it under
-     `design/ux/` since 2026-08-06. Corrected 2026-08-19.
+     **No skill authors this file**; `/ux-design` only reads it.
    - `design/ux/interaction-patterns.md` — if ❌: run `/ux-design patterns`
    Present ❌ items as required steps before gate-check. Do not offer `/gate-check`
    as an option if any item is ❌ — offer the missing skill to run instead.

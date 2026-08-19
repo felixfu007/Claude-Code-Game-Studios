@@ -355,7 +355,7 @@ Repositioning saves to player profile, not to a single slot. Applies across play
 > in every gameplay moment. Color-blind failures, illegible text at minimum scale,
 > and inability to disable distracting animations are among the top accessibility
 > complaints in game reviews. This section defines HUD-specific requirements; refer
-> to the project's `docs/accessibility-requirements.md` for the full project standard.
+> to the project's `design/ux/accessibility-requirements.md` for the full project standard.
 
 ### 10.1 Colorblind Modes
 

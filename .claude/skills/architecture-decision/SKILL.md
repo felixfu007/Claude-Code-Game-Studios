@@ -9,7 +9,7 @@ model: sonnet
 
 When this skill is invoked:
 
-## 0. Parse Arguments — Detect Retrofit Mode
+## 0. Parse Arguments — Detect Retrofit / Revision Mode
 
 Resolve the review mode (once, store for all gate spawns this run):
 1. If `--review [full|lean|solo]` was passed → use that
@@ -58,8 +58,38 @@ Enter **retrofit mode**:
 6. After adding all missing sections, update the ADR's `## Date` field if it is absent.
 7. Suggest: "Run `/architecture-review` to re-validate coverage now that this ADR
    has its Status and Dependencies fields."
+8. **If the retrofit added an `## Engine Compatibility` section, run Step 5.5 (Engine
+   Specialist Validation) on it before writing.** That section asserts engine-version
+   facts; a retrofit that generates it without validation is the same unchecked write
+   that revision mode below exists to prevent.
 
-If NOT in retrofit mode, proceed to Step 1 below (normal ADR authoring).
+---
+
+**If the argument describes a REVISION to an existing ADR** — the user says "revise
+ADR-NNNN", "修訂 ADR-NNNN", or names findings from an `/architecture-review` report to
+close:
+
+Enter **revision mode**:
+
+1. Read the existing ADR in full, plus the review report whose findings are being closed.
+2. Build an explicit **findings ledger** — one row per finding, with the proposed fix and
+   its severity. Present the ledger and agree on scope with the user **before** drafting
+   any change. Revising against a remembered summary rather than the report itself is how
+   findings get silently dropped.
+3. Draft the revision.
+4. **Run Step 5.5 (Engine Specialist Validation) on the DRAFT, before writing anything.
+   This is NOT optional in revision mode.** Revision is the highest-risk operation this
+   skill performs: on ADR-0005, review rounds 4 and 5 each found that the *previous
+   revision's own fix* had introduced new defects (R4-2, R4-3 and R4-4 were all created
+   by revision 1, not present in the original ADR). Validating after the write means the
+   next review round pays for it — at the cost of a full review cycle per defect.
+5. Present the changeset for write approval as normal (Step 5's write-approval widget).
+6. **Do not self-declare the post-revision coverage distribution.** State explicitly in
+   the ADR that coverage is left to an independent `/architecture-review` in a fresh
+   session. Every self-claim that has since been independently checked was overstated —
+   ADR-0005 self-claimed 16 complete / 3 partial; round 3 independently derived 11 / 8.
+
+If NOT in retrofit or revision mode, proceed to Step 1 below (normal ADR authoring).
 
 **No-argument guard**: If no argument was provided (title is empty), ask before
 running Phase 0:
@@ -338,6 +368,16 @@ to implement it.]
 5.5. **Engine Specialist Validation** — Before saving, spawn the **primary engine specialist** via Task to validate the drafted ADR:
    - Read `.claude/docs/technical-preferences.md` `Engine Specialists` section to get the primary specialist
    - If no engine is configured (`[TO BE CONFIGURED]`), skip this step
+   - **If the Task/Agent tool is unavailable in this session** — the environment forbids
+     spawning subagents, or the spawn fails — do **NOT** silently proceed. Stop and ask
+     the user: "Step 5.5 requires spawning [specialist]; this session cannot.
+     (a) authorize the spawn, (b) write the ADR with a `Verification Required` row reading
+     *'Step 5.5 engine-specialist validation NOT performed — [date]'*, or (c) defer the
+     write to a session that can spawn." Record the choice in the ADR itself.
+     An unvalidated ADR that says it is unvalidated is acceptable; one that is *silently*
+     unvalidated is not — ADR-0005's second revision skipped this step for exactly this
+     reason and the next review round returned 7 new findings, 3 of which that revision
+     had itself created.
    - Spawn `subagent_type: [primary specialist]` with: the ADR's Engine Compatibility section, Decision section, Key Interfaces, and the engine reference docs path. Ask them to:
      1. Confirm the proposed approach is idiomatic for the pinned engine version
      2. Flag any APIs or patterns that are deprecated or changed post-training-cutoff

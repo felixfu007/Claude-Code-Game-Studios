@@ -8,7 +8,7 @@
 > **UI Framework**: [Godot Control nodes / Unity UI Toolkit / Unreal UMG]
 > **Related Documents**:
 > - `design/art/art-bible.md` — visual standards (colors, typography, iconography)
-> - `docs/accessibility-requirements.md` — accessibility commitments per feature
+> - `design/ux/accessibility-requirements.md` — accessibility commitments per feature
 > - `docs/ux/ux-spec-[screen].md` — individual screen specs that reference patterns
 
 > **Why this document exists**: Every UI screen spec should be able to say

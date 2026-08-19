@@ -5,6 +5,17 @@ metadata:
   type: feedback
 ---
 
+> **STATUS CORRECTION (2026-08-19)**: The running example used throughout the round 8/9/10
+> follow-ups below — `design/ux/accessibility-requirements.md` — **now exists** (created
+> 2026-08-06, committed 2026-08-07; accessibility tier committed as Standard 2026-08-19).
+> Those observations are retained because the *lesson* still holds, but they must NOT be
+> read as a current statement that the file is missing.
+>
+> **New lesson from this correction**: rounds 1–5 of `/architecture-review` reported this
+> same file missing while checking `design/accessibility-requirements.md` (no `ux/`).
+> When verifying a punted obligation, glob by **filename**, never by the path the prose
+> happens to quote. "Not at the path I checked" is not "does not exist."
+
 Rule: Whenever a design document defers a concern with language like "已裁定轉交 [other file]" or "不屬本 GDD 範圍,見 [other system]," treat that as an unverified claim, not a resolved fact. Check three things before accepting the punt as adequate:
 1. Does the target file actually exist on disk (Glob/Read), or only a generic unfilled template?
 2. Is the obligation registered somewhere trackable with an owner and closure condition — either the originating GDD's own Open Questions table, or `design/gdd/systems-index.md`'s Cross-System Obligations Registry?

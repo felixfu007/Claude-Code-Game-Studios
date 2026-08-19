@@ -59,6 +59,17 @@ Note: in `solo` mode, director spawns (CD-PHASE-GATE, TD-PHASE-GATE, PR-PHASE-GA
 
 ## 2. Phase Gate Definitions
 
+> **How to check artifact existence — glob by FILENAME, never by hardcoded path.**
+> This rule governs every `exists at <path>` item in every gate below.
+> For each item, glob `**/<basename>` first. If the file is found at a path other than
+> the one written here, mark it ✅ **with the actual path** and raise the path mismatch
+> as a separate finding. **Never mark it ❌.** A ❌ is valid only when the filename
+> appears nowhere in the repository.
+> Rounds 1–5 of `/architecture-review` failed exactly this check: they reported
+> `accessibility-requirements.md` missing while looking at
+> `design/accessibility-requirements.md`; the project has kept it under `design/ux/`
+> since 2026-08-06. "Not at the path I checked" is not "does not exist."
+
 ### Gate: Concept → Systems Design
 
 **Required Artifacts:**

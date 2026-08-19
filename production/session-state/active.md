@@ -72,7 +72,7 @@ Task: ADR-0005 已完成第三次修訂(約定為最後一次全面修訂;R5-1~R
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
 1. **5 份 ADR 全為 `Proposed`。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
-2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側 17 處引用已於 2026-08-19 統一修正,該檔的 Tier 亦已定案為 **Standard**;✅ `design/ux/interaction-patterns.md` **已於 2026-08-19 由 `/ux-design patterns` 建立**(15 個模式)。**pre-gate 五項至此全部具備**——但 `/gate-check pre-production` 仍不保證通過:閘門另有 ADR `Accepted`、UX 規格覆蓋等條件,且本檔尚未經 `/ux-review` 驗證。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
+2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側引用已於 2026-08-19 分兩次修正——第一次修 17 處(缺 `ux/`),**當日稍後重掃又發現另外兩類殘留**:3 份 template 指向第三條錯路徑 `docs/accessibility-requirements.md`(頂層目錄就錯),以及 1 份 ux-designer agent-memory 明文斷言「該檔不存在於專案任何地方」(寫於 2026-08-05,檔案 2026-08-07 進 git——會自動載入該 agent 的脈絡,等於每次都餵它假事實)。兩類皆已於同日修正;該檔的 Tier 亦已定案為 **Standard**;✅ `design/ux/interaction-patterns.md` **已於 2026-08-19 由 `/ux-design patterns` 建立**(15 個模式)。**pre-gate 五項至此全部具備**——但 `/gate-check pre-production` 仍不保證通過:閘門另有 ADR `Accepted`、UX 規格覆蓋等條件,且本檔尚未經 `/ux-review` 驗證。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
 
@@ -455,3 +455,54 @@ art bible 未執行(影響全部 15 個模式的外觀,其中 P-D2 並存疊加�
 1. **`/ux-review design/ux/interaction-patterns.md`** —— 本檔尚未驗證。**Pre-Production 閘門要求關鍵規格有審查判定。**
 2. `/ux-design [畫面]` —— 目前**零份**畫面 UX 規格。
 3. **維護規則已寫進文件末尾**:每次產出新畫面規格後回頭檢查是否用了本庫沒有的互動;若有,**先登記為新模式再實作**。
+
+---
+
+## Session Extract — 流程缺失三項的 P0/P1 修補(2026-08-19)
+
+使用者指定把前一段收尾點出的三項重大缺失排進優先計畫。**實查後,三項裡有兩項並未真的關閉**——
+上一輪的修法本身就犯了它自己指出的錯。
+
+### 實查推翻的兩項
+
+1. **路徑誤報有三條錯路徑,先前只修了一條。**
+   `design/accessibility-requirements.md`(缺 `ux/`,框架 8 檔 17 處)已修;
+   但 **`docs/accessibility-requirements.md`(頂層目錄就錯)在 3 份 template 裡從未被碰過**;
+   更嚴重的是 `.claude/agent-memory/ux-designer/feedback_verify_punted_obligations.md`
+   有 **3 處明文斷言該檔不存在**(round 8/9/10 三次追蹤加碼)。memory 最後修改 2026-08-05,
+   檔案 2026-08-07 進 git——**寫的當下為真,現在為假**,而 agent-memory 會自動載入 ux-designer
+   的脈絡,等於每次跑該 agent 都在餵它假事實,偏偏 ux-designer 正是該檔的負責 agent。
+
+2. **先前在 `architecture-review/SKILL.md` 加的 `⚠️ CHECK THE PATH` 警語是紀律要求,不是結構保證**
+   ——恰好違反同日寫進 `design/ux/interaction-patterns.md` 的通則三。已刪除警語,改為結構解。
+
+3. **第三項(寫入前覆核有效)的根因比原本的說法精確**:`/architecture-decision` 只有 retrofit 與
+   new-authoring 兩個模式,**Step 5.5 只掛在 new-authoring 路徑上**(第 338 行),retrofit 在第 62 行
+   就分岔走了永遠碰不到。而 **ADR-0005 的三次修訂兩者都不是**——修訂根本不是這個 skill 的模式,
+   是臨場開的。所以那道關卡在結構上就沒掛在最需要它的操作上。Step 5.5 唯一的跳過條件是「引擎未設定」,
+   **對「Agent 工具不可用」零指示**——第二次修訂正是撞到這個然後靜默跳過。
+
+### 已完成(P0 + P1,7 檔案)
+
+| 項 | 檔案 | 修法 |
+|---|---|---|
+| P0-1 | `agent-memory/ux-designer/feedback_verify_punted_obligations.md` | frontmatter 後插入 STATUS CORRECTION 塊。**歷史敘述保留**(刪掉等於竄改紀錄),但擋在前面聲明現況,並把新教訓寫進規則本身:「glob by **filename**, never by the path the prose happens to quote」 |
+| P0-2 | 3 份 template(hud-design / interaction-pattern-library / ux-spec) | `docs/` → `design/ux/`,各 1 處 |
+| P0-3 | `gate-check/SKILL.md`(`## 2` 下,governs 全部六道閘門)+ `architecture-review/SKILL.md` Phase 9 | **存在性檢查改為 glob by FILENAME**。找到但路徑不同 ⇒ 標 ✅ 並附實際路徑 + 另報路徑不符;**絕不標 ❌**。❌ 只在該檔名全庫不存在時才成立 |
+| P1-1 | `architecture-decision/SKILL.md` | 新增 **revision 模式**(標題改 `Retrofit / Revision`,分岔句同步)。六步:讀報告原文而非記憶摘要 → findings ledger 先對範圍 → 草稿 → **強制 Step 5.5 於寫入前** → 寫入核准 → **不得自陳修訂後涵蓋分佈**。retrofit 亦補第 8 步:若補了 Engine Compatibility 章節,寫入前須跑 5.5 |
+| P1-2 | 同上 Step 5.5 | 補「Task/Agent 工具不可用」處置:**不得靜默跳過**,須停下來讓使用者三選一(授權/明文標記未覆核/延後寫入),並把選擇記進 ADR |
+
+**刻意保留的 3 處舊路徑字串**:全在新規則內文裡當反例引述(memory ×1、arch-review ×1、gate-check ×1)。
+
+**刻意不動**:`CCGS Skill Testing Framework/` 的 6 處(獨立 v1.0.0 釋出框架,自有 CLAUDE.md,
+最後提交 2026-05-13;那些路徑是測試 skill 行為的固定樣本,改了可能弄壞測試斷言)。
+歷史審查報告與 session-logs 亦不動——改寫會竄改紀錄。
+
+### 未做:P2(使用者裁決另開)
+
+`grep` 出 **49 處**「跑 `/X` 來產生/建立 Y」型宣稱,先前只驗過 4 處。
+其餘 **45 處從未對帳過各 skill 實際宣告的輸出**。需逐一比對每個 SKILL.md 的輸出表,面積大,獨立成一次作業。
+
+### 對第六輪的影響
+
+P0-3 必須先落地才跑第六輪,否則會第六次踩同一顆雷。**現已落地。**
