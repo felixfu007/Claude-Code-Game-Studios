@@ -48,7 +48,7 @@
 
 <!-- Add patterns that should never appear in this project's codebase -->
 
-**權威清單在 `docs/registry/architecture.yaml` 的 `forbidden_patterns` 節(目前 17 項)。**
+**權威清單在 `docs/registry/architecture.yaml` 的 `forbidden_patterns` 節(目前 19 項)。**
 以下 3 項是**專案級身分/範圍裁決**,來源為 `design/gdd/game-concept.md` 而非任何 ADR,
 因此在任何 ADR 被 `Accepted` 之前就已生效,寫在這裡供實作時直接查閱:
 
@@ -63,13 +63,17 @@
 - **`procedural_terrain_generation`** — 棋盤地形與其演變一律手工設計、劇情觸發,
   絕不程序化/隨機生成。
 
-其餘 14 項為 ADR-0001~0005 各自推導出的實作級禁令。ADR-0001~0004 的 10 項:節點樹推導佔位、
+其餘 16 項為 ADR-0001~0005 各自推導出的實作級禁令。ADR-0001~0004 的 10 項:節點樹推導佔位、
 動畫驅動邏輯狀態、結算路徑 `call_deferred()`、回傳內部容器參照、依賴容器迭代順序、
 可測試資料層用 Autoload、可變容器當 Dictionary 鍵、enum 位置索引字串轉換、
-Resource 承載存檔 payload、取鎖與釋放之間提前 return。**ADR-0005 新增 4 項(游標系統)**:
-游標 Autoload 薄殼加邏輯、用 `_unhandled_input()` 做裝置權威裁定、讀取 `InputEvent.device` 
-裝置 ID、已註冊游標表面使用原生 Control hover/focus(注意:此項需**兩個**條件,`focus_mode = 
-FOCUS_NONE` 單獨不足——它不關 Control 主題內建的滑鼠 hover 管線)。詳見 registry 各條的 `why:` 欄。
+Resource 承載存檔 payload、取鎖與釋放之間提前 return。**ADR-0005 共 6 項(游標系統;2026-08-18 
+首版 4 項 + 2026-08-19 修訂新增 2 項)**:游標 Autoload 薄殼加邏輯、用 `_unhandled_input()` 做裝置
+權威裁定、讀取 `InputEvent.device` 裝置 ID、已註冊游標表面使用原生 Control hover/focus(注意:
+此項需**兩個**條件,`focus_mode = FOCUS_NONE` 單獨不足——它不關 Control 主題內建的滑鼠 hover 
+管線);**2026-08-19 新增**:下游系統在 `_input()`/`_unhandled_input()` 內判讀確認類 `ui_*` action
+(`confirm_action_read_in_unhandled_input`——`process_priority` 管不到這兩個回呼,只能靠明文禁止)、
+在本系統自己發出的訊號處理函式內回頭呼叫寫入介面(`cursor_state_write_from_own_signal_handler`)。
+詳見 registry 各條的 `why:` 欄。
 
 ## Allowed Libraries / Addons
 

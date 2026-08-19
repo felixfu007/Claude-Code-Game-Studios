@@ -175,3 +175,68 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 - **`@abstract` 語法可從「印象」升級為「已查證」** —— 與 `current-best-practices.md` 第 41–49 行範例逐字格式一致。殘留:範例只有 `Array[Attack]` 一種回傳型別,ADR 用到 `bool`/`float`/`void` 三種,Day-1 spike 應**三種各建一檔分別編譯**
 - **Agile Event Flushing 鍵字串:6 份參考文件全域零命中** —— `has_setting()` 防衛應保留,不得改成信任推測鍵名
 - `_input()` 全數完成後才進 `_process()`:專家判定**印象等級(信心偏高),不算已查證** —— ADR 的「高風險待驗證」標記不應被拿掉
+
+---
+
+## Session Extract — `/architecture-review` 第四輪 2026-08-19
+
+- **判定:CONCERNS**(與第三輪同)—— 沿用同一標準(32 項 ❌ 中 25 項在尚未 Approved 的戰棋 GDD)
+- **需求:130 項 —— 65 ✅ / 33 ⚠️ / 32 ❌**(第三輪 61/34/35)
+- **新增 TR-ID:無** —— 5 份 GDD 自第三輪以來 git 改動數皆為 0,`tr-registry.yaml` 本輪零改動
+- **GDD 修訂旗標**:第三輪兩項全部維持開啟,`systems-index.md` 未改動(使用者本輪未選擇標記 `Needs Revision`)
+- **報告**:`docs/architecture/architecture-review-2026-08-19-round4.md`
+
+### 更正本檔案先前的一項自陳
+
+上方「**本次修訂尚未提交 git**」**不成立** —— ADR-0005 修訂、registry、technical-preferences、active.md
+四者全在 `7bb033b`;工作區乾淨,與 `origin/main` 同步(0/0)。
+
+### 游標系統重推:13 ✅ / 6 ⚠️ / 0 ❌(第三輪 11/8/0)
+
+9 項待修訂中 **6 項完整關閉**(F5、F2、F4、N1、N2、N4),**F1 只關一半**,**F3 修法引入新違反**。
+`-010`/`-019` 升 ✅;`-001`/`-008`/`-009`/`-011`/`-015`/`-017` 仍 ⚠️。
+
+### ADR-0005 進 `Accepted` 前必須關閉(7 項 + `-015` 兩項落差)
+
+| # | 缺陷 | 級別 |
+|---|---|---|
+| **R4-2** | `diagnostic_seed_position()` 寫在抽象基底卻 `return _seed`,`_seed` 只宣告於子類別 → 編譯期錯誤。專家建議改標 `@abstract` | **BLOCKING** |
+| **R4-1** | F1 只關一半:步驟三仍融在 −100,實際定序 1&3 → 2 → 4,與 GDD 明文四步序列相反(GDD 稱該方向為硬性行為要求);②→③ 這組無任何測試涵蓋 | 高(視同 BLOCKING) |
+| **R4-3** | F3 平滑器 `move_toward()` 對上升方向也限速 → 結構上無法滿足「達到門檻的當下透明度達 100%」。應只對下降限速 | 高(視同 BLOCKING) |
+| **R4-4** | N4 重入閘門可能鎖死 `arbitrate_frame()` 內部的導覽寫入(若重用公開 `set_target()`)。須明文區分私有寫入路徑 | 高 |
+| **R4-5** | `ActionClass` 硬編碼白名單無完整性驗證,新增導覽類 action 靜默降級為 `OTHER` | 中高 |
+| **R4-6** | 機制六的 `call_deferred()` 路線與旗標路線不等價,沖洗時點未查證,可重開 F1 剛關的洞 | 中 |
+| **R4-7** | ②/⑤ 角色重疊未討論(專家推翻「無解」判斷:單一 `_process()` 內陳述順序即可解,屬文件缺口) | 中 |
+| **`-015`** | 甲/乙分支累積位移量未重置為 0;丙分支收窄 GDD 允許的「原目標仍有效得直接沿用」。**第三輪未編號,修訂 session 依 9 項清單作業而漏掉** | 中 |
+
+> R4-1~R4-3、R4-5 由主審獨立推導,`godot-specialist` 對抗性覆核**全部成立**(R4-2 被升為 BLOCKING);
+> R4-4 為該專家額外發現;R4-7 為專家**部分推翻主審初判**後採納的更正版本。
+
+### 本輪覈實過、可直接引用的事實
+
+- **registry 61 項立場實測成立**(10 state / 10 interfaces / 22 api / 19 forbidden);ADR-0005 佔 **20 項**;
+  58 具 ADR 來源 + 3 項 `adr: none` = 61(另有 7 行位於註解區的範例不計)
+- 本次修訂**就地修訂 3 項既有條目**(`cursor_target_write`、`cursor_actor_process_priority_ladder`、
+  `cursor_visual_carrier_split`),commit message 與 technical-preferences 皆只提「2 項 api_decisions」,
+  漏記 `cursor_target_write` 這項 interface
+- **棄用 API 對修訂新增內容零命中**(主審與專家各自逐列比對)
+- **引擎參考庫自相矛盾(新發現)**:`breaking-changes.md` 標 4.4→4.5 為 `POST-CUTOFF, HIGH RISK`,
+  `VERSION.md` 卻標 4.5 為 `LOW (pre-cutoff)` —— 而 `@abstract` 賭注正押在 4.5
+- **專家更正 VR #11**:機制八的淨位移**全程停留在 viewport 座標系,不受 `CanvasLayer` 變換影響**;
+  真風險只有機制十三把 viewport 座標畫到 CanvasLayer 子節點上那一半。**應拆成兩條 Verification Required**
+- **`InputMap.event_is_action()` 印象中不過濾 `InputEventKey.echo`** —— 按住方向鍵的重複事件會與初次
+  按下同樣判為 NAVIGATION,ADR 完全未討論。專家判定為本次最值得回頭確認的一項
+- `move_toward()` 為專家唯一給高信心背書的新增依賴(已查證,優於每幀重啟 `Tween`)
+
+### 本輪順手修正的文件
+
+- `.claude/docs/technical-preferences.md`:forbidden patterns 計數 17→19、其餘 14→16、
+  ADR-0005 新增 4→共 6 並補上兩項新禁令名稱(使用者核准)
+- `docs/architecture/traceability-index.md`:19 列游標 + **修正第三輪的傳播遺漏**
+  (`TR-concept-005`/`-006`/`-007` 三列在 ADR-0005 已存在下仍留著第二輪的「架構層 ADR 未見」判定)
+
+### 仍未處理(使用者本輪未選擇)
+
+- registry `state: mouse_reclaim_accumulator` 的 `interface:` 仍寫直綁 `modulate.a`(F3 已廢除),`revised:` 空白
+- ADR-0005 Consequences 仍留「19 項全部有機制支撐(其中 3 項為部分)」的舊自陳
+- `systems-index.md` 第 28 列游標 GDD 狀態維持 `Approved`
