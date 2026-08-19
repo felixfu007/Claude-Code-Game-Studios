@@ -25,7 +25,11 @@
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
 version: 1
-last_updated: "2026-08-18"   # 第二輪 /architecture-review 核對:130 項基線不變,無新增/改寫/棄用 TR-ID
+last_updated: "2026-08-19"   # 第三輪 /architecture-review 核對:130 項基線不變,無新增/改寫/棄用 TR-ID
+# 註:本檔共 133 個 `id:` 條目,其中 3 個(TR-combat-001~-003)位於檔頭註解區、為 ID 格式範例,
+#     非真實需求。實際 active 需求數為 130 —— 三輪審查皆以此為基線。
+#     第三輪(2026-08-19)查證:5 份 GDD 自第二輪以來零修改(最新 GDD 提交 08bf6ff 早於第二輪
+#     審查提交 1c3d5d0),故無任何 TR-ID 需要新增、改寫或棄用。涵蓋情形見 traceability-index.md。
 
 requirements:
   # ─── 戰棋移動與交戰系統 (tactical-combat-system.md) ──────────────────────────

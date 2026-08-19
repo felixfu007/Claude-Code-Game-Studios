@@ -3,10 +3,10 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-review 驗證涵蓋
+Task: 第三輪 /architecture-review 已完成(CONCERNS);下一步為全新 session 修 ADR-0005 的 F1/F5
 <!-- /STATUS -->
 
-**最後更新**:2026-08-18 —— 本日三個 session 段落(第二輪 `/architecture-review` → forbidden pattern 補登 + C2/C4/C5 修正 → ADR-0005)。工作區乾淨,3 個提交待推送。
+**最後更新**:2026-08-19 —— 第三輪 `/architecture-review`(獨立驗證 ADR-0005)。2026-08-18 的 3 個提交**已推送完畢**(`main` 與 `origin/main` 同步,已實跑 `git log @{u}..HEAD` 查證)。
 
 > **本檔案是現況快照,不是流水帳。** 歷史細節在 `docs/architecture/architecture-review-*.md`、`design/gdd/reviews/*.md` 與 git history;此處只保留「下一個 session 需要知道什麼」。
 
@@ -20,18 +20,18 @@ Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-r
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
 | **架構登記處** | **55 項立場**(10 state-ownership、8 interface contracts、20 API decisions、17 forbidden patterns) |
-| **需求涵蓋** | 130 項 TR:**50 ✅ / 24 ⚠️ / 56 ❌**(第二輪 `/architecture-review` 判定,**未計入 ADR-0005**) |
-| **最新審查判定** | **FAIL** —— 唯一硬阻塞為游標系統 19/19 零涵蓋,**該項已由 ADR-0005 處理,但尚未經獨立審查驗證** |
+| **需求涵蓋** | 130 項 TR:**61 ✅ / 34 ⚠️ / 35 ❌**(第三輪 `/architecture-review` 判定,已計入 ADR-0005) |
+| **最新審查判定** | **CONCERNS**(2026-08-19 第三輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**35 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
 | **實作** | `src/` 為空,尚無任何程式碼 |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
 1. **5 份 ADR 全為 `Proposed`。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
-2. **`/gate-check pre-production` 目前不可執行**,四項 pre-gate 全缺:`tests/unit/`、`tests/integration/`、`.github/workflows/tests.yml`、`design/accessibility-requirements.md`、`design/ux/interaction-patterns.md`。
+2. **`/gate-check pre-production` 目前不可執行**,**五項** pre-gate 全缺(2026-08-19 實測確認):`tests/unit/`、`tests/integration/`、`.github/workflows/tests.yml`、`design/accessibility-requirements.md`、`design/ux/interaction-patterns.md`。
 
 ---
 
-## 二、今日完成(3 個提交,已 commit 未 push)
+## 二、2026-08-18 完成(3 個提交,已推送)
 
 | 提交 | 內容 |
 |---|---|
@@ -48,16 +48,19 @@ Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-r
 
 ## 三、下一步(建議順序)
 
-1. **全新 session 跑 `/architecture-review`** —— 驗證 ADR-0005 對 19 項 `TR-cursor-*` 的涵蓋。**硬性規定:不得與 `/architecture-decision` 同 session**,審查代理必須獨立於撰寫脈絡。ADR-0005 自陳 16 完整 / 3 部分,**刻意不宣稱 19/19**,待獨立重推。
-2. **`/test-setup`** —— 與架構軌零依賴,可平行推進;是 pre-gate 的硬需求(4 項中的 3 項)。
-3. **`/ux-design`** —— pre-gate 剩餘 2 項(`accessibility-requirements.md`、`interaction-patterns.md`)。注意 `cursor-highlight-state.md` 已登記一項**孤兒義務**:運動無障礙需求(奪權門檻可調整性、瞄準輔助)先前口頭轉交至一個**不存在的檔案**。
-4. **剩餘 2 份 ADR**:戰棋盤面演算法層(可達格/威脅範圍/視線,`TR-tactical-002`~`-010`、`-019`~`-021`、`-037`~`-039`);回合結構擁有權 + 缺席的 AI/遭遇系統(`TR-tactical-034`、`-041`)—— **全專案無人認領回合結構**,而 `tactical-combat-system.md` Core Rules #9 明文要求敵方回合消費這些查詢。
+1. ~~全新 session 跑 `/architecture-review`~~ —— **✅ 已於 2026-08-19 完成**,判定 CONCERNS。ADR-0005 自陳 16/3 被推翻為 11/8,零缺口成立。見下方「Session Extract 第三輪」。
+2. **全新 session 修 ADR-0005 的 9 項待修訂** —— **F1/F5 為 BLOCKING,修好前該 ADR 不得進 `Accepted`**。屬 `/architecture-decision` 領域。建議與 C1/C3/C6 一併處理(5 份 ADR 皆 `Proposed`,現在改動成本最低)。
+3. **`/test-setup`** —— 與架構軌零依賴,可平行推進;是 pre-gate 的硬需求(5 項中的 3 項)。
+4. **`/ux-design`** —— pre-gate 剩餘 2 項(`accessibility-requirements.md`、`interaction-patterns.md`)。注意 `cursor-highlight-state.md` 已登記一項**孤兒義務**:運動無障礙需求(奪權門檻可調整性、瞄準輔助)先前口頭轉交至一個**不存在的檔案**。
+5. **剩餘 2 份 ADR**(第三輪判定此為投入產出比最高的單一動作 —— 第一項一次移動 35 項 ❌ 中的大部分):戰棋盤面演算法層(可達格/威脅範圍/視線,`TR-tactical-002`~`-010`、`-019`~`-021`、`-037`~`-039`);回合結構擁有權 + 缺席的 AI/遭遇系統(`TR-tactical-034`、`-041`)—— **全專案無人認領回合結構**,而 `tactical-combat-system.md` Core Rules #9 明文要求敵方回合消費這些查詢。
 
 ---
 
 ## 四、待處理清單
 
-### A. 跨 ADR 銜接缺口(第二輪審查發現,C2/C4/C5 已修,兩項仍開)
+### A. 跨 ADR 銜接缺口(C2/C4/C5 已修;C1/C3 自第二輪仍開,C6 為第三輪新增)
+
+- **C6(第三輪新增,低嚴重度)**:ADR-0005 宣稱機制十一與 ADR-0004 的存檔讀取路徑「直接交接」,但實測 **ADR-0002/0003/0004 對「游標」/「cursor」零命中**。不是矛盾(GDD Core Rules #7 把義務歸給呼叫方戰棋系統,而非存檔系統 —— 兩者皆宣稱不理解遊戲實體語意),但 ADR-0004 不宜在單方面被宣稱交接的狀態下逕行 `Accepted`。**建議解:ADR-0004 的 `Related Decisions` 補一句指回 ADR-0005 機制十一並說明義務歸屬。**
 
 - **C1 —— `TOKEN_TIMEOUT_MS` 無人擁有**:ADR-0002 Risks 表明文委派給「存檔系統 ADR」,ADR-0004 機制六明文退回「該系統的職責,非本系統補償」。而 ADR-0004 的分步遷移跨越「數個至數十個影格」,正是 ADR-0002 自己預測會誤判為逾時回收的情境。**建議解:由 ADR-0004 接下**(只有它掌握遷移鏈深度上界)。
 - **C3 —— `Mutex` 條件已解未回傳**:`TR-affinity-016` 是條件式需求(「**若**選擇背景執行緒序列化」),ADR-0004 已把條件判為「否」(不引入背景執行緒 + 主執行緒斷言),但 ADR-0002 仍宣稱其無條件 `Mutex` 是「專案唯一執行緒安全義務」。**建議解:保留為縱深防禦,但明文交叉引用 ADR-0004。**
@@ -77,7 +80,10 @@ Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-r
 1. `process_priority` 不涵蓋 `_input()`,且「該影格全部 `_input()` 完成後才進 `_process()`」—— **機制六定序的全部基礎**,幀精準測試
 2. Agile Event Flushing 的確切設定鍵字串 —— 一次 `ProjectSettings.has_setting()` 查詢
 3. `Button` 設 `focus_mode = FOCUS_NONE` 後滑鼠懸停**是否仍畫 hover 主題** —— 決定機制十四第 2 項條件是硬性要求或防禦性建議
-4. `@abstract class_name Foo extends RefCounted` 最小檔案語法 —— 寫錯是**整檔案編譯失敗**(承 ADR-0004 Verification Required 6/6a)
+4. `@abstract class_name Foo extends RefCounted` 最小檔案語法 —— **第三輪已部分關閉**:專家逐字比對 `current-best-practices.md` 第 41–49 行,ADR 的寫法格式一致,可從「印象」升級為「已查證」。**殘留**:文件範例只有 `Array[Attack]` 一種回傳型別,ADR 用到 `bool`/`float`/`void` 三種 —— spike 應**三種各建一檔分別編譯**,不是只測一種
+5. **(第三輪新增)`_notification()` FOCUS_IN/OUT 相對 `process_priority` 的時序** —— 餵給 F5,現有 9 項 Verification Required 沒有這一項
+
+> 第 2 項(Agile Flushing 鍵字串)第三輪已確認**參考庫 6 份文件全域零命中** —— `has_setting()` 防衛必須保留,不得改成信任推測鍵名。
 
 ### D. 其他未處理
 
@@ -85,7 +91,8 @@ Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-r
 - **戰棋系統文件自陳的下游阻擋項**:OQ-2 `player_baseline_stat` 全專案無擁有者;OQ-10 無「不可通行」地形層級;OQ-16 敵方單位數上限無擁有者 + 效能測試須以「格數 × 敵數」兩軸參數化。
 - **戰棋系統 DEFER 未落地**:`enemy_advantage_pct < 0` 無驗證拒絕(與既有 `≥1.0` 拒絕不對稱,會靜默反轉 Core Rules #7);公式二 `ceil()` 浮點精度邊界噪聲。
 - **戰棋系統收斂狀態**:連續零 BLOCKING-NOW 輪數 = **0**(四輪皆 body-scoped)。距 Approved 尚需**連續兩輪**零 BLOCKING-NOW。
-- **`docs/consistency-failures.md` 不存在** —— 依 skill 規定未建立,故兩輪審查的 C1~C5 只存在於審查報告內。
+- **`docs/consistency-failures.md` 不存在** —— 依 skill 規定未建立,故**三輪**審查的 C1~C6 只存在於各輪審查報告內,沒有跨輪的模式累積。
+- **R4(第三輪新增)**:ADR-0005 補 Verification Required —— `_notification()` 時序(N2)、`InputMap` 動作語意分類依賴(N1,連 ADR 自己的 8 項核心依賴表都漏列)、座標空間 API 與「全程單一根 Viewport」的明文假設(F2)。
 
 ### E. 已凍結(不是待辦,是明文暫停)
 
@@ -95,3 +102,57 @@ Task: ADR-0005 已撰寫並提交;下一步為全新 session 跑 /architecture-r
 - **E2**(真人口語觀察,僅測鍵盤路徑):奪權成功後被反方向零門檻豁免規則**秒搶回**
 
 ADR-0005 機制八把它隔離在單一檔案(`MouseReclaimPolicy`),**明文不宣稱已緩解**。待辦:取得一支手把後補測 D-pad 與類比搖桿。**不得假設「未測 = 沒問題」。**
+
+---
+
+## Session Extract — `/architecture-review` 第三輪 2026-08-19
+
+- **判定:CONCERNS**(第二輪為 FAIL)—— 第二輪的唯一硬阻塞(游標 19/19 零涵蓋、Foundation 層)**已解除**
+- **需求:130 項 —— 61 ✅ / 34 ⚠️ / 35 ❌**(第二輪 50/24/56)
+- **新增 TR-ID:無** —— 5 份 GDD 自第二輪以來零修改,130 項基線未動(已以 git 查證)
+- **GDD 修訂旗標:`cursor-highlight-state.md`**(2 項,皆為**設計文件內部張力**,非引擎衝突;`systems-index.md` 未改動,狀態變更留待使用者裁決)
+- **報告**:`docs/architecture/architecture-review-2026-08-19.md`
+
+### 本輪最重要的一件事:ADR-0005 的自陳被推翻
+
+ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整 / 8 部分 / 0 缺口** ——
+`TR-cursor-001`/`-008`/`-015`/`-017`/`-019` 五項由 ✅ 降為 ⚠️。**零缺口成立,但自評膨脹了 5 項**
+(與第二輪在 ADR-0004 身上抓到的是同一個模式)。
+
+### ADR-0005 的 9 項待修訂(修好前不得進 `Accepted`)
+
+| # | 缺陷 | 級別 |
+|---|---|---|
+| **F1** | 機制六的「四個行為者」是節點渲染更新序,**不是** GDD Core Rules #2 的「四方完整定序」。呼叫方主動改標被排到緩衝內確認讀取**之後**,**違反 AC-52**(該 AC 也不在 ADR 的 Validation Criteria 清單裡)。修法需**新增對下游系統的約束**——確認動作判讀不得掛 `_unhandled_input()`(`process_priority` 完全管不到它) | **BLOCKING** |
+| **F5** | `_process()` 沒有比照 `_input()` 檢查 `_arbitration_suspended`,失焦/暫停當幀已緩衝事件仍被裁定;suspend/resume/FOCUS_IN/FOCUS_OUT 四個進出點**沒有任何一個** `clear()` 緩衝區。**`suspend_arbitration()` 路徑的競窗不依賴任何未驗證引擎行為,100% 確定存在** | **BLOCKING** |
+| **F2** | `MouseReclaimPolicy` 對累積起點的擁有權自相矛盾(`reset(seed)` vs `evaluate(net_delta)`);參數命名 `_net_delta` **邀請 GDD 明文禁止的路徑總和實作**(累加 `event.relative`)。建議改收絕對座標由策略內部相減 | 高 |
+| **F3** | `modulate.a` 直綁 `reclaim_progress()`,無呈現層平滑器,契約也無管道辨識是哪個重置觸發點 → 對觸發點 (a)(b)(c) **必然違反 AC-41**。**修法會擴充機制八的契約寬度,動搖 ADR 自陳的 Validation Criteria #8「隔離邊界只有三個方法寬」——是連動修訂** | 高 |
+| **F4** | 收斂上限的量測儀器量錯對象(量判定值而非呈現透明度)。隨 F3 解決 | 中 |
+| **N1** | `ActionClass`(NAVIGATION/CONFIRM/OTHER)如何從原始 `InputEvent` 判定,**完全沒給機制**。必然需要查 `InputMap`,而該依賴**連 ADR 自己的 8 項核心依賴涵蓋率表都漏列** | 中 |
+| **N2** | `_notification()` FOCUS_IN/OUT 相對 `process_priority` 的時序未定義,且不在現有 9 項 Verification Required 內 | 中 |
+| **N3** | `Input.mouse_mode` 是**全域**設定,與 GDD AC-60「未登記表面得用原生 hover」的 carve-out 未調和 —— 手把持權威時玩家用滑鼠點未登記側欄看不到指標 | 中 |
+| **N4** | 下游更新是輪詢還是訊號推送未定案;若採訊號,**回頭寫入 `_state` 會重入而 ADR 無閘門**(ADR-0001 對同類問題設了 `settlement_in_progress`) | 中 |
+
+> F1~F5 由主審獨立推導,`godot-specialist` 逐項對抗性覆核**五項全部成立**,其中 F1/F5 判定比初審更嚴重;
+> N1~N4 為該專家在五項之外自行額外發現。**修訂屬 `/architecture-decision` 領域,不得與審查同 session。**
+
+### 判定標準的一致性(下一輪必讀)
+
+戰棋系統仍有 **25 項 ❌ 且屬 Core 層**,字面上符合 FAIL 條件。但第二輪在同樣有 27 項戰棋缺口下仍稱
+「游標是唯一硬阻塞」,隱含理由是**該 GDD 尚未 Approved**。本輪沿用同一標準。
+**⚠️ 若戰棋 GDD 在其演算法層 ADR 之前先達 Approved,判定會退回 FAIL。**
+
+### 本輪新增/確認的銜接缺口
+
+- **C6(新,低嚴重度)**:ADR-0005 宣稱機制十一與 ADR-0004 存檔讀取路徑「直接交接」,但 **ADR-0002/0003/0004 對「游標」零命中**。不是矛盾(GDD 把義務歸給呼叫方而非存檔系統),但 ADR-0004 不宜在單方面被宣稱交接的狀態下逕行 `Accepted`
+- **C1 / C3 仍開**,與第二輪相同
+- **C2 / C4 / C5** 已於 `a56dd10` 修正,本輪覆核成立;該提交對 ADR-0003/0004 的 19 行改動**未移動任何一格涵蓋率**
+
+### 本輪覈實過、可直接引用的事實
+
+- `tr-registry.yaml` 133 個 `id:` 中 3 個在註解區(`TR-combat-*` 是格式範例)→ **實為 130 項 active**
+- `docs/registry/architecture.yaml`:ADR-0005 共 **14 個條目**;`forbidden_patterns` 共 **17 項**;`logic_in_cursor_autoload_shell` **確實已登記**(非僅「候選」);55 = 52 具 ADR 來源 + 3 項 `adr: none`。**全部自陳成立**
+- **棄用 API 對 ADR-0005 逐列比對零命中**
+- **`@abstract` 語法可從「印象」升級為「已查證」** —— 與 `current-best-practices.md` 第 41–49 行範例逐字格式一致。殘留:範例只有 `Array[Attack]` 一種回傳型別,ADR 用到 `bool`/`float`/`void` 三種,Day-1 spike 應**三種各建一檔分別編譯**
+- **Agile Event Flushing 鍵字串:6 份參考文件全域零命中** —— `has_setting()` 防衛應保留,不得改成信任推測鍵名
+- `_input()` 全數完成後才進 `_process()`:專家判定**印象等級(信心偏高),不算已查證** —— ADR 的「高風險待驗證」標記不應被拿掉
