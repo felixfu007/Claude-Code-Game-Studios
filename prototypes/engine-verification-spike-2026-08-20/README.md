@@ -461,15 +461,137 @@ var _records: Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]
 > **VR #6a 仍未答**(漏實作抽象方法是編譯期還是執行期錯誤)—— 對照組通過,
 > 但故意漏實作的那一檔在 RISKY 區,第三次執行未跑到。
 
+#### F-8 · spike 自身的「編譯成功」判定機制是錯的 · **高** · 方法論
+
+第四次執行的 RISKY 0 區:
+
+```
+  (i) 參考庫範例的逐字照抄(冒號 + pass 主體)—— 2026-08-20 已知為 parser error
+    [COMPILED OK       ]  current-best-practices.md 第 41-49 行的形式
+```
+
+```
+  (ii) ADR-0004 VR #6a:子類別**故意漏實作** diagnostic_seed_position()
+  ERROR: res://scripts/c1_subclass_incomplete.gd:8 - Parse Error: Class ... must implement ...
+  ERROR: Failed to load script ... with error "Parse error".
+    [COMPILED OK       ]  漏實作的具體子類別
+```
+
+**引擎印出 Parse Error,判定卻說 COMPILED OK。**
+
+**根因**:`load()` 對編譯失敗的腳本**不回傳 `null`** —— 它回傳一個無效的 resource 物件。
+整個 `res != null` 判定不成立。這也解釋了第三次執行為什麼在 A1 卡住:`load()` 沒回傳
+`null`,所以沒走「FAILED TO COMPILE」分支,而是直接撞上 debugger。
+
+**受影響範圍**:`_load_report()` 那一族 —— **C1 全部 + RISKY 0 全部**。
+`_build_report()` 那一族**不受影響**,它真的呼叫了 `build()` 並拿到回傳資料,那是實打實的證據。
+
+**修法**:改為三道獨立檢查,並回報是哪一道不過 ——
+(1) `ResourceLoader.load(path, "Script", CACHE_MODE_IGNORE)` 繞過資源快取
+(快取會讓先前已解析失敗的腳本直接回傳舊物件,連錯誤訊息都不再印一次,這正是 (i) 沒印
+error 的原因);(2) 型別必須真的是 `GDScript`;(3) `reload()` 回傳 `Error` ——
+唯一直接反映「這份原始碼能不能編譯」的 API。
+
+**這是本 spike 第二次自傷**(F-5 是排序、本項是判定),兩者同型:
+**把一個未查證的引擎行為當成已知**。F-5 假設「硬中止只來自執行期崩潰」,
+本項假設「`load()` 失敗會回傳 `null`」。**驗證工具自己犯了它要驗證的那類錯誤,兩次。**
+
+---
+
+#### F-9 · ADR-0002 機制四有可用的替代宣告了,`(d)` 成立 · **已關閉** · ADR-0002 VR #1
+
+**實測輸出原文**(第四次執行,四項皆實際執行 `build()` 並回傳資料,不受 F-8 影響):
+
+```
+  ── (a) Dictionary[AffinityTypes.Character, int]
+      [COMPILED OK]  size = 1  |  值型別 = int
+  ── (b) Array[AffinityRecord]
+      [COMPILED OK]  size = 1  |  is_typed = true
+  ── (c) Dictionary[AffinityTypes.Pair, Array]
+      [COMPILED OK]  size = 1  |  值型別 = Array(is_typed=false, size=1)
+  ── (d) Dictionary[AffinityTypes.Pair, AffinityRecordList]
+      [COMPILED OK]  size = 1  |  值型別 = Object(RefCounted)
+```
+
+**判定**:
+
+- **(d) 成立,且是唯一同時保住外層鍵型別與內層元素型別的選項。** 值型別是「類別」而非
+  「容器」,不觸發巢狀限制。代價:多一層 `.items` 存取 + 一個額外 `class_name`。
+- (c) 也能編譯,但實測 `is_typed=false` —— **內層元素型別確實整個放棄**,append 任何東西
+  都不會被擋。若採此路,ADR 必須明文承認這件事,不能繼續宣稱型別安全。
+- (a)(b) 皆成立 → 問題確實只在**巢狀**,不是型別化容器本身有問題。
+
+**建議**:機制四改採 (d)。**但這只解決「寫不出來」,不解決「型別保證有多少」** ——
+見 F-3:enum 鍵在執行期就是 `int`,外層鍵的保證本來就只到靜態分析為止。
+**機制四的型別安全宣稱需要整段重寫,不是換個宣告就好。**
+
+---
+
+#### F-10 · `Callable.is_valid()` 兩種綁定形式行為**相同**;`call()` 會讓函式整段中止 · **已關閉** · ADR-0005 VR #15
+
+**實測輸出原文**:
+
+```
+  釋放前:
+    named.is_valid()  = true      lambda.is_valid() = true
+    named.call()      = 42        lambda.call()     = 42
+
+  queue_free() + 等兩個影格後:
+    is_instance_valid(probe) = false
+    named.is_valid()         = false    ←具名綁定 Callable(obj, "method")
+    lambda.is_valid()        = false    ←lambda 隱式捕獲 self
+```
+
+**判定一:S-1 的防禦成立。** `is_valid()` 確實回傳 `false`,
+`_safe_mouse_position()` 每次取值前檢查的設計有效,Validation Criteria #18 驗的假設成立。
+
+**判定二:「發現 G」的前提被推翻。** 具名綁定與 lambda **行為完全一致**。
+第三次修訂改採具名綁定的理由是「lambda 隱式捕獲 `self` 時 `is_valid()` 的行為未查證」——
+現在查證了,兩者相同。**該改動仍可辯護(語意較明確),但不是必要的**,
+ADR 不應宣稱它修掉了一個實際存在的缺陷。
+
+> **一項必須留下的自我更正**:本 spike 在第三次執行後的交付訊息裡寫過「證明改採具名綁定
+> 是必要而非只是比較明確」——**那句話錯了**,是在資料還沒進來之前先寫了結論。以本節實測為準。
+
+**判定三(未預期,但重要)**:RISKY 1 的橫幅印出來了,`named.call()` / `lambda.call()`
+**兩行都沒印**,而執行卻繼續到了 RISKY 2。代表**對已釋放物件呼叫 `call()` 會讓所在函式
+整段中止**,呼叫方拿不到回傳值、也接不到任何可處理的錯誤。
+
+**這把 S-1 的 `is_valid()` 守衛從「防禦性冗餘」升格為「必需」** ——
+不檢查就直接呼叫會把外層函式攔腰砍斷,而 `_safe_mouse_position()` 的呼叫點在
+`evaluate()`/`reset()` 路徑上,那正是不能被砍斷的地方。
+
+> 探針已修:兩個呼叫拆成獨立函式、呼叫前先印一行,下一次執行可確認「是哪一個中止」
+> 以及「中止是否真的發生」。
+
+---
+
+#### F-11 · 漏實作抽象方法是**編譯期**錯誤 · **已關閉** · ADR-0004 VR #6a
+
+**實測輸出原文**:
+
+```
+ERROR: res://scripts/c1_subclass_incomplete.gd:8 - Parse Error: Class
+"c1_subclass_incomplete.gd" must implement "SpikeBareWithSignal.diagnostic_seed_position()"
+and other inherited abstract methods or be marked as "@abstract".
+ERROR: Failed to load script "res://scripts/c1_subclass_incomplete.gd" with error "Parse error".
+```
+
+**判定**:編譯期錯誤,訊息明確指名缺哪一個方法。**`@abstract` 的「保證子類別必須實作」
+是結構保證,不是「呼叫到才會爆」。** ADR-0004/0005 的相關宣稱成立。
+
+**本項不受 F-8 影響** —— 判定依據是引擎訊息本身,不是 spike 的 `[COMPILED OK]` 標籤
+(那個標籤在本項是誤報)。
+
 ### Phase 1
 
 | 檢查 | 實測輸出 | 判定 | 回寫目標 |
 |---|---|---|---|
-| A1 型別化容器宣告形式 | 見 **F-6** | **BLOCKING —— 原宣告無法編譯**;替代方案待第四次執行 | ADR-0002 VR #1、機制四 |
+| A1 型別化容器宣告形式 | 見 **F-6** + **F-9** | **BLOCKING**(原宣告無法編譯);**替代方案 (d) 已確認可用** | ADR-0002 VR #1、機制四 |
 | A2 `enum` 當鍵的雜湊/相等語意 | 見 **F-3** | **已關閉(中高發現)** | ADR-0002 VR #2 |
 | A3 `pow(0.0, 0.0)` | 見 **F-2** | **已關閉** | ADR-0002 VR #3 |
 | C1 `@abstract` 四種回傳型別 | _(待填)_ | _(待填)_ | ADR-0005 VR #1、ADR-0004 同項 |
-| C2 `Callable.is_valid()` 具名 vs lambda | _(待填)_ | _(待填)_ | ADR-0005 VR #15、VC #18 |
+| C2 `Callable.is_valid()` 具名 vs lambda | 見 **F-10** | **已關閉** —— 兩形式行為相同,發現 G 前提被推翻 | ADR-0005 VR #15、VC #18 |
 | C3 Agile Event Flushing 鍵真名 | 見 **F-4** | **已關閉** | ADR-0005 VR #3 |
 
 ### Phase 2

@@ -186,9 +186,30 @@ func _section_c1_abstract() -> void:
 
 
 func _load_report(label: String, filename: String) -> void:
-	var res = load(SCRIPTS + filename)
-	var verdict := "COMPILED OK       " if res != null else "FAILED TO COMPILE "
-	print("    [%s]  %s" % [verdict, label])
+	print("    [%s]  %s" % [_compile_check(filename), label])
+
+
+# ⚠️ 2026-08-20 第四次執行後重寫(F-8)——上一版用 `load(path) != null` 判定編譯成功,
+# **那是錯的**:load() 對編譯失敗的腳本不回傳 null,而是回傳一個無效的 resource 物件。
+# 結果 RISKY 0 的四項全部誤報 COMPILED OK,其中兩項引擎明明印了 Parse Error。
+#
+# 本版改為三道獨立檢查,任何一道不過就是 FAILED,並回報**是哪一道**不過 ——
+# 「怎麼失敗的」比「有沒有失敗」更能指出根因。
+#   1. CACHE_MODE_IGNORE 強制重新載入,繞過資源快取(快取會讓先前已解析失敗的
+#      腳本直接回傳舊物件,連錯誤訊息都不再印一次)。
+#   2. 型別必須真的是 GDScript。
+#   3. reload() 回傳 Error —— 這是唯一直接反映「這份原始碼能不能編譯」的 API。
+func _compile_check(filename: String) -> String:
+	var path := SCRIPTS + filename
+	var res = ResourceLoader.load(path, "Script", ResourceLoader.CACHE_MODE_IGNORE)
+	if res == null:
+		return "FAILED  (load→null)   "
+	if not (res is GDScript):
+		return "FAILED  (not GDScript)"
+	var err: int = res.reload()
+	if err != OK:
+		return "FAILED  (reload=%s)" % error_string(err)
+	return "COMPILED OK           "
 
 
 # ─── A1(安全部分)─────────────────────────────────────────────────────────
@@ -232,10 +253,13 @@ func _section_a1_typed_dict_safe() -> void:
 
 
 func _build_report(filename: String) -> void:
-	var s = load(SCRIPTS + filename)
-	if s == null:
-		print("      [FAILED TO COMPILE]  見上方引擎錯誤")
+	# 先用 _compile_check 確認真的編譯得過(F-8:load() != null 不是有效判定),
+	# 否則對無效腳本呼叫 build() 會讓整個函式中止,連後面的候選方案都測不到。
+	var verdict := _compile_check(filename)
+	if not verdict.begins_with("COMPILED OK"):
+		print("      [%s]  見上方引擎錯誤" % verdict.strip_edges())
 		return
+	var s = load(SCRIPTS + filename)
 	var v = s.build()
 	var extra := ""
 	if v is Dictionary:
@@ -334,11 +358,11 @@ func _risky_0_known_failing_compiles() -> void:
 
 	print("")
 	print("  (iii) A1(b):靜態可見的錯誤**鍵**型別(字面量 String 當鍵)")
-	_load_report("d[\"this_is_not_an_enum\"] = []", "a1_typed_dict_bad_key_static.gd")
+	_load_report("Dictionary[Pair, int] 內寫 d["this_is_not_an_enum"] = 1", "a1_typed_dict_bad_key_static.gd")
 
 	print("")
 	print("  (iv) A1(c):靜態可見的錯誤**值**型別(int 當值)")
-	_load_report("d[Pair.C1_C2] = 12345", "a1_typed_dict_bad_value_static.gd")
+	_load_report("Dictionary[Pair, int] 內寫 d[Pair.C1_C2] = "not_an_int"", "a1_typed_dict_bad_value_static.gd")
 	print("")
 	print("      A1 判讀:(iii)(iv) FAILED → 編譯期擋得住錯誤字面量;")
 	print("               COMPILED OK → 連靜態可見的錯誤都不擋,配合 A2 已測出的")
@@ -352,10 +376,26 @@ func _risky_1_callable_call_after_free() -> void:
 	print("若報告在這一行之後就斷掉,答案就是:call() 造成硬中止(而非乾淨地失敗)。")
 	print("那本身就是 VR #15 要的結論之一,不算 spike 失敗 —— 照樣把輸出貼回來。")
 	_hr("!")
-	print("  named.call()  → %s" % str(_named_after_free.call()))
-	print("  lambda.call() → %s" % str(_lambda_after_free.call()))
-	print("  (兩行都印出來 = 沒有硬中止;回傳值本身也是證據)")
+	# ⚠️ 2026-08-20 第四次執行後重寫。上一版把 .call() 寫在 print() 的引數裡,
+	# 結果第四次執行時**兩行都沒印出來**,但執行卻繼續到 RISKY 2 ——
+	# 代表 .call() 讓所在函式整段中止,而中止發生在 print() 求值完成之前,
+	# 於是「哪一個呼叫中止了」這個資訊一併消失。
+	#
+	# 本版:(1) 呼叫前先印一行,中止時仍能從最後一行判斷是哪一個;
+	#       (2) 兩個呼叫各自拆成獨立函式,前者中止不影響後者執行。
+	_try_call("named  (具名綁定)", _named_after_free)
+	_try_call("lambda (隱式捕獲 self)", _lambda_after_free)
 	print("")
+	print("  判讀:若某一列只印出『呼叫中…』而沒有『回傳』那一行,代表該次 call()")
+	print("        讓函式整段中止 —— 呼叫方拿不到回傳值、也接不到任何可處理的錯誤。")
+	print("        那會讓 S-1 的 is_valid() 守衛從『防禦性冗餘』升格為**必需**。")
+	print("")
+
+
+func _try_call(label: String, c: Callable) -> void:
+	print("  %s — is_valid=%s,呼叫中…" % [label, str(c.is_valid())])
+	var r = c.call()
+	print("  %s — 回傳 %s(未中止)" % [label, str(r)])
 
 
 func _risky_2_typed_dict_dynamic() -> void:
@@ -369,12 +409,17 @@ func _risky_2_typed_dict_dynamic() -> void:
 		print("  探針編譯失敗(不預期)—— 見上方錯誤")
 		print("")
 		return
-	print("  嘗試寫入錯誤**鍵**...")
-	s.run_bad_key()
-	print("    → 沒有硬中止(引擎錯誤訊息若有,見上方)")
-	print("  嘗試寫入錯誤**值**...")
-	s.run_bad_value()
-	print("    → 沒有硬中止(引擎錯誤訊息若有,見上方)")
+	print("  嘗試寫入錯誤**鍵**(String 塞進 Dictionary[Pair, int])...")
+	_print_dict(s.run_bad_key(), "      ")
+	print("")
+	print("  嘗試寫入錯誤**值**(String 塞進值型別為 int 的槽)...")
+	_print_dict(s.run_bad_value(), "      ")
+	print("")
+	print("  判讀 —— 看 write_took_effect:")
+	print("    · true  → 執行期**不擋**,型別化 Dictionary 連動態錯誤型別都放行。")
+	print("              配合 A2/F-3(enum 執行期就是 int),機制四的鍵值型別保證等於零。")
+	print("    · false → 執行期擋下了(寫入被丟棄),型別標註至少有執行期效力。")
+	print("  (上一版只印『沒有硬中止』,沒斷言寫入結果 —— 那等於沒回答問題,已修正。)")
 	print("")
 
 
