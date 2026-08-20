@@ -147,28 +147,49 @@ func _dump_settings_matching(pattern: String, is_prefix: bool) -> void:
 
 # ─── C1 ──────────────────────────────────────────────────────────────────────
 func _section_c1_abstract() -> void:
-	_section("C1", "@abstract func 的各種回傳型別是否各自合法", "ADR-0005 VR #1 / R4-2")
-	print("  第五輪明文要求:各種回傳型別**須各建一檔分別編譯**,不可只測一種外推。")
+	_section("C1", "@abstract 的正確語法與各回傳型別", "ADR-0005 VR #1 / R4-2、ADR-0004 VR #6 / #6a")
+	print("  2026-08-20 第一次執行已確定:參考庫 current-best-practices.md 第 41-49 行的")
+	print("  「冒號 + pass 主體」形式在 4.7.1 是 parser error。本輪改測裸簽章形式,")
+	print("  並保留一檔錯誤寫法作為永久證據。")
 	print("")
+
+	print("  ── (0) 已知錯誤形式(保留為證據,預期 FAILED)──")
+	_load_report("冒號 + pass 主體 —— 參考庫範例的逐字照抄", "c1_pass_body_record.gd")
+
+	print("")
+	print("  ── (1) 裸簽章形式,各回傳型別分別編譯 ──")
+	print("      第五輪明文要求「各建一檔分別編譯,不可只測一種外推」。")
 	var entries := [
-		["Array[T]  ←對照組,參考庫唯一有範例者", "c1_abstract_array_control.gd"],
-		["bool", "c1_abstract_bool.gd"],
-		["float", "c1_abstract_float.gd"],
-		["void", "c1_abstract_void.gd"],
-		["Vector2   ←R4-2 BLOCKING 修法所依賴者", "c1_abstract_vector2.gd"],
-		["@abstract 類別內同時宣告 signal + 兩個 @abstract func", "c1_abstract_with_signal.gd"],
+		["Array[T]   ←對照組", "c1_bare_array_control.gd"],
+		["bool", "c1_bare_bool.gd"],
+		["float", "c1_bare_float.gd"],
+		["void", "c1_bare_void.gd"],
+		["Vector2    ←R4-2 BLOCKING 修法所依賴者", "c1_bare_vector2.gd"],
+		["類別內同時有 signal + 兩個 @abstract func(MouseReclaimPolicy 的實際形狀)", "c1_bare_with_signal.gd"],
 	]
 	for entry in entries:
-		var label: String = entry[0]
-		var res = load(SCRIPTS + entry[1])
-		var verdict := "COMPILED OK       " if res != null else "FAILED TO COMPILE "
-		print("    [%s]  %s" % [verdict, label])
+		_load_report(str(entry[0]), str(entry[1]))
+
 	print("")
-	print("  判讀:任何一列 FAILED,上方引擎錯誤會指出確切原因。")
-	print("        · 只有對照組成功 → @abstract 對回傳型別有限制,R4-2 的修法需重做。")
-	print("        · 全部成功 → ADR-0005 VR #1 可由『印象-中』升為『已查證』,")
-	print("          ADR-0004 共用的同一項風險也一併解除。")
+	print("  ── (2) 語法變體:@abstract 與 func 同一行 ──")
+	_load_report("@abstract func inline_declared() -> bool", "c1_syntax_inline.gd")
+	print("      若兩種都可以,ADR 有選擇自由;若只有一種可以,那一種必須寫進 ADR,")
+	print("      不能留給實作者猜。")
+
 	print("")
+	print("  ── (3) ADR-0004 VR #6a:子類別漏實作抽象方法,是編譯期還是執行期錯誤 ──")
+	_load_report("完整實作全部抽象方法(對照組)", "c1_subclass_complete.gd")
+	_load_report("**故意漏實作** diagnostic_seed_position()", "c1_subclass_incomplete.gd")
+	print("      判讀:漏實作那一檔若 FAILED → 編譯期錯誤,@abstract 的「保證子類別必須")
+	print("            實作」是**結構保證**。若 COMPILED OK → 只在該方法被呼叫時才於執行期")
+	print("            顯現,那個保證就只是「呼叫到才會爆」,ADR-0004/0005 的相關宣稱要改寫。")
+	print("")
+
+
+func _load_report(label: String, filename: String) -> void:
+	var res = load(SCRIPTS + filename)
+	var verdict := "COMPILED OK       " if res != null else "FAILED TO COMPILE "
+	print("    [%s]  %s" % [verdict, label])
 
 
 # ─── A1(安全部分)─────────────────────────────────────────────────────────

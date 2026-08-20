@@ -67,6 +67,12 @@ Godot 4.7 專案,含 shader cache 與 editor layout —— 它真的被開起來
 <Godot 執行檔路徑> --headless --path prototypes/engine-verification-spike-2026-08-20
 ```
 
+### 如果 Debugger 分頁自己跳出來
+
+**那是預期行為,不是壞掉。** 有幾個檔案是刻意寫成編譯失敗的,Godot 的偵錯器會攔截 parser error
+並切到 Debugger 分頁。處理方式:**直接切回 Output 分頁**,報告在那裡。若程式停住,按繼續(F7)或
+停止(F8)都可以 —— 已經印出來的部分就是資料。
+
 ### ⚠️ 貼回來時最重要的一件事
 
 **引擎的紅色錯誤訊息是這份 spike 的主要產出,不是雜訊。**
@@ -163,12 +169,16 @@ scripts/
   a1_introspect.gd              # A1:容器內省,隔離成一檔以免拖垮 runner
   a2_enum_key_probe.gd          # A2
   a3_pow_zero_probe.gd          # A3
-  c1_abstract_array_control.gd  # C1 對照組(參考庫唯一有範例的形式)
-  c1_abstract_bool.gd
-  c1_abstract_float.gd
-  c1_abstract_void.gd
-  c1_abstract_vector2.gd        # C1:R4-2 BLOCKING 修法所依賴者
-  c1_abstract_with_signal.gd    # C1:@abstract 類別內同時宣告 signal
+  c1_pass_body_record.gd        # C1:**故意保留的錯誤寫法**,參考庫範例的逐字照抄(永久證據)
+  c1_bare_array_control.gd      # C1 對照組:裸簽章形式
+  c1_bare_bool.gd
+  c1_bare_float.gd
+  c1_bare_void.gd
+  c1_bare_vector2.gd            # C1:R4-2 BLOCKING 修法所依賴者
+  c1_bare_with_signal.gd        # C1:MouseReclaimPolicy 的實際形狀(signal + 多個抽象方法)
+  c1_syntax_inline.gd           # C1:@abstract 與 func 同一行的變體
+  c1_subclass_complete.gd       # C1:ADR-0004 VR #6a 對照組
+  c1_subclass_incomplete.gd     # C1:ADR-0004 VR #6a,故意漏實作
   c2_callable_probe.gd          # C2 探針節點
   phase2_gdunit_probe.gd        # Phase 2 主控
 ```
@@ -211,6 +221,53 @@ scripts/
 > 填寫時每一項請保留三欄:**實測輸出原文** / **判定** / **回寫到哪一份文件的哪一欄**。
 > 原文必須保留,不要只寫結論 —— 六輪審查的經驗是「結論被壓縮後失真」出現過四次
 > (最近一次就是「agent 跑不了 Godot」被壓縮成「本專案跑不了 Godot」,寫進了三份 ADR)。
+
+### 已確定的結果(第一次執行,2026-08-20)
+
+#### F-1 · 參考庫的 `@abstract` 範例在 4.7.1 是 parser error · **高**
+
+**實測輸出原文**(Godot 4.7.1.stable,編輯器 F5):
+
+```
+Error at (8, 5): An abstract function cannot have a body.
+Parser Error: An abstract function cannot have a body.
+  res://scripts/c1_abstract_array_control.gd
+```
+
+失敗的那一檔是**逐字照抄** `docs/engine-reference/godot/current-best-practices.md`
+第 41–49 行的範例:
+
+```gdscript
+@abstract
+func get_attack_pattern() -> Array[Attack]:
+    pass  # Subclasses MUST override
+```
+
+**判定**:該範例**錯誤**。`@abstract func` 不得有函式主體,連 `pass` 都不行。
+
+**影響面(實查)**:
+
+| 位置 | 事實 |
+|---|---|
+| `current-best-practices.md` 第 41–49 行 | 錯誤範例本身 |
+| ADR-0004 | 10 處 `@abstract`,其中 5 處帶 `pass` 主體(機制一 `SaveIOBackend`) |
+| ADR-0005 | 29 處 `@abstract`,其中 8 處帶 `pass` 主體(機制八 + Key Interfaces) |
+| ADR-0004 第 44、71 行 | 明文寫「唯一依據是 `current-best-practices.md` 的範例」 |
+| **第三輪 `/architecture-review`** | **把該假設由「印象」升級為「已查證」,依據就是逐字比對這個錯誤範例** |
+
+**兩件事因此成立**:
+
+1. **ADR-0004 的 VR #6 問對了問題。** 它明文寫「機制一採無冒號裸簽章形式,但參考庫範例採
+   冒號 + `pass`,**兩者互斥**,無法在本環境確認何者正確」——現在確認:**裸簽章是對的**。
+2. **第三輪那次「升級為已查證」是無效的。** 它比對的對象本身是錯的。這是六輪來第一次抓到
+   **參考庫本身有錯**,而非 ADR 有錯 —— 先前所有輪次都預設參考庫是可信基準。
+
+**回寫目標**:`current-best-practices.md`(修正範例並註記實測日期)、ADR-0004 VR #6 與機制一、
+ADR-0005 VR #1 與機制八 + Key Interfaces、`docs/architecture/architecture-review-*` 的
+「已查證」宣稱。**以上皆屬決策/參考文件內容,不在本 spike 動。**
+
+> **仍待確認**:裸簽章形式本身是否對全部四種回傳型別都合法。第一次執行時全部六檔都用了
+> 錯誤形式,所以**回傳型別那一問等於還沒被回答**。第二次執行才會有答案。
 
 ### Phase 1
 
