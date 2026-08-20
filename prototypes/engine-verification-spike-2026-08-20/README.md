@@ -162,7 +162,12 @@ scripts/
   verification_runner.gd        # Phase 1 主控;逐項即時列印,風險項排最後
   affinity_types.gd             # 逐字照抄 ADR-0002 機制二
   affinity_record.gd            # 逐字照抄 ADR-0002 機制三
-  a1_typed_dict_ok.gd           # A1 對照組:真實宣告 + 正確插入
+  a1_v_a_simple_dict.gd         # A1(a):Dictionary[enum, int] 非巢狀
+  a1_v_b_typed_array.gd         # A1(b):Array[自訂類別] 單獨使用
+  a1_v_c_untyped_inner.gd       # A1(c):候選替代——內層裸 Array
+  a1_v_d_wrapper_class.gd       # A1(d):候選替代——內層包進 RefCounted(兩層型別都保住)
+  a1_v_e_nested_known_fail.gd   # A1(e):**故意保留的失敗案例**,機制四原宣告(永久證據)
+  affinity_record_list.gd       # (d) 用的包裝類別
   a1_typed_dict_bad_key_static.gd     # A1:靜態可見的錯誤鍵(只 load 不執行)
   a1_typed_dict_bad_value_static.gd   # A1:靜態可見的錯誤值(只 load 不執行)
   a1_typed_dict_bad_dynamic.gd        # A1:經 Variant 藏起來的錯誤(RISKY 2)
@@ -370,11 +375,97 @@ parser error 並暫停執行,後面全部檢查沒跑到。
 **留下這筆記錄的理由**:這與 ADR 系列四輪來反覆出現的模式同型 ——
 **規則寫對了,但套用時漏掉一種情境**。
 
+#### F-6 · ADR-0002 機制四的核心資料結構在 4.7.1 **無法編譯** · **BLOCKING** · ADR-0002 VR #1
+
+**實測輸出原文**(Godot 4.7.1.stable,第三次執行):
+
+```
+ERROR: res://scripts/a1_typed_dict_ok.gd:10 - Parse Error: Nested typed collections are not supported.
+ERROR: modules/gdscript/gdscript_resource_format.cpp:46 - Failed to load script
+       "res://scripts/a1_typed_dict_ok.gd" with error "Parse error".
+```
+
+失敗的宣告是 ADR-0002 機制四的逐字照抄:
+
+```gdscript
+var _records: Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]
+```
+
+**判定**:**4.7.1 不支援巢狀型別容器。** 型別化 `Dictionary` 的值型別不能是型別化 `Array`。
+
+**這是 ADR-0002 的核心儲存結構** —— `TR-affinity-001` 明文要求「須用具型別類別而非
+`Array[Dictionary]`」,而機制四對該要求的答案就是這一行。它寫不出來。
+
+**與本次作業目的的關係(必須誠實記錄)**:這份 spike 的目的是關掉 ADR-0002 最後三項 VR、
+好讓它成為全專案第一份 `Accepted` 的 ADR。結果發現它的核心宣告無法編譯。
+
+**這不是壞消息,這正是「核准前必須實測」的證據。** 若當初照原計畫直接把 ADR-0002 推上
+`Accepted`,再由 `/create-stories` 產出 story、`/dev-story` 開始實作,這一行會在第一天就爆,
+而那時它已經是「已核准的架構決策」,回頭修的成本遠高於現在。
+
+**候選替代方案(第四次執行測)**:
+
+| 選項 | 宣告 | 代價 |
+|---|---|---|
+| (a) | `Dictionary[Character, int]` | 非巢狀,`_death_marks` 本來就是這個形式,應可用 |
+| (b) | `Array[AffinityRecord]` 單獨使用 | 確認型別化陣列本身沒問題 |
+| (c) | `Dictionary[Pair, Array]` | **放棄內層元素型別**,append 任何東西都不被擋 |
+| (d) | `Dictionary[Pair, AffinityRecordList]` | 內層包進 `RefCounted`,值型別是「類別」而非「容器」→ 理論上不觸發巢狀限制,**兩層型別都保住**;代價是多一層 `.items` 與一個額外 `class_name` |
+
+**若 (d) 成立,那就是機制四應改採的形式** —— 它是唯一同時保住外層鍵型別與內層元素型別的選項。
+
+**但無論選哪一個,都不改變 F-3 的結論**:enum 鍵在執行期就是 `int`,外層鍵的型別保證
+本來就只到靜態分析為止。**兩項合起來看,機制四所宣稱的「型別安全」需要整段重寫**,
+而不是換個宣告就好。
+
+**回寫目標**:ADR-0002 機制四(宣告形式 + 型別安全宣稱)、VR #1、`TR-affinity-001` 的
+涵蓋判定;registry 的相關 state ownership 條目。**屬決策內容,不在本 spike 動。**
+
+---
+
+#### F-7 · `@abstract` 裸簽章對全部回傳型別皆合法 · **已關閉** · ADR-0005 VR #1 / R4-2、ADR-0004 VR #6
+
+**實測輸出原文**(第三次執行):
+
+```
+  ── (1) 裸簽章形式,各回傳型別分別編譯 ──
+    [COMPILED OK       ]  Array[T]   ←對照組
+    [COMPILED OK       ]  bool
+    [COMPILED OK       ]  float
+    [COMPILED OK       ]  void
+    [COMPILED OK       ]  Vector2    ←R4-2 BLOCKING 修法所依賴者
+    [COMPILED OK       ]  類別內同時有 signal + 兩個 @abstract func(MouseReclaimPolicy 的實際形狀)
+
+  ── (2) 語法變體:@abstract 與 func 同一行 ──
+    [COMPILED OK       ]  @abstract func inline_declared() -> bool
+
+  ── (3) ADR-0004 VR #6a 的對照組 ──
+    [COMPILED OK       ]  完整實作全部抽象方法
+```
+
+**判定**,四項各自成立:
+
+1. **裸簽章形式(無冒號、無主體)對四種回傳型別全部合法** —— 第五輪明文要求的
+   「各建一檔分別編譯,不可只測一種外推」已滿足。
+2. **`Vector2` 合法 → ADR-0005 的 R4-2 修法(BLOCKING)成立。** 該修法把
+   `diagnostic_seed_position()` 改標 `@abstract` 回傳 `Vector2`,語法基礎確認無誤。
+3. **`@abstract` 類別內可同時宣告 `signal` 與多個 `@abstract func`** —— 這是
+   `MouseReclaimPolicy` 的實際形狀,第五輪標為「印象-中、組合未查證」,現已查證。
+4. **`@abstract` 與 `func` 同一行也合法** —— 兩種寫法皆可,ADR 有選擇自由。
+   建議仍明文指定一種,理由是一致性而非合法性。
+
+**回寫目標**:ADR-0005 VR #1 標為已查證(並註明第三輪那次「已查證」是基於錯誤範例,
+本次才是真的);ADR-0004 VR #6 標為已查證,機制一的 `SaveIOBackend` 五處 `pass` 主體須刪除;
+`current-best-practices.md` 修正範例。
+
+> **VR #6a 仍未答**(漏實作抽象方法是編譯期還是執行期錯誤)—— 對照組通過,
+> 但故意漏實作的那一檔在 RISKY 區,第三次執行未跑到。
+
 ### Phase 1
 
 | 檢查 | 實測輸出 | 判定 | 回寫目標 |
 |---|---|---|---|
-| A1 型別化 `Dictionary` 鍵值檢查層級 | 靜態層待第三次執行;**執行期已由 F-3 證明為零** | 部分 | ADR-0002 VR #1 |
+| A1 型別化容器宣告形式 | 見 **F-6** | **BLOCKING —— 原宣告無法編譯**;替代方案待第四次執行 | ADR-0002 VR #1、機制四 |
 | A2 `enum` 當鍵的雜湊/相等語意 | 見 **F-3** | **已關閉(中高發現)** | ADR-0002 VR #2 |
 | A3 `pow(0.0, 0.0)` | 見 **F-2** | **已關閉** | ADR-0002 VR #3 |
 | C1 `@abstract` 四種回傳型別 | _(待填)_ | _(待填)_ | ADR-0005 VR #1、ADR-0004 同項 |

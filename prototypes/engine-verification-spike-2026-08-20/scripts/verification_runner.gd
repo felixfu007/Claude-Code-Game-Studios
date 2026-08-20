@@ -193,23 +193,71 @@ func _load_report(label: String, filename: String) -> void:
 
 # ─── A1(安全部分)─────────────────────────────────────────────────────────
 func _section_a1_typed_dict_safe() -> void:
-	_section("A1", "型別化 Dictionary[K,V] 的鍵值型別檢查在哪一層生效", "ADR-0002 VR #1")
+	_section("A1", "型別化容器:哪些宣告形式在 4.7.1 真的可用", "ADR-0002 VR #1")
+	print("  2026-08-20 第三次執行已確定:ADR-0002 機制四的原始宣告")
+	print("  `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` **無法編譯** ——")
+	print("  Parse Error: Nested typed collections are not supported.")
+	print("  該宣告已移到 RISKY 區保留為證據。本節改測可用的替代形式。")
+	print("")
 
-	print("  (a) 正確用法 —— ADR-0002 機制四的真實宣告")
-	print("      Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]")
-	var ok_script = load(SCRIPTS + "a1_typed_dict_ok.gd")
-	if ok_script == null:
-		print("      !! FAILED TO COMPILE —— 這是 BLOCKING:")
-		print("         ADR-0002 的核心資料結構在 4.7.1 寫不出來。見上方引擎錯誤。")
-	else:
-		var d: Dictionary = ok_script.build()
-		print("      [COMPILED OK] size = %d" % d.size())
-		print("      巢狀型別(enum 當鍵、Array[Class] 當值)可宣告且可插入。")
-		_introspect_dictionary(d)
+	print("  ── (a) 非巢狀型別化字典(ADR-0002 的 _death_marks 形式)──")
+	print("      Dictionary[AffinityTypes.Character, int]")
+	_build_report("a1_v_a_simple_dict.gd")
 
 	print("")
-	print("  (b)(c) 靜態可見的錯誤鍵/值型別 —— 已移到 RISKY 區(可能觸發 parser error)")
+	print("  ── (b) 單獨的 Array[自訂類別] ──")
+	print("      Array[AffinityRecord]  (確認型別化陣列本身可用)")
+	_build_report("a1_v_b_typed_array.gd")
+
 	print("")
+	print("  ── (c) 候選替代 C:外層型別化、內層裸 Array ──")
+	print("      Dictionary[AffinityTypes.Pair, Array]")
+	print("      代價:內層元素型別完全放棄,append 任何東西都不會被擋。")
+	_build_report("a1_v_c_untyped_inner.gd")
+
+	print("")
+	print("  ── (d) 候選替代 D:內層包進 RefCounted 包裝類別 ──")
+	print("      Dictionary[AffinityTypes.Pair, AffinityRecordList]")
+	print("      值型別是「類別」而非「容器」,理論上不觸發巢狀限制,兩層型別都保住。")
+	print("      代價:多一層 .items 存取 + 一個額外 class_name。")
+	_build_report("a1_v_d_wrapper_class.gd")
+
+	print("")
+	print("  判讀:(d) 若成立,那就是 ADR-0002 機制四應改採的形式 —— 它是唯一同時保住")
+	print("        外層鍵型別與內層元素型別的選項。(c) 成立但要明文承認放棄內層型別。")
+	print("        (a)(b) 皆失敗才代表問題比巢狀限制更大。")
+	print("  ⚠️ 但**任何**選項都不改變 A2/F-3 的結論:enum 鍵在執行期就是 int,")
+	print("     外層鍵的型別保證本來就只到靜態分析為止。")
+	print("")
+
+
+func _build_report(filename: String) -> void:
+	var s = load(SCRIPTS + filename)
+	if s == null:
+		print("      [FAILED TO COMPILE]  見上方引擎錯誤")
+		return
+	var v = s.build()
+	var extra := ""
+	if v is Dictionary:
+		var d: Dictionary = v
+		extra = "size = %d" % d.size()
+		var keys := d.keys()
+		if keys.size() > 0:
+			extra += "  |  值型別 = %s" % _describe(d[keys[0]])
+	elif v is Array:
+		var a: Array = v
+		extra = "size = %d  |  is_typed = %s" % [a.size(), str(a.is_typed())]
+	print("      [COMPILED OK]  %s" % extra)
+
+
+func _describe(v: Variant) -> String:
+	if v is Array:
+		var a: Array = v
+		return "Array(is_typed=%s, size=%d)" % [str(a.is_typed()), a.size()]
+	if v is Object:
+		var o: Object = v
+		return "Object(%s)" % o.get_class()
+	return type_string(typeof(v))
 
 
 func _introspect_dictionary(d: Dictionary) -> void:
@@ -264,12 +312,17 @@ func _section_c2_callable_validity() -> void:
 # ─── 有中止風險的兩項 ────────────────────────────────────────────────────────
 func _risky_0_known_failing_compiles() -> void:
 	_hr("!")
-	print("RISKY 0/2 —— 四個**預期會編譯失敗**的檔案")
+	print("RISKY 0/2 —— 五個**預期會編譯失敗**的檔案")
 	print("每一個都會讓 debugger 暫停一次。按繼續(F7),它會接著跑下一個。")
 	_hr("!")
 
 	print("  (i) 參考庫範例的逐字照抄(冒號 + pass 主體)—— 2026-08-20 已知為 parser error")
 	_load_report("current-best-practices.md 第 41-49 行的形式", "c1_pass_body_record.gd")
+
+	print("")
+	print("  (i-b) ADR-0002 機制四的原始宣告 —— 2026-08-20 已知為 parser error")
+	print("        Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]")
+	_load_report("巢狀型別容器(Nested typed collections are not supported)", "a1_v_e_nested_known_fail.gd")
 
 	print("")
 	print("  (ii) ADR-0004 VR #6a:子類別**故意漏實作** diagnostic_seed_position()")
