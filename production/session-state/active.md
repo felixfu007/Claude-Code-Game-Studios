@@ -3,7 +3,7 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。下一步:`/architecture-decision` 修訂 ADR-0002(修訂前先補測兩項探針殘留)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併)
+Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。下一步:`/architecture-decision` 修訂 ADR-0002(修訂前先補測兩項探針殘留)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併) ⏸️ **中斷點(2026-08-20)**:補測探針殘留 #1/#2 的探針 D 已寫好 4 個 .gd 檔但未執行(缺 D.tscn、未跑、未 commit),詳見檔末「中斷檢查點」節。
 <!-- /STATUS -->
 
 **最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
@@ -931,3 +931,37 @@ Godot `4.7.1.stable.official.a13da4feb` headless,三支皆 exit code 0,log 未�
 6. 戰棋盤面演算法層 ADR(一次移動 25 項 ❌ 中的大部分)、回合結構擁有權 + AI/遭遇系統 ADR
 7. `/ux-review design/ux/interaction-patterns.md`(與架構軌零依賴)
 8. **兩個 spike 目錄的 N-1~N-6 + Phase 2 三項必修**,待 ADR 全數定案後一併處理
+
+---
+
+## ⏸️ 中斷檢查點 — 2026-08-20 探針 D(**已寫好、未執行**)
+
+**中斷情境**:系統中斷發生在「補測第七輪探針殘留未查證項 #1/#2」這件工作的**中途**。工作是上方第七輪「下一步」第 1 項的前置條件 —— `/architecture-decision` 修訂 ADR-0002 之前必須先關掉這兩項,因為 **R7-P1 與 R7-P3 的建議修法直接押在它們的實測結果上**。
+
+### 已完成(4 個檔案已寫入磁碟,**全部 untracked,尚未 commit**)
+
+| 檔案 | 內容 | 對應殘留項 |
+|---|---|---|
+| `prototypes/xcheck-round7-2026-08-20/scripts/d1_pair_ops_safe.gd` | `Pair.values().has(-1)`、`.has(999)`(越界但合法 int)、`Pair.keys().has("C1_C2")`(合法名字面量)—— 預期會過的安全子集 | #1 + #2 的一半 |
+| `.../scripts/d2_keys_has_invalid_literal.gd` | `Pair.keys().has("NO_SUCH_PAIR")` —— **靜態字面量**非法名 | #2 |
+| `.../scripts/d3_keys_has_invalid_dynamic.gd` | 同一非法名但**執行期 `"".join()` 組出**、不可常數摺疊 —— 這才是 `from_dict()` 讀存檔的真實形狀 | #2(關鍵形) |
+| `.../scripts/runner_d.gd` | D0 先以 `ResourceLoader.load(..., CACHE_MODE_IGNORE)` + `reload()` 的 `Error` **逐檔編譯檢查三個檔案**,再決定呼叫哪些;`_run_str()` 以「回傳空字串 = 函式被中止」判讀 | — |
+
+**設計已內建探針 C 第一版的教訓**:一判定一檔案、絕不裸 `load()` 已知有風險的檔案、預期會過與預期會失敗的測試分家。d2/d3 分家的理由寫在檔頭註解:`.has(字串)` 是普通 Array 方法呼叫(不是造成 c2 Parse Error 的 enum-as-Dictionary 字面量 subscript),**但在量到之前不假設這個差別是安全的**。
+
+### 未完成(下一次從這裡接)
+
+1. **建立 `scenes/D.tscn`** —— `scenes/` 目前只有 `A.tscn`/`B.tscn`/`C.tscn`,D 沒有場景就跑不起來;照 `C.tscn` 複製一份、根節點腳本改指 `runner_d.gd` 即可(每份都是 6 行)
+2. **`project.godot` 的 `run/main_scene` 指向 `scenes/D.tscn`**(前三支的跑法是換 main_scene,不是傳參數)
+3. **執行**:先 `--headless --path . --editor --quit` 建 class cache,再 `--headless --path .`,指令與兩個判讀陷阱見 `prototypes/xcheck-round7-2026-08-20/README.md` 的「如何重跑」節
+4. **log 存成 `logs/probeD-unfiltered.txt`**,未過濾、檔頭自帶指令與 exit code
+5. **更新該 README**:「log 歸檔」表加一列、「結果」節加探針 D 一段、**「殘留未查證項」表把 #1/#2 劃掉並改寫**(#3/#4 仍開)
+6. **回填 `docs/architecture/architecture-review-2026-08-20-round7.md`** 第四之二節,並依實測結果確認或修正 R7-P1 / R7-P3 的建議修法
+7. 之後才進 `/architecture-decision` 修訂 ADR-0002(17 項)
+
+**證據確認 D 確實沒跑過**(不是靠推論):`scenes/` 無 `D.tscn`;`logs/` 無 `probeD-*`;d1/d2/d3/runner_d 四檔**皆無 `.uid` 旁檔**(同目錄 a/b/c 系列除 c2/c3 外皆有),表示 Godot 編輯器從未匯入過它們。
+
+### 兩項紀律提醒
+
+- **`.gd` 檔的撰寫與修改歸 `godot-gdscript-specialist`**(`technical-preferences.md` File Extension Routing 表);協調者只做編排、判讀、寫 README/報告。這 4 個檔案是該 specialist 在中斷前的交付
+- **這 4 個檔案未 commit** —— 若下一個 session 以 `/clear` 開始,先確認它們還在(untracked 檔案不會被 git 清掉,但也沒有任何保護)。建議接續時先把它們與 `D.tscn` + log 一起 commit 成一個 `test(spike):` 提交
