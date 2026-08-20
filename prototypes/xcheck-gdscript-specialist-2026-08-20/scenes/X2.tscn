@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bxcheck2"]
+
+[ext_resource type="Script" path="res://scripts/xrunner2.gd" id="1"]
+
+[node name="X2" type="Node"]
+script = ExtResource("1")
