@@ -1,0 +1,123 @@
+# =============================================================================
+# XCHECK-2 —— ADR-0002 第 114 行的精確宣告形狀(巢狀型別容器)
+# =============================================================================
+#   指令:
+#     Godot..._console.exe --headless --path <proj> res://scenes/X2.tscn --quit-after 300
+#   exit code: 0
+#   輸出行數: 56
+#   **單一連續 process,未經 tail/head 裁切。**
+#
+#   godot-gdscript-specialist,2026-08-20。這是**未過濾**的原始 stdout+stderr。
+#   引擎版本:4.7.1.stable.official.a13da4feb
+#   執行檔:C:\Users\felixfu007\Downloads\Godot_v4.7.1-stable_win64.exe\
+#           Godot_v4.7.1-stable_win64_console.exe
+#   專案:prototypes/xcheck-gdscript-specialist-2026-08-20(非 engine-verification-spike,
+#         這是獨立重建的第二來源:不同 project.godot、不同 .godot 快取、
+#         無 spike 任何檔案 —— 目的是排除「spike 專案環境污染」這個變因)
+#
+#   前置(每份 log 皆已執行):
+#     Godot..._console.exe --headless --path <proj> --editor --quit
+#     ^ 建 .godot/global_script_class_cache.cfg。**沒有它,所有 class_name 都會
+#       解析失敗**(見 logs/xrun1-no-class-cache-FAILED-unfiltered.txt 的下場)。
+#       乾淨 checkout 的 CI 會踩到同一件事。
+#
+# ── 判讀陷阱(先讀這一段,否則會誤讀輸出)────────────────────────────────
+#
+#   [陷阱 1] `_try()` 無條件印 `(NOT aborted)`,那個字樣**不可信**。
+#     判準是 `<<` 那行 `returned` **後面有沒有內容**:
+#       有內容 → callee 真的跑完並回傳。
+#       空的   → callee **中止了**,`_try()` 拿到的是依宣告回傳型別零初始化的值。
+#     具體:XCHECK-1 的 X3r outer(`d[Pair.C1_C2] = XOtherClass.new()`)印
+#           `returned  (NOT aborted)` —— 它**其實中止了**,`-> String` 零初始化成空字串。
+#           而 X3r inner(`list.items.append(...)`)印 `returned NOT ABORTED items.size=0`
+#           —— 那才是**真的沒中止**,`items.size=0` 是實際讀值,是「寫入被丟棄」的直接證據。
+#     這個缺陷與我在 spike 抓到的 N-3 同型,我自己也犯了。
+#
+#   [陷阱 2] XCHECK-1 的 X8 會在執行期用 FileAccess **覆寫 scripts/x8_mutable.gd**
+#     為語法錯誤版本(`func broken( -> void:`)。那是刻意的,是 F-13 的證明手段。
+#     跑完後該檔留在壞狀態,要重跑必須先還原成:
+#         class_name XMutableProbe extends RefCounted
+#         func fine() -> int:
+#         <TAB>return 1
+#     本輪三份 log 產出後我已還原。
+#
+#   [陷阱 3] 本輪**全部在 headless + editor(debug)建置**下執行。
+#     export release 建置是否有相同的執行期容器檢查 **未查證**
+#     (本機 %APPDATA%\Godot\export_templates\ 為空,無 release template 可測)。
+#     `ERROR: Condition "..." is true. Returning: false` 這類訊息的形狀屬
+#     ERR_FAIL_COND_V 巨集家族。**引用「執行期會擋」時必須帶上這個限定。**
+#
+#   [陷阱 4] `Dictionary`/`Array` 的內省數字對照:
+#     TYPE_INT = 2、TYPE_OBJECT = 24、TYPE_DICTIONARY = 27。
+#
+# ── 探針原始碼在同專案 scripts/ 下,25 支全在 repo 內,可逐一對讀 ──────────
+#
+# ── 本輪要拿去改 ADR-0002 的段落索引 ────────────────────────────────────
+#   X9  → ADR-0002 第 114 行**逐字**(class member,無初始化):
+#         `var _records: Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]`
+#         → Parse Error: Nested typed collections are not supported.
+#   X9b → 同一型別當**函式參數** → 同一錯誤
+#   X9c → 同一型別當**回傳型別**  → 同一錯誤
+#         ^ 三者合起來關掉「是不是因為 local var + `= {}` 初始化才爆」這個逃生口。
+#           F-6 的 BLOCKING 判定成立於 ADR 實際會寫的全部三種位置。
+#   X9d → 替代方案 (d) 在同一位置(class member,無初始化)COMPILED OK,
+#         且未初始化的成員仍保有型別標記(is_typed_key=true, typed_value_builtin=24)
+#   X9e → ADR-0002 VR #5 的答案:subscript 賦值**不**推斷內層元素型別(false)
+# =============================================================================
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== XCHECK-2 exact ADR-0002 forms / Godot 4.7.1-stable (official) ===
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9_adr_member_exact.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:11)
+ERROR: Failed to load script "res://scripts/x9_adr_member_exact.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:11)
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9_adr_member_exact.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:7)
+       [1] _ready (res://scripts/xrunner2.gd:11)
+  [FAILED (reload=Parse error)]  X9  class MEMBER, no initializer (ADR-0002 line 114 verbatim)
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9b_adr_param.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:12)
+ERROR: Failed to load script "res://scripts/x9b_adr_param.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:12)
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9b_adr_param.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:7)
+       [1] _ready (res://scripts/xrunner2.gd:12)
+  [FAILED (reload=Parse error)]  X9b same type as a function PARAMETER
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9c_adr_return.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:13)
+ERROR: Failed to load script "res://scripts/x9c_adr_return.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:4)
+       [1] _ready (res://scripts/xrunner2.gd:13)
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9c_adr_return.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _cc (res://scripts/xrunner2.gd:7)
+       [1] _ready (res://scripts/xrunner2.gd:13)
+  [FAILED (reload=Parse error)]  X9c same type as a RETURN type
+  [COMPILED OK]  X9d option (d) as class MEMBER, no initializer
+        uninitialized member typeof=Dictionary size_after_write=1 is_typed_key=true typed_value_builtin=24
+  [COMPILED OK]  X9e ADR-0002 VR#5 subscript-assign inference
+        subscript_assigned_literal_is_typed = false
+=== XCHECK-2 COMPLETE ===

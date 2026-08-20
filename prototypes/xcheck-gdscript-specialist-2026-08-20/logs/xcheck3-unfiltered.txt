@@ -1,0 +1,94 @@
+# =============================================================================
+# XCHECK-3 —— Phase 2(GdUnit4 探針)所依賴的內省 API 假設
+# =============================================================================
+#   指令:
+#     Godot..._console.exe --headless --path <proj> res://scenes/X3.tscn --quit-after 300
+#   exit code: 0
+#   輸出行數: 29
+#
+#   godot-gdscript-specialist,2026-08-20。這是**未過濾**的原始 stdout+stderr。
+#   引擎版本:4.7.1.stable.official.a13da4feb
+#   執行檔:C:\Users\felixfu007\Downloads\Godot_v4.7.1-stable_win64.exe\
+#           Godot_v4.7.1-stable_win64_console.exe
+#   專案:prototypes/xcheck-gdscript-specialist-2026-08-20(非 engine-verification-spike,
+#         這是獨立重建的第二來源:不同 project.godot、不同 .godot 快取、
+#         無 spike 任何檔案 —— 目的是排除「spike 專案環境污染」這個變因)
+#
+#   前置(每份 log 皆已執行):
+#     Godot..._console.exe --headless --path <proj> --editor --quit
+#     ^ 建 .godot/global_script_class_cache.cfg。**沒有它,所有 class_name 都會
+#       解析失敗**(見 logs/xrun1-no-class-cache-FAILED-unfiltered.txt 的下場)。
+#       乾淨 checkout 的 CI 會踩到同一件事。
+#
+# ── 判讀陷阱(先讀這一段,否則會誤讀輸出)────────────────────────────────
+#
+#   [陷阱 1] `_try()` 無條件印 `(NOT aborted)`,那個字樣**不可信**。
+#     判準是 `<<` 那行 `returned` **後面有沒有內容**:
+#       有內容 → callee 真的跑完並回傳。
+#       空的   → callee **中止了**,`_try()` 拿到的是依宣告回傳型別零初始化的值。
+#     具體:XCHECK-1 的 X3r outer(`d[Pair.C1_C2] = XOtherClass.new()`)印
+#           `returned  (NOT aborted)` —— 它**其實中止了**,`-> String` 零初始化成空字串。
+#           而 X3r inner(`list.items.append(...)`)印 `returned NOT ABORTED items.size=0`
+#           —— 那才是**真的沒中止**,`items.size=0` 是實際讀值,是「寫入被丟棄」的直接證據。
+#     這個缺陷與我在 spike 抓到的 N-3 同型,我自己也犯了。
+#
+#   [陷阱 2] XCHECK-1 的 X8 會在執行期用 FileAccess **覆寫 scripts/x8_mutable.gd**
+#     為語法錯誤版本(`func broken( -> void:`)。那是刻意的,是 F-13 的證明手段。
+#     跑完後該檔留在壞狀態,要重跑必須先還原成:
+#         class_name XMutableProbe extends RefCounted
+#         func fine() -> int:
+#         <TAB>return 1
+#     本輪三份 log 產出後我已還原。
+#
+#   [陷阱 3] 本輪**全部在 headless + editor(debug)建置**下執行。
+#     export release 建置是否有相同的執行期容器檢查 **未查證**
+#     (本機 %APPDATA%\Godot\export_templates\ 為空,無 release template 可測)。
+#     `ERROR: Condition "..." is true. Returning: false` 這類訊息的形狀屬
+#     ERR_FAIL_COND_V 巨集家族。**引用「執行期會擋」時必須帶上這個限定。**
+#
+#   [陷阱 4] `Dictionary`/`Array` 的內省數字對照:
+#     TYPE_INT = 2、TYPE_OBJECT = 24、TYPE_DICTIONARY = 27。
+#
+# ── 探針原始碼在同專案 scripts/ 下,25 支全在 repo 內,可逐一對讀 ──────────
+#
+# ── 對 phase2_gdunit_probe.gd 的意義 ────────────────────────────────────
+#   (1) `get_script_method_list()` **包含繼承來的方法** ——
+#       X10Derived 只宣告 only_here,卻列出 only_here/assert_failure/run_tests。
+#       → P2-3 / P2-6 的內省深度是**夠的**。我原先懷疑的假陰性風險不存在,已撤回。
+#   (2) `get_base_script()` 鏈可走,能區分「哪一層宣告的」。
+#   (3) `ProjectSettings.get_global_class_list()` 在 4.7.1 存在,欄位如探針假設。
+#   (4) **但 XBrokenAbstract 出現在清單裡,而它在 XCHECK-1 的 X5 被判
+#       FAILED (reload=Parse error)。** 全域類別登記表**不是可編譯性的證據**
+#       —— P2-5 找到 GdUnitTestSuite 這個名字不代表 P2-6 的 load() 會成功。
+#       這是 P2-c 修法的依據。
+# =============================================================================
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== XCHECK-3 Phase2 API assumptions / 4.7.1-stable (official) ===
+-- get_script_method_list() on the DERIVED script (declares only 'only_here') --
+   only_here
+   assert_failure
+   run_tests
+-- does it include the inherited assert_failure/run_tests? --
+   'assert_failure' present = true
+   'run_tests' present      = true
+-- walking get_base_script() chain --
+   [X10Derived] ["only_here", "assert_failure", "run_tests"]
+   [X10Base] ["assert_failure", "run_tests"]
+-- Object.get_method_list() on an INSTANCE (should include inherited) --
+   'assert_failure' present = true
+   'run_tests' present      = true
+   total methods on instance = 199
+-- ProjectSettings.get_global_class_list() exists? --
+   entries = 9
+   class=AffinityRecord         base=RefCounted     path=res://scripts/affinity_record.gd
+   class=AffinityRecordList     base=RefCounted     path=res://scripts/affinity_record_list.gd
+   class=AffinityTypes          base=RefCounted     path=res://scripts/affinity_types.gd
+   class=X10Base                base=Node           path=res://scripts/x10_base.gd
+   class=X10Derived             base=X10Base        path=res://scripts/x10_derived.gd
+   class=X9DWrapperMember       base=RefCounted     path=res://scripts/x9d_wrapper_member.gd
+   class=XBrokenAbstract        base=RefCounted     path=res://scripts/x5_broken_with_classname.gd
+   class=XMutableProbe          base=RefCounted     path=res://scripts/x8_mutable.gd
+   class=XOtherClass            base=RefCounted     path=res://scripts/other_class.gd
+=== XCHECK-3 COMPLETE ===

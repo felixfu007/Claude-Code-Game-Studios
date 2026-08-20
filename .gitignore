@@ -142,3 +142,11 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 *.lnk
+
+# === Prototype verification evidence (overrides the Unity [Ll]ogs/ rule above) ===
+# Spike / cross-check logs under prototypes/ are cited by ADRs as the authoritative
+# evidence for engine-behaviour claims, so they MUST be in the repository.
+# Added 2026-08-20: commit e5605eb's message said "archive unfiltered cross-check logs"
+# but added zero log files — [Ll]ogs/ above had silently swallowed them all.
+!prototypes/**/logs/
+!prototypes/**/logs/**

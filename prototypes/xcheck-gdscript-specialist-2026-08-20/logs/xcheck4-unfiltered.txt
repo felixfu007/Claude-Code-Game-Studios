@@ -1,0 +1,178 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== XCHECK-4 type-vs-domain ordering / Godot 4.7.1-stable (official) ===
+
+--- X11a  is_finite()/is_nan()/is_inf() given a Variant that is actually a String ---
+    >> is_finite(Variant holding "abc") : calling...
+      >> test_is_finite_abc: entering
+SCRIPT ERROR: Invalid type in utility function "is_finite()". Cannot convert argument 1 from String to float.
+   at: test_is_finite_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] test_is_finite_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:14)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:39)
+    << is_finite(Variant holding "abc") : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> is_finite(Variant holding "1.5") : calling...
+      >> test_is_finite_numeric_string: entering
+SCRIPT ERROR: Invalid type in utility function "is_finite()". Cannot convert argument 1 from String to float.
+   at: test_is_finite_numeric_string (res://scripts/x11a_builtin_fn_wrong_type.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] test_is_finite_numeric_string (res://scripts/x11a_builtin_fn_wrong_type.gd:21)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:40)
+    << is_finite(Variant holding "1.5") : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> is_nan(Variant holding "abc") : calling...
+      >> test_is_nan_abc: entering
+SCRIPT ERROR: Invalid type in utility function "is_nan()". Cannot convert argument 1 from String to float.
+   at: test_is_nan_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:28)
+   GDScript backtrace (most recent call first):
+       [0] test_is_nan_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:28)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:41)
+    << is_nan(Variant holding "abc") : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> is_inf(Variant holding "abc") : calling...
+      >> test_is_inf_abc: entering
+SCRIPT ERROR: Invalid type in utility function "is_inf()". Cannot convert argument 1 from String to float.
+   at: test_is_inf_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:35)
+   GDScript backtrace (most recent call first):
+       [0] test_is_inf_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:35)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:42)
+    << is_inf(Variant holding "abc") : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> is_finite("abc") called via a WRAPPER (propagation check) : calling...
+      >> test_is_finite_abc_wrapped: entering, calling test_is_finite_abc()
+      >> test_is_finite_abc: entering
+SCRIPT ERROR: Invalid type in utility function "is_finite()". Cannot convert argument 1 from String to float.
+   at: test_is_finite_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] test_is_finite_abc (res://scripts/x11a_builtin_fn_wrong_type.gd:14)
+       [1] test_is_finite_abc_wrapped (res://scripts/x11a_builtin_fn_wrong_type.gd:44)
+       [2] _run_str (res://scripts/xrunner4.gd:27)
+       [3] _ready (res://scripts/xrunner4.gd:43)
+      >> test_is_finite_abc_wrapped: inner call returned '', about to return
+    << is_finite("abc") called via a WRAPPER (propagation check) : returned [WRAPPER REACHED END inner=[]]
+
+--- X11b  m == 0.0 / t >= 1 comparison OPERATORS given wrong-typed Variant ---
+    >> (Variant "abc") == 0.0 : calling...
+      >> test_eq_zero_string_abc: entering
+SCRIPT ERROR: Invalid operands 'String' and 'float' in operator '=='.
+   at: test_eq_zero_string_abc (res://scripts/x11b_domain_compare.gd:11)
+   GDScript backtrace (most recent call first):
+       [0] test_eq_zero_string_abc (res://scripts/x11b_domain_compare.gd:11)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:48)
+    << (Variant "abc") == 0.0 : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> (Variant "0.0") == 0.0 : calling...
+      >> test_eq_zero_string_zero: entering
+SCRIPT ERROR: Invalid operands 'String' and 'float' in operator '=='.
+   at: test_eq_zero_string_zero (res://scripts/x11b_domain_compare.gd:18)
+   GDScript backtrace (most recent call first):
+       [0] test_eq_zero_string_zero (res://scripts/x11b_domain_compare.gd:18)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:49)
+    << (Variant "0.0") == 0.0 : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> (Variant 1.5) >= 1 : calling...
+      >> test_ge_one_float: entering
+      >> test_ge_one_float: comparison evaluated, about to return
+    << (Variant 1.5) >= 1 : returned [REACHED END r=true typeof(r)=1]
+    >> (Variant "abc") >= 1 : calling...
+      >> test_ge_one_string_abc: entering
+SCRIPT ERROR: Invalid operands 'String' and 'int' in operator '>='.
+   at: test_ge_one_string_abc (res://scripts/x11b_domain_compare.gd:32)
+   GDScript backtrace (most recent call first):
+       [0] test_ge_one_string_abc (res://scripts/x11b_domain_compare.gd:32)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:51)
+    << (Variant "abc") >= 1 : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> (Variant "5") >= 1 : calling...
+      >> test_ge_one_string_numeric: entering
+SCRIPT ERROR: Invalid operands 'String' and 'int' in operator '>='.
+   at: test_ge_one_string_numeric (res://scripts/x11b_domain_compare.gd:39)
+   GDScript backtrace (most recent call first):
+       [0] test_ge_one_string_numeric (res://scripts/x11b_domain_compare.gd:39)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:52)
+    << (Variant "5") >= 1 : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+--- X11c  typed LOCAL VAR assignment from an untyped Dictionary value (from_dict() shape) ---
+    >> var m: float = {"m":"abc"}["m"] : calling...
+      >> test_assign_float_var_from_dict_string_abc: entering
+SCRIPT ERROR: Trying to assign value of type 'String' to a variable of type 'float'.
+   at: test_assign_float_var_from_dict_string_abc (res://scripts/x11c_typed_boundary_assign.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] test_assign_float_var_from_dict_string_abc (res://scripts/x11c_typed_boundary_assign.gd:21)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:57)
+    << var m: float = {"m":"abc"}["m"] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> var m: float = {"m":"1.5"}["m"] : calling...
+      >> test_assign_float_var_from_dict_string_numeric: entering
+SCRIPT ERROR: Trying to assign value of type 'String' to a variable of type 'float'.
+   at: test_assign_float_var_from_dict_string_numeric (res://scripts/x11c_typed_boundary_assign.gd:28)
+   GDScript backtrace (most recent call first):
+       [0] test_assign_float_var_from_dict_string_numeric (res://scripts/x11c_typed_boundary_assign.gd:28)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:58)
+    << var m: float = {"m":"1.5"}["m"] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> var t: int = {"t":1.5}["t"] : calling...
+      >> test_assign_int_var_from_dict_float: entering
+      >> test_assign_int_var_from_dict_float: assignment done, about to return
+    << var t: int = {"t":1.5}["t"] : returned [REACHED END t=1 typeof(t)=2]
+    >> var t: int = {"t":"abc"}["t"] : calling...
+      >> test_assign_int_var_from_dict_string: entering
+SCRIPT ERROR: Trying to assign value of type 'String' to a variable of type 'int'.
+   at: test_assign_int_var_from_dict_string (res://scripts/x11c_typed_boundary_assign.gd:42)
+   GDScript backtrace (most recent call first):
+       [0] test_assign_int_var_from_dict_string (res://scripts/x11c_typed_boundary_assign.gd:42)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:60)
+    << var t: int = {"t":"abc"}["t"] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+--- X11c  CALLING a typed `m: float` parameter with a Variant smuggled at runtime (append_record() shape) ---
+    >> _append_like(0, Variant("abc"), 0) : calling...
+      >> test_call_typed_param_with_variant_string_abc: entering
+SCRIPT ERROR: Invalid type in function '_append_like' in base 'GDScript'. Cannot convert argument 2 from String to float.
+   at: test_call_typed_param_with_variant_string_abc (res://scripts/x11c_typed_boundary_assign.gd:56)
+   GDScript backtrace (most recent call first):
+       [0] test_call_typed_param_with_variant_string_abc (res://scripts/x11c_typed_boundary_assign.gd:56)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:64)
+    << _append_like(0, Variant("abc"), 0) : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> _append_like(0, Variant("1.5"), 0) : calling...
+      >> test_call_typed_param_with_variant_string_numeric: entering
+SCRIPT ERROR: Invalid type in function '_append_like' in base 'GDScript'. Cannot convert argument 2 from String to float.
+   at: test_call_typed_param_with_variant_string_numeric (res://scripts/x11c_typed_boundary_assign.gd:63)
+   GDScript backtrace (most recent call first):
+       [0] test_call_typed_param_with_variant_string_numeric (res://scripts/x11c_typed_boundary_assign.gd:63)
+       [1] _run_str (res://scripts/xrunner4.gd:27)
+       [2] _ready (res://scripts/xrunner4.gd:65)
+    << _append_like(0, Variant("1.5"), 0) : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+--- X11d  STATICALLY visible wrong-type argument to typed `m: float` param (control, literal not Variant) ---
+SCRIPT ERROR: Parse Error: Cannot pass a value of type "String" as "float".
+   at: GDScript::reload (res://scripts/x11d_static_bad_call.gd:13)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner4.gd:15)
+       [1] _ready (res://scripts/xrunner4.gd:69)
+SCRIPT ERROR: Parse Error: Invalid argument for "_append_like()" function: argument 2 should be "float" but is "String".
+   at: GDScript::reload (res://scripts/x11d_static_bad_call.gd:13)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner4.gd:15)
+       [1] _ready (res://scripts/xrunner4.gd:69)
+ERROR: Failed to load script "res://scripts/x11d_static_bad_call.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner4.gd:15)
+       [1] _ready (res://scripts/xrunner4.gd:69)
+SCRIPT ERROR: Parse Error: Cannot pass a value of type "String" as "float".
+   at: GDScript::reload (res://scripts/x11d_static_bad_call.gd:13)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner4.gd:20)
+       [1] _ready (res://scripts/xrunner4.gd:69)
+SCRIPT ERROR: Parse Error: Invalid argument for "_append_like()" function: argument 2 should be "float" but is "String".
+   at: GDScript::reload (res://scripts/x11d_static_bad_call.gd:13)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner4.gd:20)
+       [1] _ready (res://scripts/xrunner4.gd:69)
+  [FAILED (reload=Parse error)]  X11d _append_like(0, "abc", 0) -- literal String where float expected
+
+=== XCHECK-4 COMPLETE ===

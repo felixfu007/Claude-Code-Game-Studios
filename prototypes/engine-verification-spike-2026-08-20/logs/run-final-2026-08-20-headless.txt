@@ -1,0 +1,430 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+==============================================================================
+ENGINE VERIFICATION SPIKE — 2026-08-20
+Godot version string : 4.7.1-stable (official)
+Version info         : { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+DisplayServer        : headless
+==============================================================================
+把從這一行到結尾的全部輸出貼回對話即可。
+**引擎的紅色錯誤訊息也要一起貼** —— 那些是證據,不是雜訊。
+
+
+------------------------------------------------------------------------------
+[A3] pow(0.0, 0.0) 的實際回傳值
+     來源:ADR-0002 VR #3
+------------------------------------------------------------------------------
+    pow(0.0, 0.0)              = 1.0
+    0.0 ** 0.0                 = 1.0
+    pow(0, 0)                  = 1.0
+    is_equal_approx_to_1       = true
+    pow(0.0, 1.0)              = 0.0
+    pow(1.0, 0.0)              = 1.0
+
+  判讀:GDD Formulas 明文『不可依賴引擎預設行為』。即使這裡回傳 1.0,
+        ADR-0002 公式一/二仍應顯式特判 —— 本項的用途是決定特判的**理由**寫成
+        「引擎行為與 0^0:=1 慣例一致但不保證」還是「引擎行為與慣例相反」。
+
+
+------------------------------------------------------------------------------
+[A2] enum 當 Dictionary 鍵的雜湊/相等語意
+     來源:ADR-0002 VR #2
+------------------------------------------------------------------------------
+    lookup_with_enum           = inserted_with_enum
+    lookup_with_raw_int_0      = inserted_with_enum
+    enum_C1_C2_int_value       = 0
+    typeof_enum_key            = 2
+    typeof_int_literal         = 2
+    hash_enum                  = 720020139
+    hash_int_0                 = 720020139
+    stored_key_typeof          = 2
+    cross_enum_family_size     = 1
+    cross_enum_final_value_at_0 = from_Character
+
+  關鍵判讀 —— 看 lookup_with_raw_int_0 這一列:
+    · 若為 inserted_with_enum → enum 鍵在底層就是 int,裸 int 可以命中 enum 鍵。
+      型別化 Dictionary 的鍵檢查對此**無能為力**,ADR-0002 機制四的『型別安全』
+      只到靜態分析為止,執行期沒有防線。
+    · 若為 <MISS> → enum 是獨立的鍵型別,型別化字典的保證是真的。
+
+  另看 cross_enum_family_size:若為 1,代表兩個不同 enum 家族的相同序數值會
+  互相覆蓋。ADR-0002 的 _records 用 Pair、_death_marks 用 Character,兩張表
+  各自獨立所以目前安全 —— 但這是必須寫下來的限制,不是可以假設的事。
+
+
+------------------------------------------------------------------------------
+[C3] Agile Event Flushing 的設定鍵真名
+     來源:ADR-0005 VR #3
+------------------------------------------------------------------------------
+  ADR-0005 推測的鍵名 : input_devices/buffering/agile_event_flushing
+  has_setting(推測值)  : true
+
+  ── 實際存在、名稱以 'input_devices' 開頭的全部鍵 ──
+    input_devices/pointing/android/enable_long_press_as_right_click = false
+    input_devices/pointing/android/enable_pan_and_scale_gestures = false
+    input_devices/pointing/android/rotary_input_scroll_axis = 1
+    input_devices/pointing/android/override_volume_buttons = false
+    input_devices/pointing/android/disable_scroll_deadzone = false
+    input_devices/compatibility/legacy_just_pressed_behavior = false
+    input_devices/sensors/enable_accelerometer = false
+    input_devices/sensors/enable_gravity = false
+    input_devices/sensors/enable_gyroscope = false
+    input_devices/sensors/enable_magnetometer = false
+    input_devices/joypads/ignore_joypad_on_unfocused_application = false
+    input_devices/pen_tablet/driver = 
+    input_devices/pen_tablet/driver.windows = 
+    input_devices/buffering/agile_event_flushing = false
+    input_devices/pointing/emulate_touch_from_mouse = false
+    input_devices/pointing/emulate_mouse_from_touch = true
+
+  ── 名稱含 'agile' 或 'flush' 的任何鍵(不限前綴)──
+    application/run/flush_stdout_on_print = true
+    application/run/flush_stdout_on_print.debug = true
+    input_devices/buffering/agile_event_flushing = false
+
+  判讀:機制七目前以 has_setting() 防衛,鍵不存在時回報
+        AGILE_FLUSHING_SETTING_KEY_UNKNOWN 而非視為通過 —— 那個防衛必須保留。
+        上面若掃出真名,ADR-0005 可以把推測值換成已查證值(防衛仍不移除)。
+
+
+------------------------------------------------------------------------------
+[C1] @abstract 的正確語法與各回傳型別
+     來源:ADR-0005 VR #1 / R4-2、ADR-0004 VR #6 / #6a
+------------------------------------------------------------------------------
+  2026-08-20 第一次執行已確定:參考庫 current-best-practices.md 第 41-49 行的
+  「冒號 + pass 主體」形式在 4.7.1 是 parser error。本輪改測裸簽章形式,
+  並保留一檔錯誤寫法作為永久證據。
+
+  (已知會編譯失敗的那幾檔已移到報告最後的 RISKY 區 —— debugger 會在 parser
+   error 上暫停,放在前面會擋住後面全部的檢查。2026-08-20 第二次執行踩到。)
+
+  ── (1) 裸簽章形式,各回傳型別分別編譯 ──
+      第五輪明文要求「各建一檔分別編譯,不可只測一種外推」。
+    [COMPILED OK           ]  Array[T]   ←對照組
+    [COMPILED OK           ]  bool
+    [COMPILED OK           ]  float
+    [COMPILED OK           ]  void
+    [COMPILED OK           ]  Vector2    ←R4-2 BLOCKING 修法所依賴者
+    [COMPILED OK           ]  類別內同時有 signal + 兩個 @abstract func(MouseReclaimPolicy 的實際形狀)
+
+  ── (2) 語法變體:@abstract 與 func 同一行 ──
+    [COMPILED OK           ]  @abstract func inline_declared() -> bool
+      若兩種都可以,ADR 有選擇自由;若只有一種可以,那一種必須寫進 ADR,
+      不能留給實作者猜。
+
+  ── (3) ADR-0004 VR #6a 的對照組(漏實作那一檔在 RISKY 區)──
+    [COMPILED OK           ]  完整實作全部抽象方法
+
+
+------------------------------------------------------------------------------
+[A1] 型別化容器:哪些宣告形式在 4.7.1 真的可用
+     來源:ADR-0002 VR #1
+------------------------------------------------------------------------------
+  2026-08-20 第三次執行已確定:ADR-0002 機制四的原始宣告
+  `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` **無法編譯** ——
+  Parse Error: Nested typed collections are not supported.
+  該宣告已移到 RISKY 區保留為證據。本節改測可用的替代形式。
+
+  ── (a) 非巢狀型別化字典(ADR-0002 的 _death_marks 形式)──
+      Dictionary[AffinityTypes.Character, int]
+      [COMPILED OK]  size = 1  |  值型別 = int
+
+  ── (b) 單獨的 Array[自訂類別] ──
+      Array[AffinityRecord]  (確認型別化陣列本身可用)
+      [COMPILED OK]  size = 1  |  is_typed = true
+
+  ── (c) 候選替代 C:外層型別化、內層裸 Array ──
+      Dictionary[AffinityTypes.Pair, Array]
+      代價:內層元素型別完全放棄,append 任何東西都不會被擋。
+      [COMPILED OK]  size = 1  |  值型別 = Array(is_typed=false, size=1)
+
+  ── (d) 候選替代 D:內層包進 RefCounted 包裝類別 ──
+      Dictionary[AffinityTypes.Pair, AffinityRecordList]
+      值型別是「類別」而非「容器」,理論上不觸發巢狀限制,兩層型別都保住。
+      代價:多一層 .items 存取 + 一個額外 class_name。
+      [COMPILED OK]  size = 1  |  值型別 = Object(RefCounted)
+
+  判讀:(d) 若成立,那就是 ADR-0002 機制四應改採的形式 —— 它是唯一同時保住
+        外層鍵型別與內層元素型別的選項。(c) 成立但要明文承認放棄內層型別。
+        (a)(b) 皆失敗才代表問題比巢狀限制更大。
+  ⚠️ 但**任何**選項都不改變 A2/F-3 的結論:enum 鍵在執行期就是 int,
+     外層鍵的型別保證本來就只到靜態分析為止。
+
+
+------------------------------------------------------------------------------
+[C2] Callable.is_valid() 對已釋放綁定物件的偵測行為
+     來源:ADR-0005 VR #15 / S-1 / 發現 G
+------------------------------------------------------------------------------
+  釋放前:
+    named.is_valid()  = true
+    lambda.is_valid() = true
+    named.call()      = 42
+    lambda.call()     = 42
+
+  queue_free() + 等兩個影格後:
+    is_instance_valid(probe) = false
+    named.is_valid()         = false    ←具名綁定 Callable(obj, "method")
+    lambda.is_valid()        = false    ←lambda 隱式捕獲 self
+
+  判讀:S-1 的整套防禦(_safe_mouse_position() 每次取值前 is_valid())押在
+        『is_valid() 會回傳 false』上。上面兩列若有任何一列是 true,該防禦
+        形同虛設,Validation Criteria #18 驗的是一個不成立的假設。
+        兩列若**不一致**,就證實了發現 G:具名綁定與 lambda 行為確實不同,
+        第三次修訂改採具名綁定是對的(而且是必要的,不只是比較明確)。
+
+==============================================================================
+以上為安全區段,全部完成。以下三項會觸發引擎錯誤或可能硬中止。
+
+⚠️ Debugger 若在這裡暫停,**按繼續(Continue / F7)** 就會接著跑。
+   每次暫停都按繼續,直到看到 REPORT COMPLETE。這些暫停是預期的。
+==============================================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+RISKY 0/2 —— 五個**預期會編譯失敗**的檔案
+每一個都會讓 debugger 暫停一次。按繼續(F7),它會接著跑下一個。
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  (i) 參考庫範例的逐字照抄(冒號 + pass 主體)—— 2026-08-20 已知為 parser error
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/c1_pass_body_record.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:344)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Failed to load script "res://scripts/c1_pass_body_record.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:344)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/c1_pass_body_record.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:344)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+    [FAILED  (reload=Parse error)]  current-best-practices.md 第 41-49 行的形式
+
+  (i-b) ADR-0002 機制四的原始宣告 —— 2026-08-20 已知為 parser error
+        Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/a1_v_e_nested_known_fail.gd:12)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:349)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Failed to load script "res://scripts/a1_v_e_nested_known_fail.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:349)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/a1_v_e_nested_known_fail.gd:12)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:349)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+    [FAILED  (reload=Parse error)]  巢狀型別容器(Nested typed collections are not supported)
+
+  (ii) ADR-0004 VR #6a:子類別**故意漏實作** diagnostic_seed_position()
+SCRIPT ERROR: Parse Error: Class "c1_subclass_incomplete.gd" must implement "SpikeBareWithSignal.diagnostic_seed_position()" and other inherited abstract methods or be marked as "@abstract".
+   at: GDScript::reload (res://scripts/c1_subclass_incomplete.gd:8)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:353)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Failed to load script "res://scripts/c1_subclass_incomplete.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:353)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Class "c1_subclass_incomplete.gd" must implement "SpikeBareWithSignal.diagnostic_seed_position()" and other inherited abstract methods or be marked as "@abstract".
+   at: GDScript::reload (res://scripts/c1_subclass_incomplete.gd:8)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:353)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+    [FAILED  (reload=Parse error)]  漏實作的具體子類別
+      FAILED  → 漏實作是**編譯期**錯誤,@abstract 的「保證子類別必須實作」
+                是結構保證,ADR-0004/0005 的相關宣稱成立。
+      OK      → 只在該方法被呼叫時才於執行期顯現,那個保證只是「呼叫到才會爆」,
+                相關宣稱要改寫。
+
+  (iii) A1(b):靜態可見的錯誤**鍵**型別(字面量 String 當鍵)
+SCRIPT ERROR: Parse Error: Invalid index type "String" for a base of type "Dictionary[AffinityTypes.Pair, int]".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_key_static.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:361)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Failed to load script "res://scripts/a1_typed_dict_bad_key_static.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:361)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Invalid index type "String" for a base of type "Dictionary[AffinityTypes.Pair, int]".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_key_static.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:361)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+    [FAILED  (reload=Parse error)]  Dictionary[Pair, int] 內寫 d['this_is_not_an_enum'] = 1
+
+  (iv) A1(c):靜態可見的錯誤**值**型別(int 當值)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "String" as "int".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_value_static.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:365)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Value of type "String" cannot be assigned to a variable of type "int".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_value_static.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:365)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Failed to load script "res://scripts/a1_typed_dict_bad_value_static.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:204)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:365)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "String" as "int".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_value_static.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:365)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Parse Error: Value of type "String" cannot be assigned to a variable of type "int".
+   at: GDScript::reload (res://scripts/a1_typed_dict_bad_value_static.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/verification_runner.gd:209)
+       [1] _load_report (res://scripts/verification_runner.gd:189)
+       [2] _risky_0_known_failing_compiles (res://scripts/verification_runner.gd:365)
+       [3] _ready (res://scripts/verification_runner.gd:57)
+       [4] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+    [FAILED  (reload=Parse error)]  Dictionary[Pair, int] 內寫 d[Pair.C1_C2] = 'not_an_int'
+
+      A1 判讀:(iii)(iv) FAILED → 編譯期擋得住錯誤字面量;
+               COMPILED OK → 連靜態可見的錯誤都不擋,配合 A2 已測出的
+               「執行期 enum 就是 int」,型別化 Dictionary 的鍵保證等於零。
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+RISKY 1/2 —— 對已釋放物件的 Callable 實際呼叫 call()
+若報告在這一行之後就斷掉,答案就是:call() 造成硬中止(而非乾淨地失敗)。
+那本身就是 VR #15 要的結論之一,不算 spike 失敗 —— 照樣把輸出貼回來。
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  named  (具名綁定) — is_valid=false,呼叫中…
+SCRIPT ERROR: Attempt to call function 'null::probe_value (Callable)' on a null instance.
+   at: _try_call (res://scripts/verification_runner.gd:397)
+   GDScript backtrace (most recent call first):
+       [0] _try_call (res://scripts/verification_runner.gd:397)
+       [1] _risky_1_callable_call_after_free (res://scripts/verification_runner.gd:386)
+       [2] _ready (res://scripts/verification_runner.gd:58)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+  lambda (隱式捕獲 self) — is_valid=false,呼叫中…
+SCRIPT ERROR: Attempt to call function '<anonymous lambda>(self lambda) (Callable)' on a null instance.
+   at: _try_call (res://scripts/verification_runner.gd:397)
+   GDScript backtrace (most recent call first):
+       [0] _try_call (res://scripts/verification_runner.gd:397)
+       [1] _risky_1_callable_call_after_free (res://scripts/verification_runner.gd:387)
+       [2] _ready (res://scripts/verification_runner.gd:58)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+
+  判讀:若某一列只印出『呼叫中…』而沒有『回傳』那一行,代表該次 call()
+        讓函式整段中止 —— 呼叫方拿不到回傳值、也接不到任何可處理的錯誤。
+        那會讓 S-1 的 is_valid() 守衛從『防禦性冗餘』升格為**必需**。
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+RISKY 2/2 —— 經 Variant 藏起來的錯誤鍵/值,實際寫入型別化 Dictionary
+這是 A1 的執行期那一半:編譯器看不見,只有執行期檢查能擋。
+若報告在這一行之後就斷掉 = 執行期檢查以硬中止的方式生效。
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  嘗試寫入錯誤**鍵**(String 塞進 Dictionary[Pair, int])...
+ERROR: Attempted to set a variable of type 'String' into a TypedDictionary.Key of type 'int'.
+   at: _internal_validate (./core/variant/container_type_validate.h:73)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_key (res://scripts/a1_typed_dict_bad_dynamic.gd:14)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:413)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Condition "!_p->typed_key.validate(key, "set")" is true. Returning: false
+   at: set (core/variant/dictionary.cpp:205)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_key (res://scripts/a1_typed_dict_bad_dynamic.gd:14)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:413)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Invalid assignment of property or key 'not_an_enum' with value of type 'int' on a base object of type 'Dictionary[int, int]'.
+   at: run_bad_key (res://scripts/a1_typed_dict_bad_dynamic.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_key (res://scripts/a1_typed_dict_bad_dynamic.gd:14)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:413)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+
+  嘗試寫入錯誤**值**(String 塞進值型別為 int 的槽)...
+ERROR: Attempted to set a variable of type 'String' into a TypedDictionary.Value of type 'int'.
+   at: _internal_validate (./core/variant/container_type_validate.h:73)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_value (res://scripts/a1_typed_dict_bad_dynamic.gd:24)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:416)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+ERROR: Condition "!_p->typed_value.validate(value, "set")" is true. Returning: false
+   at: set (core/variant/dictionary.cpp:207)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_value (res://scripts/a1_typed_dict_bad_dynamic.gd:24)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:416)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+SCRIPT ERROR: Invalid assignment of property or key '0' with value of type 'String' on a base object of type 'Dictionary[int, int]'.
+   at: run_bad_value (res://scripts/a1_typed_dict_bad_dynamic.gd:24)
+   GDScript backtrace (most recent call first):
+       [0] run_bad_value (res://scripts/a1_typed_dict_bad_dynamic.gd:24)
+       [1] _risky_2_typed_dict_dynamic (res://scripts/verification_runner.gd:416)
+       [2] _ready (res://scripts/verification_runner.gd:59)
+       [3] _section_c2_callable_validity (res://scripts/verification_runner.gd:333)
+
+  判讀 —— 看 write_took_effect:
+    · true  → 執行期**不擋**,型別化 Dictionary 連動態錯誤型別都放行。
+              配合 A2/F-3(enum 執行期就是 int),機制四的鍵值型別保證等於零。
+    · false → 執行期擋下了(寫入被丟棄),型別標註至少有執行期效力。
+  (上一版只印『沒有硬中止』,沒斷言寫入結果 —— 那等於沒回答問題,已修正。)
+
+==============================================================================
+REPORT COMPLETE — 全部檢查跑完,無硬中止。
+==============================================================================

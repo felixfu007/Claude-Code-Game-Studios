@@ -1,0 +1,244 @@
+# =============================================================================
+# XCHECK-1 —— 型別化容器 / enum 家族 / @abstract 判定機制 / Callable 中止語意
+# =============================================================================
+#   指令:
+#     Godot..._console.exe --headless --path <proj> --quit-after 300
+#   exit code: 0
+#   輸出行數: 176
+#
+#   godot-gdscript-specialist,2026-08-20。這是**未過濾**的原始 stdout+stderr。
+#   引擎版本:4.7.1.stable.official.a13da4feb
+#   執行檔:C:\Users\felixfu007\Downloads\Godot_v4.7.1-stable_win64.exe\
+#           Godot_v4.7.1-stable_win64_console.exe
+#   專案:prototypes/xcheck-gdscript-specialist-2026-08-20(非 engine-verification-spike,
+#         這是獨立重建的第二來源:不同 project.godot、不同 .godot 快取、
+#         無 spike 任何檔案 —— 目的是排除「spike 專案環境污染」這個變因)
+#
+#   前置(每份 log 皆已執行):
+#     Godot..._console.exe --headless --path <proj> --editor --quit
+#     ^ 建 .godot/global_script_class_cache.cfg。**沒有它,所有 class_name 都會
+#       解析失敗**(見 logs/xrun1-no-class-cache-FAILED-unfiltered.txt 的下場)。
+#       乾淨 checkout 的 CI 會踩到同一件事。
+#
+# ── 判讀陷阱(先讀這一段,否則會誤讀輸出)────────────────────────────────
+#
+#   [陷阱 1] `_try()` 無條件印 `(NOT aborted)`,那個字樣**不可信**。
+#     判準是 `<<` 那行 `returned` **後面有沒有內容**:
+#       有內容 → callee 真的跑完並回傳。
+#       空的   → callee **中止了**,`_try()` 拿到的是依宣告回傳型別零初始化的值。
+#     具體:XCHECK-1 的 X3r outer(`d[Pair.C1_C2] = XOtherClass.new()`)印
+#           `returned  (NOT aborted)` —— 它**其實中止了**,`-> String` 零初始化成空字串。
+#           而 X3r inner(`list.items.append(...)`)印 `returned NOT ABORTED items.size=0`
+#           —— 那才是**真的沒中止**,`items.size=0` 是實際讀值,是「寫入被丟棄」的直接證據。
+#     這個缺陷與我在 spike 抓到的 N-3 同型,我自己也犯了。
+#
+#   [陷阱 2] XCHECK-1 的 X8 會在執行期用 FileAccess **覆寫 scripts/x8_mutable.gd**
+#     為語法錯誤版本(`func broken( -> void:`)。那是刻意的,是 F-13 的證明手段。
+#     跑完後該檔留在壞狀態,要重跑必須先還原成:
+#         class_name XMutableProbe extends RefCounted
+#         func fine() -> int:
+#         <TAB>return 1
+#     本輪三份 log 產出後我已還原。
+#
+#   [陷阱 3] 本輪**全部在 headless + editor(debug)建置**下執行。
+#     export release 建置是否有相同的執行期容器檢查 **未查證**
+#     (本機 %APPDATA%\Godot\export_templates\ 為空,無 release template 可測)。
+#     `ERROR: Condition "..." is true. Returning: false` 這類訊息的形狀屬
+#     ERR_FAIL_COND_V 巨集家族。**引用「執行期會擋」時必須帶上這個限定。**
+#
+#   [陷阱 4] `Dictionary`/`Array` 的內省數字對照:
+#     TYPE_INT = 2、TYPE_OBJECT = 24、TYPE_DICTIONARY = 27。
+#
+# ── 探針原始碼在同專案 scripts/ 下,25 支全在 repo 內,可逐一對讀 ──────────
+#
+# ── 本輪要拿去改 ADR-0002 的段落索引 ────────────────────────────────────
+#   X1  → 編譯期**不**擋型別化 Dictionary 的跨 enum 家族 subscript(COMPILED OK)
+#   X1b → 編譯期**會**擋 enum 家族的變數賦值(Character 不能賦給 Pair)
+#   X1c → 編譯期**會**擋整個型別化 Dictionary 的跨家族賦值
+#         ^ X1/X1b/X1c 三者合起來才是 F-3 層三的精確界線:
+#           唯一的洞是 subscript 路徑,不是「enum 家族完全不擋」
+#   X2  → 執行期跨家族 enum 鍵**完全被接受**(size=1 keys=[2],零錯誤訊息)= 層三直接證據
+#   X3  → F-9(d) 真證據:get_class()=RefCounted 但 script.get_global_name()=AffinityRecordList
+#   X7  → 推翻 F-9(c):stored_is_typed=true vs literal_untyped_is_typed=false
+#   X4  → 四個內省 API 在 4.7.1 存在;get_typed_key_builtin=2 是 enum 抹除最短證據
+#   X5  → 帶 class_name 的壞檔仍被判 FAILED(F-13 的混淆變因排除)
+#   X8  → 同一 process 內覆寫同路徑後判定翻轉(F-13 的證明)
+#   X6  → callee 中止後 caller 收到依宣告型別零初始化的值,**不是 null**
+# =============================================================================
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== XCHECK / Godot 4.7.1-stable (official) ===
+
+--- X1  compile-time enum FAMILY crossing (static, literal) ---
+  [COMPILED OK]  X1  Dictionary[Pair,int] indexed with Character.CHARACTER_1
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "AffinityTypes.Character" as "AffinityTypes.Pair".
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type AffinityTypes.Character to variable "p" with specified type AffinityTypes.Pair.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+ERROR: Failed to load script "res://scripts/x1b_static_assign_crossfamily.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "AffinityTypes.Character" as "AffinityTypes.Pair".
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type AffinityTypes.Character to variable "p" with specified type AffinityTypes.Pair.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:32)
+  [FAILED (reload=Parse error)]  X1b var p: Pair = Character.CHARACTER_1
+SCRIPT ERROR: Parse Error: Cannot assign a value of type Dictionary[AffinityTypes.Character, int] to variable "b" with specified type Dictionary[AffinityTypes.Pair, int].
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:33)
+ERROR: Failed to load script "res://scripts/x1c_static_dict_crossfamily.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:33)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type Dictionary[AffinityTypes.Character, int] to variable "b" with specified type Dictionary[AffinityTypes.Pair, int].
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:33)
+  [FAILED (reload=Parse error)]  X1c Dictionary[Character,int] assigned to Dictionary[Pair,int]
+
+--- X5  _compile_check reliability on a class_name'd broken script ---
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/x5_broken_with_classname.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:37)
+ERROR: Failed to load script "res://scripts/x5_broken_with_classname.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:37)
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/x5_broken_with_classname.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:37)
+  [FAILED (reload=Parse error)]  X5  @abstract func WITH body, in a class_name'd file
+
+--- X8  does CACHE_MODE_IGNORE+reload() really re-read from DISK? ---
+  [COMPILED OK]  X8 before overwrite (source is valid)
+SCRIPT ERROR: Parse Error: Expected parameter name.
+   at: GDScript::reload (res://scripts/x8_mutable.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:48)
+ERROR: Failed to load script "res://scripts/x8_mutable.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:48)
+SCRIPT ERROR: Parse Error: Expected parameter name.
+   at: GDScript::reload (res://scripts/x8_mutable.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:48)
+  [FAILED (reload=Parse error)]  X8 after overwriting SAME PATH with a syntax error
+
+--- X4  container introspection API existence in 4.7.1 ---
+  [COMPILED OK]  x4_dict_introspect.gd (is_typed_key/get_typed_key_builtin)
+      is_typed_key                   = true
+      is_typed_value                 = true
+      get_typed_key_builtin          = 2
+      get_typed_value_builtin        = 2
+  [COMPILED OK]  x4b_array_introspect.gd (get_typed_class_name/get_typed_script)
+      is_typed                       = true
+      get_typed_builtin              = 24
+      get_typed_class_name           = RefCounted
+      typed_script_is_null           = false
+
+--- X3  option (d) two-layer type retention, actually probed ---
+  [COMPILED OK]  x3_wrapper_two_layer.gd
+      get_class()                    = RefCounted
+      script.get_global_name()       = AffinityRecordList
+      v is AffinityRecordList        = true
+      inner.items.is_typed()         = true
+
+--- X7  does a bare-Array value slot preserve an inner typed Array? ---
+      stored_is_typed                = true
+      stored_typed_class             = RefCounted
+      literal_untyped_is_typed       = false
+
+=== hostile runtime writes below: engine errors expected ===
+
+--- X2  runtime enum FAMILY crossing into a typed Dictionary ---
+    >> Dictionary[Pair,int][Character.CHARACTER_3] = 99 : calling...
+    << Dictionary[Pair,int][Character.CHARACTER_3] = 99 : returned NOT ABORTED size=1 keys=[2] (NOT aborted)
+
+--- X3r  outer layer: wrong OBJECT class into Dictionary[Pair,AffinityRecordList] ---
+    >> d[Pair.C1_C2] = XOtherClass.new() : calling...
+ERROR: Attempted to set an object into a TypedDictionary.Value, that does not inherit from 'GDScript'.
+   at: _internal_validate_object (./core/variant/container_type_validate.h:137)
+   GDScript backtrace (most recent call first):
+       [0] try_outer_wrong_object (res://scripts/x3_wrapper_two_layer.gd:22)
+       [1] _try (res://scripts/xrunner.gd:23)
+       [2] _ready (res://scripts/xrunner.gd:82)
+ERROR: Condition "!_p->typed_value.validate(value, "set")" is true. Returning: false
+   at: set (core/variant/dictionary.cpp:207)
+   GDScript backtrace (most recent call first):
+       [0] try_outer_wrong_object (res://scripts/x3_wrapper_two_layer.gd:22)
+       [1] _try (res://scripts/xrunner.gd:23)
+       [2] _ready (res://scripts/xrunner.gd:82)
+SCRIPT ERROR: Invalid assignment of property or key '0' with value of type 'RefCounted (XOtherClass)' on a base object of type 'Dictionary[int, AffinityRecordList]'.
+   at: try_outer_wrong_object (res://scripts/x3_wrapper_two_layer.gd:22)
+   GDScript backtrace (most recent call first):
+       [0] try_outer_wrong_object (res://scripts/x3_wrapper_two_layer.gd:22)
+       [1] _try (res://scripts/xrunner.gd:23)
+       [2] _ready (res://scripts/xrunner.gd:82)
+    << d[Pair.C1_C2] = XOtherClass.new() : returned  (NOT aborted)
+
+--- X3r  inner layer: wrong element appended to Array[AffinityRecord] ---
+    >> list.items.append(XOtherClass.new()) : calling...
+ERROR: Attempted to push_back an object into a TypedArray, that does not inherit from 'GDScript'.
+   at: _internal_validate_object (./core/variant/container_type_validate.h:137)
+   GDScript backtrace (most recent call first):
+       [0] try_inner_wrong_element (res://scripts/x3_wrapper_two_layer.gd:28)
+       [1] _try (res://scripts/xrunner.gd:23)
+       [2] _ready (res://scripts/xrunner.gd:86)
+ERROR: Condition "!_p->typed.validate(value, "push_back")" is true.
+   at: push_back (core/variant/array.cpp:285)
+   GDScript backtrace (most recent call first):
+       [0] try_inner_wrong_element (res://scripts/x3_wrapper_two_layer.gd:28)
+       [1] _try (res://scripts/xrunner.gd:23)
+       [2] _ready (res://scripts/xrunner.gd:86)
+    << list.items.append(XOtherClass.new()) : returned NOT ABORTED items.size=0 (NOT aborted)
+
+--- X6  what does the CALLER receive after a callee aborts mid-way? ---
+ERROR: Attempted to set a variable of type 'String' into a TypedDictionary.Key of type 'int'.
+   at: _internal_validate (./core/variant/container_type_validate.h:73)
+   GDScript backtrace (most recent call first):
+       [0] aborts_midway (res://scripts/x6_abort_return.gd:5)
+       [1] _ready (res://scripts/xrunner.gd:91)
+ERROR: Condition "!_p->typed_key.validate(key, "set")" is true. Returning: false
+   at: set (core/variant/dictionary.cpp:205)
+   GDScript backtrace (most recent call first):
+       [0] aborts_midway (res://scripts/x6_abort_return.gd:5)
+       [1] _ready (res://scripts/xrunner.gd:91)
+SCRIPT ERROR: Invalid assignment of property or key 'bad' with value of type 'int' on a base object of type 'Dictionary[int, int]'.
+   at: aborts_midway (res://scripts/x6_abort_return.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] aborts_midway (res://scripts/x6_abort_return.gd:5)
+       [1] _ready (res://scripts/xrunner.gd:91)
+    caller got: typeof=27  type_string=Dictionary  str={  }
+    got is Dictionary = true
+    got == null       = false
+    _print_dict-style callee with typed param d: Dictionary -> size=0
+
+=== XCHECK COMPLETE ===

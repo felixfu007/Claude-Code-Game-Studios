@@ -1,0 +1,402 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== XCHECK / Godot 4.7.1-stable (official) ===
+
+--- X1  compile-time enum FAMILY crossing (static, literal) ---
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1_static_wrong_family_key.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:31)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x1_static_wrong_family_key.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:31)
+ERROR: Failed to load script "res://scripts/x1_static_wrong_family_key.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:31)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1_static_wrong_family_key.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:31)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x1_static_wrong_family_key.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:31)
+  [FAILED (reload=Parse error)]  X1  Dictionary[Pair,int] indexed with Character.CHARACTER_1
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+ERROR: Failed to load script "res://scripts/x1b_static_assign_crossfamily.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:32)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x1b_static_assign_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:32)
+  [FAILED (reload=Parse error)]  X1b var p: Pair = Character.CHARACTER_1
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:33)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:33)
+ERROR: Failed to load script "res://scripts/x1c_static_dict_crossfamily.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:33)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:33)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x1c_static_dict_crossfamily.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:33)
+  [FAILED (reload=Parse error)]  X1c Dictionary[Character,int] assigned to Dictionary[Pair,int]
+
+--- X5  _compile_check reliability on a class_name'd broken script ---
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/x5_broken_with_classname.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:37)
+ERROR: Failed to load script "res://scripts/x5_broken_with_classname.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:37)
+SCRIPT ERROR: Parse Error: An abstract function cannot have a body.
+   at: GDScript::reload (res://scripts/x5_broken_with_classname.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:37)
+  [FAILED (reload=Parse error)]  X5  @abstract func WITH body, in a class_name'd file
+
+--- X8  does CACHE_MODE_IGNORE+reload() really re-read from DISK? ---
+  [COMPILED OK]  X8 before overwrite (source is valid)
+SCRIPT ERROR: Parse Error: Expected parameter name.
+   at: GDScript::reload (res://scripts/x8_mutable.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:48)
+ERROR: Failed to load script "res://scripts/x8_mutable.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:48)
+SCRIPT ERROR: Parse Error: Expected parameter name.
+   at: GDScript::reload (res://scripts/x8_mutable.gd:2)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:48)
+  [FAILED (reload=Parse error)]  X8 after overwriting SAME PATH with a syntax error
+
+--- X4  container introspection API existence in 4.7.1 ---
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:52)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:52)
+ERROR: Failed to load script "res://scripts/x4_dict_introspect.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:52)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:52)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:52)
+  [FAILED (reload=Parse error)]  x4_dict_introspect.gd (is_typed_key/get_typed_key_builtin)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:54)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x4_dict_introspect.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:54)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecord" in the current scope.
+   at: GDScript::reload (res://scripts/x4b_array_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:56)
+ERROR: Failed to load script "res://scripts/x4b_array_introspect.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:56)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecord" in the current scope.
+   at: GDScript::reload (res://scripts/x4b_array_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:56)
+  [FAILED (reload=Parse error)]  x4b_array_introspect.gd (get_typed_class_name/get_typed_script)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecord" in the current scope.
+   at: GDScript::reload (res://scripts/x4b_array_introspect.gd:3)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:58)
+
+--- X3  option (d) two-layer type retention, actually probed ---
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecord" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:9)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:22)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:27)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+ERROR: Failed to load script "res://scripts/x3_wrapper_two_layer.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:63)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecord" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:9)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:22)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:27)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+ERROR: Failed to load script "res://scripts/x3_wrapper_two_layer.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:7)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:4)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecord" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:6)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:9)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityTypes" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Could not find type "AffinityRecordList" in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:20)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityTypes" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:22)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "AffinityRecordList" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "list" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+SCRIPT ERROR: Parse Error: Identifier "XOtherClass" not declared in the current scope.
+   at: GDScript::reload (res://scripts/x3_wrapper_two_layer.gd:27)
+   GDScript backtrace (most recent call first):
+       [0] _compile_check (res://scripts/xrunner.gd:12)
+       [1] _ready (res://scripts/xrunner.gd:64)
+  [FAILED (reload=Parse error)]  x3_wrapper_two_layer.gd
+SCRIPT ERROR: Invalid call. Nonexistent function 'inspect' in base 'GDScript'.
+   at: _ready (res://scripts/xrunner.gd:65)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/xrunner.gd:65)
