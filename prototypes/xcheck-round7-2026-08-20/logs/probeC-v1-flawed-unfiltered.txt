@@ -1,0 +1,17 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ROUND7 Probe C / Godot 4.7.1-stable (official) ===
+SCRIPT ERROR: Parse Error: Cannot get index "NO_SUCH_PAIR" from "{ "C1_C2": 0, "C1_C3": 1, "C1_C4": 2, "C1_C5": 3, "C2_C3": 4, "C2_C4": 5, "C2_C5": 6, "C3_C4": 7, "C3_C5": 8, "C4_C5": 9 }".
+   at: GDScript::reload (res://scripts/c1_enum_ops.gd:29)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/runner_c.gd:19)
+ERROR: Failed to load script "res://scripts/c1_enum_ops.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/runner_c.gd:19)
+
+--- C1: Pair.find_key(0) -- valid ordinal ---
+SCRIPT ERROR: Invalid access to property or key 'test_find_key_valid' on a base object of type 'GDScript'.
+   at: _ready (res://scripts/runner_c.gd:23)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/runner_c.gd:23)

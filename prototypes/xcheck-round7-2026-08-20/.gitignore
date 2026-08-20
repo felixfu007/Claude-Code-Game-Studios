@@ -1,0 +1,6 @@
+# Godot 4 editor cache / import artifacts — regenerated automatically on open.
+.godot/
+export_presets.cfg
+
+# Godot 4.4+ 為每個腳本產生的 .uid —— 正式專案應提交,拋棄式 spike 視為雜訊。
+*.uid
