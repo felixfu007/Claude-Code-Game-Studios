@@ -48,9 +48,13 @@ func _ready() -> void:
 	await _section_c2_callable_validity()
 
 	_hr("=")
-	print("以上為安全區段,全部完成。以下兩項有硬中止風險。")
+	print("以上為安全區段,全部完成。以下三項會觸發引擎錯誤或可能硬中止。")
+	print("")
+	print("⚠️ Debugger 若在這裡暫停,**按繼續(Continue / F7)** 就會接著跑。")
+	print("   每次暫停都按繼續,直到看到 REPORT COMPLETE。這些暫停是預期的。")
 	_hr("=")
 
+	_risky_0_known_failing_compiles()
 	_risky_1_callable_call_after_free()
 	_risky_2_typed_dict_dynamic()
 
@@ -153,9 +157,8 @@ func _section_c1_abstract() -> void:
 	print("  並保留一檔錯誤寫法作為永久證據。")
 	print("")
 
-	print("  ── (0) 已知錯誤形式(保留為證據,預期 FAILED)──")
-	_load_report("冒號 + pass 主體 —— 參考庫範例的逐字照抄", "c1_pass_body_record.gd")
-
+	print("  (已知會編譯失敗的那幾檔已移到報告最後的 RISKY 區 —— debugger 會在 parser")
+	print("   error 上暫停,放在前面會擋住後面全部的檢查。2026-08-20 第二次執行踩到。)")
 	print("")
 	print("  ── (1) 裸簽章形式,各回傳型別分別編譯 ──")
 	print("      第五輪明文要求「各建一檔分別編譯,不可只測一種外推」。")
@@ -177,12 +180,8 @@ func _section_c1_abstract() -> void:
 	print("      不能留給實作者猜。")
 
 	print("")
-	print("  ── (3) ADR-0004 VR #6a:子類別漏實作抽象方法,是編譯期還是執行期錯誤 ──")
-	_load_report("完整實作全部抽象方法(對照組)", "c1_subclass_complete.gd")
-	_load_report("**故意漏實作** diagnostic_seed_position()", "c1_subclass_incomplete.gd")
-	print("      判讀:漏實作那一檔若 FAILED → 編譯期錯誤,@abstract 的「保證子類別必須")
-	print("            實作」是**結構保證**。若 COMPILED OK → 只在該方法被呼叫時才於執行期")
-	print("            顯現,那個保證就只是「呼叫到才會爆」,ADR-0004/0005 的相關宣稱要改寫。")
+	print("  ── (3) ADR-0004 VR #6a 的對照組(漏實作那一檔在 RISKY 區)──")
+	_load_report("完整實作全部抽象方法", "c1_subclass_complete.gd")
 	print("")
 
 
@@ -209,20 +208,7 @@ func _section_a1_typed_dict_safe() -> void:
 		_introspect_dictionary(d)
 
 	print("")
-	print("  (b) 靜態可見的錯誤**鍵**型別(字面量 String 當鍵)—— 只 load,不執行")
-	var bad_k = load(SCRIPTS + "a1_typed_dict_bad_key_static.gd")
-	if bad_k == null:
-		print("      FAILED TO COMPILE  → 編譯期就擋下,靜態鍵型別檢查是真的")
-	else:
-		print("      COMPILED OK        → 編譯期**沒有**擋下;只可能在執行期擋(見 RISKY 2)")
-
-	print("")
-	print("  (c) 靜態可見的錯誤**值**型別(int 當值)—— 只 load,不執行")
-	var bad_v = load(SCRIPTS + "a1_typed_dict_bad_value_static.gd")
-	if bad_v == null:
-		print("      FAILED TO COMPILE  → 編譯期就擋下")
-	else:
-		print("      COMPILED OK        → 編譯期**沒有**擋下")
+	print("  (b)(c) 靜態可見的錯誤鍵/值型別 —— 已移到 RISKY 區(可能觸發 parser error)")
 	print("")
 
 
@@ -276,6 +262,37 @@ func _section_c2_callable_validity() -> void:
 
 
 # ─── 有中止風險的兩項 ────────────────────────────────────────────────────────
+func _risky_0_known_failing_compiles() -> void:
+	_hr("!")
+	print("RISKY 0/2 —— 四個**預期會編譯失敗**的檔案")
+	print("每一個都會讓 debugger 暫停一次。按繼續(F7),它會接著跑下一個。")
+	_hr("!")
+
+	print("  (i) 參考庫範例的逐字照抄(冒號 + pass 主體)—— 2026-08-20 已知為 parser error")
+	_load_report("current-best-practices.md 第 41-49 行的形式", "c1_pass_body_record.gd")
+
+	print("")
+	print("  (ii) ADR-0004 VR #6a:子類別**故意漏實作** diagnostic_seed_position()")
+	_load_report("漏實作的具體子類別", "c1_subclass_incomplete.gd")
+	print("      FAILED  → 漏實作是**編譯期**錯誤,@abstract 的「保證子類別必須實作」")
+	print("                是結構保證,ADR-0004/0005 的相關宣稱成立。")
+	print("      OK      → 只在該方法被呼叫時才於執行期顯現,那個保證只是「呼叫到才會爆」,")
+	print("                相關宣稱要改寫。")
+
+	print("")
+	print("  (iii) A1(b):靜態可見的錯誤**鍵**型別(字面量 String 當鍵)")
+	_load_report("d[\"this_is_not_an_enum\"] = []", "a1_typed_dict_bad_key_static.gd")
+
+	print("")
+	print("  (iv) A1(c):靜態可見的錯誤**值**型別(int 當值)")
+	_load_report("d[Pair.C1_C2] = 12345", "a1_typed_dict_bad_value_static.gd")
+	print("")
+	print("      A1 判讀:(iii)(iv) FAILED → 編譯期擋得住錯誤字面量;")
+	print("               COMPILED OK → 連靜態可見的錯誤都不擋,配合 A2 已測出的")
+	print("               「執行期 enum 就是 int」,型別化 Dictionary 的鍵保證等於零。")
+	print("")
+
+
 func _risky_1_callable_call_after_free() -> void:
 	_hr("!")
 	print("RISKY 1/2 —— 對已釋放物件的 Callable 實際呼叫 call()")

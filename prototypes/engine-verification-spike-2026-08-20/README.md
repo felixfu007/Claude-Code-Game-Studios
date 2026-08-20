@@ -269,16 +269,117 @@ ADR-0005 VR #1 與機制八 + Key Interfaces、`docs/architecture/architecture-r
 > **仍待確認**:裸簽章形式本身是否對全部四種回傳型別都合法。第一次執行時全部六檔都用了
 > 錯誤形式,所以**回傳型別那一問等於還沒被回答**。第二次執行才會有答案。
 
+#### F-2 · `pow(0.0, 0.0)` 回傳 `1.0`,與 `0^0 := 1` 慣例一致 · **已關閉** · ADR-0002 VR #3
+
+**實測輸出原文**(Godot 4.7.1.stable):
+
+```
+pow(0.0, 0.0)              = 1.0
+0.0 ** 0.0                 = 1.0
+pow(0, 0)                  = 1.0
+is_equal_approx_to_1       = true
+pow(0.0, 1.0)              = 0.0
+pow(1.0, 0.0)              = 1.0
+```
+
+**判定**:三種寫法(`pow(float,float)`、`**` 運算子、`pow(int,int)`)全部回傳 `1.0`,
+相鄰邊界行為正常。
+
+**但這不解除顯式特判的義務。** GDD Formulas 邊界值測試總表明文要求「不可依賴引擎預設行為」,
+該要求管的是**依賴關係**而非**數值是否碰巧相符**。本項改變的是特判的**理由措辭**:
+由「引擎行為未知,必須自己定義」改為「引擎行為經 2026-08-20 實測與慣例一致,但本專案不
+建立對它的依賴」。
+
+**回寫目標**:ADR-0002 VR #3 標為已查證;公式一/二的特判保留,理由改寫。
+
+---
+
+#### F-3 · 型別化 `Dictionary` 的 enum 鍵在執行期**沒有任何型別保證** · **中高** · ADR-0002 VR #2
+
+**實測輸出原文**:
+
+```
+lookup_with_enum           = inserted_with_enum
+lookup_with_raw_int_0      = inserted_with_enum
+enum_C1_C2_int_value       = 0
+typeof_enum_key            = 2
+typeof_int_literal         = 2
+hash_enum                  = 720020139
+hash_int_0                 = 720020139
+stored_key_typeof          = 2
+cross_enum_family_size     = 1
+cross_enum_final_value_at_0 = from_Character
+```
+
+**判定**,三項各自獨立成立:
+
+1. **裸 `int` 直接命中 enum 鍵** —— `lookup_with_raw_int_0` 取回了以 `Pair.C1_C2` 插入的值。
+2. **enum 在執行期就是 `int`** —— `typeof` 皆為 `2`(`TYPE_INT`),`hash()` 完全相同
+   (`720020139`),儲存後取回的鍵型別也是 `int`。沒有任何執行期資訊可用來區分兩者。
+3. **不同 enum 家族的相同序數值會互相覆蓋** —— `cross_enum_family_size = 1`:
+   `Pair.C1_C2`(=0)與 `Character.CHARACTER_1`(=0)是**同一個鍵**,後插入者勝出。
+
+**對 ADR-0002 的意義**:`Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` 的鍵型別檢查
+**只到靜態分析為止**。機制四目前安全,是因為 `_records`(以 `Pair` 為鍵)與 `_death_marks`
+(以 `Character` 為鍵)**剛好是兩張結構獨立的表** —— 那是設計碰巧帶來的安全,不是型別系統
+保證的安全。ADR-0002 若在任何地方把兩個 enum 家族放進同一張表,會靜默資料損毀。
+
+**這正是本 ADR 自己反覆主張的「結構保證優於紀律要求」的反例**:目前靠的是「沒有人會把兩種
+鍵混在一起」這條紀律,而型別標註看起來像是結構保證,實際上不是。
+
+**回寫目標**:ADR-0002 VR #2 標為已查證;機制四新增明文限制「兩張表必須維持結構獨立,
+不得合併,亦不得引入第三個以其他 enum 家族為鍵的表與之共用容器」;
+考慮登記為 registry 的 forbidden pattern。
+
+---
+
+#### F-4 · Agile Event Flushing 的鍵名 ADR 猜對了 · **已關閉** · ADR-0005 VR #3
+
+**實測輸出原文**:
+
+```
+ADR-0005 推測的鍵名 : input_devices/buffering/agile_event_flushing
+has_setting(推測值)  : true
+...
+input_devices/buffering/agile_event_flushing = false
+```
+
+**判定**:鍵名**正確**,且現值為 `false` —— 正是機制七要求的狀態(Agile Event Flushing 必須關閉)。
+
+**`has_setting()` 防衛不移除。** 機制七的防衛存在理由是「鍵名未經查證」,現在理由變成
+「鍵名可能隨版本改變」——防衛的價值不變,只是理由更新。ADR 可把推測值升格為已查證值。
+
+**順帶掃到、沒人問過但相關的鍵**:`input_devices/compatibility/legacy_just_pressed_behavior = false`。
+ADR-0005 機制四/六大量依賴 `is_action_just_pressed()` 語意,這個相容性開關的存在與預設值
+值得記一筆,但本 spike 未探測其影響。
+
+---
+
+#### F-5 · spike 自身的排序缺陷(記錄下來,因為它是同一類錯誤)· 流程
+
+第二次執行在 C1 的第 (0) 項就停住 —— 那一項是**已知會編譯失敗**的檔案,debugger 攔截
+parser error 並暫停執行,後面全部檢查沒跑到。
+
+**這違反了本 spike 自己 README 寫的設計原則第 2 條**(「風險項排最後」)。我把「可能硬中止」
+理解成只有執行期崩潰,漏掉了「載入一個編譯失敗的檔案也會讓 debugger 暫停」。
+
+**修法**:四個預期失敗的 `load()`(參考庫錯誤形式、漏實作子類別、兩個錯誤型別字面量)
+全部移到新增的 `RISKY 0` 區,乾淨區段因此可以完整跑完。並在進入 RISKY 區前明文提示
+「debugger 會暫停,按繼續(F7)」。
+
+**留下這筆記錄的理由**:這與 ADR 系列四輪來反覆出現的模式同型 ——
+**規則寫對了,但套用時漏掉一種情境**。
+
 ### Phase 1
 
 | 檢查 | 實測輸出 | 判定 | 回寫目標 |
 |---|---|---|---|
-| A1 型別化 `Dictionary` 鍵值檢查層級 | _(待填)_ | _(待填)_ | ADR-0002 VR #1 |
-| A2 `enum` 當鍵的雜湊/相等語意 | _(待填)_ | _(待填)_ | ADR-0002 VR #2 |
-| A3 `pow(0.0, 0.0)` | _(待填)_ | _(待填)_ | ADR-0002 VR #3 |
+| A1 型別化 `Dictionary` 鍵值檢查層級 | 靜態層待第三次執行;**執行期已由 F-3 證明為零** | 部分 | ADR-0002 VR #1 |
+| A2 `enum` 當鍵的雜湊/相等語意 | 見 **F-3** | **已關閉(中高發現)** | ADR-0002 VR #2 |
+| A3 `pow(0.0, 0.0)` | 見 **F-2** | **已關閉** | ADR-0002 VR #3 |
 | C1 `@abstract` 四種回傳型別 | _(待填)_ | _(待填)_ | ADR-0005 VR #1、ADR-0004 同項 |
 | C2 `Callable.is_valid()` 具名 vs lambda | _(待填)_ | _(待填)_ | ADR-0005 VR #15、VC #18 |
-| C3 Agile Event Flushing 鍵真名 | _(待填)_ | _(待填)_ | ADR-0005 VR #3 |
+| C3 Agile Event Flushing 鍵真名 | 見 **F-4** | **已關閉** | ADR-0005 VR #3 |
 
 ### Phase 2
 
