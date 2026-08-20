@@ -6,9 +6,15 @@
 
 > **2026-08-19 修訂(銜接缺口 C1/C3,不改動任何機制決策)**:連續三輪 `/architecture-review` 判定為仍開的兩項跨 ADR 銜接缺口。**C1** —— `TOKEN_TIMEOUT_MS` 的**定值責任**已由 ADR-0004 明文接下(該 ADR 掌握遷移鏈深度上界與兩階段回寫最壞 I/O 時間,本 ADR 對兩者一無所知);本 ADR 仍擁有逾時**機制**的執行(機制七逐權杖惰性清除),但不擁有那個數字。**C3** —— `TR-affinity-016` 是條件式需求,其條件(「若選擇背景執行緒序列化」)已由 ADR-0004 判為「否」;`Mutex` 決策**不變**,但理由由「必要」改為**縱深防禦**,措辭不再宣稱它是「全專案唯一已成立的執行緒安全義務」。兩項皆為措辭與擁有權澄清,**未新增、未移除、未改變任何資料結構或介面契約**。
 
+> **2026-08-20 修訂(BLOCKING —— 引擎行為實機驗證)**:2026-08-20 的引擎行為驗證 spike 與 `godot-gdscript-specialist` 的獨立交叉覆核,在 Godot 4.7.1 實機測出本 ADR 機制二的**核心宣告無法編譯**(`Nested typed collections are not supported`),已改採包裝類別 `AffinityRecordList`(**本次驗證涵蓋的四個候選中唯一同時保住兩層型別者**)。同時:型別安全論述由單層改寫為**三層圖像**,並新增**鍵邊界與值邊界兩條規則**(分別把已實證的 subscript 空隙關在系統邊界外、以及讓 release 建置下未查證的容器驗證行為降為縱深防禦);`validate_semantics()` 的逐欄位檢查擴充為**型別 + 值域**,且型別檢查明訂只能用 `typeof()` 內省;新增機制四之三,明文呼叫端的型別義務與「7 類拒絕碼不涵蓋型別非法」這條先前隱含的範圍界線。Verification Required **由五項擴為八項**——**六項關閉**(#1/#2/#3/#5/#6/#8)、**兩項仍開**(#4 `Mutex` 可重入、#7 export release 建置下的容器驗證行為)、**三項新增**(#6/#8 新增即關閉,#7 新增且仍未查證)、**一項改寫**(#4 原附註「本專案無 Godot 執行環境可實測」的前提**已被推翻**——執行檔存在,只是不在 `PATH` 上;未關閉的原因改為尚未撰寫探針)。**本次修訂改變了資料結構的具體型別,但未改變任何介面語意、並發機制或錯誤分類。**
+>
+> **寫入前已執行 Step 5.5 雙軌覆核**(`godot-gdscript-specialist` + `godot-specialist`),抓出並修畢本次修訂初稿**自己引入的 2 項缺陷**:(a) 曾用鍵邊界規則去支撐值層的降級,推導鏈不成立;(b) VR 計數低估為「一項新增」,會讓讀者漏掉 #7。這與 ADR-0005 第三/四/五輪「修法本身引入新缺陷」是同一模式,第六次。
+>
+> **本 ADR 不自陳修訂後的需求涵蓋分佈** —— 留給全新 session 的獨立 `/architecture-review`(第七輪)重新推導。歷次自陳皆被獨立覆核判為高估。
+
 ## Date
 
-2026-08-18(初版) / 2026-08-19(C1/C3 銜接缺口修訂)
+2026-08-18(初版) / 2026-08-19(C1/C3 銜接缺口修訂) / 2026-08-20(引擎行為實機驗證修訂)
 
 ## Engine Compatibility
 
@@ -16,12 +22,25 @@
 |-------|-------|
 | **Engine** | Godot 4.7.1 |
 | **Domain** | Core(資料結構與並發) |
-| **Knowledge Risk** | MEDIUM——本領域無 `breaking-changes.md` 列出的 4.7 專屬破壞性變更(`Dictionary`/`enum`/`Mutex`/`RefCounted` 皆為 4.0 起語意穩定的機制),但仍屬 2026-01 訓練截止後未經本專案實機驗證的版本;無專屬模組參考文件(`docs/engine-reference/godot/modules/` 只有 animation/audio/input/navigation/networking/physics/rendering/ui,無 core/scripting) |
+| **Knowledge Risk** | MEDIUM——本領域無 `breaking-changes.md` 列出的 4.7 專屬破壞性變更(`Dictionary`/`enum`/`Mutex`/`RefCounted` 皆為 4.0 起語意穩定的機制),但仍屬 2026-01 訓練截止後未經本專案實機驗證的版本;無專屬模組參考文件(`docs/engine-reference/godot/modules/` 只有 animation/audio/input/navigation/networking/physics/rendering/ui,無 core/scripting)。**2026-08-20 更新**:本領域已首次取得實機驗證,八項 Verification Required 中六項關閉——其中一項(#6)推翻了本 ADR 的核心宣告。風險等級維持 MEDIUM 而非下調,理由是仍有兩項未查證,且 #7 屬本專案目前無法查證的類別 |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md` |
-| **Post-Cutoff APIs Used** | 無——`Dictionary[K,V]` 型別化容器語法(4.4 起)、`enum`、`RefCounted`、`Mutex`、`Time.get_ticks_msec()`,以及 `Resource.DEEP_DUPLICATE_ALL`(本 ADR 不使用深拷貝,見 Decision,故此 API 與本 ADR 無交集)皆非本 ADR 依賴項 |
-| **Verification Required** | (1) 型別化 `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` 與 `Dictionary[AffinityTypes.Character, int]` 在 4.7.1 的編譯期鍵值型別檢查是否確實生效(而非僅靜態分析提示);(2) `enum` 值作為 `Dictionary` 鍵的雜湊/相等語意在 4.7.1 是否與訓練資料涵蓋的版本一致(理論上不應變動,但本專案尚未實機驗證);(3) GDScript `pow(0.0, 0.0)` 的實際回傳值是否為 `1.0`——本 ADR 的公式一/二實作依賴 `0^0 := 1` 慣例(GDD Formulas 邊界值測試總表明文要求「不可依賴引擎預設行為」),需顯式測試涵蓋此邊界,不可假設 IEEE 754/GDScript 內建 `pow()` 行為與該慣例一致;(4) `Mutex` 在 4.7.1 是否為可重入(同執行緒重複 `lock()` 不死結,但須成對 `unlock()`)——`godot-specialist` 於 2026-08-18 查核時本專案無 Godot 執行環境可實測,亦無 core/scripting 模組參考文件可查,依訓練資料傾向判斷為可重入但**未經專案驗證**;本 ADR 已在 Decision 機制七採取「無論答案為何皆正確」的防禦寫法(見下方鎖定模式說明),故此項驗證結果不影響本 ADR 是否可實作,僅影響是否可移除該防禦寫法;(5) 型別化 `Dictionary` 的值槽(`_records[pair] = [...]`)在 subscript 賦值情境下是否可靠推斷元素型別(見機制四實作提醒,建議實作時顯式標註型別、不依賴推斷,故此項不影響本 ADR 是否可實作) |
+| **Post-Cutoff APIs Used** | 無——`Dictionary[K,V]` 型別化容器語法(4.4 起)、`enum`、`RefCounted`、`Mutex`、`Time.get_ticks_msec()`,以及 `Resource.DEEP_DUPLICATE_ALL`(本 ADR 不使用深拷貝,見 Decision,故此 API 與本 ADR 無交集)皆非本 ADR 依賴項。**2026-08-20 修正**:原本把 `Dictionary[K,V]` 一律當成「4.4 起語意穩定、非依賴項」——該判斷在**巢狀**用法上不成立(4.7.1 明確不支援巢狀型別容器,見 Verification Required #6)。單層型別化容器仍為穩定機制;本 ADR 修訂後**只使用單層**。另新增依賴 `typeof()` 與 `Variant.Type` 常數(機制八的型別檢查),兩者皆為 4.0 起穩定的核心 API |
+| **Verification Required** | **2026-08-20 全欄改寫,五項擴為八項。六項已關閉、兩項仍開。** 詳表見下方「Verification Required 明細」 |
 
 **引擎知識落差聲明**:`godot-specialist` 於 2026-08-18 對本 ADR 初稿逐項查核(型別化 Dictionary 語意、enum 作為鍵、`RefCounted`+signal 的正確性、`Mutex` 用法、序列化替代方案 `inst_to_dict()`/`dict_to_inst()`、`class_name` 命名空間風險),結論:零 BLOCKING 級的機制決策問題(`Dictionary`/`RefCounted`/`enum`/`Mutex`/DI 擁有模式的選擇本身皆確認為 4.7.1 慣用做法),但發現初稿的 Key Interfaces **完整性缺口**——共用列舉(`Pair`/`Character`/`Source`)若不集中包裝於單一 `class_name`,會造成跨檔案引用無法編譯,已修訂為 `AffinityTypes` 包裝類別(見機制二)。另提出 5 項 minor notes,已全數採納並反映於機制四/七/八與本節、Risks 表。
+
+### Verification Required 明細(2026-08-20 改寫)
+
+| # | 項目 | 狀態 |
+|---|---|---|
+| **1** | 型別化 `Dictionary` 的編譯期鍵值型別檢查是否確實生效(而非僅靜態分析提示) | **已查證(2026-08-20)**,但答案分三層,見機制四之二:編譯期**確實擋** enum 家族與容器整體賦值(層一);**subscript 鍵路徑完全不擋**(層三)。**另:本項原本描述的型別 `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` 本身在 4.7.1 無法編譯**,已於本次修訂改為 `Dictionary[AffinityTypes.Pair, AffinityRecordList]`(見機制二 BLOCKING 修訂) |
+| **2** | `enum` 值作為 `Dictionary` 鍵的雜湊/相等語意是否與訓練資料涵蓋的版本一致 | **已查證(2026-08-20)**:一致。容器層把 enum 鍵型別抹成 `TYPE_INT`(`get_typed_key_builtin() == 2`),相等語意即 int 相等——這同時是層三空隙的機制解釋。`TR-affinity-003` 的「值型別鍵」決策因此成立且更明確 |
+| **3** | GDScript `pow(0.0, 0.0)` 的實際回傳值是否為 `1.0` | **已查證(2026-08-20)**:是,`1.0`(`**` 運算子與 `pow(int,int)` 同)。**但顯式特判仍須保留**——GDD Formulas 邊界值測試總表要求的是「不建立對引擎預設行為的依賴」,不是「數值是否碰巧相符」;改變的只有理由措辭:從「答案未知故須特判」改為「答案已知相符,但契約不允許依賴它」 |
+| **4** | `Mutex` 在 4.7.1 是否為可重入(同執行緒重複 `lock()` 不死結,但須成對 `unlock()`) | **仍未查證。**⚠️ 本項原本附註「`godot-specialist` 查核時本專案無 Godot 執行環境可實測」——**該前提已於 2026-08-20 被推翻**:Godot 4.7.1 可在本機 headless 完整執行(`which godot` 找不到只代表不在 `PATH` 上)。本項未關閉的原因改為**尚未撰寫該探針**,不是不能測。機制七的鎖定模式(單一進入點取鎖 + `_sweep_timed_out_tokens_unlocked()` 假設已持鎖)**維持不變**——該寫法在兩種答案下皆正確,故本項不影響可實作性,僅影響是否可移除防禦寫法 |
+| **5** | 型別化 `Dictionary` 的值槽在 subscript 賦值情境下是否可靠推斷元素型別 | **已查證(2026-08-20)**:**不推斷**(未型別化字面量經 subscript 賦值後讀回 `is_typed() == false`)。包裝類別 `AffinityRecordList` 讓此問題不再適用於 `_records`——`items` 的型別來自宣告式初始化,不經推斷路徑,見機制四實作提醒 |
+| **6** | GDScript 4.7.1 是否支援巢狀型別容器 | **已查證(2026-08-20):不支援**——`Parse Error: Nested typed collections are not supported`,class member(無初始化)/ 函式參數 / 回傳型別三種語法形狀皆同,兩個獨立專案重現。**本項為新增,原 VR 表沒有它,而它擊落了本 ADR 的核心宣告**(見機制二 BLOCKING 修訂) |
+| **7** | **export release 建置下,C++ 容器驗證(層二)是否仍生效** | **未查證,且本專案目前無法查證**:`%APPDATA%/Godot/export_templates/` 存在但完全是空的、全域零個 `.tpz`;三條替代路皆已排除(`--headless` 只換 DisplayServer、`OS.is_debug_build()` 不可切換、無 template binary)。**跨 ADR:ADR-0005 的 S-1 必要性論證依賴同一問題的另一半**(GDScript VM 是否在 release 中止所在函式),但依賴方向不同——本 ADR 依賴層 A(容器驗證是否丟棄寫入)且已由機制四之二的規則二降為縱深防禦,ADR-0005 依賴層 B(VM 中止語意)且尚未降級。**建議的關閉方式不是手動測一次**,而是把探針改成建置無關(只斷言容器 `size()`,不管中止與否),掛進 CI 的 release-export job 成為永久回歸測試。**證據等級誠實聲明**:層 A 的關鍵論證是 `ERR_FAIL_COND_V(cond, false)` 的 `return false` 與錯誤列印在同一巨集內、巨集若被編掉則兩者一起消失——此推論的前提(4.7 的實際巨集定義)無 C++ 原始碼可查,屬**訓練資料推論** |
+| **8** | 型別錯配的 `Variant` 傳給內建函式、比較運算子、與型別化賦值時的行為 | **已查證(2026-08-20,`XCHECK-4`)**:內建函式(`is_finite`/`is_nan`/`is_inf`)與比較運算子(`==`/`>=`)對 `String` **皆中止所在函式**,無一會靜默回傳 `false`;但 `var t: int = <float 1.5>` **靜默截斷為 `1`**,不中止不報錯。中止不往上層傳染。**本項為新增**——它坐實了機制八「先 `typeof()` 內省、後值域運算」的排序,並揭露了 `t`/`c` 型別檢查不可寬鬆到「int 或 float 皆可」的靜默截斷風險 |
 
 ## ADR Dependencies
 
@@ -36,7 +55,7 @@
 
 ### Problem Statement
 
-`design/gdd/affinity-data-pool.md`(Foundation 層,已 Approved,歷經 12 輪 `/design-review` 收斂)是《弈緣》好感度系統的唯一資料來源,但在架構層完全零覆蓋——`docs/architecture/architecture-review-2026-08-18.md` 記錄該文件 24 項技術需求(`TR-affinity-001` 至 `-024`)全數為缺口,且明文列為「全專案最高優先的 ADR 缺口」,理由是其中 `TR-affinity-016` 是**全專案唯一已宣告的執行緒安全義務**。GDD 本身已把「要做什麼」定案得極其詳盡(五輪以上的對抗性覆核收斂出逐欄位值域、7 類拒絕情境、跨結構不變量、權杖式並發語意),但完全沒有回答「用什麼 Godot/GDScript 資料結構、什麼並發機制實作」——這是本 ADR 存在的理由:把 GDD 已鎖定的義務對應到具體、可實作、可測試的型別與介面,讓下游 `/create-architecture`、`/create-stories`、`/dev-story` 有型別可依循。
+`design/gdd/affinity-data-pool.md`(Foundation 層,已 Approved,歷經 12 輪 `/design-review` 收斂)是《弈緣》好感度系統的唯一資料來源,但在架構層完全零覆蓋——`docs/architecture/architecture-review-2026-08-18.md` 記錄該文件 24 項技術需求(`TR-affinity-001` 至 `-024`)全數為缺口,且明文列為「全專案最高優先的 ADR 缺口」,理由是其中 `TR-affinity-016` 是**全專案唯一已宣告的執行緒安全義務**(**2026-08-19 C3 修訂後的現況說明**:此句是 2026-08-18 首輪稽核當時把本 ADR 列為最高優先的**理由**,不是本 ADR 現在的宣稱。`TR-affinity-016` 的條件句此後已由 ADR-0004 判為「否」,`Mutex` 保留為縱深防禦——見機制七的 C3 段落)。GDD 本身已把「要做什麼」定案得極其詳盡(五輪以上的對抗性覆核收斂出逐欄位值域、7 類拒絕情境、跨結構不變量、權杖式並發語意),但完全沒有回答「用什麼 Godot/GDScript 資料結構、什麼並發機制實作」——這是本 ADR 存在的理由:把 GDD 已鎖定的義務對應到具體、可實作、可測試的型別與介面,讓下游 `/create-architecture`、`/create-stories`、`/dev-story` 有型別可依循。
 
 ### Constraints
 
@@ -108,10 +127,38 @@ var c: int          # 戰役刻度計數器值,寫入當下的現值,≥0
 var source: AffinityTypes.Source
 ```
 
+**`AffinityRecordList` —— 繞過 GDScript 不支援巢狀型別容器的包裝層(2026-08-20 BLOCKING 修訂)**:
+
+```
+class_name AffinityRecordList extends RefCounted
+var items: Array[AffinityRecord] = []
+```
+
+本 ADR 初版把 per-pair 儲存寫成 `var _records: Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]`。2026-08-20 的引擎行為驗證 spike 與 `godot-gdscript-specialist` 的獨立交叉覆核在 Godot 4.7.1 實機測出**這一行無法編譯**:
+
+```
+Parse Error: Nested typed collections are not supported.
+   at: GDScript::reload (res://scripts/x9_adr_member_exact.gd:2)
+```
+
+探針第 2 行的型別註記與本 ADR 原文**逐位元組相同**,parse error 定位在**宣告那一行本身**。覆核者另補測 **class member 無初始化 / 函式參數 / 回傳型別三種語法形狀,全部同一錯誤**,並在**完全獨立的專案**(不同 `project.godot`、不同 `.godot` 快取)重現——這不是快取或專案設定問題,是語言層限制,沒有語法逃生口。
+
+在**本次驗證實際涵蓋的四個候選方案**中,`AffinityRecordList` 是**唯一同時保住兩層型別**的選項(其餘三個:`Dictionary[AffinityTypes.Character, int]` 單層合法但不適用於 Delta Log;`Array[AffinityRecord]` 單獨合法但失去 per-pair 索引,即 GDD 明文排除的扁平陣列反模式;`Dictionary[Pair, Array]` 見 Alternative 7)。實測(`x3_wrapper_two_layer.gd`):
+
+| 量測項 | 值 |
+|---|---|
+| `script.get_global_name()` | `AffinityRecordList` |
+| `v is AffinityRecordList` | `true` |
+| `inner.items.is_typed()` | `true` |
+
+> **不可引用 `get_class()` 的輸出作為此結論的證據**:它回傳**原生**類別,任何 `RefCounted` 子類別都印 `RefCounted`,無法區辨包裝類別、也從未碰到內層。2026-08-20 的覆核推翻了 spike 原本以 `get_class()` 為依據的同一結論——結論湊巧為真,證據無效。此處引用的是覆核者改測的三項。
+
+**代價**:多一個全域 `class_name`(碰撞風險見 Risks 表既有列,前綴 `Affinity` 與其餘六個一致),以及所有存取多一層 `.items`。**收益**:內層元素型別由 `AffinityRecordList` 自身的宣告式 `var items: Array[AffinityRecord] = []` 保證,**不經任何 subscript 型別推斷路徑**(見機制四的實作提醒——subscript 賦值已實測**不**推斷元素型別)。
+
 `AffinityDataPool` 內部儲存:
 
 ```
-var _records: Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]   # per-pair 索引,查詢 O(n_p)
+var _records: Dictionary[AffinityTypes.Pair, AffinityRecordList]      # per-pair 索引,查詢 O(n_p)
 var _t_now: int                                          # 執行期快取,見下方「衍生值」說明
 var _campaign_tick_marks: Array[int]                     # append-only,見下方
 var _death_marks: Dictionary[AffinityTypes.Character, int]             # 獨立於 Delta Log
@@ -120,9 +167,9 @@ var _serialization_tokens: Dictionary[int, int]          # token id → 發放�
 var _token_mutex: Mutex
 ```
 
-**`Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]` 直接滿足 `TR-affinity-002`(O(n_p+m) 效能契約)**:單一配對查詢只需 `_records[pair]`(O(1) 鍵查找)取得該配對自身的 `Array`,不掃描其他配對——這正是 GDD 明文排除的「單一扁平陣列 + 全表掃描過濾」反模式。**`Pair`/`Character` enum 皆為值型別(底層是 int)**,直接滿足 `TR-affinity-003`(Dictionary 鍵須為值型別,不可為 Object/Resource 參照)——本專案已知的 GDScript 參照相等陷阱(`AffinityRecord` 本身雖是 `RefCounted`,但從未被用作任何 Dictionary 的鍵,只作為 Array 的元素)不適用於此。
+**`Dictionary[AffinityTypes.Pair, AffinityRecordList]` 直接滿足 `TR-affinity-002`(O(n_p+m) 效能契約)**:單一配對查詢只需 `_records[pair]`(O(1) 鍵查找)取得該配對自身的 `AffinityRecordList`,再以 `.items` 取得其型別化 `Array`,不掃描其他配對——這正是 GDD 明文排除的「單一扁平陣列 + 全表掃描過濾」反模式。**包裝層只改變值槽的型別,不改變鍵查找複雜度**,故此論證與初版完全相同。**`Pair`/`Character` enum 皆為值型別(底層是 int)**,直接滿足 `TR-affinity-003`(Dictionary 鍵須為值型別,不可為 Object/Resource 參照)——本專案已知的 GDScript 參照相等陷阱不適用於此:`AffinityRecord` 與 `AffinityRecordList` 雖皆為 `RefCounted`,但**兩者都只作為值、從未被用作任何 Dictionary 的鍵**(前者是 `items` 的元素,後者是 `_records` 的值)。
 
-**`_t_now` 是執行期快取,不是獨立持久化欄位**(直接滿足 `TR-affinity-004`「衍生值,不得另存」):載入完成後(`import_state()` 執行完畢時)由 `_records` 各配對 `Array` 長度總和一次性重建(`O(n_total)`,只在載入時發生一次,不影響任何單次查詢的複雜度保證);運行期每次 `append_record()` 成功時 `+1`。序列化時**不**輸出 `_t_now` 欄位本身,只輸出 `_records`——這避免了「儲存的衍生值與實際內容不同步」這一類本專案已知的傳播失敗模式(見 `.claude/docs/context-management.md` 對跨檔同步失敗的一般性警語)。
+**`_t_now` 是執行期快取,不是獨立持久化欄位**(直接滿足 `TR-affinity-004`「衍生值,不得另存」):載入完成後(`import_state()` 執行完畢時)由 `_records` 各配對 `AffinityRecordList.items` 長度總和一次性重建(`O(n_total)`,只在載入時發生一次,不影響任何單次查詢的複雜度保證);運行期每次 `append_record()` 成功時 `+1`。序列化時**不**輸出 `_t_now` 欄位本身,只輸出 `_records`——這避免了「儲存的衍生值與實際內容不同步」這一類本專案已知的傳播失敗模式(見 `.claude/docs/context-management.md` 對跨檔同步失敗的一般性警語)。
 
 **`_campaign_tick_marks: Array[int]` 是獨立於 Delta Log 的 append-only 結構**(滿足 `TR-affinity-005`):每次 `advance_campaign_tick()` 呼叫時,附加當下的 `_t_now` 值。`c_now(t_query)` 的重建演算法(見 GDD Formulas 3c 精確定義)為「`_campaign_tick_marks` 中 `≤ t_query` 的標記筆數」——本 ADR 的實作選擇是對 `_campaign_tick_marks` 做線性計數(`O(m)`,`m` = 標記總數),滿足 GDD 鎖定的 `O(n_p+m)` 契約;**由於 `_campaign_tick_marks` 依寫入順序天然遞增排序,`/create-architecture` 或未來效能優化階段可選擇改用二分搜尋降至 `O(log m)`,但這是超出 GDD 契約的加分優化,本 ADR 不強制要求**,以免對尚未有實測需求的效能項目過度工程化。
 
@@ -163,9 +210,46 @@ func append_record(pair: AffinityTypes.Pair, m: float, source: AffinityTypes.Sou
 5. `pair` 不在合法列舉值 → `INVALID_PAIR`(同上)
 6. `t_death(pair) != null and source == AffinityTypes.Source.COMBAT_CARD` → `DEAD_PAIR_COMBAT_CARD_FORBIDDEN`
 
-全數通過 → 建立 `AffinityRecord`,附加至 `_records[pair]`,`_t_now += 1`,回傳 `WriteRejection.NONE`,並 emit `entry_appended(pair, record)` 訊號(見機制七)。任何拒絕路徑皆不遞增 `_t_now`、不附加記錄,對應 GDD「不遞增全域計數器、不產生記錄」的一致慣例。
+全數通過 → 建立 `AffinityRecord`,附加至 `_records[pair].items`,`_t_now += 1`,回傳 `WriteRejection.NONE`,並 emit `entry_appended(pair, record)` 訊號(見機制七)。任何拒絕路徑皆不遞增 `_t_now`、不附加記錄,對應 GDD「不遞增全域計數器、不產生記錄」的一致慣例。
 
-**實作提醒(2026-08-18 `godot-specialist` 驗證發現)**:首次對某配對寫入時,需要先在 `_records` 中建立該配對的空 `Array`(`_records[pair] = []`)再附加。型別化 `Dictionary` 的值槽型別推斷在**一般變數宣告**(`var x: Array[T] = []`)已確認可靠,但對**subscript 賦值進一個已型別化的 Dictionary 值槽**這個較窄的用法,`godot-specialist` 查核時無法確認推斷同樣可靠——建議實作時顯式標註型別(`_records[pair] = [] as Array[AffinityRecord]`),不依賴推斷。
+**實作提醒(2026-08-18 `godot-specialist` 提出,2026-08-20 實機驗證後改寫)**:首次對某配對寫入時,需先建立該配對的 `AffinityRecordList`——`_records[pair] = AffinityRecordList.new()`,再 `_records[pair].items.append(record)`。原本「無法確認 subscript 賦值是否可靠推斷元素型別」的疑問**已實測定案:不推斷**(把未型別化字面量以 subscript 賦值存入型別化 `Dictionary` 的值槽後讀回,`is_typed()` 為 `false`)。這正是包裝類別相對 Alternative 7 的一項附帶收益:`items` 的元素型別由 `AffinityRecordList` 自身的宣告式 `var items: Array[AffinityRecord] = []` 保證,**完全不經 subscript 推斷路徑**;而值槽本身的型別(`AffinityRecordList`)由下述層一的編譯期檢查守住。
+
+### 機制四之二:型別保證分三層,與兩條邊界規則(2026-08-20 實機驗證新增)
+
+本 ADR 初版對「型別化容器」的措辭把型別標註當成**單一層**的保證。實機驗證顯示它是**三層**,且三層的強度、失敗方式、以及**是否可依賴**都不同:
+
+| 層 | 機制 | 實測結果 | 可依賴? |
+|---|---|---|---|
+| **一** | GDScript 編譯期靜態檢查 | **確實擋 enum 家族**:`Cannot assign a value of type "AffinityTypes.Character" as "AffinityTypes.Pair"`;容器整體賦值同樣擋(`Dictionary[Character,int]` 不可賦給 `Dictionary[Pair,int]`) | **是**——編譯期錯誤,是結構保證 |
+| **二** | C++ 容器驗證(`container_type_validate.h`) | debug 建置下確實生效,但**兩種寫入路徑行為不同**:錯誤 `Object` 類別寫進 `Dictionary` 值槽 → 錯誤 + `SCRIPT ERROR` + **所在函式中止**;錯誤元素 `append` 進型別化 `Array` → 錯誤 + **寫入被丟棄**,`size()` 不變。⚠️ **差異的成因是「subscript 賦值運算子」vs「方法呼叫」,不是「`Dictionary`」vs「`Array`」**——這張表不可據以類推到 `Dictionary.merge()`、`Array.erase()` 等其他寫入路徑 | **否**——export release 建置下是否仍生效**未查證**(見 Verification Required 第 7 項) |
+| **三** | 型別化 `Dictionary` 的 **subscript 鍵**路徑 | **完全不擋**:`Dictionary[Pair,int][Character.CHARACTER_3] = 99` → `size=1`、`keys=[2]`、**零錯誤訊息**。機制是 `get_typed_key_builtin() == 2`(`TYPE_INT`)——enum 家族在容器層被抹成 `int`,`Character` 與 `Pair` 在鍵型別上不可區辨 | **否**——已實證為空隙 |
+
+**因此本 ADR 明訂兩條邊界規則——鍵與值是兩件事,分別對應層三與層二**:
+
+> **規則一(鍵邊界,對應層三)**:所有從本系統**外部**進入 `_records` / `_death_marks` 的**鍵**,一律經 `func f(pair: AffinityTypes.Pair)` 這類**型別化參數簽章**收斂;**禁止**把來源為 `Variant`(或未經型別化參數收斂的值)直接當作 subscript 鍵。
+>
+> **規則二(值邊界,對應層二)**:`_records` / `_death_marks` 的**值**一律由本系統自身方法以**靜態型別**建構後賦值——`_records[pair] = AffinityRecordList.new()`(`.new()` 的回傳值靜態型別即 `AffinityRecordList`,在層一編譯期即受檢)、`_records[pair].items.append(record)`(`record` 為本系統內部建構的 `AffinityRecord`)、`_death_marks[character] = _t_now`(`int`)。**外部呼叫者沒有任何路徑可以把 `Variant`/`Object` 直接寫進這兩個容器的值槽**——三個公開寫入方法只接收型別化的純量與 enum,不接收容器或物件;`import_state()` 是唯一一條外來資料路徑,其防線見機制八。
+
+**兩條規則各自關掉一層,不可互相代用**:
+
+- **規則一關掉層三**。層三是已實證的空隙(錯誤家族的 enum 鍵經 subscript 寫入完全不被攔),規則一把外來鍵推回層一的編譯期檢查——那一層已實證會擋,空隙因此關在系統邊界之外。
+- **規則二關掉對層二的依賴**。層二量測的是**值槽被塞進錯誤 `Object` 類別**,與「鍵是否跨 enum 家族」**是兩件不同的事**。⚠️ 本次修訂的初稿曾用規則一去支撐「層二可降級」,那是**不成立的推導鏈**(論證的是另一件事),已由寫入前的 Step 5.5 覆核抓出並改正。真正讓層二降為縱深防禦的是規則二:值從來不經 `Variant` 中介,層一在賦值處就檢查完畢,層二的 C++ 容器驗證只是同一件事的第二道確認。
+
+**兩條規則都不改變任何既有簽章**——本 ADR 的公開介面本來就全部符合(`append_record`/`can_write`/三個讀取函數/`notify_death` 的參數皆為型別化 enum 與純量)。它們把兩個原本隱含的性質升級為明文的、可被 registry 強制的架構約束(見 `raw_variant_subscript_into_typed_container`),並指明未來新增介面時不得破壞。
+
+**效果**:層二在 export release 建置下是否仍生效(Verification Required 第 7 項,未查證),**不再影響本 ADR 的正確性論證**。這與本 ADR C3 修訂對 `Mutex`、ADR-0004 對 `SaveIOBackend` 是**同一個手法**:把未查證的外部行為隔離成「有則更好」,而非「正確性所繫」。**但唯一的外來資料路徑 `import_state()` 不受這兩條規則保護**——它處理的就是本系統外部產生的 `Dictionary`,那條路徑的防線是 `validate_semantics()`,見機制八。
+
+**失敗模式為何值得這樣防**(不是崩潰,是靜默存檔損壞、且出貨版本專屬):錯誤型別的鍵或值若被靜默寫入 `_records`(層三路徑:無錯誤、無中止、`size()` 增加),四個讀取函數迭代到型別不符的元素時,公式一/二會產生 `NaN` 或在**離寫入點很遠**的地方爆;更糟的是壞值會經 ADR-0003 的 `var_to_bytes()` 寫進存檔並**通過該 ADR 的兩層 SHA-256 雜湊鏈**——雜湊驗的是位元組完整性,不是語意合法性。存檔在位元層完全合法、在語意層已損壞。
+
+### 機制四之三:驗證順序的安全性,與呼叫端的型別義務(2026-08-20 實機驗證新增)
+
+**機制四的驗證順序不需要改,而理由現在是實測而非推論**:`append_record(pair, m: float, source)` 的 `m` 是**型別化參數**,實測確認一個夾帶 `String` 的 `Variant` 在**呼叫端**就被擋下——函式本體從未執行。因此步驟 2(`m == 0.0`)與步驟 3(`is_nan(m) or is_inf(m)`)在進入時 `m` 必為 `float`,兩者都不會踩到機制八記載的中止路徑。**這是規則二(值邊界)的保證,不是規則一(鍵邊界)的**——兩者不可互相引用。
+
+**但這條保護有一個必須明文的代價——呼叫端義務**:型別化參數的阻擋方式是**整段呼叫端函式中止**,不是一個可判斷的回傳值。本 ADR 的錯誤處理哲學是「GDScript 無 try/catch,錯誤一律以回傳值表達」(見 Constraints),而型別錯誤是這條哲學**唯一涵蓋不到**的失敗類別:`append_record()` 不可能回傳一個 `INVALID_TYPE`,因為那個呼叫根本到不了函式本體。
+
+因此:**上游系統若持有來源不明的 `Variant`(例如從存檔、從編輯器匯入的資料表、從尚未定案的角色系統傳來的識別碼),必須在呼叫 `append_record()`/`notify_death()` 之前自行以 `typeof()` 收斂型別**,不能把型別驗證的責任推給本系統的拒絕碼機制。本 ADR 的 7 類 `WriteRejection` 涵蓋的是**值域與狀態**的非法,**不涵蓋型別的非法**——這個範圍界線先前是隱含的,現在明文寫出。
+
+**本 ADR 刻意不新增 `WriteRejection.INVALID_TYPE`**:那會是一個結構上不可能被回傳的死碼,反而誤導呼叫方以為型別錯誤會被本系統攔下並回報。
 
 ```
 func advance_campaign_tick() -> AdvanceRejection   # 目前僅 SERIALIZATION_WINDOW_ACTIVE 一種拒絕情境
@@ -283,8 +367,26 @@ class AffinityRecord:
 
 - `pair`/`source` 一律以**字串名稱**持久化,直接滿足 `TR-affinity-018`。**轉換方式(2026-08-18 `godot-specialist` 驗證發現修訂)**:正向轉換(enum → 字串)使用 `AffinityTypes.Pair.find_key(pair_value)`(GDScript enum 在執行期以類 `Dictionary` 物件呈現,`find_key()` 做的是**依值查鍵**,不受成員排列順序或未來是否出現非連續數值影響);反向轉換(字串 → enum)使用 `AffinityTypes.Pair[name_string]` 並以 `AffinityTypes.Pair.values().has(...)` 風格的檢查guard 非法字串輸入。**不採用**原草稿描述的「依 `keys()[pair]` 位置索引」寫法——那是位置查找,一旦列舉成員未來被指派非連續或重新排列的底層數值就會靜默出錯,`find_key()`/`enum[name]` 的依值/依鍵查找沒有這個風險。**「退役名稱永久保留、不得重新指派」的治理規則與 CI 檢查本身,依 GDD Dependencies 明文屬於存檔系統的職責**(「並由存檔系統維護『字串名稱↔目前 enum 定義』的對照表」)——本 ADR 只負責提供穩定的字串轉換原語(`to_dict`/`from_dict`),不建立獨立的退役名稱登記機制,避免與存檔系統的既有機制重複實作。**已考慮並拒絕的內建替代方案**:Godot 提供 `inst_to_dict()`/`dict_to_inst()` 可自動將 `Object` 衍生實例的屬性轉為/還原自 `Dictionary`,但它會把 enum 欄位序列化成原始 `int`(而非 `TR-affinity-018` 要求的字串名稱),且還原時內嵌腳本路徑依賴——與本 ADR 刻意追求的「格式無關、enum 以字串名稱持久化」需求不符,故不採用,改以手寫 `to_dict()/from_dict()` 逐欄位轉換。
 - **反序列化語意驗證規則,本系統為唯一權威**(`TR-affinity-019`,直接對應 GDD「反序列化語意驗證規則宣告」章節):`import_state()` 內部依序執行——
-  1. 逐欄位值域(`pair`/`source` 合法列舉值、`m` 非零有限浮點、`t≥1`、`c≥0`;陣亡標記表值 `≥0`)
+  1. **逐欄位型別 + 值域**(2026-08-20 實機驗證後擴充)——**必須先以 `typeof()` 內省確認型別,通過後才允許賦值或做任何值域運算。順序不可顛倒,檢查手段不可代換**:
+     - **型別**(以 `typeof(raw)` 比對 `Variant.Type` 常數,**不可用賦值當檢查**):`pair`/`source` 為 `TYPE_STRING`;`m` 為 `TYPE_FLOAT`;**`t`/`c` 必須嚴格為 `TYPE_INT`——不可寬鬆到「`int` 或 `float` 皆可」**;`records` 為 `TYPE_ARRAY` 且每個元素為 `TYPE_DICTIONARY`、恰含這 5 個鍵;`campaign_tick_marks` 為 `TYPE_ARRAY` 且每個元素為 `TYPE_INT`;`death_marks` 為 `TYPE_DICTIONARY` 且鍵為 `TYPE_STRING`、值為 `TYPE_INT`。
+     - **值域**(僅在型別檢查通過後執行):`pair`/`source` 為合法列舉名稱;`m` 非零且有限;`t ≥ 1`;`c ≥ 0`;陣亡標記表值 `≥ 0`。
   2. 跨結構不變量 1—5(Delta Log 非空則標記列表非空;`c_i ≤ c_now`;全域 `t_i` 不重複且嚴格遞增;`n(p)=0` 哨兵不與非零筆數混淆;陣亡標記值不大於還原後 `t_now`)
+
+  **為何型別與值域必須分成兩件事、且型別檢查只能用 `typeof()`**(2026-08-20 實機驗證,`XCHECK-4`):初版只寫「值域」,那在 ADR-0003 選定**二進位 Variant 序列化**(`bytes_to_var(bytes, false)`)之後不再足夠——該格式只擋自訂 `Object`,**任意內建型別都可被還原**,因此 `m` 可能還原成 `String`、`t` 可能還原成 `float`。實測結果:
+
+  | 操作 | `Variant` 實際持有錯誤型別時 | 判定 |
+  |---|---|---|
+  | `is_finite(v)` / `is_nan(v)` / `is_inf(v)`,`v` 為 `String` | **SCRIPT ERROR + 所在函式中止**(`Invalid type in utility function … Cannot convert argument 1 from String to float.`) | 不可先做 |
+  | `v == 0.0` / `v >= 1`(比較運算子),`v` 為 `String` | **同樣中止**(`Invalid operands 'String' and 'float'/'int' in operator`)。⚠️ **「比較運算子比較安全」是錯的假設,已被實測推翻**——沒有任何操作會對 `String` 誤配靜默回傳 `false` | 不可先做 |
+  | `var t: int = raw`,`raw` 為 `float 1.5` | **不中止、不報錯、靜默截斷為 `1`** | ⚠️ **唯一一種「不出錯但也不安全」的情況** |
+
+  **第三列是本次修訂最關鍵的一項發現**,它同時否定了兩種看似可行的寫法:(i) 不能用「賦值進型別化變數、指望賦值失敗當型別檢查」——賦值對 `String` 會中止、對 `float` 則靜默截斷,兩種都不是可判斷的檢查;(ii) `t`/`c` 的型別檢查不能寬鬆到「`int` 或 `float` 都算過」,否則存檔裡一個 `1.5` 會被靜默變成 `1`,而 `t` 是 Delta Log 的全域排序鍵——截斷會直接違反跨結構不變量 3(`t_i` 不重複且嚴格遞增),且違反的方式是**已經寫進內部狀態之後**才顯現。
+
+  **中止的傳染範圍**:實測只影響直接執行該操作的函式,不往上層傳染。因此把每一項檢查放在 `validate_semantics()` 內是安全的——但那正是為什麼**不能靠中止當防線**:中止是無回傳值的失敗,而本方法的契約是回傳結構化 `ImportResult`。**先 `typeof()`** 讓每一種損壞都落在 `ImportResult` 裡,而不是變成一次未分類的執行期中止。
+
+  **與 ADR-0003 的分工**:ADR-0003 的格式選擇讓「自訂 `Object` 結構上不可能被產生」——那擋掉的是**類別**注入;本項擋的是**內建型別錯配**與**靜默截斷**。兩者互補,不重疊。`TR-affinity-019` 明訂本系統是反序列化語意驗證規則的唯一權威,故此規則歸本 ADR,不歸 ADR-0003。
+
+  **重建 `_records` 時一律經型別化邊界**:`from_dict()` 產出 `AffinityRecord` 後,以 `_records[pair].items.append(record)` 寫入,其中 `pair` 必須是由字串名稱經 `AffinityTypes.Pair[name]` 轉換並驗證過的列舉值——**不得**把還原自存檔的原始 `Variant` 直接當作 subscript 鍵(見機制四之二的兩條邊界規則與 registry 的 `raw_variant_subscript_into_typed_container`)。**存檔還原是唯一一條「外來資料進入 `_records`」的路徑,層三空隙在這裡的暴露面最大。**
 
   任一檢查失敗回傳結構化 `ImportResult`(標明失敗的具體規則),對應存檔系統 `SEMANTIC_VALIDATION_FAILED` 路徑的輸入。**本方法回傳的失敗結果與 `append_record()` 等寫入端拒絕規則是兩個不同層級的檢查**(GDD「範圍聲明」段落已明訂),不共用同一個錯誤碼列舉,避免呼叫端誤判兩種來源的驗證失敗為同一件事。
 - **容器格式本身由存檔系統 ADR 決定**:`export_state()`/`import_state()` 只交換通用 `Dictionary`,不論存檔系統最終選 `Resource`/`.tres`、JSON 或自訂二進位,只需在其序列化層外包一次 `Dictionary ↔ 目標格式` 的轉換,不需要碰觸本系統內部。
@@ -307,8 +409,9 @@ func can_write(pair: AffinityTypes.Pair, source: AffinityTypes.Source) -> bool
                     ┌───────────────────────────────────────────────┐
                     │           AffinityDataPool(DI 注入)            │
                     │                                                │
-                    │  _records: Dictionary[AffinityTypes.Pair, Array[            │
-                    │             AffinityRecord]]                  │
+                    │  _records: Dictionary[AffinityTypes.Pair,       │
+                    │             AffinityRecordList]                │
+                    │             └─ items: Array[AffinityRecord]    │
                     │  _t_now: int  ← 執行期快取,載入時由總筆數重建   │
                     │  _campaign_tick_marks: Array[int]              │
                     │  _death_marks: Dictionary[AffinityTypes.Character, int]      │
@@ -344,7 +447,7 @@ func can_write(pair: AffinityTypes.Pair, source: AffinityTypes.Source) -> bool
 
 以下為本 ADR 定案的契約形狀。**具體命名與型別簽章可在實作時微調,但語意不得改變**;任何改變語意的調整須回頭修訂本 ADR。
 
-> **閱讀提醒**:以下為概念契約,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時各類別應落在各自檔案(如 `affinity_record.gd`、`affinity_data_pool.gd`、`affinity_read_result.gd`)。
+> **閱讀提醒**:以下為概念契約,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時各類別應落在各自檔案(如 `affinity_record.gd`、`affinity_record_list.gd`、`affinity_data_pool.gd`、`affinity_read_result.gd`)。
 
 ```gdscript
 # ─── affinity_record.gd ──────────────────────────────────────
@@ -356,6 +459,11 @@ var c: int
 var source: AffinityTypes.Source
 func to_dict() -> Dictionary: ...
 static func from_dict(d: Dictionary) -> AffinityRecord: ...
+
+# ─── affinity_record_list.gd ─────────────────────────────────
+# 繞過 GDScript 不支援巢狀型別容器的包裝層,見機制二 2026-08-20 BLOCKING 修訂
+class_name AffinityRecordList extends RefCounted
+var items: Array[AffinityRecord] = []
 
 # ─── affinity_data_pool.gd ───────────────────────────────────
 class_name AffinityDataPool extends RefCounted
@@ -432,11 +540,21 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 - **Cons**:GDScript `Array` 作為 `Dictionary` 鍵雖技術上可行(依內容雜湊/比對,不同於 `Object` 參照鍵),但**可變物件作為鍵值本身是已知風險模式**——若該 `Array` 實例在被用作鍵之後又被其他程式碼路徑意外修改(例如誤用同一個陣列變數),會破壞雜湊桶一致性。這與 `TR-affinity-003` 明文示警的參照/可變性陷阱精神相通,不建議在本專案已知唯一一類陷阱旁邊,再引入同類風險的第二種形式。
 - **Rejection Reason**:`enum Pair` + `Pair.of()` 正規化建構函式同時消除了組合列舉的手動維護負擔(建構函式內部查表,呼叫端不需要知道 10 個成員叫什麼)與可變鍵風險,是嚴格更安全的選項,額外成本只是一次性寫死 10 個 enum 成員與一張查表。
 
+### Alternative 7:`Dictionary[AffinityTypes.Pair, Array]`(值槽不帶元素型別)
+
+- **Description**:值槽宣告為裸 `Array`,靠寫入紀律保證裡面裝的是 `Array[AffinityRecord]`。與機制二採用的 `AffinityRecordList` 一樣可繞過巢狀型別容器的語言限制,但不需要新增類別。
+- **Pros**:不需要新增一個全域 `class_name`,不需要 `.items` 這一層間接。
+- **Cons(2026-08-20 實測修正)**:代價**不是**「內層完全無型別」——實測把 `Array[AffinityRecord]` 存進裸 `Array` 值槽後讀回,`is_typed()` 仍為 `true`(`x7_typed_inner_in_bare_slot.gd`)。真正的代價是**不強制**:該值槽同時接受型別化與未型別化的 `Array`(對照組:未型別化字面量 `is_typed = false`),編譯期與執行期都沒有任何一層會阻止未型別化的 `Array` 被放進去。
+- **Rejection Reason**:「不強制」只能用 setter 或撰寫紀律收斂,而本 ADR 系列反覆主張的立場是**結構保證優於紀律要求**(見 ADR-0003 對反序列化型別白名單的處理——它選了一個「結構上不可能產生自訂 `Object`」的格式,而非維護一份 app 層白名單)。另外覆核者自陳此選項還有一項**未測**:未型別化的 `Array` 存進去後,能否再被當成 `Array[AffinityRecord]` 讀出使用——若採此方案就必須先補這項驗證,選包裝類別則不需要。
+
+> **原巢狀宣告 `Dictionary[Pair, Array[AffinityRecord]]` 不列為 Alternative**——它不是被權衡後拒絕的方案,是**被引擎否決的原決策**。該事實記在 Status 的修訂註記與機制二內。
+
 ## Consequences
 
 ### Positive
 
-- **24 項 `TR-affinity-*` 缺口一次性獲得具體型別與介面**,`/create-architecture`/`/create-stories` 不需要再等待或重新推導本系統的資料結構。
+- **24 項 `TR-affinity-*` 的具體型別與介面已定案**,`/create-architecture`/`/create-stories` 不需要再等待或重新推導本系統的資料結構。**涵蓋分佈本身不由本 ADR 自陳**——第五輪 `/architecture-review` 獨立推導的結果與後續輪次為權威來源。
+- **核心資料結構已在真機編譯驗證過**(2026-08-20):這是本專案第一份經實機驗證的 ADR。驗證直接擊落了原本的核心宣告——若照原計畫把本 ADR 推上 `Accepted` 再往下走 story,那一行會在實作第一天就爆,而那時它已是「已核准的架構決策」。
 - **與存檔系統 ADR 完全解耦**:`export_state()`/`import_state()` 的通用 `Dictionary` 契約讓存檔格式決策(`TR-save-001`)可以在本 ADR 之後任意時間點做出,不需要回頭修改本 ADR 或已寫好的程式碼。
 - **執行緒安全義務一次性、無條件滿足**:不論存檔系統未來選擇同步或背景執行緒,`_serialization_tokens` 的並發正確性已經成立,不會有「存檔系統 ADR 選了背景執行緒才發現這裡忘了加鎖」的風險。
 - **可單元測試性**:DI 擁有模式 + 無場景樹依賴,讓 7 類拒絕情境、5 條跨結構不變量等大量邊界案例可以用乾淨、隔離、不需引擎執行環境的單元測試逐一覆蓋,直接對應 GDD Acceptance Criteria 章節的密集驗收條件。
@@ -446,6 +564,8 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 
 - **多一份必須維護的文件與交叉指標**:GDD 現有多處指標指向未來的本 ADR;本 ADR 也回指 GDD 各章節。任一方修訂時須檢查另一方——本專案已知最容易產生傳播失敗的動作。
 - **無條件 Mutex 是一個保守選擇,可能是不必要的成本**(雖然可忽略):若存檔系統最終確定選擇同步阻塞式寫入(`TR-save-005` 原本的 `provisional` 傾向),這個 Mutex 保護實際上永遠不會有並發競爭場景,只是純粹的鎖開銷。
+- **多一層 `.items` 間接與一個額外的全域 `class_name`**(2026-08-20 新增):`AffinityRecordList` 純粹是為了繞過 GDScript 不支援巢狀型別容器而存在的包裝層,本身沒有任何行為;每一處存取 `_records` 的程式碼都要多寫 `.items`。這是**語言限制的直接成本,不是設計偏好**——已實測確認本次涵蓋的候選中無其他能同時保住兩層型別的寫法。
+- **型別錯誤是本 ADR 拒絕碼機制唯一涵蓋不到的失敗類別**(2026-08-20 新增):見機制四之三。7 類 `WriteRejection` 涵蓋值域與狀態的非法,不涵蓋型別的非法;型別非法的失敗形式是呼叫端函式中止,不是回傳碼。這把一部分驗證責任明文推給上游呼叫方。
 - **`can_write()` 的窄範圍決定隱含一個未來風險**:若第二個封鎖成因出現卻沒有被正確辨識為需要升級全作用域登記處,`can_write()` 只涵蓋本系統自知的邏輯,不會自動涵蓋未來其他系統引入的封鎖成因。
 
 ### Risks
@@ -456,14 +576,16 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 | **`_records`/`_death_marks`/`_campaign_tick_marks` 本身未加鎖**:本 ADR 假設寫入(`append_record` 等)只發生在主執行緒/遊戲邏輯執行緒,唯有序列化的**讀取**(`export_state()`)可能發生在背景執行緒——若這個假設不成立(例如未來某系統嘗試在背景執行緒呼叫 `append_record`),會產生資料競爭 | 本 ADR 的隱含前提已於此處明文記載:唯一可能的背景執行緒存取路徑是存檔系統的**唯讀**匯出,且該路徑受 `_token_mutex` 保護的「非原子視窗期間拒絕寫入」規則保護(視窗開啟時所有寫入方法皆拒絕)——只要存檔系統遵守「匯出前必先 `begin_non_atomic_window()`」的契約,`export_state()` 執行期間不會有並行寫入,不需要對 `_records` 本身額外加鎖。若未來出現本 ADR 未預期的背景寫入路徑,須回頭重新評估 |
 | **`TOKEN_TIMEOUT_MS` 未定案**,若設得過短,會誤將仍在合法進行中的慢速操作(例如大型遷移的最後一步)判定為逾時回收,造成 `end_non_atomic_window` 回傳非預期的 `TIMED_OUT_RECLAIMED` 而非 `RELEASED` | **2026-08-19 修訂(C1 銜接缺口關閉)**:此值的**定值責任已由 ADR-0004 明文接下**(見該 ADR 機制六「C1 銜接缺口」段落),不再是本表原本模糊的「留待存檔系統 ADR 或實測校準」——該模糊措辭與 ADR-0004 上一版的「非本系統補償」互相推諉,使本值連續三輪 `/architecture-review` 被判為**孤兒義務**。定值依據是遷移鏈深度上界 × 幀預算 + 兩階段回寫最壞 I/O 時間 × 安全係數,**只有 ADR-0004 掌握這些量**。本系統仍擁有逾時**機制**的執行(機制七的逐權杖惰性清除),但不擁有那個數字。`TIMED_OUT_RECLAIMED` 本身被設計為非故障結果,呼叫方可自行決定如何處理,不會導致資料損毀 |
 | **`AffinityTypes.Pair` 的 10 個成員在角色系統定案實際命名前只是佔位符**,若角色系統設計時發現主角規模政策變動(理論上已由 `game-concept.md` 主角群規模裁決鎖定 5 人,但仍是一個交叉文件的相依) | 若角色數量變動,`Pair`/`Character` enum 需要重新生成(10 對 → 其他組合數),`AffinityTypes.pair_of()` 的查表邏輯集中在單一函式,重新生成的影響範圍侷限,不擴散到呼叫端邏輯 |
-| **全域 `class_name` 命名碰撞**(2026-08-18 `godot-specialist` 驗證發現,低風險前瞻性提醒):`class_name` 註冊是專案級扁平命名空間,`AffinityRecord`/`HypotheticalEntry`/`AffinityReadResult`/`ShapeFeatureResult`/`AffinityDataPool`/`AffinityTypes` 六個全域類別名稱未來可能與其他系統或第三方 addon 的類別名稱碰撞 | 六個名稱皆帶 `Affinity` 字首(`AffinityTypes` 包裝三個共用 enum,避免了原草稿 `Pair`/`Character`/`Source` 這類過於通用、碰撞風險較高的裸命名),目前 `src/` 為空、無碰撞對象;此為一次性命名慣例,無需額外機制 |
+| **export release 建置下 C++ 容器驗證(層二)可能被編譯掉**,使錯誤型別的值寫入 `_records` 時既不中止也不被丟棄。⚠️ 最壞影響不是崩潰,是**靜默存檔損壞且出貨版本專屬**:壞值經 ADR-0003 的 `var_to_bytes()` 序列化並通過兩層 SHA-256 雜湊鏈(雜湊驗位元組完整性、不驗語意),形成「debug 測得出、release 測不出」的不一致 | 三重,且三者對應**不同**的進入路徑:(i) **機制四之二的規則二(值邊界)**——值一律經靜態型別建構賦值、從不經 `Variant` 中介,層一在賦值處即受檢(編譯期,建置無關),層二因此只是同一件事的第二道確認;**規則一(鍵邊界)關的是層三,與本列無關**——本次修訂的初稿曾把兩者混為一談,已由 Step 5.5 覆核抓出並改正;(ii) **`validate_semantics()` 的逐欄位檢查已擴充為「型別 + 值域」**(機制八)——這是唯一涵蓋 `import_state()` 那條外來資料路徑的防線,app 層、與建置組態無關;(iii) Verification Required #7 記錄了建置無關的探針設計與 CI 回歸測試建議 |
+| **型別錯誤是本 ADR 拒絕碼機制唯一涵蓋不到的失敗類別**:型別化參數的阻擋方式是整段**呼叫端**函式中止(2026-08-20 實測),不是可判斷的回傳值。上游若持有來源不明的 `Variant` 並直接傳入,失敗會表現為呼叫端函式靜默中止(在 release 建置下甚至可能連錯誤都不列印,見 Verification Required #7),而非一個 `WriteRejection` | 明文列為**呼叫端義務**(機制四之三):上游必須在呼叫前自行以 `typeof()` 收斂型別。本系統 7 類拒絕碼的範圍界線同時明文化為「值域與狀態的非法,不含型別的非法」。**本 ADR 刻意不新增 `INVALID_TYPE` 拒絕碼**——那會是一個結構上不可能被回傳的死碼,反而誤導呼叫方以為型別錯誤會被本系統攔下並回報 |
+| **全域 `class_name` 命名碰撞**(2026-08-18 `godot-specialist` 驗證發現,低風險前瞻性提醒):`class_name` 註冊是專案級扁平命名空間,`AffinityRecord`/`AffinityRecordList`/`HypotheticalEntry`/`AffinityReadResult`/`ShapeFeatureResult`/`AffinityDataPool`/`AffinityTypes` **七**個全域類別名稱(2026-08-20 由六增為七,新增 `AffinityRecordList`)未來可能與其他系統或第三方 addon 的類別名稱碰撞 | 七個名稱中六個皆帶 `Affinity` 字首(`AffinityTypes` 包裝三個共用 enum,避免了原草稿 `Pair`/`Character`/`Source` 這類過於通用、碰撞風險較高的裸命名),目前 `src/` 為空、無碰撞對象;此為一次性命名慣例,無需額外機制 |
 
 ## GDD Requirements Addressed
 
 | TR-ID | 需求 | How This ADR Addresses It |
 |---|---|---|
 | TR-affinity-001 | Delta Log 5 欄型別化記錄,非 `Array[Dictionary]` | `AffinityRecord`(`RefCounted`,5 個型別化欄位:`pair: Pair`、`m: float`、`t: int`、`c: int`、`source: Source`) |
-| TR-affinity-002 | per-pair 索引,`O(n_p+m)` | `Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]`;`c_now(t_query)` 對 `_campaign_tick_marks` 線性計數,`O(m)` |
+| TR-affinity-002 | per-pair 索引,`O(n_p+m)` | `Dictionary[AffinityTypes.Pair, AffinityRecordList]`(內層 `items: Array[AffinityRecord]`;2026-08-20 修訂,原巢狀寫法在 4.7.1 無法編譯);`c_now(t_query)` 對 `_campaign_tick_marks` 線性計數,`O(m)` |
 | TR-affinity-003 | Dictionary 鍵須為值型別,不可為 Object 參照 | `Pair`/`Character` enum(int 底層)作為 `_records`/`_death_marks` 的鍵;序列化權杖為單調遞增 int,非物件身分(見 Alternative 4 的拒絕理由) |
 | TR-affinity-004 | 兩個獨立全域單調計數器,皆為衍生值,不得另存 | `_t_now`(執行期快取,載入時由記錄總筆數重建,不獨立持久化);戰役刻度計數器本身由 `_campaign_tick_marks.size()` 衍生 |
 | TR-affinity-005 | 獨立戰役刻度標記列表,`c_now` 不得由 Delta Log 的 `c_i` 推導 | `_campaign_tick_marks: Array[int]`,`advance_campaign_tick()` 附加而非由 `_records` 反推 |
@@ -511,6 +633,10 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 7. **公式四邊界測試**:零筆假設性項目呼叫回傳 `EMPTY_HYPOTHETICAL_SET`;陣亡配對呼叫回傳 `DEAD_PAIR_NOT_ALLOWED`;多筆假設性項目驗證 `t_new` 嚴格遞增且結果與「依序真實寫入後再讀取」完全一致(GDD 明文的等價性要求)。
 8. **後續 `/architecture-review`** 判定本 ADR 與其他 ADR(尤其 ADR-0001 的拒絕式閘門模式、`settlement_in_progress` 先例)無衝突、且對 `affinity-data-pool.md` 24 項需求的涵蓋無缺口。
 
+9. **兩條邊界規則各自的迴歸測試(兩項,不可合併)**(2026-08-20 新增):(a) **鍵邊界**——驗證「以 `Variant` 直接當 subscript 鍵寫入 `_records`/`_death_marks`」不存在於本系統任何程式碼路徑(靜態檢查/lint 層,非執行期),且所有公開寫入介面的鍵參數簽章皆為型別化 enum;(b) **值邊界**——驗證 `_records`/`_death_marks` 的每一處值槽賦值,其右手側的靜態型別皆為 `AffinityRecordList`/`AffinityRecord`/`int`,無任何一處是 `Variant`。**兩者必須是兩個獨立的測試**——(a) 通過不蘊含 (b) 通過,這正是本次修訂初稿把兩者混為一談時 Step 5.5 覆核抓到的錯誤。
+10. **`validate_semantics()` 的型別錯配案例測試(三類,缺一不可)**(2026-08-20 新增):對每個欄位各構造 (a)「型別正確、值域非法」、(b)「型別錯誤為 `String`」、(c)「型別錯誤為數值近親」三種輸入,驗證**三者都回傳結構化 `ImportResult` 而非執行期中止或靜默通過**。(b) 對應已實測的中止路徑:`m` 為 `String` 時不得走到 `is_nan()`/`is_inf()`,`t` 為 `String` 時不得走到 `t >= 1` 的比較。**(c) 是最容易漏的一類,且它不會中止**:`t`/`c` 給 `float 1.5`,驗證回傳型別失敗而**不是**被靜默截斷為 `1` 後通過全部檢查——這一類沒有任何引擎層錯誤可依賴,是本 ADR 自己的檢查漏掉就完全沒有人擋的唯一一類。
+11. **`AffinityRecordList` 包裝層的編譯驗證**(2026-08-20 新增):實作第一天即在真機編譯 `var _records: Dictionary[AffinityTypes.Pair, AffinityRecordList]` 的宣告,確認不再出現 `Nested typed collections are not supported`;並斷言 `_records[pair].items.is_typed() == true`(兩層型別皆保住)。**不可用 `get_class()` 做這項斷言**——它回傳原生類別,任何 `RefCounted` 子類都印 `RefCounted`;應用 `script.get_global_name()` 或 `is AffinityRecordList`。
+
 **反向驗證(本 ADR 若錯了會如何顯現)**:若 per-pair 索引實作有誤(例如意外退化為全表掃描),會表現為 `diagnostic_visited_count` 隨全域總筆數增長而非配對自身筆數增長——`AC-55` 對應的自動化測試會直接攔截。若權杖逾時邏輯過於激進(逾時門檻太短),會表現為合法但較慢完成的存檔操作被誤判為 `TIMED_OUT_RECLAIMED`,雖非資料損毀但會產生誤導性診斷紀錄,應在校準 `TOKEN_TIMEOUT_MS` 時特別注意。
 
 ## Related Decisions
@@ -521,3 +647,5 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 - `docs/architecture/architecture-review-2026-08-18.md` — 記錄本 ADR 為全專案最高優先 ADR 缺口的稽核結果。
 - `docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md`(2026-08-18 新增)——消費本 ADR 的 `export_state()`/`import_state()` 契約作為好感度區塊的 payload 來源,並促成本 ADR 新增 `validate_semantics()`(見機制八回填修訂)。
 - **待建**:存檔系統原子寫入與遷移執行模型 ADR(`TR-save-005` 及其下游)——可直接引用本 ADR 的 `export_state()`/`import_state()`/`validate_semantics()` 契約。
+- `prototypes/engine-verification-spike-2026-08-20/` 與 `prototypes/xcheck-gdscript-specialist-2026-08-20/`(2026-08-20 新增)——本次修訂的**全部實測證據來源**。原始未過濾 log 已歸檔(`logs/run-final-2026-08-20-headless.txt`、`logs/xcheck{1,2,3,4}-unfiltered.txt`),檔頭自帶執行指令、exit code 與判讀陷阱,**下一輪覆核不需回讀對話**。⚠️ 兩份 README 皆自陳探針弱點與已被推翻的結論,引用前請讀「結論歸屬」一節。
+- `docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`(2026-08-20 新增交叉引用)——Verification Required #7(export release 建置)是兩份 ADR 共同的待驗證項,但**依賴方向不同**:本 ADR 只依賴層 A(容器驗證是否丟棄寫入)且已由機制四之二的規則二降為縱深防禦;ADR-0005 的 S-1 必要性論證依賴層 B(GDScript VM 是否中止所在函式),**尚未降級**。

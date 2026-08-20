@@ -84,7 +84,7 @@ state_ownership:
     status: active
     owner_system: affinity-data-pool
     adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
-    interface: "AffinityDataPool.append_record(pair, m, source) -> WriteRejection (write); AffinityDataPool.combat_strength_read/narrative_depth_read/shape_feature_read/speculative_read (read). Backed by Dictionary[AffinityTypes.Pair, Array[AffinityRecord]]."
+    interface: "AffinityDataPool.append_record(pair, m, source) -> WriteRejection (write); AffinityDataPool.combat_strength_read/narrative_depth_read/shape_feature_read/speculative_read (read). Backed by Dictionary[AffinityTypes.Pair, AffinityRecordList] (inner items: Array[AffinityRecord]; 2026-08-20 revision - the original nested form does not compile in 4.7.1)."
     write_access: affinity-data-pool-only (via append_record; writers are skill-card, support-conversation, and chapter/campaign-structure systems calling this single method)
     notes: "Append-only. t_now/campaign tick are derived, cached values, never persisted independently. Per-pair indexed for O(n_p+m) query complexity — see affinity_pair_key_representation below."
     referenced_by:
@@ -1755,6 +1755,36 @@ forbidden_patterns:
       automated floor.
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-19c"
+
+  - pattern: raw_variant_subscript_into_typed_container
+    status: active
+    description: >
+      Two distinct violations, one per boundary. (Rule 1, keys) Using a Variant-sourced
+      value — anything not narrowed through a typed parameter signature — directly as a
+      subscript KEY into a typed Dictionary such as _records or _death_marks.
+      (Rule 2, values) Writing into the VALUE slot of those containers from anywhere other
+      than a statically typed construction inside AffinityDataPool itself
+      (AffinityRecordList.new(), an internally built AffinityRecord, or an int) — in
+      particular, never assigning a Variant/Object obtained from outside the system.
+    why: >
+      Measured on Godot 4.7.1 (2026-08-20). Rule 1: the typed-Dictionary subscript path
+      does NOT enforce enum family. Dictionary[Pair,int][Character.CHARACTER_3] = 99
+      succeeds silently — size=1, keys=[2], zero error output — because the container
+      erases enum keys to TYPE_INT (get_typed_key_builtin() == 2). The compiler DOES
+      discriminate enum families at typed assignment and typed-container assignment
+      boundaries, so routing every external key through a typed parameter closes the only
+      known static-checking gap. Rule 2 is a SEPARATE guarantee and must NOT be conflated
+      with Rule 1 — the first draft of this revision did exactly that and Step 5.5 review
+      rejected the derivation. The value slot is guarded at runtime by C++ container
+      validation, whose behaviour under an export release build is UNVERIFIED (ADR-0002
+      Verification Required #7). Keeping every value construction statically typed means
+      layer 1 checks it at the assignment site, making the release-build question a
+      defence-in-depth concern rather than a correctness dependency. Without either rule a
+      wrong-typed key or value is written silently and surfaces far from the write site —
+      worst case as save corruption that passes ADR-0003's two SHA-256 chains, since hashes
+      verify byte integrity, not semantic validity.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-20"
 # Example:
 #
 # forbidden_patterns:
