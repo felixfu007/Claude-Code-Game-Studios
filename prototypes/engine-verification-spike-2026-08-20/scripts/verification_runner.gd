@@ -358,11 +358,11 @@ func _risky_0_known_failing_compiles() -> void:
 
 	print("")
 	print("  (iii) A1(b):靜態可見的錯誤**鍵**型別(字面量 String 當鍵)")
-	_load_report("Dictionary[Pair, int] 內寫 d["this_is_not_an_enum"] = 1", "a1_typed_dict_bad_key_static.gd")
+	_load_report("Dictionary[Pair, int] 內寫 d['this_is_not_an_enum'] = 1", "a1_typed_dict_bad_key_static.gd")
 
 	print("")
 	print("  (iv) A1(c):靜態可見的錯誤**值**型別(int 當值)")
-	_load_report("Dictionary[Pair, int] 內寫 d[Pair.C1_C2] = "not_an_int"", "a1_typed_dict_bad_value_static.gd")
+	_load_report("Dictionary[Pair, int] 內寫 d[Pair.C1_C2] = 'not_an_int'", "a1_typed_dict_bad_value_static.gd")
 	print("")
 	print("      A1 判讀:(iii)(iv) FAILED → 編譯期擋得住錯誤字面量;")
 	print("               COMPILED OK → 連靜態可見的錯誤都不擋,配合 A2 已測出的")

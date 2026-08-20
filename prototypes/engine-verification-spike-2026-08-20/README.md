@@ -3,12 +3,16 @@
 > **PROTOTYPE — NOT FOR PRODUCTION / 拋棄式技術驗證,不是實作,不進 `src/`**
 >
 > **日期**:2026-08-20
-> **Status**:**in-progress** —— 已建置完成,**尚未執行**。等待人類測試者在 Godot 中跑 Phase 1。
-> 結果回填於本檔末尾「Findings」節;該節填妥後本 spike 即轉為 **concluded**。
+> **Status**:**concluded**(Phase 1)—— 2026-08-20 共執行五次,結果全部回填於本檔末尾「Findings」節。
+> Phase 2(GdUnit4)仍為 **in-progress**,需先安裝 addon。
+> 依 `.claude/rules/prototype-code.md`,已 concluded 的部分**不得再擴充**。
 >
-> **執行者分工**:agent 寫這份 spike;**人類測試者在 Godot 裡執行**,把輸出貼回對話。
-> 本 agent 的環境沒有安裝 Godot(`which godot` 無結果),無法自行執行 ——
-> 比照 `prototypes/cursor-reclaim-godot-spike-2026-08-05/` 的既有分工。
+> **執行者**:前四次由人類測試者於 Godot Editor 手動執行;**最終(第五次)由 agent 自行以
+> headless 模式執行完成**。
+>
+> ⚠️ 本檔初版寫「本 agent 的環境沒有安裝 Godot(`which godot` 無結果),無法自行執行」——
+> **那是錯的,見 F-14**。執行檔在 `~/Downloads/Godot_v4.7.1-stable_win64.exe/` 底下,
+> 只是不在 `PATH` 上。原始輸出存於 `logs/run-final-2026-08-20-headless.txt`。
 
 ---
 
@@ -338,6 +342,40 @@ cross_enum_final_value_at_0 = from_Character
 
 ---
 
+> ### ⚠️ F-3 的重大更正(2026-08-20 最終執行,headless)
+>
+> **上面「執行期沒有防線」「鍵值型別保證等於零」的說法太重,不成立。** 最終執行的
+> RISKY 2 區(實際動態寫入)顯示執行期**確實會擋**:
+>
+> ```
+> ERROR: Attempted to set a variable of type 'String' into a TypedDictionary.Key of type 'int'.
+> ERROR: Condition "!_p->typed_key.validate(key, "set")" is true. Returning: false
+> SCRIPT ERROR: Invalid assignment of property or key 'not_an_enum' with value of type 'int'
+>               on a base object of type 'Dictionary[int, int]'.
+> ```
+>
+> 值那一側同理(`TypedDictionary.Value of type 'int'`,`typed_value.validate` 失敗)。
+> **寫入被丟棄(`Returning: false`)並拋出腳本錯誤,不是靜默放行。**
+>
+> **精確的圖像應該是三層,而不是「有/沒有」**:
+>
+> | 層級 | 是否擋得住 | 證據 |
+> |---|---|---|
+> | **編譯期**,錯誤的**內建型別**字面量 | ✅ 擋 | `Parse Error: Invalid index type "String" for a base of type "Dictionary[AffinityTypes.Pair, int]"`、`Cannot assign a value of type "String" as "int"` |
+> | **執行期**,經 `Variant` 藏起來的錯誤**內建型別** | ✅ 擋 | 上方 `typed_key.validate` / `typed_value.validate` 失敗 |
+> | **enum 家族身分**(`Pair` vs `Character`,兩者皆為 `int`) | ❌ **完全不擋** | 引擎自己的訊息寫 **`on a base object of type 'Dictionary[int, int]'`** —— `Dictionary[AffinityTypes.Pair, int]` 在執行期就是 `Dictionary[int, int]`,enum 家族資訊被抹除 |
+>
+> **對 ADR-0002 的正確結論**:型別化容器的保證**對內建型別混用是真的**(String 塞不進去,
+> 編譯期與執行期兩道都擋);**唯一缺的是 enum 家族之間的區辨** —— 而那恰好就是 ADR-0002
+> 面對的風險(`Pair` 與 `Character` 都是 `int`)。
+>
+> 所以機制四要寫的限制**不是**「型別標註沒有保證」,而是精確的那一句:
+> **「同一個容器內不得混用兩個不同的 enum 家族作為鍵,因為執行期無從區辨;
+> `_records` 與 `_death_marks` 必須維持結構獨立,這一點無法靠型別系統保證,必須靠設計。」**
+>
+> 這個更正很重要,因為兩種寫法會導向不同的修法:若「保證等於零」,機制四得放棄型別標註
+> 另尋出路;若「只缺 enum 家族區辨」,型別標註值得保留,只需補一條明文的容器隔離規則。
+
 #### F-4 · Agile Event Flushing 的鍵名 ADR 猜對了 · **已關閉** · ADR-0005 VR #3
 
 **實測輸出原文**:
@@ -583,14 +621,76 @@ ERROR: Failed to load script "res://scripts/c1_subclass_incomplete.gd" with erro
 **本項不受 F-8 影響** —— 判定依據是引擎訊息本身,不是 spike 的 `[COMPILED OK]` 標籤
 (那個標籤在本項是誤報)。
 
+#### F-12 · 修正後的判定機制有效,RISKY 0 五項全部正確回報 · **已關閉**(F-8 的驗證)
+
+最終執行(headless)的 RISKY 0 五項全部回報 `FAILED (reload=Parse error)`,
+與 F-8 修法前的五項全誤報 `COMPILED OK` 形成直接對照。**`reload()` 回傳 `Error` 是可靠的
+編譯判定,`load() != null` 不是。**
+
+五項各自的引擎訊息(這些訊息本身比「FAILED」有價值得多):
+
+| 項 | 引擎訊息 | 關閉的問題 |
+|---|---|---|
+| (i) | `Parse Error: An abstract function cannot have a body.` | F-1 |
+| (i-b) | `Parse Error: Nested typed collections are not supported.` | F-6 |
+| (ii) | `Parse Error: Class "..." must implement "SpikeBareWithSignal.diagnostic_seed_position()" and other inherited abstract methods or be marked as "@abstract".` | F-11 / ADR-0004 VR #6a |
+| (iii) | `Parse Error: Invalid index type "String" for a base of type "Dictionary[AffinityTypes.Pair, int]".` | A1 靜態層(鍵) |
+| (iv) | `Parse Error: Cannot assign a value of type "String" as "int".` | A1 靜態層(值) |
+
+---
+
+#### F-13 · C1 在可靠判定下結果不變 · **已關閉** · ADR-0005 VR #1、ADR-0004 VR #6
+
+F-7 的結論是在不可靠的判定機制下得到的,因此標為待覆核。最終執行以 `reload()` 重驗:
+
+```
+    [COMPILED OK           ]  Array[T]   ←對照組
+    [COMPILED OK           ]  bool
+    [COMPILED OK           ]  float
+    [COMPILED OK           ]  void
+    [COMPILED OK           ]  Vector2    ←R4-2 BLOCKING 修法所依賴者
+    [COMPILED OK           ]  類別內同時有 signal + 兩個 @abstract func
+    [COMPILED OK           ]  @abstract func inline_declared() -> bool
+    [COMPILED OK           ]  完整實作全部抽象方法
+```
+
+**八項全部 COMPILED OK,F-7 的結論成立。** `Vector2` 合法 → R4-2 的 BLOCKING 修法語法基礎確認。
+
+---
+
+#### F-14 · 「本 agent 無法執行 Godot」也是錯的,而且我犯了第三次同型錯誤 · **流程**
+
+**(1) 我可以自己跑 Godot。** 執行檔在
+`C:\Users\felixfu007\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe`,
+`--version` 回報 `4.7.1.stable.official.a13da4feb`,`--headless --path` 可完整跑完本 spike
+(exit 0)。**本檔開頭寫的「本 agent 的環境沒有安裝 Godot(`which godot` 無結果)」是錯的** ——
+`which` 找不到只代表不在 `PATH` 上。
+
+這與 F-1 抓到的錯誤**同型**:一個否定性的結論,證據只有一次窄範圍的查詢。
+2026-08-05 那份 spike 的 README 說得精確(「本 agent 的環境沒有安裝 Godot」在當時可能為真),
+但我在 2026-08-20 沿用了那句話**而沒有重新查證**,還讓使用者手動跑了四輪。
+
+**(2) headless 跑法需要一個設定。** `application/run/flush_stdout_on_print` 預設 `false`
+(這個值本身是 C3 那一節掃出來的),`print()` 會被緩衝,程式不退出就一個字都看不到 ——
+第一次 headless 嘗試因此完全沒有輸出且超時。已在本 spike 的 `project.godot` 開啟。
+
+**(3) 第三次自傷:我用 perl 改標籤文字時弄掉了字串轉義,讓 `verification_runner.gd`
+編譯不過**(`Parse Error: Expected closing ")" after call arguments.`),
+於是使用者第五次執行只看到三行編輯器錯誤、什麼報告都沒有。**那一輪是我浪費的。**
+
+三次自傷的共同形狀:**F-5** 假設「硬中止只來自執行期崩潰」、**F-8** 假設「load 失敗回傳
+null」、**本項** 用批次字串替換改動程式碼後**沒有重新驗證它還能編譯**。
+前兩次是把未查證的引擎行為當已知,第三次是改完不驗。
+**改程式碼之後跑一次,成本是零 —— 而我現在確定跑得起來。**
+
 ### Phase 1
 
 | 檢查 | 實測輸出 | 判定 | 回寫目標 |
 |---|---|---|---|
-| A1 型別化容器宣告形式 | 見 **F-6** + **F-9** | **BLOCKING**(原宣告無法編譯);**替代方案 (d) 已確認可用** | ADR-0002 VR #1、機制四 |
-| A2 `enum` 當鍵的雜湊/相等語意 | 見 **F-3** | **已關閉(中高發現)** | ADR-0002 VR #2 |
+| A1 型別化容器宣告形式 | 見 **F-6**、**F-9**、**F-3 更正** | **BLOCKING**(原宣告無法編譯);替代方案 (d) 可用;型別保證的精確界線已釐清 | ADR-0002 VR #1、機制四 |
+| A2 `enum` 當鍵的雜湊/相等語意 | 見 **F-3** 及其**重大更正** | **已關閉(中發現,非中高)** | ADR-0002 VR #2 |
 | A3 `pow(0.0, 0.0)` | 見 **F-2** | **已關閉** | ADR-0002 VR #3 |
-| C1 `@abstract` 四種回傳型別 | _(待填)_ | _(待填)_ | ADR-0005 VR #1、ADR-0004 同項 |
+| C1 `@abstract` 語法與四種回傳型別 | 見 **F-1**(參考庫範例有誤)、**F-7**、**F-11**、**F-13**(可靠判定下覆核通過) | **已關閉** | ADR-0005 VR #1 / R4-2、ADR-0004 VR #6 / #6a |
 | C2 `Callable.is_valid()` 具名 vs lambda | 見 **F-10** | **已關閉** —— 兩形式行為相同,發現 G 前提被推翻 | ADR-0005 VR #15、VC #18 |
 | C3 Agile Event Flushing 鍵真名 | 見 **F-4** | **已關閉** | ADR-0005 VR #3 |
 
