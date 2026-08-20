@@ -44,9 +44,22 @@ This supplements (not replaces) the agent's built-in knowledge.
   class_name BaseEnemy extends CharacterBody3D
 
   @abstract
-  func get_attack_pattern() -> Array[Attack]:
-      pass  # Subclasses MUST override
+  func get_attack_pattern() -> Array[Attack]
   ```
+
+  > **2026-08-20 更正(Godot 4.7.1 headless 實機驗證)**:`@abstract func` 必須是**裸簽章**
+  > —— 無冒號、無函式主體,**連 `pass` 都不行**。本範例先前的版本在簽章後帶 `:` 與 `pass`
+  > 主體,那是硬性 parse error:`Parse Error: An abstract function cannot have a body.`
+  > 裸簽章已實測對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆合法;
+  > `@abstract` 類別內亦可同時宣告 `signal` 與多個 `@abstract func`。
+  > **類別層寫法(`@abstract` 獨立一行、置於 `class_name` 之前)原本就是對的,未改動。**
+  > 證據:`prototypes/engine-verification-spike-2026-08-20/logs/run-final-2026-08-20-headless.txt`。
+  >
+  > ⚠️ **本範例曾是 ADR-0004 與 ADR-0005 引為「本專案唯一已查證的 `@abstract` 範例」的唯一依據**,
+  > 錯誤因此傳播到那兩份文件共 13 處宣告(ADR-0004 五處、ADR-0005 八處),兩份各另有一處
+  > 明文指示句要求「沿用該形式」。第三輪 `/architecture-review` 把 `@abstract` 語法由「印象」
+  > 升級為「已查證」的依據就是逐字比對這個錯誤範例 —— **那次升級無效**。
+  > 詳見 `docs/architecture/architecture-review-2026-08-20-round7.md` 第 3.3/3.5 節。
 
 - **Script backtracing**: Detailed call stacks available even in Release builds
 
