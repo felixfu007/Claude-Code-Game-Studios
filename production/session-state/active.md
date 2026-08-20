@@ -3,7 +3,7 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 /architecture-decision 已完成 ADR-0002 引擎行為實機驗證修訂(ledger A1~A14 全數處理,五份檔案已寫入,registry 68→69)—— F-6 BLOCKING 關閉(改採包裝類別 AffinityRecordList)、新增三層型別保證圖像與鍵/值兩條邊界規則、validate_semantics() 型別檢查改 typeof() 內省、VR 五項擴為八項(六關兩開)。寫入前 Step 5.5 雙軌覆核抓出並修畢本次修訂初稿自己引入的 2 項缺陷(B1 推導鏈錯位、VR 計數低估),B2 以 XCHECK-4 探針實測關閉並另測出 float→int 靜默截斷洞。ADR-0002 現為最接近可 Accepted 的一份,但需先跑第七輪獨立 /architecture-review。下一步:ADR-0004/0005 修訂(0005 與第六輪遺留 R6-6~R6-13 合併)
+Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。下一步:`/architecture-decision` 修訂 ADR-0002(修訂前先補測兩項探針殘留)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併)
 <!-- /STATUS -->
 
 **最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
@@ -65,13 +65,13 @@ Task: 2026-08-20 /architecture-decision 已完成 ADR-0002 引擎行為實機驗
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
 | **架構登記處** | **69 項立場**(10 state-ownership、11 interface contracts、23 API decisions、**25** forbidden patterns)—— 2026-08-20 ADR-0002 修訂新增 `raw_variant_subscript_into_typed_container`,ADR-0002 佔 13 項。以下為前次紀錄:**68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
-| **需求涵蓋** | 130 項 TR:**68 ✅ / 30 ⚠️ / 32 ❌**(第五輪 `/architecture-review` 判定);游標系統 15 ✅ / 4 ⚠️ / 0 ❌。**第三次修訂後的分佈至今仍未被獨立推導** —— 第六輪為範圍限縮審查、明文未重推,待**第七輪** |
-| **最新審查判定** | **CONCERNS**(2026-08-19 **第六輪**,範圍限縮、**零 BLOCKING**;第三~六輪皆 CONCERNS)。第六輪判定第三次修訂的 17 項中 16 項完整關閉,新增 R6-1~R6-13(5 項已修、8 項待第四次修訂)。以下涵蓋數字仍為**第五輪**的,第六輪未重推 —— **CONCERNS**(2026-08-19 第五輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL。三個 Foundation 層系統合計 73 項需求**僅 1 項缺口**(`TR-save-030` 雲端同步) |
+| **需求涵蓋** | 130 項 TR:**64 ✅ / 34 ⚠️ / 32 ❌**(2026-08-20 **第七輪** `/architecture-review` 獨立重推);游標系統 **12 ✅ / 7 ⚠️ / 0 ❌**、好感度 **21 ✅ / 3 ⚠️ / 0 ❌**。⚠️ **下降不是 ADR 退步** —— 第五輪的 68/30/32 與游標 15/4/0 是在 R6-6~R6-13 被發現**之前**算的,第六輪發現了那 8 項但範圍限縮未重推;本輪是第一次把它們算進涵蓋判定。三個 Foundation 系統合計 73 項**仍只有 1 項缺口**(`TR-save-030`)|
+| **最新審查判定** | **CONCERNS**(2026-08-20 **第七輪**;第三~七輪皆 CONCERNS)。但與第六輪(零 BLOCKING)有實質差異:**三份 ADR 各帶 BLOCKING 級項目,且沒有一項屬於涵蓋缺口** —— 全部是已寫下的決策內容與已實測的引擎現實不符(ADR-0002 兩項 BLOCKING;ADR-0004/0005 共 13 處 `@abstract func ...: pass` 為已證實的編譯期錯誤)。**32 項 ❌ 中 25 項在戰棋系統**,該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
 | **實作** | `src/` 為空,尚無任何程式碼。**但 2026-08-20 已實證 Godot 4.7.1 可在本機 headless 執行**(執行檔在 `~/Downloads/Godot_v4.7.1-stable_win64.exe/`,不在 `PATH` 上)—— 多份 ADR 寫的「本專案無 Godot 執行環境」是錯的,見檔尾 Session Extract |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
-1. **5 份 ADR 全為 `Proposed`。** **✅ 2026-08-20 第二次更新:ADR-0002 的 BLOCKING 已由當日 `/architecture-decision` 修訂關閉(改採包裝類別 `AffinityRecordList`),核心結構已經真機編譯驗證。它現在是最接近可 `Accepted` 的一份——但建議先跑第七輪獨立 `/architecture-review` 重推涵蓋分佈,再由使用者裁決。**(前次紀錄:spike 實測抓到其機制四核心宣告在 4.7.1 無法編譯,需先修訂。)全框架五個消費者、零個生產者 —— 沒有任何 skill 會把 ADR 改成 `Accepted`,那是使用者裁決。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
+1. **5 份 ADR 全為 `Proposed`。** **🔴 2026-08-20 第三次更新(第七輪 `/architecture-review` 判定):ADR-0002 仍不可進 `Accepted`。** 2026-08-20 的修訂確實關掉了 F-6 BLOCKING(改採包裝類別 `AffinityRecordList`,且第七輪探針 A 已實機確認該宣告兩形皆編譯、兩層型別皆保住),**但第七輪抓出 17 項新的待關項,其中 2 項 BLOCKING**:R7E-6(`ReadRejection.FUTURE_TIME_QUERY` 是死碼 —— `t_query: Variant` 才是本 ADR 真正的 `Variant` 入口,而機制四之三的範圍宣告完全沒稽核它)、R7E-4(enum 型別化參數對數值近親**靜默轉換**,已由探針 B 實機確認 → 記錄寫進錯誤配對且回傳 `NONE`)。**探針另推翻機制四「`INVALID_PAIR`/`INVALID_SOURCE` 理論上不可達」那句話**(R7-P1,高)。**因此「ADR-0002 是最接近可 `Accepted` 的一份」這個說法在結構上仍成立(`Depends On: None`、零缺口),但「可以現在裁決」不成立。** 全框架五個消費者、零個生產者 —— `Accepted` 是使用者裁決,而現在還不到那一步。依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋**。
 2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側引用已於 2026-08-19 分兩次修正——第一次修 17 處(缺 `ux/`),**當日稍後重掃又發現另外兩類殘留**:3 份 template 指向第三條錯路徑 `docs/accessibility-requirements.md`(頂層目錄就錯),以及 1 份 ux-designer agent-memory 明文斷言「該檔不存在於專案任何地方」(寫於 2026-08-05,檔案 2026-08-07 進 git——會自動載入該 agent 的脈絡,等於每次都餵它假事實)。兩類皆已於同日修正;該檔的 Tier 亦已定案為 **Standard**;✅ `design/ux/interaction-patterns.md` **已於 2026-08-19 由 `/ux-design patterns` 建立**(15 個模式)。**pre-gate 五項至此全部具備**——但 `/gate-check pre-production` 仍不保證通過:閘門另有 ADR `Accepted`、UX 規格覆蓋等條件,且本檔尚未經 `/ux-review` 驗證。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
@@ -131,7 +131,7 @@ Task: 2026-08-20 /architecture-decision 已完成 ADR-0002 引擎行為實機驗
 1. `process_priority` 不涵蓋 `_input()`,且「該影格全部 `_input()` 完成後才進 `_process()`」—— **機制六定序的全部基礎**,幀精準測試
 2. Agile Event Flushing 的確切設定鍵字串 —— 一次 `ProjectSettings.has_setting()` 查詢
 3. `Button` 設 `focus_mode = FOCUS_NONE` 後滑鼠懸停**是否仍畫 hover 主題** —— 決定機制十四第 2 項條件是硬性要求或防禦性建議
-4. `@abstract class_name Foo extends RefCounted` 最小檔案語法 —— **第三輪已部分關閉**:專家逐字比對 `current-best-practices.md` 第 41–49 行,ADR 的寫法格式一致,可從「印象」升級為「已查證」。**殘留**:文件範例只有 `Array[Attack]` 一種回傳型別,ADR 用到 `bool`/`float`/`void` 三種 —— spike 應**三種各建一檔分別編譯**,不是只測一種
+4. `@abstract class_name Foo extends RefCounted` 最小檔案語法 —— **🔴 2026-08-20 更正:本項在第三輪被判定為「可從印象升級為已查證」,那次升級無效。** 依據是逐字比對 `current-best-practices.md` 第 41–49 行,而**該範例本身是錯的**(`@abstract func ...: pass` 在 4.7.1 是 `Parse Error: An abstract function cannot have a body.`,正確形式是裸簽章)。**該錯誤範例已於 2026-08-20 第七輪修正**(第 47–48 行 + 更正註記)。**現況:裸簽章已實測對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆合法,`@abstract` 類別內可同時含 `signal` 與多個 `@abstract func`,漏實作抽象方法是編譯期錯誤 —— 語法問題本身已關閉。** 真正的殘留是:**ADR-0004 五處、ADR-0005 八處(共 13 處)`pass` 主體尚未刪除**,外加兩處明文指示句(ADR-0004:71、ADR-0005:1151「下方沿用該形式」)—— 只刪 `pass` 不改那兩句,下一個實作者會照著加回來。
 5. **(第三輪新增)`_notification()` FOCUS_IN/OUT 相對 `process_priority` 的時序** —— 餵給 F5,現有 9 項 Verification Required 沒有這一項
 
 > 第 2 項(Agile Flushing 鍵字串)第三輪已確認**參考庫 6 份文件全域零命中** —— `has_setting()` 防衛必須保留,不得改成信任推測鍵名。
@@ -142,7 +142,7 @@ Task: 2026-08-20 /architecture-decision 已完成 ADR-0002 引擎行為實機驗
 - **戰棋系統文件自陳的下游阻擋項**:OQ-2 `player_baseline_stat` 全專案無擁有者;OQ-10 無「不可通行」地形層級;OQ-16 敵方單位數上限無擁有者 + 效能測試須以「格數 × 敵數」兩軸參數化。
 - **戰棋系統 DEFER 未落地**:`enemy_advantage_pct < 0` 無驗證拒絕(與既有 `≥1.0` 拒絕不對稱,會靜默反轉 Core Rules #7);公式二 `ceil()` 浮點精度邊界噪聲。
 - **戰棋系統收斂狀態**:連續零 BLOCKING-NOW 輪數 = **0**(四輪皆 body-scoped)。距 Approved 尚需**連續兩輪**零 BLOCKING-NOW。
-- **`docs/consistency-failures.md` 不存在** —— 依 skill 規定未建立,故**三輪**審查的 C1~C6 只存在於各輪審查報告內,沒有跨輪的模式累積。
+- **`docs/consistency-failures.md` 不存在** —— 依 skill 規定未建立(該 skill 只在檔案已存在時附加,不建立)。**至第七輪已第五次提出建立。** 後果:七輪的 C1~C7 與各輪模式警示只存在於各輪審查報告內,**沒有跨輪的模式累積**。七輪累積的同型別重複:自陳膨脹 ×1、修法引入新缺陷 ×4、散文改了但結構化欄位/示意圖/歷史表沒跟著改 ×5、「只修了觸發我注意的那一處」×8。
 - **R4(第三輪新增)**:ADR-0005 補 Verification Required —— `_notification()` 時序(N2)、`InputMap` 動作語意分類依賴(N1,連 ADR 自己的 8 項核心依賴表都漏列)、座標空間 API 與「全程單一根 Viewport」的明文假設(F2)。
 
 ### E. 已凍結(不是待辦,是明文暫停)
@@ -204,7 +204,7 @@ ADR-0005 自陳 19 項中 **16 完整 / 3 部分**。獨立重推為 **11 完整
 - `tr-registry.yaml` 133 個 `id:` 中 3 個在註解區(`TR-combat-*` 是格式範例)→ **實為 130 項 active**
 - `docs/registry/architecture.yaml`:ADR-0005 共 **14 個條目**;`forbidden_patterns` 共 **17 項**;`logic_in_cursor_autoload_shell` **確實已登記**(非僅「候選」);55 = 52 具 ADR 來源 + 3 項 `adr: none`。**全部自陳成立**
 - **棄用 API 對 ADR-0005 逐列比對零命中**
-- **`@abstract` 語法可從「印象」升級為「已查證」** —— 與 `current-best-practices.md` 第 41–49 行範例逐字格式一致。殘留:範例只有 `Array[Attack]` 一種回傳型別,ADR 用到 `bool`/`float`/`void` 三種,Day-1 spike 應**三種各建一檔分別編譯**
+- ~~**`@abstract` 語法可從「印象」升級為「已查證」** —— 與 `current-best-practices.md` 第 41–49 行範例逐字格式一致。~~ **🔴 2026-08-20 第七輪推翻:那次升級無效,因為該範例本身是錯的**(`pass` 主體在 4.7.1 是 parse error)。此處保留原文作為歷史紀錄,**但不得再被引用為事實** —— 現況見上方「待處理清單 C 第 4 項」與檔尾第七輪 Session Extract。原文殘留部分(範例只有一種回傳型別)已由 2026-08-20 spike 實測關閉:五種回傳型別皆合法。
 - **Agile Event Flushing 鍵字串:6 份參考文件全域零命中** —— `has_setting()` 防衛應保留,不得改成信任推測鍵名
 - `_input()` 全數完成後才進 `_process()`:專家判定**印象等級(信心偏高),不算已查證** —— ADR 的「高風險待驗證」標記不應被拿掉
 
@@ -834,14 +834,14 @@ Godot `4.7.1.stable.official.a13da4feb`,exit 0,`logs/xcheck4-unfiltered.txt`(178
 
 ### 下一步
 
-1. **ADR-0002 現在是最接近可 `Accepted` 的一份** —— BLOCKING 已關、核心結構已實機編譯驗證。
+1. **🔴 2026-08-20 第七輪已執行,判定為不可進 `Accepted`** —— 本項的建議(「先讓第七輪獨立重推涵蓋分佈,再由使用者裁決」)**已完成**,答案是不行。第七輪獨立推導好感度為 **21 ✅ / 3 ⚠️ / 0 缺口**(此前 22/2/0,`TR-affinity-011` 因 R7E-4 降級),並抓出 2 項 BLOCKING + 15 項其他發現。詳見檔尾「Session Extract — /architecture-review 第七輪」與 `docs/architecture/architecture-review-2026-08-20-round7.md`。**下一個動作是 `/architecture-decision` 修訂 ADR-0002,不是裁決 `Accepted`。**
    但 `Accepted` 是**使用者裁決**,全框架五個消費者、零個生產者。
    建議先讓**第七輪獨立 `/architecture-review`**(全新 session)重推涵蓋分佈,再裁決。
 2. **剩餘 ADR 修訂**:ADR-0003(`validate_semantics()` 的責任已改判歸 ADR-0002,故 ADR-0003 側可能無事可做,需核對)、
    **ADR-0004**(刪 5 處 `pass` 主體、VR #6/#6a 標已查證)、
    **ADR-0005**(刪 8 處 `pass`、VR #1/#3/#15 標已查證、S-1 必要性論證改寫、發現 G 前提更正、
    刪第 121 行「無 Godot 執行環境」Constraint,**與第六輪遺留的 R6-6~R6-13 合併成一次修訂**)。
-3. `docs/engine-reference/godot/current-best-practices.md` 第 41–49 行的 `@abstract` 錯誤範例(歸 `godot-specialist`)。
+3. ~~`docs/engine-reference/godot/current-best-practices.md` 第 41–49 行的 `@abstract` 錯誤範例(歸 `godot-specialist`)。~~ **✅ 已於 2026-08-20 第七輪修正**(第 47–48 行改裸簽章 + 12 行更正註記,記載實測證據與錯誤傳播到兩份 ADR 共 13 處的事實)。使用者核准為「純事實更正、零決策內容」。
 4. `tests/README.md` 記 N-8(乾淨 checkout 無 `global_script_class_cache.cfg`)。
 5. 兩個 spike 的 N-1~N-6 + Phase 2 三項必修,**待 ADR 全數定案後一併處理**。
 6. `/ux-review design/ux/interaction-patterns.md`(與架構軌零依賴)。
@@ -854,3 +854,80 @@ Godot `4.7.1.stable.official.a13da4feb`,exit 0,`logs/xcheck4-unfiltered.txt`(178
   > **「我這句『因為 X 所以 Y』,X 和 Y 講的是同一個對象嗎?」**
   搭配既有兩條:「這個修法會不會讓某個既有簽章/正交性宣告變得不成立」、
   「這個缺陷的全部出現位置我列過清單了嗎」。
+
+---
+
+## Session Extract — /architecture-review 第七輪 2026-08-20
+
+- **Verdict**: **CONCERNS**(第三~七輪皆 CONCERNS)。但與第六輪(零 BLOCKING)有實質差異:**三份 ADR 各帶 BLOCKING 級項目,且沒有一項屬於涵蓋缺口** —— 全部是已寫下的決策內容與已實測的引擎現實不符
+- **Requirements**: 130 項 —— **64 ✅ / 34 ⚠️ / 32 ❌**(第五輪 68/30/32)
+- **游標系統**: **12 完整 / 7 部分 / 0 缺口**(第五輪 15/4/0)。⚠️ = `-008`、`-009`、`-010`、`-011`、`-013`、`-015`、`-017`
+- **好感度**: **21 完整 / 3 部分 / 0 缺口**(第五輪 22/2/0)。⚠️ = `-008`、`-011`(新)、`-020`
+- **New TR-IDs registered**: None —— `affinity-data-pool.md` 2026-08-20 的 2 行改動經逐行核對確認**只加實作註記、規則層未動**,`tr-registry.yaml` 本輪零改動
+- **GDD revision flags**: None(引擎現實層面)。第三輪的兩處**設計文件內部張力**(Core Rules #5 全域隱藏 vs AC-60 未登記表面例外)維持開啟,ADR-0005 自陳「該張力本身仍未被裁決」。`systems-index.md` 未改動
+- **Report**: `docs/architecture/architecture-review-2026-08-20-round7.md`
+
+### 🔴 最重要的一件事:ADR-0002 判定為不可進 `Accepted`
+
+2026-08-20 的 `/architecture-decision` session 把 ADR-0002 推到「最接近可核准」並建議先跑第七輪再裁決。**本輪答案是不行。**
+
+**理由不是修訂做錯方向** —— 包裝類別、兩條邊界規則的分工、`validate_semantics()` 改用 `typeof()` 內省,這三段是全 ADR 最紮實的部分,「兩條規則不可互相代用」的推導鏈本輪覆核判定**正確關閉**。**理由是修訂新增範圍宣告時,只稽核了自己剛寫的那兩個方法(`append_record`/`notify_death`,參數全是型別化 enum),漏掉 ADR 既有的三個 `Variant` 公開入口。**
+
+| 項 | 內容 | 級別 |
+|---|---|---|
+| **R7E-6** | `t_query: Variant`(機制五三個讀取函數)才是本 ADR 真正的 `Variant` 入口,而機制四之三的範圍宣告完全沒稽核它 → **`ReadRejection.FUTURE_TIME_QUERY` 是死碼**(第 294 行那條比較正是本次修訂自己實測出「對 `String` 中止所在函式」的比較)。機制八為 `import_state()` 立的「先 `typeof()`」規則完全適用於機制五,機制五卻沒引用它。**需新增/擴大拒絕碼,屬決策變更** | **BLOCKING** |
+| **R7E-4** | enum 型別化參數對數值近親**靜默轉換**(已由探針 B 實機確認)→ `Variant(3.7)` 靜默變成合法序數 3、記錄寫進**錯誤配對**、`append_record()` 回傳 `NONE`。結論(不加 `INVALID_TYPE`)仍對,**理由必須改寫** | **BLOCKING** |
+| **R7-P1** | **探針額外推翻機制四的另一句宣稱**:步驟 4/5 註解寫「GDScript enum 本身型別化後這條理論上不可達」—— 實測越界 int(`-1`/`999`)**原封不動抵達函式本體、零錯誤零檢查**。`INVALID_SOURCE`/`INVALID_PAIR` 不是防禦層,是**唯一防線** | 高(新) |
+| **R7-P2** | float/bool 截斷後若落在合法序數範圍內,會**靜默通過任何值域檢查** —— 檢查看到的已是「合法的 3」,無從得知它原本是型別錯誤 | 中高(新) |
+| **R7-P3** | 機制八 `from_dict()` **不可對不可信字串裸用 `Pair[name]`** —— 動態非法字串索引是**執行期中止**,`validate_semantics()` 會在走到自己的拒絕碼邏輯前先中止,契約承諾的 `ImportResult` 永遠回不去。正確寫法:先 `values().has()`/`keys().has()` 存在性檢查,或改用已驗證乾淨回傳 `null` 的 `find_key()` | 中高(新) |
+| **R7E-2** | **由「引擎行為未查證」升級為已實測的正確性缺口** —— 型別化 `Dictionary` 對從未寫入的鍵做 subscript 讀取是 `SCRIPT ERROR` 並**中止呼叫函式**(不是 `null`、不是預設值)。而機制二明文「首次寫入時才建立 `AffinityRecordList`」→ 任何寫入前的讀取(`n(p)=0`,GDD 明文要處理的合法情境)會當場中止。**必須二選一並明文寫入 ADR**:(a) 建構子預填 10 對空 list,或 (b) 讀取入口一律 `has()` 守衛。`_death_marks`/`t_death()` 同理 | 中高 |
+
+其餘:R7E-7/**C7**(中高,跨 ADR)、R7E-8(`death_marks` 字串鍵值域缺席)、R7E-3(層三歸因寫錯、三層不正交)、R7E-9(頂層 `data` 鍵集合未驗)、R7E-12(`AffinityRecordList.items` 是公開可變欄位 —— **Alternative 7 被拒的「不強制」理由原封不動重現**)、R7E-11(R6-4 的 `Mutex` 矛盾句在 ADR-0002 本體未修)、R7E-14(`_reclaimed_tokens` 次要逾時 = C1 孤兒義務的同構複本)、R7E-15、R7E-10、R7E-5、R7E-16。**R7E-1 與 R7E-13 已由探針關閉。**
+
+### R6-6~R6-13:**8 項全部仍開**,無一被 R6-1~R6-5 順帶關掉
+
+`godot-specialist` 逐項讀 ADR-0005 現行檔案並附行號證據。這是游標系統四項降級的**唯一成因** —— 第五輪的 15/4/0 是在這 8 項被發現**之前**算的,第六輪發現了但明文未重推,ADR-0005 第四次修訂尚未執行。**ADR-0005 沒有變差,是我們對它的認識變準了。** R6-1 回歸檢查:已關閉(現存 −50 皆為歷史敘述);唯一落差是第六輪報告記載「4 處刻意保留」而 ADR 側現存 3 處,差一處未查證。
+
+### 三支探針(同日執行,`prototypes/xcheck-round7-2026-08-20/`)
+
+Godot `4.7.1.stable.official.a13da4feb` headless,三支皆 exit code 0,log 未過濾。**探針執行者主動自陳一項過程失誤並保留證據**:探針 C 第一版把「預期會過」與「預期會失敗」的測試放同一檔,Parse Error 擋掉整檔四項 —— 正是 spike F-5 的教訓。修法為一判定一檔案 + 逐檔 `reload()` 的 `Error` 檢查,第一版失敗 log 刻意保留(`probeC-v1-flawed-unfiltered.txt`)而非刪除。
+
+**探針自陳的殘留未查證項(兩項是 R7-P1/R7-P3 建議修法的地基,下次修訂前應補測)**:(1) `values().has(-1)`/`.has(999)` 越界輸入的實際回傳值(本輪只測合法值);(2) `keys().has(name)` 是否與 `values().has()` 對稱;(3) 只測單一配對存入,未測 `_death_marks` 的功能性存讀;(4) 只測 `Pair` 一個 enum,`Source`/`Character` 屬合理外推非直接測量。
+
+### 本輪順手修正的兩項(使用者核准的純事實更正,零決策內容)
+
+1. **`docs/engine-reference/godot/current-best-practices.md` 第 47–48 行** —— `@abstract` 錯誤範例已修:簽章改裸簽章、`pass` 刪除,並加 12 行更正註記。**這一項必須先於任何 ADR 修訂執行**,否則修完 13 處 `pass`,下一份 ADR 又會從同一個地方抄回來。⚠️ **第三輪把 `@abstract` 由「印象」升級為「已查證」的依據就是逐字比對這個錯誤範例 —— 那次升級無效。**
+2. **`docs/registry/architecture.yaml`** —— `last_updated` `2026-08-19c` → `2026-08-20`;`affinity_delta_log`(第 93 行)`revised: ""` → `"2026-08-20"`。**這是第六輪 R6-2 已修過兩次的同一族缺陷,第五次出現**(內文改了、結構化欄位沒跟上)。逐節計數複查未變動。
+
+### 引擎審計
+
+- **棄用 API**:主審 grep 涵蓋五份,零有效命中(`Time.get_ticks_msec()` 是替代者;`duplicate_deep()` 兩處在已拒絕的 Alternative 內)。⚠️ `godot-specialist` **自陳未逐行比對 ADR-0001/0003**,那兩份在專家側為「未查證」
+- **版本一致**:五份皆釘 4.7.1,無過時釘選
+- **13 處 `pass` 主體仍在**(ADR-0004 五處:80/83/86/89/92;ADR-0005 八處:533/537/542/556/1180/1183/1186/1189)。**專家另抓到 spike 清單漏掉的 2 處指示句**(ADR-0004:71、ADR-0005:1151「下方沿用該形式」)—— 只刪 `pass` 不改這兩句,下一個實作者會照著加回來。**「同一缺陷的全部出現位置」問題第八次**
+- **2026-08-20 的證據只套用到五份中的一份**:ADR-0001/0003/0004/0005 對 `2026-08-20` **全部零命中**。雙向後果 —— 低報已知的洞(13 處 `pass`;ADR-0003:17 與 ADR-0005:121 的「無 Godot 執行環境」仍是**現在式**,後者還位在 `Constraints` 即架構約束),同時高報未知的洞(ADR-0005 Day-1 spike 七項中 **#12/#15 已可劃掉**、ADR-0004 VR #6/#6a 已關閉)
+- **參考庫矛盾其實有兩處**:4.5(LOW vs HIGH,已登記)之外,**4.6 也有**(`VERSION.md` MEDIUM vs `breaking-changes.md` HIGH,**本輪新發現**)—— 4.6 影響面更大,`technical-preferences.md` 的「Jolt(4.6+ 預設)」正押在那個版本。另 `modules/` 8 份仍標 4.6
+- **`VERSION.md` 的 `LLM Knowledge Cutoff` 欄位**被當成事實引用(ADR-0002 第 25 行),但它不等於任何特定模型的實際截止日 —— 建議改為「本專案假設的最低共同截止日」並註明是保守下界
+- **正面**:ADR-0005 以 `InputEvent` 子類別分類而非 `.device`,對 4.7 device ID 重編號是**結構性免疫**,做法**優於棄用表的要求**(該表只要求 runtime query);ADR-0002 機制七「單一進入點取鎖」讓正確性不依賴未查證的 `Mutex` 可重入性,專家判為**全專案處理未查證引擎行為的最佳範例**
+
+### Registry / Pre-gate
+
+- **Registry 69 項逐節實測零落差**:10 state / 11 interface / 23 api / 25 forbidden;依 `adr:` 欄 13/13/6/8/26/3(none)= 69,與檔頭及 `technical-preferences.md` 三處一致
+- **Pre-gate 五項全備**(以檔名 glob)。但 `/gate-check pre-production` 仍不保證通過:ADR `Accepted` 0/5、畫面 UX 規格 0 份、`interaction-patterns.md` 未經 `/ux-review`
+
+### 流程紀錄
+
+- **兩個背景 agent 各中斷一次,兩次都偵測到並以 SendMessage 接續、未重跑、未無限期等待** —— 這是 2026-08-18「等死掉的背景任務」教訓的第一次正面應用。第一次回傳只有一句開場白;第二次停在「正要修探針 C」
+- **常設授權運作正常**:引擎覆核走 `godot-specialist`(路由表「General architecture review」),`.gd` 探針走 `godot-gdscript-specialist`(File Extension Routing 表),協調者只做編排、判讀、寫報告
+- **模式警示,第七次一致**:本輪 ADR-0002 的兩項 BLOCKING 都是**修訂自己引入的範圍宣告讓既有簽章不成立**,而非修訂寫錯。第六輪的自問「這個修法會不會讓某個既有簽章、既有正交性宣告變得不成立」方向正確但不充分。**本輪採納第四條自問**:
+  > **「我這次新增的範圍宣告,涵蓋了本文件全部同類的介面面嗎?我列過那份清單嗎?」**
+
+### 下一步
+
+1. **`/architecture-decision` 修訂 ADR-0002** —— R7E-6/R7E-4 兩項 BLOCKING + R7-P1/P2/P3 + R7E-2 的二選一裁決 + 其餘 11 項。**修訂前先補測探針殘留的兩項**(`values().has()` 越界、`keys().has()` 對稱性),因為 R7-P1/R7-P3 的建議修法押在它們上面
+2. **`/architecture-decision` 第四次修訂 ADR-0005** —— R6-6~R6-13 八項 + 8 處 `pass` + 第 1151 行指示句 + 第 121 行 `Constraints` + VR #1/#3/#12/#15 標已查證。可合併成一次
+3. **ADR-0004** —— 5 處 `pass` + 第 71 行指示句 + VR #6/#6a 標已查證。**ADR-0003** —— 第 17 行「無 Godot 執行環境」刪除
+4. **C7 現在調和成本最低**(C1~C6 花了三~五輪才關完)
+5. **建立 `docs/consistency-failures.md`** —— 自第三輪起**第五次**提出。七輪累積:自陳膨脹 ×1、修法引入新缺陷 ×4、散文改了但結構化欄位沒跟上 ×5、「只修了觸發我注意的那一處」×8
+6. 戰棋盤面演算法層 ADR(一次移動 25 項 ❌ 中的大部分)、回合結構擁有權 + AI/遭遇系統 ADR
+7. `/ux-review design/ux/interaction-patterns.md`(與架構軌零依賴)
+8. **兩個 spike 目錄的 N-1~N-6 + Phase 2 三項必修**,待 ADR 全數定案後一併處理
