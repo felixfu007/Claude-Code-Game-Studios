@@ -19,3 +19,4 @@
 | --- | --- | --- | --- | --- |
 | 戰役規模好感度模擬(design-review 第六輪硬性前置) | 2026-07-29 | Paper(手算) | CONFIRMED——不加權會產生不可達結局;指數衰減優於回溯窗口;λ 校準有取捨,需對照均衡經營策略門檻 | [README.md](affinity-campaign-simulation-2026-07-29/README.md) |
 | 單一游標/高亮狀態系統——滑鼠奪權子機制 Godot 4.7.1 引擎行為驗證(`cursor-highlight-state.md` 第十輪 spike 前置) | 2026-08-05 | Godot 4.7.1 專案 | Test 1(offset transform 命中測試)CONFIRMED SAFE;Test 2(混合輸入)重新設計驗證通過,但發現觸發點 (d) + 持續按住方向鍵/搖桿會造成完整鎖死,新阻擋項待第十一輪 `/design-review` | [README.md](cursor-reclaim-godot-spike-2026-08-05/README.md) |
+| 引擎行為驗證——解鎖 ADR-0002 進入 `Accepted`(ADR-0002 VR #1/#2/#3、ADR-0005 VR #1/#3/#15、`tests/` 六項未驗證) | 2026-08-20 | Godot 4.7.1 專案 | **in-progress —— 已建置,尚未執行**。等待人類測試者跑 Phase 1 | [README.md](engine-verification-spike-2026-08-20/README.md) |

@@ -1,0 +1,16 @@
+; Engine configuration file.
+; 拋棄式技術驗證 spike —— 不是實作,不進 src/。
+
+config_version=5
+
+[application]
+
+config/name="Engine Verification Spike (2026-08-20)"
+config/description="Throwaway spike answering ADR-0002 Verification Required 1/2/3 and ADR-0005 VR #1/#3/#15. Run the main scene and copy the whole report back. See README.md."
+run/main_scene="res://scenes/VerificationScene.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=900
+window/size/viewport_height=600
