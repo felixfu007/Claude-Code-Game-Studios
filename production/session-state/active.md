@@ -3,7 +3,7 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 引擎行為驗證 spike + specialist 交叉覆核已完成(見檔尾 Session Extract)—— 抓到 1 項 BLOCKING(ADR-0002 機制四核心宣告因巢狀型別容器不支援而無法編譯)、參考庫 @abstract 範例有誤(ADR-0004/0005 共 13 處 pass 主體要刪)、7 項 VR 關閉、協調者 3 條結論被 specialist 推翻。下一步走 /architecture-decision,協調者不得直接改 ADR。此前:第六輪 /architecture-review 已完成(CONCERNS,零 BLOCKING),R6-6~R6-13 仍待第四次修訂
+Task: 2026-08-20 /architecture-decision 已完成 ADR-0002 引擎行為實機驗證修訂(ledger A1~A14 全數處理,五份檔案已寫入,registry 68→69)—— F-6 BLOCKING 關閉(改採包裝類別 AffinityRecordList)、新增三層型別保證圖像與鍵/值兩條邊界規則、validate_semantics() 型別檢查改 typeof() 內省、VR 五項擴為八項(六關兩開)。寫入前 Step 5.5 雙軌覆核抓出並修畢本次修訂初稿自己引入的 2 項缺陷(B1 推導鏈錯位、VR 計數低估),B2 以 XCHECK-4 探針實測關閉並另測出 float→int 靜默截斷洞。ADR-0002 現為最接近可 Accepted 的一份,但需先跑第七輪獨立 /architecture-review。下一步:ADR-0004/0005 修訂(0005 與第六輪遺留 R6-6~R6-13 合併)
 <!-- /STATUS -->
 
 **最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
@@ -64,14 +64,14 @@ Task: 2026-08-20 引擎行為驗證 spike + specialist 交叉覆核已完成(見
 | **專案階段** | 架構階段(Technical Setup → Pre-Production 之間) |
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
 | **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
-| **架構登記處** | **68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
+| **架構登記處** | **69 項立場**(10 state-ownership、11 interface contracts、23 API decisions、**25** forbidden patterns)—— 2026-08-20 ADR-0002 修訂新增 `raw_variant_subscript_into_typed_container`,ADR-0002 佔 13 項。以下為前次紀錄:**68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
 | **需求涵蓋** | 130 項 TR:**68 ✅ / 30 ⚠️ / 32 ❌**(第五輪 `/architecture-review` 判定);游標系統 15 ✅ / 4 ⚠️ / 0 ❌。**第三次修訂後的分佈至今仍未被獨立推導** —— 第六輪為範圍限縮審查、明文未重推,待**第七輪** |
 | **最新審查判定** | **CONCERNS**(2026-08-19 **第六輪**,範圍限縮、**零 BLOCKING**;第三~六輪皆 CONCERNS)。第六輪判定第三次修訂的 17 項中 16 項完整關閉,新增 R6-1~R6-13(5 項已修、8 項待第四次修訂)。以下涵蓋數字仍為**第五輪**的,第六輪未重推 —— **CONCERNS**(2026-08-19 第五輪)—— 第二輪 FAIL 的唯一成因(游標 19/19 零涵蓋)已解除。**32 項 ❌ 中 25 項在戰棋系統**,但該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL。三個 Foundation 層系統合計 73 項需求**僅 1 項缺口**(`TR-save-030` 雲端同步) |
 | **實作** | `src/` 為空,尚無任何程式碼。**但 2026-08-20 已實證 Godot 4.7.1 可在本機 headless 執行**(執行檔在 `~/Downloads/Godot_v4.7.1-stable_win64.exe/`,不在 `PATH` 上)—— 多份 ADR 寫的「本專案無 Godot 執行環境」是錯的,見檔尾 Session Extract |
 
 ### ⚠️ 兩個結構性阻擋(比任何單一缺口都重要)
 
-1. **5 份 ADR 全為 `Proposed`。** **⚠️ 2026-08-20 更新:ADR-0002 原本是最接近可 `Accepted` 的一份,但 spike 實測抓到其機制四核心宣告在 4.7.1 無法編譯(BLOCKING),需先修訂。全框架五個消費者、零個生產者 —— 沒有任何 skill 會把 ADR 改成 `Accepted`,那是使用者裁決。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
+1. **5 份 ADR 全為 `Proposed`。** **✅ 2026-08-20 第二次更新:ADR-0002 的 BLOCKING 已由當日 `/architecture-decision` 修訂關閉(改採包裝類別 `AffinityRecordList`),核心結構已經真機編譯驗證。它現在是最接近可 `Accepted` 的一份——但建議先跑第七輪獨立 `/architecture-review` 重推涵蓋分佈,再由使用者裁決。**(前次紀錄:spike 實測抓到其機制四核心宣告在 4.7.1 無法編譯,需先修訂。)全框架五個消費者、零個生產者 —— 沒有任何 skill 會把 ADR 改成 `Accepted`,那是使用者裁決。** 依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被**自動阻擋** —— 即使把剩餘 ADR 全寫完,也還不能進實作。**ADR-0002 是最接近可 `Accepted` 的一份**(24 項 `TR-affinity-*` 零缺口)。
 2. **`/gate-check pre-production` 仍不可執行,但缺口性質已完全改變**(2026-08-19 實測):✅ `tests/unit/`、✅ `tests/integration/`、✅ `.github/workflows/tests.yml`(`/test-setup` 建立);⚠️ **`design/ux/accessibility-requirements.md` 一直都存在**(2026-08-06 建立)——**第一~五輪 `/architecture-review` 全部報「不存在」是查錯路徑**(查 `design/accessibility-requirements.md`,少了 `ux/`),框架側引用已於 2026-08-19 分兩次修正——第一次修 17 處(缺 `ux/`),**當日稍後重掃又發現另外兩類殘留**:3 份 template 指向第三條錯路徑 `docs/accessibility-requirements.md`(頂層目錄就錯),以及 1 份 ux-designer agent-memory 明文斷言「該檔不存在於專案任何地方」(寫於 2026-08-05,檔案 2026-08-07 進 git——會自動載入該 agent 的脈絡,等於每次都餵它假事實)。兩類皆已於同日修正;該檔的 Tier 亦已定案為 **Standard**;✅ `design/ux/interaction-patterns.md` **已於 2026-08-19 由 `/ux-design patterns` 建立**(15 個模式)。**pre-gate 五項至此全部具備**——但 `/gate-check pre-production` 仍不保證通過:閘門另有 ADR `Accepted`、UX 規格覆蓋等條件,且本檔尚未經 `/ux-review` 驗證。**注意**:CI 目前帶一個暫時性守衛(`project.godot` 不存在時跳過並直接成功),綠燈**不代表測試通過**——移除條件寫在 `tests/README.md` 與 workflow 註解裡。
 
 ---
@@ -730,3 +730,127 @@ Export With Debug)→ 以 xcheck 的 X2/X3r/X6 重跑。
 2. **待使用者決定**:要不要下載 export template(約 1 GB)以決定性回答 release 那題
 3. 第六輪遺留的 **R6-6~R6-13**(ADR-0005 第四次修訂)仍未做 —— 與上表的 ADR-0005 項目**可合併成一次修訂**
 4. `/ux-review design/ux/interaction-patterns.md`(與架構軌零依賴)
+
+---
+
+## Session Extract — `/architecture-decision` ADR-0002 引擎行為實機驗證修訂 2026-08-20
+
+**起因**:2026-08-20 的引擎驗證 spike 抓到 ADR-0002 機制二的核心宣告在 4.7.1 無法編譯(F-6 BLOCKING)。
+使用者裁決範圍為 ledger 全部 14 項(A1~A14)+ GDD 加實作註記不改規則。
+
+### 已寫入的五份檔案
+
+| 檔案 | 變更 |
+|---|---|
+| `docs/architecture/adr-0002-…md` | 523 → **651 行**。Status 新增修訂註記、Date、Engine Compatibility(VR 欄改為指向新增的「VR 明細」表,**五項擴為八項**)、機制二新增 `AffinityRecordList` 定義段、型別改宣告、**新增機制四之二**(三層型別保證圖像 + 鍵/值兩條邊界規則)、**新增機制四之三**(呼叫端型別義務)、機制八 `validate_semantics()` 擴充、Key Interfaces 新增區塊、**Alternative 7**、Risks +2 列、Consequences Positive +1 / Negative +2、Validation Criteria +3 項(9/10/11)、Related Decisions +2 |
+| `docs/registry/architecture.yaml` | 第 87 行型別字串;新增 forbidden pattern `raw_variant_subscript_into_typed_container`。**68 → 69**(逐節實測 10/11/23/**25**),ADR-0002 佔 12 → **13** |
+| `design/gdd/affinity-data-pool.md` | 第 60/539 行各加實作註記。**規則層完全未動** —— 原文本就寫「例如…**或等效結構**」,包裝類別滿足該豁免 |
+| `.claude/docs/technical-preferences.md` | ADR-0002 條目、Forbidden 清單 24→25、Registry 累計 68→69 |
+| `production/session-state/active.md` | 本段 |
+
+### 核心決策:選項 (d) 包裝類別
+
+```gdscript
+class_name AffinityRecordList extends RefCounted
+var items: Array[AffinityRecord] = []
+```
+`var _records: Dictionary[AffinityTypes.Pair, AffinityRecordList]`
+
+實測三項(`x3_wrapper_two_layer.gd`):`script.get_global_name() = AffinityRecordList`、
+`v is AffinityRecordList = true`、`inner.items.is_typed() = true`。
+⚠️ **不可引用 `get_class()`** —— 它回傳原生類別,任何 `RefCounted` 子類都印 `RefCounted`。
+
+**Alternative 7 記錄了 (c) `Dictionary[Pair, Array]` 的拒絕**:代價不是「無型別」而是「**不強制**」
+(型別化 `Array` 存進裸值槽後 `is_typed()` 仍為 `true`)。拒絕理由是本 ADR 系列的立場
+**結構保證優於紀律要求**,加上 (c) 還有一項未測(未型別化 Array 存進去後能否當
+`Array[AffinityRecord]` 讀出)。
+
+**原巢狀宣告不列為 Alternative** —— 它不是被權衡後拒絕,是**被引擎否決的原決策**。
+
+### 三層型別保證圖像(機制四之二,新增)
+
+| 層 | 實測 | 可依賴 |
+|---|---|---|
+| 一 · 編譯期 | **確實擋** enum 家族與容器整體賦值(`x1b`/`x1c`) | **是** |
+| 二 · C++ 容器驗證 | debug 生效;**兩路徑行為不同**:值槽賦值→**中止函式**;`append`→**丟棄寫入**。⚠️ 成因是「賦值運算子 vs 方法呼叫」,**不是** Dictionary vs Array | 否(release 未查證) |
+| 三 · subscript 鍵 | **完全不擋**:`size=1, keys=[2]`,零錯誤。機制 `get_typed_key_builtin()==2` | 否(已證為空隙) |
+
+**兩條邊界規則,不可互相代用** —— 規則一(鍵)關層三、規則二(值)關對層二的依賴。
+
+### ⚠️ 本次修訂初稿自己引入 2 項缺陷,由寫入前 Step 5.5 雙軌覆核抓出
+
+| 項 | 內容 |
+|---|---|
+| **B1(BLOCKING)** | 用**鍵**邊界規則去支撐**值**層(層二)降級 —— 論證的是另一件事。兩位覆核者獨立得到同一結論與同一修法。已改為兩條獨立規則,並把「不可互相代用」寫進 registry `why:` 欄 |
+| **VR 計數低估** | 寫成「五項關閉、**一項**新增」,實為**三項**新增;少算會讓讀者漏掉 **#7(release 建置,仍未查證)** —— 而 #7 正是 B1 缺口所在的同一項 |
+
+**與 ADR-0005 第三/四/五輪「修法本身引入新缺陷」同一模式,第六次。Step 5.5 這道關卡再次證明有效。**
+
+### B2 未用 hedge,改以 `XCHECK-4` 探針實測關閉 —— 並測出原草稿沒涵蓋的洞
+
+初稿把「`is_finite("abc")` 是執行期錯誤」當論證地基,但那是**訓練資料推論、零探針涵蓋**。
+委派 `godot-gdscript-specialist` 補測(`.gd` 依 File Extension Routing 表)。
+Godot `4.7.1.stable.official.a13da4feb`,exit 0,`logs/xcheck4-unfiltered.txt`(178 行)。
+
+| 操作 | 結果 |
+|---|---|
+| `is_finite`/`is_nan`/`is_inf` 餵 `String` | **中止所在函式**(原句成立) |
+| `m == 0.0` / `t >= 1` 餵 `String` | **同樣中止** —— ⚠️ 「比較運算子比較安全」是**錯的假設,被推翻** |
+| **`var t: int = <float 1.5>`** | **不中止、不報錯、靜默截斷為 `1`** —— ⚠️ **唯一「不出錯但也不安全」的情況,原草稿完全沒涵蓋** |
+| 中止傳染範圍 | 只影響直接執行該操作的函式,不往上傳 |
+| `append_record(pair, m: float, …)` 餵 `String` | **呼叫端**就被擋(函式本體未執行)—— 但那是**值**邊界保證,不是鍵邊界 |
+
+**兩項連帶結論**:(i) 機制八的型別檢查**只能用 `typeof()` 內省**,不能用「賦值進型別化變數、
+指望賦值失敗」——賦值對 `String` 會中止、對 `float` 會靜默截斷,兩者都不是可判斷的檢查;
+(ii) **`t`/`c` 的型別檢查不可寬鬆到「int 或 float 皆可」** ——`t` 是 Delta Log 的全域排序鍵,
+截斷會違反跨結構不變量 3,且是**寫進內部狀態之後**才顯現。
+
+### 機制四之三(新增):型別錯誤是拒絕碼機制唯一涵蓋不到的失敗類別
+
+型別化參數的阻擋方式是**整段呼叫端函式中止**,不是可判斷的回傳值。
+`append_record()` 不可能回傳 `INVALID_TYPE` —— 那個呼叫到不了函式本體。
+故:**7 類 `WriteRejection` 的範圍界線明文化為「值域與狀態的非法,不含型別的非法」**,
+上游持有來源不明 `Variant` 時**必須自行以 `typeof()` 收斂**。
+**刻意不新增 `INVALID_TYPE`** —— 那是結構上不可能被回傳的死碼,會誤導呼叫方以為型別錯誤會被攔下並回報。
+
+### 跨 ADR 三處分工宣稱,`godot-specialist` 逐一核實成立
+
+- **ADR-0003 互補不重疊**:`bytes_to_var(buffer, false)` 只擋**自訂 `Object` 類別**注入,
+  不管內建型別錯配(`String` 存進本該是 `float` 的欄位仍會成功解碼)。故機制八補的是另一維度。
+  ⚠️ 由於 `TR-affinity-019` 明訂本系統是驗證規則唯一權威,**這條規則歸 ADR-0002 而非 ADR-0003**
+  ——原本 spike 判定的「ADR-0003 缺口」其實是本 ADR 的責任,已在此關閉。
+- **ADR-0005 共用未查證項但方向不同**:本 ADR 依賴層 A(容器驗證是否丟棄寫入)且**已由規則二降為縱深防禦**;
+  ADR-0005 的 S-1 必要性論證依賴層 B(VM 是否中止所在函式),**尚未降級**。
+- registry 第 87 行為唯一目標,新 pattern 全庫零命中、無重複鍵覆蓋風險。
+
+### 仍未關閉的兩項 VR
+
+- **#4 `Mutex` 可重入** —— 未查證,但原因已從「不能測」改為「**尚未寫探針**」
+  (「本專案無 Godot 執行環境」的前提已被推翻)。機制七的鎖定模式在兩種答案下皆正確,不影響可實作性。
+- **#7 export release 建置下容器驗證是否生效** —— **本專案目前無法查證**
+  (`export_templates/` 為空、零 `.tpz`,三條替代路已排除)。
+  **建議的關閉方式不是手動測一次**,而是把探針改成建置無關(只斷言容器 `size()`),
+  掛進 CI 的 release-export job 成為永久回歸測試。
+
+### 下一步
+
+1. **ADR-0002 現在是最接近可 `Accepted` 的一份** —— BLOCKING 已關、核心結構已實機編譯驗證。
+   但 `Accepted` 是**使用者裁決**,全框架五個消費者、零個生產者。
+   建議先讓**第七輪獨立 `/architecture-review`**(全新 session)重推涵蓋分佈,再裁決。
+2. **剩餘 ADR 修訂**:ADR-0003(`validate_semantics()` 的責任已改判歸 ADR-0002,故 ADR-0003 側可能無事可做,需核對)、
+   **ADR-0004**(刪 5 處 `pass` 主體、VR #6/#6a 標已查證)、
+   **ADR-0005**(刪 8 處 `pass`、VR #1/#3/#15 標已查證、S-1 必要性論證改寫、發現 G 前提更正、
+   刪第 121 行「無 Godot 執行環境」Constraint,**與第六輪遺留的 R6-6~R6-13 合併成一次修訂**)。
+3. `docs/engine-reference/godot/current-best-practices.md` 第 41–49 行的 `@abstract` 錯誤範例(歸 `godot-specialist`)。
+4. `tests/README.md` 記 N-8(乾淨 checkout 無 `global_script_class_cache.cfg`)。
+5. 兩個 spike 的 N-1~N-6 + Phase 2 三項必修,**待 ADR 全數定案後一併處理**。
+6. `/ux-review design/ux/interaction-patterns.md`(與架構軌零依賴)。
+
+### 流程紀錄
+
+- **常設授權運作正常**:`.gd` 探針全程委派 `godot-gdscript-specialist`,協調者只做編排、判讀、寫 ADR 文字、git。
+- **Step 5.5 在 revision mode 是強制的,且這次再次證明必要** —— skill 明文寫「revision 是本 skill 風險最高的操作」。
+- **採納的第三條自問(來自本次 B1)**:
+  > **「我這句『因為 X 所以 Y』,X 和 Y 講的是同一個對象嗎?」**
+  搭配既有兩條:「這個修法會不會讓某個既有簽章/正交性宣告變得不成立」、
+  「這個缺陷的全部出現位置我列過清單了嗎」。
