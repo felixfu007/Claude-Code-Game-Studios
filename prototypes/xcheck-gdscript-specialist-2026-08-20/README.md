@@ -2,13 +2,95 @@
 
 > **PROTOTYPE — NOT FOR PRODUCTION / 拋棄式技術驗證,不進 `src/`**
 >
-> **日期**:2026-08-20
+> **日期**:2026-08-20(XCHECK-1~3)/ 2026-08-20 追加(XCHECK-4,關閉 ADR-0002 §A14 覆核
+> BLOCKING 項)
 > **作者**:`godot-gdscript-specialist`(**不是**協調者)。協調者只做了兩件事:
 > 從 session 專屬的 scratchpad 搶救進 repo、以及寫這份 README。
 > **探針與 runner 的每一行都是該 specialist 寫的。**
-> **Status**:**concluded** —— 未過濾完整 log 已歸檔(`logs/xcheck{1,2,3}-unfiltered.txt` + 完整
-> class cache),`x8_mutable.gd` 已還原為有效版本。**唯一未查證項是 export release 建置**,
+> **Status**:**concluded** —— 未過濾完整 log 已歸檔(`logs/xcheck{1,2,3,4}-unfiltered.txt` +
+> 完整 class cache),`x8_mutable.gd` 已還原為有效版本。**唯一未查證項是 export release 建置**,
 > 該項因環境無 export template 而在本專案範圍內不可測,見下方專節。
+
+---
+
+## 2026-08-20 追加:XCHECK-4 — `validate_semantics()` 型別 vs 值域排序的地基查證
+
+**為什麼跑這個**:上一輪覆核(見下方主體)指出 ADR-0002 §A14「`is_finite("abc")` 是執行期
+錯誤而非回傳 `false`」是訓練資料推論、未經查證,卻被當作「先驗型別再驗值域」排序論證的
+地基使用——而且同一份草稿在 B1 又踩到一次「鍵/值邊界是兩件事」的推論落差(型別化參數
+邊界規則只管鍵,卻被拿去論證層二的值也安全)。協調者裁決:B2 補測,不降級為「未查證」。
+
+**跑法**:沿用本專案既有 `.godot/global_script_class_cache.cfg`(未變動),新增
+`scripts/x11a~x11d_*.gd` + `scripts/xrunner4.gd` + `scenes/X4.tscn`,執行:
+
+```bash
+GODOT=/c/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe
+"$GODOT" --headless --path prototypes/xcheck-gdscript-specialist-2026-08-20 res://scenes/X4.tscn --quit-after 300
+```
+
+未過濾完整 log:`logs/xcheck4-unfiltered.txt`(exit=0,Godot 4.7.1.stable.official.a13da4feb)。
+
+**判讀紀律**(沿用 XCHECK-1~3 已知的 `_try()` 陷阱,這次直接在設計上排除):每個測試函式宣告
+`-> String`,唯一的成功出口是印出 `"REACHED END..."` 後回傳非空字串。若中止,呼叫方拿到的
+是 `""`(String 的零值),`xrunner4.gd` 的 `_run_str()` 明文印出 `ABORTED (zero value for
+-> String)` 而不是無條件的 `(NOT aborted)` 字樣——不會重蹈上次的判讀陷阱。
+
+### 結果
+
+| 操作 | 輸入 | 結果 | log 行 |
+|---|---|---|---|
+| `is_finite(v)` | `Variant` 實際是 `"abc"` | **SCRIPT ERROR,中止**:`Invalid type in utility function "is_finite()". Cannot convert argument 1 from String to float.` | `xcheck4:8-14` |
+| `is_finite(v)` | `Variant` 實際是 `"1.5"`(數字形狀字串) | **同樣中止**——不會被隱式解析成 `1.5`,字串「長得像數字」不影響結果 | `xcheck4:17-23` |
+| `is_nan(v)` | `"abc"` | **中止**,同一錯誤家族(`Cannot convert argument 1 from String to float`) | `xcheck4:26-32` |
+| `is_inf(v)` | `"abc"` | **中止**,同上 | `xcheck4:35-41` |
+| `is_finite("abc")` 經一層 wrapper 呼叫 | — | **中止只影響直接呼叫的那一層**——wrapper 收到內層的 `""`(零值)後繼續正常執行、正常回傳(`WRAPPER REACHED END inner=[]`),不往上傳染 | `xcheck4:42-53` |
+| `m == 0.0` | `m` 實際是 `"abc"` | **中止**:`Invalid operands 'String' and 'float' in operator '=='.`——比較運算子**沒有**比內建函式更寬容 | `xcheck4:56-64` |
+| `m == 0.0` | `m` 實際是 `"0.0"` | **同樣中止**——字串「長得像正確值」不影響,不會被隱式轉型後判為真 | `xcheck4:65-73` |
+| `t >= 1` | `t` 實際是 `1.5`(float,非 String) | **不中止**,正常回傳 `true`——int/float 混合比較是安全操作 | `xcheck4:74-77` |
+| `t >= 1` | `t` 實際是 `"abc"` | **中止**:`Invalid operands 'String' and 'int' in operator '>='.` | `xcheck4:78-86` |
+| `t >= 1` | `t` 實際是 `"5"`(數字形狀字串) | **同樣中止**——不會被隱式解析成 `5` | `xcheck4:87-95` |
+| `var m: float = d["m"]` | `d["m"]` 是 `"abc"` | **中止**:`Trying to assign value of type 'String' to a variable of type 'float'.` | `xcheck4:100-106` |
+| `var m: float = d["m"]` | `d["m"]` 是 `"1.5"` | **同樣中止** | `xcheck4:109-115` |
+| **`var t: int = d["t"]`** | **`d["t"]` 是 `1.5`(float)** | **⚠️ 不中止,靜默截斷成 `1`(`typeof(t)=2` 即 `TYPE_INT`)——沒有任何錯誤訊息** | `xcheck4:116-119` |
+| `var t: int = d["t"]` | `d["t"]` 是 `"abc"` | **中止**:`Trying to assign value of type 'String' to a variable of type 'int'.` | `xcheck4:121-128` |
+| 呼叫 `_append_like(0, m: float, 0)` | 以 `Variant` 夾帶 `"abc"` | **中止,且是在呼叫端(caller)中止,函式本體從未執行**:`Invalid type in function '_append_like' in base 'GDScript'. Cannot convert argument 2 from String to float.` | `xcheck4:133-139` |
+| 同上 | 以 `Variant` 夾帶 `"1.5"` | **同樣在呼叫端中止** | `xcheck4:142-148` |
+| 靜態可見的字面量錯誤型別呼叫(對照組) | `_append_like(0, "abc", 0)` | **編譯期 Parse Error**,與 `x1b`/`x1c` 同一家族 | `xcheck4:151-176` |
+
+### 判讀
+
+1. **B2 地基成立,但範圍比原句窄且有一個沒被原句涵蓋的新洞。** `is_finite("abc")` 確實是
+   執行期錯誤而非回傳 `false`——原句對。但覆核者原本假設「比較運算子可能是另一種安全的
+   失敗模式」也被推翻:`m == 0.0`/`t >= 1` 在 **String vs 數值** 的情況下**同樣中止**,沒有
+   任何一個測到的操作會對 String 誤配對安靜地回傳 `false`/`true`。**唯一真正安全(不出錯、
+   但也不可靠)的情況是 float↔int 之間**:`t >= 1`(比較運算子)與 `var t: int = <float>`
+   (賦值)兩者都不出錯,但賦值那一種是**靜默截斷**,不是「安全地保持原值可用」。
+2. **`validate_semantics()` 該怎麼寫**:不能先做 `var m: float = data.get("m")` 這種「賦值
+   當作讀取」再指望某個檢查會攔下錯誤——**賦值本身就是會中止的操作之一**。正確順序必須是
+   對 `Variant` 先做 `typeof(raw) == TYPE_FLOAT`(或對應型別常數)的**內省檢查**,型別確認
+   通過後才允許賦值進型別化區域變數或呼叫 `is_finite`/`is_nan`/`is_inf`/比較運算子。這條
+   規則對 `pair`/`source`(字串轉 enum)、`m`(float)、`t`/`c`(int)、`records`/
+   `campaign_tick_marks`/`death_marks` 的容器與元素型別都要套用,不能只做「數值域」檢查
+   就直接操作欄位。
+3. **新洞,原句沒提到,必須寫進 ADR**:`t`/`c` 若因存檔版本錯置或損毀而被還原成 `float`
+   (例如 `1.5`)而非預期的 `int`,`typeof()` 前置檢查若只做「是不是 int 或 float 都接受」
+   這種寬鬆檢查,或乾脆略過檢查直接賦值,會**靜默截斷資料且無任何錯誤訊號**——這比「執行期
+   中止」更危險,因為它不會被任何現有的錯誤分類攔到,是道地的靜默資料損壞。`validate_semantics()`
+   的型別檢查必須對 `t`/`c` 明確要求 `typeof(raw) == TYPE_INT`(不接受 `TYPE_FLOAT`),
+   而不是依賴賦值本身「不出錯就代表型別對」。
+4. **中止的傳染範圍維持一致**:僅中止「直接呼叫該操作」的那個函式,不會往呼叫鏈上層傳染
+   (`test_is_finite_abc_wrapped` 直接證明,與 XCHECK-1 的 X6 同結論)。
+5. **append_record() 的 `m: float` 型別化參數邊界確實成立,且與機制四的「鍵」邊界規則是
+   兩件獨立的事**(呼應 B1 同一類判斷,這次沒有重蹈):呼叫 `_append_like(pair, smuggled_m,
+   source)`、`smuggled_m` 是夾帶 `String` 的 `Variant`,錯誤在**呼叫端**發生(`_append_like`
+   本體從未執行),證實靜態型別化參數對「Variant 夾帶錯誤型別值」確實有效——但這是**值**
+   邊界的獨立保證(來自「函式簽章型別化」這件事本身),不是 §A2 鍵邊界規則的推論範圍,兩者
+   不可互相代換引用。**附帶風險**:這個保護是「整段函式中止」而非「回傳可判斷的錯誤碼」,
+   若未來真的有呼叫端不慎把未驗證的 `Variant` 直接傳給 `append_record()`,呼叫端本身會
+   無條件中止、拿不到任何可程式化判斷的錯誤——這與 `.claude/docs/coding-standards.md`/
+   本 ADR Constraints「錯誤處理須以回傳值表達」的精神有潛在張力,值得在 Risks 表補一句
+   警語(呼叫端有義務在傳入 `append_record()` 之前自行完成型別窄化,不能依賴函式邊界替
+   自己擋下未驗證的 Variant)。
 
 ---
 
