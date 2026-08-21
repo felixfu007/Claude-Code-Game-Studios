@@ -21,9 +21,12 @@ expansions/
 # === Marrow (eval tooling — never commit) ===
 marrow/
 
-# === Runtime Artifacts (auto-generated, start empty on fresh clone) ===
-# Created on first use by /consistency-check and /architecture-review
-docs/consistency-failures.md
+# NOTE: docs/consistency-failures.md was ignored here until 2026-08-21, on the
+# assumption it is an auto-generated runtime artifact that should start empty on a
+# fresh clone. What actually got built is hand-authored, back-filled reflexion
+# knowledge that five skills read and that docs/CLAUDE.md registers as the
+# project's Reflexion Log — its entire value is surviving across sessions and
+# machines. The rule outlived its premise, so it is gone. The file is tracked.
 
 # === Build Output ===
 build/
