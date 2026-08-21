@@ -60,6 +60,19 @@ This supplements (not replaces) the agent's built-in knowledge.
   > 明文指示句要求「沿用該形式」。第三輪 `/architecture-review` 把 `@abstract` 語法由「印象」
   > 升級為「已查證」的依據就是逐字比對這個錯誤範例 —— **那次升級無效**。
   > 詳見 `docs/architecture/architecture-review-2026-08-20-round7.md` 第 3.3/3.5 節。
+  >
+  > **2026-08-21 補充(不修改上文,僅追加新查證事實;完整清單見
+  > `docs/engine-reference/godot/modules/scripting-typing.md` 第 5 節)**:已測回傳
+  > 型別由五種擴為 **8 種**(新增 `Variant`/`String`/`PackedByteArray`);
+  > `class_name`+`extends`+`signal`+多個 `@abstract func` 的完整組合已逐字編譯
+  > 通過;透過抽象基底**靜態型別**的多型呼叫已確認執行期正常;字面
+  > `ClassName.new()` 構造抽象類別是**編譯期**錯誤
+  > (`Parse Error: Cannot construct abstract class "..."`),但 `set_script()`/
+  > `load().new()`/`ClassDB` 三條間接路徑仍未查證;漏實作的錯誤訊息格式為
+  > `must implement "Base.method()" and other inherited abstract methods`——
+  > **只指名一個方法,其餘概括,不逐一列舉**。
+  > 證據:`prototypes/engine-verification-spike-2026-08-20/logs/run-final-2026-08-20-headless.txt`、
+  > `prototypes/xcheck-round7-2026-08-20/README.md` 探針 E。
 
 - **Script backtracing**: Detailed call stacks available even in Release builds
 

@@ -57,7 +57,14 @@ Engine-specialist agents are instructed to:
 ### Quality Rules
 
 - Every file must have a "Last verified: YYYY-MM-DD" date
-- Keep module files under 150 lines (context budget)
+- Keep module files under 150 lines (context budget). **Documented exceptions are
+  allowed**: a file may exceed this if its own header states the deviation and why.
+  Two such files exist (`godot/modules/core-serialization.md`,
+  `godot/modules/scripting-typing.md`) — both carry per-claim evidence citations,
+  which the older module files do not. A silent overrun is still a violation.
+- **When adding a module file, also add it to that engine's `VERSION.md` module
+  index.** `VERSION.md` is the documented entry point; a module absent from it is a
+  module nobody will find.
 - Include code examples showing correct/incorrect patterns
 - Link to official documentation URLs for verification
 - Only document things that differ from the model's training data

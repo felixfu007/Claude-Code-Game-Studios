@@ -36,3 +36,24 @@ Android export, and custom Control layout code.
 - 4.4→4.5 migration: https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.5.html
 - Changelog: https://github.com/godotengine/godot/blob/master/CHANGELOG.md
 - Release notes: https://godotengine.org/releases/4.7/
+
+## 模組參考索引
+
+Agent 的查閱起點是本檔。**新增模組檔時必須同時更新此表**,否則後來的人找不到它存在。
+
+**✅ 經 2026-08-21 逐條實機驗證(每條宣稱附探針與 log 引用)**:
+
+- `modules/core-serialization.md` — 二進位 Variant 序列化、`HashingContext`、
+  `Callable`/`Signal`/`RID` 邊界、Variant 型別枚舉
+- `modules/scripting-typing.md` — 型別化容器邊界、enum 型別化參數、`@abstract`、
+  中止 vs 靜默矩陣
+
+兩份刻意超出 README 的 150 行上限,理由在各自檔頭「格式偏離說明」——記錄在案的例外。
+
+**⚠️ 來源為訓練資料與官方文件,非本專案量測**:`animation` / `audio` / `input` /
+`navigation` / `networking` / `physics` / `rendering` / `ui`(其中 `ui` 有部分經
+2026-08-05 游標 spike 驗證)。
+
+> **「未驗證」不等於錯,但要當成待查證而非既定事實。** 2026-08-21 之前本庫有一個
+> **看似合理的錯誤範例**擴散到兩份技術設計文件、造成 13 處編譯期錯誤(已修正,見
+> `current-best-practices.md` 的 `@abstract` 段)。這個庫是承重結構。
