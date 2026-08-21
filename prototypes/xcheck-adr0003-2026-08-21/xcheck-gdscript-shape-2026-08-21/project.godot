@@ -1,0 +1,12 @@
+config_version=5
+
+[application]
+
+config/name="xcheck-gdscript-shape-J"
+run/main_scene="res://scenes/J.tscn"
+config/features=PackedStringArray("4.7")
+run/flush_stdout_on_print=true
+
+[debug]
+
+gdscript/warnings/enable=false

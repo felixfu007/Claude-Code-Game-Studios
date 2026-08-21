@@ -1,0 +1,12 @@
+config_version=5
+
+[application]
+config/name="xcheck-stepdotfive"
+run/main_scene="res://scenes/H.tscn"
+config/features=PackedStringArray("4.7")
+
+[debug]
+settings/stdout/print_fps=false
+
+[application]
+run/flush_stdout_on_print=true

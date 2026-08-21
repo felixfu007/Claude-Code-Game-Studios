@@ -1,0 +1,281 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (5 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  66% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+editor-quit exit=0
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Step 5.5 Probe H / Godot 4.7.1-stable (official) ===
+
+--- H-0: 先編譯全部,再呼叫任何一個 ---
+  [COMPILED OK]  h1_fileaccess_introspect.gd   H1 FileAccess.get_var/store_var 真實簽章
+  [COMPILED OK]  h2_type_enum.gd   H2 完整 Variant 型別列舉 (type_string)
+  [COMPILED OK]  h3_type_max.gd   H3 TYPE_MAX 哨兵值
+  [COMPILED OK]  h4_object_as_dict_key.gd   H4 Object 當 Dictionary 鍵 / Array 元素 / 型別化 Array
+
+--- H-1..H-4 執行 ---
+  ## H1 FileAccess.get_var/store_var 真實簽章
+    >> h1_fileaccess_introspect.gd : calling...
+      H1: FileAccess.get_var(allow_objects:type1)  default_args=[false]  return=type0
+      H1: FileAccess.store_var(value:type0, full_objects:type1)  default_args=[false]  return=type1
+      H1: FileAccess.get_buffer(length:type2)  default_args=[]  return=type29
+      H1: FileAccess.store_buffer(buffer:type29)  default_args=[]  return=type1
+    << h1_fileaccess_introspect.gd : [H1-REACHED-END]
+  ## H2 完整 Variant 型別列舉 (type_string)
+    >> h2_type_enum.gd : calling...
+      H2: type  0 -> Nil
+      H2: type  1 -> bool
+      H2: type  2 -> int
+      H2: type  3 -> float
+      H2: type  4 -> String
+      H2: type  5 -> Vector2
+      H2: type  6 -> Vector2i
+      H2: type  7 -> Rect2
+      H2: type  8 -> Rect2i
+      H2: type  9 -> Vector3
+      H2: type 10 -> Vector3i
+      H2: type 11 -> Transform2D
+      H2: type 12 -> Vector4
+      H2: type 13 -> Vector4i
+      H2: type 14 -> Plane
+      H2: type 15 -> Quaternion
+      H2: type 16 -> AABB
+      H2: type 17 -> Basis
+      H2: type 18 -> Transform3D
+      H2: type 19 -> Projection
+      H2: type 20 -> Color
+      H2: type 21 -> StringName
+      H2: type 22 -> NodePath
+      H2: type 23 -> RID
+      H2: type 24 -> Object
+      H2: type 25 -> Callable
+      H2: type 26 -> Signal
+      H2: type 27 -> Dictionary
+      H2: type 28 -> Array
+      H2: type 29 -> PackedByteArray
+      H2: type 30 -> PackedInt32Array
+      H2: type 31 -> PackedInt64Array
+      H2: type 32 -> PackedFloat32Array
+      H2: type 33 -> PackedFloat64Array
+      H2: type 34 -> PackedStringArray
+      H2: type 35 -> PackedVector2Array
+      H2: type 36 -> PackedVector3Array
+      H2: type 37 -> PackedColorArray
+      H2: type 38 -> PackedVector4Array
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 39 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 40 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 41 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 42 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 43 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 44 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 45 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 46 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 47 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 48 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 49 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 50 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 51 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 52 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 53 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 54 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 55 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 56 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 57 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 58 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 59 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 60 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 61 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 62 -> <invalid type>
+ERROR: Invalid type argument to type_string(), use the TYPE_* constants.
+   at: type_string (core/variant/variant_utility.cpp:956)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/h2_type_enum.gd:8)
+       [1] _run (res://scripts/runner_h.gd:26)
+       [2] _ready (res://scripts/runner_h.gd:52)
+      H2: type 63 -> <invalid type>
+      H2: 掃描停在 i=64
+    << h2_type_enum.gd : [H2-REACHED-END]
+  ## H3 TYPE_MAX 哨兵值
+    >> h3_type_max.gd : calling...
+      H3: TYPE_MAX = 39
+      H3: TYPE_OBJECT=24 TYPE_CALLABLE=25 TYPE_SIGNAL=26 TYPE_RID=23
+      H3: TYPE_NIL=0 TYPE_DICTIONARY=27 TYPE_ARRAY=28 TYPE_PACKED_BYTE_ARRAY=29
+    << h3_type_max.gd : [H3-REACHED-END]
+  ## H4 Object 當 Dictionary 鍵 / Array 元素 / 型別化 Array
+    >> h4_object_as_dict_key.gd : calling...
+      H4a: Dict 以 RefCounted 為鍵,size=2  keys typeof=[24, 4]
+      H4a: var_to_bytes(該 Dict) -> size=48 (零錯誤代表靜默成功)
+      H4a: bytes_to_var -> typeof=27 value={ <EncodedObjectAsID#-9223372008350284336>: 1, "ok": 2 }
+      H4a: 還原後 keys typeof=[24, 4]
+      H4b: 對照 —— 乾淨 Dict size=28
+      H4c: Array 含 Object -> encode size=40 ; decode typeof=28 value=[1, <EncodedObjectAsID#-9223372008299952685>, "x"]
+      H4d: Array[int] -> decode typeof=28  is Array=true  get_typed_builtin(src)=2
+      H4d: 還原物 get_typed_builtin()=2 (0 = 非型別化)
+    << h4_object_as_dict_key.gd : [H4-REACHED-END]
+
+=== PROBE H COMPLETE ===
+run exit=0

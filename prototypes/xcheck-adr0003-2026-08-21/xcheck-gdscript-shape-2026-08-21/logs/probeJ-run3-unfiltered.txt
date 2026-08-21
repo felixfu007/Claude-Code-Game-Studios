@@ -1,0 +1,180 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (2 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== 探針 J / Step 5.5 GDScript 語言層形狀驗證 ===
+引擎:{ "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+--- 階段 1:編譯判定(reload() 的 Error 回傳值,0 = OK)---
+  [COMPILED OK] err=0  J1  草案 3b 逐字宣告形狀   (res://scripts/j1_save_format.gd)
+  [COMPILED OK] err=0  J4a 擁有者類別(巢狀 enum)   (res://scripts/j4a_owner.gd)
+  [COMPILED OK] err=0  J4b 獨立 class_name + 限定巢狀 enum   (res://scripts/j4b_qualified.gd)
+SCRIPT ERROR: Parse Error: Could not find type "ReadRejection" in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:28)
+       [1] _ready (res://scripts/runner_j.gd:41)
+SCRIPT ERROR: Parse Error: Identifier "ReadRejection" not declared in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:28)
+       [1] _ready (res://scripts/runner_j.gd:41)
+ERROR: Failed to load script "res://scripts/j4c_unqualified.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:28)
+       [1] _ready (res://scripts/runner_j.gd:41)
+SCRIPT ERROR: Parse Error: Could not find type "ReadRejection" in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:34)
+       [1] _ready (res://scripts/runner_j.gd:41)
+SCRIPT ERROR: Parse Error: Identifier "ReadRejection" not declared in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:34)
+       [1] _ready (res://scripts/runner_j.gd:41)
+  [COMPILE FAIL] err=43  J4c 獨立 class_name + 未限定巢狀 enum(預期失敗)   (res://scripts/j4c_unqualified.gd)
+  [COMPILED OK] err=0  J1b 跨檔案 Outer.Inner 標註 + 欄位讀取   (res://scripts/j1b_caller.gd)
+  [COMPILED OK] err=0  J1c 外部構造內部類別 + enum 預設值   (res://scripts/j1c_outside_new.gd)
+  [COMPILED OK] err=0  J1d enum 欄位 = 越界 int 字面量   (res://scripts/j1d_enum_int_literal.gd)
+  [COMPILED OK] err=0  J1e enum 欄位 = 執行期 float(無型別 Variant)   (res://scripts/j1e_enum_runtime_float.gd)
+  [COMPILED OK] err=0  J2  內部類別無 extends   (res://scripts/j2_inner_no_extends.gd)
+  [COMPILED OK] err=0  J3  內部類別前向參照   (res://scripts/j3_forward_ref.gd)
+  [COMPILED OK] err=0  J4d 使用限定寫法   (res://scripts/j4d_use_qualified.gd)
+  [COMPILED OK] err=0  J5  型別化容器 / is Dictionary   (res://scripts/j5_typed_containers.gd)
+  [COMPILED OK] err=0  J6  HashingContext 狀態機   (res://scripts/j6_hashing_state.gd)
+  [COMPILED OK] err=0  J7  已餵資料後再 start()   (res://scripts/j7_hash_restart.gd)
+--- 階段 2:執行 ---
+  ## J1b 跨檔案 Outer.Inner 標註 + 欄位讀取
+    >> calling res://scripts/j1b_caller.gd ...
+      J1b-S1 呼叫前 sentinel
+      J1b: typeof(r)=24  get_class()=RefCounted  is RefCounted=true
+      J1b: rejection=0  == PayloadRejection.NONE -> true
+      J1b: buffer.size()=28  offending_path=[]
+      J1b: 拒絕路徑 rejection=1  path=[poison]  buffer.size()=0
+      J1b-S2 呼叫後 sentinel
+    << 回傳值=[J1b-REACHED-END]  (空字串代表函式中途中止)
+  ## J1c 外部構造內部類別 + enum 預設值
+    >> calling res://scripts/j1c_outside_new.gd ...
+      J1c: 外部 .new() 成功 —— rejection 預設值=0  buffer.size()=0  offending_path=[]
+      J1c: PayloadRejection.keys()=["NONE", "FORBIDDEN_TYPE"]
+    << 回傳值=[J1c-REACHED-END]  (空字串代表函式中途中止)
+  ## J1d enum 欄位 = 越界 int 字面量
+    >> calling res://scripts/j1d_enum_int_literal.gd ...
+      J1d: r.rejection = 7(int 字面量,越界)-> 7  typeof=2
+      J1d: == NONE? false   == FORBIDDEN_TYPE? false
+    << 回傳值=[J1d-REACHED-END]  (空字串代表函式中途中止)
+  ## J1e enum 欄位 = 執行期 float(無型別 Variant)
+    >> calling res://scripts/j1e_enum_runtime_float.gd ...
+      J1e-S1 賦值前 sentinel(_untyped typeof=3 值=1.7)
+      J1e: 賦值後 r.rejection=1  typeof=2
+      J1e-S2 賦值後 sentinel
+    << 回傳值=[J1e-REACHED-END]  (空字串代表函式中途中止)
+  ## J2  內部類別無 extends
+    >> calling res://scripts/j2_inner_no_extends.gd ...
+      J2: class X: (無 extends) -> get_class()=RefCounted  is RefCounted=true  is Object=true
+    << 回傳值=[J2-REACHED-END]  (空字串代表函式中途中止)
+  ## J3  內部類別前向參照
+    >> calling res://scripts/j3_forward_ref.gd ...
+      J3: 前向參照 OK,v=42
+    << 回傳值=[J3-REACHED-END]  (空字串代表函式中途中止)
+  ## J4d 使用限定寫法
+    >> calling res://scripts/j4d_use_qualified.gd ...
+      J4d: 限定寫法可用 —— rejection=0  typeof=2
+      J4d: JOwner.ReadRejection.keys()=["NONE", "DATA_CORRUPTED", "VERSION_TOO_NEW"]
+    << 回傳值=[J4d-REACHED-END]  (空字串代表函式中途中止)
+  ## J5  型別化容器 / is Dictionary
+    >> calling res://scripts/j5_typed_containers.gd ...
+      J5a: Dictionary[String,int] -> typeof=27  is Dictionary=true
+      J5a: 往返後 typeof=27  is Dictionary=true  size=2
+      J5b: Array[int] 經 Variant -> typeof=28  is Array=true  is Dictionary=false
+      J5c: 合法但非 Dictionary 的解碼值 —— is Dictionary 各自為:
+        輸入 typeof= 2 -> 解碼 typeof= 2  is Dictionary=false  == null -> false
+        輸入 typeof= 3 -> 解碼 typeof= 3  is Dictionary=false  == null -> false
+        輸入 typeof= 4 -> 解碼 typeof= 4  is Dictionary=false  == null -> false
+        輸入 typeof=28 -> 解碼 typeof=28  is Dictionary=false  == null -> false
+        輸入 typeof=29 -> 解碼 typeof=29  is Dictionary=false  == null -> false
+        輸入 typeof= 1 -> 解碼 typeof= 1  is Dictionary=false  == null -> false
+        輸入 typeof= 0 -> 解碼 typeof= 0  is Dictionary=false  == null -> true
+      J5d: 空 Dictionary 是否通過 is Dictionary:true
+      J5e: 型別化 Dictionary 往返後 get_typed_key_builtin=4 get_typed_value_builtin=2 (0=非型別化)
+    << 回傳值=[J5-REACHED-END]  (空字串代表函式中途中止)
+  ## J6  HashingContext 狀態機
+    >> calling res://scripts/j6_hashing_state.gd ...
+ERROR: Condition "ctx != nullptr" is true. Returning: ERR_ALREADY_IN_USE
+   at: start (core/crypto/hashing_context.cpp:37)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:9)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J6-D1: start() 第一次 err=0,第二次 err=22
+      J6-D1: 二次 start 後 finish() size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+      J6-D2: start err=0
+      J6-D2: update err=0
+      J6-D2: finish size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+ERROR: Parameter "ctx" is null.
+   at: update (core/crypto/hashing_context.cpp:52)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:20)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J6-D2: finish 之後 update err=3
+ERROR: Parameter "ctx" is null.
+   at: finish (core/crypto/hashing_context.cpp:68)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:22)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J6-D3: 第二次 finish size=0 hex=
+      J6-D4: finish 之後再 start err=0
+      J6-D4: 再 update err=0
+      J6-D4: 重用後 finish size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+ERROR: Condition "len == 0" is true. Returning: FAILED
+   at: update (core/crypto/hashing_context.cpp:54)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:32)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J6-D5: update(空 PackedByteArray) err=1
+      J6-D5: finish size=32 hex=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 (空輸入標準答案 e3b0c442...)
+ERROR: Parameter "ctx" is null.
+   at: finish (core/crypto/hashing_context.cpp:68)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:37)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J6-D6: 未 start 就 finish size=0  == PackedByteArray() -> true
+      J6-D6: 兩個空 PackedByteArray 相等 -> true
+    << 回傳值=[J6-REACHED-END]  (空字串代表函式中途中止)
+  ## J7  已餵資料後再 start()
+    >> calling res://scripts/j7_hash_restart.gd ...
+      J7: ERR_ALREADY_IN_USE=22  ERR_UNCONFIGURED=3  FAILED=1
+      J7a: start err=0
+      J7a: update(abc) err=0
+ERROR: Condition "ctx != nullptr" is true. Returning: ERR_ALREADY_IN_USE
+   at: start (core/crypto/hashing_context.cpp:37)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j7_hash_restart.gd:11)
+       [1] _ready (res://scripts/runner_j.gd:56)
+      J7a: 已餵資料後再 start() err=22
+      J7a: update(abc) 第二次 err=0
+      J7a: finish hex=bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
+        對照 SHA256(abc)    = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+        對照 SHA256(abcabc) = bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
+      J7b: 空 buffer 是否真的可能 —— var_to_bytes({}) size=8,var_to_bytes(null) size=4
+    << 回傳值=[J7-REACHED-END]  (空字串代表函式中途中止)
+=== 探針 J 結束 ===

@@ -1,0 +1,40 @@
+extends RefCounted
+# J6 —— D:HashingContext 的狀態機(探針 F 只測了「未 start 就 update/finish」)
+#   三個方法的存在性與 arity 已由探針 F 的 ClassDB 內省確認,故可同檔。
+func probe() -> String:
+	var chunk: PackedByteArray = "abc".to_utf8_buffer()
+	# D-1: 連續兩次 start()
+	var c1 := HashingContext.new()
+	var e1a: int = c1.start(HashingContext.HASH_SHA256)
+	var e1b: int = c1.start(HashingContext.HASH_SHA256)
+	print("      J6-D1: start() 第一次 err=%d,第二次 err=%d" % [e1a, e1b])
+	c1.update(chunk)
+	var d1: PackedByteArray = c1.finish()
+	print("      J6-D1: 二次 start 後 finish() size=%d hex=%s" % [d1.size(), d1.hex_encode()])
+	# D-2: finish() 之後再 update()
+	var c2 := HashingContext.new()
+	print("      J6-D2: start err=%d" % c2.start(HashingContext.HASH_SHA256))
+	print("      J6-D2: update err=%d" % c2.update(chunk))
+	var d2: PackedByteArray = c2.finish()
+	print("      J6-D2: finish size=%d hex=%s" % [d2.size(), d2.hex_encode()])
+	print("      J6-D2: finish 之後 update err=%d" % c2.update(chunk))
+	# D-3: finish() 兩次
+	var d2b: PackedByteArray = c2.finish()
+	print("      J6-D3: 第二次 finish size=%d hex=%s" % [d2b.size(), d2b.hex_encode()])
+	# D-4: finish 之後重新 start
+	print("      J6-D4: finish 之後再 start err=%d" % c2.start(HashingContext.HASH_SHA256))
+	print("      J6-D4: 再 update err=%d" % c2.update(chunk))
+	var d3: PackedByteArray = c2.finish()
+	print("      J6-D4: 重用後 finish size=%d hex=%s" % [d3.size(), d3.hex_encode()])
+	# D-5: 空 chunk update
+	var c3 := HashingContext.new()
+	c3.start(HashingContext.HASH_SHA256)
+	print("      J6-D5: update(空 PackedByteArray) err=%d" % c3.update(PackedByteArray()))
+	var d4: PackedByteArray = c3.finish()
+	print("      J6-D5: finish size=%d hex=%s (空輸入標準答案 e3b0c442...)" % [d4.size(), d4.hex_encode()])
+	# D-6: 未 start 就 finish(探針 F 已測,此處作為對照重現)
+	var c4 := HashingContext.new()
+	var d5: PackedByteArray = c4.finish()
+	print("      J6-D6: 未 start 就 finish size=%d  == PackedByteArray() -> %s" % [d5.size(), str(d5 == PackedByteArray())])
+	print("      J6-D6: 兩個空 PackedByteArray 相等 -> %s" % str(PackedByteArray() == PackedByteArray()))
+	return "J6-REACHED-END"

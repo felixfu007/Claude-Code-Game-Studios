@@ -1,0 +1,218 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (12 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   7% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  15% ] [90m[1mupdate_scripts_classes[22m | JSaveFormat[39m[0m
+[  23% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  30% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  38% ] [90m[1mupdate_scripts_classes[22m | JOwner[39m[0m
+[  46% ] [90m[1mupdate_scripts_classes[22m | JReadResultQualified[39m[0m
+[  53% ] [90m[1mupdate_scripts_classes[22m | JReadResultUnqualified[39m[0m
+[  61% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  69% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  76% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  84% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== 探針 J / Step 5.5 GDScript 語言層形狀驗證 ===
+引擎:{ "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+--- 階段 1:編譯判定(reload() 的 Error 回傳值,0 = OK)---
+  [COMPILED OK] err=0  J1  草案 3b 逐字宣告形狀   (res://scripts/j1_save_format.gd)
+  [COMPILED OK] err=0  J4a 擁有者類別(巢狀 enum)   (res://scripts/j4a_owner.gd)
+  [COMPILED OK] err=0  J4b 獨立 class_name + 限定巢狀 enum   (res://scripts/j4b_qualified.gd)
+SCRIPT ERROR: Parse Error: Could not find type "ReadRejection" in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Identifier "ReadRejection" not declared in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+ERROR: Failed to load script "res://scripts/j4c_unqualified.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Could not find type "ReadRejection" in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Identifier "ReadRejection" not declared in the current scope.
+   at: GDScript::reload (res://scripts/j4c_unqualified.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:38)
+  [COMPILE FAIL] err=43  J4c 獨立 class_name + 未限定巢狀 enum(預期失敗)   (res://scripts/j4c_unqualified.gd)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "float" as "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Value of type "float" cannot be assigned to a variable of type "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+ERROR: Failed to load script "res://scripts/j1b_caller.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "float" as "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Value of type "float" cannot be assigned to a variable of type "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:38)
+  [COMPILE FAIL] err=43  J1b 跨檔案 Outer.Inner 標註 + 欄位讀取   (res://scripts/j1b_caller.gd)
+  [COMPILED OK] err=0  J1c 外部構造內部類別 + enum 預設值   (res://scripts/j1c_outside_new.gd)
+  [COMPILED OK] err=0  J2  內部類別無 extends   (res://scripts/j2_inner_no_extends.gd)
+  [COMPILED OK] err=0  J3  內部類別前向參照   (res://scripts/j3_forward_ref.gd)
+  [COMPILED OK] err=0  J4d 使用限定寫法   (res://scripts/j4d_use_qualified.gd)
+SCRIPT ERROR: Parse Error: Expression is of type "Array[int]" so it can't be of type "Dictionary".
+   at: GDScript::reload (res://scripts/j5_typed_containers.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+ERROR: Failed to load script "res://scripts/j5_typed_containers.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:38)
+SCRIPT ERROR: Parse Error: Expression is of type "Array[int]" so it can't be of type "Dictionary".
+   at: GDScript::reload (res://scripts/j5_typed_containers.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:38)
+  [COMPILE FAIL] err=43  J5  型別化容器 / is Dictionary   (res://scripts/j5_typed_containers.gd)
+  [COMPILED OK] err=0  J6  HashingContext 狀態機   (res://scripts/j6_hashing_state.gd)
+--- 階段 2:執行 ---
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "float" as "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:42)
+SCRIPT ERROR: Parse Error: Value of type "float" cannot be assigned to a variable of type "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:42)
+ERROR: Failed to load script "res://scripts/j1b_caller.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:42)
+SCRIPT ERROR: Parse Error: Cannot assign a value of type "float" as "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:42)
+SCRIPT ERROR: Parse Error: Value of type "float" cannot be assigned to a variable of type "JSaveFormat.PayloadRejection".
+   at: GDScript::reload (res://scripts/j1b_caller.gd:14)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:42)
+  ## J1b 跨檔案 Outer.Inner 標註 + 欄位讀取
+    !! 編譯失敗(err=43),跳過呼叫
+  ## J1c 外部構造內部類別 + enum 預設值
+    >> calling res://scripts/j1c_outside_new.gd ...
+      J1c: 外部 .new() 成功 —— rejection 預設值=0  buffer.size()=0  offending_path=[]
+      J1c: PayloadRejection.keys()=["NONE", "FORBIDDEN_TYPE"]
+    << 回傳值=[J1c-REACHED-END]  (空字串代表函式中途中止)
+  ## J2  內部類別無 extends
+    >> calling res://scripts/j2_inner_no_extends.gd ...
+      J2: class X: (無 extends) -> get_class()=RefCounted  is RefCounted=true  is Object=true
+    << 回傳值=[J2-REACHED-END]  (空字串代表函式中途中止)
+  ## J3  內部類別前向參照
+    >> calling res://scripts/j3_forward_ref.gd ...
+      J3: 前向參照 OK,v=42
+    << 回傳值=[J3-REACHED-END]  (空字串代表函式中途中止)
+  ## J4d 使用限定寫法
+    >> calling res://scripts/j4d_use_qualified.gd ...
+      J4d: 限定寫法可用 —— rejection=0  typeof=2
+      J4d: JOwner.ReadRejection.keys()=["NONE", "DATA_CORRUPTED", "VERSION_TOO_NEW"]
+    << 回傳值=[J4d-REACHED-END]  (空字串代表函式中途中止)
+SCRIPT ERROR: Parse Error: Expression is of type "Array[int]" so it can't be of type "Dictionary".
+   at: GDScript::reload (res://scripts/j5_typed_containers.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:42)
+ERROR: Failed to load script "res://scripts/j5_typed_containers.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:25)
+       [1] _ready (res://scripts/runner_j.gd:42)
+SCRIPT ERROR: Parse Error: Expression is of type "Array[int]" so it can't be of type "Dictionary".
+   at: GDScript::reload (res://scripts/j5_typed_containers.gd:10)
+   GDScript backtrace (most recent call first):
+       [0] _compile (res://scripts/runner_j.gd:31)
+       [1] _ready (res://scripts/runner_j.gd:42)
+  ## J5  型別化容器 / is Dictionary
+    !! 編譯失敗(err=43),跳過呼叫
+  ## J6  HashingContext 狀態機
+    >> calling res://scripts/j6_hashing_state.gd ...
+ERROR: Condition "ctx != nullptr" is true. Returning: ERR_ALREADY_IN_USE
+   at: start (core/crypto/hashing_context.cpp:37)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:9)
+       [1] _ready (res://scripts/runner_j.gd:53)
+      J6-D1: start() 第一次 err=0,第二次 err=22
+      J6-D1: 二次 start 後 finish() size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+      J6-D2: start err=0
+      J6-D2: update err=0
+      J6-D2: finish size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+ERROR: Parameter "ctx" is null.
+   at: update (core/crypto/hashing_context.cpp:52)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:20)
+       [1] _ready (res://scripts/runner_j.gd:53)
+      J6-D2: finish 之後 update err=3
+ERROR: Parameter "ctx" is null.
+   at: finish (core/crypto/hashing_context.cpp:68)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:22)
+       [1] _ready (res://scripts/runner_j.gd:53)
+      J6-D3: 第二次 finish size=0 hex=
+      J6-D4: finish 之後再 start err=0
+      J6-D4: 再 update err=0
+      J6-D4: 重用後 finish size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+ERROR: Condition "len == 0" is true. Returning: FAILED
+   at: update (core/crypto/hashing_context.cpp:54)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:32)
+       [1] _ready (res://scripts/runner_j.gd:53)
+      J6-D5: update(空 PackedByteArray) err=1
+      J6-D5: finish size=32 hex=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 (空輸入標準答案 e3b0c442...)
+ERROR: Parameter "ctx" is null.
+   at: finish (core/crypto/hashing_context.cpp:68)
+   GDScript backtrace (most recent call first):
+       [0] probe (res://scripts/j6_hashing_state.gd:37)
+       [1] _ready (res://scripts/runner_j.gd:53)
+      J6-D6: 未 start 就 finish size=0  == PackedByteArray() -> true
+      J6-D6: 兩個空 PackedByteArray 相等 -> true
+    << 回傳值=[J6-REACHED-END]  (空字串代表函式中途中止)
+=== 探針 J 結束 ===
