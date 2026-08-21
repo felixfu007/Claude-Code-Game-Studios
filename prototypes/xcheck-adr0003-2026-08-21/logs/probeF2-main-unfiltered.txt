@@ -1,0 +1,581 @@
+# 探針 F / 階段 2 — 未過濾 log(F2 / F4' / F3 / F5)
+#
+# 目的:關閉 ADR-0003(docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md)
+#       Engine Compatibility 表 Verification Required 第 2、3、3a、4、5 項,
+#       外加 ADR 從未列為 VR、但整條 manifest-only 路徑押在其上的「外層解碼不遞迴」前提。
+#
+# 前置(重要):階段 1(logs/probeF1-signatures-unfiltered.txt)已實測 ——
+#   bytes_to_var(b, false) 與 var_to_bytes(v, false) 兩引數形狀在 4.7.1 皆為
+#   「Parse Error: Too many arguments ... Expected at most 1 but received 2.」
+#   而 ADR-0003 全文(機制一/二/三、Key Interfaces、Architecture Diagram、VR#1)
+#   逐字採用的正是兩引數形狀。因此本階段全部改用實際存在的 1 引數形式,
+#   並以 var_to_bytes_with_objects() 製造「本應解碼出 Object 的位元組」。
+#   ★ 連帶必測子項:1 引數的 bytes_to_var(b) 是否真的拒絕 Object —— 見 F2-a / F2-g / F4-b。
+#
+# 引擎:Godot Engine v4.7.1.stable.official.a13da4feb(headless)
+# 執行日:2026-08-21
+#
+# 指令(Godot 執行檔不在 PATH 上,逐字如下):
+#   GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+#   步驟 1(建 class cache;本階段新註冊 F2CustomRef / F2CustomRes 兩個 class_name):
+#     "$GODOT" --headless --path . --editor --quit
+#   步驟 2(main_scene = res://scenes/F.tscn):
+#     "$GODOT" --headless --path .
+#
+# exit code:步驟 1 = 0;步驟 2 = 0(見檔尾 STEP1_EXIT / STEP2_EXIT)
+#
+# 本檔為 stdout + stderr 合併重導(2>&1),未經 grep/head/tail 過濾或截斷。
+# 檔中大量 "ERROR: Condition ... Returning: ERR_UNAUTHORIZED" 與 f3c1 的 Parse Error
+# 都是**預期的量測結果**,不是探針故障 —— 前者正是 ADR VR#2 要問的「是否伴隨
+# console/log 錯誤訊息」的答案,後者是 VR#3a 的答案(該便利方法不存在)。
+# ============================================================================
+########## STEP 1: editor cache build ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (2 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+STEP1_EXIT=0
+
+########## STEP 2: run probe (scenes/F.tscn) ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0003 Probe F / STAGE 2 / Godot 4.7.1-stable (official) ===
+
+--- F-0: compile-check EVERY file BEFORE calling into any of them ---
+  [COMPILED OK]  f2_object_decode.gd           F2-a/b/c/f/g
+  [COMPILED OK]  f2e_bad_bytes.gd              F2-e 非 Object 的壞位元組
+  [COMPILED OK]  f4_manifest_layering.gd       F4-a / F4-b
+  [COMPILED OK]  f4c_float_fidelity.gd         F4-c 浮點位元保真
+  [COMPILED OK]  f4c2_float_from_bits.gd       F4-c 補測:由位元樣式構造 double,繞開常數池
+  [COMPILED OK]  f4c3_zero_order.gd            F4-c 補測之二:零值 float 常數的順序相依性
+  [COMPILED OK]  f3a_hash_ctx_returns.gd       F3 回傳型別(指派回傳值;void 會整檔 parse error)
+  [COMPILED OK]  f3b_hash_qualified_enum.gd    F3 HashingContext.HashType.HASH_SHA256 完整路徑形式
+SCRIPT ERROR: Parse Error: Cannot find member "sha256_buffer" in base "PackedByteArray".
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:24)
+       [1] _ready (res://scripts/runner_f.gd:63)
+SCRIPT ERROR: Parse Error: Function "sha256_buffer()" not found in base PackedByteArray.
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:24)
+       [1] _ready (res://scripts/runner_f.gd:63)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "h" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:24)
+       [1] _ready (res://scripts/runner_f.gd:63)
+ERROR: Failed to load script "res://scripts/f3c1_pba_sha256_buffer.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:24)
+       [1] _ready (res://scripts/runner_f.gd:63)
+SCRIPT ERROR: Parse Error: Cannot find member "sha256_buffer" in base "PackedByteArray".
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:29)
+       [1] _ready (res://scripts/runner_f.gd:63)
+SCRIPT ERROR: Parse Error: Function "sha256_buffer()" not found in base PackedByteArray.
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:29)
+       [1] _ready (res://scripts/runner_f.gd:63)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "h" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/f3c1_pba_sha256_buffer.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f.gd:29)
+       [1] _ready (res://scripts/runner_f.gd:63)
+  [FAILED (reload=Parse error)]  f3c1_pba_sha256_buffer.gd     F3a PackedByteArray.sha256_buffer()
+  [COMPILED OK]  f3c2_string_sha256_buffer.gd  F3a String.sha256_buffer()
+  [COMPILED OK]  f3c3_string_sha256_text.gd    F3a String.sha256_text()
+  [COMPILED OK]  f3d_hash_segmented.gd         F3 ClassDB 內省 / 已知答案 / 分段一致性
+  [COMPILED OK]  f5_large_buffer.gd            F5 大緩衝區
+
+============ F2 -- bytes_to_var() 對本應解碼出 Object 的輸入(ADR VR#2,最高優先)============
+
+  -- 對照組:完全乾淨的 payload --
+    >> f2.t_control_clean() : calling...
+      [CONTROL] clean payload -> typeof=27  equal_to_source=true  value={ "alpha": 1, "beta": "two", "gamma": 3.5 }
+    << f2.t_control_clean() : returned [CONTROL-REACHED-END]
+
+  -- F2-a:頂層就是 Object。三個 sentinel 判『回傳 null』vs『中止』 --
+    >> f2.t_a_toplevel_object() : calling...
+      [S1] BEFORE bytes_to_var  (encoded size=40)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_a_toplevel_object (res://scripts/f2_object_decode.gd:21)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:84)
+      [S2] AFTER  bytes_to_var  typeof=0  is_null=true  value=[<null>]
+    << f2.t_a_toplevel_object() : returned [S3-F2a-REACHED-END]
+
+  -- F2-b:原子性 -- 3 個合法鍵 + 1 個 Object 值 --
+    >> f2.t_b_atomicity() : calling...
+      [S1] BEFORE bytes_to_var  (4 keys: alpha/beta/gamma/poison, encoded size=136)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_b_atomicity (res://scripts/f2_object_decode.gd:30)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:87)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_b_atomicity (res://scripts/f2_object_decode.gd:30)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:87)
+      [S2] AFTER  bytes_to_var  typeof=0  is_null=true
+      [S2b] not a Dictionary -> 整包失敗(ADR 主張的原子性失敗)
+    << f2.t_b_atomicity() : returned [S3-F2b-REACHED-END]
+
+  -- F2-c:深層巢狀 Dict -> Array -> Object(第三層) --
+    >> f2.t_c_deep_nested() : calling...
+      [S1] BEFORE bytes_to_var  (Dict -> Array -> Object, encoded size=116)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_c_deep_nested (res://scripts/f2_object_decode.gd:45)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:90)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:907)
+   GDScript backtrace (most recent call first):
+       [0] t_c_deep_nested (res://scripts/f2_object_decode.gd:45)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:90)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_c_deep_nested (res://scripts/f2_object_decode.gd:45)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:90)
+      [S2] AFTER  bytes_to_var  typeof=0  is_null=true  value=[<null>]
+    << f2.t_c_deep_nested() : returned [S3-F2c-REACHED-END]
+
+  -- F2-f:寫入側 -- var_to_bytes()(不帶 _with_objects)碰到 Object --
+    >> f2.t_f_write_side_plain() : calling...
+      [S1] BEFORE var_to_bytes (NO _with_objects) on Dictionary containing an Object
+      [S2] AFTER  var_to_bytes  size=60  hex=1b000000020000000400000005000000616c70686100000002000000010000000400000006000000706f69736f6e000018000100cc05009307000080
+      [S3] round-trip bytes_to_var  typeof=27  value=[{ "alpha": 1, "poison": <EncodedObjectAsID#-9223372004306975270> }]
+      [S3b] keys=["alpha", "poison"]
+      [S3b] dd['poison'] typeof=24 value=[<EncodedObjectAsID#-9223372004306975270>]  <-- 這是什麼型別?
+    << f2.t_f_write_side_plain() : returned [S4-F2f-REACHED-END]
+
+  -- F2-f2:同上,但頂層直接就是 Object --
+    >> f2.t_f2_write_side_toplevel() : calling...
+      [S1] BEFORE var_to_bytes(RefCounted.new()) — plain, 頂層即 Object
+      [S2] AFTER  var_to_bytes  size=12  hex=18000100da05009507000080
+      [S3] bytes_to_var  typeof=24  value=[<EncodedObjectAsID#-9223372004273420852>]
+    << f2.t_f2_write_side_toplevel() : returned [S4-F2f2-REACHED-END]
+
+  -- F2-g:三種 Object 種類是否一致 --
+    >> f2.t_g_builtin_refcounted() : calling...
+      [S1] BEFORE (builtin RefCounted, size=60)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_g_builtin_refcounted (res://scripts/f2_object_decode.gd:78)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:99)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_g_builtin_refcounted (res://scripts/f2_object_decode.gd:78)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:99)
+      [S2] AFTER  typeof=0 is_null=true value=[<null>]
+    << f2.t_g_builtin_refcounted() : returned [S3-F2g-builtin-REACHED-END]
+    >> f2.t_g_custom_refcounted() : calling...
+      [S1] BEFORE (custom class_name F2CustomRef, size=156)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_g_custom_refcounted (res://scripts/f2_object_decode.gd:85)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:100)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_g_custom_refcounted (res://scripts/f2_object_decode.gd:85)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:100)
+      [S2] AFTER  typeof=0 is_null=true value=[<null>]
+    << f2.t_g_custom_refcounted() : returned [S3-F2g-customref-REACHED-END]
+    >> f2.t_g_custom_resource() : calling...
+      [S1] BEFORE (custom class_name F2CustomRes extends Resource, size=216)
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_g_custom_resource (res://scripts/f2_object_decode.gd:92)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:101)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_g_custom_resource (res://scripts/f2_object_decode.gd:92)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:101)
+      [S2] AFTER  typeof=0 is_null=true value=[<null>]
+    << f2.t_g_custom_resource() : returned [S3-F2g-customres-REACHED-END]
+
+  -- F2-e:非 Object 的壞位元組 --
+    >> f2e.t_empty() : calling...
+      [S1] BEFORE bytes_to_var  <empty PackedByteArray>  size=0 hex=
+ERROR: Condition "len < 4" is true. Returning: ERR_INVALID_DATA
+   at: decode_variant (core/io/marshalls.cpp:191)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_empty (res://scripts/f2e_bad_bytes.gd:12)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:109)
+      [S2] AFTER  <empty PackedByteArray>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_empty() : returned [S3-F2e-empty-REACHED-END]
+    >> f2e.t_truncated_half() : calling...
+      [S1] BEFORE bytes_to_var  <truncated to half>  size=40 hex=1b000000030000000400000005000000616c70686100000002000000010000000400000004000000
+ERROR: Condition "strlen < 0 || strlen + pad > len" is true. Returning: ERR_FILE_EOF
+   at: _decode_string (core/io/marshalls.cpp:108)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_truncated_half (res://scripts/f2e_bad_bytes.gd:17)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:110)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:851)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_truncated_half (res://scripts/f2e_bad_bytes.gd:17)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:110)
+      [S2] AFTER  <truncated to half>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_truncated_half() : returned [S3-F2e-trunc-half-REACHED-END]
+    >> f2e.t_truncated_header_only() : calling...
+      [S1] BEFORE bytes_to_var  <truncated to first 4 bytes (type header only)>  size=4 hex=1b000000
+ERROR: Condition "len < 4" is true. Returning: ERR_INVALID_DATA
+   at: decode_variant (core/io/marshalls.cpp:828)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_truncated_header_only (res://scripts/f2e_bad_bytes.gd:22)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:111)
+      [S2] AFTER  <truncated to first 4 bytes (type header only)>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_truncated_header_only() : returned [S3-F2e-trunc-hdr-REACHED-END]
+    >> f2e.t_garbage_fixed_pattern() : calling...
+      [S1] BEFORE bytes_to_var  <64 bytes of fixed 0xDEADBEEF pattern>  size=64 hex=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+ERROR: Condition "(header & 0xFF) >= Variant::VARIANT_MAX" is true. Returning: ERR_INVALID_DATA
+   at: decode_variant (core/io/marshalls.cpp:195)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_garbage_fixed_pattern (res://scripts/f2e_bad_bytes.gd:30)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:112)
+      [S2] AFTER  <64 bytes of fixed 0xDEADBEEF pattern>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_garbage_fixed_pattern() : returned [S3-F2e-garbage-REACHED-END]
+    >> f2e.t_valid_header_bogus_length() : calling...
+      [S1] BEFORE bytes_to_var  <valid-ish type header + bogus huge length, no payload>  size=8 hex=1d000000ffffff7f
+ERROR: Condition "count < 0 || count > len" is true. Returning: ERR_INVALID_DATA
+   at: decode_variant (core/io/marshalls.cpp:926)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://scripts/f2e_bad_bytes.gd:8)
+       [1] t_valid_header_bogus_length (res://scripts/f2e_bad_bytes.gd:36)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:113)
+      [S2] AFTER  <valid-ish type header + bogus huge length, no payload>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_valid_header_bogus_length() : returned [S3-F2e-bogus-len-REACHED-END]
+    >> f2e.t_all_zero() : calling...
+      [S1] BEFORE bytes_to_var  <16 zero bytes (type 0 = NIL?)>  size=16 hex=00000000000000000000000000000000
+      [S2] AFTER  <16 zero bytes (type 0 = NIL?)>  typeof=0 is_null=true value=[<null>]
+    << f2e.t_all_zero() : returned [S3-F2e-zeros-REACHED-END]
+
+============ F4 -- manifest 分層(ADR 機制二,整條 manifest-only 路徑的前提)============
+
+  -- F4-a:外層解碼是否『不遞迴』進區塊,且區塊逐位元組相同 --
+    >> f4.t_a_no_recursion() : calling...
+      inner_buf.size()=160   outer_buf.size()=260
+      [S1] BEFORE outer bytes_to_var
+      [S2] AFTER  outer bytes_to_var typeof=27
+      outer keys = ["ruleset_version", "blocks"]   ruleset_version=3
+      blocks['affinity_data_pool'] typeof=29 (29 = TYPE_PACKED_BYTE_ARRAY)
+      is PackedByteArray = true
+      size: got=160 expected=160   equal_size=true
+      byte-for-byte '==' vs inner_buf : true
+      hex identical                   : true
+      second-stage decode typeof=27  equals original payload = true
+    << f4.t_a_no_recursion() : returned [S3-F4a-REACHED-END]
+
+  -- F4-b(殺手鐧):含 Object 的區塊塞進外層,外層還解得開嗎 --
+    >> f4.t_b_poison_block() : calling...
+      poison_buf.size()=84  good_buf.size()=28  outer_buf.size()=328
+      [S1] BEFORE outer bytes_to_var (外層本身只含 PackedByteArray,無 Object)
+      [S2] AFTER  outer bytes_to_var typeof=27 is_null=false
+      *** 外層解碼成功 *** manifest 可讀:ruleset_version=3 block_manifest=[{ "source_id": "bad" }, { "source_id": "good" }]
+      blocks['good'] typeof=29  blocks['bad'] typeof=29
+      [S3] 對好區塊二次解碼:
+            typeof=27 value={ "k": 42 }
+      [S4] 對壞區塊二次解碼(應與 F2-a 同行為):
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_b_poison_block (res://scripts/f4_manifest_layering.gd:64)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:128)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_b_poison_block (res://scripts/f4_manifest_layering.gd:64)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:128)
+            typeof=0 is_null=true value=[<null>]
+    << f4.t_b_poison_block() : returned [S5-F4b-REACHED-END]
+
+  -- F4-b2:對照組 -- Alternative 3 的扁平巢狀寫法 --
+    >> f4.t_b2_flat_contrast() : calling...
+      [S1] BEFORE (扁平巢狀,無 PackedByteArray 分層) size=160
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_b2_flat_contrast (res://scripts/f4_manifest_layering.gd:76)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:131)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_b2_flat_contrast (res://scripts/f4_manifest_layering.gd:76)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:131)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_b2_flat_contrast (res://scripts/f4_manifest_layering.gd:76)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:131)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_b2_flat_contrast (res://scripts/f4_manifest_layering.gd:76)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:131)
+      [S2] AFTER  typeof=0 is_null=true value=[<null>]
+      判讀:此為 ADR-0003 Alternative 3(被拒的扁平方案)的失敗模式對照組。
+    << f4.t_b2_flat_contrast() : returned [S3-F4b2-REACHED-END]
+
+  -- F4-c:浮點位元保真(拒絕 JSON 的理由之一 / GDD AC-24 依賴此) --
+    >> f4c.t_roundtrip() : calling...
+      [0.1                                         ] enc_size=32  bits_in=9a9999999999b93f  bits_out=9a9999999999b93f  BIT_IDENTICAL=true
+      [1e-300                                      ] enc_size=32  bits_in=59f3f8c21f6ea501  bits_out=59f3f8c21f6ea501  BIT_IDENTICAL=true
+      [PI                                          ] enc_size=32  bits_in=182d4454fb210940  bits_out=182d4454fb210940  BIT_IDENTICAL=true
+      [-0.0                                        ] enc_size=28  bits_in=0000000000000080  bits_out=0000000000000080  BIT_IDENTICAL=true
+      [+0.0                                        ] enc_size=28  bits_in=0000000000000080  bits_out=0000000000000080  BIT_IDENTICAL=true
+      [INF                                         ] enc_size=28  bits_in=000000000000f07f  bits_out=000000000000f07f  BIT_IDENTICAL=true
+      [-INF                                        ] enc_size=28  bits_in=000000000000f0ff  bits_out=000000000000f0ff  BIT_IDENTICAL=true
+      [NAN                                         ] enc_size=32  bits_in=000000000000f87f  bits_out=000000000000f87f  BIT_IDENTICAL=true  is_nan(in)=true is_nan(out)=true
+      [1.0/3.0                                     ] enc_size=32  bits_in=555555555555d53f  bits_out=555555555555d53f  BIT_IDENTICAL=true
+      [max double 1.7976931348623157e308           ] enc_size=32  bits_in=ffffffffffffef7f  bits_out=ffffffffffffef7f  BIT_IDENTICAL=true
+      [min subnormal 5e-324                        ] enc_size=28  bits_in=0000000000000080  bits_out=0000000000000080  BIT_IDENTICAL=true
+      [9007199254740993.0 (2^53+1)                 ] enc_size=32  bits_in=0100000000004043  bits_out=0100000000004043  BIT_IDENTICAL=true
+      [1.5 (exactly representable)                 ] enc_size=28  bits_in=000000000000f83f  bits_out=000000000000f83f  BIT_IDENTICAL=true
+      ---- 全部項目位元完全相同 = true ----
+    << f4c.t_roundtrip() : returned [F4c-REACHED-END]
+    >> f4c.t_int_float_distinction() : calling...
+      as_int   typeof=2 (2=TYPE_INT)   value=3
+      as_float typeof=3 (3=TYPE_FLOAT) value=3.0
+      int/float 區分是否保住 = true
+    << f4c.t_int_float_distinction() : returned [F4c-int-float-REACHED-END]
+
+  -- F4-c 補測:字面量常數池異常,以及由位元樣式構造的向量 --
+     背景:上一項 f4c.t_roundtrip() 的 `+0.0` 與 `5e-324` 兩列,bits_in 與 `-0.0`
+     那一列完全相同 -> 那兩個測試向量在進入序列化之前就已經不是預期的值。
+     以下用 PackedByteArray.decode_double() 從明確位元組樣式構造,不經任何浮點字面量。
+    >> f4c2.t_literal_constant_pool_anomaly() : calling...
+      字面量 -0.0            bits = 0000000000000080
+      字面量  0.0            bits = 0000000000000080   <-- 若與上一行相同,即為常數池去重
+      字面量  5e-324         bits = 0000000000000080   <-- 同上
+      執行期 float(0)        bits = 0000000000000080
+      執行期 1.0 - 1.0       bits = 0000000000000080
+      由位元構造 +0.0        bits = 0000000000000000
+      判讀:此為 GDScript 來源字面量層的現象,與 var_to_bytes/bytes_to_var 無關;
+            記錄於此是因為它使 f4c 第一版的兩個測試向量失效。
+    << f4c2.t_literal_constant_pool_anomaly() : returned [F4c2-anomaly-REACHED-END]
+    >> f4c2.t_from_bits_roundtrip() : calling...
+      [+0.0            (0x0000000000000000)] want=0000000000000000 constructed=0000000000000000 CONSTRUCT_OK=true | enc=28 out=0000000000000000 ROUNDTRIP_BIT_IDENTICAL=true
+      [-0.0            (0x8000000000000000)] want=0000000000000080 constructed=0000000000000080 CONSTRUCT_OK=true | enc=28 out=0000000000000080 ROUNDTRIP_BIT_IDENTICAL=true
+      [min subnormal   (0x0000000000000001)] want=0100000000000000 constructed=0100000000000000 CONSTRUCT_OK=true | enc=32 out=0100000000000000 ROUNDTRIP_BIT_IDENTICAL=true
+      [max subnormal   (0x000FFFFFFFFFFFFF)] want=ffffffffffff0f00 constructed=ffffffffffff0f00 CONSTRUCT_OK=true | enc=32 out=ffffffffffff0f00 ROUNDTRIP_BIT_IDENTICAL=true
+      [min normal      (0x0010000000000000)] want=0000000000001000 constructed=0000000000001000 CONSTRUCT_OK=true | enc=32 out=0000000000001000 ROUNDTRIP_BIT_IDENTICAL=true
+      [0.1             (0x3FB999999999999A)] want=9a9999999999b93f constructed=9a9999999999b93f CONSTRUCT_OK=true | enc=32 out=9a9999999999b93f ROUNDTRIP_BIT_IDENTICAL=true
+      [+INF            (0x7FF0000000000000)] want=000000000000f07f constructed=000000000000f07f CONSTRUCT_OK=true | enc=28 out=000000000000f07f ROUNDTRIP_BIT_IDENTICAL=true
+      [-INF            (0xFFF0000000000000)] want=000000000000f0ff constructed=000000000000f0ff CONSTRUCT_OK=true | enc=28 out=000000000000f0ff ROUNDTRIP_BIT_IDENTICAL=true
+      [quiet NaN       (0x7FF8000000000000)] want=000000000000f87f constructed=000000000000f87f CONSTRUCT_OK=true | enc=32 out=000000000000f87f ROUNDTRIP_BIT_IDENTICAL=true
+      [NaN w/ payload  (0x7FF8000000000001)] want=010000000000f87f constructed=010000000000f87f CONSTRUCT_OK=true | enc=32 out=010000000000f87f ROUNDTRIP_BIT_IDENTICAL=true
+      [signaling NaN   (0x7FF0000000000001)] want=010000000000f07f constructed=010000000000f07f CONSTRUCT_OK=true | enc=32 out=010000000000f07f ROUNDTRIP_BIT_IDENTICAL=true
+      [max double      (0x7FEFFFFFFFFFFFFF)] want=ffffffffffffef7f constructed=ffffffffffffef7f CONSTRUCT_OK=true | enc=32 out=ffffffffffffef7f ROUNDTRIP_BIT_IDENTICAL=true
+      ---- 構造出來的值確實等於指定位元 = true ----
+      ---- 全部向量往返位元完全相同     = true ----
+    << f4c2.t_from_bits_roundtrip() : returned [F4c2-frombits-REACHED-END]
+
+  -- F4-c 補測之二:判別「同檔內先出現的零值 float 常數勝」假說 --
+    >> f4c3.probe() : calling...
+      本檔順序:先 0.0、後 -0.0(與 f4c2 相反)
+        字面量  0.0  (先) bits = 0000000000000000   期望 0000000000000000
+        字面量 -0.0  (後) bits = 0000000000000000   期望 0000000000000080
+      判讀:若第二行印出 0000000000000000,即『同檔內先出現的零值 float 常數勝』;
+            若兩行各自正確,則 f4c2 的成因不是順序相關的常數去重。
+    << f4c3.probe() : returned [F4c3-REACHED-END]
+    >> f4c3.probe_signbit_visible() : calling...
+        1.0 / (本檔字面量 0.0) = inf   (+inf 表示 +0.0,-inf 表示 -0.0)
+        1.0 / (由位元構造的 +0.0) = inf
+    << f4c3.probe_signbit_visible() : returned [F4c3-signbit-REACHED-END]
+
+============ F3 -- HashingContext(ADR VR#3 / #3a)============
+
+  -- F3-0:哪些形式編譯得過(編譯結果本身就是答案) --
+     HashingContext.HASH_SHA256 短形式 (f3a)         : [COMPILED OK]
+     HashingContext.HashType.HASH_SHA256 完整 (f3b)  : [COMPILED OK]
+     PackedByteArray.sha256_buffer()      (f3c1)     : [FAILED (reload=Parse error)]
+     String.sha256_buffer()               (f3c2)     : [COMPILED OK]
+     String.sha256_text()                 (f3c3)     : [COMPILED OK]
+     註:f3a 之所以能編譯,即代表 start()/update()/finish() 三者皆非 void
+        (回傳 void 的函式其回傳值不可指派,GDScript 會在 parse 階段擋下)。
+
+  -- F3:ClassDB 對 HashingContext 的真實簽章內省 --
+    >> f3d.probe_classdb() : calling...
+      ClassDB.class_exists('HashingContext') = true
+        method: { "name": "start", "args": [{ "name": "type", "class_name": &"HashingContext.HashType", "type": 2, "hint": 0, "hint_string": "", "usage": 65542 }], "default_args": [], "flags": 1, "id": 500, "return": { "name": "", "class_name": &"Error", "type": 2, "hint": 0, "hint_string": "", "usage": 65542 } }
+        method: { "name": "update", "args": [{ "name": "chunk", "class_name": &"", "type": 29, "hint": 0, "hint_string": "", "usage": 6 }], "default_args": [], "flags": 1, "id": 501, "return": { "name": "", "class_name": &"Error", "type": 2, "hint": 0, "hint_string": "", "usage": 65542 } }
+        method: { "name": "finish", "args": [], "default_args": [], "flags": 1, "id": 502, "return": { "name": "", "class_name": &"", "type": 29, "hint": 0, "hint_string": "", "usage": 6 } }
+      -- enum constants --
+        enum HashType -> ["HASH_MD5", "HASH_SHA1", "HASH_SHA256"]
+      -- integer constants --
+        const HASH_MD5 = 0
+        const HASH_SHA1 = 1
+        const HASH_SHA256 = 2
+    << f3d.probe_classdb() : returned [F3d-classdb-REACHED-END]
+
+  -- F3:回傳型別實測 --
+    >> f3a.probe() : calling...
+      start(HashingContext.HASH_SHA256) -> typeof=2 value=0  (2=TYPE_INT/Error, 0=TYPE_NIL)
+      update(PackedByteArray)           -> typeof=2 value=0
+      finish()                          -> typeof=29 size=32 hex=2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+      HashingContext.HASH_SHA256 常數值 = 2
+    << f3a.probe() : returned [F3a-REACHED-END]
+
+  -- F3:未 start 就 update/finish 的失敗模式 --
+    >> f3a.probe_error_paths() : calling...
+      [S1] 未 start 就 update:
+ERROR: Parameter "ctx" is null.
+   at: update (core/crypto/hashing_context.cpp:52)
+   GDScript backtrace (most recent call first):
+       [0] probe_error_paths (res://scripts/f3a_hash_ctx_returns.gd:22)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:192)
+      [S2] update 回傳 typeof=2 value=3
+      [S3] 未 start 就 finish:
+ERROR: Parameter "ctx" is null.
+   at: finish (core/crypto/hashing_context.cpp:68)
+   GDScript backtrace (most recent call first):
+       [0] probe_error_paths (res://scripts/f3a_hash_ctx_returns.gd:25)
+       [1] _run (res://scripts/runner_f.gd:36)
+       [2] _ready (res://scripts/runner_f.gd:192)
+      [S4] finish 回傳 typeof=29 size=0
+    << f3a.probe_error_paths() : returned [F3a-errpath-REACHED-END]
+
+  -- F3:完整路徑 enum 形式 --
+    >> f3b.probe() : calling...
+      HashingContext.HashType.HASH_SHA256 = 2 (typeof=2)
+      以完整路徑形式 start() 之後 finish() = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+    << f3b.probe() : returned [F3b-REACHED-END]
+
+  -- F3a:一次性便利方法 --
+    f3c1 SKIPPED -> PackedByteArray.sha256_buffer() 不存在
+    >> f3c2.probe() : calling...
+      String('abc').sha256_buffer() = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad (size=32)
+    << f3c2.probe() : returned [F3c2-REACHED-END]
+    >> f3c3.probe() : calling...
+      String('abc').sha256_text() = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+    << f3c3.probe() : returned [F3c3-REACHED-END]
+
+  -- F3:對照已知 SHA-256 標準答案(獨立確認演算法身分) --
+    >> f3d.probe_known_answer() : calling...
+      SHA-256('abc') got      = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+      SHA-256('abc') expected = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+      MATCHES KNOWN ANSWER    = true
+    << f3d.probe_known_answer() : returned [F3d-known-REACHED-END]
+    >> f3d.probe_empty_input() : calling...
+ERROR: Condition "len == 0" is true. Returning: FAILED
+   at: update (core/crypto/hashing_context.cpp:54)
+   GDScript backtrace (most recent call first):
+       [0] _sha256_oneshot (res://scripts/f3d_hash_segmented.gd:25)
+       [1] probe_empty_input (res://scripts/f3d_hash_segmented.gd:66)
+       [2] _run (res://scripts/runner_f.gd:36)
+       [3] _ready (res://scripts/runner_f.gd:223)
+      SHA-256(empty) = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      expected       = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      match = true
+    << f3d.probe_empty_input() : returned [F3d-empty-REACHED-END]
+
+  -- F3b:分段一致性(ADR 機制四用逐段 update()) --
+    >> f3d.probe_segmented() : calling...
+      one-shot      = 59699bcf06bcdfb5d109b127cc188dd3c730d161fbb1f250f741b915605ab4bb
+      2-segment     = 59699bcf06bcdfb5d109b127cc188dd3c730d161fbb1f250f741b915605ab4bb   same=true
+      4-segment     = 59699bcf06bcdfb5d109b127cc188dd3c730d161fbb1f250f741b915605ab4bb   same=true
+    << f3d.probe_segmented() : returned [F3d-segmented-REACHED-END]
+
+  -- F3a:三段式基準值,供與便利方法輸出比對 --
+    >> f3d.probe_convenience_equivalence() : calling...
+      HashingContext 三段式 SHA-256('abc') = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+      (便利方法的輸出見 F3c 各項;pba_ok=false str_ok=true)
+    << f3d.probe_convenience_equivalence() : returned [F3d-conv-REACHED-END]
+
+============ F5 -- 大緩衝區(排最後:前面結果已因 flush_stdout_on_print 落地)============
+    >> f5.t_realistic_slot() : calling...
+      [realistic single slot: 500 records]
+        encoded size = 53988 bytes (52.7 KB)
+        var_to_bytes 1 ms / bytes_to_var 1 ms / SHA-256 0 ms   ok=true
+        digest = 4157f666729b8e4e4d56ca2de7fb5805cb98406e3e2cc35ef75399eecce8a0c8
+    << f5.t_realistic_slot() : returned [F5-realistic-REACHED-END]
+    >> f5.t_raw_buffer(32MB) : calling...
+      [32 MB raw PackedByteArray in a Dictionary]
+        var_to_bytes  :      7 ms   (encoded size = 33554484 bytes)
+        bytes_to_var  :     14 ms   round-trip byte-identical = true
+        SHA-256       :    138 ms   digest = 913d0a338ff7002f4170b77280a470a7a74c372dd25c679e6b5d25a3834b4464
+    << f5.t_raw_buffer(32MB) : returned [F5-raw-32MB-REACHED-END]
+    >> f5.t_raw_buffer(64MB) : calling...
+      [64 MB raw PackedByteArray in a Dictionary]
+        var_to_bytes  :     15 ms   (encoded size = 67108916 bytes)
+        bytes_to_var  :     30 ms   round-trip byte-identical = true
+        SHA-256       :    259 ms   digest = f232c9e2b4997b1aac646a2ab8b17a3dfbf1c1563a6c33ee7d44f181e8d8934d
+    << f5.t_raw_buffer(64MB) : returned [F5-raw-64MB-REACHED-END]
+    >> f5.t_many_records(100k) : calling...
+      [100000 records, each a 3-key Dictionary]
+        (build in GDScript) :    113 ms
+        var_to_bytes        :    111 ms   (encoded size = 7996868 bytes = 7.63 MB)
+        bytes_to_var        :    116 ms   size preserved=true  last record spot-check=true
+        SHA-256             :     28 ms   digest = 029be21c169f5e35fa4b5cc015110ab86e7af918be108891fccc4ceb7cf3efcf
+    << f5.t_many_records(100k) : returned [F5-records-100000-REACHED-END]
+    >> f5.t_many_records(500k) : calling...
+      [500000 records, each a 3-key Dictionary]
+        (build in GDScript) :    390 ms
+        var_to_bytes        :    425 ms   (encoded size = 39984068 bytes = 38.13 MB)
+        bytes_to_var        :    497 ms   size preserved=true  last record spot-check=true
+        SHA-256             :    114 ms   digest = c8fa45c8be979a36aed822743a077e937c24b4cc68082960d3ca8ddf9fc8a633
+    << f5.t_many_records(500k) : returned [F5-records-500000-REACHED-END]
+
+=== STAGE 2 COMPLETE ===
+STEP2_EXIT=0

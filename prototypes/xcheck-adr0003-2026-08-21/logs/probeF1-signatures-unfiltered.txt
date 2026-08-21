@@ -1,0 +1,119 @@
+# 探針 F / 階段 1 — 未過濾 log(F1:var_to_bytes / bytes_to_var 的實際簽章)
+#
+# 目的:關閉 ADR-0003 Verification Required 第 1 項。ADR-0003 第 20 行逐字寫
+#       `bytes_to_var(bytes: PackedByteArray, allow_objects: bool = false)`,
+#       且機制一/二/三、Key Interfaces、Architecture Diagram 全文一律寫成
+#       `bytes_to_var(buffer, false)`。本階段單獨先量這件事,因為它決定階段 2
+#       的測試碼該怎麼下筆 —— 若照 ADR 寫法下筆而該形狀不編譯,會整檔 Parse Error
+#       而一項都跑不出來(本專案探針 C 第一版踩過的坑)。
+#
+# 引擎:Godot Engine v4.7.1.stable.official.a13da4feb(headless)
+# 執行日:2026-08-21
+#
+# 指令(Godot 執行檔不在 PATH 上,逐字如下):
+#   GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+#   步驟 1(建 class cache,main_scene = res://scenes/F1.tscn):
+#     "$GODOT" --headless --path . --editor --quit
+#   步驟 2:
+#     "$GODOT" --headless --path .
+#
+# exit code:步驟 1 = 0;步驟 2 = 0
+#
+# 本檔為 stdout + stderr 合併重導(2>&1),未經 grep/head/tail 過濾或截斷。
+# ============================================================================
+########## STEP 1: editor cache build ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+STEP1_EXIT=0
+
+########## STEP 2: run probe (scenes/F1.tscn) ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0003 Probe F / STAGE 1 (F1 signatures) / Godot 4.7.1-stable (official) ===
+
+--- F1-0: compile-check EVERY file BEFORE calling into any of them ---
+  [COMPILED OK]  f1a_bytes_to_var_1arg.gd    bytes_to_var(b)          <- 1 個引數
+SCRIPT ERROR: Parse Error: Too many arguments for "bytes_to_var()" call. Expected at most 1 but received 2.
+   at: GDScript::reload (res://scripts/f1b_bytes_to_var_2arg.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:27)
+       [1] _ready (res://scripts/runner_f1.gd:52)
+ERROR: Failed to load script "res://scripts/f1b_bytes_to_var_2arg.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:27)
+       [1] _ready (res://scripts/runner_f1.gd:52)
+SCRIPT ERROR: Parse Error: Too many arguments for "bytes_to_var()" call. Expected at most 1 but received 2.
+   at: GDScript::reload (res://scripts/f1b_bytes_to_var_2arg.gd:7)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:32)
+       [1] _ready (res://scripts/runner_f1.gd:52)
+  [FAILED (reload=Parse error)]  f1b_bytes_to_var_2arg.gd    bytes_to_var(b, false)   <- ADR-0003 全文採用的形狀
+  [COMPILED OK]  f1c_var_to_bytes_1arg.gd    var_to_bytes(v)          <- 1 個引數
+SCRIPT ERROR: Parse Error: Too many arguments for "var_to_bytes()" call. Expected at most 1 but received 2.
+   at: GDScript::reload (res://scripts/f1d_var_to_bytes_2arg.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:27)
+       [1] _ready (res://scripts/runner_f1.gd:56)
+ERROR: Failed to load script "res://scripts/f1d_var_to_bytes_2arg.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:27)
+       [1] _ready (res://scripts/runner_f1.gd:56)
+SCRIPT ERROR: Parse Error: Too many arguments for "var_to_bytes()" call. Expected at most 1 but received 2.
+   at: GDScript::reload (res://scripts/f1d_var_to_bytes_2arg.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_f1.gd:32)
+       [1] _ready (res://scripts/runner_f1.gd:56)
+  [FAILED (reload=Parse error)]  f1d_var_to_bytes_2arg.gd    var_to_bytes(v, false)   <- 2 個引數
+  [COMPILED OK]  f1e_with_objects.gd         *_with_objects 變體是否存在
+  [COMPILED OK]  f1f_introspect.gd           ClassDB 內省嘗試
+
+--- F1-1 判讀:哪一個 arity 編譯得過 ---
+  bytes_to_var, 1 arg : [COMPILED OK]
+  bytes_to_var, 2 arg : [FAILED (reload=Parse error)]   <<< ADR-0003 逐字寫法
+  var_to_bytes, 1 arg : [COMPILED OK]
+  var_to_bytes, 2 arg : [FAILED (reload=Parse error)]
+
+--- F1-2:實際呼叫(只呼叫編譯得過的) ---
+    >> f1a.probe() : calling...
+      f1a: bytes_to_var(b) -> typeof=2 value=123
+    << f1a.probe() : returned [F1a-REACHED-END]
+    -- f1b SKIPPED (編譯失敗) —— 若此行出現,ADR-0003 全文的呼叫形狀在 4.7.1 不成立
+    >> f1c.probe() : calling...
+      f1c: var_to_bytes({'k':1}) -> typeof=29 size=28
+    << f1c.probe() : returned [F1c-REACHED-END]
+    -- f1d SKIPPED (編譯失敗)
+
+--- F1-3:*_with_objects 變體 ---
+    >> f1e.probe_encode() : calling...
+      f1e: var_to_bytes_with_objects(RefCounted.new()) -> size=40
+      f1e: hex(前 32 byte) = 180000000a000000526566436f756e7465640000010000000600000073637269
+    << f1e.probe_encode() : returned [F1e-encode-REACHED-END]
+    >> f1e.probe_decode() : calling...
+      f1e: bytes_to_var_with_objects(b) -> typeof=24 is_Object=true
+    << f1e.probe_decode() : returned [F1e-decode-REACHED-END]
+
+--- F1-4:ClassDB 內省(測不到就明說未查證) ---
+    >> f1f.probe() : calling...
+      f1f: ClassDB.class_exists('@GlobalScope') = false
+      f1f: ClassDB.class_exists('@GDScript')    = false
+      f1f: class_get_method_list('@GlobalScope').size() = 0
+    << f1f.probe() : returned [F1f-REACHED-END]
+
+=== STAGE 1 COMPLETE ===
+STEP2_EXIT=0
