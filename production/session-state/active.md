@@ -3,10 +3,10 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。✅ **2026-08-21:中斷點已解除** —— 探針 D 執行完畢(exit 0),殘留 #1/#2 **兩項皆關閉**(`values().has()` 越界輸入與 `keys().has()` 非法名皆乾淨回傳 `false`、不中止),**R7-P1/R7-P3 建議修法地基成立,ADR-0002 修訂的前置條件已解除**。下一步:`/architecture-decision` 修訂 ADR-0002(17 項)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併)。
+Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。✅ **2026-08-21:中斷點已解除** —— 探針 D 執行完畢(exit 0),殘留 #1/#2 **兩項皆關閉**(`values().has()` 越界輸入與 `keys().has()` 非法名皆乾淨回傳 `false`、不中止),**R7-P1/R7-P3 建議修法地基成立,ADR-0002 修訂的前置條件已解除**。✅ **2026-08-21:ADR-0002 第四次修訂已完成並寫入**(17 項全數處理;Step 5.5 雙軌覆核**兩輪**,共抓出 15 項 BLOCKING/高,**其中 12 項是修訂草稿自己引入或漏掉的**;協調者自行 grep 另抓到範圍宣告連續被低估三次 + 一句被自己修法弄假的既有宣稱)。ADR-0002 651 → **974 行**,registry 69 → **78 項**(ADR-0002 佔 22)。**涵蓋分佈不自陳,待第八輪。** 下一步:ADR-0005 第四次修訂(R6-6~R6-13 八項 + 13 處 `pass` 中的 8 處 + 第 1151 行指示句 + 第 121 行 `Constraints`)。
 <!-- /STATUS -->
 
-**最後更新**:2026-08-21 —— 探針 D 執行完畢,第七輪的兩項殘留未查證項關閉,ADR-0002 修訂前置條件解除(詳見檔末「Session Extract — 探針 D」)。以下為前次更新內容。
+**最後更新**:2026-08-21 —— (1) 探針 D 執行完畢,第七輪兩項殘留未查證項關閉;(2) **ADR-0002 第四次修訂完成並寫入**(17 項 + Step 5.5 雙軌兩輪覆核的 20 項修正)。詳見檔末兩節 Session Extract。以下為前次更新內容。
 
 **前次更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
 
@@ -65,8 +65,8 @@ Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依
 |---|---|
 | **專案階段** | 架構階段(Technical Setup → Pre-Production 之間) |
 | **GDD** | 4 份系統 GDD:好感度數值池、存檔系統、單一游標/高亮狀態系統 = **Approved**;戰棋移動與交戰系統 = **Designed,尚未 Approved** |
-| **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`** |
-| **架構登記處** | **69 項立場**(10 state-ownership、11 interface contracts、23 API decisions、**25** forbidden patterns)—— 2026-08-20 ADR-0002 修訂新增 `raw_variant_subscript_into_typed_container`,ADR-0002 佔 13 項。以下為前次紀錄:**68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
+| **ADR** | **5 份,全部 `Proposed`,無一 `Accepted`**。ADR-0002 已於 2026-08-21 完成第四次修訂(第七輪 17 項),**但涵蓋分佈與可否 `Accepted` 皆待第八輪獨立 `/architecture-review`** —— 本 ADR 明文不自陳 |
+| **架構登記處** | **78 項立場**(10 state-ownership、11 interface contracts、**28** API decisions、**29** forbidden patterns)—— 2026-08-21 ADR-0002 第四次修訂新增 9 項(5 api / 4 forbidden)+ 就地修訂 2 項,**ADR-0002 佔 22 項**(逐節實測)。以下為前次紀錄:**69 項立場**(…23 API、25 forbidden)—— 2026-08-20 ADR-0002 修訂新增 `raw_variant_subscript_into_typed_container`,ADR-0002 佔 13 項。以下為前次紀錄:**68 項立場**(10 state-ownership、11 interface contracts、23 API decisions、24 forbidden patterns)—— 2026-08-19 第三次修訂後逐節實測,**第六輪獨立重測確認零落差**(修掉 2 處 `revised:` 欄未同步與 1 處 YAML 重複鍵之後)。ADR-0005 佔 26 項(3/5/7/11) |
 | **需求涵蓋** | 130 項 TR:**64 ✅ / 34 ⚠️ / 32 ❌**(2026-08-20 **第七輪** `/architecture-review` 獨立重推);游標系統 **12 ✅ / 7 ⚠️ / 0 ❌**、好感度 **21 ✅ / 3 ⚠️ / 0 ❌**。⚠️ **下降不是 ADR 退步** —— 第五輪的 68/30/32 與游標 15/4/0 是在 R6-6~R6-13 被發現**之前**算的,第六輪發現了那 8 項但範圍限縮未重推;本輪是第一次把它們算進涵蓋判定。三個 Foundation 系統合計 73 項**仍只有 1 項缺口**(`TR-save-030`)|
 | **最新審查判定** | **CONCERNS**(2026-08-20 **第七輪**;第三~七輪皆 CONCERNS)。但與第六輪(零 BLOCKING)有實質差異:**三份 ADR 各帶 BLOCKING 級項目,且沒有一項屬於涵蓋缺口** —— 全部是已寫下的決策內容與已實測的引擎現實不符(ADR-0002 兩項 BLOCKING;ADR-0004/0005 共 13 處 `@abstract func ...: pass` 為已證實的編譯期錯誤)。**32 項 ❌ 中 25 項在戰棋系統**,該 GDD 尚未 Approved,故沿用第二輪標準不判 FAIL;⚠️ 若戰棋 GDD 先於其演算法層 ADR 達 Approved,判定退回 FAIL |
 | **實作** | `src/` 為空,尚無任何程式碼。**但 2026-08-20 已實證 Godot 4.7.1 可在本機 headless 執行**(執行檔在 `~/Downloads/Godot_v4.7.1-stable_win64.exe/`,不在 `PATH` 上)—— 多份 ADR 寫的「本專案無 Godot 執行環境」是錯的,見檔尾 Session Extract |
@@ -987,3 +987,53 @@ Godot `4.7.1.stable.official.a13da4feb` headless,`main_scene` = `res://scenes/D.
 ### 下一步(取代原「中斷檢查點」)
 
 **前置條件已解除,可直接進 `/architecture-decision` 修訂 ADR-0002(17 項)** —— R7E-6/R7E-4 兩項 BLOCKING + R7-P1/P2/P3 + R7E-2 的二選一裁決((a) 建構子預填 10 對空 list / (b) 讀取入口一律 `has()` 守衛)+ 其餘 11 項。其後為 ADR-0005 第四次修訂(R6-6~R6-13 八項 + 8 處 `pass` + 第 1151 行指示句 + 第 121 行 `Constraints`)。
+
+---
+
+## Session Extract — `/architecture-decision` ADR-0002 第四次修訂 2026-08-21
+
+**處理第七輪 `/architecture-review` 的 17 項,全數寫入。** ADR-0002 **651 → 974 行**;registry **69 → 78 項**(ADR-0002 佔 **22**);連帶改 `design/gdd/affinity-data-pool.md` 第 60 行與 `.claude/docs/technical-preferences.md`。
+
+### 使用者的四項裁決
+
+| 項 | 裁決 |
+|---|---|
+| **R7E-2**(空配對讀取會中止) | `_records` 建構子預填 10 對;**`_death_marks` 刻意不預填**、一律 `has()` 守衛 —— 因為它的鍵存在本身就是「已陣亡」的語意 |
+| **R7E-12**(`items` 公開可變) | 改私有 `_items` + `append()`/`size()`/`get_at()` 最小存取面 |
+| **R7E-6 / R7E-5**(拒絕回報形狀) | 結果物件加 `rejection` 欄位,`SpeculativeRejection` 併入 `ReadRejection`,**四個簽章全部不再回傳 `Variant`** |
+| **R7E-14**(`_reclaimed_tokens` 次要逾時) | **撤回**比例規則,改自足公式;**ADR-0002 維持 `Depends On: None`** |
+
+### Step 5.5 雙軌覆核跑了兩輪,共抓出 15 項 BLOCKING/高 —— **12 項是草稿自己引入或漏掉的**
+
+**第一輪**(`godot-gdscript-specialist` + `godot-specialist` 平行):11 BLOCKING/高 + 12 非阻塞。
+
+- **架構軌最重要一項**:R7-P1 的修法**只補了 `append_record`**,`notify_death` 與四個讀取函數的同型 enum 參數零防線 —— 非法序數會踩缺鍵讀取而**當場中止**(比 R7E-4 的靜默寫錯更嚴重,因為讀取是每回合熱路徑),且 `DeathNotifyResult`/`ReadRejection` 都沒有能容身的值
+- **兩軌獨立收斂**:哨兵值清單混淆了兩個結果類別(`AffinityReadResult` 沒有 `c_now`、`ShapeFeatureResult` 沒有 `value`,且後者專屬 5 個欄位完全沒交代)
+- **GDScript 軌**:`value = 0.0` / `diagnostic_visited_count = 0` **違反草稿自己寫的哨兵原則**(淨值相消本來就可能是 `0.0`)→ 改 `NAN` / `-1`;清單**漏了 `AffinityRecord.from_dict()`**(公開靜態方法,可繞過兩段式契約);機制四的「實作提醒」在預填生效後**自相矛盾**;`AffinityRecordList` 在 ADR 裡**被定義了兩次**
+- **架構軌**:**Key Interfaces 整節完全沒被草稿改到** —— 那是 ADR 自稱「定案的契約形狀」的權威摘要,只改內文等於沒關 R7E-12 與 R7E-5;變更九的推導鏈**自我矛盾**且替 ADR-0004 開了一張它不知道的帳單(**C7 同形,而同一份草稿才剛修好 C7**)
+
+**協調者自行 grep 核實**(不接受任何一份清單):範圍宣告**連續被低估三次** —— 第一版「機制二/四/八所有 `.items`」= 4 處 → 第二版經覆核 17 處 → grep 實測**約 30 處**。並抓到**兩軌都不可能抓到的一項**:**修正 A 讓 ADR 第 238 行「兩條規則都不改變任何既有簽章」變成假話** —— 該句逐字點名 `can_write`,而修正 A 改了它的回傳型別。**「修法讓某個既有宣稱變得不成立」第八次,且這次是在同一份草稿內由自己的修正造成。**
+
+**第二輪**(窄範圍,只驗覆核後才產生的修正 A/H):再抓 4 項。
+
+- **兩軌獨立收斂**:`can_write() -> WriteRejection` 有 **3 個**結構上不可達的值,不是 1 個 —— `ZERO_AMPLITUDE`/`NON_FINITE_AMPLITUDE` 依賴 `m`,而 `can_write()` **沒有 `m` 參數**。與 R7E-5 同形,而本次修訂正在消滅那個形狀
+- **架構軌**:`pair_of()` 是**第 8 個**帶 enum 參數的入口,且**唯一無拒絕通道**者(回傳裸 `Pair`,不可為 null)。已排除改回傳 `Variant`(違反本次方向)、`Pair.INVALID = -1`(會讓 `values().has(-1)` 判為合法、自毀修法)、`push_error()` + 哨兵(違反 Constraints)。**採用:三個驗證器改為 `AffinityTypes` 上的公開靜態函式 + `pair_of()` 明文前置條件 + forbidden pattern**,並誠實聲明**第 8 個入口不與前 7 個同級保護**
+- **GDScript 軌 B7 推翻了一項宣稱**:FIFO 在 `Dictionary[int, bool]` 上**不是「少一條路徑」**。三層理由,**第三層是協調者完全沒想到的** —— 權杖移入 `_reclaimed_tokens` 的時點是「逾時掃描發現它」的時點,**不等於 token id 的大小順序**(先發放的可能因操作較久而更晚被掃進來),故連「用 key 數值大小近似最舊」也不成立。已改採明確的 `_reclaimed_token_order: Array[int]`,並把宣稱改寫為「**換掉**一條路徑」。**選這條路的理由與機制七的取鎖模式同一個手法**:讓正確性完全不依賴未查證的 `Dictionary` 迭代順序,因此那個未查證項不需成為本 ADR 的依賴
+- **架構軌 N1**:`can_write` 在 registry **零命中** —— 機制九的裁決從一開始就沒被登記過,故 registry 影響的動詞應為「**新增**」而非「就地修訂」
+
+### 本次誠實登記、不假裝已解決的項目
+
+1. **VR #9**(`match typeof(x)` 對 `TYPE_NIL` 的比對)、**VR #11**(型別化 `Array` 越界索引 —— 四支探針零覆蓋,**不得沿用探針 A 對 `Dictionary` 的結論**)、**VR #12**(`var_to_bytes()` 型別保真 —— **歸屬 ADR-0003**,本 ADR 只登記依賴)
+2. **C7 只關本 ADR 這一半**,另一半需 ADR-0005 第四次修訂
+3. **機制七對 `TOKEN_TIMEOUT_MS` 的引用是 `Depends On: None` 的既存例外**(C1 舊帳,本次裁決範圍不含它)—— 已明文標註,避免下一輪誤讀為新引入的依賴
+4. **`pair_of()` 是呼叫端義務,不是結構保證**;**序數驗證有兩條實作路徑**(公開靜態 vs 內部讀快取),刻意接受,只以測試補償
+5. **`_items` 私有化不是結構保證** —— GDScript 無真正的私有成員,ADR 明文不宣稱達到據以拒絕 Alternative 7 的那個標準
+6. ⚠️ **修正 A/H 是第一輪覆核之後才產生的機制變更**;第二輪雖已窄範圍重驗,但**第二輪的修法(公開驗證器、`_reclaimed_token_order`、可達性表)本身未再經覆核** —— 依本專案八輪經驗,這是新缺陷最可能藏身處,**已列為第八輪的優先查核點**
+
+### 下一步
+
+1. **ADR-0005 第四次修訂** —— R6-6~R6-13 八項 + 8 處 `pass` 主體 + 第 1151 行指示句 + 第 121 行 `Constraints` 的「無 Godot 執行環境」+ VR #1/#3/#12/#15 標已查證。可合併成一次
+2. **ADR-0004** —— 5 處 `pass` + 第 71 行指示句 + VR #6/#6a 標已查證;**ADR-0003** —— 第 17 行「無 Godot 執行環境」刪除
+3. **C7 的另一半**(ADR-0005 側)
+4. **建立 `docs/consistency-failures.md`** —— 自第三輪起**第六次**提出。八輪累積:自陳膨脹 ×1、修法引入新缺陷 ×5、散文改了但結構化欄位沒跟上 ×5、「只修了觸發我注意的那一處」×9(本次 +1)
+5. **全新 session 跑第八輪 `/architecture-review`**(不得與本 session 同一個)

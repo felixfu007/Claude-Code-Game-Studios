@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-20"  # /architecture-decision ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -84,13 +84,13 @@ state_ownership:
     status: active
     owner_system: affinity-data-pool
     adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
-    interface: "AffinityDataPool.append_record(pair, m, source) -> WriteRejection (write); AffinityDataPool.combat_strength_read/narrative_depth_read/shape_feature_read/speculative_read (read). Backed by Dictionary[AffinityTypes.Pair, AffinityRecordList] (inner items: Array[AffinityRecord]; 2026-08-20 revision - the original nested form does not compile in 4.7.1)."
+    interface: "AffinityDataPool.append_record(pair, m, source) -> WriteRejection (write); AffinityDataPool.combat_strength_read/narrative_depth_read/shape_feature_read/speculative_read (read). Backed by Dictionary[AffinityTypes.Pair, AffinityRecordList] (2026-08-20 revision - the original nested form does not compile in 4.7.1). Inner array is PRIVATE _items: Array[AffinityRecord], reached only via append()/size()/get_at() (2026-08-21 revision, R7E-12). All four read functions return their result object with a rejection: ReadRejection field - none returns Variant (2026-08-21)."
     write_access: affinity-data-pool-only (via append_record; writers are skill-card, support-conversation, and chapter/campaign-structure systems calling this single method)
     notes: "Append-only. t_now/campaign tick are derived, cached values, never persisted independently. Per-pair indexed for O(n_p+m) query complexity — see affinity_pair_key_representation below."
     referenced_by:
       - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     added: 2026-08-18
-    revised: "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:巢狀型別容器改包裝類別 AffinityRecordList
+    revised: "2026-08-21"  # 2026-08-20 巢狀型別容器改包裝類別 AffinityRecordList;2026-08-21 內層陣列改私有 _items + 最小存取面(R7E-12),讀取回傳型別全部去 Variant(R7E-6/R7E-5)
 
   - state: affinity_death_marks
     status: active
@@ -701,7 +701,7 @@ api_decisions:
 
   - purpose: affinity_pair_key_representation
     status: active
-    api: "enum Pair (10 fixed members) wrapped in class_name AffinityTypes, constructed via AffinityTypes.pair_of(a, b) canonical lookup"
+    api: "enum Pair (10 fixed members) wrapped in class_name AffinityTypes, constructed via AffinityTypes.pair_of(a, b) canonical lookup. PRECONDITION (2026-08-21): callers MUST validate both arguments with AffinityTypes.is_valid_character() first - pair_of() returns a bare Pair and has no rejection channel, so its behaviour on an illegal ordinal is undefined. See forbidden pattern unvalidated_character_into_pair_of."
     not: "runtime-normalized Array[Character] composite key"
     adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     reason: >
@@ -711,6 +711,10 @@ api_decisions:
       bucket. An explicit enum is an int under the hood, immutable by construction, and the
       canonical constructor hides the 10-combination lookup from callers. See also
       forbidden pattern mutable_container_as_dictionary_key below.
+      2026-08-21: an enum being "an int under the hood" is exactly why the type annotation
+      does NOT constrain the ordinal - probe B measured out-of-range ints (-1/999) reaching
+      the function body unchanged. pair_of() is the one entry that cannot carry a rejection
+      code, hence the caller precondition above.
     referenced_by:
       - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     added: 2026-08-18
@@ -1247,6 +1251,123 @@ api_decisions:
       - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
       - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     added: "2026-08-19b"
+    revised: ""
+
+  - purpose: affinity_records_prefilled_all_pairs
+    status: active
+    api: "AffinityDataPool._init() prefills _records with all 10 AffinityTypes.Pair keys mapped to empty AffinityRecordList instances; import_state() re-prefills after a successful state swap. _death_marks is deliberately NOT prefilled."
+    not: "lazy creation on first write, with read paths left unguarded"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      MEASURED (probe A, 2026-08-20): subscript-reading a never-written key on a typed
+      Dictionary is a SCRIPT ERROR that ABORTS THE CALLING FUNCTION — not null, not a
+      default value. Mechanism 4 only ever specified creating the AffinityRecordList on
+      WRITE; the read path had no corresponding rule. At campaign start _records is empty,
+      so the very first combat_strength_read(pair) would abort — and n(p)=0 is an EXPECTED
+      legal state (GDD cross-structure invariant #4), not an edge case. Prefilling makes
+      _records[pair] structurally safe at any point in time, so read paths need zero guards.
+      ASYMMETRY IS DELIBERATE: _death_marks must NOT be prefilled because key presence IS
+      the "this character is dead" semantics — prefilling would mark all 5 characters dead.
+      See forbidden pattern death_marks_prefill_or_unguarded_read.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+    revised: ""
+
+  - purpose: affinity_read_rejection_as_result_field
+    status: active
+    api: "All four read functions return their result object (AffinityReadResult / ShapeFeatureResult) carrying a rejection: ReadRejection field. SpeculativeRejection is deleted and merged into ReadRejection (6 values). No read function returns Variant."
+    not: "returning ReadRejection from a function declared to return AffinityReadResult; or returning Variant and making the caller type-check"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      R7E-6 (BLOCKING): the three read functions are declared -> AffinityReadResult /
+      ShapeFeatureResult, so ReadRejection.FUTURE_TIME_QUERY was structurally unreturnable
+      — dead code. R7E-5: speculative_read returned Variant with "caller distinguishes by
+      type check" unspecified, and its SpeculativeRejection.NONE was never returned. One
+      shape closes both. Per-function reachability tables are MANDATORY (mechanism 5-2 and
+      mechanism 9) — this ADR has now been caught with dead enum values twice.
+      Rejection-path sentinels use NAN for float fields and -1 for int fields, never 0.0 or
+      0, because those are reachable on the SUCCESS path (net cancellation; n_pair==0).
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+    revised: ""
+
+  - purpose: affinity_enum_ordinal_validators_all_entries
+    status: active
+    api: "Three one-line ordinal validators. AffinityDataPool private _validate_pair_ordinal/_validate_character_ordinal/_validate_source_ordinal read _init()-cached .values() arrays; AffinityTypes.is_valid_pair/is_valid_character/is_valid_source are public static equivalents for external callers. All 7 AffinityDataPool entries call a validator before touching any container. ReadRejection gains INVALID_PAIR; DeathNotifyResult gains INVALID_CHARACTER."
+    not: "relying on the enum type annotation to constrain the ordinal; or validating only inside append_record"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      MEASURED (probe B, 2026-08-20): an out-of-range int (-1 / 999) passed to a parameter
+      typed as an enum arrives IN THE FUNCTION BODY UNCHANGED, with zero errors and zero
+      checks. The type annotation only flattens the String family. Combined with the prefill
+      decision, an illegal ordinal therefore hits _records[illegal] — a missing-key read,
+      which ABORTS the calling function (probe A). That is worse than R7E-4's silent
+      wrong-pair write: reads are a per-turn hot path. Probe D (2026-08-21) confirmed
+      .values().has(out-of-range) returns false cleanly without aborting, so it is a usable
+      check. CACHED, NOT RECOMPUTED: .values() allocates a fresh Array on every call.
+      TWO PATHS ACCEPTED KNOWINGLY: static functions cannot read instance members, so the
+      public and private validators are separate implementations of the same check — a
+      Validation Criteria item asserts they agree. pair_of() is an 8th entry that CANNOT be
+      protected this way (returns a bare Pair, no rejection channel) — see forbidden pattern
+      unvalidated_character_into_pair_of. This ADR does NOT claim entry 8 is protected to
+      the same standard as entries 1-7.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+    revised: ""
+
+  - purpose: affinity_can_write_rejection_query
+    status: active
+    api: "can_write(pair, source) -> WriteRejection (NONE means writable). Reachable values are exactly {NONE, INVALID_PAIR, INVALID_SOURCE, DEAD_PAIR_COMBAT_CARD_FORBIDDEN}; the other three are documented as structurally unreachable."
+    not: "can_write(pair, source) -> bool"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      Mechanism 9's TR-affinity-023 ruling was never registered here at all (found
+      2026-08-21) — this entry registers it for the first time, carrying the new signature.
+      bool has nowhere to express "the ordinal argument is itself illegal", which the
+      ordinal-validation decision requires. THREE OF SEVEN VALUES ARE UNREACHABLE:
+      SERIALIZATION_WINDOW_ACTIVE by semantic exclusion (transient state, not this
+      predicate's purpose), and ZERO_AMPLITUDE / NON_FINITE_AMPLITUDE structurally because
+      can_write has NO m parameter. Both Step 5.5 tracks independently flagged that the
+      first draft excluded only one of the three — reusing an enum with silent dead values
+      is the same shape as R7E-5, which this same revision was closing.
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+    revised: ""
+
+  - purpose: reclaimed_token_fifo_capacity
+    status: active
+    api: "_reclaimed_tokens is a fixed-capacity FIFO: RECLAIMED_TOKEN_CAPACITY = 64, owned by ADR-0002, paired with a private _reclaimed_token_order: Array[int] that maintains insertion order explicitly. No time threshold; no reference to TOKEN_TIMEOUT_MS."
+    not: "RECLAIMED_TOKEN_TTL_MS >= 2 x TOKEN_TIMEOUT_MS; or relying on Dictionary iteration order to find the oldest entry"
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    reason: >
+      Mechanism 7 originally deferred this constant with wording IDENTICAL to the one that
+      made TOKEN_TIMEOUT_MS an orphan for three review rounds (C1). A first draft proposed a
+      ratio rule; Step 5.5 rejected it — the derivation contradicted itself (claimed to need
+      nothing from ADR-0004 while multiplying an ADR-0004-owned constant) and ADR-0004 has
+      zero mentions of it, i.e. the C7 shape again. WHY A SECOND CONTAINER IS REQUIRED:
+      (i) Dictionary has no O(1) dequeue; (ii) using .keys() order needs
+      insertion-order-preservation, which NO probe has covered, and .keys() reallocates on
+      every call; (iii) DECISIVE — the moment a token enters _reclaimed_tokens is when a
+      sweep noticed it, which does NOT track token-id order (a long-running early token can
+      be swept later than a short-lived later one), so "approximate oldest by key value"
+      also fails. An explicit order array makes correctness independent of the unverified
+      Dictionary ordering — the same technique mechanism 7 uses for the unverified Mutex
+      reentrancy question, which round 7 called this project's best example of handling
+      unverified engine behaviour. 64 = one order of magnitude above the single-digit bound
+      mechanism 7 already establishes for concurrent non-atomic windows. OVERFLOW IS BENIGN
+      AND EXPLICIT: the oldest reclaimed id is evicted, so end_non_atomic_window() returns
+      INVALID_TOKEN instead of TIMED_OUT_RECLAIMED — diagnostic precision drops, data
+      correctness does not. NOT a pure simplification: it TRADES the time-sweep path for an
+      ordering container. Array.pop_front() complexity is unverified (presumed O(n)); with a
+      fixed small constant this ADR claims only "amortised constant within a constant bound",
+      never O(1).
+    referenced_by:
+      - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
     revised: ""
 # Example:
 #
@@ -1785,6 +1906,84 @@ forbidden_patterns:
       verify byte integrity, not semantic validity.
     adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     added: "2026-08-20"
+
+  - pattern: death_marks_prefill_or_unguarded_read
+    status: active
+    description: >
+      _death_marks must never be prefilled with all Character keys, AND every read of it
+      (including t_death()'s two lookups) must be guarded by .has(character) first. This is
+      the exact OPPOSITE of the rule for _records, which IS prefilled and needs no guard.
+    why: >
+      The two containers have different key-presence semantics. For _death_marks, KEY
+      PRESENCE IS THE SEMANTICS — mechanism 3 returns DUPLICATE_DEATH_NOTIFICATION when the
+      character is already present. Prefilling would mark all 5 characters dead. But an
+      unguarded subscript read of a missing key ABORTS THE CALLING FUNCTION (measured, probe
+      A 2026-08-20), so the guard is mandatory. Registered because the asymmetry with
+      _records is counter-intuitive: an implementer tidying up "for consistency" would
+      prefill both and silently destroy the death semantics.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+
+  - pattern: raw_enum_name_subscript_from_untrusted_string
+    status: active
+    description: >
+      Never write AffinityTypes.Pair[name] / Character[name] / Source[name] where name came
+      from a save file, an imported data table, or any source outside this system. Always do
+      an existence check first — keys().has(name) — or use find_key(value), both of which
+      return cleanly. The ban is on the SHAPE ([] subscript), not merely on the input source.
+    why: >
+      MEASURED: a dynamically-built illegal enum-member name passed to [] is a runtime
+      SCRIPT ERROR that ABORTS the calling function (probe C, 2026-08-20); a literal one is
+      a Parse Error that fails the whole file. Either way validate_semantics() aborts BEFORE
+      reaching its own rejection-code logic, so the structured ImportResult its contract
+      promises can never be returned. Probe D (2026-08-21) measured that the SAME illegal
+      name via keys().has() COMPILES AND RETURNS FALSE in both the literal and the
+      runtime-built form. The .has() method call and the [] subscript therefore have
+      entirely different fates — which is why the rule must name the shape. "Do not
+      bare-subscript with untrusted strings" forbids a shape; "use keys().has() first"
+      supplies the replacement shape. Both sentences are required; they are not two
+      phrasings of one rule.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+
+  - pattern: wholesale_reassignment_of_affinity_record_list_items
+    status: active
+    description: >
+      Never reassign AffinityRecordList's inner array as a whole (_items = <anything>). The
+      only sanctioned write path is append(record: AffinityRecord). No method returning
+      _items itself may be added.
+    why: >
+      Round 7 (R7E-12) found that the AffinityRecordList wrapper had MOVED the "not
+      enforced" weakness that Alternative 7 was rejected for — from the Dictionary value
+      slot to a public mutable field. The declarative initialiser only guarantees the
+      INITIAL value. Privatising to _items narrows the sanctioned write path to one typed
+      signature, so any wholesale assignment becomes a visible convention violation that
+      lint can find — whereas assigning to a public items field is completely normal usage
+      and indistinguishable from correct code. HONEST LIMIT: GDScript has NO real private
+      members; the underscore is convention, so this is NOT a structural guarantee and
+      ADR-0002 explicitly does not claim it meets the "structure over discipline" bar it
+      used to reject Alternative 7.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+
+  - pattern: unvalidated_character_into_pair_of
+    status: active
+    description: >
+      Never call AffinityTypes.pair_of(a, b) without first validating both arguments via
+      AffinityTypes.is_valid_character(). pair_of()'s behaviour on an illegal ordinal is
+      undefined.
+    why: >
+      pair_of() is the 8th entry taking enum-typed parameters, and the only one that CANNOT
+      be given a rejection code: it returns a bare Pair, which cannot be null. Rejected
+      alternatives: returning Variant (contradicts the same revision's elimination of all
+      Variant returns), adding Pair.INVALID = -1 (would make values().has(-1) report legal
+      and defeat the ordinal validators), and push_error() plus a sentinel Pair (violates
+      ADR-0002's Constraints and silently produces a wrong pair — exactly the R7-P2 failure
+      mode). Caller obligation plus this ban is therefore the only remaining option.
+      ADR-0002 explicitly does NOT claim entry 8 is protected to the same standard as
+      entries 1-7 — this is a documented obligation, not a structural guarantee.
+    adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
 # Example:
 #
 # forbidden_patterns:
