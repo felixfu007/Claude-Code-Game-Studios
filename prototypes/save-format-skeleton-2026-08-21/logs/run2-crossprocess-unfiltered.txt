@@ -1,0 +1,161 @@
+### RUN2 STEP1: --editor --quit (cache for the 3 new files; no new class_name but keep the discipline)
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (4 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  20% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  40% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  60% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+STEP1 EXIT=0
+### RUN2 STEP2: main_scene = res://scenes/Run2.tscn  -- INDEPENDENT PROCESS, reads what Run1 wrote to user://
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== SAVE FORMAT SKELETON / RUN 2 (獨立行程) / Godot 4.7.1-stable (official) ===
+=== user data dir = C:/Users/felixfu007/AppData/Roaming/Godot/app_userdata/SaveFormatSkeleton ===
+=== 本行程新建物件的 instance_id 起點 = -9223372010095114804 ===
+    user://f_ids.txt exists=true
+    user://f_plain.bin exists=true
+    user://f_with_objects.bin exists=true
+    user://f_rid.bin exists=true
+    user://f_rid.txt exists=true
+
+================================================================
+=== 驗證 F(第二半):跨行程的記憶體號碼   (t_f_read.gd)
+================================================================
+    >> t_f1_ids_and_pre_churn_lookup() : calling...
+      行程 1 存下的 instance_id = -9223371889668258322
+      低 32 bits(推測為 slot)  = 1157629422
+      本行程新建一個物件的 id 作為對照 = -9223372006488013367
+      -- 未經任何物件配置(churn)之前,直接查詢那個號碼 --
+      instance_from_id(舊 id) -> typeof=24 is_null=true
+    << t_f1_ids_and_pre_churn_lookup() : returned [F1-REACHED-END]
+    >> t_f2_post_churn_lookup() : calling...
+      配置了 2000 個物件並保持存活
+        id 範圍 -9223372006471236151 .. -9223371972933579352
+        slot 範圍 318768585 .. 3791654312
+        舊 id 的 slot 1157629422 落在這個範圍內嗎: true
+        有任何新物件「完整」等於舊 id 嗎: false
+      instance_from_id(舊 id) 再查一次 -> typeof=24 is_null=true
+    << t_f2_post_churn_lookup() : returned [F2-REACHED-END]
+    >> t_f3_plain_file() : calling...
+      user://f_plain.bin -> 136 bytes
+      bytes_to_var typeof=27
+      keys = ["marker_str", "obj", "sig", "cb"]
+      marker_str = F-CROSS-PROCESS-MARKER
+        obj  typeof=24  class=EncodedObjectAsID
+        sig  typeof=26  class=n/a
+        cb   typeof=25  class=n/a
+      obj.get("object_id") = -9223371889668258322(行程 1 存的是 -9223371889668258322;相同嗎 true)
+      obj 的欄位還在嗎: marker=<null>
+      SaveFormat.deserialize_block -> ok=false detail=type gate rejected on READ side (rejection=1) path=payload["obj"] <typeof=24>
+    << t_f3_plain_file() : returned [F3-REACHED-END]
+    >> t_f4_with_objects_file() : calling...
+      user://f_with_objects.bin -> 204 bytes
+      -- 先用 1 引數的 bytes_to_var(骨架真正會走的那一條)--
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] t_f4_with_objects_file (res://scripts/t_f_read.gd:104)
+       [1] _run (res://scripts/runner_run2.gd:28)
+       [2] _stage (res://scripts/runner_run2.gd:45)
+       [3] _ready (res://scripts/runner_run2.gd:57)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] t_f4_with_objects_file (res://scripts/t_f_read.gd:104)
+       [1] _run (res://scripts/runner_run2.gd:28)
+       [2] _stage (res://scripts/runner_run2.gd:45)
+       [3] _ready (res://scripts/runner_run2.gd:57)
+      bytes_to_var typeof=0 is_null=true
+      -- 再用 bytes_to_var_with_objects(僅為量測跨行程行為)--
+      bytes_to_var_with_objects typeof=27
+      keys = ["marker_str", "obj", "sig", "cb"]
+      obj typeof=24 is_Object=true
+        class=RefCounted  instance_id=-9223371972749029974(行程 1 的是 -9223371889668258322)
+        is SkelPoisonTarget = true
+        marker = 987654321(行程 1 是 987654321)
+      cb typeof=25 is_valid=false(刻意不呼叫它)
+    << t_f4_with_objects_file() : returned [F4-REACHED-END]
+    >> t_f5_signal_inspect() : calling...
+      sig typeof=26 is_Signal=true
+      get_name() = pinged
+      about to call get_object_id()...
+      get_object_id() = -9223371889668258322(行程 1 的來源是 -9223371889668258322;相同嗎 true)
+      about to call is_null()...
+      is_null() = false
+      about to call get_object()...
+      get_object() = <Object#null>
+    << t_f5_signal_inspect() : returned [F5-REACHED-END]
+    >> t_f6_signal_connect_emit() : calling...
+      about to connect()...
+ERROR: Parameter "obj" is null.
+   at: connect (core/variant/callable.cpp:545)
+   GDScript backtrace (most recent call first):
+       [0] t_f6_signal_connect_emit (res://scripts/t_f_read.gd:162)
+       [1] _run (res://scripts/runner_run2.gd:28)
+       [2] _stage (res://scripts/runner_run2.gd:45)
+       [3] _ready (res://scripts/runner_run2.gd:57)
+      connect() -> 3 (Unconfigured)
+ERROR: Parameter "obj" is null.
+   at: is_connected (core/variant/callable.cpp:558)
+   GDScript backtrace (most recent call first):
+       [0] t_f6_signal_connect_emit (res://scripts/t_f_read.gd:164)
+       [1] _run (res://scripts/runner_run2.gd:28)
+       [2] _stage (res://scripts/runner_run2.gd:45)
+       [3] _ready (res://scripts/runner_run2.gd:57)
+      is_connected = false
+      about to emit()...
+      emit() 之後 witness.ping_count = 0(0 = 事件沒送達)
+    << t_f6_signal_connect_emit() : returned [F6-REACHED-END]
+
+================================================================
+=== 驗證 F 的 RID 分支(第二半)   (t_f_read_rid.gd)
+================================================================
+    >> t_f_read_rid() : calling...
+      行程 1 存下的 RID id = 94489280512
+      本行程新配的 RID id = 94489280512(與舊號碼相同嗎 true)
+      bytes_to_var typeof=27
+      marker_str = F-RID-MARKER
+      rid typeof=23 is_RID=true
+        is_valid=true get_id=94489280512(與行程 1 相同嗎 true)
+        == 本行程剛配的那個 RID 嗎: true
+        (刻意不對伺服器使用它)
+      empty_rid: is_valid=false get_id=0
+      SaveFormat.deserialize_block -> ok=false detail=type gate rejected on READ side (rejection=1) path=payload["rid"] <typeof=23>
+    << t_f_read_rid() : returned [F-RID-READ-REACHED-END]
+
+================================================================
+=== 追加 I:閘門成本歸因 + 熱檔案 I/O   (t_i_gate_cost.gd)
+================================================================
+    >> t_i_gate_attribution() : calling...
+      payload 約 3018 個節點(500 筆 x 6 + 頂層)
+      pass 1: 規格版閘門 17.866 ms  精簡版閘門 3.258 ms   var_to_bytes 1.758 ms   (rej 0/0, 69744 bytes)
+      pass 2: 規格版閘門 25.781 ms  精簡版閘門 4.236 ms   var_to_bytes 1.843 ms   (rej 0/0, 69744 bytes)
+      pass 3: 規格版閘門 19.085 ms  精簡版閘門 2.448 ms   var_to_bytes 1.436 ms   (rej 0/0, 69744 bytes)
+    << t_i_gate_attribution() : returned [I-REACHED-END]
+    >> t_i_warm_file_io() : calling...
+      信封 70456 bytes
+      iter 1: write 8.540 ms   read 1.699 ms   read_full 18.906 ms  status=0
+      iter 2: write 7.815 ms   read 2.528 ms   read_full 19.390 ms  status=0
+      iter 3: write 6.574 ms   read 1.520 ms   read_full 22.232 ms  status=0
+    << t_i_warm_file_io() : returned [I-IO-REACHED-END]
+
+=== RUN 2 COMPLETE ===
+ERROR: 1 RID allocations of type 'P11GodotBody2D' were leaked at exit.
+RUN2 EXIT=0
