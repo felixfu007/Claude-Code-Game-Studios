@@ -59,6 +59,7 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 5. **🆕 判定「回傳 null」vs「中止函式」不能只看有沒有印出東西** —— 本探針一律讓測試函式宣告 `-> String`、最後一行才 `return` sentinel;呼叫端收到 `""`(String 的零值)才是「中止」的可靠證據。三個 sentinel(呼叫前 / 呼叫後 / 回傳值)缺一不可。
 6. **🆕 log 裡大量的 `ERROR: Condition "!p_allow_objects" is true` 是預期的量測結果,不是探針故障** —— 那正是 VR#2 要問的「是否伴隨 console/log 錯誤訊息」的答案本身。
 7. **🆕 不可用浮點「字面量」當位元級測試向量** —— 同一 `.gd` 檔內所有**值為零**的 float 編譯期常數會被去重成同一個,先出現者的符號勝出(見 F4'-c 補測)。要測精確位元必須用 `PackedByteArray.decode_double()` 從位元組樣式構造。
+8. **🆕(探針 G 付出實際代價學到)一個測項用錯 API,會讓同一檔案裡其他完全無關的測項全部測不到** —— GDScript 的未知方法是**整檔 Parse Error**,不是該行的執行期錯誤。探針 G 第一次執行時 `g1_callable_signal_rid.gd` 裡一行 `PhysicsServer2D.body_free()`(4.7.1 無此方法)讓 **G-1a~G-1f 十個測項一項都沒跑到**,而失敗形狀是「G-1 整段什麼都沒印出來」,不是「那一項失敗」。**規則:一個檔一組測項;凡是存在性或 arity 未經查證的呼叫,一律隔離到自己的獨立檔案**(探針 G 的 `g1x1`/`g1x2`/`g1x3` 即為此故),這樣編譯失敗只損失該檔,而「編譯失敗」本身就是該項的答案。這與上面第 3 項(不可用 `load() != null` 判編譯)是同一家族:**編譯期失敗的可見性,永遠低於你以為的程度。**
 
 ---
 
@@ -363,3 +364,208 @@ logs/probeF2-main-unfiltered.txt
 **決定性**:全探針零 RNG —— 「隨機」壞位元組用固定 `0xDEADBEEF` 樣式,
 大緩衝區填充用 `(i / 65536) % 251` 固定式,浮點向量為明確位元組常數。重跑結果應逐字相同
 (F5 的毫秒數除外)。
+
+---
+---
+
+# 探針 G — Callable/Signal/RID 型別閘門 + plain `var_to_bytes()` 對 Resource(2026-08-21)
+
+**目的**:關閉兩項至今仍**押在訓練資料上、從未實機驗證**的宣稱。兩者的來源與探針 F
+剛剛推翻的 N-1 假設完全相同(推測,非量測),而其中一項正要被寫進 ADR-0003 的修訂內容。
+
+| # | 待驗證的宣稱 | 出處(逐字位置) |
+|---|---|---|
+| **G-1** | 「`Callable`/`Signal`/`RID` 不是 `Object` 衍生類,**不受 `allow_objects=false` 管控**;若某系統的 `export_state()` 不慎把 `Callable` 放進 payload,`bytes_to_var()` 仍會把它還原」 | 2026-08-18 第二輪 `/architecture-review` 發現 **E1**,`docs/architecture/architecture-review-2026-08-18-round2.md:188`。**懸置三輪** |
+| **G-2** | 把 raw `Resource` 交給存檔寫入路徑的系統「**would fail to serialize at all**」 | `docs/registry/architecture.yaml` forbidden pattern **`resource_based_save_payload`**(第 **1544** 行),宣稱句在其 `why:` 欄第 **1558–1559** 行 |
+
+**執行者**:`godot-gdscript-specialist`。**引擎**:`Godot 4.7.1.stable.official.a13da4feb`,headless。
+**四段執行(STEP1 / RUN-A / STEP1B / RUN-B)皆 exit code 0。**
+
+> ### ⚠️ 本探針推翻了 registry 的一項宣稱,並把 E1 拆成了三個不同的答案
+>
+> - **registry:1558「would fail to serialize at all」是錯的** —— plain `var_to_bytes()`
+>   對 `Resource`(自訂子類別與內建皆同)**靜默成功**,編成 ObjectID。
+> - **E1 對 `RID` 與 `Signal` 是對的,對 `Callable` 只對了一半** —— 而且
+>   **`Signal` 還原出來的是「仍綁著活體物件、connect 得起來、emit 得動」的東西**,
+>   不是空殼。詳見下方 G-1 結果表與「E1 的一句話答案」。
+>
+> 這是本專案第三次由實機驗證擊落已寫下的文件內容
+> (第一次:2026-08-20 ADR-0002 巢狀型別容器;第二次:同日探針 F 的兩引數 `bytes_to_var`)。
+
+## 如何重跑
+
+```bash
+GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+"$GODOT" --headless --path . --editor --quit   # 建 class cache(GProbeTarget / GCustomRes)
+"$GODOT" --headless --path .                   # main_scene = res://scenes/G.tscn
+```
+
+本目錄提交時 `main_scene` 停在 `res://scenes/G.tscn`(最後執行的一支)。
+要重跑探針 F 請把 `project.godot` 的 `run/main_scene` 改回 `res://scenes/F.tscn`。
+
+**log**:`logs/probeG-callable-resource-unfiltered.txt`(**未過濾**,含 RUN-A 與 RUN-B
+兩次步驟 2 的完整輸出 —— RUN-A 是探針自身失誤的證據,刻意保留,見判讀陷阱第 8 項)。
+
+## 測試方法有效性(先證明這件事)
+
+**G-1f 對照組**:`NodePath`(`typeof=22`)與 `StringName`(`typeof=21`)經 plain
+`var_to_bytes()` → plain `bytes_to_var()` 往返,`equal_to_source=true`,包在
+Dictionary 裡亦然。**確認「全部失敗」不會是測試碼寫錯造成的假象。**
+
+## 結果 / G-1 —— Callable / Signal / RID
+
+### 三者的命運**完全不同**,不可一併敘述
+
+| | `Callable`(typeof **25**) | `Signal`(typeof **26**) | `RID`(typeof **23**) |
+|---|---|---|---|
+| plain `var_to_bytes()` 是否成功 | ✅ 成功,零錯誤 | ✅ 成功,零錯誤 | ✅ 成功,零錯誤 |
+| 裸值編碼後大小 | **4 bytes**(`19000000` —— **只有型別標頭**) | **24 bytes**(型別 + `"pinged"` + **8 byte ObjectID**) | **12 bytes**(型別 + **8 byte RID id**) |
+| plain `bytes_to_var()` 是否觸發 `ERR_UNAUTHORIZED` | ❌ **完全不觸發** | ❌ **完全不觸發** | ❌ **完全不觸發** |
+| 鍵是否被丟棄 / 整包是否失敗 | ❌ 都沒有,Dictionary 完整 | ❌ 都沒有 | ❌ 都沒有 |
+| 解碼後 `typeof` / `is X` | 25 / `is Callable = true` | 26 / `is Signal = true` | 23 / `is RID = true` |
+| 還原物內容 | **`null::null`** — `is_valid=false`、`is_null=true`、`get_object()` 為 `<Object#null>`、`get_method()` 為空字串 | **`RefCounted(g_probe_target.gd)::[signal]pinged`** — `get_object()` 是**活體 `RefCounted`**、`get_object_id()` 與來源 `get_instance_id()` **完全相同**、`get_name()` 為 `pinged` | **`RID(94489280512)`** — `is_valid=true`、`get_id()` 與來源**逐位元相同**、`== 來源` 為 `true` |
+| **還原物還能動嗎** | **🟢 不能。** `rc.call(999)` 觸發 `SCRIPT ERROR: Attempt to call function "null::null (Callable)" on a null instance.` 且**中止呼叫函式**(sentinel 回傳空字串) | **🔴 能,而且完全正常。** `connect()` 回傳 `0`(OK)、`is_connected=true`、`emit(777)` 後**處理函式真的執行了**(`emit_count` 0 → 1) | **🟠 是一個 `is_valid=true` 的 RID**;本探針未拿它去對伺服器發指令(見未查證 #3) |
+
+**`_with_objects` 變體對 G-1 三者一律無差別** —— `Callable` 的 plain 與 `_with_objects`
+編碼結果**逐位元組相同**(48/48 bytes,同 hex),`Signal`/`RID` 亦然,且
+`bytes_to_var_with_objects()` 解出來的東西與 1 引數版**完全相同**。
+也就是說:**這三個型別根本不走 `allow_objects` 那道閘門** —— E1 的核心推理正確。
+
+**Callable 的細節(為什麼「只對了一半」)**:型別欄位存活、鍵沒被丟、無任何錯誤訊息,
+但**綁定資訊完全沒有被寫進位元組流**(裸 Callable 只有 4 bytes 的型別標頭)。
+bound method 與 lambda 兩種來源的編碼結果**逐位元相同**,還原物皆為空 Callable。
+隔離檔 `g1x2` 量到:來源的 bound method 是 `is_standard=true` / `is_custom=false`、
+lambda 是 `is_standard=false` / `is_custom=true`,而**還原物兩者皆 false / false** ——
+它既不是標準的也不是自訂的,是真的什麼都沒有。
+
+⚠️ **但空殼不等於無害**:呼叫還原出來的空 `Callable` 會**中止呼叫端函式**。
+若讀檔路徑上有 `if payload.has("cb"): payload["cb"].call()` 這種形狀(`has()` 為 `true`、
+`is Callable` 也為 `true`),失敗模式是**該函式從中間斷掉**,不是回傳錯誤 ——
+與探針 F 判讀陷阱第 5 項同一家族。
+
+### G-1e 的 RID 來源(誠實標記範圍)
+
+- **實際採用**:`PhysicsServer2D.body_create()`,量到 **`is_valid=true`、`get_id=94489280512`**,
+  **是一個真正 valid 的 RID**,故 G-1e 的往返結論成立於 valid RID 上,不是只測到空值。
+- 併測空 `RID()`:`is_valid=false`、`get_id=0`,亦乾淨往返(還原為 `RID(0)`)。
+- **備援來源實測不可用**:隔離檔 `g1x3` 量到 `Resource.get_rid()` 回傳
+  **`is_valid=false`、`get_id=0`** —— 若當初改用它,G-1e 就只會測到 invalid RID。
+- **刻意不釋放該 RID**:`PhysicsServer2D.body_free()` 在 4.7.1 不存在(正是 RUN-A 的
+  Parse Error 成因),而猜正確名稱等於再賭一次「整檔編譯失敗」。行程結束時的
+  `1 RID allocations of type P11GodotBody2D were leaked at exit` 是這個選擇的已知後果,
+  **不是測到的引擎缺陷**。
+
+## 結果 / G-2 —— plain `var_to_bytes()` 對 `Resource`
+
+| 測項 | 輸入 | 結果 |
+|---|---|---|
+| **G-2a** | `Dict{res: GCustomRes(帶值), alpha: 1}`,plain `var_to_bytes()` | **🔴 靜默成功**,size **56**,零錯誤訊息。型別位元組 `18 00 01 00` = TYPE_OBJECT(24) **加上 encode-as-ID 旗標**,後接 8 byte ObjectID |
+| **G-2b** | 上者 plain `bytes_to_var()` | **成功**,Dictionary 完整(`keys` 為 `["res","alpha"]`)。`dd["res"]` 為 **`EncodedObjectAsID`**、`typeof=24`、`get_class()` 為 `EncodedObjectAsID`。**無 `ERR_UNAUTHORIZED`、不中止** |
+| **G-2b 欄位** | 讀 `payload_int` / `payload_str` / `payload_dict` | **全部 `<null>`** —— **資料沒有跟著過去**,只剩一個 ID。`get("object_id")` 與來源的 `get_instance_id()` **完全相同** |
+| **G-2a2** | 頂層直接就是 `Resource`,plain | 12 bytes,解出 `EncodedObjectAsID`,同行為 |
+| **G-2c** | 內建 `Resource.new()`(設了 `resource_name`) | **與自訂子類別完全一致** —— 靜默成功、`EncodedObjectAsID`、`resource_name` 亦為 `<null>` |
+| **G-2c 對照** | 同一 Resource:`_with_objects` 寫入 → **plain** 讀取 | `ERR_UNAUTHORIZED` + `Error when trying to decode Variant.`,回傳 `null`,**與探針 F 的 F2 完全一致** |
+| **G-2c2 上限對照** | `_with_objects` **兩側** | 真的 `Resource`(`is Resource=true`、`get_class()` 為 `Resource`),**欄位全部帶過去**(`424242` / `G2-DISTINCTIVE-STRING` / 巢狀 Dictionary),但是**新實例**(`instance_id` 與來源不同) |
+| **G-2d** | 拿 G-2b 的 ObjectID 去 `instance_from_id()`(來源在同行程內仍活著) | **🔴 復活成功** —— 回傳一個 `Resource`,`instance_id` **與來源同一實例**,`payload_int=424242`、`payload_str=G2-DISTINCTIVE-STRING`、`payload_dict` 完整可讀 |
+| **G-2d2** | `instance_from_id(123456789)`(不存在的 id) | 引擎報 `Condition "slot >= slot_max" is true. Returning: nullptr`,**回傳 null 且不中止**(`typeof=24`、`is_null=true`) |
+
+**G-2c2 的作用是界定基準**:它讓 G-2b 的「只剩 ID」有對照 —— 同一個 Resource
+走 `_with_objects` 兩側時 344 bytes 且欄位齊全,走 plain 時 56 bytes 只有 ID。
+**兩者的差別不是「成功 vs 失敗」,而是「帶資料 vs 只帶指標」。**
+
+## 對 ADR-0003 / registry 的影響分類
+
+### (a) 已實測確認既有宣稱成立
+
+- **E1 的核心推理成立**:`Callable`/`Signal`/`RID` 三者**都不受 `allow_objects` 那道閘門管控** ——
+  plain `bytes_to_var()` 對三者**零 `ERR_UNAUTHORIZED`、零丟鍵、零整包失敗**,
+  且 `_with_objects` 變體與 1 引數版**逐位元/逐值相同**。E1 主張「白名單論證的隱含前提是
+  payload 只含原生 Variant 型別」—— 這個前提確實是必要的。
+- **E1 建議的處置方向成立**:確實需要在 payload 建構路徑上排除這三個型別(見下方 b/b')。
+- 探針 F 的 **F2 結論在 G-2c 被獨立重現**:`_with_objects` 寫入 + plain 讀取 = `ERR_UNAUTHORIZED` + `null`。
+
+### (b) 🔴 已實測推翻既有宣稱
+
+| # | 推翻內容 | 受影響位置 |
+|---|---|---|
+| **G-B1** | **「把 raw `Resource` 交給存檔寫入路徑會 would fail to serialize at all」是錯的。** plain `var_to_bytes()` **靜默成功**(56 bytes,零錯誤),編成 ObjectID;plain `bytes_to_var()` 亦**靜默成功**,給出 `EncodedObjectAsID`。自訂 `class_name` 子類別與內建 `Resource.new()` **行為一致**。真正發生的是**欄位資料全部靜默遺失**,不是序列化失敗 | `docs/registry/architecture.yaml` **1558–1559**(`resource_based_save_payload` 的 `why:`)。**該 forbidden pattern 本身依然應該保留** —— 但它的理由必須從「會失敗」改為「會靜默寫出一個無意義的 ObjectID,且欄位全失」 |
+| **G-B2** | **E1 對 `Callable` 的「仍會把它還原」只對了一半。** 型別欄位確實還原(`typeof=25`、`is Callable=true`、鍵不被丟),但**綁定資訊從未被寫入位元組流**,還原物是 `null::null` 空殼、`is_valid=false`、**不可呼叫**。E1 舉的具體例子(「驗證器參照本身」被還原)在 4.7.1 **不會**還原成可用的驗證器 | `architecture-review-2026-08-18-round2.md:188`(E1 敘述),及任何據此撰寫的 ADR-0003 修訂內容 |
+| **G-B3** | **反過來,E1 對 `Signal` 的嚴重性被低估了。** `Signal` 的 8 byte ObjectID **會被寫進位元組流**,plain 解碼後 `get_object()` 拿到的是**活體物件**,且 `connect()` 回傳 OK、`emit()` **真的把事件送達處理函式**。E1 把三者並列敘述,掩蓋了「其中一個還原出的是全功能物件」 | 同上 |
+
+> **G-B3 對 ADR-0003 核心洞見的實質衝擊(請 `/architecture-decision` 特別評估)**:
+> ADR-0003 機制一論述的是「該解碼路徑**結構性地不可能產生任何 `Object` 衍生實例**」。
+> 本探針測到的是:plain `bytes_to_var()` 確實**不會實例化**任何 `Object`(型別實例化攻擊面
+> 仍然不存在,探針 F 的結論不變),**但它可以交出一個指向行程內既有活體 `Object` 的參照** ——
+> 經由 `Signal.get_object()`。**「不能製造」與「不能交出」是兩件不同的事**,而 ADR 現行措辭
+> 只涵蓋前者。同理,G-2d 證明 `EncodedObjectAsID` 帶的 ID 在**同一行程內**可用
+> `instance_from_id()` 復活成**完整的原物件**(欄位齊全,且是同一實例)。
+
+### (b') 🟠 已實測、既有文件未涵蓋的新事實
+
+| # | 內容 | 建議去處 |
+|---|---|---|
+| **G-N1** | **呼叫還原出來的空 `Callable` 會中止呼叫端函式**(`Attempt to call function ... on a null instance`),而非回傳錯誤。且 `has()` 與 `is Callable` 兩個常見守衛**都會通過** | ADR-0003 讀檔路徑;與探針 F 判讀陷阱第 5 項同家族 |
+| **G-N2** | **`Signal` 的編碼會把 ObjectID 寫進存檔位元組**,`RID` 的 id 亦然(逐位元相同、`is_valid=true` 往返)。這兩者是 `EncodedObjectAsID` 之外**另兩條把行程內部指標寫進存檔的管道**,且**兩側全靜默** | 機制一「payload 不含 Object」的紀律要求須擴及 `Callable`/`Signal`/`RID` |
+| **G-N3** | **`instance_from_id()` 對不存在的 id 回傳 null 且不中止**(僅引擎報 `slot >= slot_max`)。但對**同行程內仍活著**的 id 會回傳**完整的原物件** | 威脅模型敘述 |
+| **G-N4** | **`EncodedObjectAsID` 的欄位讀取一律 `<null>`**(`payload_int` / `payload_str` / `resource_name` 皆是),即「靜默資料遺失」的形狀已量化 | G-B1 的替代理由 |
+
+### (c) 未查證(明說卡在哪,不編造)
+
+| # | 項目 | 卡在哪 |
+|---|---|---|
+| 1 | **跨行程**:重新啟動後,存檔裡的 `Signal` ObjectID / `EncodedObjectAsID` / `RID` id 解碼成什麼 | 本探針全部在**單一行程內**完成。這是探針 F 未查證 #5 的同一個洞,**探針 G 未縮小它**。⚠️ 這一項對威脅模型很關鍵:同行程內 `Signal` 是全功能的,跨行程則可能指向 nothing、**或指向剛好占用同一 slot 的另一個物件** —— 後者是最壞情況,**未測** |
+| 2 | `Signal` 還原物在其**來源物件已死**時的行為(`get_object()` / `connect()` / `emit()`) | 未測 —— 本探針刻意讓來源在整個測項內保持存活,以量測最壞情況的「能不能動」 |
+| 3 | 還原出來的 valid `RID` 拿去**對伺服器發實際指令**會怎樣 | 刻意未測 —— 對物理伺服器餵入來自位元組流的 RID 有崩潰風險,且會污染後續測項。已量到的是「往返後 `is_valid=true` 且 id 相同」 |
+| 4 | **release build** 行為 | 全部量測皆在 debug/headless(與探針 F 未查證 #3 同性質) |
+| 5 | `Callable` 的**綁定引數**(`bind()` 過的 Callable)是否也一併被丟棄 | 未測 —— 已量到 `get_bound_arguments_count()` 為 0 的來源案例往返後為空殼,但**未測非零綁定引數的情形** |
+| 6 | `Object` / `Node`(非 `Resource`)在 plain 寫入側 | 探針 F 的 F2-f 已測 `RefCounted`,本探針測 `Resource`;`Node` 未測 |
+
+## E1 的一句話答案(供 ADR-0003 修訂直接引用)
+
+> **E1 的斷言「`Callable`/`Signal`/`RID` 會通過 `allow_objects` 閘門」是對的 —— 三者全部通過,
+> plain `bytes_to_var()` 對它們零錯誤、零拒絕、零丟鍵。但「會被還原」這三個字必須拆成三個答案:**
+>
+> - **`RID`:完整還原。** `is_valid=true`,id 與來源逐位元相同,`== 來源` 為 `true`。
+> - **`Signal`:完整還原且危險。** ObjectID 進了位元組流,還原後 `get_object()` 是活體物件,
+>   `connect()` 成功、`emit()` **真的把事件送達**。這**不是空殼**。
+> - **`Callable`:只有型別還原,綁定沒有。** 還原物是 `null::null` 空殼、`is_valid=false`、
+>   **不可呼叫**;而且**呼叫它會中止呼叫端函式**。E1 舉的「驗證器參照被還原」這個具體例子**不成立**。
+>
+> **危險程度排序:`Signal`(可運作的全功能物件) > `RID`(有效的伺服器 handle) > `Callable`(空殼,但誤用會中止函式)。**
+> 三者一律**未查證跨行程行為** —— 本探針全部在單一行程內量測。
+
+## 檔案清單(探針 G 新增)
+
+```
+scenes/G.tscn                          # main_scene(提交時停在此)
+scripts/runner_g.gd                    # G runner(含 G-0 編譯前置檢查)
+scripts/g_probe_target.gd              # class_name GProbeTarget — 可觀測受害者(call_count/emit_count)
+scripts/g_custom_res.gd                # class_name GCustomRes  — 帶可辨識欄位值的 Resource
+scripts/g1_callable_signal_rid.gd      # G-1a/b/c/d/e/f
+scripts/g2_resource_payload.gd         # G-2a/b/c/d
+scripts/g1x1_callable_arity.gd         # 隔離:get_argument_count / get_bound_arguments_count
+scripts/g1x2_callable_kind.gd          # 隔離:is_standard / is_custom / get_object_id
+scripts/g1x3_signal_and_rid_extra.gd   # 隔離:Signal.get_object_id / Resource.get_rid
+logs/probeG-callable-resource-unfiltered.txt   # 未過濾,含 RUN-A(失誤證據)與 RUN-B
+```
+
+**決定性**:探針 G 零 RNG。唯一非決定性的輸出是 ObjectID / RID id 的具體數值
+(每次執行都不同),但**所有判準都是「兩個值是否相同」而非具體數值**,重跑結論應逐字相同。
+
+## 本探針自身的過程失誤(執行者主動自陳,證據保留)
+
+**第一次執行(log 的 RUN-A 段)`g1_callable_signal_rid.gd` 整檔 Parse Error,
+G-1a~G-1f 十個測項一項都沒跑到** —— 成因是一行 `PhysicsServer2D.body_free()`,
+該方法在 4.7.1 不存在(4.x 的釋放入口已改名)。**代價的形狀值得記住:失敗看起來像
+「G-1 整段沒有輸出」,而不是「那一個測項失敗」。** 一個與待測宣稱**完全無關**的
+清理呼叫,葬送了同檔全部十個測項。
+
+**修法**:(1) 刪掉該呼叫,改為刻意不釋放該 RID 並在程式碼註解說明(不去猜正確名稱 ——
+猜錯就是再賭一次整檔編譯失敗);(2) 把所有**存在性或 arity 未經查證**的內省呼叫
+(`Callable.get_argument_count` / `get_bound_arguments_count` / `is_standard` / `is_custom` /
+`get_object_id`、`Signal.get_object_id`、`Resource.get_rid`)隔離到 `g1x1` / `g1x2` / `g1x3`
+三個獨立小檔。RUN-B 中這三檔全部 `COMPILED OK`,但**這不是重點** ——
+重點是它們若失敗,只會損失自己那一格。
+
+**教訓已寫入本 README 判讀陷阱第 8 項。** 與探針 F 的 F4'-c 失誤同一性質:
+**探針的紀律要用在探針自己的每一行上,不只用在待測的那一行上。**

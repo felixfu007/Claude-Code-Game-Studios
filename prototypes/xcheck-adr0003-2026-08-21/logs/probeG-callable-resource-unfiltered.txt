@@ -1,0 +1,697 @@
+# 探針 G — 未過濾 log(G-1 Callable/Signal/RID 型別閘門 + G-2 plain var_to_bytes 對 Resource)
+#
+# 目的:關閉兩項至今仍押在訓練資料上、從未實機驗證的宣稱 ——
+#   G-1:2026-08-18 第二輪 /architecture-review 的發現 E1
+#        (docs/architecture/architecture-review-2026-08-18-round2.md:188):
+#        「Callable/Signal/RID 不是 Object 衍生類,不受 allow_objects=false 管控…
+#         若某系統的 export_state() 不慎把 Callable 放進 payload,
+#         bytes_to_var(buffer, false) 仍會把它還原。」
+#        該斷言自 2026-08-18 懸置三輪,來源與探針 F 剛推翻的 N-1 假設相同(訓練資料推測)。
+#   G-2:docs/registry/architecture.yaml 的 forbidden pattern `resource_based_save_payload`
+#        (第 1544 行)其 why: 欄第 1558-1559 行逐字宣稱:把 raw Resource 交給存檔
+#        寫入路徑的系統「would fail to serialize at all」。
+#        探針 F 的 F2-f 測的是 RefCounted、F2-g 走的是 _with_objects 讀取側,
+#        兩者都沒有測「plain var_to_bytes() 對 Resource」——故此句仍未驗證。
+#
+# 前置(沿用探針 F 階段 1 的實測結果):
+#   bytes_to_var(b, false) / var_to_bytes(v, false) 兩引數形狀在 4.7.1 是 Parse Error。
+#   本探針**全部測項一律使用 1 引數形狀**,即語意上「不允許 Object」的那一個函式。
+#
+# 引擎:Godot Engine v4.7.1.stable.official.a13da4feb(headless)
+# 執行日:2026-08-21
+#
+# 指令(Godot 執行檔不在 PATH 上,逐字如下):
+#   GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+#   步驟 1(建 class cache;本探針新註冊 GProbeTarget / GCustomRes 兩個 class_name):
+#     "$GODOT" --headless --path . --editor --quit
+#   步驟 2(main_scene = res://scenes/G.tscn):
+#     "$GODOT" --headless --path .
+#
+# exit code:STEP1=0、RUN-A(步驟 2 第一次)=0、STEP1B=0、RUN-B(步驟 2 第二次)=0
+#   (四段各自的 EXIT 值都印在對應的段落標題行上)
+#
+# ★ 本檔含兩次步驟 2 的完整輸出,原因是一項**探針自身的失誤**,刻意保留為證據:
+#   RUN-A 時 g1_callable_signal_rid.gd 裡有一行 PhysicsServer2D.body_free()
+#   —— 該方法在 4.7.1 不存在,造成**整檔 Parse Error**,結果是 G-1a~G-1f
+#   十個測項**一項都沒跑到**,而失敗形狀是「G-1 整段什麼都沒印出來」,
+#   不是「那一個測項失敗」。修法:刪掉該呼叫(改為刻意不釋放該 RID),
+#   並把所有我沒查證過存在性/arity 的內省呼叫隔離到
+#   g1x1_callable_arity.gd / g1x2_callable_kind.gd / g1x3_signal_and_rid_extra.gd
+#   三個獨立小檔 —— 這樣編譯失敗只損失該檔,而「編譯失敗」本身就是該項的答案。
+#   RUN-B 為修正後的完整執行。
+#
+# 本檔的四段內容各為 stdout + stderr 合併重導(2>&1),未經 grep/head/tail 過濾或截斷;
+# 本檔僅由這四份原始擷取檔依序串接,並插入 ########## 段落標題行。
+#
+# 檔中的以下訊息都是**預期的量測結果**,不是探針故障:
+#   * RUN-A 的 "Parse Error: Static function body_free() not found" —— 見上方說明
+#   * "Condition !p_allow_objects is true. Returning: ERR_UNAUTHORIZED" —— G-2c 對照組
+#   * "Attempt to call function 'null::null (Callable)' on a null instance" —— G-1c 的答案本身
+#   * "Condition slot >= slot_max is true" —— G-2d2 對不存在 id 的答案本身
+#   * 結尾的 "1 RID allocations of type 'P11GodotBody2D' were leaked at exit"
+#     —— G-1e 刻意不釋放該 RID 的已知後果(見 g1_callable_signal_rid.gd 內註解)
+# ============================================================================
+########## STEP 1: editor cache build (EXIT=0) ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (5 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | GCustomRes[39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | GProbeTarget[39m[0m
+[  66% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+
+########## RUN-A: probe G, first attempt (EXIT=0) — G-1 整批 skip,成因見檔頭 ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0003 Probe G / Godot 4.7.1-stable (official) ===
+=== G-1: Callable/Signal/RID 型別閘門(E1) / G-2: plain var_to_bytes 對 Resource(registry:1558) ===
+
+--- G-0: compile-check EVERY file BEFORE calling into any of them ---
+SCRIPT ERROR: Parse Error: Static function "body_free()" not found in base "GDScriptNativeClass".
+   at: GDScript::reload (res://scripts/g1_callable_signal_rid.gd:252)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_g.gd:25)
+       [1] _ready (res://scripts/runner_g.gd:49)
+ERROR: Failed to load script "res://scripts/g1_callable_signal_rid.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_g.gd:25)
+       [1] _ready (res://scripts/runner_g.gd:49)
+SCRIPT ERROR: Parse Error: Static function "body_free()" not found in base "GDScriptNativeClass".
+   at: GDScript::reload (res://scripts/g1_callable_signal_rid.gd:252)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_g.gd:30)
+       [1] _ready (res://scripts/runner_g.gd:49)
+  [FAILED (reload=Parse error)]  g1_callable_signal_rid.gd   G-1a..G-1f
+  [COMPILED OK]  g2_resource_payload.gd      G-2a..G-2d
+  [COMPILED OK]  g_probe_target.gd           class_name GProbeTarget(G-1 的可觀測受害者)
+  [COMPILED OK]  g_custom_res.gd             class_name GCustomRes(G-2 的帶值 Resource)
+
+!!! g1 編譯失敗 —— G-1 全數 SKIPPED。編譯失敗本身即為一項結果,見上方 status。
+
+============ G-2a / G-2b —— 自訂 class_name Resource,plain var_to_bytes ============
+  (registry:1558 宣稱這裡會 fail to serialize at all)
+    >> g2.t_2ab_custom_resource_plain() : calling...
+      來源 Resource:get_class=Resource  instance_id=-9223372008417393204
+      來源欄位:payload_int=424242  payload_str=G2-DISTINCTIVE-STRING  payload_dict={ "nested": [1, 2, 3], "flag": true }
+
+      >>> G-2a:Dictionary{res: GCustomRes, alpha: 1},plain var_to_bytes()
+      [ENC-1] Dict{res}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{res}/plain : RETURNED typeof=29
+      [ENC-3] Dict{res}/plain : size=56 hex=1b0000000200000004000000030000007265730018000100cc05009f060000800400000005000000616c7068610000000200000001000000
+
+      >>> G-2b:plain bytes_to_var()
+      [DEC-1] Dict{res}/plain : calling bytes_to_var() ...
+      [DEC-2] Dict{res}/plain : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372008400615985>, "alpha": 1 }]
+      [RPT] keys=["res", "alpha"]  size=2
+      [OBJ] dd[res] : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008400615985>]
+      [OBJ] dd[res] : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] dd[res] : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] dd[res] : get(object_id)=[-9223372008417393204]
+    << g2.t_2ab_custom_resource_plain() : returned [S-G2ab-REACHED-END]
+
+  -- 頂層直接是 Resource --
+    >> g2.t_2a2_bare_toplevel_resource_plain() : calling...
+      >>> 頂層直接就是 Resource,plain var_to_bytes()
+      [ENC-1] bare GCustomRes/plain : calling var_to_bytes() ...
+      [ENC-2] bare GCustomRes/plain : RETURNED typeof=29
+      [ENC-3] bare GCustomRes/plain : size=12 hex=18000100cf0500a106000080
+      [DEC-1] bare GCustomRes/plain : calling bytes_to_var() ...
+      [DEC-2] bare GCustomRes/plain : RETURNED typeof=24 is_null=false value=[<EncodedObjectAsID#-9223372008367061556>]
+      [OBJ] bare 還原物 : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008367061556>]
+      [OBJ] bare 還原物 : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] bare 還原物 : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] bare 還原物 : get(object_id)=[-9223372008383838769]
+    << g2.t_2a2_bare_toplevel_resource_plain() : returned [S-G2a2-REACHED-END]
+
+============ G-2c —— 內建 Resource.new() 與自訂子類別是否一致 ============
+    >> g2.t_2c_builtin_resource_plain() : calling...
+      來源:get_class=Resource  instance_id=-9223372008350284340  resource_name=G2-BUILTIN-RES
+      [ENC-1] Dict{builtin Resource}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{builtin Resource}/plain : RETURNED typeof=29
+      [ENC-3] Dict{builtin Resource}/plain : size=56 hex=1b0000000200000004000000030000007265730018000100cc0500a3060000800400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{builtin Resource}/plain : calling bytes_to_var() ...
+      [DEC-2] Dict{builtin Resource}/plain : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372008333507121>, "alpha": 1 }]
+      [OBJ] builtin dd[res] : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008333507121>]
+      [OBJ] builtin dd[res] : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] builtin dd[res] : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] builtin dd[res] : get(object_id)=[-9223372008350284340]
+      [OBJ] builtin dd[res] : get(resource_name)=[<null>]
+      >>> 與 F2 對照:同一個內建 Resource 走 with_objects 寫入 + plain 讀取
+      [ENC-1] Dict{builtin Resource}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{builtin Resource}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{builtin Resource}/with_objects : size=160 hex=1b0000000200000004000000030000007265730018000000080000005265736f7572636503000000170000007265736f757263655f6c6f63616c5f746f5f7363656e650001000000000000000d0000007265736f757263655f6e616d65000000040000000e00000047322d4255494c54494e2d5245530000060000007363726970740000000000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{builtin Resource}/with_objects->plain : calling bytes_to_var() ...
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] _dec (res://scripts/g2_resource_payload.gd:39)
+       [1] t_2c_builtin_resource_plain (res://scripts/g2_resource_payload.gd:115)
+       [2] _run (res://scripts/runner_g.gd:37)
+       [3] _ready (res://scripts/runner_g.gd:107)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] _dec (res://scripts/g2_resource_payload.gd:39)
+       [1] t_2c_builtin_resource_plain (res://scripts/g2_resource_payload.gd:115)
+       [2] _run (res://scripts/runner_g.gd:37)
+       [3] _ready (res://scripts/runner_g.gd:107)
+      [DEC-2] Dict{builtin Resource}/with_objects->plain : RETURNED typeof=0 is_null=true value=[<null>]
+      [RPT] with_objects->plain 結果 typeof=0 is_null=true
+    << g2.t_2c_builtin_resource_plain() : returned [S-G2c-REACHED-END]
+
+============ G-2c2 —— 上限對照組:with_objects 兩側(界定「資料真的帶過去」長什麼樣)============
+    >> g2.t_2c2_with_objects_both_sides() : calling...
+      來源 instance_id=-9223372008283175473
+      [ENC-1] Dict{res}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{res}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{res}/with_objects : size=344 hex=1b0000000200000004000000030000007265730018000000080000005265736f7572636506000000170000007265736f757263655f6c6f63616c5f746f5f7363656e650001000000000000000d0000007265736f757263655f6e616d650000000400000000000000060000007363726970740000040000001d0000007265733a2f2f736372697074732f675f637573746f6d5f7265732e67640000000b0000007061796c6f61645f696e740002000000327906000b0000007061796c6f61645f73747200040000001500000047322d44495354494e43544956452d535452494e470000000c0000007061796c6f61645f646963741b0000000200000004000000060000006e657374656400001c000000030000000200000001000000020000000200000002000000030000000400000004000000666c616701000000010000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{res}/with_objects->with_objects : calling bytes_to_var_with_objects() ...
+      [DEC-2] Dict{res}/with_objects->with_objects : RETURNED typeof=27 is_null=false value=[{ "res": ():<Resource#-9223372008266398260>, "alpha": 1 }]
+      [OBJ] with_objects 還原物 : typeof=24  is Object=true  is Resource=true  value=[():<Resource#-9223372008266398260>]
+      [OBJ] with_objects 還原物 : get_class()=Resource  is EncodedObjectAsID=false
+      [OBJ] with_objects 還原物 : get(payload_int)=[424242]  get(payload_str)=[G2-DISTINCTIVE-STRING]  get(payload_dict)=[{ "nested": [1, 2, 3], "flag": true }]
+      [OBJ] with_objects 還原物 : get(object_id)=[<null>]
+      [OBJ] 還原物 instance_id=-9223372008266398260  與來源同一個實例=false
+    << g2.t_2c2_with_objects_both_sides() : returned [S-G2c2-REACHED-END]
+
+############################################################
+### 以下為風險段:實際呼叫 / emit / 復活還原物。
+### 上方所有量測結果已因 flush_stdout_on_print=true 落地。
+############################################################
+
+============ G-2d(整支探針最後)—— instance_from_id() 能否復活那個 ID ============
+    >> g2.t_2d_instance_from_id() : calling...
+      來源仍活著,instance_id=-9223372008232843828
+      [ENC-1] Dict{res}/plain for 2d : calling var_to_bytes() ...
+      [ENC-2] Dict{res}/plain for 2d : RETURNED typeof=29
+      [ENC-3] Dict{res}/plain for 2d : size=32 hex=1b0000000100000004000000030000007265730018000100cc0500aa06000080
+      [DEC-1] Dict{res}/plain for 2d : calling bytes_to_var() ...
+      [DEC-2] Dict{res}/plain for 2d : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372008216066609> }]
+      [OBJ] 2d 還原物 : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008216066609>]
+      [OBJ] 2d 還原物 : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] 2d 還原物 : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] 2d 還原物 : get(object_id)=[-9223372008232843828]
+      [2d] get(object_id)=[-9223372008232843828] typeof=2
+      [2d] 取到的 id=-9223372008232843828  /  來源 id=-9223372008232843828  /  相同=true
+      [RISK-1] 即將 instance_from_id(-9223372008232843828) —— 若下一行沒印出來就是中止/崩潰了
+      [RISK-2] instance_from_id 回傳 typeof=24 is_null=false value=[():<Resource#-9223372008232843828>]
+      [RISK-3] get_class=Resource  instance_id=-9223372008232843828  與來源同一實例=true
+      [RISK-4] 復活物欄位:payload_int=[424242]  payload_str=[G2-DISTINCTIVE-STRING]  payload_dict=[{ "nested": [1, 2, 3], "flag": true }]
+      [RISK-4] <== 若這一行印出 424242 / G2-DISTINCTIVE-STRING,代表 ID 可被復活成完整物件
+    << g2.t_2d_instance_from_id() : returned [S-G2d-REACHED-END]
+
+  -- 最後一項:不存在的 id(比上一項更可能崩,故排在其後)--
+    >> g2.t_2d2_instance_from_bogus_id() : calling...
+      [RISK-1] 即將 instance_from_id(123456789)(刻意選一個幾乎確定不存在的 id)
+ERROR: Condition "slot >= slot_max" is true. Returning: nullptr
+   at: get_instance (./core/object/object.h:912)
+   GDScript backtrace (most recent call first):
+       [0] t_2d2_instance_from_bogus_id (res://scripts/g2_resource_payload.gd:179)
+       [1] _run (res://scripts/runner_g.gd:37)
+       [2] _ready (res://scripts/runner_g.gd:140)
+      [RISK-2] 回傳 typeof=24 is_null=true value=[<Object#null>]
+    << g2.t_2d2_instance_from_bogus_id() : returned [S-G2d2-REACHED-END]
+
+=== PROBE G COMPLETE ===
+
+########## STEP 1B: editor cache rebuild after fix (EXIT=0) ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (5 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  66% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+
+########## RUN-B: probe G, after isolating uncertain-API calls (EXIT=0) — 完整結果 ##########
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0003 Probe G / Godot 4.7.1-stable (official) ===
+=== G-1: Callable/Signal/RID 型別閘門(E1) / G-2: plain var_to_bytes 對 Resource(registry:1558) ===
+
+--- G-0: compile-check EVERY file BEFORE calling into any of them ---
+  [COMPILED OK]  g1_callable_signal_rid.gd   G-1a..G-1f
+  [COMPILED OK]  g2_resource_payload.gd      G-2a..G-2d
+  [COMPILED OK]  g_probe_target.gd           class_name GProbeTarget(G-1 的可觀測受害者)
+  [COMPILED OK]  g_custom_res.gd             class_name GCustomRes(G-2 的帶值 Resource)
+
+============ G-1f 對照組 —— NodePath / StringName(先證明測試方法本身有效)============
+    >> g1.t_1f_control_nodepath_stringname() : calling...
+      -- NodePath --  typeof_in=22  value_in=[Visuals/Sprite2D:modulate:a]
+      [ENC-1] NodePath : calling var_to_bytes() ...
+      [ENC-2] NodePath : RETURNED typeof=29
+      [ENC-3] NodePath : size=60 hex=160000000200008002000000000000000700000056697375616c7300080000005370726974653244080000006d6f64756c6174650100000061000000
+      [DEC-1] NodePath : calling bytes_to_var() ...
+      [DEC-2] NodePath : RETURNED typeof=22 is_null=false value=[Visuals/Sprite2D:modulate:a]
+      [CMP] NodePath  equal_to_source=true  typeof_out=22
+      -- StringName --  typeof_in=21  value_in=[affinity_data_pool]
+      [ENC-1] StringName : calling var_to_bytes() ...
+      [ENC-2] StringName : RETURNED typeof=29
+      [ENC-3] StringName : size=28 hex=1500000012000000616666696e6974795f646174615f706f6f6c0000
+      [DEC-1] StringName : calling bytes_to_var() ...
+      [DEC-2] StringName : RETURNED typeof=21 is_null=false value=[affinity_data_pool]
+      [CMP] StringName  equal_to_source=true  typeof_out=21
+      [ENC-1] Dict{np,sn,plain} : calling var_to_bytes() ...
+      [ENC-2] Dict{np,sn,plain} : RETURNED typeof=29
+      [ENC-3] Dict{np,sn,plain} : size=144 hex=1b0000000300000004000000020000006e700000160000000200008002000000000000000700000056697375616c7300080000005370726974653244080000006d6f64756c61746501000000610000000400000002000000736e00001500000012000000616666696e6974795f646174615f706f6f6c00000400000005000000706c61696e0000000200000007000000
+      [DEC-1] Dict{np,sn,plain} : calling bytes_to_var() ...
+      [DEC-2] Dict{np,sn,plain} : RETURNED typeof=27 is_null=false value=[{ "np": ^"Visuals/Sprite2D:modulate:a", "sn": &"affinity_data_pool", "plain": 7 }]
+      [CMP] Dict  equal_to_source=true
+    << g1.t_1f_control_nodepath_stringname() : returned [S-G1f-REACHED-END]
+
+============ G-1a —— Callable 能否被編碼 ============
+  -- (i) 綁定到活體物件的方法參照 --
+    >> g1.t_1a_encode_bound_method() : calling...
+      來源 Callable:typeof=25  is_valid=true  get_object=<RefCounted#-9223372008199289396>  get_method=ping
+      (先自證這個 Callable 現在就能用:)
+      !!!! GProbeTarget.ping() ACTUALLY EXECUTED  v=101  call_count=1  tag=G1a-TARGET !!!!
+      來源 Callable 直呼結果=[PING-EXECUTED-101]  target.call_count=1
+
+      >>> 裸 Callable,plain var_to_bytes():
+      [ENC-1] bare Callable / plain : calling var_to_bytes() ...
+      [ENC-2] bare Callable / plain : RETURNED typeof=29
+      [ENC-3] bare Callable / plain : size=4 hex=19000000
+
+      >>> 裸 Callable,var_to_bytes_with_objects():
+      [ENC-1] bare Callable / with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] bare Callable / with_objects : RETURNED typeof=29
+      [ENC-3] bare Callable / with_objects : size=4 hex=19000000
+
+      >>> Dictionary{cb: Callable, alpha: 1},plain var_to_bytes():
+      [ENC-1] Dict{cb}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{cb}/plain : RETURNED typeof=29
+      [ENC-3] Dict{cb}/plain : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+
+      >>> Dictionary{cb: Callable, alpha: 1},var_to_bytes_with_objects():
+      [ENC-1] Dict{cb}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{cb}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{cb}/with_objects : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+    << g1.t_1a_encode_bound_method() : returned [S-G1a-REACHED-END]
+
+  -- (ii) lambda --
+    >> g1.t_1a2_encode_lambda() : calling...
+      來源 lambda:typeof=25  is_valid=true  get_object=(res://scripts/g1_callable_signal_rid.gd):<GDScript#-9223372010279664179>  get_method=<anonymous lambda>
+      (先自證它現在就能用:)
+      !!!! LAMBDA ACTUALLY EXECUTED  x=202 !!!!
+      來源 lambda 直呼結果=[LAMBDA-EXECUTED-202]
+
+      >>> 裸 lambda,plain var_to_bytes():
+      [ENC-1] bare lambda / plain : calling var_to_bytes() ...
+      [ENC-2] bare lambda / plain : RETURNED typeof=29
+      [ENC-3] bare lambda / plain : size=4 hex=19000000
+
+      >>> Dictionary{cb: lambda},plain var_to_bytes():
+      [ENC-1] Dict{lambda}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{lambda}/plain : RETURNED typeof=29
+      [ENC-3] Dict{lambda}/plain : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+
+      >>> Dictionary{cb: lambda},var_to_bytes_with_objects():
+      [ENC-1] Dict{lambda}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{lambda}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{lambda}/with_objects : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+    << g1.t_1a2_encode_lambda() : returned [S-G1a2-REACHED-END]
+
+  -- (iii) 空 Callable(基準線)--
+    >> g1.t_1a3_encode_empty_callable() : calling...
+      空 Callable:typeof=25  is_valid=false  is_null=true
+      [ENC-1] empty Callable / plain : calling var_to_bytes() ...
+      [ENC-2] empty Callable / plain : RETURNED typeof=29
+      [ENC-3] empty Callable / plain : size=4 hex=19000000
+      [ENC-1] Dict{empty Callable} / plain : calling var_to_bytes() ...
+      [ENC-2] Dict{empty Callable} / plain : RETURNED typeof=29
+      [ENC-3] Dict{empty Callable} / plain : size=24 hex=1b0000000100000004000000020000006362000019000000
+    << g1.t_1a3_encode_empty_callable() : returned [S-G1a3-REACHED-END]
+
+============ G-1b —— 解碼:回傳什麼 / 是否 ERR_UNAUTHORIZED / 是否中止 ============
+    >> g1.t_1b_decode_bound_method() : calling...
+      >>> 路徑一:plain var_to_bytes() -> plain bytes_to_var()
+      [ENC-1] Dict{cb} : calling var_to_bytes() ...
+      [ENC-2] Dict{cb} : RETURNED typeof=29
+      [ENC-3] Dict{cb} : size=72 hex=1b00000003000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000040000000400000062657461040000000300000074776f00
+      [DEC-1] Dict{cb} : calling bytes_to_var() ...
+      [DEC-2] Dict{cb} : RETURNED typeof=27 is_null=false value=[{ "cb": null::null, "alpha": 1, "beta": "two" }]
+      [RPT] 路徑一 : Dictionary size=3 keys=["cb", "alpha", "beta"]
+      [RPT] 路徑一 : dd[cb] typeof=25  is_null=false  value=[null::null]
+      [RPT] 路徑一 : dd[cb] is Callable = true
+
+      >>> 路徑二:var_to_bytes_with_objects() -> plain bytes_to_var()  (F2 的形狀)
+      [ENC-1] Dict{cb} : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{cb} : RETURNED typeof=29
+      [ENC-3] Dict{cb} : size=72 hex=1b00000003000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000040000000400000062657461040000000300000074776f00
+      [DEC-1] Dict{cb} : calling bytes_to_var() ...
+      [DEC-2] Dict{cb} : RETURNED typeof=27 is_null=false value=[{ "cb": null::null, "alpha": 1, "beta": "two" }]
+      [RPT] 路徑二 : Dictionary size=3 keys=["cb", "alpha", "beta"]
+      [RPT] 路徑二 : dd[cb] typeof=25  is_null=false  value=[null::null]
+      [RPT] 路徑二 : dd[cb] is Callable = true
+
+      >>> 路徑三:var_to_bytes_with_objects() -> bytes_to_var_with_objects()  (對照上限)
+      [ENC-1] Dict{cb} : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{cb} : RETURNED typeof=29
+      [ENC-3] Dict{cb} : size=72 hex=1b00000003000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000040000000400000062657461040000000300000074776f00
+      [DEC-1] Dict{cb} : calling bytes_to_var_with_objects() ...
+      [DEC-2] Dict{cb} : RETURNED typeof=27 is_null=false value=[{ "cb": null::null, "alpha": 1, "beta": "two" }]
+      [RPT] 路徑三 : Dictionary size=3 keys=["cb", "alpha", "beta"]
+      [RPT] 路徑三 : dd[cb] typeof=25  is_null=false  value=[null::null]
+      [RPT] 路徑三 : dd[cb] is Callable = true
+    << g1.t_1b_decode_bound_method() : returned [S-G1b-REACHED-END]
+
+    >> g1.t_1b2_decode_lambda() : calling...
+      >>> plain -> plain
+      [ENC-1] Dict{lambda} : calling var_to_bytes() ...
+      [ENC-2] Dict{lambda} : RETURNED typeof=29
+      [ENC-3] Dict{lambda} : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{lambda} : calling bytes_to_var() ...
+      [DEC-2] Dict{lambda} : RETURNED typeof=27 is_null=false value=[{ "cb": null::null, "alpha": 1 }]
+      [RPT] lambda/plain : Dictionary size=2 keys=["cb", "alpha"]
+      [RPT] lambda/plain : dd[cb] typeof=25  is_null=false  value=[null::null]
+      [RPT] lambda/plain : dd[cb] is Callable = true
+
+      >>> with_objects -> plain
+      [ENC-1] Dict{lambda} : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{lambda} : RETURNED typeof=29
+      [ENC-3] Dict{lambda} : size=48 hex=1b00000002000000040000000200000063620000190000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{lambda} : calling bytes_to_var() ...
+      [DEC-2] Dict{lambda} : RETURNED typeof=27 is_null=false value=[{ "cb": null::null, "alpha": 1 }]
+      [RPT] lambda/with_objects->plain : Dictionary size=2 keys=["cb", "alpha"]
+      [RPT] lambda/with_objects->plain : dd[cb] typeof=25  is_null=false  value=[null::null]
+      [RPT] lambda/with_objects->plain : dd[cb] is Callable = true
+    << g1.t_1b2_decode_lambda() : returned [S-G1b2-REACHED-END]
+
+============ G-1d —— Signal(編碼 / 解碼 / 內省)============
+    >> g1.t_1d_signal_encode_decode() : calling...
+      來源 Signal:typeof=26  is_null=false  get_object=<RefCounted#-9223372008165734964>  get_name=pinged
+      (先自證它現在就能用:connect + emit)
+      !!!! GProbeTarget.on_pinged() ACTUALLY EXECUTED  v=303  emit_count=1 !!!!
+      來源 Signal emit 後 target.emit_count=1
+
+      >>> 裸 Signal,plain var_to_bytes():
+      [ENC-1] bare Signal / plain : calling var_to_bytes() ...
+      [ENC-2] bare Signal / plain : RETURNED typeof=29
+      [ENC-3] bare Signal / plain : size=24 hex=1a0000000600000070696e6765640000cc0500ae06000080
+
+      >>> Dictionary{sg: Signal},plain -> plain:
+      [ENC-1] Dict{sg}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{sg}/plain : RETURNED typeof=29
+      [ENC-3] Dict{sg}/plain : size=68 hex=1b000000020000000400000002000000736700001a0000000600000070696e6765640000cc0500ae060000800400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{sg} : calling bytes_to_var() ...
+      [DEC-2] Dict{sg} : RETURNED typeof=27 is_null=false value=[{ "sg": RefCounted(g_probe_target.gd)::[signal]pinged, "alpha": 1 }]
+      [RPT] plain->plain : keys=["sg", "alpha"]
+      [RPT] plain->plain : dd[sg] typeof=26  is_null=false  is Signal=true  value=[RefCounted(g_probe_target.gd)::[signal]pinged]
+
+      >>> Dictionary{sg: Signal},with_objects -> plain:
+      [ENC-1] Dict{sg}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{sg}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{sg}/with_objects : size=68 hex=1b000000020000000400000002000000736700001a0000000600000070696e6765640000cc0500ae060000800400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{sg} : calling bytes_to_var() ...
+      [DEC-2] Dict{sg} : RETURNED typeof=27 is_null=false value=[{ "sg": RefCounted(g_probe_target.gd)::[signal]pinged, "alpha": 1 }]
+      [RPT] with_objects->plain : keys=["sg", "alpha"]
+      [RPT] with_objects->plain : dd[sg] typeof=26  is_null=false  is Signal=true  value=[RefCounted(g_probe_target.gd)::[signal]pinged]
+
+      >>> Dictionary{sg: Signal},with_objects -> with_objects:
+      [ENC-1] Dict{sg}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{sg}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{sg}/with_objects : size=68 hex=1b000000020000000400000002000000736700001a0000000600000070696e6765640000cc0500ae060000800400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{sg} : calling bytes_to_var_with_objects() ...
+      [DEC-2] Dict{sg} : RETURNED typeof=27 is_null=false value=[{ "sg": RefCounted(g_probe_target.gd)::[signal]pinged, "alpha": 1 }]
+      [RPT] with_objects->with_objects : keys=["sg", "alpha"]
+      [RPT] with_objects->with_objects : dd[sg] typeof=26  is_null=false  is Signal=true  value=[RefCounted(g_probe_target.gd)::[signal]pinged]
+    << g1.t_1d_signal_encode_decode() : returned [S-G1d-REACHED-END]
+
+============ G-1e —— RID(編碼 / 解碼 / is_valid / get_id)============
+    >> g1.t_1e_rid_encode_decode() : calling...
+      來源 RID:typeof=23  is_valid=true  get_id=94489280512
+      空 RID  :typeof=23  is_valid=false  get_id=0
+
+      >>> 裸 RID,plain var_to_bytes():
+      [ENC-1] bare RID / plain : calling var_to_bytes() ...
+      [ENC-2] bare RID / plain : RETURNED typeof=29
+      [ENC-3] bare RID / plain : size=12 hex=170000000000000016000000
+
+      >>> Dictionary{rid: RID},plain -> plain:
+      [ENC-1] Dict{rid}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{rid}/plain : RETURNED typeof=29
+      [ENC-3] Dict{rid}/plain : size=56 hex=1b000000020000000400000003000000726964001700000000000000160000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{rid} : calling bytes_to_var() ...
+      [DEC-2] Dict{rid} : RETURNED typeof=27 is_null=false value=[{ "rid": RID(94489280512), "alpha": 1 }]
+      [RPT] plain->plain : keys=["rid", "alpha"]
+      [RPT] plain->plain : dd[rid] typeof=23  is_null=false  is RID=true  value=[RID(94489280512)]
+      [RPT] plain->plain : 還原 RID is_valid=true get_id=94489280512  /  來源 get_id=94489280512  /  相同=true
+
+      >>> Dictionary{rid: RID},with_objects -> plain:
+      [ENC-1] Dict{rid}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{rid}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{rid}/with_objects : size=56 hex=1b000000020000000400000003000000726964001700000000000000160000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{rid} : calling bytes_to_var() ...
+      [DEC-2] Dict{rid} : RETURNED typeof=27 is_null=false value=[{ "rid": RID(94489280512), "alpha": 1 }]
+      [RPT] with_objects->plain : keys=["rid", "alpha"]
+      [RPT] with_objects->plain : dd[rid] typeof=23  is_null=false  is RID=true  value=[RID(94489280512)]
+      [RPT] with_objects->plain : 還原 RID is_valid=true get_id=94489280512  /  來源 get_id=94489280512  /  相同=true
+
+      >>> Dictionary{rid: 空 RID},plain -> plain:
+      [ENC-1] Dict{empty rid}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{empty rid}/plain : RETURNED typeof=29
+      [ENC-3] Dict{empty rid}/plain : size=32 hex=1b00000001000000040000000300000072696400170000000000000000000000
+      [DEC-1] Dict{empty rid} : calling bytes_to_var() ...
+      [DEC-2] Dict{empty rid} : RETURNED typeof=27 is_null=false value=[{ "rid": RID(0) }]
+      [RPT] empty/plain->plain : keys=["rid"]
+      [RPT] empty/plain->plain : dd[rid] typeof=23  is_null=false  is RID=true  value=[RID(0)]
+      [RPT] empty/plain->plain : 還原 RID is_valid=false get_id=0  /  來源 get_id=0  /  相同=true
+      (刻意不釋放此 RID — 見程式碼註解:避免再引入一個不確定的 API 名稱)
+    << g1.t_1e_rid_encode_decode() : returned [S-G1e-REACHED-END]
+
+============ G-2a / G-2b —— 自訂 class_name Resource,plain var_to_bytes ============
+  (registry:1558 宣稱這裡會 fail to serialize at all)
+    >> g2.t_2ab_custom_resource_plain() : calling...
+      來源 Resource:get_class=Resource  instance_id=-9223372008148957748
+      來源欄位:payload_int=424242  payload_str=G2-DISTINCTIVE-STRING  payload_dict={ "nested": [1, 2, 3], "flag": true }
+
+      >>> G-2a:Dictionary{res: GCustomRes, alpha: 1},plain var_to_bytes()
+      [ENC-1] Dict{res}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{res}/plain : RETURNED typeof=29
+      [ENC-3] Dict{res}/plain : size=56 hex=1b0000000200000004000000030000007265730018000100cc0500af060000800400000005000000616c7068610000000200000001000000
+
+      >>> G-2b:plain bytes_to_var()
+      [DEC-1] Dict{res}/plain : calling bytes_to_var() ...
+      [DEC-2] Dict{res}/plain : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372008132180530>, "alpha": 1 }]
+      [RPT] keys=["res", "alpha"]  size=2
+      [OBJ] dd[res] : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008132180530>]
+      [OBJ] dd[res] : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] dd[res] : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] dd[res] : get(object_id)=[-9223372008148957748]
+    << g2.t_2ab_custom_resource_plain() : returned [S-G2ab-REACHED-END]
+
+  -- 頂層直接是 Resource --
+    >> g2.t_2a2_bare_toplevel_resource_plain() : calling...
+      >>> 頂層直接就是 Resource,plain var_to_bytes()
+      [ENC-1] bare GCustomRes/plain : calling var_to_bytes() ...
+      [ENC-2] bare GCustomRes/plain : RETURNED typeof=29
+      [ENC-3] bare GCustomRes/plain : size=12 hex=18000100ce0500b106000080
+      [DEC-1] bare GCustomRes/plain : calling bytes_to_var() ...
+      [DEC-2] bare GCustomRes/plain : RETURNED typeof=24 is_null=false value=[<EncodedObjectAsID#-9223372008098626100>]
+      [OBJ] bare 還原物 : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008098626100>]
+      [OBJ] bare 還原物 : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] bare 還原物 : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] bare 還原物 : get(object_id)=[-9223372008115403314]
+    << g2.t_2a2_bare_toplevel_resource_plain() : returned [S-G2a2-REACHED-END]
+
+============ G-2c —— 內建 Resource.new() 與自訂子類別是否一致 ============
+    >> g2.t_2c_builtin_resource_plain() : calling...
+      來源:get_class=Resource  instance_id=-9223372008081848884  resource_name=G2-BUILTIN-RES
+      [ENC-1] Dict{builtin Resource}/plain : calling var_to_bytes() ...
+      [ENC-2] Dict{builtin Resource}/plain : RETURNED typeof=29
+      [ENC-3] Dict{builtin Resource}/plain : size=56 hex=1b0000000200000004000000030000007265730018000100cc0500b3060000800400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{builtin Resource}/plain : calling bytes_to_var() ...
+      [DEC-2] Dict{builtin Resource}/plain : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372008065071666>, "alpha": 1 }]
+      [OBJ] builtin dd[res] : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372008065071666>]
+      [OBJ] builtin dd[res] : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] builtin dd[res] : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] builtin dd[res] : get(object_id)=[-9223372008081848884]
+      [OBJ] builtin dd[res] : get(resource_name)=[<null>]
+      >>> 與 F2 對照:同一個內建 Resource 走 with_objects 寫入 + plain 讀取
+      [ENC-1] Dict{builtin Resource}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{builtin Resource}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{builtin Resource}/with_objects : size=160 hex=1b0000000200000004000000030000007265730018000000080000005265736f7572636503000000170000007265736f757263655f6c6f63616c5f746f5f7363656e650001000000000000000d0000007265736f757263655f6e616d65000000040000000e00000047322d4255494c54494e2d5245530000060000007363726970740000000000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{builtin Resource}/with_objects->plain : calling bytes_to_var() ...
+ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED
+   at: decode_variant (core/io/marshalls.cpp:718)
+   GDScript backtrace (most recent call first):
+       [0] _dec (res://scripts/g2_resource_payload.gd:39)
+       [1] t_2c_builtin_resource_plain (res://scripts/g2_resource_payload.gd:115)
+       [2] _run (res://scripts/runner_g.gd:37)
+       [3] _ready (res://scripts/runner_g.gd:107)
+ERROR: Error when trying to decode Variant.
+   at: decode_variant (core/io/marshalls.cpp:860)
+   GDScript backtrace (most recent call first):
+       [0] _dec (res://scripts/g2_resource_payload.gd:39)
+       [1] t_2c_builtin_resource_plain (res://scripts/g2_resource_payload.gd:115)
+       [2] _run (res://scripts/runner_g.gd:37)
+       [3] _ready (res://scripts/runner_g.gd:107)
+      [DEC-2] Dict{builtin Resource}/with_objects->plain : RETURNED typeof=0 is_null=true value=[<null>]
+      [RPT] with_objects->plain 結果 typeof=0 is_null=true
+    << g2.t_2c_builtin_resource_plain() : returned [S-G2c-REACHED-END]
+
+============ G-2c2 —— 上限對照組:with_objects 兩側(界定「資料真的帶過去」長什麼樣)============
+    >> g2.t_2c2_with_objects_both_sides() : calling...
+      來源 instance_id=-9223372008014740018
+      [ENC-1] Dict{res}/with_objects : calling var_to_bytes_with_objects() ...
+      [ENC-2] Dict{res}/with_objects : RETURNED typeof=29
+      [ENC-3] Dict{res}/with_objects : size=344 hex=1b0000000200000004000000030000007265730018000000080000005265736f7572636506000000170000007265736f757263655f6c6f63616c5f746f5f7363656e650001000000000000000d0000007265736f757263655f6e616d650000000400000000000000060000007363726970740000040000001d0000007265733a2f2f736372697074732f675f637573746f6d5f7265732e67640000000b0000007061796c6f61645f696e740002000000327906000b0000007061796c6f61645f73747200040000001500000047322d44495354494e43544956452d535452494e470000000c0000007061796c6f61645f646963741b0000000200000004000000060000006e657374656400001c000000030000000200000001000000020000000200000002000000030000000400000004000000666c616701000000010000000400000005000000616c7068610000000200000001000000
+      [DEC-1] Dict{res}/with_objects->with_objects : calling bytes_to_var_with_objects() ...
+      [DEC-2] Dict{res}/with_objects->with_objects : RETURNED typeof=27 is_null=false value=[{ "res": ():<Resource#-9223372007997962804>, "alpha": 1 }]
+      [OBJ] with_objects 還原物 : typeof=24  is Object=true  is Resource=true  value=[():<Resource#-9223372007997962804>]
+      [OBJ] with_objects 還原物 : get_class()=Resource  is EncodedObjectAsID=false
+      [OBJ] with_objects 還原物 : get(payload_int)=[424242]  get(payload_str)=[G2-DISTINCTIVE-STRING]  get(payload_dict)=[{ "nested": [1, 2, 3], "flag": true }]
+      [OBJ] with_objects 還原物 : get(object_id)=[<null>]
+      [OBJ] 還原物 instance_id=-9223372007997962804  與來源同一個實例=false
+    << g2.t_2c2_with_objects_both_sides() : returned [S-G2c2-REACHED-END]
+
+
+============ G-1x —— 隔離檔的內省測項(各自一檔,編譯失敗只損失該檔)============
+  [COMPILED OK]  g1x1_callable_arity.gd        Callable.get_argument_count/get_bound_arguments_count
+    >> g1x1.probe() : calling...
+      get_argument_count() = 1
+      get_bound_arguments_count() = 0
+    << g1x1.probe() : returned [S-G1x1-REACHED-END]
+  [COMPILED OK]  g1x2_callable_kind.gd         Callable.is_standard/is_custom/get_object_id
+    >> g1x2.probe() : calling...
+      bound method : is_standard=true  is_custom=false  get_object_id=-9223372006706117172
+      lambda       : is_standard=false  is_custom=true  get_object_id=-9223372007259765296
+    << g1x2.probe() : returned [S-G1x2-REACHED-END]
+  [COMPILED OK]  g1x3_signal_and_rid_extra.gd  Signal.get_object_id / Resource.get_rid(G-1e 備援 RID 來源)
+    >> g1x3.probe_signal_objid() : calling...
+      Signal.get_object_id() = -9223372006068582964  (來源物件 get_instance_id=-9223372006068582964)
+    << g1x3.probe_signal_objid() : returned [S-G1x3sig-REACHED-END]
+    >> g1x3.probe_resource_get_rid() : calling...
+      Resource.get_rid() -> typeof=23  is_valid=false  get_id=0
+    << g1x3.probe_resource_get_rid() : returned [S-G1x3rid-REACHED-END]
+############################################################
+### 以下為風險段:實際呼叫 / emit / 復活還原物。
+### 上方所有量測結果已因 flush_stdout_on_print=true 落地。
+############################################################
+
+============ G-1c(安全關鍵)—— 還原出來的 Callable 還能被呼叫嗎 ============
+  判準:GProbeTarget.call_count 是否真的遞增。
+  『還原出一個失效空殼』與『還原出仍綁著物件、仍可呼叫的 Callable』
+  對存檔系統的威脅模型是兩件完全不同的事。
+    >> g1.t_1c_invoke_restored_bound() : calling...
+      [ENC-1] Dict{cb} for invoke : calling var_to_bytes() ...
+      [ENC-2] Dict{cb} for invoke : RETURNED typeof=29
+      [ENC-3] Dict{cb} for invoke : size=24 hex=1b0000000100000004000000020000006362000019000000
+      [DEC-1] Dict{cb} for invoke : calling bytes_to_var() ...
+      [DEC-2] Dict{cb} for invoke : RETURNED typeof=27 is_null=false value=[{ "cb": null::null }]
+      還原物:typeof=25  is Callable=true  value=[null::null]
+      [INTRO] is_valid=false  is_null=true
+      [INTRO] get_object=<Object#null>  get_method=
+      [INTRO] 呼叫前 target.call_count=0
+      [RISK-1] 即將 rc.call(999) —— 若下一行沒印出來就是中止了
+SCRIPT ERROR: Attempt to call function 'null::null (Callable)' on a null instance.
+   at: t_1c_invoke_restored_bound (res://scripts/g1_callable_signal_rid.gd:307)
+   GDScript backtrace (most recent call first):
+       [0] t_1c_invoke_restored_bound (res://scripts/g1_callable_signal_rid.gd:307)
+       [1] _run (res://scripts/runner_g.gd:37)
+       [2] _ready (res://scripts/runner_g.gd:142)
+    << g1.t_1c_invoke_restored_bound() : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+    >> g1.t_1c2_invoke_restored_lambda() : calling...
+      [ENC-1] Dict{lambda} for invoke : calling var_to_bytes() ...
+      [ENC-2] Dict{lambda} for invoke : RETURNED typeof=29
+      [ENC-3] Dict{lambda} for invoke : size=24 hex=1b0000000100000004000000020000006362000019000000
+      [DEC-1] Dict{lambda} for invoke : calling bytes_to_var() ...
+      [DEC-2] Dict{lambda} for invoke : RETURNED typeof=27 is_null=false value=[{ "cb": null::null }]
+      還原物:typeof=25  is Callable=true  value=[null::null]
+      [INTRO] is_valid=false  is_null=true  is_standard=false  is_custom=false
+      [RISK-1] 即將 rc.call(888)
+SCRIPT ERROR: Attempt to call function 'null::null (Callable)' on a null instance.
+   at: t_1c2_invoke_restored_lambda (res://scripts/g1_callable_signal_rid.gd:329)
+   GDScript backtrace (most recent call first):
+       [0] t_1c2_invoke_restored_lambda (res://scripts/g1_callable_signal_rid.gd:329)
+       [1] _run (res://scripts/runner_g.gd:37)
+       [2] _ready (res://scripts/runner_g.gd:144)
+    << g1.t_1c2_invoke_restored_lambda() : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+============ G-1d2 —— 還原出來的 Signal 還能 connect / emit 嗎 ============
+    >> g1.t_1d2_emit_restored_signal() : calling...
+      [ENC-1] Dict{sg} for emit : calling var_to_bytes() ...
+      [ENC-2] Dict{sg} for emit : RETURNED typeof=29
+      [ENC-3] Dict{sg} for emit : size=44 hex=1b000000010000000400000002000000736700001a0000000600000070696e6765640000cc05003007000080
+      [DEC-1] Dict{sg} for emit : calling bytes_to_var() ...
+      [DEC-2] Dict{sg} for emit : RETURNED typeof=27 is_null=false value=[{ "sg": RefCounted(g_probe_target.gd)::[signal]pinged }]
+      還原物:typeof=26  is Signal=true  value=[RefCounted(g_probe_target.gd)::[signal]pinged]
+      [INTRO] is_null=false  get_object=<RefCounted#-9223372005984696884>  get_object_id=-9223372005984696884  get_name=pinged
+      [RISK-1] 即將 rs.connect(target.on_pinged)
+      [RISK-2] connect 回傳 typeof=2 value=[0]  is_connected=true
+      [RISK-3] 即將 rs.emit(777);emit 前 target.emit_count=0
+      !!!! GProbeTarget.on_pinged() ACTUALLY EXECUTED  v=777  emit_count=1 !!!!
+      [RISK-4] emit 後 target.emit_count=1  <== 這一欄是「真的送達」的鐵證
+    << g1.t_1d2_emit_restored_signal() : returned [S-G1d2-REACHED-END]
+
+============ G-2d(整支探針最後)—— instance_from_id() 能否復活那個 ID ============
+    >> g2.t_2d_instance_from_id() : calling...
+      來源仍活著,instance_id=-9223372005967919668
+      [ENC-1] Dict{res}/plain for 2d : calling var_to_bytes() ...
+      [ENC-2] Dict{res}/plain for 2d : RETURNED typeof=29
+      [ENC-3] Dict{res}/plain for 2d : size=32 hex=1b0000000100000004000000030000007265730018000100cc05003107000080
+      [DEC-1] Dict{res}/plain for 2d : calling bytes_to_var() ...
+      [DEC-2] Dict{res}/plain for 2d : RETURNED typeof=27 is_null=false value=[{ "res": <EncodedObjectAsID#-9223372005951142446> }]
+      [OBJ] 2d 還原物 : typeof=24  is Object=true  is Resource=false  value=[<EncodedObjectAsID#-9223372005951142446>]
+      [OBJ] 2d 還原物 : get_class()=EncodedObjectAsID  is EncodedObjectAsID=true
+      [OBJ] 2d 還原物 : get(payload_int)=[<null>]  get(payload_str)=[<null>]  get(payload_dict)=[<null>]
+      [OBJ] 2d 還原物 : get(object_id)=[-9223372005967919668]
+      [2d] get(object_id)=[-9223372005967919668] typeof=2
+      [2d] 取到的 id=-9223372005967919668  /  來源 id=-9223372005967919668  /  相同=true
+      [RISK-1] 即將 instance_from_id(-9223372005967919668) —— 若下一行沒印出來就是中止/崩潰了
+      [RISK-2] instance_from_id 回傳 typeof=24 is_null=false value=[():<Resource#-9223372005967919668>]
+      [RISK-3] get_class=Resource  instance_id=-9223372005967919668  與來源同一實例=true
+      [RISK-4] 復活物欄位:payload_int=[424242]  payload_str=[G2-DISTINCTIVE-STRING]  payload_dict=[{ "nested": [1, 2, 3], "flag": true }]
+      [RISK-4] <== 若這一行印出 424242 / G2-DISTINCTIVE-STRING,代表 ID 可被復活成完整物件
+    << g2.t_2d_instance_from_id() : returned [S-G2d-REACHED-END]
+
+  -- 最後一項:不存在的 id(比上一項更可能崩,故排在其後)--
+    >> g2.t_2d2_instance_from_bogus_id() : calling...
+      [RISK-1] 即將 instance_from_id(123456789)(刻意選一個幾乎確定不存在的 id)
+ERROR: Condition "slot >= slot_max" is true. Returning: nullptr
+   at: get_instance (./core/object/object.h:912)
+   GDScript backtrace (most recent call first):
+       [0] t_2d2_instance_from_bogus_id (res://scripts/g2_resource_payload.gd:179)
+       [1] _run (res://scripts/runner_g.gd:37)
+       [2] _ready (res://scripts/runner_g.gd:156)
+      [RISK-2] 回傳 typeof=24 is_null=true value=[<Object#null>]
+    << g2.t_2d2_instance_from_bogus_id() : returned [S-G2d2-REACHED-END]
+
+=== PROBE G COMPLETE ===
+ERROR: 1 RID allocations of type 'P11GodotBody2D' were leaked at exit.
