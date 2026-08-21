@@ -1241,6 +1241,7 @@ B1 鍵側規則須補一句(**`Dictionary` 以 Object 當鍵實測可往返**,`r
 
 ### 下一步
 
+0. 🔴 **下次必須以 `/architecture-decision --review full` 呼叫(2026-08-21 使用者裁決)。** 原因:`production/review-mode.txt` **從未建立**,依 `director-gates.md:56` 預設 `lean`,而 `lean` 會跳過所有非 PHASE-GATE 的 per-skill 閘門 —— 包含 **`TD-ADR`(technical-director 的架構一致性覆核)**。結果是五份 ADR 的撰寫與九次修訂期間 `TD-ADR` **一次都沒跑過**;而本次草案 6 項 BLOCKING 中的 4 項,性質全部落在 `TD-ADR` 的職責而非引擎專家的職責。⚠️ **使用者明文選擇不建立 `review-mode.txt`**(不想讓每次 skill 都多付一輪成本),改為**逐次**在高風險修訂上加 `--review full`。已登記為 `docs/consistency-failures.md` 第 9 則(該處的**文件矛盾本身仍開**:`director-gates.md:802` 的 Required 與 `lean` 規則尚未調和)。
 1. **修訂草案**(六項 BLOCKING → 「數學型別」逐一列名 + `TYPE_MAX` 斷言 → 刪替 ADR-0002 記帳那句 → 高級約 15 項 → registry 第 4 處 + 兩個 `revised:` 欄)。⚠️ **草案在 scratchpad,新 session 需依本節重建。**
 2. **修完必須重跑窄範圍 Step 5.5** —— 第一軌明文警告:BLOCKING #2(深度上限 + 第三列舉值)與 #4(新增兩個 manifest 層函式)是**覆核後才產生的機制變更**,正落在同一個陷阱的正下方。ADR-0002 第四次修訂的第二輪窄覆核就**又抓到 4 項,全部出自第一輪覆核後才產生的那兩項變更**。
 3. **建 `docs/engine-reference/godot/modules/core-serialization.md`** —— 探針 F/G/H/J 現有 39 個型別、完整簽章、`TYPE_MAX`、效能數字、`HashingContext` 全部失敗模式。**不建,下一個 ADR 作者會踩同一個 Godot 3 記憶。**
