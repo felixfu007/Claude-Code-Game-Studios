@@ -1,8 +1,9 @@
 # 第七輪審查探針 — 2026-08-20
 
 **目的**:關閉 `/architecture-review` 第七輪對 ADR-0002 提出的四項未查證項 —— R7E-1、R7E-2、R7E-4、R7E-13。
-**執行者**:`godot-gdscript-specialist`(`.gd` 依 `technical-preferences.md` File Extension Routing 表委派)。
-**引擎**:`Godot 4.7.1.stable.official.a13da4feb`,headless,**三支探針皆 exit code 0**。
+**執行者**:`godot-gdscript-specialist`(`.gd` 依 `technical-preferences.md` File Extension Routing 表委派)。探針 D 的 4 個 `.gd` 檔為該 specialist 於 2026-08-20 中斷前的交付;`D.tscn`(6 行、照 `C.tscn` 複製)、執行、log 歸檔與本 README 更新由協調者完成。
+**探針 D(2026-08-21 追加)**:關閉探針 A/B/C 執行者自陳的殘留未查證項 **#1 / #2**,兩者是 R7-P1 與 R7-P3 建議修法的地基。
+**引擎**:`Godot 4.7.1.stable.official.a13da4feb`,headless,**四支探針皆 exit code 0**。
 **上游報告**:`docs/architecture/architecture-review-2026-08-20-round7.md` 第四之二節。
 
 > **本 README 由審查協調者於探針交付後補寫** —— 探針執行者交付了完整結果但未建立 README,而本專案的紀律是「原始 log 檔頭自帶指令、exit code、判讀陷阱,**下一輪不需回讀對話**」。此處補齊該層。
@@ -23,6 +24,10 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 "$GODOT" --headless --path .
 ```
 
+**切換探針的方式是改 `project.godot` 的 `run/main_scene`,不是傳參數** —— 四支各有一個 6 行場景
+(`scenes/A.tscn` ~ `scenes/D.tscn`),根節點腳本各指向對應的 `scripts/runner_*.gd`。
+本目錄提交時 `main_scene` 停在 `res://scenes/D.tscn`(最後執行的一支)。
+
 **兩個判讀陷阱(前人踩過,務必避開)**
 
 1. **`project.godot` 必須有 `application/run/flush_stdout_on_print=true`** —— 否則 `print()` 全被緩衝,程式不退出就一個字都看不到。
@@ -39,6 +44,7 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 | `logs/probeB-unfiltered.txt` | 探針 B —— R7E-4(最高優先) |
 | `logs/probeC-v1-flawed-unfiltered.txt` | 探針 C **第一版(失敗)** —— **刻意保留**,見下方「過程失誤」 |
 | `logs/probeC-v2-unfiltered.txt` | 探針 C 第二版 —— R7E-13 |
+| `logs/probeD-unfiltered.txt` | 探針 D(2026-08-21)—— 殘留未查證項 #1 / #2 |
 
 **執行者自陳:log 全部未經 `grep`/`head`/`tail` 過濾或截斷。**
 
@@ -102,6 +108,34 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 
 **R7-P3(中高,新)—— 對 ADR-0002 機制八的影響**:目前寫「先 `typeof()` 內省、後值域運算」,但**沒有涵蓋「型別合法的字串,卻不是任何 enum 成員名稱」這一類輸入** —— 而那正是存檔還原遇到打錯字或版本不相容時最可能出現的錯誤。若 `validate_semantics()` 直接用 `Pair[name]` 做轉換,遇非法名稱會在走到自己的拒絕碼邏輯**之前**就中止,契約承諾的結構化 `ImportResult` 永遠回不去。**正確寫法**:先做存在性檢查(`values().has()` / `keys().has()`),或改用已驗證會乾淨回傳 `null` 的 `find_key()`。**絕不對不可信字串裸用 `Pair[name]`。**
 
+### 探針 D — 殘留未查證項 #1 / #2(兩項皆關閉)
+
+2026-08-21 追加執行。`main_scene` 指向 `scenes/D.tscn`,exit code 0,**六項判定無一中止**。
+
+| 操作 | 結果 |
+|---|---|
+| **D0** `d1` / `d2` / `d3` 三檔逐檔 `reload()` 編譯檢查 | **三檔皆 `COMPILED OK`** |
+| `Pair.values().has(-1)`(越界但合法 int) | **不中止,回傳 `false`** |
+| `Pair.values().has(999)`(同上) | **不中止,回傳 `false`** |
+| `Pair.keys().has("C1_C2")`(合法成員名,字面量) | **不中止,回傳 `true`** |
+| `Pair.keys().has("NO_SUCH_PAIR")`(非法名,**靜態字面量**) | **編譯通過、不中止,回傳 `false`** |
+| 同一非法名,**執行期 `"".join()` 組出**(不可常數摺疊) | **不中止,回傳 `false`** |
+
+**#1 結論(關閉)**:`values().has(int)` 對越界輸入**乾淨回傳 `false`**,不中止呼叫函式。**R7-P1 的建議修法地基成立** —— 機制四步驟 4/5 可以用 `Pair.values().has(ordinal)` 作為 `INVALID_PAIR`/`INVALID_SOURCE` 的實際檢查手段,回傳值可安全判讀。
+
+**#2 結論(關閉)**:`keys().has(String)` 與 `values().has(int)` **對稱可用** —— 對非法名回傳 `false` 而非中止。**R7-P3 的建議修法地基成立**,機制八 `from_dict()` 可用 `keys().has(name)` 做存在性檢查後再轉換。
+
+**本探針最有價值的一項對比(探針 C 未區分,本輪首次量到)**:同一個非法名字串,走 **`.has()` 方法呼叫**與走 **`[]` subscript** 是**兩種完全不同的命運** ——
+
+| 形狀 | 字面量 | 執行期動態組出 |
+|---|---|---|
+| `Pair["NO_SUCH_PAIR"]`(subscript) | **Parse Error,整檔編譯失敗**(探針 C) | **`SCRIPT ERROR`,中止呼叫函式**(探針 C) |
+| `Pair.keys().has("NO_SUCH_PAIR")`(方法呼叫) | **編譯通過,回傳 `false`**(D2) | **回傳 `false`**(D3) |
+
+探針 D 的檔頭註解明文寫下「即使 `.has(字串)` 是普通 Array 方法呼叫、不是造成 c2 Parse Error 的 enum-as-Dictionary 字面量 subscript,**在量到之前不假設這個差別是安全的**」,因此仍拆成 d2/d3 兩檔。**量完的結論是那個差別確實存在且方向有利** —— 但拆檔的紀律不因結果良好而追認為多餘:d2 若與 d1 同檔而結果相反,會重演探針 C 第一版的整檔封鎖。
+
+**因此 ADR-0002 的規則措辭必須點名形狀,不能只點名輸入來源**:「不對不可信字串裸用 `Pair[name]`」是正確的;而「改用 `keys().has()` 先檢查」現已有實測支撐,兩者不是同一件事的兩種說法。
+
 ---
 
 ## 過程失誤(執行者主動自陳,證據刻意保留)
@@ -118,9 +152,13 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 
 | # | 項目 | 為何重要 |
 |---|---|---|
-| **1** | `Pair.values().has(-1)` / `.has(999)` 在**越界輸入**下的實際回傳值 —— 本輪只測了 `values().has(0)`(合法值) | **R7-P1 的建議修法正押在它上面。** 不宜假設它「當然回傳 `false`」 |
-| **2** | `Pair.keys().has(name)` 是否與 `values().has()` 對稱可用 | **R7-P3 的建議修法之一押在它上面** |
+| ~~**1**~~ | ~~`Pair.values().has(-1)` / `.has(999)` 在**越界輸入**下的實際回傳值~~ | **✅ 2026-08-21 探針 D 關閉** —— 乾淨回傳 `false`,不中止。R7-P1 修法地基成立 |
+| ~~**2**~~ | ~~`Pair.keys().has(name)` 是否與 `values().has()` 對稱可用~~ | **✅ 2026-08-21 探針 D 關閉** —— 對稱,非法名回傳 `false` 不中止。R7-P3 修法地基成立 |
 | 3 | 只測單一配對(`C1_C2`)存入,未測多配對或 `_death_marks` 的功能性存讀(只測了它的缺鍵讀取) | 覆蓋面 |
 | 4 | 只對 `Pair` 一個 enum 測試 —— `Source`/`Character` 同行為屬**合理外推,非直接測量** | 覆蓋面 |
 
-**第 1、2 項應併入下一次 ADR-0002 修訂前的補測** —— 兩者各自是 R7-P1 與 R7-P3 建議修法的地基。
+**第 1、2 項已於 2026-08-21 由探針 D 關閉**(見上方「探針 D」節),ADR-0002 修訂的前置條件因此解除。
+**第 3、4 項仍開** —— 兩者皆屬覆蓋面,不阻擋 ADR-0002 修訂:
+
+- **#3**(多配對 / `_death_marks` 功能性存讀)—— 影響的是實作期的單元測試設計,非 ADR 決策內容。ADR-0002 對 `_death_marks` 的缺鍵讀取已有探針 A 的實測(同一行為),二選一裁決不需要 #3 的結果。
+- **#4**(只測 `Pair`,`Source`/`Character` 屬外推)—— 探針 B 已對 `Pair` 與裸 `int` 做逐項對照並得出「enum 標註只抹平 `String`」的機制級結論,該機制不依賴特定 enum 的成員數。**但這仍是外推,不得記為已測。**

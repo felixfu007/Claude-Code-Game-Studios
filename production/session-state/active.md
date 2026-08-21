@@ -3,10 +3,12 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。下一步:`/architecture-decision` 修訂 ADR-0002(修訂前先補測兩項探針殘留)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併) ⏸️ **中斷點(2026-08-20)**:補測探針殘留 #1/#2 的探針 D 已寫好 4 個 .gd 檔但未執行(缺 D.tscn、未跑、未 commit),詳見檔末「中斷檢查點」節。
+Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。✅ **2026-08-21:中斷點已解除** —— 探針 D 執行完畢(exit 0),殘留 #1/#2 **兩項皆關閉**(`values().has()` 越界輸入與 `keys().has()` 非法名皆乾淨回傳 `false`、不中止),**R7-P1/R7-P3 建議修法地基成立,ADR-0002 修訂的前置條件已解除**。下一步:`/architecture-decision` 修訂 ADR-0002(17 項)、ADR-0005 第四次修訂(與 R6-6~R6-13 合併)。
 <!-- /STATUS -->
 
-**最後更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
+**最後更新**:2026-08-21 —— 探針 D 執行完畢,第七輪的兩項殘留未查證項關閉,ADR-0002 修訂前置條件解除(詳見檔末「Session Extract — 探針 D」)。以下為前次更新內容。
+
+**前次更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
 
 ### 本次核對出的三項新事實(不在第四輪的 7 項清單內)
 
@@ -934,34 +936,54 @@ Godot `4.7.1.stable.official.a13da4feb` headless,三支皆 exit code 0,log 未�
 
 ---
 
-## ⏸️ 中斷檢查點 — 2026-08-20 探針 D(**已寫好、未執行**)
+## Session Extract — 探針 D 2026-08-21(**中斷點已解除**)
 
-**中斷情境**:系統中斷發生在「補測第七輪探針殘留未查證項 #1/#2」這件工作的**中途**。工作是上方第七輪「下一步」第 1 項的前置條件 —— `/architecture-decision` 修訂 ADR-0002 之前必須先關掉這兩項,因為 **R7-P1 與 R7-P3 的建議修法直接押在它們的實測結果上**。
+**接續情境**:2026-08-20 的系統中斷發生在「補測第七輪探針殘留未查證項 #1/#2」的中途 —— `godot-gdscript-specialist` 已交付 4 個 `.gd` 檔(`bb3c164`,commit message 明文標 `NOT YET EXECUTED`),但缺 `D.tscn`、未執行、無 log。本次接續完成剩餘全部 7 個步驟。
 
-### 已完成(4 個檔案已寫入磁碟,**全部 untracked,尚未 commit**)
+### 執行結果:**兩項殘留皆關閉,零中止**
 
-| 檔案 | 內容 | 對應殘留項 |
+Godot `4.7.1.stable.official.a13da4feb` headless,`main_scene` = `res://scenes/D.tscn`,**exit code 0**,log 未過濾(`logs/probeD-unfiltered.txt`,檔頭自帶兩步指令與 exit code)。D0 的三檔逐檔 `reload()` 編譯檢查**全部 `COMPILED OK`**。
+
+| 判定 | 結果 |
+|---|---|
+| `Pair.values().has(-1)`(越界但合法 int) | **不中止,回傳 `false`** |
+| `Pair.values().has(999)` | **不中止,回傳 `false`** |
+| `Pair.keys().has("C1_C2")`(合法名) | **不中止,回傳 `true`** |
+| `Pair.keys().has("NO_SUCH_PAIR")`(非法名,**靜態字面量**) | **編譯通過、不中止,回傳 `false`** |
+| 同一非法名,執行期 `"".join()` 組出 | **不中止,回傳 `false`** |
+
+- **殘留 #1 關閉** → **R7-P1 的建議修法地基成立**:機制四步驟 4/5 可用 `Pair.values().has(ordinal)` 作為 `INVALID_PAIR`/`INVALID_SOURCE` 的實際檢查手段。
+- **殘留 #2 關閉** → **R7-P3 的建議修法地基成立**:`keys().has()` 與 `values().has()` 對稱,機制八 `from_dict()` 三條替代路徑(`values().has()` / `keys().has()` / `find_key()`)現已全部實測可用。
+- **殘留 #3/#4 仍開**,但**不阻擋 ADR-0002 修訂** —— #3 影響實作期單元測試設計而非 ADR 決策內容(R7E-2 二選一裁決所需的缺鍵行為已由探針 A 實測);#4 的機制級結論不依賴特定 enum 的成員數,**但那仍是外推,不得記為已測**。
+
+### 本次量到的新事實(探針 C 未區分)
+
+同一個非法名字串,走 `.has()` **方法呼叫**與走 `[]` **subscript** 是兩種完全不同的命運:
+
+| 形狀 | 字面量 | 執行期動態組出 |
 |---|---|---|
-| `prototypes/xcheck-round7-2026-08-20/scripts/d1_pair_ops_safe.gd` | `Pair.values().has(-1)`、`.has(999)`(越界但合法 int)、`Pair.keys().has("C1_C2")`(合法名字面量)—— 預期會過的安全子集 | #1 + #2 的一半 |
-| `.../scripts/d2_keys_has_invalid_literal.gd` | `Pair.keys().has("NO_SUCH_PAIR")` —— **靜態字面量**非法名 | #2 |
-| `.../scripts/d3_keys_has_invalid_dynamic.gd` | 同一非法名但**執行期 `"".join()` 組出**、不可常數摺疊 —— 這才是 `from_dict()` 讀存檔的真實形狀 | #2(關鍵形) |
-| `.../scripts/runner_d.gd` | D0 先以 `ResourceLoader.load(..., CACHE_MODE_IGNORE)` + `reload()` 的 `Error` **逐檔編譯檢查三個檔案**,再決定呼叫哪些;`_run_str()` 以「回傳空字串 = 函式被中止」判讀 | — |
+| `Pair["NO_SUCH_PAIR"]` | **Parse Error,整檔編譯失敗** | **`SCRIPT ERROR`,中止呼叫函式** |
+| `Pair.keys().has("NO_SUCH_PAIR")` | **編譯通過,回傳 `false`** | **回傳 `false`** |
 
-**設計已內建探針 C 第一版的教訓**:一判定一檔案、絕不裸 `load()` 已知有風險的檔案、預期會過與預期會失敗的測試分家。d2/d3 分家的理由寫在檔頭註解:`.has(字串)` 是普通 Array 方法呼叫(不是造成 c2 Parse Error 的 enum-as-Dictionary 字面量 subscript),**但在量到之前不假設這個差別是安全的**。
+**因此 ADR-0002 的規則措辭必須點名形狀,不能只點名輸入來源** —— 「不對不可信字串裸用 `Pair[name]`」禁的是形狀,「改用 `keys().has()` 先檢查」給的是替代形狀,**兩句都必須寫**,不是同一件事的兩種說法。
 
-### 未完成(下一次從這裡接)
+> **紀律註記(值得保留)**:探針 D 的檔頭註解已推測 `.has(字串)` 與 c2 的 enum-as-Dictionary 字面量 subscript 不同形狀,但仍把預期會過(d1)與預期可能失敗(d2/d3)拆三檔並逐檔編譯檢查。**量完證實那個推測正確且方向有利,但拆檔紀律不因結果良好而追認為多餘** —— d2 若與 d1 同檔而結果相反,會原地重演探針 C 第一版的整檔封鎖。
 
-1. **建立 `scenes/D.tscn`** —— `scenes/` 目前只有 `A.tscn`/`B.tscn`/`C.tscn`,D 沒有場景就跑不起來;照 `C.tscn` 複製一份、根節點腳本改指 `runner_d.gd` 即可(每份都是 6 行)
-2. **`project.godot` 的 `run/main_scene` 指向 `scenes/D.tscn`**(前三支的跑法是換 main_scene,不是傳參數)
-3. **執行**:先 `--headless --path . --editor --quit` 建 class cache,再 `--headless --path .`,指令與兩個判讀陷阱見 `prototypes/xcheck-round7-2026-08-20/README.md` 的「如何重跑」節
-4. **log 存成 `logs/probeD-unfiltered.txt`**,未過濾、檔頭自帶指令與 exit code
-5. **更新該 README**:「log 歸檔」表加一列、「結果」節加探針 D 一段、**「殘留未查證項」表把 #1/#2 劃掉並改寫**(#3/#4 仍開)
-6. **回填 `docs/architecture/architecture-review-2026-08-20-round7.md`** 第四之二節,並依實測結果確認或修正 R7-P1 / R7-P3 的建議修法
-7. 之後才進 `/architecture-decision` 修訂 ADR-0002(17 項)
+### 本次更新的檔案
 
-**證據確認 D 確實沒跑過**(不是靠推論):`scenes/` 無 `D.tscn`;`logs/` 無 `probeD-*`;d1/d2/d3/runner_d 四檔**皆無 `.uid` 旁檔**(同目錄 a/b/c 系列除 c2/c3 外皆有),表示 Godot 編輯器從未匯入過它們。
+| 檔案 | 改動 |
+|---|---|
+| `prototypes/xcheck-round7-2026-08-20/scenes/D.tscn` | **新建**(6 行,照 `C.tscn` 複製,`uid://bround7d`,腳本指 `runner_d.gd`) |
+| `.../project.godot` | `run/main_scene` `A.tscn` → `D.tscn` |
+| `.../logs/probeD-unfiltered.txt` | **新建**,未過濾,檔頭自帶兩步指令與兩個 exit code |
+| `.../README.md` | 檔頭改「四支探針」+ 探針 D 分工說明;「如何重跑」補**切換探針是改 `main_scene` 不是傳參數**;log 表加一列;新增「探針 D」結果節;殘留表 #1/#2 劃掉並改寫 #3/#4 為何不阻擋 |
+| `docs/architecture/architecture-review-2026-08-20-round7.md` | 第四之二節標題與前言、新增探針 D 小節、殘留清單 #1/#2 劃掉、「實測待辦」表加 D 列並改標題為四支、結論節第 1 項改寫 |
+| `prototypes/index.md` | 第七輪探針列:三支→四支、日期範圍、探針 D 結論 |
 
-### 兩項紀律提醒
+### 分工紀錄
 
-- **`.gd` 檔的撰寫與修改歸 `godot-gdscript-specialist`**(`technical-preferences.md` File Extension Routing 表);協調者只做編排、判讀、寫 README/報告。這 4 個檔案是該 specialist 在中斷前的交付
-- **這 4 個檔案未 commit** —— 若下一個 session 以 `/clear` 開始,先確認它們還在(untracked 檔案不會被 git 清掉,但也沒有任何保護)。建議接續時先把它們與 `D.tscn` + log 一起 commit 成一個 `test(spike):` 提交
+`.gd` 檔(4 個)為 `godot-gdscript-specialist` 於 2026-08-20 中斷前的交付,**本次未修改任何一行**。`D.tscn`(6 行機械複製,檢查點原文已明文列為協調者步驟)、執行、log 歸檔、README/報告/index 回填由協調者完成。
+
+### 下一步(取代原「中斷檢查點」)
+
+**前置條件已解除,可直接進 `/architecture-decision` 修訂 ADR-0002(17 項)** —— R7E-6/R7E-4 兩項 BLOCKING + R7-P1/P2/P3 + R7E-2 的二選一裁決((a) 建構子預填 10 對空 list / (b) 讀取入口一律 `has()` 守衛)+ 其餘 11 項。其後為 ADR-0005 第四次修訂(R6-6~R6-13 八項 + 8 處 `pass` + 第 1151 行指示句 + 第 121 行 `Constraints`)。

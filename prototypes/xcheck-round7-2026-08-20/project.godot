@@ -3,5 +3,5 @@ config_version=5
 [application]
 run/flush_stdout_on_print=true
 config/name="XCheckRound7"
-run/main_scene="res://scenes/A.tscn"
+run/main_scene="res://scenes/D.tscn"
 config/features=PackedStringArray("4.7")

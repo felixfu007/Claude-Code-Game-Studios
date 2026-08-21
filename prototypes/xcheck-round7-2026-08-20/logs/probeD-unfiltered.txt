@@ -1,0 +1,63 @@
+# ROUND7 Probe D — 未過濾 log
+#
+# 目的:關閉 README「殘留未查證項」#1(values().has() 對越界但合法 int 的實際回傳值)
+#       與 #2(keys().has() 是否與 values().has() 對稱)。
+#       兩項是第七輪 R7-P1 / R7-P3 建議修法的地基。
+#
+# 引擎:Godot Engine v4.7.1.stable.official.a13da4feb(headless)
+# 執行日:2026-08-21
+#
+# 指令(兩步,照 README「如何重跑」節;Godot 執行檔不在 PATH 上):
+#   GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+#   "$GODOT" --headless --path . --editor --quit        # 步驟 1:建 class cache → exit code 0
+#   "$GODOT" --headless --path .                        # 步驟 2:跑探針(main_scene=res://scenes/D.tscn)
+#
+# exit code:步驟 1 = 0;步驟 2 = 0
+#
+# 註:步驟 1 的輸出本次未另存新檔 —— 與既有 logs/00-editor-cache-build.txt 是同一道程序、
+#     同一組 8 個 global class 註冊,僅新增 d1/d2/d3/runner_d 四檔的匯入。exit code 0。
+#
+# 以下為步驟 2 的 stdout+stderr 原文,未過濾、未刪節。
+# ============================================================================
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ROUND7 Probe D / Godot 4.7.1-stable (official) ===
+
+--- D0: compile-check ALL THREE files BEFORE calling anything into any of them ---
+  [COMPILED OK]  d1_pair_ops_safe.gd (values().has(-1)/(999), keys().has(valid))
+  [COMPILED OK]  d2_keys_has_invalid_literal.gd (keys().has() invalid literal)
+  [COMPILED OK]  d3_keys_has_invalid_dynamic.gd (keys().has() invalid dynamic)
+
+--- D1a: Pair.values().has(-1) -- out-of-range but legal int ---
+    >> AffinityTypes.Pair.values().has(-1) : calling...
+      >> test_values_has_negative_one: entering
+      >> test_values_has_negative_one: call done, about to return
+    << AffinityTypes.Pair.values().has(-1) : returned [REACHED END has=false]
+
+--- D1b: Pair.values().has(999) -- out-of-range but legal int ---
+    >> AffinityTypes.Pair.values().has(999) : calling...
+      >> test_values_has_999: entering
+      >> test_values_has_999: call done, about to return
+    << AffinityTypes.Pair.values().has(999) : returned [REACHED END has=false]
+
+--- D1c: Pair.keys().has("C1_C2") -- valid member name, literal ---
+    >> AffinityTypes.Pair.keys().has("C1_C2") : calling...
+      >> test_keys_has_valid_literal: entering
+      >> test_keys_has_valid_literal: call done, about to return
+    << AffinityTypes.Pair.keys().has("C1_C2") : returned [REACHED END has=true]
+
+--- D2: Pair.keys().has("NO_SUCH_PAIR") -- invalid name, STATIC LITERAL ---
+    >> AffinityTypes.Pair.keys().has("NO_SUCH_PAIR") (literal) : calling...
+      >> test_keys_has_invalid_literal: entering
+      >> test_keys_has_invalid_literal: call done, about to return
+    << AffinityTypes.Pair.keys().has("NO_SUCH_PAIR") (literal) : returned [REACHED END has=false]
+
+--- D3: Pair.keys().has(bad_key) -- invalid name, built at RUNTIME ---
+    >> AffinityTypes.Pair.keys().has(bad_key) (dynamic, not constant-foldable) : calling...
+      >> test_keys_has_invalid_dynamic: entering
+      >> test_keys_has_invalid_dynamic: bad_key built = NO_SUCH_PAIR
+      >> test_keys_has_invalid_dynamic: call done, about to return
+    << AffinityTypes.Pair.keys().has(bad_key) (dynamic, not constant-foldable) : returned [REACHED END has=false]
+
+=== ROUND7 Probe D COMPLETE ===
