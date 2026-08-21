@@ -795,6 +795,43 @@ When a new gate is needed for a new skill or workflow:
 
 ## Gate Coverage by Stage
 
+> ⚠️ **"Required" in this table means "required when the resolved review mode is
+> `full`". It does NOT mean the gate runs by default.**
+>
+> The default mode is `lean` (see Review Modes above), and `lean` skips every gate
+> that is not one of the four PHASE-GATEs. Cross-checking the two halves of this
+> document, measured 2026-08-21:
+>
+> | Stage | Required gates listed | …that actually run under default `lean` |
+> |---|---|---|
+> | Concept | 2 | **0** |
+> | Systems Design | 4 | **0** |
+> | Technical Setup | 4 | **0** |
+> | Pre-Production | 3 + PHASE-GATEs | PHASE-GATEs only |
+> | Production | 4 | **0** |
+> | Polish | 3 | **0** |
+> | Release | PHASE-GATEs | all |
+>
+> **Five of seven stages run zero of their listed Required gates under the default.**
+>
+> This is not hypothetical. `production/review-mode.txt` was never created, so every
+> run since project start resolved to `lean`. Verified 2026-08-21: across five ADRs
+> and nine revisions, `TD-ADR` never ran once — and of the six must-fix findings in
+> that day's revision draft, four fell inside `TD-ADR`'s remit (architectural
+> coherence) rather than the engine specialist's (API correctness). They were
+> eventually forced out the long way, by writing throwaway code that failed.
+> `TD-ARCHITECTURE`, `LP-FEASIBILITY` and `AD-ART-BIBLE` — the other three Required
+> gates for the current stage — have zero mentions in any produced document.
+>
+> **This project's operating decision (2026-08-21, manager ruling):** do NOT create
+> `production/review-mode.txt`. Pass `--review full` per run on high-risk work
+> instead — chiefly `/architecture-decision` in revision mode. Rationale: a global
+> `full` makes every skill run pay for a full director pass, which is not wanted;
+> but a silent `lean` on architecture work has now demonstrably cost more.
+>
+> Registered as entry 9 in `docs/consistency-failures.md`.
+> If you are reading this table to decide what to run, read the mode you are in first.
+
 | Stage | Required Gates | Optional Gates |
 |-------|---------------|----------------|
 | **Concept** | CD-PILLARS, AD-CONCEPT-VISUAL | TD-FEASIBILITY, PR-SCOPE |
