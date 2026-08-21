@@ -3,10 +3,12 @@
 <!-- STATUS -->
 Epic: 架構階段(Foundation + Core 層 ADR 系列)
 Feature: 單一游標/高亮狀態系統
-Task: 2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。✅ **2026-08-21:中斷點已解除** —— 探針 D 執行完畢(exit 0),殘留 #1/#2 **兩項皆關閉**(`values().has()` 越界輸入與 `keys().has()` 非法名皆乾淨回傳 `false`、不中止),**R7-P1/R7-P3 建議修法地基成立,ADR-0002 修訂的前置條件已解除**。✅ **2026-08-21:ADR-0002 第四次修訂已完成並寫入**(17 項全數處理;Step 5.5 雙軌覆核**兩輪**,共抓出 15 項 BLOCKING/高,**其中 12 項是修訂草稿自己引入或漏掉的**;協調者自行 grep 另抓到範圍宣告連續被低估三次 + 一句被自己修法弄假的既有宣稱)。ADR-0002 651 → **974 行**,registry 69 → **78 項**(ADR-0002 佔 22)。**涵蓋分佈不自陳,待第八輪。** ✅ **同日 ADR-0005 第四次修訂亦已完成並寫入**(R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌 2 BLOCKING + 11 非阻塞)。ADR-0005 1440 → **1600 行**,registry 78 → **81 項**(ADR-0005 佔 29)。**兩份 ADR 的涵蓋分佈皆不自陳,待第八輪。** ✅ **同日 ADR-0004 / 0003 / 0002 事實層修訂已完成並寫入**(零決策內容,7 項 + Step 5.5 覆核衍生 3 項 + 協調者自行抓到 2 項)。**先跑探針 E 才動筆** —— ADR-0004 第 91 行的 `-> Variant` 不在已測五種之內,屬外推;探針 E 關閉它、並**逐字編譯機制一的完整組合**,額外測出「字面 `ClassName.new()` 構造抽象類別是編譯期 Parse Error」。ADR-0004 的 5 處 `pass` + 第 71 行根因指示句 + VR #6/#6a 全部關閉(新增 #6b 登記三條未查證的間接構造路徑);ADR-0003 第 17 行的 HIGH 評級**維持 HIGH、理由由三項收為兩項**;ADR-0002 第 603 行補上交叉引用。**另關閉兩處「全數覆蓋」過度宣稱:ADR-0003:350 是第五處(唯一不在 ADR-0004 檔內者,第五輪「四處全數清除」的定義域小於措辭)、`design/gdd/systems-index.md:4` 是第六處(同一行的 `TR-save-*` 早已修正,只被修了一半)。** **registry 不新增條目,維持 81 項**(逐節實測 10/11/29/31、零重複鍵)。**三份 ADR 皆不自陳涵蓋分佈,待第八輪。** 下一步:建立 `docs/consistency-failures.md`(第七次提出)、全新 session 跑第八輪 `/architecture-review`。
+Task: **2026-08-21 第二批(最新)—— ADR-0003 軌**。探針 F/G 關閉該 ADR 全部五項 VR(它是五份 ADR 裡唯一從未上引擎的一份),**決策實質成立但寫法錯 18 處**:`bytes_to_var(buffer, false)` 兩引數形狀在 4.7.1 是 **Parse Error**(ADR 寫的是 Godot 3 簽章)。另推翻三項宣稱,並關閉懸置三輪的 E1/R3(核心推理成立,但它舉的例子不成立、**嚴重低估 `Signal`**〔還原後 `emit()` 實測真的執行處理函式〕、建議修法不足)。🔴 **ADR-0003 修訂草案已寫,但 Step 5.5 雙軌覆核皆判不可寫入:6 項 BLOCKING,其中 4 項是草案自己引入的 —— 模式 A 第九場。** 六項:收窄後的核心宣告仍被同一批 log 否證(`EncodedObjectAsID` 實測 `is Object=true`)、遞迴閘門無深度上限致 stack overflow(而引擎自己反而有循環防護)、公開簽章變更的**唯一理由實測為假**(`var_to_bytes({})`=8B,合法編碼永不為 0)、範圍宣告漏掉 ADR 自己示意圖的外層呼叫**與** `FileAccess.store_var/get_var` 等價旁路、讀取側閘門套用點未定(字面上可能什麼都攔不到)、「數學型別」四個字承載 16 個 Variant 型別的命運(且覆核者照表實作出來的實測是**黑名單**)。三項裁決已定:A1 採主案 + 三條件、A2 用既有 `DATA_CORRUPTED` 不新增值、D1 **ADR-0002 不需要改且 ADR-0003 不可替它記帳**(其 `typeof()` 是逐欄位**正向**白名單,天生免疫漏列)。**下一步:依檔末最後一節重建草案 → 修六項 BLOCKING + 約 15 項高 → 窄範圍 Step 5.5 重跑(前次修訂的同型陷阱就在正下方)→ 建 `core-serialization.md` 參考庫 → 第八輪 `/architecture-review`(本 session 原定 A → B,B 未執行)。** ⚠️ **草案在 session 專屬 scratchpad,新 session 讀不到,必須依檔末那節重建。** ／以下為前一批:2026-08-20 /architecture-review **第七輪**已完成(CONCERNS)—— 依第六輪交代重推游標 19 項為 **12/7/0**、好感度 24 項為 **21/3/0**,全域 130 項 **64 ✅ / 34 ⚠️ / 32 ❌**。**🔴 ADR-0002 判定不可進 `Accepted`**:兩項 BLOCKING(R7E-6 `FUTURE_TIME_QUERY` 死碼、R7E-4 enum 參數靜默轉換)+ R7-P1/P2/P3 + R7E-2 共 17 項,成因是修訂新增範圍宣告時漏稽核既有的三個 `Variant` 入口。同日跑三支探針實機確認 R7E-4、把 R7E-2 升為已實測缺口、關閉 R7E-1/R7E-13,並**推翻機制四「INVALID_PAIR/INVALID_SOURCE 理論上不可達」**。R6-6~R6-13 **八項全部仍開**。新增銜接缺口 C7。已順手修正 `current-best-practices.md` 的 `@abstract` 錯誤範例與 registry 兩個過時欄位。✅ **2026-08-21:中斷點已解除** —— 探針 D 執行完畢(exit 0),殘留 #1/#2 **兩項皆關閉**(`values().has()` 越界輸入與 `keys().has()` 非法名皆乾淨回傳 `false`、不中止),**R7-P1/R7-P3 建議修法地基成立,ADR-0002 修訂的前置條件已解除**。✅ **2026-08-21:ADR-0002 第四次修訂已完成並寫入**(17 項全數處理;Step 5.5 雙軌覆核**兩輪**,共抓出 15 項 BLOCKING/高,**其中 12 項是修訂草稿自己引入或漏掉的**;協調者自行 grep 另抓到範圍宣告連續被低估三次 + 一句被自己修法弄假的既有宣稱)。ADR-0002 651 → **974 行**,registry 69 → **78 項**(ADR-0002 佔 22)。**涵蓋分佈不自陳,待第八輪。** ✅ **同日 ADR-0005 第四次修訂亦已完成並寫入**(R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌 2 BLOCKING + 11 非阻塞)。ADR-0005 1440 → **1600 行**,registry 78 → **81 項**(ADR-0005 佔 29)。**兩份 ADR 的涵蓋分佈皆不自陳,待第八輪。** ✅ **同日 ADR-0004 / 0003 / 0002 事實層修訂已完成並寫入**(零決策內容,7 項 + Step 5.5 覆核衍生 3 項 + 協調者自行抓到 2 項)。**先跑探針 E 才動筆** —— ADR-0004 第 91 行的 `-> Variant` 不在已測五種之內,屬外推;探針 E 關閉它、並**逐字編譯機制一的完整組合**,額外測出「字面 `ClassName.new()` 構造抽象類別是編譯期 Parse Error」。ADR-0004 的 5 處 `pass` + 第 71 行根因指示句 + VR #6/#6a 全部關閉(新增 #6b 登記三條未查證的間接構造路徑);ADR-0003 第 17 行的 HIGH 評級**維持 HIGH、理由由三項收為兩項**;ADR-0002 第 603 行補上交叉引用。**另關閉兩處「全數覆蓋」過度宣稱:ADR-0003:350 是第五處(唯一不在 ADR-0004 檔內者,第五輪「四處全數清除」的定義域小於措辭)、`design/gdd/systems-index.md:4` 是第六處(同一行的 `TR-save-*` 早已修正,只被修了一半)。** **registry 不新增條目,維持 81 項**(逐節實測 10/11/29/31、零重複鍵)。**三份 ADR 皆不自陳涵蓋分佈,待第八輪。** 下一步:建立 `docs/consistency-failures.md`(第七次提出)、全新 session 跑第八輪 `/architecture-review`。
 <!-- /STATUS -->
 
-**最後更新**:2026-08-21 —— (1) 探針 D 執行完畢,第七輪兩項殘留未查證項關閉;(2) **ADR-0002 第四次修訂完成並寫入**(17 項 + Step 5.5 雙軌兩輪覆核的 20 項修正)。詳見檔末兩節 Session Extract。以下為前次更新內容。
+**最後更新**:2026-08-21(**第二批**)—— 探針 F/G/H/J 四支 + ADR-0003 修訂草案 + Step 5.5 雙軌覆核(**兩軌皆判不可寫入**)。提交 `324fb02`/`27217ec`/`aee86fc`。**詳見檔末最後一節** —— 那一節是 scratchpad 草案的 durable 替代品,草案本身新 session 讀不到。
+
+**前一批**:2026-08-21 —— (1) 探針 D 執行完畢,第七輪兩項殘留未查證項關閉;(2) **ADR-0002 第四次修訂完成並寫入**(17 項 + Step 5.5 雙軌兩輪覆核的 20 項修正)。詳見檔末兩節 Session Extract。以下為前次更新內容。
 
 **前次更新**:2026-08-19 —— `/architecture-decision` **第三次修訂 ADR-0005**,處理第五輪 `/architecture-review` 的 R5-1~R5-6 與 S-1~S-5 共 11 項,並在寫入前先跑 `godot-specialist` Step 5.5 覆核(使用者明文授權),該覆核再抓出 6 項(其中 4 項是本次修法自己新產生的)。**R5-1 為 BLOCKING**。連帶修訂 ADR-0004(Validation Criteria 第 6/7 項順序,R5-4)、`docs/registry/architecture.yaml`(65 → 68 項)與 `.claude/docs/technical-preferences.md`。詳見下方「Session Extract — `/architecture-decision` 第三次修訂」。
 
@@ -1144,3 +1146,110 @@ ADR-0004(5 處裸簽章 / 第 71 行根因 / 機制一新段落 / VR #6·#6a·#6
 ### 誠實登記、未關閉的
 
 `@abstract` 的三條間接構造路徑(VR #6b,低優先 —— 會被誤寫的形狀已關閉)、ADR-0003 VR 五項全開(**性質已改**:從「無法查證」變成「尚未撰寫探針」,其中第 2 項 `bytes_to_var(bytes, false)` 是該 ADR 型別安全論證的地基,優先級最高)、ADR-0002 VR #4(`Mutex` 可重入)與 #7(release 建置容器驗證)、過度宣稱是否有第七處、`docs/consistency-failures.md` 仍未建立。
+
+---
+
+## Session Extract — 探針 F/G + ADR-0003 修訂草案 + Step 5.5 雙軌(2026-08-21)
+
+**結論:草案未寫入。兩軌 Step 5.5 皆判 ❌ 不可寫入,6 項 BLOCKING,其中 4 項是草案自己引入的 —— 模式 A 第九場。**
+⚠️ **草案本身在 scratchpad(session 專屬),下一個 session 讀不到。本節即是它的 durable 替代品。**
+
+四支探針,全部 exit 0,引擎 `4.7.1.stable.official.a13da4feb` headless,未過濾 log 已提交:
+`prototypes/xcheck-adr0003-2026-08-21/`(F、G 在 `logs/`;H 在 `xcheck-stepdotfive-2026-08-21/`;J 在 `xcheck-gdscript-shape-2026-08-21/`)。
+提交:`324fb02`(F)、`27217ec`(G)、`aee86fc`(H+J)。
+
+### ✅ ADR-0003 的決策實質成立(VR 五項全關)
+
+格式選擇、分層結構、雜湊機制、manifest-only 安全前提**全部實測成立**。VR#2(型別安全論證的地基)三個子宣稱全中:原子性失敗、回傳 `null` **不中止呼叫函式**、伴隨 `ERR_UNAUTHORIZED`(引擎 C++ 斷言 `!p_allow_objects`,`marshalls.cpp:718`)→ **機制三步驟 5 可實作**。
+VR#4 是最有利的一項:含 Object 的**毒區塊**塞進外層,外層仍解碼成功、manifest 完整可讀。
+VR#5:64MB 線性無懸崖;單槽數十 KB 三項操作 < 2ms。VR#3 的 SHA-256 對照 `"hello"`/`"abc"` 標準答案逐字相符。
+
+### 🔴 但寫法錯 18 處,且三項宣稱被推翻
+
+- **B-1**:`bytes_to_var(buffer, false)` **兩引數形狀是 Parse Error**。ADR 全文 **18 處 / 16 行**(17、20×2、58、62、66、95×2、103、107、151、181、191、218、290、297、308、338),寫的是 **Godot 3 簽章**。4.7.1 是四個獨立全域函式:`var_to_bytes(v)`/`var_to_bytes_with_objects(v)`/`bytes_to_var(b)`/`bytes_to_var_with_objects(b)`。
+- **B-2**:第 66 行的 `allow_objects` 縱深防禦論述**前提整體不成立**(沒有參數可傳)。須重寫,非刪字。
+- **B-3**:VR#3a 的 `sha256_buffer()` 簡化機會**不適用** —— 只在 `String` 上,`PackedByteArray` 上不存在,而 ADR 的雜湊輸入正是後者。
+- **根因**:`FileAccess.get_var(allow_objects)` **確實有此參數且預設 false**(探針 H-1 `ClassDB` 內省)。4.7.1 對同一件事有**兩種 API 形狀**,`FileAccess` 保留布林參數、全域函式拆變體。**這是 B-1 最可能被重新加回去的路徑,ADR 必須明文警示。**
+- **參考庫零覆蓋**:`grep -rn "var_to_bytes|bytes_to_var|allow_objects|HashingContext|sha256" docs/engine-reference/` → **零命中**。與 `@abstract` 那次不同 —— 這次不是錯誤範例,是**完全沒有**。應建 `docs/engine-reference/godot/modules/core-serialization.md`。
+
+### 🔴 N-1 + E1:「不能製造」≠「不能交出」(四條靜默管道)
+
+| 管道 | 寫入側 | 讀取側(1 引數) | 危險度 |
+|---|---|---|---|
+| `EncodedObjectAsID` | plain `var_to_bytes()` 對任何 Object **靜默成功**(`RefCounted` 60B / `Resource` 56B,零錯誤) | `typeof=24`、**`is Object=true`**、欄位全 `<null>`;**`instance_from_id()` 同行程內可復活完整原物件** | 高 |
+| `Signal` | 靜默成功,8 byte ObjectID 進流(44B) | **完整還原且可用** —— `connect()` 回 0、`emit(777)` 實測處理函式**真的執行**(`emit_count` 0→1) | **最高** |
+| `RID` | 靜默成功 | 完整還原,`is_valid=true`、`get_id=94489280512` 逐位元相同 | 高 |
+| `Callable` | 裸 Callable 只編 **4 bytes**(純型別標頭) | 型別還原、**綁定丟失**,`is_valid=false`;**誤呼中止呼叫函式**,且 `has()`/`is Callable` 兩守衛都通過 | 中 |
+
+**鐵證:含 Callable 的 Dict,plain 與 `_with_objects` 編碼 48 bytes 逐位元組相同 —— 四者根本不經過閘門。**
+**E1(第二輪提出、第三輪列 R3、懸置三輪)核心推理成立,但三項修正**:它舉的例子(驗證器 Callable 被還原)**不成立**;它**嚴重低估 `Signal`**(三者並列掩蓋了其中一個還原出全功能物件);它建議的修法(Validation Criteria 補一條)**不足**,應升級為格式層結構閘門。
+**registry `resource_based_save_payload`(第 1544 行)的 `why:` 說 raw Resource「would fail to serialize at all」—— 實測為假**,靜默成功 56B、欄位全失。禁令保留,理由要改。
+
+### 六項 BLOCKING(兩軌去重後)—— 修訂草案必須先關掉這些
+
+1. **收窄後的核心宣告仍為假**:草案寫「拒絕實例化**任何** `Object` 衍生類別」,而 `EncodedObjectAsID` 實測 `is Object=true`,是 `bytes_to_var()` 親手實例化交出的。**「任何」又是紅旗字;收窄版本被它正在引用的同一批 log 否證。** 修法:改為「拒絕實例化任何**由腳本或 `ClassDB` 指名的**類別;唯一能產生的 Object 是引擎內建標記類別 `EncodedObjectAsID`,不帶腳本不帶欄位,只帶 8 byte ObjectID」。
+2. **遞迴閘門無深度上限**:循環 payload 實測 **stack overflow + 1024 行 `Stack underflow! (Engine Bug)`**,回傳 `false` 是「中止後展開拿 `bool` 零值」的**意外正確**,極性反寫即 fail-open。**而主案的物件回傳型別讓它變糟**:物件零值是 `null`,呼叫端 `result.rejection` = null 取屬性 = **無聲中止**。**引擎自己反而有防護**(`marshalls.cpp:1363` `Potential infinite recursion detected. Bailing.` → size 0)。修法:`MAX_PAYLOAD_DEPTH`(64~128;實測合法深度 256 正常)+ 第三個列舉值 `DEPTH_EXCEEDED`。
+3. **簽章變更的唯一理由為假**:草案寫「空 `PackedByteArray` 與『合法但空』不可分」;實測 `var_to_bytes({})`=**8B**、`var_to_bytes([])`=8B、`var_to_bytes(null)`=**4B**。**合法編碼最短 4 bytes,永不為 0** → `size()==0` 是可靠訊號,且**正是引擎自己的失敗訊號**。結論可留(採主案),理由整條換掉。**同形雙胞胎草案沒抓到**:循環 → size 0 → 對空緩衝區算 SHA-256 得完全合法的 `e3b0c442…` → 頂層雜湊也對 → **寫出結構完整、雜湊全符、內容為空的存檔**,玩家載入時才發現資料沒了。必須加「`var_to_bytes()` 後斷言 `size() > 0`」。
+4. **「層一」範圍宣告有兩個洞**(同一句話):(a) 漏掉 ADR **自己示意圖第 177 行**的**外層** `var_to_bytes()`,而 Key Interfaces 根本沒有承載它的函式 —— **R7E-6 完全重演,範圍宣告只稽核了我剛寫的東西**;(b) 「沒有參數可傳」這個全稱句對 `FileAccess.store_var(v, true)`/`get_var(false)` **不成立**,而 **ADR-0003:66 自己就寫著兩者「底層共用相同的 Variant 編碼/解碼核心邏輯(線格式相同)」**,且 ADR-0004 的 `SaveIOBackend` 正是被授權碰 `FileAccess` 的檔案(`ADR-0004:97` 已選擇不用 `store_var()`,但那是散文選擇、非登記禁令)。修法:禁令定義域改為「任何能把 Variant 編成位元組或解回 Variant 的入口」並**逐一列名六個**;**不要再寫數字**(ADR-0005 的「四條私有路徑」在至少 7 處失效就是這麼來的)。⚠️ `Marshalls.variant_to_base64()`/`base64_to_variant()` **未查證**,措辭用「包含但不限於」並登記待查。
+5. **讀取側閘門的套用點未定,字面上可能什麼都攔不到**:機制二/三有**至少四個**編解碼點,而 VR#4 已實測**外層解碼不遞迴進區塊**。若閘門套在外層解碼,它看到的 `blocks` 值全是未解碼 `PackedByteArray` → **一個都攔不到**。修法:逐點指名(寫入側套第 3 點、讀取側套第 4 點即機制三步驟 5 之後)。
+6. **「數學型別」四個字承載 16 個型別的命運**:實測 4.7.1 共 **39 個型別(0–38),`TYPE_MAX=39`**。草案逐一列名 19 + 拒絕 4,**剩 5–20 共 16 個全靠那四個字**,而 **`Color`(20) 在任何通常讀法下都不是數學型別**(`Projection`(19)/`Basis`(17)/`AABB`(16)/`Transform3D`(18) 同理)。**且已實測發生**:專家照那兩張表實作出來的是**黑名單**(4 個 `or` 條件),`Color`/`Transform3D`/`Projection` 通過**不是因為在白名單上,是因為不在黑名單上**。修法:允許表**逐一列名 35 個**;拒絕表改標題為「說明用,非實作依據」並明文「必須以允許集合 `has()` 為判準」;**加 `TYPE_MAX` 完整性斷言**(`允許 ∪ 拒絕 == 0..TYPE_MAX-1`,載入期或 CI)—— 先例是 ADR-0005 的 `UI_ACTION_UNCLASSIFIED`。**沒有這條,「未來新增型別預設被拒」只是願望。**
+
+### 裁決(兩軌一致,方向確認)
+
+- **A1 採主案**(`serialize_block() -> SerializeResult` 結果物件),**但必須附三條件**:深度上限 + `DEPTH_EXCEEDED`、`var_to_bytes()` 後斷言 `size() > 0`、型別閘門**另外公開**為可獨立呼叫的 `validate_payload_types()`(供遷移鏈重用)。備案單獨採用**不可辯護** —— 它與 ADR-0002 第四次修訂**剛新增**的禁令 `unvalidated_character_into_pair_of` 同形狀,同一波修訂裡一邊禁一邊採。
+  形狀已實測可編譯:`class SerializeResult extends RefCounted:` 內部類別、欄位型別可為外層檔案層 enum、`static func -> SerializeResult` 成立、呼叫端寫 `SaveFormat.SerializeResult`。**與 ADR-0002 既有先例一致,不是第三種形狀。** 額外收益:內部類別**不進入全域命名空間**。
+  ⚠️ 但 `typeof(r)`=24、`get_class()`=`"RefCounted"` 不是 `"SerializeResult"`;且結果物件自己**永遠不可進 payload**(會被自家閘門拒)。
+- **A2 用既有 `DATA_CORRUPTED`,不新增值。** 理由**不是**草案寫的「語意上算損毀」,而是 **ADR-0003 第 50 行自己就這麼要求**;且新增值會迫使 ADR-0004(第 285–291 行**逐字複製了 `ReadRejection`**)同步 = 模式 B 第 10 個實例候選。⚠️ **草案漏了第 212 行** —— 那是 `DATA_CORRUPTED` 的**成因清單**註解,讀取側閘門是第四個成因,必須加進去。
+- **A3 ADR-0004 不受影響**:`serialize_block`/`deserialize_block` 全專案僅 **3 處命中,全在 ADR-0003 自己檔內**。但須明文寫下交接點:`ADR-0004:81 write_temp(path, buffer: PackedByteArray)` 與 `:141 replace(slot, buffer: PackedByteArray)` 吃**裸 `PackedByteArray`**,改結果物件後**解包 `.buffer` 的義務歸呼叫方**;`ADR-0004:99` 維持成立。
+- **D1 ADR-0002 不需要改,且 ADR-0003 不可替它記帳。** `validate_semantics()` 是**逐欄位正向白名單**(`adr-0002:640-643`:頂層恰含 3 鍵、`pair`/`source` 須 `TYPE_STRING`、`m` 嚴格 `TYPE_FLOAT`、`t`/`c` 嚴格 `TYPE_INT`…)—— **正向白名單天生免疫黑名單的漏列問題**,任何位置塞 Object/Signal/RID 都被該位置自己的檢查擋下,「多出來的鍵」被兩處「恰含 N 鍵」擋下。**覆蓋完整。** 草案「另需評估」那一句**就是 C7 的形狀,必須刪掉**,改為 ADR-0003 自我強化(機制六驗證器契約由「值域」補成「型別 + 值域」,ADR-0002 第 639 行早已是後者 —— **ADR-0003 定義通用契約卻比唯一實作弱**)。
+- **B2 查證為不成立(非 BLOCKING)**:`AffinityDataPool.export_state()` 輸出**純 `Dictionary`**(`adr-0002:609-613`),`AffinityRecordList` 只是 `_records` 的**內部**容器、不跨 export 邊界。真正風險點是**手寫的 `to_dict()`** 未來加欄位時漏手 —— 寫入側閘門正是對這件事的防線。
+
+### 高:必須同批處理
+
+- **D 的三項補充(N-3 不足)**:①**`start()` 的 `ERR_ALREADY_IN_USE(22)` 必須當致命錯誤** —— 跨區塊重用 `HashingContext` 而忘了 `finish()`,實測得到「前一區塊 ‖ 本區塊」的雜湊,而**長度是正確的 32 bytes**(實測 `"abc"`+`"abc"` → `bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c`,協調者以 `sha256sum` 獨立核實 = `sha256("abcabc")`)。**草案的 `size()==32` 斷言完全擋不住它,只有檢查 `start()` 的 `Error` 擋得住。兩條規則不是二選一的縱深防禦,是各擋不同的一種失敗。** ②**`update(空陣列)` 回傳 `FAILED(1)`**,而空分段**不是損壞** —— 草案的規則會誤判為 `DATA_CORRUPTED`(假損傷)。須先斷言 `chunk.size() > 0`、零長度跳過,並把 `FAILED(1)` 與 `ERR_UNCONFIGURED(3)`/`ERR_ALREADY_IN_USE(22)` 分開處理。③**`finish()` 會銷毀 context**(之後 `update()` 回 err=3),須寫出來。
+- **E4 讀取側簽章不對稱,方向與同日先例相反**:`deserialize_block(buffer) -> Variant # Dictionary 或 null` 修訂後有**三種**失敗塌成同一個 `null`(引擎解碼失敗、解出合法非 Dictionary、新增的讀取側閘門拒絕)。而 **ADR-0002 第四次修訂(同一天)剛把這形狀判為 BLOCKING 並全數移除**(`:460`、`:15`「四個簽章全部不再回傳 `Variant`」)。ADR-0003 另有三處同形狀:`:140`/`:231`(`get_validator() -> Variant`)、`:238-242`(`read_manifest_only`/`read_block`)。**草案正在編輯這個介面區塊卻只改一半** —— 須裁決:一併改為 `DeserializeResult`,或明文寫「刻意不改,理由 X」並登記銜接缺口。**現狀是第三種:沒有討論。**
+- **E5 enum 欄位不擋非法值**:`r.rejection = 1.7`(float **字面量**)→ Parse Error;`= 7`(越界 int 字面量)→ **編譯通過**,存 7,兩個 `==` 比較皆 false → `match` 兩分支**靜默落空**;經無型別 `Variant` 持有 `1.7` → **靜默截斷為 1**。**「編譯期會擋」只對字面量成立**;第三列是 R7E-4 同形狀,但**這次量的是內部類別的欄位而非函式參數**,是新觀測點。修法:寫出預設值 `= PayloadRejection.NONE`(沿用 `adr-0002:416`)+ Validation Criteria 加呼叫端義務(`adr-0002:526` 有逐字可沿用的措辭)。
+- **H-1 Consequences → Positive 第 1 點(第 281 行)與新機制直接矛盾**:「型別白名單不是靠維護清單實現,而是格式選擇的結構性副產品」—— 機制一之二**正是一張要維護的清單**。須拆兩句:**類別實例化**白名單仍是結構性副產品(不變);**Variant 型別**白名單是本次新增、非零的維護義務。
+- **H-2 Architecture Diagram 除呼叫形狀外還缺兩處**:(a) 第 161 行 `export_state() → var_to_bytes(payload)` 之間**沒有閘門方塊**;(b) 第 191–192 行「④`bytes_to_var(...)` 解碼(**= 型別白名單閘門**)」—— 修訂後它**已不再是**完整閘門,那個括號**變成假的**。
+- **H-3** 機制三步驟 5(第 107 行)**沒有安放讀取側閘門**;**H-4** 與 Requirements 第 3 項(第 50 行)「此閘門必須**先於反序列化本身**生效」**字面衝突**(讀取側閘門在 `bytes_to_var()` 回傳**之後**)—— 須明文和解:引擎層拒絕實例化才是「先於」那道;遞迴閘門是**事後的縱深濾網**。不寫這段,文件內部即互斥。
+- **H-5** 機制七(第 151 行,Open Question 4)推導鏈斷了:「從不產生任何自訂 Object,因此**不存在「型別」這個維度**需要按版本分域」—— 修訂後**存在**。須明文:新白名單是**格式層的 Variant 型別集合,刻意不依規則集版本分域**。否則 OQ4 被重新打開而無人知。
+- **H-6** `TR-save-028`(第 318 行)部分為假:保護來自新閘門,不來自格式選擇。**草案改了 registry 的同一句話卻漏了 ADR 內這一句 —— 模式 C。**
+- **H-7** 第 66 行「不含任何**自訂** `Object`/`Resource`」—— **「自訂」二字現在是錯的**(內建 `Resource.new()` 與自訂子類別行為完全一致;`Signal`/`RID` 根本不是 Object)。
+- **H-9** Performance Implications(320–324 行)**完全沒提閘門成本**,而該節現行寫「可忽略」。**探針 F 的 F5 量的是引擎成本,不能用來推論閘門成本。**
+- **H-10** Validation Criteria **沒有一條驗證新閘門**。須加六類毒藥向量(值為 Object / **鍵**為 Object / Signal / RID / Callable / 循環引用)× 兩側 × 巢狀深度。
+- **H-11** 機制六驗證器契約(第 138 行)只寫「值域」,漏「型別」,而 ADR-0002 第 639 行早已是「型別 + 值域」。
+
+### 閘門成本(實測,草案零數字)
+
+| payload | 編碼後 | 寫入閘門 | `var_to_bytes` | `bytes_to_var` | 讀取閘門 | 閘門佔比 |
+|---|---|---|---|---|---|---|
+| **500 筆(GDD 估計規模)** | 52.1 KB | **1.9 ms** | 0.6 ms | 0.6 ms | **1.9 ms** | ~76% |
+| 100,000 筆 | 10.4 MB | 435.5 ms | 132.1 ms | 171.5 ms | 391.0 ms | ~73% |
+| 500,000 筆 | 52.0 MB | 2028.4 ms | 822.3 ms | 1669.6 ms | 3387.8 ms | ~68% |
+
+**閘門約為引擎 C++ 編解碼的 3 倍。** GDD 規模下總計由 < 2ms 變 ~5ms,可接受(非每幀路徑)。⚠️ 大規模時**讀取側比寫入側更貴**(3388 vs 2028 ms),**成因未查證,只記現象**。這些數字是覆核者為量測寫的一版,**不是規格值**,只支撐「同一量級、約 3 倍」。
+
+### 中/低(清單,詳見兩軌報告)
+
+B1 鍵側規則須補一句(**`Dictionary` 以 Object 當鍵實測可往返**,`registry:1511` 的 `mutable_container_as_dictionary_key` **不覆蓋它**;建議鍵只允許 `STRING`/`STRING_NAME`/`INT`)、B3 `typeof()` 無法區分 typed/untyped **但閘門不需區分**(typed 往返後**保留**,`get_typed_builtin()=2`)、C2 指名 `DATA_CORRUPTED`、E6 `rejection` 預設 0 = 成功(與 ADR-0002 `AffinityReadResult` 同性質,不改慣例但須明寫)、E7 驗證器 `Callable` 呼叫前須 `is_valid()`(⚠️ **會繼承 ADR-0005 發現 G 的未查證項**,不可靜默押上)、E8 `offending_path` 成本與格式未定**且草案例子筆誤**(`records/0/source_i` → 欄位名是 `source`)、E9 `PayloadRejection` 應一次定完 4 值、E10 內部類別不佔全域命名空間(正面點)、M-1~M-9(Knowledge Risk 敘事過期、HIGH 評級須明文維持理由、`Post-Cutoff APIs Used` 須註明 **B-1 不是後截止失敗** —— `allow_objects` 拆分發生在 Godot **4.0**(pre-cutoff),真正來源是**過期的 Godot 3 記憶**,而本 ADR 整套風險框架只防「後截止」、機制四步驟 5 的 `DATA_CORRUPTED` 在寫入側是錯的分類、M-6 第 220 行括號例子已死、M-9 registry 1559–1560 的 type-instantiation 措辭)。
+
+### 範圍:連帶檔案 7 個(**registry 是 4 處不是 3 處**)
+
+`adr-0003`(18 + 3)、**`registry` 4 處**(764 `api:` 逐字寫著不存在的簽章、771 `reason:`、**1552–1553 `why:` 第一句** ←草案漏掉,**就在它已指名要改的 1558–1559 上面 6 行、同一個 YAML 欄位裡**、1559–1560)、`traceability-index:123`、`technical-preferences:106`、`systems-index:4,157`、`adr-0002:657`。
+**另兩個 `revised:` 欄** —— `save_serialization_format` 第 **780** 行是 `revised: ""` 空字串待填;`resource_based_save_payload` **根本沒有 `revised:` 這個鍵**,須新增。**這是模式 B 第三次重犯。**
+**排除**:`session-logs/`(gitignored 稽核軌跡)、**恰好 3 份**帶日期的 `architecture-review-*.md`、`save-system.md:706`(**實測確認正確** —— H-1 `ClassDB` 內省證實 `FileAccess.get_var(allow_objects) default_args=[false]`)。`active.md:820`/`:1146` 建議排除但**須寫下理由**(時點快照)。
+
+### 下一步
+
+1. **修訂草案**(六項 BLOCKING → 「數學型別」逐一列名 + `TYPE_MAX` 斷言 → 刪替 ADR-0002 記帳那句 → 高級約 15 項 → registry 第 4 處 + 兩個 `revised:` 欄)。⚠️ **草案在 scratchpad,新 session 需依本節重建。**
+2. **修完必須重跑窄範圍 Step 5.5** —— 第一軌明文警告:BLOCKING #2(深度上限 + 第三列舉值)與 #4(新增兩個 manifest 層函式)是**覆核後才產生的機制變更**,正落在同一個陷阱的正下方。ADR-0002 第四次修訂的第二輪窄覆核就**又抓到 4 項,全部出自第一輪覆核後才產生的那兩項變更**。
+3. **建 `docs/engine-reference/godot/modules/core-serialization.md`** —— 探針 F/G/H/J 現有 39 個型別、完整簽章、`TYPE_MAX`、效能數字、`HashingContext` 全部失敗模式。**不建,下一個 ADR 作者會踩同一個 Godot 3 記憶。**
+4. **C8 候選(範圍外,勿靜默省略)**:ADR-0002 的 `:747`/`:895`(三個結果類別為**獨立 `class_name`**、計入七個全域名稱)與 `:415-430`(欄位型別為**巢狀於 `AffinityDataPool` 的** enum)**同時主張兩者,而前者讀法實測不編譯**(`Parse Error: Could not find type "ReadRejection" in the current scope.`)。只能選一。另 `ImportResult` **全 ADR-0002 無任何宣告**,只作為回傳型別出現 6 次,而 ADR-0003 機制六消費它。
+5. **仍未查證**:跨行程 `Signal`/`RID`/`EncodedObjectAsID`(VR#6,**不阻擋機制一之二的決策** —— 不論答案為何寫入側都須拒絕,但**須在任何存檔 story 進實作前關閉**)、release 建置(VR#7,與 ADR-0002 VR#7 同一個洞,**可一次關三份**)、`Marshalls.variant_to_base64()` 存在性與 arity、引擎遞迴 bail 的確切深度門檻、讀取側閘門大規模時較貴的成因。
+6. 第八輪 `/architecture-review` **仍未跑**(本 session 原定 A → B,B 未執行)。**優先查核點須加上 ADR-0003 本次修訂。**
+
+### 方法論教訓(三項,值得進 `docs/consistency-failures.md`)
+
+1. **「收窄宣稱到實測範圍」本身也會出錯** —— BLOCKING #1:收窄後的版本被它正在引用的同一批 log 否證。收窄不等於安全,收窄後仍須逐字回頭對證據。
+2. **「比較輸入與輸出」的斷言,在輸入本身就錯時仍會通過** —— 探針 F 第一版浮點測試 13 列全綠,而兩個向量的輸入位元與 `-0.0` 相同,根本沒測到宣稱在測的東西。位元級測試必須額外斷言「輸入確實等於指定位元」。
+3. **一句宣示擋不住一張表的結構誘導** —— 草案明寫「白名單制,非黑名單」,但同時給了一張結構完整、可直接轉成 4 個 `or` 的拒絕表,而允許側有一格是無法逐一比對的散文詞。**照著實作最省力的路就是黑名單,而覆核者實測寫出來的就是黑名單。**
