@@ -20,6 +20,27 @@ after each significant milestone:
 The state file should contain: current task, progress checklist, key decisions
 made, files being worked on, and open questions.
 
+### Manager-Facing Status Page
+
+`production/PROJECT-STATUS.md` — one page, plain language, **no unexplained codes**.
+Written for the project manager, who makes the approval calls but is not a
+technical reader. Distinct from `active.md`: that file is the handoff for whoever
+picks up the work (long, precise, codes allowed); this one is for deciding.
+
+**Regenerate it at every session wrap-up**, alongside the `active.md` update.
+Keep it under ~100 lines and keep the column shape stable across regenerations —
+its value is that the manager can scan the same layout each time.
+
+Rules for its content:
+- Every technical term gets translated to its consequence on first use.
+  Not "the declaration does not compile" but "code written from this document
+  fails to start on day one."
+- No requirement IDs, finding IDs, round numbers, or pattern letters. Those
+  belong in `active.md` and the review reports.
+- State what the manager will be asked to decide next, and when.
+- Judgement check before writing: **"after reading this, does he know what he is
+  deciding?"** — not "is this technically accurate?"
+
 ### Status Line Block (Production+ only)
 
 When the project is in Production, Polish, or Release stage, include a structured
