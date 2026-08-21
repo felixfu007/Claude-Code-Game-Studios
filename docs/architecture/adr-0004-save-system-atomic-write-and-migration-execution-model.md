@@ -19,7 +19,7 @@
 | **Knowledge Risk** | HIGH——本 ADR 的正確性直接倚賴 `DirAccess.rename()`/`remove()`、`FileAccess` 的寫入/flush 錯誤偵測能力、`await get_tree().process_frame` 跨幀語意等多組 API 的精確行為,`breaking-changes.md` 未列出這些 API 在 4.4→4.7 之間的異動,但 GDD 自身(Open Question 7/12/13/14/15)已明文列出多項待驗證項目,顯示 GDD 作者群本身也不確定 |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md`;`docs/architecture/adr-0001-tactical-query-atomicity-contract.md`(跨幀 `await` 生命週期約束的既有先例) |
 | **Post-Cutoff APIs Used** | 無已知——`FileAccess`/`DirAccess`/`await get_tree().process_frame`/`@abstract` 皆為 4.5 前既有穩定機制,`deprecated-apis.md` 未列出任何相關廢棄項 |
-| **Verification Required** | (1) `FileAccess.flush()` 是否提供可檢查的失敗訊號——**`store_buffer()` 的 `bool` 回傳值已由 `breaking-changes.md` 4.3→4.4 表格明文確認**(該表逐名列出 `store_buffer` 在回傳型別異動清單內),此半已解決,不再視為待驗證;**仍待驗證的僅剩 `flush()` 本身**(傾向無直接回傳值,若無則須改用 `FileAccess.get_error()` 累積錯誤狀態間接判定——但 `get_error()` 回傳的是**累積**錯誤狀態,無法區分「`flush()` 本身失敗」與「前一次 `store_buffer()` 呼叫已設下錯誤狀態」,只是一個較粗粒度的訊號,見 Risks);(2) `DirAccess.rename()` 對「目的檔案已存在」情境的實際行為(部分平台 `rename()` 若目的已存在會失敗,這正是 Core Rules #14 Step 4a 存在的理由,但確切在 4.7.1/各平台上的行為未經本專案驗證——`godot-specialist` 2026-08-18 查核:靜態便利方法可能是 `DirAccess.rename_absolute(from, to) -> Error`/`DirAccess.remove_absolute(path) -> Error`,回傳 `Error` 列舉而非 `bool`,**中高信心度、未實機驗證**,具體方法名稱待 `/create-architecture` 確認);(3) `OS.get_thread_caller_id()`/`OS.get_main_thread_id()` 是否為 4.7.1 正確 API 名稱(GDD Open Question 12 明文標記,`design/gdd/reviews/save-system-review-log.md` 已記載為待查證項,`godot-specialist` 2026-08-18 查核仍無新解──供 Core Rules #15 主執行緒斷言使用);(4) GDScript 是否有 fsync/`FlushFileBuffers` 等效的硬體層級落盤機制(GDD Open Question 14 明文標記,關係到耐久性範圍聲明,傾向無,可能需要 GDExtension);(5) `await get_tree().process_frame` 在本 ADR 的分步遷移情境下,跨幀恢復點的行為是否與 ADR-0001 已驗證的假設一致(`godot-specialist` 2026-08-18 高信心度確認:`await` 機制本身與宿主是否為 `Node`/`RefCounted` 無關,`SceneTree.process_frame` 為穩定訊號名稱,同一份訓練資料來源,但分步遷移可能跨越比 ADR-0001 更多幀,建議獨立煙霧測試);(6) `@abstract` 方法宣告的確切語法(機制一程式碼區塊採「無冒號、無函式主體」的裸簽章形式,但本專案唯一已查證的 `@abstract` 範例——`current-best-practices.md`——採「冒號 + `pass` 主體」形式,兩者互斥,`godot-specialist` 2026-08-18 查核無法在本環境確認何者正確;若寫錯屬編譯期錯誤,會擋下整個 `save_io_backend.gd`,見下方機制一修訂與 Risks);(6a) `@abstract` 類別若某具體子類別漏實作某個抽象方法,是否為編譯期錯誤或僅在該方法被呼叫時才於執行期顯現(`godot-specialist` 中信心度,未確認,建議實作前先以刻意缺漏一個方法的測試子類別驗證) |
+| **Verification Required** | (1) `FileAccess.flush()` 是否提供可檢查的失敗訊號——**`store_buffer()` 的 `bool` 回傳值已由 `breaking-changes.md` 4.3→4.4 表格明文確認**(該表逐名列出 `store_buffer` 在回傳型別異動清單內),此半已解決,不再視為待驗證;**仍待驗證的僅剩 `flush()` 本身**(傾向無直接回傳值,若無則須改用 `FileAccess.get_error()` 累積錯誤狀態間接判定——但 `get_error()` 回傳的是**累積**錯誤狀態,無法區分「`flush()` 本身失敗」與「前一次 `store_buffer()` 呼叫已設下錯誤狀態」,只是一個較粗粒度的訊號,見 Risks);(2) `DirAccess.rename()` 對「目的檔案已存在」情境的實際行為(部分平台 `rename()` 若目的已存在會失敗,這正是 Core Rules #14 Step 4a 存在的理由,但確切在 4.7.1/各平台上的行為未經本專案驗證——`godot-specialist` 2026-08-18 查核:靜態便利方法可能是 `DirAccess.rename_absolute(from, to) -> Error`/`DirAccess.remove_absolute(path) -> Error`,回傳 `Error` 列舉而非 `bool`,**中高信心度、未實機驗證**,具體方法名稱待 `/create-architecture` 確認);(3) `OS.get_thread_caller_id()`/`OS.get_main_thread_id()` 是否為 4.7.1 正確 API 名稱(GDD Open Question 12 明文標記,`design/gdd/reviews/save-system-review-log.md` 已記載為待查證項,`godot-specialist` 2026-08-18 查核仍無新解──供 Core Rules #15 主執行緒斷言使用);(4) GDScript 是否有 fsync/`FlushFileBuffers` 等效的硬體層級落盤機制(GDD Open Question 14 明文標記,關係到耐久性範圍聲明,傾向無,可能需要 GDExtension);(5) `await get_tree().process_frame` 在本 ADR 的分步遷移情境下,跨幀恢復點的行為是否與 ADR-0001 已驗證的假設一致(`godot-specialist` 2026-08-18 高信心度確認:`await` 機制本身與宿主是否為 `Node`/`RefCounted` 無關,`SceneTree.process_frame` 為穩定訊號名稱,同一份訓練資料來源,但分步遷移可能跨越比 ADR-0001 更多幀,建議獨立煙霧測試);(6) **已查證並關閉(2026-08-21,`prototypes/xcheck-round7-2026-08-20/`,見 `logs/probeE-unfiltered.txt`)**:`@abstract` 方法宣告的正確語法是**裸簽章**(`@abstract func f() -> T`,無冒號、無主體);冒號 + `pass` 主體是 `Parse Error: An abstract function cannot have a body.`,會擋下整個檔案。裸簽章已對 **8 種**回傳型別各自實測成立、每種皆有獨立的 `[COMPILED OK]` 證據行(`Array[T]`/`bool`/`float`/`void`/`Vector2` 於 2026-08-20 批次 `engine-verification-spike-2026-08-20`;`Variant`/`String`/`PackedByteArray` 於 2026-08-21 探針 E),**且機制一那整段的完整組合已逐字編譯通過**(混合 `bool`×4 + `Variant`×1、`@abstract` 標記與 `class_name`/`extends` 同檔)——後者才是本項真正要關的東西,各回傳型別分別通過並不等於該組合通過。⚠️ **本項在 2026-08-21 之前是三處自相矛盾**:本欄宣稱程式碼區塊採裸簽章,但機制一的指示句與實際程式碼都是冒號 + `pass`;且本欄末尾 `見下方機制一修訂與 Risks` 之中 **Risks 半邊是懸空指標**(Risks 表逐列核對,從無 `@abstract` 列),已一併刪除該指標(機制一半邊的交叉引用未遺失——機制一的新語法段落與本項互相點名)。修法方向恰與實測結果一致,故本次是往正確方向收斂,但**這個矛盾能長期存在而無人發現,本身就是本專案「散文改了、結構化欄位沒跟上」這個慣性缺陷的又一次實例**。原文如下(保留供追溯):`@abstract` 方法宣告的確切語法(機制一程式碼區塊採「無冒號、無函式主體」的裸簽章形式,但本專案唯一已查證的 `@abstract` 範例——`current-best-practices.md`——採「冒號 + `pass` 主體」形式,兩者互斥,`godot-specialist` 2026-08-18 查核無法在本環境確認何者正確;若寫錯屬編譯期錯誤,會擋下整個 `save_io_backend.gd`);(6a) **已查證並關閉(2026-08-20 批次 + 2026-08-21 探針 E)**:具體子類別漏實作某個抽象方法是**編譯期**錯誤。實測訊息格式為 `Parse Error: Class "X.gd" must implement "Base.method_name()" and other inherited abstract methods or be marked as "@abstract".` —— ⚠️ **注意它只指名其中一個方法**,其餘以「and other inherited abstract methods」概括,**不逐一列舉**;修完被指名的那一個之後可能還要再編譯一次才會看到下一個。另已實測:完整實作全部五個方法的具體子類別可正常編譯、可 `.new()` 實例化,`-> Variant` 的多型覆寫在執行期兩個分支(回 `PackedByteArray`(typeof=29)/ 回 `null`(typeof=0))皆正常,**包含透過靜態型別為抽象基底的參數做多型呼叫**(`read_via_base_type(backend: SaveIOBackend, ...)`,兩分支結果一致)——這是機制一「上層只持有 `SaveIOBackend` 型別參照」的執行期前提,本項連帶關閉。原文如下(保留供追溯):`@abstract` 類別若某具體子類別漏實作某個抽象方法,是否為編譯期錯誤或僅在該方法被呼叫時才於執行期顯現;(6b) **新增,未查證** —— `@abstract` 類別經**間接路徑**構造是否同樣被擋:`Object.new()` 後 `set_script()`、`load("save_io_backend.gd").new()`(呼叫端持有 `Script` 資源變數,parser 未必能靜態推斷)、`ClassDB`/`ResourceLoader` 間接實例化。**已查證的只有文字上直接 `ClassName.new()`**(編譯期 Parse Error);三條間接路徑**既無實測證據亦無反證**,故機制一的編譯期保證宣稱明文限定在直接構造這一條路徑上。**低優先**——會被實作者誤寫的形狀是直接構造,那條已關閉;本項只影響能否把宣稱擴寫為「不可能被實例化」。探針成本已證實極低,可併入下一批 |
 
 ## ADR Dependencies
 
@@ -41,7 +41,7 @@
 - **GDD 已鎖定、不受本 ADR 裁量的核心序列**(Core Rules #14):跨平台原子置換的六個步驟(Step 0 分支邏輯、1、2、3、4a、4)已經是 GDD 層級定案的具體演算法,不是留給架構階段自由裁量的高層次原則——本 ADR 的角色是把這個已定案的序列翻譯成 Godot API 呼叫,不是重新設計它。
 - **無例外處理機制**:GDScript 沒有 try/catch/finally——本 ADR 對「無條件釋放」「單一結束出口」等 GDD 要求(見機制四)必須靠函式結構本身(單一釋放點、進入後不提前 return)實現,不能依賴語言層級的例外安全機制。
 - **威脅模型範圍聲明**(承 ADR-0003):防護意外損毀,非反作弊。
-- **ADR-0002/0003 已建立的先例**:DI 優於 Autoload(ADR-0002 機制一已直接建立此慣例)、跨幀 `await` 需要宿主生命週期涵蓋整個操作(ADR-0001 已驗證的約束)。**`@abstract` 基底類別是本 ADR 首次在本專案 ADR 系列中實際採用**(2026-08-18 `godot-specialist` 驗證修訂,原稿誤稱此為 ADR-0002/0003 已建立的先例——查核後確認 ADR-0001/0002/0003 皆未使用或驗證過 `@abstract`,唯一依據是 `docs/engine-reference/godot/current-best-practices.md` 的獨立範例片段,尚未經任何本專案 ADR 審查驗證)。
+- **ADR-0002/0003 已建立的先例**:DI 優於 Autoload(ADR-0002 機制一已直接建立此慣例)、跨幀 `await` 需要宿主生命週期涵蓋整個操作(ADR-0001 已驗證的約束)。**`@abstract` 基底類別是本 ADR 首次在本專案 ADR 系列中實際採用**(2026-08-18 `godot-specialist` 驗證修訂,原稿誤稱此為 ADR-0002/0003 已建立的先例——查核後確認 ADR-0001/0002/0003 皆未使用或驗證過 `@abstract`,唯一依據是 `docs/engine-reference/godot/current-best-practices.md` 的獨立範例片段,尚未經任何本專案 ADR 審查驗證)。**⚠️ 2026-08-21 更新**:那個範例後來被證實**寫錯**(冒號 + `pass` 主體),已於 2026-08-20 第七輪修正;本 ADR 據它寫下的 5 處 `pass` 主體同日刪除。`@abstract` 現已由兩批探針實機驗證——8 種回傳型別、機制一完整組合的逐字編譯、具體子類別的多型執行期行為、以及抽象基底的直接構造為編譯期錯誤——**不再是本專案 ADR 系列中未經驗證的賭注**。這是本 ADR 相對 2026-08-18 原稿最重要的一項事實層變化:當時它是唯一押在一份未經審查的範例片段上的語法決定,而那個賭注**押錯了**。
 - **確認的目標平台**:PC、Console(`.claude/docs/technical-preferences.md`),但未指定具體主機型號/SDK——本 ADR 不得假設任何具體主機 SaveData API 的細節,只能對「若同步阻塞模型不成立」這個可能性做結構性準備(見機制一),不能替换成一個未經任何主機平台驗證的非同步設計。
 
 ### Requirements
@@ -68,7 +68,9 @@ Core Rules #14 的六步驟序列與 Core Rules #5 的四條終止路徑,都已�
 
 ### 機制一:可替換 I/O 後端抽象(現行實作:同步阻塞)
 
-> **語法提醒(2026-08-18 `godot-specialist` 驗證發現,比照 Key Interfaces 章節的既有提醒)**:以下為概念契約,`@abstract` 方法宣告採用 `docs/engine-reference/godot/current-best-practices.md` 唯一已查證範例的形式(冒號 + `pass` 主體)——本專案 ADR 系列先前從未實際使用過 `@abstract`(見上方 Constraints 修訂),此為首次採用,確切語法(是否需要 `pass` 主體、漏實作抽象方法是編譯期或執行期才顯現)留待 Engine Compatibility Verification Required 第 6/6a 項於 `/create-architecture` 階段實機確認,不可假設以下寫法逐字可編譯。
+> **語法(2026-08-21 已實機驗證,取代原本的「語法提醒」)**:以下為概念契約,`@abstract` 方法宣告採**裸簽章**形式(無冒號、無函式主體)——這是 Godot 4.7.1 唯一合法的寫法;`@abstract func f() -> T: pass` 是 `Parse Error: An abstract function cannot have a body.`,會擋下整個 `save_io_backend.gd`。**下方這整段組合已由探針 `prototypes/xcheck-round7-2026-08-20/scripts/e3_save_io_backend.gd` 逐字編譯通過**(`bool`×4 + `Variant`×1、`@abstract` 標記與 `class_name`/`extends` 同檔、行尾註解保留),不只是各回傳型別分別通過,見 Engine Compatibility Verification Required 第 6 項。
+>
+> ⚠️ **本段原本明文指示「採用 `docs/engine-reference/godot/current-best-practices.md` 唯一已查證範例的形式(冒號 + `pass` 主體)」——那個範例本身是錯的**(已於 2026-08-20 第七輪連同一段更正註記修正)。依它寫下的 5 處 `pass` 主體已於 2026-08-21 全部刪除。**根因的指示句與症狀必須同時改**:只刪 `pass` 而留下這句話,下一個實作者會照著把它加回來。
 
 ```gdscript
 # ─── save_io_backend.gd ──────────────────────────────────────
@@ -76,20 +78,15 @@ Core Rules #14 的六步驟序列與 Core Rules #5 的四條終止路徑,都已�
 class_name SaveIOBackend extends RefCounted
 
 @abstract
-func write_temp(path: String, buffer: PackedByteArray) -> bool:   # Core Rules #14 Step 1
-    pass
+func write_temp(path: String, buffer: PackedByteArray) -> bool   # Core Rules #14 Step 1
 @abstract
-func rename_file(from_path: String, to_path: String) -> bool:     # Step 2/3/4
-    pass
+func rename_file(from_path: String, to_path: String) -> bool     # Step 2/3/4
 @abstract
-func delete_file(path: String) -> bool:                            # Step 4a
-    pass
+func delete_file(path: String) -> bool                            # Step 4a
 @abstract
-func file_exists(path: String) -> bool:
-    pass
+func file_exists(path: String) -> bool
 @abstract
-func read_file(path: String) -> Variant:                           # PackedByteArray 或 null(不存在/讀取失敗)
-    pass
+func read_file(path: String) -> Variant                           # PackedByteArray 或 null(不存在/讀取失敗)
 
 # ─── sync_blocking_save_io_backend.gd ────────────────────────
 class_name SyncBlockingSaveIOBackend extends SaveIOBackend
@@ -106,6 +103,12 @@ class_name SyncBlockingSaveIOBackend extends SaveIOBackend
 #   ADR-0003 的 Risks 表原已提醒「若呼叫 store_var()/store_buffer() 須檢查 bool 回傳值」,
 #   但兩份 ADR 先前都沒有真正拍板用哪一個;此處正式定案。
 ```
+
+**`SaveIOBackend` 不可能被誤寫成具體類別來實例化,這是編譯期保證而非紀律要求**(2026-08-21 探針 E 額外發現,見 `prototypes/xcheck-round7-2026-08-20/logs/probeE-unfiltered.txt`):對 `@abstract` 類別以**文字上直接的 `ClassName.new()`** 形式構造,是 `Parse Error: Cannot construct abstract class "SaveIOBackend"` —— **編譯期**,不是執行期。因此「上層邏輯只能持有具體後端實例、絕不能自己 `new` 一個抽象基底」不需要靠程式碼審查維持:寫錯的檔案根本編譯不過,**連寫在一條永遠不會執行到的分支上也一樣**(探針的加碼檔就是因為含一行 `SaveIOBackend.new()` 而整檔編譯失敗,被逐檔編譯檢查擋在任何呼叫之前)。
+
+> ⚠️ **本宣稱的範圍界線(2026-08-21 Step 5.5 覆核要求收窄)**:上述已驗證的只有**文字上直接 `ClassName.new()`** 這一條構造路徑 —— parser 之所以能擋,正是因為它靜態看得見那個類名是 `@abstract`。**以下間接路徑本專案尚未查證,不在本宣稱涵蓋範圍內**:`Object.new()` 後 `set_script()`(腳本關聯是執行期賦值,不是文字上的 `ClassName.new()`)、`load("save_io_backend.gd").new()`(呼叫端持有的是 `Script` 資源變數,parser 未必能靜態推斷該腳本是抽象)、`ClassDB`/`ResourceLoader` 間接實例化。三者**既無實測證據支撐、亦無反證**,已列入 Verification Required 第 6b 項。這條界線對本 ADR 的實務影響很小(會被實作者誤寫的形狀就是 `SaveIOBackend.new()`,而那條已關閉),但**不可把本段擴讀成「不可能被實例化」** —— 那超出已驗證範圍。
+>
+> 對照:ADR-0002 明文承認 `AffinityRecordList` 的欄位私有化**只是紀律**(GDScript 無真正的私有成員)。兩者不同級,不可混用同一套論述強度。連帶事實:`is_abstract` 會被序列化進 `.godot/global_script_class_cache.cfg` 的結構化欄位,不只是 parse 階段的暫時旗標。
 
 **決策**:延續 GDD Core Rules #4 的現行(provisional)決定——一般寫入為同步阻塞、單執行緒假設。**但**上層邏輯(機制三/四/五/六)一律透過 `SaveIOBackend` 抽象存取檔案系統,不直接呼叫 `FileAccess`/`DirAccess`。**理由**:GDD Open Question 9 明文要求在 `/create-architecture` 開始前確認同步阻塞模型在**已確認的目標主機平台**(`.claude/docs/technical-preferences.md`:PC、Console)上是否成立,但本 ADR 撰寫時專案文件未指定具體主機型號/SDK,無法實際驗證。本 ADR 不假裝這個驗證已經完成,也不在缺乏具體平台資訊的情況下貿然改用一個未經任何主機平台驗證的非同步設計(那同樣是缺乏依據的猜測,只是猜測的方向不同)。可替換的 `SaveIOBackend` 邊界讓這個懸而未決的驗證項目,將來只需要新增一個 `AsyncSaveIOBackend`(方法簽章可能需要改為回傳 `Signal`/接受 `Callable` 回呼,屆時另需修訂本 ADR)實作,不需要重寫機制三以上的任何邏輯——上層的六步驟序列、分步遷移狀態機、權杖消費時機皆與 I/O 是否同步無關,只依賴「每一步驟的成功與否可以被檢查」這個更弱的前提。
 

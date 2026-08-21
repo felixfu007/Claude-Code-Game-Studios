@@ -3,7 +3,8 @@
 **目的**:關閉 `/architecture-review` 第七輪對 ADR-0002 提出的四項未查證項 —— R7E-1、R7E-2、R7E-4、R7E-13。
 **執行者**:`godot-gdscript-specialist`(`.gd` 依 `technical-preferences.md` File Extension Routing 表委派)。探針 D 的 4 個 `.gd` 檔為該 specialist 於 2026-08-20 中斷前的交付;`D.tscn`(6 行、照 `C.tscn` 複製)、執行、log 歸檔與本 README 更新由協調者完成。
 **探針 D(2026-08-21 追加)**:關閉探針 A/B/C 執行者自陳的殘留未查證項 **#1 / #2**,兩者是 R7-P1 與 R7-P3 建議修法的地基。
-**引擎**:`Godot 4.7.1.stable.official.a13da4feb`,headless,**四支探針皆 exit code 0**。
+**探針 E(2026-08-21 追加,目標換為 ADR-0004)**:ADR-0004 機制一第 91 行 `read_file() -> Variant` 用的回傳型別**不在 2026-08-20 已測的五種之內**,屬外推。探針 E 關閉它,並順帶逐字編譯機制一的**完整組合**。⚠️ **本探針的目標 ADR 與 A~D 不同** —— 沿用本專案而非另建,只因 class cache 與紀律範本已在此,不代表它屬第七輪對 ADR-0002 的稽核範圍。
+**引擎**:`Godot 4.7.1.stable.official.a13da4feb`,headless,**五支探針皆 exit code 0**。
 **上游報告**:`docs/architecture/architecture-review-2026-08-20-round7.md` 第四之二節。
 
 > **本 README 由審查協調者於探針交付後補寫** —— 探針執行者交付了完整結果但未建立 README,而本專案的紀律是「原始 log 檔頭自帶指令、exit code、判讀陷阱,**下一輪不需回讀對話**」。此處補齊該層。
@@ -45,6 +46,7 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 | `logs/probeC-v1-flawed-unfiltered.txt` | 探針 C **第一版(失敗)** —— **刻意保留**,見下方「過程失誤」 |
 | `logs/probeC-v2-unfiltered.txt` | 探針 C 第二版 —— R7E-13 |
 | `logs/probeD-unfiltered.txt` | 探針 D(2026-08-21)—— 殘留未查證項 #1 / #2 |
+| `logs/probeE-unfiltered.txt` | 探針 E(2026-08-21)—— ADR-0004 `@abstract` 語法。**唯一同時歸檔步驟 1 完整輸出者**,因該步新註冊 5 個類別且 class cache 記下了 `is_abstract` 欄 |
 
 **執行者自陳:log 全部未經 `grep`/`head`/`tail` 過濾或截斷。**
 
@@ -135,6 +137,27 @@ GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_c
 探針 D 的檔頭註解明文寫下「即使 `.has(字串)` 是普通 Array 方法呼叫、不是造成 c2 Parse Error 的 enum-as-Dictionary 字面量 subscript,**在量到之前不假設這個差別是安全的**」,因此仍拆成 d2/d3 兩檔。**量完的結論是那個差別確實存在且方向有利** —— 但拆檔的紀律不因結果良好而追認為多餘:d2 若與 d1 同檔而結果相反,會重演探針 C 第一版的整檔封鎖。
 
 **因此 ADR-0002 的規則措辭必須點名形狀,不能只點名輸入來源**:「不對不可信字串裸用 `Pair[name]`」是正確的;而「改用 `keys().has()` 先檢查」現已有實測支撐,兩者不是同一件事的兩種說法。
+
+---
+
+### 探針 E — ADR-0004 `@abstract` 語法(全項關閉,並多測出一項)
+
+**目標**:ADR-0004 機制一(第 73–92 行)的 `SaveIOBackend`。第 91 行 `read_file(path: String) -> Variant` 的回傳型別不在 2026-08-20 已測的 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種之內 —— ADR 對它的正確性當時純屬外推。
+
+| 測項 | 結果 |
+|---|---|
+| **E1** `@abstract func f(...) -> Variant` 裸簽章 | `COMPILED OK` —— 第 **6** 種已實測回傳型別 |
+| **E2a / E2b** `-> String` / `-> PackedByteArray` | 皆 `COMPILED OK` —— 第 7、8 種。`PackedByteArray` 特意單測:它是打包陣列,與已測的型別化 `Array[T]` **不等價**,不可外推 |
+| **E3** 機制一 `SaveIOBackend` **逐字**(`bool`×4 + `Variant`×1、`@abstract` 與 `class_name`/`extends` 同檔、行尾註解保留) | `COMPILED OK`。**這才是本探針的主要價值** —— 各回傳型別分別通過不等於該組合通過 |
+| **E4a–e** `SyncBlockingSaveIOBackend` 完整實作五方法 | 編譯 OK、可 `.new()`、`read_file()` 回 `PackedByteArray`(typeof=29)與 `null`(typeof=0)兩分支皆正常,**且透過靜態型別為 `SaveIOBackend` 的參數做多型呼叫兩分支亦正常** —— 後者是機制一「上層只持有抽象基底型別參照」的執行期前提 |
+
+**額外發現(探針的「編譯失敗」本身就是答案)**:加碼檔 `e_bonus_abstract_instantiation.gd` 編譯失敗,錯誤為 `Parse Error: Cannot construct abstract class "SaveIOBackend"`。也就是說 —— **對 `@abstract` 類別以字面 `ClassName.new()` 構造是編譯期錯誤,不是執行期**,連寫在永不執行的分支上也一樣。⚠️ **但已驗證的只有這一條直接路徑**:`Object.new()` + `set_script()`、`load("...").new()`、`ClassDB`/`ResourceLoader` 三條間接路徑**既無實測亦無反證**,已登記為 ADR-0004 Verification Required #6b。
+
+**次要發現**:`is_abstract` 會被序列化進 `.godot/global_script_class_cache.cfg` 的結構化欄位(4 個抽象類別 `true`、`SyncBlockingSaveIOBackend` `false`;協調者已獨立覆核),不只是 parse 階段的暫時旗標。
+
+**修正的一項用詞**:漏實作抽象方法的錯誤訊息實測格式為 `must implement "Base.method()" and other inherited abstract methods` —— **只指名其中一個**,其餘概括,**不逐一列舉**。registry 原本寫「naming the method」在只缺一個時對,缺多個時就只點一個;已同步修正。
+
+**執行者自陳:未做任何結構替換。** `class_name SaveIOBackend`/`SyncBlockingSaveIOBackend` 逐字照 ADR 寫法(寫入前先查過既有 `global_script_class_cache.cfg` 確認無衝突),沒有退回 `preload`/路徑繼承 —— 故量測與 ADR 的實際寫法**零落差**。
 
 ---
 

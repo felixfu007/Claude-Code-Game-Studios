@@ -1,0 +1,155 @@
+# ROUND7 Probe E — 未過濾 log
+#
+# 目的:量測 ADR-0004(docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+#       第 73-92 行)機制一目前屬「外推」的語法事實 —— @abstract func 裸簽章搭配
+#       `-> Variant` 回傳型別是否編譯(read_file() 用了它,已測五種型別
+#       Array[T]/bool/float/void/Vector2 不含 Variant),以及完整 SaveIOBackend
+#       形狀(bool x4 + Variant x1,@abstract 標記與 class_name/extends 同檔)逐字
+#       編譯,並確認具體子類別對 -> Variant 的多型實作在執行期真的可用。
+#
+# 引擎:Godot Engine v4.7.1.stable.official.a13da4feb(headless)
+# 執行日:2026-08-21
+#
+# 指令(兩步,照 README「如何重跑」節;Godot 執行檔不在 PATH 上,逐字如下):
+#
+#   GODOT="$HOME/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"
+#
+#   步驟 1(建 class cache;main_scene 已於本次執行前由協調者改為 res://scenes/E.tscn):
+#     "$GODOT" --headless --path . --editor --quit
+#
+#   步驟 2(實跑探針):
+#     "$GODOT" --headless --path .
+#
+# exit code:步驟 1 = 0;步驟 2 = 0
+#
+# 結構說明:本檔與既有 probeA~D 慣例不同之處 —— 步驟 1 的完整輸出本次**一併保留**
+# 於下方(標記「STEP 1」區),而非僅口頭記錄「與既有 00-editor-cache-build.txt 同一
+# 道程序」。理由:本次步驟 1 新註冊了 5 個先前不存在的類別
+# (SpikeBareVariant/SpikeBareString/SpikeBarePackedByteArray/SaveIOBackend/
+# SyncBlockingSaveIOBackend),且 .godot/global_script_class_cache.cfg 中對前四者
+# 記錄 "is_abstract": true、對 SyncBlockingSaveIOBackend 記錄 "is_abstract": false
+# —— 這是一項額外發現(@abstract 狀態確實被序列化進類別快取的結構化欄位,不只是
+# parse 階段的暫時旗標),值得連同原始輸出一起保留,不只是引註結論。
+#
+# 以下為兩步驟的 stdout+stderr 原文,未過濾、未刪節。
+# ============================================================================
+
+# ─── STEP 1 完整輸出 ("$GODOT" --headless --path . --editor --quit) ───────────
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (7 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | SpikeBareVariant[39m[0m
+[  12% ] [90m[1mupdate_scripts_classes[22m | SpikeBareString[39m[0m
+[  25% ] [90m[1mupdate_scripts_classes[22m | SpikeBarePackedByteArray[39m[0m
+[  37% ] [90m[1mupdate_scripts_classes[22m | SaveIOBackend[39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | SyncBlockingSaveIOBackend[39m[0m
+[  62% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  75% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+STEP1_EXIT=0
+
+# ─── STEP 2 完整輸出 ("$GODOT" --headless --path .) ─────────────────────────
+
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ROUND7 Probe E / Godot 4.7.1-stable (official) ===
+
+--- E0: compile-check EVERY file BEFORE calling anything into any of them ---
+  [COMPILED OK]  e1_abstract_variant_return.gd  (@abstract func f() -> Variant, 裸簽章, 單獨一項)
+  [COMPILED OK]  e2a_abstract_string_return.gd  (-> String)
+  [COMPILED OK]  e2b_abstract_packedbytearray_return.gd  (-> PackedByteArray)
+  [COMPILED OK]  e3_save_io_backend.gd  (ADR-0004 機制一逐字組合: bool x4 + Variant x1, class_name SaveIOBackend)
+  [COMPILED OK]  e4_sync_blocking_save_io_backend.gd  (SyncBlockingSaveIOBackend extends SaveIOBackend, 完整實作五方法)
+SCRIPT ERROR: Parse Error: Cannot construct abstract class "SpikeBareVariant".
+   at: GDScript::reload (res://scripts/e_bonus_abstract_instantiation.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_e.gd:24)
+       [1] _ready (res://scripts/runner_e.gd:57)
+SCRIPT ERROR: Parse Error: Cannot construct abstract class "SaveIOBackend".
+   at: GDScript::reload (res://scripts/e_bonus_abstract_instantiation.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_e.gd:24)
+       [1] _ready (res://scripts/runner_e.gd:57)
+ERROR: Failed to load script "res://scripts/e_bonus_abstract_instantiation.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_e.gd:24)
+       [1] _ready (res://scripts/runner_e.gd:57)
+SCRIPT ERROR: Parse Error: Cannot construct abstract class "SpikeBareVariant".
+   at: GDScript::reload (res://scripts/e_bonus_abstract_instantiation.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_e.gd:29)
+       [1] _ready (res://scripts/runner_e.gd:57)
+SCRIPT ERROR: Parse Error: Cannot construct abstract class "SaveIOBackend".
+   at: GDScript::reload (res://scripts/e_bonus_abstract_instantiation.gd:21)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner_e.gd:29)
+       [1] _ready (res://scripts/runner_e.gd:57)
+  [FAILED (reload=Parse error)]  e_bonus_abstract_instantiation.gd  (加碼: .new() 對 @abstract 類別本身)
+
+--- E1(核心)判讀:@abstract func f(...) -> Variant 裸簽章是否編譯 ---
+  直接讀上一節 e1_abstract_variant_return.gd 那一行的 [COMPILED OK]。
+  本項無需呼叫任何東西 -- 編譯結果本身就是答案,這是已測五種型別之外的第六種。
+
+--- E2 判讀:-> String / -> PackedByteArray 是否編譯 ---
+  -> String            : [COMPILED OK]
+  -> PackedByteArray   : [COMPILED OK]
+
+--- E3(最高價值)判讀:ADR-0004 機制一 SaveIOBackend 逐字組合是否編譯 ---
+  直接讀上面 e3_save_io_backend.gd 那一行的 [COMPILED OK]。
+  這是 bool x4 + Variant x1 混合、且 @abstract 標記與 class_name/extends 同檔的
+  完整組合 -- 單獨測各型別(E1/E2)不等於測這個組合。
+
+--- E4 判讀:具體子類別對 -> Variant 的多型實作,執行期是否真的可用 ---
+
+  -- E4a: .new() 是否可實例化 --
+    >> SyncBlockingSaveIOBackend.new() 後立即回報 : calling...
+      >> test_instantiate_only: entering
+      >> test_instantiate_only: instance created, about to return
+    << SyncBlockingSaveIOBackend.new() 後立即回報 : returned [REACHED END inst=<RefCounted#-9223372007276542516> typeof=24 global_name=SyncBlockingSaveIOBackend]
+
+  -- E4b: read_file() 回傳 PackedByteArray 的分支 --
+    >> inst.read_file(...) with _should_return_null=false : calling...
+      >> test_instantiate_and_read_bytes: entering
+      >> test_instantiate_and_read_bytes: call done, about to return
+    << inst.read_file(...) with _should_return_null=false : returned [REACHED END r=[1, 2, 3] typeof=29 is_PackedByteArray=true]
+
+  -- E4c: read_file() 回傳 null 的分支 --
+    >> inst.read_file(...) with _should_return_null=true : calling...
+      >> test_instantiate_and_read_null: entering
+      >> test_instantiate_and_read_null: call done, about to return
+    << inst.read_file(...) with _should_return_null=true : returned [REACHED END r=<null> typeof=0 is_null=true]
+
+  -- E4d: 透過靜態型別為 SaveIOBackend(抽象基底)的參數呼叫 read_file(), PackedByteArray 分支 --
+    >> read_via_base_type(inst, ...) -> PackedByteArray branch : calling...
+      >> test_read_via_base_typed_param_bytes: entering
+      >> test_read_via_base_typed_param_bytes: call done, about to return
+    << read_via_base_type(inst, ...) -> PackedByteArray branch : returned [REACHED END r=[1, 2, 3] typeof=29 is_PackedByteArray=true]
+
+  -- E4e: 同上, null 分支 --
+    >> read_via_base_type(inst, ...) -> null branch : calling...
+      >> test_read_via_base_typed_param_null: entering
+      >> test_read_via_base_typed_param_null: call done, about to return
+    << read_via_base_type(inst, ...) -> null branch : returned [REACHED END r=<null> typeof=0 is_null=true]
+
+--- 加碼(額外發現):@abstract 類別本身被 .new() 時的確切行為 ---
+  SKIPPED -- e_bonus_abstract_instantiation.gd 編譯失敗(依賴 e1 與/或 e3),見 E0 狀態
+
+=== ROUND7 Probe E COMPLETE ===
+STEP2_EXIT=0
