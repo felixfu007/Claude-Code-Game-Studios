@@ -20,6 +20,14 @@
 >
 > **模式警示(三輪一致)**:第三輪抓到自陳膨脹,第四輪與第五輪抓到的都是**修法本身引入新缺陷**。本次修訂在寫入前先跑 Step 5.5 覆核,正是為了讓這個模式在寫進文件之前就被攔下——覆核結果證實這道關卡有效(6 項中 4 項是本次修法自己新產生的)。
 
+> **2026-08-21 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層)**:第七輪已逐項附行號證據確認八項**全開**,**其中 5 項是第三次修訂自己新產生的**。**機制層面的實質變更**:刪除 `handoff_before_unload()` 的懸空 `surface` 參數(R6-6);`equals()` 定案為**只比表面 + `id`**、`is_valid` 翻轉納入 `target_changed()`(R6-7,使用者裁決沿用既有訊號而非新增);CanvasLayer 下**拆為三個節點**(R6-8,`modulate.a` 只掛自繪游標);「兩兩相異」明訂管轄**角色之間**(R6-9);閘門反方向失敗改記 `_pending_reseed` 旗標而非丟棄(R6-10);provider 失效由「座標層 fallback」升為**系統層降級**(R6-11,失敗方向從「靜默凍結」翻成「大聲停用」);`process_priority` 必須在 `add_child()` **之前**設定(R6-12);第二張登記表拆出 `ExceptionRegisterResult` + `tree_exited` 自動反登記(R6-13)。**私有路徑因此 4 → 6**(新增 `_target_changed_from()` 與 `_drain_pending_reseed()`)。
+>
+> **事實層五項**:8 處 `@abstract func ...: pass` 改**裸簽章**(已實測;**連同根因的指示句一起改** —— 該句原本明文要求「沿用 `current-best-practices.md` 的冒號 + `pass` 形式」,而那個範例本身是錯的,只刪 `pass` 不改那句,下一個實作者會照著加回來);`Constraints` 的「**無 Godot 執行環境可供實機驗證**」刪除(已實證可本機 headless 執行、已跑兩批 spike 與四支探針);VR #12/#15 標為已查證(#1/#3 維持未查證);**C7 的另一半** —— 本 ADR 自己認定依賴層 B,不再被 ADR-0002 單方面記帳;R6-1 的 −50 計數落差**已關閉**(以 `git log` 確認第三次修訂 `5593d58` 之後該檔案從未被改動,故第六輪看到的與現行是同一份;`−50` 是 **U+2212 全角減號**,精確 **3 處**〔412/433/1359〕，**第六輪的「4 處」是單純計數失誤**,不是有人事後改掉)。
+>
+> **寫入前執行 Step 5.5 雙軌覆核**(`godot-gdscript-specialist` + `godot-specialist`,使用者明文授權),共回傳 **2 項 BLOCKING + 11 項非阻塞**,並**關閉了草稿自己標記的全部 3 處「需覆核」**。兩項 BLOCKING 皆為「**寫了行為,沒寫接線**」與「**數字必然改變**」這兩種本專案慣性缺陷:**B-1** —— 變更六描述「provider 無效時 `evaluate()` 整段跳過」,但 `_safe_mouse_position() -> Vector2` 失效時回傳陳舊座標,**呼叫方結構上無從得知**(與 R6-6 懸空參數、R5-1 無合法呼叫路徑同型),已改為在 `arbitrate_device_authority()` 內前置檢查 `_mouse_position_provider.is_valid()`;**B-2** —— 變更二與變更五各需一個共用私有方法,使全文**至少 7 處**「四條私有路徑」的宣告當場失效(協調者另發現其中第 705 行的「三者」**在本次修訂之前就已與第 774 行的「四個」不一致**)。**另一項自我修正**:VR #15 初稿誤判為「未查證」,實際量測在更早那批 spike 裡 —— 「未查證」在多批探針並存時易被誤讀為「哪一批都沒測」,已把這個檢索紀律教訓寫進 Constraints。
+>
+> **本 ADR 不自陳修訂後的涵蓋分佈** —— 留給全新 session 的獨立第八輪 `/architecture-review`。歷史:自陳 16/3 → 第三輪 **11/8** → 第四輪 13/6 → 第五輪 15/4 → 第七輪 **12/7**,**每一次自陳都被判為高估**。
+
 ## Date
 
 2026-08-18(初版) / 2026-08-19(第一次修訂,F1~F5+N1~N4) / 2026-08-19(第二次修訂,R4-1~R4-7 + `TR-cursor-015` 兩項落差 + 三項新事實) / 2026-08-19(**第三次修訂,R5-1~R5-6 + S-1~S-5 + Step 5.5 新發現 A/B/2b/D/F/G**)
@@ -81,11 +89,20 @@
 | 11a | **~~機制八的淨位移計算受 `CanvasLayer` 變換影響~~ —— 第四輪引擎專家更正:此項為虛驚,已降級為資訊項**。機制八全程只是兩個 viewport-space 座標相減求距離(`current_mouse_position.distance_to(_seed)`),兩個座標都來自 `get_viewport().get_mouse_position()`,**從未轉進 `CanvasLayer` 的局部空間** → 結構上不受該層是否恆等變換影響 | 第一次修訂列為風險;**第四輪 `godot-specialist` 更正並降級** | **低**(原判高)——保留登記供追溯,不佔用 Day-1 spike 額度 |
 | 11b | **機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響** —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出——**綁在一起會讓 Day-1 spike 的範圍設計過寬,或反過來稀釋真正該驗的這一半** | **高**——這才是原 #11 的真風險所在,Day-1 spike 應只針對此半 |
 | 13 | **`InputMap.event_is_action()` 是否過濾 `InputEventKey.echo`**(2026-08-19 第四輪修訂新增)——若不過濾,玩家**按住**方向鍵產生的重複 echo 事件會與初次按下同樣被機制四之二判為 `NAVIGATION`,亦即每一影格都在主張裝置權威。這會直接餵進機制八觸發點 (d)(同幀否決)與 E1 缺陷(類比搖桿持續按住造成滑鼠奪權永久鎖死)的因果鏈——**上一版 ADR 對此完全未討論** | 第四輪 `godot-specialist` 判定為「本次最值得回頭確認的一項」 | **高**——若不過濾,機制四之二須自行加 `event is InputEventKey and event.echo` 過濾,且該過濾要不要套用於觸發點 (d) 需回頭對照 GDD;但**該子機制已凍結**,此處只登記、不預先設計修法 |
-| 12 | **`@abstract` 類別內同時宣告 `signal` 與多個 `@abstract func`(機制八 F3 修訂新增 `reset_triggered` 訊號)是否有語法限制** | 本次修訂新增(**godot-specialist** 標記 **UNVERIFIABLE-FLAG-AS-RISK**,與既有 `@abstract` 語法賭注同一風險等級) | 高——寫錯屬編譯期錯誤,擋下整個檔案 |
+| 12 | **已查證(2026-08-20,`engine-verification-spike-2026-08-20`,探針 `c1_bare_with_signal.gd`)**:`@abstract` 類別內**可以**同時含 `signal` 與多個 `@abstract func` —— 該探針測的正是 `MouseReclaimPolicy` 這個形狀(一個 `signal` + 四個 `@abstract func`)。連帶查證:正確語法是**裸簽章**(`@abstract func f() -> T`,無冒號無主體),對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆成立;`@abstract func ...: pass` 是 `Parse Error: An abstract function cannot have a body.`;漏實作抽象方法是編譯期錯誤且訊息指名缺哪一個。**本 ADR 原有的 8 處 `pass` 主體已於 2026-08-21 全部刪除。** 原文如下(保留供追溯):`@abstract` 類別內同時宣告 `signal` 與多個 `@abstract func`(機制八 F3 修訂新增 `reset_triggered` 訊號)是否有語法限制 | 本次修訂新增(**godot-specialist** 標記 **UNVERIFIABLE-FLAG-AS-RISK**,與既有 `@abstract` 語法賭注同一風險等級) | 高——寫錯屬編譯期錯誤,擋下整個檔案 |
 | 9 | **`focus_mode = FOCUS_NONE` 是否也排除 Control 主題內建的滑鼠 hover 繪製** —— `godot-specialist` 判斷**大概率不排除**(兩條獨立管線)。最小 spike:`Button` 設 `FOCUS_NONE` 後滑鼠懸停是否仍畫 hover 主題。決定機制十四第 2 項條件是硬性要求或防禦性建議 | **本 ADR Step 5.5 驗證新發現** | **高** —— 若不排除,單靠 `focus_mode` 的機制十四只封住兩條管線中的一條,原決策已據此修訂 |
 | 14 | **`Viewport.gui_get_hovered_control()` 對 `MOUSE_FILTER_IGNORE` 與 `MOUSE_FILTER_PASS` 的回傳行為**(2026-08-19 第三次修訂新增)—— `IGNORE` 節點不參與滑鼠事件/懸停判定、事件穿透給下方(`godot-specialist` 兩輪一致判定 **印象-高信心**,此列舉語意跨 4.6/4.7 未被雙焦點重構觸及)。**第五輪發現(R5-6)原本使此項成為高風險**:黑名單判定下,已註冊表面祖先鏈上任一 `IGNORE` 會讓比對永遠落空 → 錯誤恢復原生指標 → 違反 Core Rules #5。**本次修訂的白名單反轉已讓失敗方向翻轉為「錯誤隱藏」**,因此本項降為資訊項:若例外白名單表面的祖先鏈含 `IGNORE`,後果僅是該表面的 AC-60 便利性失效 | 第五輪 `godot-specialist` 自行發現(R5-6);第三次修訂以白名單反轉降級 | **低**(原判中高)—— 失敗方向已結構性翻轉至安全側,不佔用 Day-1 spike 額度 |
-| 15 | **`Callable.is_valid()` 對「已釋放的綁定物件」的偵測行為,在 lambda 隱式捕獲 `self` 與具名方法綁定 `Callable(obj, "method")` 兩種形式下是否一致**(2026-08-19 第三次修訂新增)—— S-1 的整個防禦(每次取值前 `is_valid()`)押在這個行為上,而上一版 ADR 寫的注入形式正是 lambda 字面量。本 ADR 已改採具名綁定(兩者中語意較明確的一側),但**該選擇本身也未查證**。**最小 spike**:建一個 `Node`,於 `_ready()` 內產生 `var cb := func(): return self.get_position()` 存到另一個長生命週期物件,`queue_free()` 該 `Node` 並等一影格,對 `cb` 呼叫 `is_valid()` 與 `call()`,觀察回傳 `false` / 丟例外 / 回傳陳舊值三者何者;再以 `Callable(node, "get_position")` 形式重測一次比對。成本:一個 `.tscn` + 十行腳本,約五分鐘 | 第三次修訂 `godot-specialist` Step 5.5 自行發現(發現 G) | **中高** —— 若 `is_valid()` 在該情境回傳 `true`,S-1 的防禦形同虛設,Validation Criteria #18 驗的是一個不成立的假設 |
+| 15 | **已查證(2026-08-20,`engine-verification-spike-2026-08-20` 的 C2 段 / README F-10)。** 兩種形式**行為一致**:`queue_free()` + 等兩幀後,具名綁定與 lambda 隱式捕獲 `self` 的 `is_valid()` **皆回傳 `false`** → **「發現 G」的前提(兩者行為可能不同)被推翻**,第三次修訂改採具名綁定「可辯護(語意較明確)但非必要」,決定維持不變。**同一次量測另得出一項比本項原問題更重要的事實**:對已釋放物件呼叫 `.call()` **會讓所在函式整段中止**(log 只印「呼叫中…」無「回傳」;中止範圍只到直接呼叫的函式,不往上傳播)→ **S-1 的 `is_valid()` 守衛從「防禦性冗餘」升格為「必需」**,已寫入機制十。⚠️ **檢索紀律教訓**:本項在 2026-08-21 的修訂初稿裡被誤判為「未查證」,原因是只搜了 `xcheck-round7` 那四支探針的 log、沒搜更早那批 spike ——「未查證」在多批探針並存時易被誤讀為「哪一批都沒測」。原文如下(保留供追溯):`Callable.is_valid()` 對「已釋放的綁定物件」的偵測行為,在 lambda 隱式捕獲 `self` 與具名方法綁定兩種形式下是否一致(2026-08-19 第三次修訂新增)—— S-1 的整個防禦(每次取值前 `is_valid()`)押在這個行為上,而上一版 ADR 寫的注入形式正是 lambda 字面量。本 ADR 已改採具名綁定(兩者中語意較明確的一側),但**該選擇本身也未查證**。**最小 spike**:建一個 `Node`,於 `_ready()` 內產生 `var cb := func(): return self.get_position()` 存到另一個長生命週期物件,`queue_free()` 該 `Node` 並等一影格,對 `cb` 呼叫 `is_valid()` 與 `call()`,觀察回傳 `false` / 丟例外 / 回傳陳舊值三者何者;再以 `Callable(node, "get_position")` 形式重測一次比對。成本:一個 `.tscn` + 十行腳本,約五分鐘 | 第三次修訂 `godot-specialist` Step 5.5 自行發現(發現 G) | **中高** —— 若 `is_valid()` 在該情境回傳 `true`,S-1 的防禦形同虛設,Validation Criteria #18 驗的是一個不成立的假設 |
 | 8 | **`InputEvent.device` 於某些合成事件回傳 `-1` sentinel** —— GDD 第十一輪明文登記為「ADR 撰寫時的警告項」。本 ADR 機制四結構性不讀取 `.device`,不受影響;**但下游若為除錯/記錄用途讀取裝置 ID 須留意此值**,已列為機制四的明文警告 | GDD Open Question(第十一輪) | 低(本系統結構性免疫) |
+
+**🔴 2026-08-21 新增 —— 層 B 的依賴由本 ADR 自己認定(C7 的另一半)**:
+
+> **層 B(GDScript VM 在 export release 建置下是否中止所在函式)—— 未查證,本 ADR 依賴它。**
+> 本專案目前**無法**查證(`%APPDATA%/Godot/export_templates/` 為空、全域零個 `.tpz`、`OS.is_debug_build()` 不可切換)。ADR-0002 的 Verification Required #7 是**同一問題的另一半**(層 A:C++ 容器驗證是否丟棄寫入),該 ADR 已由其「值邊界」規則把層 A 降為縱深防禦;**本 ADR 對層 B 尚未降級** —— 機制十的 S-1 論證押在它上面(已實測:對已釋放物件呼叫 `.call()` 在 debug 下會中止所在函式;**release 下是否相同未查證**)。
+>
+> ⚠️ **沿革**:ADR-0002 原先單方面替本 ADR 記帳(宣稱「本 ADR 只依賴層 A、ADR-0005 依賴層 B」),已於 2026-08-21 刪除該句並明文「**由該 ADR 自行認定,本 ADR 不代為記帳**」。**本項是本 ADR 自己的認定,不是被記帳** —— 這是第三輪 C6 的正解形狀(由被記帳的那一方自己補一句)。
+>
+> **與 R6-11 修法的交互已釐清**:`push_error()` **不是** `assert()` —— `assert()` 在 release 被剝離(那是它的設計目的),`push_error()` 是一般執行期呼叫、**不受建置影響**,且不會讓函式中止。故 R6-11 的「大聲停用」修法**不加深**對層 B 的依賴,兩者是不相關的引擎行為。(**印象-高信心,本專案未查證**,參考庫零命中。)
 
 **實作第一天的驗證排程建議**(`godot-specialist` Step 5.5 建議;第一次修訂新增第 11/12 項;**第四輪修訂:#11 拆項後只保留 #11b、新增 #13**):第 **2**(`process_priority` 不涵蓋 `_input()` 與批次前提)、**3**(Agile Event Flushing 鍵名)、**9**(`FOCUS_NONE` 是否也關 hover 主題)、**11b**(`CanvasLayer` 變換對機制十三/十三之二的**視覺定位**影響——**不含**已降級為虛驚的 #11a 淨位移計算)、**12**(`@abstract` 類別內含 `signal` 的語法組合,擴充自 ADR-0004 Verification Required 6/6a 的既有 `@abstract` 語法賭注)、**13**(`InputMap.event_is_action()` 是否過濾 `InputEventKey.echo`)、**15**(`Callable.is_valid()` 對已釋放綁定物件的偵測行為——2026-08-19 第三次修訂新增,S-1 的整個防禦押在它上面)**七項**,應在實作**第一天**先跑掉,不要留到整合測試後期。理由:七者的驗證成本都極低(一次幀精準測試、一次 `has_setting()` 查詢、一個 `Button` 懸停 spike、一個放在**帶非恆等變換的** `CanvasLayer` 底下的自繪節點定位比對、一個最小 `@abstract`+`signal` 檔案、一次按住方向鍵印出 `event_is_action()` 回傳值、一個十行的 `Callable` 釋放後 `is_valid()` 比對),但後果都是**全有全無**——`@abstract`/`signal` 組合寫錯是整檔案編譯失敗;`process_priority` 前提不成立會讓機制六整個定序失效;`FOCUS_NONE` 只關一半會讓機制十四在某些節點型別上失效;`CanvasLayer` 變換假設不成立會讓機制十三/十三之二的自繪定位與 hover 判定脫節;Agile Flushing 鍵名寫錯會讓機制七的驗證靜默通過,製造假的安全感;`echo` 若未被過濾,按住方向鍵會讓每一影格都在主張裝置權威;`Callable.is_valid()` 若在綁定物件已釋放時仍回傳 `true`,S-1 的整個防禦形同虛設。**先跑這七項,可以在寫任何正式程式碼之前就知道有沒有需要回頭修訂本 ADR。**
 
@@ -118,7 +135,7 @@
 ### Constraints
 
 - **GDScript 無例外處理機制**:錯誤處理須以回傳值(enum 或結構化 Result 物件)表達。GDD 明文要求「標記待重新解析」介面**絕不靜默**,必須回傳結構化的已套用/已過期結果。
-- **無 Godot 執行環境可供實機驗證**:本專案 `src/` 為空,尚無任何實作程式碼,亦無法實測任何引擎 API 行為。所有引擎判斷須明確區分「已查證」與「訓練資料印象」。
+- **引擎判斷必須區分「已查證」與「訓練資料印象」**(**2026-08-21 改寫**):本 ADR 原本在此宣稱「**無 Godot 執行環境可供實機驗證**」—— **該前提已被推翻**。Godot 4.7.1 可在本機 headless 完整執行(`which godot` 找不到只代表不在 `PATH` 上),2026-08-20~21 已執行兩批 spike 與四支探針,未過濾 log 已歸檔於 `prototypes/`。`src/` 仍為空,但**那不等於不能實測**。**因此「未查證」從此只能表示「尚未撰寫該探針」,不能再表示「無法查證」** —— 探針成本已證實極低(探針 D 為 4 個 `.gd` 檔 + 一個 6 行場景)。區分兩種證據等級的紀律**不變**,理由改為紀律本身的價值。⚠️ **檢索紀律**:多批探針並存時,「未查證」易被誤讀為「哪一批都沒測」,實際可能是「你查的那批沒測、另一批測過」(VR #15 即為實例)。查證前先確認搜尋範圍涵蓋全部批次。
 - **參考文件的兩個核心模組落後一個大版本**(見上方 Engine Compatibility)。
 - **裸 enum 跨檔無法編譯**(ADR-0002 撰寫時由 `godot-specialist` 查核發現的 BLOCKING 問題,已包裝為 `AffinityTypes` 解決)——機制二不得重蹈。
 - **`process_priority` 不管 `_input()` 的順序**,只管 `_process`/`_physics_process`。這是機制五/六形狀的直接決定因素。
@@ -245,6 +262,12 @@ var id: int                  # 該表面內的目標識別。int 而非 Variant 
 var is_valid: bool           # Core Rules #1 的有效性旗標
 
 func equals(other: CursorTarget) -> bool   # 顯式值比較,不用 ==
+# 2026-08-21 定案(R6-7):**只比較「表面 + id」,`is_valid` 不參與。**
+#   理由一:這是身分比較的最自然讀法,也是本節把 id 統一為 int 的整個理由。
+#   理由二(決定性的):若 is_valid 參與比較,`mark_pending_reresolve(expected)` 的競態語意會壞掉 ——
+#     呼叫方手上的 expected 幾乎必然是「有效版本」,而當下持有的可能已失效,於是該入口**恆回
+#     STALE_NOT_APPLIED**,整條路徑失效。
+#   代價:「目標是否改變」因此不涵蓋有效性翻轉 —— 由 _target_changed_from() 補上,見機制十。
 static func make(surface, id) -> CursorTarget      # is_valid 恆為 true
 static func invalidated(from: CursorTarget) -> CursorTarget  # 保留 surface/id,旗標翻 false
 ```
@@ -259,7 +282,20 @@ static func invalidated(from: CursorTarget) -> CursorTarget  # 保留 surface/id
 # ─── cursor_surface_registry.gd ──────────────────────────────
 class_name CursorSurfaceRegistry extends RefCounted
 
-enum RegisterResult { REGISTERED, DUPLICATE_TAG_REJECTED, UNREGISTERED_NOT_FOUND, ALREADY_EXCEPTED }
+enum RegisterResult { REGISTERED, DUPLICATE_TAG_REJECTED, UNREGISTERED_NOT_FOUND }
+# 2026-08-21(R6-13):ALREADY_EXCEPTED 已移出。本 enum 自此只服務第一張表
+# (已註冊游標表面,單標籤單實例 + 顯式 unregister())。
+
+# 2026-08-21 新增(R6-13):第二張表(AC-60 原生指標例外表面)自己的回傳型別。
+# **理由**:本 ADR 才剛以「兩者的生命週期擁有者不同」為由堅持兩張表必須**結構獨立**,卻讓兩張表
+# 共用同一個回傳 enum —— 於是 DUPLICATE_TAG_REJECTED(標籤概念)出現在一張明文「**沒有標籤**」的表
+# 的回傳型別裡。拆開之後,結構獨立的宣告在**回傳型別層也成立**,不再只是文字宣告。
+enum ExceptionRegisterResult {
+    REGISTERED,          # register:成功登記
+    ALREADY_EXCEPTED,    # register:同一個 Control 已在表內(原本全文未說明何時回傳)
+    NOT_REGISTERED,      # unregister:該節點未曾登記(原本**沒有對應值**)
+    INVALID_NODE,        # 傳入的 Control 已被釋放或為 null
+}
 
 # ─── 第一份登記表:已註冊表面(受本系統管轄)───────────────────
 # node 型別刻意為通用 Node,不強制 Control —— 見機制十四「專家發現 F 修法」。
@@ -273,9 +309,27 @@ func registered_surfaces_sorted() -> Array[CursorTypes.SurfaceType]  # 見下方
 # 不共用標籤空間 —— 例外表面不是「一種表面類型」,它根本不受本系統管轄,
 # 只是在機制十三之二判定原生指標可見性時需要被認得。
 # 型別為 Control(非 Control 節點不會出現在 gui_get_hovered_control() 的回傳裡,登記它無意義)。
-func register_native_pointer_exception(node: Control) -> RegisterResult
-func unregister_native_pointer_exception(node: Control) -> RegisterResult
+func register_native_pointer_exception(node: Control) -> ExceptionRegisterResult
+func unregister_native_pointer_exception(node: Control) -> ExceptionRegisterResult
 func is_native_pointer_exception(node: Node) -> bool   # 沿祖先鏈比對,見機制十三之二
+# 🔴 2026-08-21 新增(R6-13)—— 自動反登記與三條實作順序義務:
+#   (1) register 內部連接 node.tree_exited 到一個內部處理函式,該函式把 node 從第二張表移除。
+#       **理由**:比對本表「可以有任意多個、沒有標籤、來去自由」的明文定位,**自動化比紀律更合適**
+#       —— 第一張表用顯式 unregister() 是因為它單標籤單實例、擁有者明確;本表的定位就是「來去自由」,
+#       要求呼叫方記得反登記與那個定位自相矛盾。
+#   (2) **is_instance_valid(node) 檢查必須在任何後續操作(含 connect())之前執行。** 對已釋放物件
+#       呼叫方法會讓所在函式整段中止(同類行為已由 spike F-10 實測),所以 INVALID_NODE 不可能靠
+#       「事後補救」回傳 —— 順序一錯就不是回傳值而是中止。
+#   (3) **不加 CONNECT_ONE_SHOT** —— 加了之後第一次反登記連線就斷,節點若之後重新進出場景樹,
+#       反登記機制反而失效。
+#
+# ⚠️ **本自動反登記的明文假設(Step 5.5 發現的真實缺口)**:tree_exited 會在**每一次**離開場景樹時
+#   發出,不限於刪除。因此本機制**假設例外表面以 visible 屬性(或其他不離開場景樹的方式)切換顯示**。
+#   若某表面以 add_child/remove_child 管理生命週期,它每次隱藏都會被自動反登記,呼叫方須在重新掛載後
+#   再次呼叫 register_native_pointer_exception(),否則**例外資格會靜默消失**。失敗方向仍在**安全側**
+#   (白名單設計 → 錯誤隱藏原生指標,不違反 Core Rules #5),但 AC-60 的便利性會無聲失效。
+#   **明文寫下,不讓它變成沒人知道的隱性行為。**
+#   tree_exited 必發生於 queue_free() 路徑:**印象-高信心,本專案未查證**(三批探針與參考庫零命中)。
 ```
 
 **為何是兩張獨立的表而不是在同一張表上加旗標**:兩者的**生命週期擁有者不同**——已註冊表面由本系統的登記制管轄(單標籤單實例、`SurfaceType` 列舉為鍵),AC-60 例外表面則明文**不受本系統管轄**(GDD AC-60),它可以有任意多個、沒有標籤、來去自由。塞進同一張表會逼出一個「不受管轄但登記在管轄表裡」的矛盾狀態,也會讓 `registered_surfaces_sorted()` 的迭代語意被污染。
@@ -384,6 +438,13 @@ func flush_buffered_navigation() -> void:
 
 # ─── cursor_navigation_applier.gd(2026-08-19 第四輪修訂新增,R4-1)──
 # CursorStateHost 於 _ready() 內 add_child() 建立的專屬子節點,process_priority = -25。
+# 🔴 2026-08-21 強制寫法(R6-12):**process_priority 必須在 add_child() 之前設定。**
+#   節點尚未進入場景樹時設值不涉及任何處理鏈重排;進入後才設值會觸發重排,而「是否影響當前這一幀
+#   已開始的遍歷」是本專案**未查證**的引擎行為。**先設值再掛載的成本為零,因此列為強制寫法而非建議**
+#   —— 這樣可以直接消掉一個印象等級的引擎依賴,不必為它保留一個 Verification Required 項。
+#   (第五輪明文提出過這項建議,第三次修訂**既未採納也未駁回** —— 全文 5 處 add_child 無一處規定,
+#    VC 9c 只做靜態值斷言與父子關係斷言、不涵蓋設定順序。與 S-2 同一模式,這次輪到第五輪自己的
+#    建議被下一次修訂漏接。)
 # 存在的唯一理由:process_priority 是逐節點屬性,同一個節點不可能同時位於 −100 與 −25,
 # 而 GDD 四步序列要求步驟三發生在步驟二(呼叫方主動改標,−60)之後。
 # 本節點沿用機制一薄殼的同一紀律 —— 只有一行轉發,不含任何裁定邏輯。
@@ -419,7 +480,7 @@ func _process(_delta: float) -> void:
 | ② 呼叫方主動改標 | 任何因遊戲語意事件(非 `ui_*` 觸發,例如單位死亡)需呼叫 `mark_pending_reresolve()`/`set_target()` 的下游系統,於**該系統自己的節點** `_process()` | **−60**(架構強制;必須落在**開區間** −100 < ② < −25,**兩個端點皆不可取**,此為參考值——見下方「R5-2 修法」) | GDD 四步序列**步驟二** |
 | ③(第四輪新增)緩衝內導覽寫入 | `CursorNavigationApplier`——`CursorStateHost` 於 `_ready()` 內 `add_child()` 的專屬子節點 | **−25**(架構強制;必須嚴格介於 ② 與 ④ 之間,且**不得與 ② 同值**——見下方「R5-2 修法」) | `apply_buffered_navigation(events)` 依①已裁定的權威套用緩衝內導覽類 `ui_*` 目標寫入(GDD 四步序列**步驟三**),**並清空緩衝區**(該影格緩衝的最後一個消費者) |
 | ④ 已註冊表面 | 各 `CursorSurface` | **0**(預設) | 讀取狀態,渲染自己的高亮/待重新解析視覺 |
-| ⑤ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 待機指示、奪權漸進回饋載體、機制十三之二的 hover 判定(機制十二/十三,同一節點單一 `_process()` 內完成,避免與其他 priority=50 節點的同層排序未定義問題) |
+| ⑤ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 待機指示、奪權漸進回饋載體、機制十三之二的 hover 判定 —— **2026-08-21 修訂(R6-8):三者為三個獨立節點,不是同一節點**(見下方 ⑤ 的展開說明);同為呈現層這**一個角色的三個實例**,彼此無定序需求,故同值 50 不違反「兩兩相異」(該規則管轄角色之間,見 R6-9 的範圍限定)。原文寫「同一節點單一 `_process()` 內完成,避免與其他 priority=50 節點的同層排序未定義問題) |
 | ⑥ 下游讀取方(含確認動作判讀) | 戰鬥 HUD、好感度視覺 UI、支援對話 UI,於**該系統自己的節點** `_process()` | **100** | 讀取游標目標更新自己的呈現;**GDD 四步序列步驟四**——任何解讀確認類 `ui_*` action 並查詢 `is_current_target_valid()`/`get_device_authority()` 的邏輯必須落在此處,絕不可掛 `_input()`/`_unhandled_input()`(見 Requirements 第 11 項、Constraints「下游確認動作判讀的執行位置」) |
 
 **定序對照(這是本修法唯一要證明的事)**:①(−100)→ ②(−60)→ ③(−25)→ ⑥(100),即 GDD 明文的 **1 → 2 → 3 → 4**,逐步對齊、無融合。④⑤ 是純讀取的渲染方,不屬 GDD 四步序列的任何一步,插在 ③ 與 ⑥ 之間不影響該序列。
@@ -431,7 +492,9 @@ func _process(_delta: float) -> void:
 **修法兩點**:
 
 1. **② 的參考值由 −50 改為 −60,區間改寫為開區間 −100 < ② < −25,兩個端點皆不可取。** 取 −60 而非 −50,是為了與兩端都留出安全間距——下游若因為別的理由微調這個值,±10 的漂移不會撞到任何一端。
-2. **統一本 ADR 對「同 `process_priority` 節點」的立場**:上一版在機制六說「`process_priority` 是數值小者先執行」(暗示嚴格全序),又在機制六 ⑤ 與機制十三之二說「同層級同優先序節點無 tie-break 保證」(視為風險),兩處措辭不一致。**本 ADR 的正式立場**:「數值小者先執行」**只在不同值之間成立**;同值節點之間本 ADR **不假設任何 tie-break**(`godot-specialist` 對此的最高判定是「印象——同優先序桶內依登記進處理鏈的順序穩定排序」,**無官方文件或本專案參考庫佐證,不得從印象升為已查證**)。因此:**機制六六個行為者的架構強制優先序值必須兩兩相異**,這是定序保證成立的前提,不是建議。④ 的 `0`(預設值)與 ⑤ 的 `50` 之所以仍然安全,是因為兩者都是**純讀取的渲染方**,不屬 GDD 四步序列的任何一步——即使專案內其他無關節點恰好也用 `0`,與本表的定序論證無關。
+2. **⚠️ 2026-08-21 範圍限定(R6-9)—— 本規則管轄的是「角色之間」**:R5-2 立的是「機制六**六個行為者**的架構強制優先序值必須兩兩相異,這是定序保證成立的前提,不是建議」。但同一張表裡 ② 的定義是「**任何**因遊戲語意事件需呼叫 `mark_pending_reresolve()`/`set_target()` 的下游系統」(開放式、多實例),⑥ **明文列了三個具體系統全部在 100** —— **新立的規則自己就有三個反例**。故明訂:**同一角色的多個實例之間,本 ADR 不提供定序保證。** (a) **純讀取角色的多實例**(④ 呈現層的三個節點、⑥ 的三個下游消費者):無定序需求,**同值安全**;(b) **② 的多實例**(主動改標的下游系統):**呼叫方義務** —— 須自行確保同幀不會有兩個系統對同一目標欄位競寫,**本 ADR 不提供仲裁,也不偵測違反**(兩個系統同幀各自 `set_target()` → 順序未定義 → 最後寫入者勝 → **最終目標不決定**,而本 ADR 全文從未討論同幀多重主動改標)。**嚴重度誠實記錄**:GDD 的「100% 決定性」宣稱其字面管轄範圍是**同幀雙裝置仲裁**,不是多呼叫方改標;後者更像下游設計問題。但本 ADR 既然把「兩兩相異」升格為硬性前提,就有義務說清楚它管到哪一層 —— 這一句就是那個界線。**不採更強的版本**(規定 ② 的多實例必須在開區間內取相異值並登記):那要求本 ADR 管理一份它看不到的下游清單,且開區間取值本身需要一個註冊機制,對一個尚無任何 ② 實例存在的專案是過度工程化 —— 明文記錄此選擇,供未來出現多個 ② 實例時重新評估。
+
+3. **統一本 ADR 對「同 `process_priority` 節點」的立場**:上一版在機制六說「`process_priority` 是數值小者先執行」(暗示嚴格全序),又在機制六 ⑤ 與機制十三之二說「同層級同優先序節點無 tie-break 保證」(視為風險),兩處措辭不一致。**本 ADR 的正式立場**:「數值小者先執行」**只在不同值之間成立**;同值節點之間本 ADR **不假設任何 tie-break**(`godot-specialist` 對此的最高判定是「印象——同優先序桶內依登記進處理鏈的順序穩定排序」,**無官方文件或本專案參考庫佐證,不得從印象升為已查證**)。因此:**機制六六個行為者的架構強制優先序值必須兩兩相異**,這是定序保證成立的前提,不是建議。④ 的 `0`(預設值)與 ⑤ 的 `50` 之所以仍然安全,是因為兩者都是**純讀取的渲染方**,不屬 GDD 四步序列的任何一步——即使專案內其他無關節點恰好也用 `0`,與本表的定序論證無關。
 
 **R4-7 修法(2026-08-19 第四輪修訂新增)—— 一系統身兼多角色**:上表與下方 Architecture Diagram 都暗示「一角色一節點」,但戰棋系統同時是②(呼叫方主動改標)與⑥(確認讀取方)幾乎是必然,上一版對此一字未提。**規則**:多角色合併於單一節點的單一 `_process()`、以陳述順序保證相對順序,**只在這些角色於優先序梯上相鄰、中間不存在其他行為者時成立**。
 
@@ -529,17 +592,14 @@ signal reset_triggered(trigger: CursorTypes.ResetTrigger)
 # 淨位移由實作內部以 current_mouse_position.distance_to(_seed) 計算,不再由呼叫方算好傳入。
 # 回傳本影格滑鼠是否取得有效的奪權主張資格。
 @abstract
-func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool:
-    pass
+func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool
 # GDD 稱此值為 `reclaim_progress`(0.0~1.0),供機制十三的呈現層平滑器讀取(不再直綁 modulate.a,見機制十三)
 @abstract
-func reclaim_progress() -> float:
-    pass
+func reclaim_progress() -> float
 # F2/F3 修訂:新增 trigger 參數,標明四個重置觸發點 (a)(b)(c)(d) 中的哪一個(CursorTypes.ResetTrigger),
 # 供內部記錄 seed 之餘,亦透過 reset_triggered 訊號通知呈現層。
 @abstract
-func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void:
-    pass
+func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void
 # 2026-08-19 修訂新增(回應 TR-cursor-001 的條件式涵蓋——見機制一「第三個頂層欄位的歸屬」註記:
 # AC-1 窮盡檢視若認定累積起點是未被承認的第四欄位,本 ADR 須補一個可查詢的 getter)。
 # QA/測試專用,下游業務邏輯不得依賴,比照機制十五 diagnostic_* 慣例。
@@ -552,8 +612,7 @@ func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void:
 # 每個未來策略實作都有。(另一選項「把 _seed 上移到基底」已否決:代價是
 # ImmediateMouseReclaimPolicy 等實作被迫攜帶一個對它無意義的欄位。)
 @abstract
-func diagnostic_seed_position() -> Vector2:
-    pass
+func diagnostic_seed_position() -> Vector2
 
 # ─── threshold_mouse_reclaim_policy.gd ───────────────────────
 # 現行實作:GDD Core Rules #3 的表面類型固定像素門檻。
@@ -702,7 +761,9 @@ func _init(
 ) -> void
 
 # ─── 私有路徑(2026-08-19 第四輪修訂新增 R4-4;第三次修訂補完 R5-1)──────
-# 三者皆**不檢查 _mutation_in_progress**,永遠只被公開入口在旗標已為真時呼叫。
+# 六者皆**不檢查 _mutation_in_progress**,永遠只被公開入口在旗標已為真時呼叫。
+# ⚠️ 2026-08-21:本行原寫「三者」,而下方 R4-4 表格列的是四個 —— 該不一致在本次修訂之前就已存在
+#    (第三次修訂把私有路徑由一擴為四時漏改此處)。本次修訂再新增兩條(見第五、六項),故為六。
 #
 # (1) 唯一實際改寫 _target 的地方。
 #     reset_policy 的兩條路徑**互斥**(專家發現 A):
@@ -726,9 +787,46 @@ func _validate_target_writable(target: CursorTarget) -> SetTargetResult
 # (4) 滑鼠座標取值(第三次修訂新增,S-1)。
 #     每次取值前檢查 _mouse_position_provider.is_valid();無效時回傳**上一次成功取得的座標**
 #     (初值 Vector2.ZERO)並遞增 diagnostic_invalid_mouse_provider_count(QA-only,機制十五慣例)。
-#     絕不回傳偽造座標、絕不靜默。正式 Autoload 生命週期下此風險趨近於零,
-#     主要防的是單元測試自訂假物件被釋放後每幀靜默失敗、錯誤時間點與成因脫節。
+#
+# 🔴 2026-08-21 修訂(R6-11 + Step 5.5 B-1)—— is_valid() 守衛是**必需**,不是防禦性冗餘:
+#   原文寫「正式 Autoload 生命週期下此風險趨近於零,主要防的是單元測試假物件被釋放後每幀
+#   **靜默失敗**」。**已實測推翻**(engine-verification-spike-2026-08-20 的 C2 段 / README F-10):
+#   對已釋放物件呼叫 Callable.call() **會讓所在函式整段中止**(log 只印「呼叫中…」、無「回傳」;
+#   中止範圍只到直接呼叫的那個函式,不往上傳播)。真實失敗模式是**硬中止**,不是靜默失敗 ——
+#   不做 is_valid() 檢查就直接呼叫,_safe_mouse_position() 自己會整段中止。
+#   同一次量測也確認:具名綁定 Callable(obj,"method") 與 lambda 隱式捕獲 self,is_valid() **皆回傳
+#   false、行為一致** → **「發現 G」的前提(兩者行為可能不同)被推翻**;第三次修訂改採具名綁定
+#   「可辯護(語意較明確)但非必要」,決定維持不變。
+#
+# ⚠️ 本方法的契約**維持不變**(失效時回傳上次成功座標)。它服務的另外兩個呼叫點
+#   —— handoff_before_unload()(甲)與 reseed_reclaim_on_focus_regained() 的 reset() —— 都是
+#   **一次性播種**:用陳舊值播種一次、provider 恢復後即無事,**沒有永久鎖死的病理**。
+#   evaluate() 那條**持續 polling** 的路徑才有病理,而它的處置在呼叫端,見下方。
 func _safe_mouse_position() -> Vector2
+
+# 🔴 2026-08-21 新增(R6-11 的真正修法 + Step 5.5 B-1)—— provider 失效的處置在**系統層**,不在座標層:
+#   arbitrate_device_authority()(−100)在呼叫 _safe_mouse_position() / evaluate() **之前**,
+#   先直接檢查 _mouse_position_provider.is_valid():
+#     · false → **整段跳過 evaluate() 路徑**(滑鼠奪權停用)、push_error() **恰一次**
+#               (以 _provider_error_reported: bool 守衛,不是每幀)、遞增診斷計數。
+#               **不呼叫** _safe_mouse_position()。
+#     · true  → 照舊呼叫(此時必然成功)。
+#   這**不違反** S-3 的「座標值只能經 _safe_mouse_position() 取得」—— is_valid() 查的是 Callable
+#   本身的有效性,不是在取座標值,兩者是不同的操作。
+#
+#   **為何一定要在呼叫端做**(Step 5.5 B-1):_safe_mouse_position() 的簽章是 -> Vector2,
+#   失效時回傳陳舊座標,**呼叫方結構上無從得知這次是不是 fallback 值**。修訂初稿只寫了
+#   「evaluate() 整段跳過」這個**行為**,沒有改動使該行為可能實現的**介面** —— 與 R6-6(懸空參數)、
+#   R5-1(無合法呼叫路徑)是同一種病:寫了行為,沒寫接線。
+#
+#   **失敗方向從「靜默凍結」翻成「大聲停用」**,與 R5-6 把機制十三之二反轉為白名單的邏輯一致。
+#   原本的穩態必然是:_seed == 陳舊座標 P → 淨位移恆為 0 → **滑鼠側奪權永久失效且完全無聲**
+#   (情況二會因 NAVIGATION 恆勝觸發 (d) VETOED_SAME_FRAME 而收斂進情況一)。
+#   初值 Vector2.ZERO 的問題(provider 從第一次呼叫就無效 → 表現得像滑鼠停在 (0,0))亦一併涵蓋:
+#   provider 無效即從不進入 evaluate(),_seed 的值不再有意義。
+#   ⚠️ push_error() **不是** assert():assert() 在 export release 被剝離(那是它的設計目的),
+#   push_error() 是一般執行期呼叫、不受建置影響(**印象-高信心,本專案未查證**,參考庫零命中)。
+#   故本修法**不加深**對層 B 的依賴 —— 兩者是不相關的引擎行為。
 
 # TR-cursor-012:雙輸入簽章(目標識別 + 是否由裝置 ui_* action 觸發),不含碰撞箱幾何。
 # 有效性旗標自動翻回有效。訊號於狀態完全寫定後才發出(見下方)。
@@ -740,13 +838,41 @@ func mark_pending_reresolve(expected: CursorTarget) -> MarkResult
 
 # ─── 生命週期類公開入口(不屬 Core Rules #2 的雙寫入)──────────
 # 甲分支(既有,機制十一);乙分支(2026-08-19 第三次修訂新增,R5-1,機制十一):
-#   func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult
+#   func handoff_before_unload() -> MarkResult
+#   🔴 2026-08-21 修訂(R6-6):**原簽章帶一個 surface: CursorTypes.SurfaceType 參數,全文零讀取,已刪除。**
+#     兩種讀法都有問題:當**守衛**則 MarkResult 沒有任何值能表達「表面不符」,複用
+#     STALE_NOT_APPLIED 會對呼叫方**說謊**(它的語意是「你手上的目標過期了」,不是「你交接錯表面」);
+#     當**殘留參數**則是誘導實作者猜語意的介面面 —— 而本 ADR 才剛以「呼叫處看不出參數是什麼」為由
+#     否決 set_target() 的第三參數方案。**選擇刪除而非新增 SURFACE_MISMATCH**:甲分支的呼叫時機是
+#     「舊表面拆除前」,呼叫方本來就知道自己在拆哪一個,守衛能攔下的錯誤情境幾乎不存在,而代價是
+#     一個新 enum 值加一條新測試向量。刪參數同時消掉「甲/乙不成對」的不對稱(原本參數型別是
+#     SurfaceType vs CursorTarget —— 不是一對,是兩個不同抽象層級的東西;**根因是 R5-1 新增乙分支
+#     入口時只設計了乙的簽章,沒有回頭把甲的簽章納入同一次設計**)。MarkResult 維持四值不變,
+#     SURFACE_MISMATCH 全文應保持零命中(可作為回歸檢查項)。
 #   func handoff_after_mount(target: CursorTarget) -> SetTargetResult
 #
 # 復焦/解除暫停時重新播種累積起點(2026-08-19 第三次修訂新增,R5-3)。
 # 由 CursorStateHost 的 resume_arbitration() 與 _notification() FOCUS_IN 分支轉發進來。
 # 內部固定 _reclaim.reset(_safe_mouse_position(), ResetTrigger.FOCUS_LOST_REGAINED) —— 觸發點 (c)。
 # **掛閘門**,理由見下方「專家發現 D」。
+#
+# 🔴 2026-08-21 修訂(R6-10)—— 重入時**不丟棄**,改記 pending:
+#   偵測到 _mutation_in_progress 為真時設 _pending_reseed = true(bool,非計數 —— 重複的重新播種
+#   請求是**冪等**的,都是把 _seed 設為當下滑鼠座標),由當前正在執行的公開入口在清除
+#   _mutation_in_progress **之前**經 _drain_pending_reseed() 補做一次。
+#   **與 R4-6 定下的「唯一許可手段是設旗標」同一形狀**,不引入任何未查證的排程假設。
+#
+#   **修法前的失敗方向**(發現 D 的論證只涵蓋「防止雙重重置」這一個方向):下游在
+#   device_authority_changed() 的處理函式裡呼叫 CursorStateHost.resume_arbitration() —— 這是
+#   **合理**的下游設計(「權威轉回滑鼠 → 關掉手把提示模態」),不是誤用。此時 _mutation_in_progress
+#   仍為真(**訊號在旗標清空之前發出**)→ 轉發進掛閘門的入口 → 整段 no-op → **重新播種被靜默丟棄**,
+#   累積起點停在模態開啟前的過期座標。**那正好是第一次修訂新增本方法時要修的缺口;閘門在一條窄路徑上
+#   把它重新打開了** —— 而回傳型別是 void,呼叫方連知道都不知道,只有一個 QA-only 計數器。
+#
+# ⚠️ **閘門的不對稱是刻意的,理由是兩者觸碰的狀態擁有者不同**(2026-08-21 補,原本全文無說明):
+#   suspend_arbitration() **不**掛閘門 —— 它只碰 Host 自己的 _arbitration_suspended 與 _frame_events,
+#   不碰 CursorState 的任何狀態。resume_arbitration() 會被閘門擋 —— 它轉發進本方法。
+#   同一對 API 在重入情境下行為不對稱,這是設計結果而非疏漏。
 func reseed_reclaim_on_focus_regained() -> void
 
 # ─── 讀取(2 個查詢,對應 TR-cursor-014)─────────────────────
@@ -771,7 +897,7 @@ func reclaim_progress() -> float
 | 路徑 | 成員 | 是否掛閘門 |
 |---|---|---|
 | **公開入口(七個,2026-08-19 第三次修訂由五增為七)** | `arbitrate_device_authority()`、`apply_buffered_navigation()`、`set_target()`、`mark_pending_reresolve()`、`handoff_before_unload()`、**`handoff_after_mount()`**、**`reseed_reclaim_on_focus_regained()`** | **是**。進入設旗標、離開清旗標,重入回傳 `REJECTED_REENTRANT`(三個 `void` 入口則為 no-op + 診斷計數) |
-| **私有路徑(四個,第三次修訂由一增為四)** | `_write_target_internal()`(唯一改寫 `_target`)、`_mark_pending_reresolve_internal()`(唯一標記待重新解析)、`_validate_target_writable()`(目標寫入前置驗證)、`_safe_mouse_position()`(唯一取滑鼠座標) | **否**。四者永遠只被上列公開入口在旗標已為真的狀態下呼叫,再檢查一次必然自我拒絕 |
+| **私有路徑(六個;第三次修訂由一增為四,2026-08-21 第四次修訂再增為六)** | `_write_target_internal()`(唯一改寫 `_target`)、`_mark_pending_reresolve_internal()`(唯一標記待重新解析)、`_validate_target_writable()`(目標寫入前置驗證)、`_safe_mouse_position()`(唯一取滑鼠座標)、**`_target_changed_from(old, new)`**(唯一判定是否發 `target_changed()`,2026-08-21 新增)、**`_drain_pending_reseed()`**(唯一補做被閘門擋下的重新播種,2026-08-21 新增) | **否**。六者永遠只被上列公開入口在旗標已為真的狀態下呼叫,再檢查一次必然自我拒絕 |
 
 **R5-1 連帶修法(2026-08-19 第三次修訂)—— 私有路徑地圖上一版只畫了一格,結果甲/乙兩個分支都無處可走**:第五輪 `/architecture-review` 判定乙分支的 `SURFACE_HANDOFF` 沒有任何合法呼叫路徑(BLOCKING,詳見機制十一)。逐條追下去會發現,根因不只在乙——**上一版只宣告了 `_write_target_internal()` 一條私有路徑,而至少有三種內部行為需要它**:
 
@@ -781,7 +907,7 @@ func reclaim_progress() -> float
 | 乙分支需要「寫入 + 無條件帶 `SURFACE_HANDOFF` 重置」 | 通用 `set_target()` 走的是「目標確實改變才 `TARGET_CHANGED`」;三種可能的讀法全部不成立(見機制十一 R5-1 修法) |
 | 乙分支 `handoff_after_mount()` 回傳 `SetTargetResult`,就必須做 `set_target()` 那套「表面已註冊 / 類型合法」驗證 | 不能重用公開的 `set_target()` 借驗證(撞閘門);若因此**跳過驗證**直接寫入,等於允許把未註冊或非法表面的目標寫進來,而且是掛在 `SURFACE_HANDOFF` 這個沒人檢查的信任假設下(`godot-specialist` 判定為「本次批量修法最可能製造的下一個 R5-x」) |
 
-**修法**:把私有路徑由一條擴為四條(見上方程式碼區塊與本表),讓每一個公開入口都有一條**不掛閘門**的路可走,不必回頭借用另一個公開入口。
+**修法**:把私有路徑由一條擴為四條(2026-08-21 再增為六條,見上表)(見上方程式碼區塊與本表),讓每一個公開入口都有一條**不掛閘門**的路可走,不必回頭借用另一個公開入口。
 
 **紀律**:公開入口**不得**互相呼叫。任何「一個公開入口需要另一個公開入口的行為」的情境,一律把共用邏輯下放到私有方法,由兩個入口各自呼叫——這是 GDScript 無 `try`/`finally` 下唯一能保證「旗標的設與清恰好配對一次」的形狀(同一理由見 ADR-0004 的單一進入/單一釋放每槽重入鎖)。呼叫方若需要在訊號處理函式內串聯狀態變更,應以 `call_deferred()` 延後到下一影格,不得期待同步生效。
 
@@ -820,7 +946,7 @@ func reclaim_progress() -> float
 # 不再讓乙分支借用通用寫入介面 —— 上一版正是因為沒有這張表而讓乙無路可走。
 #
 #   甲:讀檔流程開始、舊表面拆除前
-#       公開入口 handoff_before_unload(surface)
+#       公開入口 handoff_before_unload()
 #         → _mark_pending_reresolve_internal(當下目標)        # 私有,不撞閘門
 #         → _reclaim.reset(_safe_mouse_position(), SURFACE_HANDOFF)   # 無條件
 #
@@ -835,7 +961,7 @@ func reclaim_progress() -> float
 #         → _write_target_internal(target, TargetResetPolicy.CONDITIONAL_ON_CHANGE)
 #            (目標確實改變才 TARGET_CHANGED;丙分支**沒有**重置義務,見下方)
 #       原目標仍有效則直接沿用,僅失效時才依 Core Rules #6 重新計算(AC-63b)
-func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult
+func handoff_before_unload() -> MarkResult
 func handoff_after_mount(target: CursorTarget) -> SetTargetResult      # 第三次修訂新增(R5-1)
 ```
 
@@ -939,7 +1065,15 @@ func _process(_delta: float) -> void:
 
 **問題**(第三輪 `/architecture-review` 引擎專家額外發現):`Input.mouse_mode` 是**全域**設定(整個應用程式視窗),依裝置權威切換;但裝置權威是全域欄位,與玩家當下實際把滑鼠移到哪個表面無關。GDD AC-60 明文允許「未登記表面」(例如非模態設定側欄)使用原生 hover、不受本系統管轄——但手把持權威時原生指標全域隱藏,玩家想用滑鼠點這類側欄時,側欄自己的 hover 樣式仍會畫出來(`mouse_entered`/`mouse_exited` 不依賴游標可見性),玩家卻完全看不到滑鼠指標在哪。這是真實體感落差,原版本未處理也未承認。
 
-**決策**:與機制十三的自繪載體同一節點(CanvasLayer,priority = 50,單一 `_process()` 內完成,避免與其他同層節點的排序未定義問題——`godot-specialist` 本次驗證提醒同層級同優先序節點無 tie-break 保證),新增每影格 hover 檢查:
+**決策(2026-08-21 修訂,R6-8)**:**hover 判定器是 CanvasLayer 底下的第三個獨立節點**(priority = 50),**不是**與機制十三的自繪載體同一節點。原文寫「同一節點」在三節點方案下是**事實錯誤**。
+
+> **🔴 為何必須拆(R6-8)**:`modulate.a` 是**逐節點**屬性。機制十三的 `_process()` 末尾寫 `modulate.a = _presented_alpha` —— 若三者真是同一節點,那一行會把**待機指示一起淡出**,而待機指示的可見性依 `TR-cursor-016` 由**裝置權威**決定、與奪權進度無關,**這是行為錯誤**。反之若是兩個節點,機制六 ⑤ 的「同一節點」就不成立,而該句的理由正是「避免同層排序未定義」—— 兩個節點都在 50,直接落入 R5-2 新訂的「架構強制值必須兩兩相異」。
+>
+> **三節點的職責與同值理由**:待機指示器(純讀取,`TR-cursor-016`)、自繪游標(**唯一**承載 `modulate.a = _presented_alpha`,`TR-cursor-017`)、hover 判定器(執行 Core Rules #5)。三者同為**呈現層這一個角色的三個實例**,依 R6-9 的範圍限定,同一角色的多實例之間本 ADR 不提供定序保證 —— 而三者**彼此無定序需求**:待機指示器與自繪游標各讀各的狀態、互不依賴;hover 判定器寫的是 `Input.mouse_mode`(全域設定),不被另外兩者讀取。**三者皆不寫 `CursorState`**,故無同幀競寫問題。
+>
+> ⚠️ **待機指示器的資料來源尚未定義(Step 5.5 新發現,誠實登記)**:`TR-cursor-016` 要求「每裝置待機指示」,代表它至少要知道「當前哪個裝置閒置中」,而 `CursorState` 的頂層欄位裡**沒有任何 idle 概念**。這**不是本次拆分造成的**(拆分前被「同一節點」的措辭蓋住了),但既然本次要正式拆成獨立節點並寫進 registry,就不應留一個空殼契約。**本 ADR 不在此臆造一個 idle 欄位** —— 列為下一輪必須處理的缺口,並明文記錄它先前被掩蓋的原因。
+
+新增每影格 hover 檢查:
 
 ```gdscript
 func _process(_delta: float) -> void:
@@ -964,8 +1098,8 @@ func _reapply_native_cursor_visibility_with_unregistered_surface_exception() -> 
 `CursorSurfaceRegistry` 新增**第二份登記表**與其查詢方法(取代上一版的 `is_part_of_registered_surface()`):
 
 ```gdscript
-func register_native_pointer_exception(node: Control) -> RegisterResult    # AC-60 例外表面
-func unregister_native_pointer_exception(node: Control) -> RegisterResult
+func register_native_pointer_exception(node: Control) -> ExceptionRegisterResult    # AC-60 例外表面
+func unregister_native_pointer_exception(node: Control) -> ExceptionRegisterResult
 func is_native_pointer_exception(node: Node) -> bool                       # 沿祖先鏈比對
 ```
 
@@ -1091,7 +1225,11 @@ var diagnostic_reclaim_progress_history: Array[float]   # 取樣自繪節點每�
                     │  ┌───────────────────────────────────────────┐  │
                     │  │ CanvasLayer (機制十二/十三) priority = 50  │  │
                     │  │  ├ 全域每裝置待機指示   ← TR-cursor-016    │  │
-                    │  │  └ 自繪奪權漸進回饋游標 ← TR-cursor-017    │  │
+                    │  │  ├ 自繪奪權漸進回饋游標 ← TR-cursor-017    │  │
+                    │  │  │   (唯一承載 modulate.a = _presented_alpha) │  │
+                    │  │  └ hover 判定器 ← 機制十三之二/Core Rules #5 │  │
+                    │  │      (2026-08-21 R6-8:三個獨立節點,同為  │  │
+                    │  │       呈現層角色的實例,priority 皆 50)   │  │
                     │  │      modulate.a = _presented_alpha (呈現層平滑器) │  │
                     │  │        上升立即同步 / 下降收斂 / (d) 瞬間歸零     │  │
                     │  │      訂閱 _state.reclaim_reset_triggered (R5-3)   │  │
@@ -1120,6 +1258,9 @@ var diagnostic_reclaim_progress_history: Array[float]   # 取樣自繪節點每�
         │ ② 呼叫方主動改標 (priority = -60) —— 例如戰棋系統偵測單位死亡          │
         │  ⚠️ 開區間 -100 < ② < -25,兩端點皆不可取;六個行為者的架構強制值        │
         │     必須兩兩相異 —— 同值之間本 ADR 不假設任何 tie-break (R5-2)         │
+        │     ⚠️ 2026-08-21(R6-9):本規則管轄**角色之間**。同一角色的多個實例    │
+        │     (②、④、⑥)之間本 ADR **不**提供定序保證 —— 純讀取角色的多實例      │
+        │     同值安全;② 的多實例須由呼叫方自行確保同幀不競寫(下游義務)。      │
         │  於自己的 _process() 呼叫 mark_pending_reresolve()/set_target()      │
         │  ⚠️ 觸發來源若為 _physics_process():只准設旗標於自己 _process() 開頭執行 │
         │     (R4-6:call_deferred() 路線已刪除,沖洗時點未查證)                 │
@@ -1148,7 +1289,9 @@ var diagnostic_reclaim_progress_history: Array[float]   # 取樣自繪節點每�
 
 > **閱讀提醒**:以下為概念契約,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時各類別應落在各自檔案。
 >
-> **`@abstract` 語法警告**(承 ADR-0004 的同一風險):本專案唯一已查證的 `@abstract` 範例(`current-best-practices.md`)採「冒號 + `pass` 主體」形式,下方沿用該形式。`godot-specialist` 在 ADR-0004 審查時無法在本環境確認何者正確,且**寫錯屬編譯期錯誤,會擋下整個檔案**——ADR-0004 的 Verification Required 第 6/6a 項同樣適用於本 ADR 的 `MouseReclaimPolicy`,且該專家明確指出這是四份 ADR 裡信心度最低、後果最嚴重的語法賭注。
+> **`@abstract` 語法(2026-08-21:已實測定案,不再是賭注)**:正確形式是**裸簽章** —— `@abstract func f() -> T`,**無冒號、無主體**。`@abstract func f() -> T: pass` 是 `Parse Error: An abstract function cannot have a body.` 已實測對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆成立;`@abstract` 類別內可同時含 `signal` 與多個 `@abstract func`(探針 `c1_bare_with_signal.gd` 測的正是 `MouseReclaimPolicy` 這個形狀:一個 `signal` + 四個 `@abstract func`);漏實作抽象方法是編譯期錯誤且訊息指名缺哪一個方法。**下方全部採裸簽章。**
+>
+> ⚠️ **歷史紀錄(不得再被引用為現況)**:本段原本指示「本專案唯一已查證的 `@abstract` 範例採『冒號 + `pass` 主體』形式,**下方沿用該形式**」—— **那個範例本身是錯的**,已於 2026-08-20 第七輪修正(`current-best-practices.md` 第 47–48 行改為裸簽章 + 12 行更正註記)。第三輪把 `@abstract` 由「印象」升級為「已查證」的依據就是逐字比對那個錯誤範例,**那次升級無效**。原句「無法在本環境確認」亦已被推翻(見 Constraints)。**本次修訂已刪除本 ADR 的 8 處 `pass` 主體**(原 533/537/542/556/1180/1183/1186/1189);ADR-0004 是否與何時同步修正,屬 ADR-0004 自身管轄,**本文件不記錄其狀態** —— 該事實登記於 `docs/registry/architecture.yaml` 的 `abstract_func_with_body`,那是不會過期的單一權威位置。
 
 ```gdscript
 # ─── cursor_types.gd ─────────────────────────────────────────
@@ -1176,17 +1319,13 @@ static func invalidated(from: CursorTarget) -> CursorTarget
 class_name MouseReclaimPolicy extends RefCounted
 signal reset_triggered(trigger: CursorTypes.ResetTrigger)
 @abstract
-func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool:
-    pass
+func evaluate(current_mouse_position: Vector2, surface: CursorTypes.SurfaceType) -> bool
 @abstract
-func reclaim_progress() -> float:
-    pass
+func reclaim_progress() -> float
 @abstract
-func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void:
-    pass
+func reset(seed_position: Vector2, trigger: CursorTypes.ResetTrigger) -> void
 @abstract
-func diagnostic_seed_position() -> Vector2:   # 第四輪修訂(R4-2):改標 @abstract,實作下放子類別
-    pass
+func diagnostic_seed_position() -> Vector2   # 第四輪修訂(R4-2):改標 @abstract,實作下放子類別
 
 # ─── cursor_state.gd(DI 核心,單元測試直接 new()）────────────
 class_name CursorState extends RefCounted
@@ -1205,10 +1344,38 @@ func arbitrate_device_authority(events: Array[InputEvent]) -> void   # ① -100,
 func apply_buffered_navigation(events: Array[InputEvent]) -> void    # ③ -25,GDD 步驟三(第四輪新增:原 arbitrate_frame 後半)
 func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult   # 新增 REJECTED_REENTRANT(N4)
 func mark_pending_reresolve(expected: CursorTarget) -> MarkResult               # 新增 REJECTED_REENTRANT(N4)
-func handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult      # 甲分支
+func handoff_before_unload() -> MarkResult      # 甲分支
 func handoff_after_mount(target: CursorTarget) -> SetTargetResult               # 乙分支(第三次修訂新增,R5-1,BLOCKING)
 func reseed_reclaim_on_focus_regained() -> void                                 # 觸發點 (c)(第三次修訂新增,R5-3)
-# ─── 四條私有路徑,**不**掛閘門(R4-4 + 第三次修訂 R5-1)。公開入口不得互相呼叫 ──
+# ─── 六條私有路徑,**不**掛閘門(R4-4 + 第三次修訂 R5-1 + 2026-08-21 第四次修訂)。公開入口不得互相呼叫 ──
+#
+# 2026-08-21 新增的兩條(R6-7 與 R6-10 的修法各需要一個共用私有方法;若不抽出而在各公開入口
+# 內複製,就是本 ADR 在 R5-1 段落親口否決過的做法):
+#
+# (5) _target_changed_from(old: CursorTarget, new: CursorTarget) -> bool
+#     **全 ADR 唯一決定是否發出 target_changed() 的地方。** 回傳:
+#         not old.equals(new) or old.is_valid != new.is_valid
+#     兩個條件是 **OR**,且缺一不可 —— equals() 依機制三定案**不看 is_valid**,所以有效性翻轉
+#     必須用第二個條件另外偵測。
+#     **呼叫端的順序義務(有陷阱)**:必須「**先存舊值 → 再寫新值 → 才呼叫本方法**」。
+#     若先覆寫 _target 再比較,舊值已被蓋掉,比不出任何東西。
+#     兩個呼叫者:_write_target_internal() 與 _mark_pending_reresolve_internal()
+#     (後者走 CursorTarget.invalidated(from),不經過前者)。**兩者不得各自 inline 判斷。**
+#
+# (6) _drain_pending_reseed() -> void
+#     若 _pending_reseed 為真:呼叫 _reclaim.reset(_safe_mouse_position(), FOCUS_LOST_REGAINED),清旗標。
+#     **六個會發訊號的公開入口**在清除 _mutation_in_progress **之前**各呼叫本方法恰一次
+#     (set_target / apply_buffered_navigation / handoff_after_mount / arbitrate_device_authority /
+#      mark_pending_reresolve / handoff_before_unload —— 後兩者是因為變更二讓 is_valid 翻轉也發訊號,
+#      所以它們也可能誘發下游重入)。reseed_reclaim_on_focus_regained() 自己不需要,但為避免
+#     「漏了一個」的疏漏,**七個一起做**。重複的只是一行呼叫,不是邏輯。
+#
+# 訊號發出規則(2026-08-21,R6-7)—— 機制十原本那句「target_changed() 只在目標確實改變時發,
+# 與 reset_policy 正交」的**正交性宣告仍然成立**(發出條件與 reset_policy 無關),但**條件本身變寬了**:
+# 自「equals() 為 false」擴為「equals() 為 false **或** is_valid 翻轉」。原句不可沿用。
+# **修法前的實際後果**:機制十的 N4 修法明文祝福「不想每幀輪詢的下游系統」只訂閱訊號;存檔讀取後
+# 回到同一張棋盤(表面與 id 皆相同、僅 is_valid 由 false 翻回 true)是**常態**,而那個狀態變化原本
+# 沒有任何訊號 → **這類下游會永遠停在待重新解析的視覺上**。輪詢派不受影響,**只有訂閱派中招**。
 # func _write_target_internal(target: CursorTarget, reset_policy: TargetResetPolicy) -> void
 #      兩條 reset 路徑必須寫成 if / elif,不得兩個獨立 if(發現 A)
 # func _mark_pending_reresolve_internal(expected: CursorTarget) -> MarkResult
@@ -1229,13 +1396,15 @@ func get_surface(surface: CursorTypes.SurfaceType) -> Node
 func registered_surfaces_sorted() -> Array[CursorTypes.SurfaceType]
 # 2026-08-19 第三次修訂(R5-6 + 發現 F):黑名單 is_part_of_registered_surface() 已刪除,
 # 改為 AC-60 例外表面的**白名單**第二份登記表,見機制十三之二。
-func register_native_pointer_exception(node: Control) -> RegisterResult
-func unregister_native_pointer_exception(node: Control) -> RegisterResult
+func register_native_pointer_exception(node: Control) -> ExceptionRegisterResult
+func unregister_native_pointer_exception(node: Control) -> ExceptionRegisterResult
 func is_native_pointer_exception(node: Node) -> bool     # 沿祖先鏈比對
 
 # ─── cursor_state_host.gd(Autoload 薄殼,無裁定邏輯）─────────
 class_name CursorStateHost extends Node
 # process_priority = -100;於 _ready() 內 add_child(CursorNavigationApplier)(第四輪,R4-1)
+# 2026-08-21(R6-12):全部 5 處 add_child() 呼叫點,**process_priority 的賦值語句必須在原始碼順序上
+#   位於 add_child() 之前**。VC 9c 已補一條靜態程式碼審查項。
 func suspend_arbitration() -> void      # 2026-08-19 修訂:內部亦呼叫 _frame_events.clear()(F5)
 func resume_arbitration() -> void       # 2026-08-19 修訂:內部亦呼叫 _frame_events.clear() + _reclaim.reset()(F5)
 func flush_buffered_navigation() -> void  # 第四輪新增(R4-1):供 -25 子節點呼叫,緩衝區維持私有
@@ -1388,7 +1557,7 @@ class_name CursorNavigationApplier extends Node
 - **CPU**:`_input()` 每事件僅一次 `Array.append`,O(1)。`arbitrate_device_authority()` 與 `apply_buffered_navigation()`(2026-08-19 第四輪修訂拆分,兩者各自)對該影格事件數線性,而一影格內的輸入事件數是個位數量級(滑鼠移動事件最密,約每影格 1–2 個)。`classify()` 為常數次 `is` 判定,**2026-08-19 修訂新增**`classify_action()` 為常數次 `InputMap.event_is_action()` 查詢(N1)。`MouseReclaimPolicy.evaluate()` 為一次 `Vector2` 距離計算 + 一次表面類型查表,O(1)。**2026-08-19 修訂新增**:機制十三的呈現層平滑器每影格一次 `move_toward()`(F3);機制十三之二每影格一次 `gui_get_hovered_control()` O(1) 快取查詢(N3)。**全部落在每影格路徑,但總量遠低於 16.6ms 預算的任何可觀比例。**
 - **Memory**:`_frame_events` 每影格清空,峰值與單影格事件數成正比。`CursorSurfaceRegistry` 上界為 `SurfaceType` 成員數(目前 4)。`diagnostic_reclaim_progress_history` 為診斷用,須有上界(建議環形緩衝,具體大小留實作)。
 - **Load Time**:`CursorStartupValidator.validate()` 遍歷全部 `ui_*` action 一次,發生於啟動,非每幀路徑。
-- **Draw Calls**:機制十二/十三的全域 CanvasLayer 新增至多 2 個繪製元素(待機指示、自繪游標),對 `<1000` 的專案預算(`technical-preferences.md`)無實質影響。
+- **Draw Calls**:機制十二/十三的全域 CanvasLayer 新增至多 **3** 個繪製元素(待機指示、自繪游標、hover 判定器;**2026-08-21 R6-8 由 2 改為 3** —— hover 判定器本身通常不繪製,計入是為了與節點數一致、避免下一輪再對不上),對 `<1000` 的專案預算(`technical-preferences.md`)無實質影響。
 - **Network**:不適用(單人遊戲;`networking_features` 為專案級 forbidden pattern)。
 
 **明確未定案**:各表面類型的 `reclaim_threshold_px` 具體值(GDD 初步校準數據:單一合成測試表面約 50–100px 手感自然,**非最終值,亦未依表面類型分別測試**,待垂直切片階段各表面分別校準);`reclaim_visual_convergence_max_frames` 具體值(僅約束嚴格大於 0)。
@@ -1415,7 +1584,7 @@ class_name CursorNavigationApplier extends Node
 10. **F5 暫停/復焦緩衝清空測試(2026-08-19 修訂新增)**:構造「`_input()` 已 append 事件之後、同影格內 `_arbitration_suspended` 才變 true」的時序,斷言 `_process()` 不裁定該批事件;另構造暫停期間累積殘留事件、復焦後驗證 `_frame_events` 為空、不與復焦當下新事件混合處理。**2026-08-19 第四輪修訂新增第三個向量(R4-1 連帶)**:構造「−100 已完成裝置權威裁定、−25 尚未執行、期間 `_arbitration_suspended` 翻為 `true`」的中間狀態,斷言(i) 裝置權威**已**被裁定(該影格不回溯)、(ii) 導覽寫入**未**套用、(iii) `_frame_events` 已被 `suspend_arbitration()` 清空,`flush_buffered_navigation()` 進入時直接 return。這是拆節點修法製造的新中間狀態,見機制五「R4-1 修法對 F5 的連帶影響」。
 11. **N4 重入測試(2026-08-19 修訂新增)**:在 `target_changed()`/`device_authority_changed()` 的處理函式內同步呼叫 `set_target()`,斷言回傳 `REJECTED_REENTRANT`、狀態未被變更、訊號未被重複發出。
 12. **R4-3 上升方向測試(2026-08-19 第四輪修訂新增)**:餵入單調遞增的 `reclaim_progress()` 序列直到跨過門檻,斷言**跨過門檻的當影格** `_presented_alpha == 1.0`(不是「N 影格後才到 1.0」)。這是 GDD「達到門檻的當下透明度達 100%」的直接兌現,也是上一版平滑器**結構上不可能通過**的那一項。另餵入下降序列,斷言收斂步數不超過 `reclaim_visual_convergence_max_frames`,且觸發點 (d) 的歸零為單影格完成。
-13. **內部寫入不被自己的閘門拒絕(2026-08-19 第四輪修訂新增 R4-4;第三次修訂擴充 R5-1)**:呼叫 `apply_buffered_navigation()` 使其內部執行目標寫入,斷言目標**確實改變**(不是靜默 no-op)。上一版若把內部寫入實作為呼叫公開 `set_target()`,此測試會失敗——這是 R4-4 的直接證據。**第三次修訂新增兩組同型別向量(R5-1:第四輪只修了三處中的一處)**:(i) 呼叫 `handoff_before_unload()`,斷言當下目標**確實**被標記為待重新解析,而非回傳 `REJECTED_REENTRANT`——上一版若把甲分支實作為呼叫公開 `mark_pending_reresolve()`,此測試會失敗;(ii) 呼叫 `handoff_after_mount()`,斷言目標**確實**寫入且驗證**確實**執行過(以未註冊表面的目標呼叫,斷言回傳 `SURFACE_NOT_REGISTERED` 而非 `APPLIED`——若實作者為了避開閘門而跳過驗證,此測試會失敗)。另斷言**七個**公開入口彼此不互相呼叫、且**四條私有路徑**不跨越任何公開方法(以呼叫圖靜態檢查或程式碼審查為之)。
+13. **內部寫入不被自己的閘門拒絕(2026-08-19 第四輪修訂新增 R4-4;第三次修訂擴充 R5-1)**:呼叫 `apply_buffered_navigation()` 使其內部執行目標寫入,斷言目標**確實改變**(不是靜默 no-op)。上一版若把內部寫入實作為呼叫公開 `set_target()`,此測試會失敗——這是 R4-4 的直接證據。**第三次修訂新增兩組同型別向量(R5-1:第四輪只修了三處中的一處)**:(i) 呼叫 `handoff_before_unload()`,斷言當下目標**確實**被標記為待重新解析,而非回傳 `REJECTED_REENTRANT`——上一版若把甲分支實作為呼叫公開 `mark_pending_reresolve()`,此測試會失敗;(ii) 呼叫 `handoff_after_mount()`,斷言目標**確實**寫入且驗證**確實**執行過(以未註冊表面的目標呼叫,斷言回傳 `SURFACE_NOT_REGISTERED` 而非 `APPLIED`——若實作者為了避開閘門而跳過驗證,此測試會失敗)。另斷言**七個**公開入口彼此不互相呼叫、且**六條私有路徑**不跨越任何公開方法(以呼叫圖靜態檢查或程式碼審查為之)。**2026-08-21**:私有路徑由四條增為六條(新增 `_target_changed_from()` 與 `_drain_pending_reseed()`)—— 這正是 Step 5.5 覆核指出的「數字必然改變、不用猜」那一類連帶,原文的「四條」在本次修訂後會當場自我矛盾。連帶新增兩條斷言:(iii) `_target_changed_from()` 是全 ADR 唯一決定是否發出 `target_changed()` 的地方(兩個呼叫它的私有方法都不自行判斷);(iv) 六個會發訊號的公開入口在清除 `_mutation_in_progress` **之前**皆呼叫 `_drain_pending_reseed()` 恰一次。
 14. **R4-5 分類完整性測試(2026-08-19 第四輪修訂新增)**:於 `InputMap` 注入一個不在三份清單任一份中的 `ui_*` action,斷言 `CursorStartupValidator.validate()` 回報 `UI_ACTION_UNCLASSIFIED` **並附帶該 action 名稱**,而非靜默通過。
 15. **`TR-cursor-015` 三分支測試(2026-08-19 第四輪修訂新增;第三次修訂大幅擴充,R5-1 BLOCKING 的直接驗證)**:
     - **15a(甲)**:呼叫 `handoff_before_unload()`,斷言累積位移量已重置為 0、起點已更新為當下滑鼠座標、且 `reclaim_reset_triggered` 帶的是 `SURFACE_HANDOFF`(不是 `TARGET_CHANGED`)。
@@ -1424,7 +1593,7 @@ class_name CursorNavigationApplier extends Node
     - **15d(丙,不得誤發)**:丙分支**兩條路徑各測一次**——原目標仍有效時斷言可直接以原目標值重新設定(不強制重算),原目標已失效時斷言走 Core Rules #6 重算路徑;**兩條路徑皆斷言觸發點是 `TARGET_CHANGED` 或不發出,絕不是 `SURFACE_HANDOFF`**(GDD Core Rules #7 只要求甲/乙重置,丙不在內)。一般改標 `set_target()` 亦須同樣斷言。
 16. **R5-3 擁有權與轉發鏈測試(2026-08-19 第三次修訂新增)**:(i) 靜態斷言 `CursorState` **不存在**任何回傳 `MouseReclaimPolicy` 的公開方法或屬性(`_reclaim` 不外流);(ii) 斷言 `CursorStateHost` 全文不出現 `_reclaim`,且 `get_viewport().get_mouse_position()` 在全專案**恰好出現一次**(建構 `mouse_position_provider` 之處);(iii) 對自繪節點斷言其只依賴 `CursorState.reclaim_reset_triggered` 與 `CursorState.reclaim_progress()`,不持有 `MouseReclaimPolicy` 參照;(iv) **重入向量(專家發現 D)**:於 `target_changed()` 的處理函式內同步呼叫 `CursorStateHost.resume_arbitration()`,斷言 `_reclaim` 在該次外層寫入內**只被 reset 一次**、且 `diagnostic_reentrant_rejection_count` 遞增。
 17. **R5-6 白名單 fail-safe 測試(2026-08-19 第三次修訂新增)**:權威為 `KEYBOARD_GAMEPAD` 時,(i) 滑鼠位於已註冊表面上 → 斷言 `Input.mouse_mode == MOUSE_MODE_HIDDEN`;(ii) 滑鼠位於**未登記且未列入例外白名單**的表面上 → 斷言**仍為 HIDDEN**(這是與上一版黑名單行為相反的一項,是本次反轉的直接證據);(iii) 滑鼠位於**已登記的 AC-60 例外表面**上 → 斷言 VISIBLE;(iv) 把某個已註冊表面的祖先鏈節點設為 `MOUSE_FILTER_IGNORE`、或把根節點換成非 `Control` 型別 → 斷言 (i) 的結果**不變**(仍為 HIDDEN)——這一項是 R5-6 與專家發現 F 各自的迴歸測試,上一版黑名單下兩者皆會錯誤地變成 VISIBLE。另斷言 `Input.mouse_mode` 在值未改變的影格**不被重複賦值**(S-2)。
-18. **S-1 provider 失效測試(2026-08-19 第三次修訂新增)**:注入一個綁定到「隨後即被釋放的物件」的 `mouse_position_provider`,斷言後續取值走 `_safe_mouse_position()` 的失效路徑——回傳**上一次成功取得的座標**、`diagnostic_invalid_mouse_provider_count` 遞增、且**不丟出例外、不回傳偽造座標**。⚠️ 本測試的前提(`Callable.is_valid()` 對已釋放綁定物件的偵測行為)本身列為 Verification Required #15,須先跑 Day-1 spike 確認,否則本測試驗的是一個未查證的假設。
+18. **S-1 provider 失效測試(2026-08-19 第三次修訂新增,**2026-08-21 依 R6-11 改寫**)**:注入一個綁定到「隨後即被釋放的物件」的 `mouse_position_provider`,斷言 **(a) `evaluate()` 不被呼叫**(滑鼠奪權進入停用狀態,而非「淨位移恆為 0」那種看起來在運作的凍結);**(b) `push_error()` 恰一次**(連續多幀不重複,由 `_provider_error_reported` 守衛);**(c) `diagnostic_invalid_mouse_provider_count` 持續累加**。🔴 **原文把「回傳上一次成功取得的座標」斷言為期望結果 —— 那正是 R6-11 指出的「靜默凍結」**:穩態必然是 `_seed == 陳舊座標` → 淨位移恆為 0 → 滑鼠側奪權**永久失效且完全無聲**。`_safe_mouse_position()` 自己的失效契約(回傳上次成功座標)**維持不變**並仍應被獨立測試,但那是為了它的**一次性播種**呼叫點,不是 `evaluate()` 這條持續 polling 的路徑。⚠️ 本測試的前提(`Callable.is_valid()` 對已釋放綁定物件的偵測行為)本身列為 Verification Required #15,須先跑 Day-1 spike 確認,否則本測試驗的是一個未查證的假設。
 19. **後續 `/architecture-review`**(須於**全新 session** 執行)判定本 ADR 與 ADR-0001~0004 無衝突,且對 19 項 `TR-cursor-*` 的涵蓋由獨立審查重新推導——本 ADR **不預先自陳修訂後的涵蓋分佈**(見 GDD Requirements Addressed 涵蓋結論)。**第三次修訂補充**:本次修訂已約定為 ADR-0005 的**最後一次全面修訂**,第六輪審查的範圍應為「R5-1~R5-6、S-1~S-5 與本次 Step 5.5 新發現 A/D/F/G 是否確實關閉」,而非全域重推 130 項需求。
 
 **反向驗證(本 ADR 若錯了會如何顯現)**:若機制一的分離不徹底(邏輯洩漏進 Autoload 薄殼),會表現為某些 AC 的單元測試開始需要 `add_child()` 或全域狀態清理 —— 驗證條件 2 會直接攔截。若機制六的 `_process` 定序前提不成立(`_input()` 未在 `_process()` 前全數完成),會表現為同幀仲裁結果隨事件抵達時序漂移 —— 驗證條件 4 會攔截,但**只在多次執行下才會顯現**,因此該測試須重複執行而非單次通過即算過。若機制十三的自繪載體未正確讀取 `reclaim_progress()`,會表現為漸進回饋視覺與判定值脫節(玩家看到指標淡入但奪權未發生,或反之)—— 這是 GDD Player Fantasy 明訂要消除的「探測性輸入後仍不確定」失敗情境本身。

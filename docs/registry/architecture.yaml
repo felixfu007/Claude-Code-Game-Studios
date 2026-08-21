@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-21b"  # /architecture-decision ADR-0005 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌覆核 2 BLOCKING + 11 非阻塞):新增 3 項(1 api cursor_process_priority_before_add_child、2 forbidden abstract_func_with_body〔專案級,adr: none + verified_by,referenced_by 同時列 ADR-0004/0005〕、silent_freeze_fallback_for_invalid_provider),就地修訂 cursor_target_write(signal_signature 由 5 個公開入口改為 7,私有路徑 FOUR → SIX,handoff_before_unload 刪 surface 參數)。總計 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測);ADR-0005 佔 29 項。以下為前次紀錄 —— "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -369,7 +369,7 @@ interfaces:
       - tactical-combat-system    # sets initial target (Core Rules #6); marks stale on unit death/move
       - save-system               # handoff branches 甲/乙/丙 across screen teardown (ADR-0004 read path)
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
-    signal_signature: "PUBLIC GATED ENTRIES (5): arbitrate_device_authority(events: Array[InputEvent]) -> void  |  apply_buffered_navigation(events: Array[InputEvent]) -> void  |  set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload(surface: CursorTypes.SurfaceType) -> MarkResult  ||  PRIVATE UNGATED: _write_target_internal(target: CursorTarget) -> void  ||  CTOR: _init(reclaim, registry, mouse_position_provider: Callable)"
+    signal_signature: "PUBLIC GATED ENTRIES (7): arbitrate_device_authority(events: Array[InputEvent]) -> void  |  apply_buffered_navigation(events: Array[InputEvent]) -> void  |  set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload() -> MarkResult  |  handoff_after_mount(target: CursorTarget) -> SetTargetResult  |  reseed_reclaim_on_focus_regained() -> void  ||  PRIVATE UNGATED (6): _write_target_internal(target, reset_policy) -> void  |  _mark_pending_reresolve_internal(expected) -> MarkResult  |  _validate_target_writable(target) -> SetTargetResult  |  _safe_mouse_position() -> Vector2  |  _target_changed_from(old, new) -> bool  |  _drain_pending_reseed() -> void  ||  CTOR: _init(reclaim, registry, mouse_position_provider: Callable)"
     notes: >
       mark_pending_reresolve MUST NEVER be silent: if `expected` does not equal the
       currently-held target (the player navigated away in the meantime), it returns
@@ -436,7 +436,13 @@ interfaces:
       misfire on 丙 and on ordinary retargets), and a fourth problem existed: if 乙's
       computed target equals the current one, no reset fired at all — the GDD-mandated
       zeroing silently did not happen.
-      (2) FOUR private paths, not one: _write_target_internal(target, reset_policy),
+      (2) 2026-08-21: SIX private paths, not four (and not one). _target_changed_from(old, new)
+      and _drain_pending_reseed() were added by the fourth revision — R6-7's and R6-10's fixes each
+      need a shared private method, and copying the logic into each public entry is exactly what
+      R5-1 forbade. Step 5.5 flagged this as a count that NECESSARILY changes; at least 7 places
+      declared "four". Note the ADR's own mechanism-10 comment said "three" even before this
+      revision — inconsistent with the "four" table since the third revision. The six are:
+      _write_target_internal(target, reset_policy),
       _mark_pending_reresolve_internal(expected), _validate_target_writable(target),
       _safe_mouse_position(). The second closes a defect of the SAME SHAPE as R4-4 that
       round 4 left unfixed: handoff_before_unload() (branch 甲) was specified as "calls
@@ -1369,6 +1375,26 @@ api_decisions:
       - docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
     added: "2026-08-21"
     revised: ""
+
+  - purpose: cursor_process_priority_before_add_child
+    status: active
+    api: "process_priority must be assigned BEFORE add_child(), at all 5 add_child() call sites in ADR-0005. Enforced by a static source-order review item in Validation Criteria 9c."
+    not: "add_child() first, then set process_priority"
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    reason: >
+      A node not yet in the scene tree cannot trigger any processing-chain reorder; setting the
+      value after entry does trigger one, and whether that affects the frame's already-started
+      traversal is UNVERIFIED engine behaviour for this project. Setting the value first costs
+      ZERO, so it is mandated rather than recommended — this removes an impression-level engine
+      dependency outright instead of carrying a Verification Required item for it. Round 5 raised
+      this explicitly and the third revision NEITHER adopted NOR rejected it (R6-12): all five
+      add_child() mentions were silent on ordering and VC 9c only asserted static values and
+      parent-child relationships. Same pattern as S-2, except this time it was round 5's own
+      recommendation that the next revision dropped.
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+    added: "2026-08-21"
+    revised: ""
 # Example:
 #
 # api_decisions:
@@ -1776,12 +1802,13 @@ forbidden_patterns:
       with no try/finally in GDScript, "the flag is set exactly once and cleared exactly
       once" is only guaranteeable if entries never nest.
       EXTENDED 2026-08-19c (round-5 R5-1): round 4 fixed only ONE of three sites of this
-      shape. handoff_before_unload() (branch 甲) was specified as "calls
+      shape. 2026-08-21: the count below is now SEVEN public entries and SIX private paths.
+      handoff_before_unload() (branch 甲) was specified as "calls
       mark_pending_reresolve()" — both gated public entries, so 甲 would have been rejected
       by its own gate and the pending-reresolve mark would never have been applied.
       handoff_after_mount() (branch 乙, added in the same revision) would have hit the same
       wall had it borrowed set_target() for its validation. The rule now covers SEVEN public
-      entries and FOUR private paths; no public entry may call another, and every entry has
+      entries and SIX private paths (2026-08-21: was four); no public entry may call another, and every entry has
       a private path available so it never needs to.
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-19b"
@@ -1983,6 +2010,64 @@ forbidden_patterns:
       ADR-0002 explicitly does NOT claim entry 8 is protected to the same standard as
       entries 1-7 — this is a documented obligation, not a structural guarantee.
     adr: docs/architecture/adr-0002-affinity-data-pool-data-structure-and-concurrency-contract.md
+    added: "2026-08-21"
+
+  - pattern: abstract_func_with_body
+    status: active
+    description: >
+      An @abstract function must be declared as a BARE SIGNATURE — no colon, no body.
+      "@abstract func f() -> T: pass" is a compile-time Parse Error that blocks the whole file.
+    why: >
+      MEASURED (2026-08-20, prototypes/engine-verification-spike-2026-08-20): the colon+pass form
+      is "Parse Error: An abstract function cannot have a body." The bare signature is legal for
+      Array[T]/bool/float/void/Vector2 return types; an @abstract class may hold a signal
+      alongside several @abstract funcs; a missing override is a compile error naming the method.
+      REGISTERED PROJECT-WIDE, not under one ADR, because it exists in TWO documents and the
+      root cause was a THIRD: docs/engine-reference/godot/current-best-practices.md carried a
+      WRONG example (colon+pass, with a "# Subclasses MUST override" comment that made it read
+      as deliberately verified). Round 3 upgraded @abstract from "impression" to "verified" by
+      comparing against that wrong example — that upgrade was VOID. The example was corrected
+      2026-08-20; ADR-0005's 8 occurrences were removed 2026-08-21 together with the sentence
+      that instructed implementers to copy the wrong form. ADR-0004's 5 occurrences (lines
+      80/83/86/89/92) and its line-71 instruction sentence are STILL OPEN — recorded here rather
+      than inside ADR-0005, because a cross-ADR TODO written in another ADR's prose silently
+      expires when that ADR is fixed independently (the C6/C7 failure shape). This registry entry
+      is the single non-expiring authority for that fact.
+    adr: none
+    verified_by: >
+      docs/engine-reference/godot/current-best-practices.md (corrected 2026-08-20) +
+      docs/architecture/architecture-review-2026-08-20-round7.md section 7.5 +
+      prototypes/engine-verification-spike-2026-08-20/ (probes c1_bare_*.gd, finding F-11)
+    referenced_by:
+      - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
+      - docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    added: "2026-08-21"
+
+  - pattern: silent_freeze_fallback_for_invalid_provider
+    status: active
+    description: >
+      When an injected Callable provider becomes invalid, never fall back to "return the last
+      known value" on a path that is polled every frame. Escalate to a system-level degraded
+      state: skip the dependent path entirely, push_error() ONCE (guarded by a bool), keep the
+      diagnostic counter.
+    why: >
+      R6-11: MouseReclaimPolicy.evaluate() computes P.distance_to(_seed). With a stale-coordinate
+      fallback the steady state is necessarily _seed == P, so net displacement is permanently 0 —
+      mouse-side reclaim is DEAD and COMPLETELY SILENT in shipping builds (the diagnostic counter
+      is QA-only). The other branch (stale P already past the threshold) converges to the same
+      place: NAVIGATION always wins the fixed ladder, the player presses a direction key, trigger
+      (d) VETOED_SAME_FRAME fires reset(P, ...) and pulls _seed back to P. This contradicts the
+      ADR's own "never silent" stance and its rule that fail-safe must lean toward the hard
+      requirement — the very same revision had just used that argument to invert mechanism 13-2
+      into a whitelist. Failure direction must flip from "silent freeze" to "loud disable".
+      NOTE the interface half (Step 5.5 B-1): the coordinate getter's -> Vector2 signature gives
+      the caller NO channel to know the value is a fallback, so the check must sit in the CALLER
+      (is_valid() on the provider, before requesting a coordinate). Declaring the behaviour
+      without wiring the interface is the R6-6 / R5-1 defect shape.
+      push_error() is NOT assert(): assert() is stripped in release builds by design, push_error()
+      is an ordinary runtime call unaffected by build type (impression-high-confidence, NOT
+      verified by this project — engine reference has zero hits).
+    adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-21"
 # Example:
 #
