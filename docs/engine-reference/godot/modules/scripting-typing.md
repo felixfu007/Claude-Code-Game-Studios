@@ -1,6 +1,6 @@
 # Godot GDScript 型別系統邊界 — Quick Reference
 
-Last verified: 2026-08-21 | Engine: Godot 4.7.1
+Last verified: 2026-08-24 | Engine: Godot 4.7.1
 
 > **格式偏離說明(刻意,非疏漏)**:本檔案超出 `docs/engine-reference/README.md` 訂的
 > 150 行 context-budget 建議上限,且每個小節下方帶「**證據**:」引用行——這兩者都是
@@ -8,6 +8,10 @@ Last verified: 2026-08-21 | Engine: Godot 4.7.1
 > `core-serialization.md` 相同:本檔記載的巢狀型別容器限制、enum 型別化參數的靜默
 > 轉換行為,分別是本專案多份技術設計文件已被實機驗證推翻的位置,省略引用會讓
 > 下一次修訂重蹈覆轍。這不是對 150 行規則的靜默違反,是記錄在案的例外。
+>
+> **2026-08-24 補充兩節(第 6、7 節,約 45 行)後,檔案來到約 260 行**——新增內容
+> 是 `Callable`/`RefCounted` 生命週期與 `StringName`/`String` 鍵互通這兩項邊界事實,
+> 借了本檔「型別/物件邊界行為」的定義域,詳見兩節各自開頭的範圍說明。
 
 ## 1. 巢狀型別容器不支援
 
@@ -174,6 +178,62 @@ J1d/J1e(`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/l
 **證據**:`prototypes/engine-verification-spike-2026-08-20/logs/run-final-2026-08-20-headless.txt`;
 `prototypes/xcheck-round7-2026-08-20/README.md` 探針 E。
 
+## 6. `Callable` 綁定 `RefCounted` 實例方法的生命週期 —— 與序列化無關
+
+> **範圍提醒**:本節與 `core-serialization.md` 第 4 節的 `Callable` 條目是**兩件不同的
+> 事**。第 4 節談的是 `Callable` 經 `var_to_bytes()`/`bytes_to_var()` **序列化往返後**
+> 的空殼行為;本節從頭到尾沒有呼叫任何序列化函式,是**同行程內、單純的 `RefCounted`
+> 引用計數生命週期**對已綁定 `Callable` 的影響。放在本檔而非 `core-serialization.md`,
+> 是因為它與本檔其他小節同屬「看起來安全但邊界有洞」的型別/物件行為類別,不是序列化
+> 行為。
+
+綁定到某個 `RefCounted` 實例方法的 `Callable`,常見的隱含假設是「只要還握著這個
+`Callable`,它綁定的物件就還活著」。實測**不成立**:
+
+| 時機 | `is_valid()` | `get_object()` | `get_method()` |
+|---|---|---|---|
+| 綁定來源的 `RefCounted` 實例仍在作用域內 | `true` | 該實例的活體參照 | 方法名稱 |
+| **來源實例離開作用域並被回收後** | `false` | `<Object#null>` | **仍正確回傳方法名稱** |
+
+`Callable` 本身**不會**讓它綁定的 `RefCounted` 續命(不增加引用計數)。⚠️
+**`get_method()` 在物件已死之後仍然「看起來正常」**——它是這張表裡唯一一個不反映
+失效狀態的查詢方法。若驗證邏輯誤用「`get_method()` 有沒有回傳值」判斷 Callable 是否
+仍可用,會得出錯誤的「還活著」結論。正確的存活判斷必須用 `is_valid()`。
+
+**證據**:`prototypes/save-format-skeleton-2026-08-21/scripts/t_h_callable_lifetime.gd`
+第 7–26 行;`prototypes/save-format-skeleton-2026-08-21/logs/run1-unfiltered.txt` 第
+7536–7540 行;`prototypes/save-format-skeleton-2026-08-21/README.md`「追加 H」表
+(約第 226–235 行)。
+
+## 7. `StringName`/`String` 當 `Dictionary` 鍵,序列化往返後仍互通
+
+`Dictionary` 若同時混用 `String` 鍵與 `StringName` 鍵,查詢時**不需要**在乎當初插入
+時是哪一種型別——`has("alpha")` 與 `has(&"alpha")` 對同一個鍵**都會**命中,不論該鍵
+原本是用 `String` 還是 `StringName` 寫入的。這個互通性在**序列化往返後依然成立**:
+
+```gdscript
+var d: Dictionary = {}
+d[&"alpha"] = 1       # StringName 鍵
+d["beta"] = 2          # String 鍵
+
+var back = bytes_to_var(var_to_bytes(d))
+# back.has("alpha") == true, back.has(&"alpha") == true
+# back.has("beta")  == true, back.has(&"beta")  == true
+```
+
+實測四種組合(寫入用哪種 × 查詢用哪種)**往返前後全部回傳 `true`**,且各鍵的
+`typeof()` 在往返前後保持不變(`StringName` 鍵仍是 21,`String` 鍵仍是 4——不會被
+互相轉型)。
+
+**意義**:若某個型別化資料結構的鍵位置同時允許 `STRING` 與 `STRING_NAME`(例如
+白名單式的型別閘門),混用兩種字串鍵型別在查詢層面是安全的——不會因為寫入端與
+讀取端選用的字串型別不同而查不到鍵。
+
+**證據**:`prototypes/save-format-skeleton-2026-08-21/scripts/x2_stringname_key.gd`;
+`prototypes/save-format-skeleton-2026-08-21/logs/stage0-unfiltered.txt` 第 96–100
+行;`prototypes/save-format-skeleton-2026-08-21/README.md` 階段 0 x2 列(約第 95
+行)。
+
 > ### ⚠️ 證據等級:探針 J 的引用與其他探針不同級
 >
 > 本檔引用的探針裡,**只有探針 J(`xcheck-gdscript-shape-2026-08-21/`)沒有 README** ——
@@ -204,3 +264,32 @@ J1d/J1e(`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/l
 | 1 | **release build 下容器型別驗證是否仍生效** | C++ 層的 `ERR_FAIL_COND_V` 系列巨集是否在 release 被編掉(從而讓「型別不符寫入被拒絕」失效),需要讀 4.7.1 引擎原始碼的 `container_type_validate.h` 才能確認,而本專案環境沒有可用的 export template——`%APPDATA%/Godot/export_templates/` 目錄存在但是空的,系統上找不到任何 `.tpz` 檔,無法匯出 release 建置實測。這一層與「GDScript VM 執行期錯誤回報在 release 是否仍中止函式」是兩個不同層級的問題,後者同樣只能在 debug/headless 下驗證,兩者皆待補測。 |
 | 2 | `@abstract` 類別的三條間接構造路徑(`set_script()`、`load().new()`、`ClassDB`/`ResourceLoader`) | 尚未設計對應探針,已知的只有字面 `ClassName.new()` 這一條直接路徑。 |
 | 3 | enum 欄位賦值對 `bool`/`String` 的行為 | 函式參數版本已測(第 3 節),欄位賦值僅測過 float、越界 int 兩項,`bool`/`String` 屬合理外推,非直接量測。 |
+
+## 8. `class_name` 全域註冊依賴匯入產生的快取 —— headless 探針的假否證陷阱
+
+**現象**:在一個**從未匯入過**的專案目錄直接跑 `godot --headless --path .`,任何
+對 `class_name` 全域類別的參照都會失敗,逐字:
+
+```
+SCRIPT ERROR: Parse Error: Could not find type "SaveFormat" in the current scope.
+SCRIPT ERROR: Parse Error: Identifier "SaveEnvelope" not declared in the current scope.
+ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
+```
+
+**根因**:`class_name` 的全域註冊來自 `.godot/global_script_class_cache.cfg`,
+該檔由**匯入階段**產生。全新目錄沒有 `.godot/`,於是沒有任何 `class_name` 被登記。
+
+**正確做法**:先跑 `godot --headless --path . --import`,再執行。
+匯入後 `global_script_class_cache.cfg` 會列出各 `class_name` 與其 `path`。
+
+**證據**:`prototypes/xcheck-classname-cycle-2026-08-24/logs/run1-unfiltered.txt`
+(未匯入,全盤失敗)對照 `logs/xcycle-unfiltered.txt`(匯入後,全部通過);
+快取內容見同目錄 README「環境陷阱」節。
+
+> ⚠️ **這是一個「假否證」陷阱,危險程度高於一般環境問題。** 錯誤訊息看起來斬釘截鐵
+> 且完全合理,若據此下結論會得到「`class_name` 互相引用在本版本不可行」這種
+> **方向相反**的判定,並可能據以把架構改成不必要的形狀。
+> **後續任何用到 `class_name` 的 headless 探針都必須先 `--import`。**
+
+**附帶可用的事實**:快取能成功生成,本身即代表**該目錄下所有腳本在匯入期都通過剖析** ——
+這比執行期輸出更早、更硬的一道證據,可作為「這批腳本編譯得過」的獨立佐證。

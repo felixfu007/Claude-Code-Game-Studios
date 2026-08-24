@@ -8,6 +8,6 @@
 > | `bytes_to_var(b)` | `bytes_to_var_with_objects(b)` | 後者會從存檔實例化 Object——正是 Core Rules #9 要防的事 |
 > | (不適用) | `FileAccess.store_var()` / `FileAccess.get_var()` | **見下方禁令範圍** |
 >
-> **禁令範圍涵蓋 `FileAccess`(2026-08-21 新增,E3)**:`FileAccess.get_var(allow_objects: bool = false)` 與 `FileAccess.store_var(value, full_objects: bool = false)` **確實接受第二個布林參數**,且底層與全域函式共用同一份 Variant 線格式。這使它成為一條**外觀合理的等效繞道**:預設值雖然安全,但只要有人寫 `get_var(true)`,本 ADR 的整套型別安全論證就在那一行被繞過,而且**看起來完全像是正常的 Godot 用法**。因此本 ADR 明文禁止在存檔讀寫路徑上使用 `FileAccess.store_var()`/`get_var()`——存檔位元組一律經 `store_buffer()`/`get_buffer()` 以不透明位元組進出磁碟,Variant 編解碼只發生在本 ADR 定義的兩個函式裡(機制八)。
+> **禁令範圍涵蓋 `FileAccess`(2026-08-21 新增,E3)**:`FileAccess.get_var(allow_objects: bool = false)` 與 `FileAccess.store_var(value, full_objects: bool = false)` **確實接受第二個布林參數**。⚠️ **推論、本輪未實機量測**:底層是否與全域函式共用同一份 Variant 線格式,是沿用舊稿的推論——本輪沒有做位元組層級的探針去比對兩者輸出是否逐位元組相同,不可當成實測事實引用。這使它成為一條**外觀合理的等效繞道**:預設值雖然安全,但只要有人寫 `get_var(true)`,本 ADR 的整套型別安全論證就在那一行被繞過,而且**看起來完全像是正常的 Godot 用法**。因此本 ADR 明文禁止在存檔讀寫路徑上使用 `FileAccess.store_var()`/`get_var()`——存檔位元組一律經 `store_buffer()`/`get_buffer()` 以不透明位元組進出磁碟,Variant 編解碼只發生在本 ADR 定義的兩個函式裡(機制八)。
 >
 > **這兩組 API 的不對稱本身就是本文件出錯的根因**,務必讀 `docs/engine-reference/godot/modules/core-serialization.md` 第 1 節:同一件事、兩種形狀,而 `FileAccess` 兩個方法的第二參數**連名稱都不同**(`allow_objects` vs `full_objects`)。拿 `FileAccess` 當先例去推全域函式,就是那 18 處錯誤的來歷。

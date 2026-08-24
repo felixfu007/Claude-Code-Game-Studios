@@ -1,6 +1,6 @@
 # Godot 二進位序列化與核心型別 — Quick Reference
 
-Last verified: 2026-08-21 | Engine: Godot 4.7.1
+Last verified: 2026-08-24 | Engine: Godot 4.7.1
 
 > **格式偏離說明(刻意,非疏漏)**:本檔案超出 `docs/engine-reference/README.md` 訂的
 > 150 行 context-budget 建議上限,且每個小節下方帶「**證據**:」引用行——這兩者都是
@@ -9,6 +9,11 @@ Last verified: 2026-08-21 | Engine: Godot 4.7.1
 > 因此各自被實機驗證推翻;(2) 本檔每一條宣稱都要求可追溯到具體探針與 log 檔案,省略
 > 引用等於重演本庫曾發生過的「錯誤範例擴散」事故(見 `current-best-practices.md` 的
 > `@abstract` 條目)。這不是對 150 行規則的靜默違反,是記錄在案的例外。
+>
+> **2026-08-24 補充兩節(第 10、11 節,約 65 行)後,檔案來到約 394 行**——理由與
+> 上述相同,不是新的例外:2026-08-24 一次判讀失準,起因是所需證據只存在探針的
+> README 裡、沒有進到本檔,而指示要求信本檔優先於探針原始資料。缺口本身就是下一輪
+> 誤判的來源,補完比控制行數更優先。
 
 ## 為什麼這份文件存在
 
@@ -274,6 +279,71 @@ script.`,接著約 1024 行 `ERROR: Stack underflow! (Engine Bug)`。GDScript �
 | 9 | Vector3 | 19 | Projection | 29 | PackedByteArray | 39 | *(TYPE_MAX 哨兵,`typeof()` 永不回傳)* |
 
 **證據**:探針 H-2/H-3(`probeH-run1-unfiltered.txt`)。
+
+## 10. 巢狀 `PackedByteArray` 保真與不遞迴解讀
+
+`PackedByteArray` 在 Variant 二進位編碼中是**一級不透明型別**:外層 `bytes_to_var()`
+只解碼一層,巢狀出現的 `PackedByteArray` 值本身**不會被遞迴解讀**——維持
+`typeof=29`(`TYPE_PACKED_BYTE_ARRAY`)、未解碼狀態。
+
+```gdscript
+var inner_buf: PackedByteArray = var_to_bytes({"k": 42})
+var outer := {"block": inner_buf}
+var outer_bytes := var_to_bytes(outer)
+
+var back = bytes_to_var(outer_bytes)          # typeof=27 (Dictionary)
+var block = back["block"]                     # typeof=29 —— 仍是原始位元組,不是 {"k": 42}
+# block == inner_buf 為 true,hex 逐位元組相同、長度相同
+# 對 block 再呼叫一次 bytes_to_var() 才會拿到 {"k": 42}
+```
+
+實測數字:外層一次解碼得到 `typeof=27`;巢狀值維持 `typeof=29`,與原始緩衝區 `==`
+為 `true`、hex 逐位元組相同、長度皆 160 bytes;對該值**再解碼一次**(第二階段)結果
+`== 原 payload` 為 `true`。
+
+**同一份探針直接測過這個保真性的實際後果(不是外推)**:把巢狀的 `PackedByteArray`
+換成「內容其實含 Object、會觸發第 3 節整包拒絕行為」的一段位元組,外層一次解碼**仍然
+成功**——外層其他欄位完整可讀,不受巢狀壞內容影響;只有在對該巢狀值**單獨再呼叫一次**
+`bytes_to_var()` 時,壞內容才顯現為 `null`,行為與第 3 節一致。
+
+**為什麼這件事重要**:任何把「已序列化的 `PackedByteArray` 視為葉節點、外層解碼一次
+就等於掃過整包資料」當作前提的設計(例如分層 manifest、只在外層做一次型別檢查),
+前提都是這個不遞迴的保真性——它是**成立的**,但也代表反過來:外層檢查**不會**幫忙
+發現巢狀值內部的問題,凡是需要驗證巢狀 `PackedByteArray` 內容的地方,必須對它單獨
+呼叫一次 `bytes_to_var()`。
+
+**證據**:探針 F4'-a/F4'-b,
+`prototypes/xcheck-adr0003-2026-08-21/logs/probeF2-main-unfiltered.txt`;
+`prototypes/xcheck-adr0003-2026-08-21/README.md` F4' 表格(約第 174–183 行)。
+
+## 11. `bytes_to_var_with_objects()` 跨行程會完整實例化自訂腳本類別
+
+第 2 節談的是 plain `var_to_bytes()`(不帶 `_with_objects`)對 Object 的**寫入側**
+靜默行為;這裡是 `_with_objects` **讀取側**變體的跨行程能力,是不同的事實,兩者不可
+互相外推。
+
+行程 1 寫入的位元組裡含有一個自訂 `class_name` 子類別(`RefCounted` 衍生)的實例。
+**行程 2 是全新獨立行程**(不是同行程模擬),讀同一批位元組:
+
+| 讀法 | 結果 |
+|---|---|
+| plain `bytes_to_var()`(1 引數) | `typeof=0`,`is_null=true`——與第 3 節的整包拒絕行為一致 |
+| `bytes_to_var_with_objects()` | **成功**:`typeof=27`(Dictionary),`obj typeof=24`(Object),**`is SkelPoisonTarget == true`**——真的依存檔內容實例化了那個自訂腳本類別,不只是還原成內建 `RefCounted`;自訂欄位 `marker` 逐值正確還原(`987654321`,與行程 1 寫入時相同);唯一不同的是 `instance_id`(新配的,與行程 1 不同) |
+
+⚠️ 這個案例上 `get_class()` 印出的是 `RefCounted`(引擎原生類別),**不能**用它判斷
+還原物是不是自訂子類別;本表判定身分用的是 `is SkelPoisonTarget`,不是 `get_class()`
+(對應 `scripting-typing.md` 判讀陷阱第 1 項的具體實例)。
+
+**這正是「只用 1 引數版 `bytes_to_var()`」這個格式選擇要擋掉的具體能力**——
+`_with_objects` 變體不只是「允許 Object 通過閘門」,它會**依位元組流的內容主動建構
+並執行一個腳本類別的實例化路徑**,即使讀取端與寫入端是完全不同的行程。不應為了
+方便而改用 `_with_objects` 讀取不可信來源的資料。
+
+**證據**:`prototypes/save-format-skeleton-2026-08-21/scripts/t_f_read.gd` 第 100–123
+行(`t_f4_with_objects_file`);
+`prototypes/save-format-skeleton-2026-08-21/logs/run2-crossprocess-unfiltered.txt`
+第 85–93 行;`prototypes/save-format-skeleton-2026-08-21/README.md` F-4 段(約第
+288–298 行)。
 
 > ### ⚠️ 證據等級:探針 J 的引用與其他探針不同級
 >

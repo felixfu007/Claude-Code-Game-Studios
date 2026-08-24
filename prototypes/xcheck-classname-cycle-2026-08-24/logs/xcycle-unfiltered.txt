@@ -1,0 +1,26 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== X-CYCLE / Godot 4.7.1-stable (official) ===
+
+--- Step 1: compile-check both files independently ---
+  [COMPILED OK]  save_format.gd   (class_name SaveFormat, 引用 SaveEnvelope)
+  [COMPILED OK]  save_envelope.gd (class_name SaveEnvelope, 引用 SaveFormat)
+
+--- Step 2: 透過全域 class_name 直接呼叫,驗證雙向引用在執行期也成立 ---
+  嘗試呼叫 SaveFormat.deserialize_manifest() -- 其內部呼叫 SaveEnvelope.check_shape() --
+  [Case 1: 合法信封] ok=true detail='' (預期 ok=true)
+  [Case 2: 缺少 ruleset_version] ok=false rejection=1 detail='信封缺少鍵 ruleset_version' (預期 ok=false, detail 含 'ruleset_version')
+  [Case 3: hash 長度錯誤] ok=false rejection=1 detail='top_level_hash 型別或長度不符' (預期 ok=false, detail 含 'top_level_hash')
+ERROR: Condition "len < 4" is true. Returning: ERR_INVALID_DATA
+   at: decode_variant (core/io/marshalls.cpp:191)
+   GDScript backtrace (most recent call first):
+       [0] deserialize_manifest (res://scripts/save_format.gd:28)
+       [1] _ready (res://scripts/runner.gd:88)
+  [Case 4: 空 buffer] ok=false rejection=1 detail='decoded typeof=0, not a Dictionary' (預期 ok=false, DATA_CORRUPTED)
+
+--- Step 3: 直接存取跨檔符號(不經方法呼叫)---
+  SaveFormat.HASH_LEN = 32 (預期 32)
+  SaveFormat.ReadRejection.DATA_CORRUPTED = 1
+  SaveEnvelope.ShapeCheckResult.new().rejection (預設值) = 0 (預期等於 SaveFormat.ReadRejection.NONE = 0)
+
+=== X-CYCLE DONE ===

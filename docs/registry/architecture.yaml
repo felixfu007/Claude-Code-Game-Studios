@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-08-21d"  # 專案效率稽核(非 skill、非審查輪):就地修訂 2 項,零新增,總計仍 81 項(10/11/29/31,逐節實測)。(1) api save_serialization_format —— `api:` 與 `not:` 欄的呼叫形狀由兩參數改單參數(實測 Parse Error;證據 prototypes/xcheck-adr0003-2026-08-21/ 探針 F1),`reason:` 欄補記根因(全域函式與 FileAccess 方法是同一線格式的兩種 API 形狀,且 FileAccess 兩個方法的第二參數連名稱都不同 —— 引 FileAccess 當先例正是陷阱),並明文標示與 ADR-0003 的**刻意分歧**(該 ADR 18 處仍為舊形狀,待 6 組必修修訂;禁止把本條目「對齊」回 ADR)。(2) forbidden resource_based_save_payload —— `why:` 欄的**失敗方向是錯的,且錯在危險的那一邊**:原文寫「would fail to serialize at all」,實測寫入側**不失敗**,plain var_to_bytes() 靜默接受任何 Object/Resource 並編成 EncodedObjectAsID,欄位全部遺失且整個往返無任何錯誤;響亮的拒絕只發生在讀取側、且只對 _with_objects 產生的位元組。原措辭暗示有引擎層安全網會在寫入時攔下,實際沒有 —— 故本禁令比原推理**更強**而非更弱。以下為前次紀錄 —— "2026-08-21c"  # /architecture-decision ADR-0004/0003/0002 事實層修訂(零決策內容;Step 5.5 單軌 godot-specialist 覆核,零 BLOCKING、3 項可行動):就地修訂 1 項(forbidden abstract_func_with_body —— why: 欄型別清單 5 → 8 種、新增「漏實作訊息只指名其中一個」與「字面 ClassName.new() 為編譯期錯誤而間接路徑未查證」兩項實測、ADR-0004 的 5 處由 STILL OPEN 改 CLOSED 並刪去會因刪行而位移的具體行號、verified_by 增列探針 E)。**不新增任何條目** —— 「抽象基底不可實例化」已是編譯期保證,不需要紀律條目。總計仍為 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測、零重複鍵)。連帶關閉範圍外新發現 2 項過度宣稱(ADR-0003:350 為第五處、design/gdd/systems-index.md:4 為第六處)。以下為前次紀錄 —— "2026-08-21b"  # /architecture-decision ADR-0005 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌覆核 2 BLOCKING + 11 非阻塞):新增 3 項(1 api cursor_process_priority_before_add_child、2 forbidden abstract_func_with_body〔專案級,adr: none + verified_by,referenced_by 同時列 ADR-0004/0005〕、silent_freeze_fallback_for_invalid_provider),就地修訂 cursor_target_write(signal_signature 由 5 個公開入口改為 7,私有路徑 FOUR → SIX,handoff_before_unload 刪 surface 參數)。總計 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測);ADR-0005 佔 29 項。以下為前次紀錄 —— "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-08-24"  # /architecture-decision ADR-0003 修訂寫入(6 組必修 + 機制一之二、機制四之二;Step 5.5 引擎專家 CONCERNS→修畢、Step 5.6 TD-ADR 本專案首次執行 CONCERNS→窄範圍複驗 APPROVE):新增 4 項 forbidden(fileaccess_store_var_on_save_path、hash_compare_without_length_check、gate_recursion_calling_walk_body、unowned_save_assembly_layer〔status: open_gap,雙文件 also_affects〕),就地修訂 api save_serialization_format(2026-08-21 的 DELIBERATE DIVERGENCE 警告已 RESOLVED —— ADR 已改正,登記表與 ADR 恢復一致)。總計 85 項(10 state / 11 interface / 29 api / 35 forbidden,逐節實測)。以下為前次紀錄 —— "2026-08-21d"  # 專案效率稽核(非 skill、非審查輪):就地修訂 2 項,零新增,總計仍 81 項(10/11/29/31,逐節實測)。(1) api save_serialization_format —— `api:` 與 `not:` 欄的呼叫形狀由兩參數改單參數(實測 Parse Error;證據 prototypes/xcheck-adr0003-2026-08-21/ 探針 F1),`reason:` 欄補記根因(全域函式與 FileAccess 方法是同一線格式的兩種 API 形狀,且 FileAccess 兩個方法的第二參數連名稱都不同 —— 引 FileAccess 當先例正是陷阱),並明文標示與 ADR-0003 的**刻意分歧**(該 ADR 18 處仍為舊形狀,待 6 組必修修訂;禁止把本條目「對齊」回 ADR)。(2) forbidden resource_based_save_payload —— `why:` 欄的**失敗方向是錯的,且錯在危險的那一邊**:原文寫「would fail to serialize at all」,實測寫入側**不失敗**,plain var_to_bytes() 靜默接受任何 Object/Resource 並編成 EncodedObjectAsID,欄位全部遺失且整個往返無任何錯誤;響亮的拒絕只發生在讀取側、且只對 _with_objects 產生的位元組。原措辭暗示有引擎層安全網會在寫入時攔下,實際沒有 —— 故本禁令比原推理**更強**而非更弱。以下為前次紀錄 —— "2026-08-21c"  # /architecture-decision ADR-0004/0003/0002 事實層修訂(零決策內容;Step 5.5 單軌 godot-specialist 覆核,零 BLOCKING、3 項可行動):就地修訂 1 項(forbidden abstract_func_with_body —— why: 欄型別清單 5 → 8 種、新增「漏實作訊息只指名其中一個」與「字面 ClassName.new() 為編譯期錯誤而間接路徑未查證」兩項實測、ADR-0004 的 5 處由 STILL OPEN 改 CLOSED 並刪去會因刪行而位移的具體行號、verified_by 增列探針 E)。**不新增任何條目** —— 「抽象基底不可實例化」已是編譯期保證,不需要紀律條目。總計仍為 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測、零重複鍵)。連帶關閉範圍外新發現 2 項過度宣稱(ADR-0003:350 為第五處、design/gdd/systems-index.md:4 為第六處)。以下為前次紀錄 —— "2026-08-21b"  # /architecture-decision ADR-0005 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌覆核 2 BLOCKING + 11 非阻塞):新增 3 項(1 api cursor_process_priority_before_add_child、2 forbidden abstract_func_with_body〔專案級,adr: none + verified_by,referenced_by 同時列 ADR-0004/0005〕、silent_freeze_fallback_for_invalid_provider),就地修訂 cursor_target_write(signal_signature 由 5 個公開入口改為 7,私有路徑 FOUR → SIX,handoff_before_unload 刪 surface 參數)。總計 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測);ADR-0005 佔 29 項。以下為前次紀錄 —— "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -787,13 +787,16 @@ api_decisions:
       full_objects: bool = false) DO take a second boolean — same underlying wire format,
       two different API shapes, and the FileAccess parameter is not even named the same on
       both methods. Citing FileAccess as precedent for the global functions is the trap.
-      ⚠️ DIVERGENCE, DELIBERATE: ADR-0003 still carries the 2-argument shape in 18 places
-      as of 2026-08-21 and is scheduled for revision (6 must-fix groups). This registry
-      entry is correct and the ADR is not; do not "re-align" this entry back to the ADR.
+      RESOLVED 2026-08-24: the divergence noted here from 2026-08-21 is closed. ADR-0003's
+      2026-08-24 revision corrected all 18 two-argument call sites; registry and ADR now
+      agree. (Historical note kept deliberately: this entry was CORRECT and the ADR was
+      WRONG for three days, which is why the warning existed. Verified after the revision:
+      zero two-argument call sites remain outside the one that quotes the historical error
+      verbatim.)
     referenced_by:
       - docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
     added: 2026-08-18
-    revised: "2026-08-21d"  # call shape corrected (measured); deliberate divergence from ADR-0003 noted in reason
+    revised: "2026-08-24"  # divergence from ADR-0003 RESOLVED — the ADR revision landed; warning removed
 
   - purpose: save_manifest_buffer_layout
     status: active
@@ -2122,6 +2125,90 @@ forbidden_patterns:
       verified by this project — engine reference has zero hits).
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: "2026-08-21"
+
+  - pattern: fileaccess_store_var_on_save_path
+    status: active
+    description: "The save read/write path must never call FileAccess.store_var() or
+      FileAccess.get_var(). Save bytes go through store_buffer()/get_buffer() as opaque
+      bytes; Variant encode/decode happens only in the two functions ADR-0003 defines."
+    why: "Unlike the four global functions, FileAccess.get_var(allow_objects: bool = false)
+      and FileAccess.store_var(value, full_objects: bool = false) DO take a second boolean.
+      Defaults are safe, but a single get_var(true) bypasses ADR-0003's entire type-safety
+      argument on one line that looks like completely normal Godot usage. This asymmetry
+      between the two API families is also the ROOT CAUSE of ADR-0003's 18 non-compiling
+      call sites (2026-08-21 probe F): citing FileAccess as precedent for the global
+      functions is the trap — and the two FileAccess methods do not even name that second
+      parameter the same way (allow_objects vs full_objects). NOTE: whether FileAccess and
+      the global functions share the same Variant wire format is an INFERENCE carried over
+      from an older draft, NOT measured by this project; the ban does not depend on it."
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    verified_by: prototypes/xcheck-adr0003-2026-08-21/
+    added: "2026-08-24"
+
+  - pattern: hash_compare_without_length_check
+    status: active
+    description: "Hash comparison must go through hash_matches(), which checks length
+      before content. Never compare two hash PackedByteArrays with == directly."
+    why: "When BOTH sides fail, each is an empty PackedByteArray, and empty == empty is
+      TRUE — a double failure reads as a successful match. Measured: a second finish() on
+      a used HashingContext returns an EMPTY PackedByteArray (not an error). Two experts
+      (engine and GDScript domains) independently wrote the same length-first function for
+      the same reason during the 2026-08-24 revision — two-track convergence."
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    verified_by: docs/engine-reference/godot/modules/core-serialization.md
+    added: "2026-08-24"
+
+  - pattern: gate_recursion_calling_walk_body
+    status: active
+    description: "Inside SaveTypeGate, every recursive call must go to _walk() (the thin
+      shell that performs the depth check), never to _walk_body(). The depth check must
+      remain the first executable statement of _walk()."
+    why: "SaveTypeGate returns a field-bearing GateResult rather than a bool. That is safe
+      ONLY because the depth check runs before any recursion, capping the stack at 66
+      frames against an inferred ~1024-frame GDScript limit. If recursion bypasses the
+      shell, a stack overflow unwinds returning null, the caller reads a property on null,
+      and the calling function aborts silently. CRITICAL: the existing depth tests (10/62/
+      63/64/65/100) CANNOT detect this regression — 100 is far below the real stack limit,
+      so a reordered check still looks like it works. Only the deliberate 3000-deep
+      regression test catches it, and its second assertion (no Stack overflow in stderr)
+      requires CI-level stderr checking, registered as an implementation-phase item."
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    verified_by: prototypes/save-format-skeleton-2026-08-21/
+    added: "2026-08-24"
+
+  - pattern: unowned_save_assembly_layer
+    status: open_gap
+    description: "OPEN GAP, not a ban. No ADR currently claims the assembly layer that
+      turns per-block payloads into a complete save envelope (calling serialize_block()
+      per block, computing the two-level hash chain, building block_manifest, calling
+      serialize_manifest()). ADR-0003's architecture diagram draws the step but defines no
+      Key Interface for it; ADR-0004 states it only replaces bytes on disk and does not
+      cover how the bytes are assembled."
+    why: "Two consequences, and the second is a security issue. (1) COMPLETENESS: nothing
+      specifies how a save file is assembled. (2) SECURITY: ADR-0004 mechanism 7 Phase B
+      takes migrated_data as a Dictionary while write_temp() takes PackedByteArray, so a
+      serialization step must exist in between — but NO ADR says which function it calls.
+      Through SaveFormat.serialize_manifest() the new write-side gate blocks dangerous
+      types; through a bare var_to_bytes() nothing blocks them. This is the SECOND
+      occurrence of gap C4 (2026-08-18 settled write_temp()'s underlying call for the
+      normal write path; the migration write-back path was never settled) and the
+      2026-08-24 revision is what first turned it into a security issue, because before
+      it there was no write-side gate at all. RELATED: ADR-0004 mechanism 5 applies only
+      structural post-conditions per migration step and semantic validation only at the
+      final step — type checking runs zero times, so a buggy migration function can inject
+      a Callable/RID/Signal/Object mid-chain. ADJUDICATION (TD-ADR 2026-08-24): these are
+      NOT two gaps. The migration one is the assembly layer's instance on the migration
+      path. Claiming the assembly layer AND requiring both paths (normal write, migration
+      write-back) to go through the same entry point closes both with ONE owner and no new
+      seam. Do not fix them separately. ALSO OPEN in ADR-0004: mechanism-7 path four
+      promises 'integrity/type check WITHOUT deserializing payload' — structurally
+      impossible now, since RID/Callable/Signal are only detectable on a decoded
+      Dictionary; and line 328 still says 'type-whitelist DECODING', which invites
+      implementers to skip the separate gate scan."
+    adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
+    also_affects: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
+    verified_by: prototypes/save-format-skeleton-2026-08-21/
+    added: "2026-08-24"
 # Example:
 #
 # forbidden_patterns:

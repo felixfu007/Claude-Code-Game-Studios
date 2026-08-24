@@ -41,12 +41,14 @@ Android export, and custom Control layout code.
 
 Agent 的查閱起點是本檔。**新增模組檔時必須同時更新此表**,否則後來的人找不到它存在。
 
-**✅ 經 2026-08-21 逐條實機驗證(每條宣稱附探針與 log 引用)**:
+**✅ 經 2026-08-21 逐條實機驗證,2026-08-24 各補兩節(每條宣稱附探針與 log 引用)**:
 
 - `modules/core-serialization.md` — 二進位 Variant 序列化、`HashingContext`、
-  `Callable`/`Signal`/`RID` 邊界、Variant 型別枚舉
+  `Callable`/`Signal`/`RID` 邊界、Variant 型別枚舉、巢狀 `PackedByteArray` 保真、
+  `_with_objects` 跨行程實例化自訂類別
 - `modules/scripting-typing.md` — 型別化容器邊界、enum 型別化參數、`@abstract`、
-  中止 vs 靜默矩陣
+  中止 vs 靜默矩陣、`Callable` 綁 `RefCounted` 的生命週期、`StringName`/`String` 當鍵、
+  `class_name` 全域註冊的 headless 假否證陷阱
 
 兩份刻意超出 README 的 150 行上限,理由在各自檔頭「格式偏離說明」——記錄在案的例外。
 
