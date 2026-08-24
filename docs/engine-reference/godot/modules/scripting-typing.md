@@ -291,5 +291,19 @@ ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
 > **方向相反**的判定,並可能據以把架構改成不必要的形狀。
 > **後續任何用到 `class_name` 的 headless 探針都必須先 `--import`。**
 
-**附帶可用的事實**:快取能成功生成,本身即代表**該目錄下所有腳本在匯入期都通過剖析** ——
-這比執行期輸出更早、更硬的一道證據,可作為「這批腳本編譯得過」的獨立佐證。
+⚠️ **反向的陷阱同樣存在,而且更危險 —— 這句話 2026-08-24 曾被本庫寫錯過**:
+本節初版寫「快取能成功生成,即代表該目錄下所有腳本都通過剖析,可作為『這批腳本編譯
+得過』的獨立佐證」。**這是假的,已由探針否證。**
+
+`--import` 只掃描 `class_name` 宣告以建立全域索引,**不編譯方法主體**。實測:一個含
+`Parse Error`(跨檔裸引用另一檔的內部 enum)、`reload()` 明確回傳 parse error 的腳本,
+在匯入階段**零錯誤訊息、exit 0**,而且它的 `class_name` **照樣被登記進快取**。
+
+**證據**:`prototypes/xcheck-adr0002-review-2026-08-24/` —— `logs/00-import.txt`
+(16 行,`Parse Error` 零命中,exit 0)、`.godot/global_script_class_cache.cfg`
+(三個 class_name 全數登記,含編譯失敗的 `BareRefOtherFile`)、
+`logs/run-final-unfiltered.txt`(執行期才報出 `Parse Error: Could not find type "MyEnum"`)。
+
+**所以**:`--import` 成功**只能**證明「全域類別索引已建立」,**不能**用來推論任何腳本
+編譯得過。判斷編譯與否唯一可靠的方式是取 `ResourceLoader.load()` 後 `reload()` 的
+`Error` 回傳值 —— 這也是本庫既有探針一貫的做法。

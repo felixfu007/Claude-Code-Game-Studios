@@ -1,0 +1,40 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0002 review probe / Godot 4.7.1-stable (official) ===
+
+--- outer_holder.gd (class_name OuterHolder, nested enum MyEnum) ---
+  [COMPILED OK]
+
+--- bare_ref_other_file.gd (BARE `MyEnum` reference from a DIFFERENT file) ---
+SCRIPT ERROR: Parse Error: Could not find type "MyEnum" in the current scope.
+   at: GDScript::reload (res://scripts/bare_ref_other_file.gd:11)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner.gd:18)
+       [1] _ready (res://scripts/runner.gd:38)
+SCRIPT ERROR: Parse Error: Identifier "MyEnum" not declared in the current scope.
+   at: GDScript::reload (res://scripts/bare_ref_other_file.gd:11)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner.gd:18)
+       [1] _ready (res://scripts/runner.gd:38)
+ERROR: Failed to load script "res://scripts/bare_ref_other_file.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner.gd:18)
+       [1] _ready (res://scripts/runner.gd:38)
+SCRIPT ERROR: Parse Error: Could not find type "MyEnum" in the current scope.
+   at: GDScript::reload (res://scripts/bare_ref_other_file.gd:11)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner.gd:23)
+       [1] _ready (res://scripts/runner.gd:38)
+SCRIPT ERROR: Parse Error: Identifier "MyEnum" not declared in the current scope.
+   at: GDScript::reload (res://scripts/bare_ref_other_file.gd:11)
+   GDScript backtrace (most recent call first):
+       [0] _load_checked (res://scripts/runner.gd:23)
+       [1] _ready (res://scripts/runner.gd:38)
+  [FAILED (reload=Parse error)]
+
+--- qualified_ref_other_file.gd (QUALIFIED `OuterHolder.MyEnum`, control group) ---
+  [COMPILED OK]
+
+=== PROBE COMPLETE ===
+EXIT_CODE=0
