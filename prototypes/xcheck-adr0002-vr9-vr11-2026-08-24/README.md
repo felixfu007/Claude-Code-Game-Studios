@@ -113,3 +113,49 @@ cd -
   對同一份程式碼的影響)——因此設計成兩個結構相同、只有 case 標籤寫法不同的
   獨立函式,靠比對兩者對同一組輸入的輸出是否一致來間接得出「等價」的結論,而非
   直接測「同一份程式碼裡兩種寫法哪個生效」。
+
+---
+
+## 2026-08-24 執行紀錄(由協調者跑,**判讀留給探針作者**)
+
+引擎 `4.7.1.stable.official.a13da4feb`,headless,兩支皆先 `--import` 再執行。
+
+### VR11(型別化 Array 越界)—— ✅ 跑完,結果明確
+
+未過濾 log:`probe-vr11-array-bounds/logs/run1-unfiltered.txt`
+
+**以下只記錄 log 逐字呈現的事實,不做設計推論**:
+
+| 情況 | log 呈現 |
+|---|---|
+| `Array[int]`,索引 == `size()` | `SCRIPT ERROR: Out of bounds get index '3' (on base: 'Array[int]')`,**`AFTER_READ` 那行沒有出現** |
+| `Array[int]`,索引 999 | 同上形狀,`AFTER_READ` 未出現 |
+| `Array[int]`(非空),索引 **-1** | **`AFTER_READ ... v=30 ... (function did NOT abort here)`** —— 取到最後一個元素,**未中止** |
+| `Array[int]`(空),索引 -1 | `Out of bounds get index '-1'`,`AFTER_READ` 未出現 |
+| `Array[int]`(非空),索引 -999 | `Out of bounds get index '-999'`,`AFTER_READ` 未出現 |
+| `Array[int]`(空),索引 0 | `Out of bounds get index '0'`,`AFTER_READ` 未出現 |
+| `Array[Dictionary]`,索引 == `size()` | 同 `Array[int]` 形狀 |
+| `Array[Dictionary]`(非空),索引 -1 | `AFTER_READ ... (function did NOT abort here)` |
+| **`Array[int].get()` 是否存在** | **`[COMPILED OK]`** —— 靜態型別化 Array 有這個方法 |
+| **`.get()` 越界** | `ERROR: Index p_index = 3 is out of bounds (p_instance->size() = 3).`(來自 `core/variant/variant_call.cpp:681`),接著 **`AFTER_READ ... v=<null> (function did NOT abort here)`** |
+
+⚠️ **兩者行為不同,而這正是本探針要區分的那件事**:`[]` 越界時 `AFTER_READ` 不出現(中止),
+`.get()` 越界時 `AFTER_READ` 出現且值為 `<null>`(不中止)。**每一格都可在 log 對照。**
+
+**尚待探針作者判讀**:這對 ADR-0002 的 `get_at()` 是否需要自帶邊界檢查意味著什麼、
+以及負索引可用這件事是否構成新的風險面。**協調者不代為推論。**
+
+### VR9(`match typeof()` 對 `TYPE_NIL`)—— ❌ 未完成,探針本身編譯不過
+
+未過濾 log:`probe-vr9-match-typeof/logs/run1-unfiltered.txt`,逐字:
+
+```
+SCRIPT ERROR: Parse Error: Function "_classify_default_before_nil()" not found in base self.
+   at: GDScript::reload (res://scripts/runner.gd:111)
+ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
+```
+
+`runner.gd` 呼叫了一個**未定義的函式** —— 撰寫者在收尾前停止(context 用盡),
+`_classify_default_before_nil()` 沒有寫出來。**本項仍為 ADR-0002 核准條件一的開放缺口。**
+
+⚠️ 協調者**未修改**這支探針的任何程式碼 —— 補上那個函式屬撰寫者的職責。

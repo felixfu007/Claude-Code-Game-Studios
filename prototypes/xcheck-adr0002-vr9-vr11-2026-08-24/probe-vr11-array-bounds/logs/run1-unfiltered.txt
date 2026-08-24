@@ -1,0 +1,83 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== VR11 probe: typed Array boundary reads / Godot 4.7.1-stable (official) ===
+
+--- 1: Array[int], read at index == size() (one past end) ---
+  BEFORE_READ [one_past_end_int] size=3 index=3
+SCRIPT ERROR: Out of bounds get index '3' (on base: 'Array[int]')
+   at: _case_one_past_end_int (res://scripts/runner.gd:25)
+   GDScript backtrace (most recent call first):
+       [0] _case_one_past_end_int (res://scripts/runner.gd:25)
+       [1] _ready (res://scripts/runner.gd:88)
+RETURNED_TO_READY after case 1
+
+--- 2: Array[int], read at index >> size() (999) ---
+  BEFORE_READ [far_out_of_bounds_int] size=3 index=999
+SCRIPT ERROR: Out of bounds get index '999' (on base: 'Array[int]')
+   at: _case_far_out_of_bounds_int (res://scripts/runner.gd:30)
+   GDScript backtrace (most recent call first):
+       [0] _case_far_out_of_bounds_int (res://scripts/runner.gd:30)
+       [1] _ready (res://scripts/runner.gd:93)
+RETURNED_TO_READY after case 2
+
+--- 3: Array[int] (non-empty), read at index -1 ---
+  BEFORE_READ [negative_one_nonempty_int] size=3 index=-1
+  AFTER_READ [negative_one_nonempty_int] v=30 last_element_via_size_minus_1=30 (function did NOT abort here)
+RETURNED_TO_READY after case 3
+
+--- 4: Array[int] (EMPTY), read at index -1 ---
+  BEFORE_READ [negative_one_empty_int] size=0 index=-1
+SCRIPT ERROR: Out of bounds get index '-1' (on base: 'Array[int]')
+   at: _case_negative_one_empty_int (res://scripts/runner.gd:40)
+   GDScript backtrace (most recent call first):
+       [0] _case_negative_one_empty_int (res://scripts/runner.gd:40)
+       [1] _ready (res://scripts/runner.gd:103)
+RETURNED_TO_READY after case 4
+
+--- 5: Array[int] (non-empty), read at index -999 (deep negative) ---
+  BEFORE_READ [deep_negative_nonempty_int] size=3 index=-999
+SCRIPT ERROR: Out of bounds get index '-999' (on base: 'Array[int]')
+   at: _case_deep_negative_nonempty_int (res://scripts/runner.gd:45)
+   GDScript backtrace (most recent call first):
+       [0] _case_deep_negative_nonempty_int (res://scripts/runner.gd:45)
+       [1] _ready (res://scripts/runner.gd:108)
+RETURNED_TO_READY after case 5
+
+--- 6: Array[int] (EMPTY), read at index 0 ---
+  BEFORE_READ [empty_read_zero_int] size=0 index=0
+SCRIPT ERROR: Out of bounds get index '0' (on base: 'Array[int]')
+   at: _case_empty_read_zero_int (res://scripts/runner.gd:50)
+   GDScript backtrace (most recent call first):
+       [0] _case_empty_read_zero_int (res://scripts/runner.gd:50)
+       [1] _ready (res://scripts/runner.gd:113)
+RETURNED_TO_READY after case 6
+
+--- 7: Array[Dictionary], read at index == size() (one past end) ---
+  BEFORE_READ [one_past_end_dict] size=2 index=2
+SCRIPT ERROR: Out of bounds get index '2' (on base: 'Array[Dictionary]')
+   at: _case_one_past_end_dict (res://scripts/runner.gd:55)
+   GDScript backtrace (most recent call first):
+       [0] _case_one_past_end_dict (res://scripts/runner.gd:55)
+       [1] _ready (res://scripts/runner.gd:118)
+RETURNED_TO_READY after case 7
+
+--- 8: Array[Dictionary] (non-empty), read at index -1 ---
+  BEFORE_READ [negative_one_nonempty_dict] size=2 index=-1
+  AFTER_READ [negative_one_nonempty_dict] v={ "b": 2 } (function did NOT abort here)
+RETURNED_TO_READY after case 8
+
+--- 9: does a statically-typed Array[int] even have a `.get()` method? (compile-check via reload()) ---
+  [COMPILED OK]
+
+--- 9b: `.get()` compiled -- testing its one-past-end runtime behavior for comparison with [] ---
+  BEFORE_READ [get_method_one_past_end_int] size=3 index=3
+ERROR: Index p_index = 3 is out of bounds (p_instance->size() = 3).
+   at: func_Array_get (core/variant/variant_call.cpp:681)
+   GDScript backtrace (most recent call first):
+       [0] _case_get_method_one_past_end_int (res://scripts/runner.gd:65)
+       [1] _ready (res://scripts/runner.gd:134)
+  AFTER_READ [get_method_one_past_end_int] v=<null> (function did NOT abort here)
+RETURNED_TO_READY after case 9b
+
+=== PROBE VR11 COMPLETE ===
+run exit=0
