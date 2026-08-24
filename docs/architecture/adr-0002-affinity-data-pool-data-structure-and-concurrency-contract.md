@@ -744,7 +744,11 @@ func can_write(pair: AffinityTypes.Pair, source: AffinityTypes.Source) -> WriteR
 
 以下為本 ADR 定案的契約形狀。**具體命名與型別簽章可在實作時微調,但語意不得改變**;任何改變語意的調整須回頭修訂本 ADR。
 
-> **閱讀提醒**:以下為概念契約,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時各類別應落在各自檔案(如 `affinity_record.gd`、`affinity_record_list.gd`、`affinity_data_pool.gd`、`affinity_read_result.gd`)。
+> **閱讀提醒**:以下為概念契約,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時多數類別應落在各自檔案(如 `affinity_record.gd`、`affinity_record_list.gd`、`affinity_types.gd`、`hypothetical_entry.gd`、`import_result.gd`、`affinity_data_pool.gd`)。
+>
+> **🔴 2026-08-24 同檔強制規則(Step 5.5 覆核抓到的編譯期矛盾修正,取代原本點名 `affinity_read_result.gd` 的錯誤建議)**:機制二已明文 `WriteRejection`/`AdvanceRejection`/`DeathNotifyResult`/`EndTokenResult`/`ReadRejection`/`ReadMode`(及未來比照此決策新增的同類方法結果列舉)維持巢狀於 `AffinityDataPool`、不獨立抽出。**規則(涵蓋任何未來新增型別,不是只點名目前這兩個)**:任何型別若在自己的宣告(欄位型別/方法簽章/內部邏輯)中裸引用(不加 `AffinityDataPool.` 前綴)這組列舉的任一成員,該型別**必須與 `AffinityDataPool` 同檔**(`affinity_data_pool.gd`,以並列的 inner class 宣告,因此不再擁有自己的全域 `class_name`)——這是 Godot 4.7.1 對巢狀 enum **跨檔**裸引用的編譯期限制,不是紀律建議(探針 `prototypes/xcheck-adr0002-review-2026-08-24/`:同檔裸引用 `COMPILED OK`,跨檔裸引用 `FAILED — Parse Error: Could not find type "MyEnum" in the current scope.`,跨檔加前綴 `COMPILED OK`)。不引用這組列舉的型別不受此規則約束,可自由獨立成檔並保留自己的 `class_name`。
+>
+> **目前落在同檔規則下**:`AffinityReadResult`、`ShapeFeatureResult`(欄位 `rejection: ReadRejection`,見機制五)——**原建議的獨立檔案 `affinity_read_result.gd` 已撤回**,兩者改為 `affinity_data_pool.gd` 內的並列 inner class,不再是全域 `class_name`(見下方 Risks 表計數修正)。`HypotheticalEntry` 只引用已加前綴的 `AffinityTypes.Source`,**不受**此規則約束,維持獨立成檔、保留自己的 `class_name`;但呼叫端建構 `speculative_read()` 的 `mode` 引數時仍須加前綴 `AffinityDataPool.ReadMode`(裸用 `ReadMode` 在跨檔情境下無法編譯,見機制五呼叫端範例)。`ImportResult` 的 `Rejection` 列舉巢狀於 `ImportResult` 自身、非 `AffinityDataPool`(見機制八),故 `ImportResult` 同樣不受此規則約束,可獨立成檔(`import_result.gd`)並保留自己的 `class_name`。
 
 ```gdscript
 # ─── affinity_record.gd ──────────────────────────────────────
@@ -757,7 +761,16 @@ var source: AffinityTypes.Source
 func to_dict() -> Dictionary: ...
 static func from_dict(d: Dictionary) -> AffinityRecord: ...   # 遇非法名稱回傳 null,見機制八
 
-# ─── affinity_types.gd(2026-08-21 新增三個公開驗證器,機制四之四)────────
+# ─── affinity_types.gd ───────────────────────────────────────
+# 2026-08-24 補上 pair_of() 與三個共用列舉本身(原 Key Interfaces 只列驗證器,
+# 照抄本節的實作者會漏掉正規化建構函式——完整列舉成員見機制二,此處不重複)。
+class_name AffinityTypes extends RefCounted
+enum Character { ... }   # 5 個佔位識別碼,完整成員見機制二
+enum Pair { ... }         # 10 對固定組合,完整成員見機制二
+enum Source { ... }       # 完整成員見機制二
+static func pair_of(a: Character, b: Character) -> Pair
+
+# 2026-08-21 新增三個公開驗證器,機制四之四:
 # 公開靜態,供 pair_of() 的呼叫端與任何外部使用者預先驗證序數合法性。
 # AffinityDataPool 內部的 7 個入口改讀 _init() 快取的序數陣列(熱路徑,見修正 T),
 # 但兩條路徑的檢查語意必須完全相同(已列入 Validation Criteria)。

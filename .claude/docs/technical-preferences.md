@@ -101,7 +101,7 @@
 **修訂歷史全文在 `docs/architecture/adr-revision-history.md`。** 本節只記現況。
 2026-08-21 起本節不再累積修訂敘述 —— 該檔每次對話開場載入,歷史屬按需查閱。
 
-**核准門檻**:`docs/architecture/adr-acceptance-criteria.md`(白話,含四個必要條件與
+**核准門檻**:`docs/architecture/adr-acceptance-criteria.md`(白話,含五個必要條件與
 五項明確不阻擋核准的事)。**立場登記表(權威來源)**:`docs/registry/architecture.yaml`,
 目前 **81** 項(10 state-ownership、11 interface contracts、29 API decisions、31 forbidden patterns)。
 
