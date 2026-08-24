@@ -150,7 +150,7 @@ ERROR: Error when trying to decode Variant.
 | 項目 | 同行程 | 跨行程 |
 |---|---|---|
 | 編碼 | 成功,24 bytes(型別 + 訊號名 + 8 bytes ObjectID) | 同上(位元組本身不變) |
-| 還原後 `get_object()` | **活體物件** | `<Object#null>` |
+| 還原後 `get_object()` | **活體物件**,且 `get_instance_id()` 與來源**完全相同**(不只是「某個活物件」,是同一個) | `<Object#null>` |
 | `connect()` | 回 `0`(OK) | 回 `3`(`ERR_UNCONFIGURED`),報 `Parameter "obj" is null.` |
 | `emit()` | **處理函式真的執行** | 沒有送達 |
 | `is_null()` | `false` | ⚠️ **仍是 `false`**——不可當守衛,要用 `get_object() != null` |
@@ -163,10 +163,19 @@ ERROR: Error when trying to decode Variant.
 | 還原後 | `is_valid=true`,`get_id()` 與來源逐位元相同,`== 來源` 為 `true` | `is_valid=true`,id 與行程 1 存下的號碼**完全相同** |
 | 跨行程風險 | — | ⚠️ **已實測成立且具決定性**:行程 2 第一個 `PhysicsServer2D.body_create()` 配到的 id 與行程 1 存檔裡的 id **完全相同**,`還原的RID == 本行程新配的RID` 為 `true`——存檔裡的 RID 會指向一個真實存在、屬於別人的活體資源,不是機率碰撞 |
 
+⚠️ **範圍限定**:上述跨行程可預測性僅實測 `PhysicsServer2D`,`RenderingServer`/
+`NavigationServer` 等其他伺服器**未查證**。已知一個伺服器可預測即足以支撐「寫入側
+必須拒絕 `RID`」的結論,不影響本節其餘判定。
+
+**實測到的號碼**:行程 1 存下 `get_id()=94489280512`,行程 2 第一個
+`PhysicsServer2D.body_create()` 配到的 id 與它**完全相同**。機制上的原因是 RID 的 id
+直接是伺服器配置計數器的產物,**沒有 `Object` 那種 validator 計數保護**,所以不是
+機率碰撞,而是可重現的。
+
 **危險程度排序**:`Signal`(同行程時是全功能物件)> `RID`(跨行程仍是有效的伺服器
 handle)> `Callable`(空殼,但誤用會中止呼叫端函式)。
 
-**證據**:探針 G(G-1),`probeG-callable-resource-unfiltered.txt`;跨行程部分:
+**證據**:探針 G(G-1),`prototypes/xcheck-adr0003-2026-08-21/logs/probeG-callable-resource-unfiltered.txt`;跨行程部分:
 `prototypes/save-format-skeleton-2026-08-21/README.md` F-2/F-3。
 
 ## 5. HashingContext 狀態機
@@ -183,6 +192,7 @@ handle)> `Callable`(空殼,但誤用會中止呼叫端函式)。
 
 | 操作序列 | 結果 |
 |---|---|
+| 全新 `HashingContext` → `start()` | `OK(0)`(基準格;J6-D1 逐字 `start() 第一次 err=0`、J7a `start err=0`) |
 | `start()` 後,**未 `update()`** 就再 `start()` | 第二次回 `ERR_ALREADY_IN_USE(22)` |
 | `start()` → `update()` 後,再 `start()`(已餵資料) | 同樣回 `ERR_ALREADY_IN_USE(22)`,**且不重置**——後續 `update()` 會**接續累積**在原資料之後(實測 `finish()` 結果等於 `SHA256("abc"+"abc")`,不是重新開始的 `SHA256("abc")`) |
 | `finish()` 之後再 `update()` | `ERR_UNCONFIGURED(3)` |
@@ -200,10 +210,59 @@ handle)> `Callable`(空殼,但誤用會中止呼叫端函式)。
 (`sha256_buffer()`/`sha256_text()`)。若雜湊輸入是 `PackedByteArray`(區塊緩衝區的
 常見情境),三段式 `HashingContext` 是唯一路徑,無法用便利方法簡化。
 
-**證據**:探針 F3(`probeF2-main-unfiltered.txt` 尾段)、探針 J6/J7
+**證據**:探針 F3(`prototypes/xcheck-adr0003-2026-08-21/scripts/f3c1_pba_sha256_buffer.gd` 等三個腳本,
+`probeF2-main-unfiltered.txt` 尾段)、探針 J6/J7
 (`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run1-unfiltered.txt`、
 `probeJ-run2-unfiltered.txt`、`probeJ-run3-unfiltered.txt`)。
 
+
+### 「已餵資料後再 `start()` 不重置」的獨立驗證(兩支探針,含逐字 hex 對照)
+
+這一格是本節最容易被誤記的一條,故保留完整證據鏈。ADR-0003 機制四之二對它標記為
+load-bearing 宣稱。
+
+- **探針 J6**(尚未餵資料就重複 `start()`):
+  `J6-D1: start() 第一次 err=0,第二次 err=22`,而
+  `J6-D1: 二次 start 後 finish() size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`
+  —— 這個 hex 等於單次 `SHA256("abc")` 的標準值,說明**未餵資料時**重複 `start()`
+  雖被拒絕,但狀態沒有被破壞。
+- **探針 J7**(刻意補測「已餵資料後」的情境,J6 沒測到這格):
+
+  ```
+  J7a: start err=0
+  J7a: update(abc) err=0
+  J7a: 已餵資料後再 start() err=22
+  J7a: update(abc) 第二次 err=0
+  J7a: finish hex=bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
+    對照 SHA256(abc)    = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+    對照 SHA256(abcabc) = bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
+  ```
+
+  `finish()` 的輸出與**同一行印出的獨立複算** `"abcabc".sha256_text()` 逐字元相同,
+  而與單次 `SHA256("abc")` 不同。這代表第二次 `start()` 回 `ERR_ALREADY_IN_USE` 之後,
+  context **沒有被重置**,後續 `update("abc")` 是接在第一次的 `"abc"` 之後繼續累積,
+  而不是靜默開了一個新的雜湊。
+
+**證據**:`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
+第 128-129 行(J6-D1)、第 165-177 行(J7a,含逐字 hex 對照)。
+
+### `PackedByteArray() == PackedByteArray()` 為 `true` —— 與失敗回傳空陣列疊加的風險
+
+探針 J6-D6 同時記錄兩件事:未 `start()` 就 `finish()` 得到 `size=0` 的
+`PackedByteArray`,而且兩個空 `PackedByteArray` 相等為 **`true`**:
+
+```
+J6-D6: 未 start 就 finish size=0  == PackedByteArray() -> true
+J6-D6: 兩個空 PackedByteArray 相等 -> true
+```
+
+**後果**:若某處雜湊計算因任何原因失敗而回傳空陣列(誤用狀態機、或呼叫端忘記檢查
+`Error` 回傳值),而比對的另一側也剛好因另一個獨立原因回傳空陣列,單純寫
+`computed == stored` 會得到 `true` —— **兩邊都失敗,卻判定為雜湊相符**。
+消費端必須先比長度再比內容。
+
+**證據**:`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
+第 160-161 行。
 ## 6. 循環引用容器
 
 GDScript 允許構造自我參照的 `Dictionary`/`Array`(它們是參照型別,`d["self"] = d`
@@ -382,6 +441,11 @@ var block = back["block"]                     # typeof=29 —— 仍是原始位
    方向相反:它不報錯、不拒絕,靜默編碼成 `EncodedObjectAsID`,真正發生的是欄位
    資料靜默遺失,不是序列化失敗。任何依賴「Object 會導致寫入失敗」這個假設的程式
    碼都會踩空。
+8. **`Callable` 空殼的常見守衛寫法會誤判為「合法」**——`has()`/`is Callable`
+   對序列化往返後的空殼 `Callable` 兩者都通過,不會攔下呼叫這個空殼時的
+   `Attempt to call function "null::null (Callable)" on a null instance.` 中止。
+   唯一可靠的存活判斷是 `is_valid()`。
+
 
 ## 未查證
 
@@ -392,3 +456,4 @@ var block = back["block"]                     # typeof=29 —— 仍是原始位
 | 3 | `EncodedObjectAsID`/`Signal`/`RID` 在**大量物件配置或長時間執行後**的跨行程行為邊界 | 已測 2,000 次配置仍未命中舊 slot,但未讀引擎原始碼確認 ObjectID 的 validator 計數規則,不能宣稱是保證。 |
 | 4 | 還原出來的 valid `RID` 拿去對伺服器發送實際指令會怎樣 | 刻意未測——對物理伺服器餵入來自位元組流的 RID 有崩潰風險,且會污染後續測項。已量到的是「號碼相同且 `==` 為 `true`」,已足以判定第 4 節的跨行程風險結論。 |
 | 5 | `Callable` 的**綁定引數**(`bind()` 過的 Callable)是否也一併被丟棄 | 未測——已量到零綁定引數的來源案例往返後為空殼,未測非零綁定引數的情形。 |
+| 6 | `HashingContext.update()` 傳入空 `PackedByteArray` 回傳 `FAILED` 之後,同一個 context 後續 `update()` 是否仍正常累積 | 只測過「單次空 `update()` 後直接 `finish()`」這一種情境(探針 J6-D5,`probeJ-run3-unfiltered.txt` 第 148-154 行);未測「空 `update()` 之後再餵一次正常資料、再 `finish()`」的情境,無出處可引用。 |

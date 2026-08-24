@@ -17,7 +17,7 @@ Proposed
 | **Knowledge Risk** | **MEDIUM(2026-08-21 第一次修訂由 HIGH 下調,理由如下;⚠️ 此下調為本次修訂的提案,請覆核者明確確認或否決)**——原 HIGH 的兩項理由**其中一項已消滅、一項仍成立**。**已消滅**:「無專屬 core/scripting 模組參考文件可查」——2026-08-21 已建立 `docs/engine-reference/godot/modules/core-serialization.md` 與 `modules/scripting-typing.md`,兩份皆逐條附探針與未過濾 log 引用,涵蓋本 ADR 依賴的全部 API(四個全域序列化函式、`HashingContext` 完整狀態機、`EncodedObjectAsID`、`Callable`/`Signal`/`RID` 邊界、Variant 型別枚舉全表)。**仍成立**:`var_to_bytes`/`bytes_to_var`/`HashingContext` 在 `breaking-changes.md`/`deprecated-apis.md` 仍為零命中,即**官方仍未記錄這些 API 的任何版本變更**,故不能宣稱「已知穩定」,只能宣稱「本專案已在 4.7.1 實測」。**新增的第三項理由(支持不降到 LOW)**:全部量測皆在 **debug/headless** 下取得,**release 建置行為未查證且本機無法查證**(`%APPDATA%/Godot/export_templates/` 存在但完全是空的,全域零個 `.tpz`)——此缺口與 ADR-0002 第 7 項、ADR-0004 為同一個洞,可一次關三份。⚠️ **本 ADR 的歷史教訓必須保留在此欄**:2026-08-21 探針 F 實測推翻本文件**全文 18 處**逐字採用的呼叫寫法(`bytes_to_var(bytes, false)` 是 **Parse Error**),這是本專案第二次由實機驗證擊落已寫下的 ADR 內容。**該錯誤的根因不是引擎版本變更,而是過期的舊版記憶**——Godot 3 的單一布林參數在 Godot 4 已拆成兩個獨立函式,而 `FileAccess.get_var(allow_objects)`/`store_var(full_objects)` **仍保留第二個布林參數**,「**同一件事、兩種 API 形狀**」正是誤植來源(詳見 `modules/core-serialization.md` 第 1 節) |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md`、**`modules/core-serialization.md`(2026-08-21 新增,逐條實機驗證)**、**`modules/scripting-typing.md`(2026-08-21 新增)** |
 | **Post-Cutoff APIs Used** | 無直接依賴——本 ADR 的區塊緩衝區編解碼改採 `var_to_bytes()`/`bytes_to_var()`(2026-08-18 `godot-specialist` 驗證修訂,見機制一),不呼叫 `FileAccess.store_var()`/`get_var()` 本身。**修訂前的草稿曾誤植依賴 `FileAccess.store_var()`,`godot-specialist` 查核時發現 `breaking-changes.md` 4.3→4.4 表格已明文列出「`FileAccess.store_*` 回傳型別 `void`→`bool`」,原稿 Engine Compatibility 宣稱「無已知」並不準確**——此為過程提醒:「已查閱參考文件」不等於「逐項比對過」。此變更與本 ADR 現行決策(`var_to_bytes`/`bytes_to_var`)無直接交集,但下一份 ADR(原子寫入)若確實呼叫 `FileAccess.store_var()`/`store_buffer()` 寫入磁碟,須檢查其 `bool` 回傳值以偵測寫入失敗,已記入 Risks 表供交接 |
-| **Verification Required** | **原五項(含 3a)於 2026-08-21 由探針 F/G/H/J 與存檔格式骨架全數關閉,其中第 1 項的答案是「推翻原假設」。** 證據為 `prototypes/xcheck-adr0003-2026-08-21/`(四支,皆 exit 0,log 未過濾)與 `prototypes/save-format-skeleton-2026-08-21/`(三階段皆 exit 0);整理後的引擎事實見 `docs/engine-reference/godot/modules/core-serialization.md`。**(1) ✅ 關閉,但答案是否定的**——`var_to_bytes` 與 `bytes_to_var` **各只接受一個引數**,Godot 4 已將 Godot 3 的布林參數拆成 `var_to_bytes`/`bytes_to_var`(拒絕 Object)與 `var_to_bytes_with_objects`/`bytes_to_var_with_objects`(允許 Object)兩組獨立函式;寫成兩引數是 **Parse Error**(逐字:`Too many arguments for "bytes_to_var()" call. Expected at most 1 but received 2.`)。本文件原全文 18 處採兩引數形狀,已於本次修訂全部改正。**(2) ✅ 關閉,且答案分兩半——原問法只涵蓋了其中一半。** 讀取側:對「由 `_with_objects` 產生、本應解碼出 Object」的位元組,plain `bytes_to_var()` **整包原子性失敗、回傳 `null`、不中止呼叫函式**,伴隨逐字 `ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED` 與 `Error when trying to decode Variant.`——與原推測相符。**寫入側:原問法完全沒問,而實測結果與直覺相反**——plain `var_to_bytes()` 對任何 `Object`/`Resource` **不報錯、不拒絕**,靜默編成 `EncodedObjectAsID`(4 bytes 型別碼 + 8 bytes ObjectID),還原後欄位全為 `null`,**整個往返無任何錯誤訊息**。內建 `RefCounted`、自訂 `class_name` 子類別、內建與自訂 `Resource` 行為一致。**這是機制一之二(寫入側型別閘門)存在的唯一理由:引擎在寫入側沒有任何安全網。** **(3) ✅ 關閉**——`start(type: HashingContext.HashType) -> Error`、`update(chunk: PackedByteArray) -> Error`、`finish() -> PackedByteArray`;完整狀態機(含各種誤用的回傳碼)見機制四之二。**(3a) ✅ 關閉,答案是不適用**——`PackedByteArray` **沒有** `sha256_buffer()`(`Parse Error: Cannot find member "sha256_buffer" in base "PackedByteArray".`),該便利方法只存在於 `String`。本 ADR 的雜湊輸入一律是 `PackedByteArray`,故三段式 `HashingContext` 是唯一路徑,無簡化空間。**(4) ✅ 關閉**——巢狀 `PackedByteArray` 往返保真,外層解碼不遞迴解讀其內容(`PackedByteArray` 在 Variant 編碼中為一級不透明型別);型別化容器往返後仍保持型別化。**(5) ✅ 關閉於實務範圍**——32MB/64MB 緩衝區與 100k/500k 筆記錄的編解碼與 SHA-256 皆線性成長、無效能懸崖、往返 byte-identical;**未逼近 ~2GB 理論上限**(會 OOM),而本專案估計規模為單槽數十 KB,差距六個數量級。**——以下為本次修訂新開的唯一一項——** **(6) ⛔ 未查證,且本機無法查證:release(export)建置下,上述全部行為是否一致。** 全部量測皆在 debug/headless 取得。卡點是純環境問題而非技術問題:`%APPDATA%/Godot/export_templates/` 目錄存在但完全是空的,全域零個 `.tpz`。**此項與 ADR-0002 第 7 項、ADR-0004 的同一疑問是同一個洞,補齊匯出範本後可一次關閉三份文件。** 依 `docs/architecture/adr-acceptance-criteria.md` 第四節第 1 項,本項**不阻擋核准**——因為不論答案是什麼,本 ADR 的設計都不改變(寫入側閘門本來就必須存在,不能依賴引擎行為) |
+| **Verification Required** | **原五項(含 3a)於 2026-08-21 由探針 F/G/H/J 與存檔格式骨架全數關閉,其中第 1 項的答案是「推翻原假設」。** 證據為 `prototypes/xcheck-adr0003-2026-08-21/`(四支,皆 exit 0,log 未過濾)與 `prototypes/save-format-skeleton-2026-08-21/`(三階段皆 exit 0);整理後的引擎事實見 `docs/engine-reference/godot/modules/core-serialization.md`。**(1) ✅ 關閉,但答案是否定的**——`var_to_bytes` 與 `bytes_to_var` **各只接受一個引數**,Godot 4 已將 Godot 3 的布林參數拆成 `var_to_bytes`/`bytes_to_var`(拒絕 Object)與 `var_to_bytes_with_objects`/`bytes_to_var_with_objects`(允許 Object)兩組獨立函式;寫成兩引數是 **Parse Error**(逐字:`Too many arguments for "bytes_to_var()" call. Expected at most 1 but received 2.`)。本文件原全文 18 處採兩引數形狀,已於本次修訂全部改正。**(2) ✅ 關閉,且答案分兩半——原問法只涵蓋了其中一半。** 讀取側:對「由 `_with_objects` 產生、本應解碼出 Object」的位元組,plain `bytes_to_var()` **整包原子性失敗、回傳 `null`、不中止呼叫函式**,伴隨逐字 `ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED` 與 `Error when trying to decode Variant.`——與原推測相符。**寫入側:原問法完全沒問,而實測結果與直覺相反**——plain `var_to_bytes()` 對任何 `Object`/`Resource` **不報錯、不拒絕**,靜默編成 `EncodedObjectAsID`(4 bytes 型別碼 + 8 bytes ObjectID),還原後欄位全為 `null`,**整個往返無任何錯誤訊息**。內建 `RefCounted`、自訂 `class_name` 子類別、內建與自訂 `Resource` 行為一致。**這是機制一之二(寫入側型別閘門)存在的唯一理由:引擎在寫入側沒有任何安全網。** **(3) ✅ 關閉**——`start(type: HashingContext.HashType) -> Error`、`update(chunk: PackedByteArray) -> Error`、`finish() -> PackedByteArray`;完整狀態機(含各種誤用的回傳碼)見機制四之二。**(3a) ✅ 關閉,答案是不適用**——`PackedByteArray` **沒有** `sha256_buffer()`(逐字錯誤訊息見 `docs/engine-reference/godot/modules/core-serialization.md` 第 5 節),該便利方法只存在於 `String`。本 ADR 的雜湊輸入一律是 `PackedByteArray`,故三段式 `HashingContext` 是唯一路徑,無簡化空間。**(4) ✅ 關閉**——巢狀 `PackedByteArray` 往返保真,外層解碼不遞迴解讀其內容(`PackedByteArray` 在 Variant 編碼中為一級不透明型別);型別化容器往返後仍保持型別化。**(5) ✅ 關閉於實務範圍**——32MB/64MB 緩衝區與 100k/500k 筆記錄的編解碼與 SHA-256 皆線性成長、無效能懸崖、往返 byte-identical;**未逼近 ~2GB 理論上限**(會 OOM),而本專案估計規模為單槽數十 KB,差距六個數量級。**——以下為本次修訂新開的唯一一項——** **(6) ⛔ 未查證,且本機無法查證:release(export)建置下,上述全部行為是否一致。** 全部量測皆在 debug/headless 取得。卡點是純環境問題而非技術問題:`%APPDATA%/Godot/export_templates/` 目錄存在但完全是空的,全域零個 `.tpz`。**此項與 ADR-0002 第 7 項、ADR-0004 的同一疑問是同一個洞,補齊匯出範本後可一次關閉三份文件。** 依 `docs/architecture/adr-acceptance-criteria.md` 第四節第 1 項,本項**不阻擋核准**——因為不論答案是什麼,本 ADR 的設計都不改變(寫入側閘門本來就必須存在,不能依賴引擎行為) |
 
 ## ADR Dependencies
 
@@ -94,34 +94,12 @@ Proposed
 
 #### 2. 二維框架:四象限實測結果
 
-| 型別 | 寫入側(`var_to_bytes()`,plain) | 讀取側(`bytes_to_var()`,plain) |
-|---|---|---|
-| **`Object`(24)**,含所有 `Resource`/`RefCounted`/`Node` 子類別 | ❌ **不擋**——靜默編碼成 `EncodedObjectAsID`(型別碼 + 8 bytes ObjectID),零錯誤、零丟棄 | ✅ **整包原子性失敗**——回傳 `null`,不中止呼叫函式,伴隨 `ERR_UNAUTHORIZED` 錯誤訊息 |
-| **`RID`(23)/`Callable`(25)/`Signal`(26)** | ❌ **不擋**——編碼成功,零錯誤 | ❌ **也不擋**——成功解碼出來,零 `ERR_UNAUTHORIZED`、零丟鍵、零整包失敗 |
-
-**證據(`Object` 列)**:
-- 寫入側靜默編碼:`docs/engine-reference/godot/modules/core-serialization.md` 第 2 節;
-  原始量測 `prototypes/xcheck-adr0003-2026-08-21/README.md` 「F2-f 寫入側」
-  (`var_to_bytes({"alpha": 1, "poison": RefCounted.new()})` → size=60,零錯誤;
-  `bytes_to_var()` 讀回得 `typeof=24` 的 `EncodedObjectAsID`,原欄位全部讀為 `<null>`)。
-  同型行為在 `Resource` 上重現於探針 G:`prototypes/xcheck-adr0003-2026-08-21/README.md`
-  「G-2a/b/c」(自訂 `class_name` 子類別與內建 `Resource.new()` 行為一致)。
-- 讀取側原子失敗:`core-serialization.md` 第 3 節;原始量測同檔「F2 —— `bytes_to_var()`
-  對本應解碼出 Object 的輸入」表(F2-a/b/c/g,含逐字錯誤訊息
-  `ERROR: Condition "!p_allow_objects" is true. Returning: ERR_UNAUTHORIZED`)。
-
-**證據(`RID`/`Callable`/`Signal` 列)**:
-`core-serialization.md` 第 4 節逐字:「這三個型別**全部不受 `allow_objects` 那道閘門
-管控**——plain `bytes_to_var()` 對三者一律零 `ERR_UNAUTHORIZED`、零丟鍵、零整包失敗,
-`_with_objects` 變體與 1 引數版逐位元組相同。」原始量測見
-`prototypes/xcheck-adr0003-2026-08-21/README.md` 探針 G「結果 / G-1」表格
-(三型別「plain `var_to_bytes()` 是否成功」「plain `bytes_to_var()` 是否觸發
-`ERR_UNAUTHORIZED`」兩列均為「✅ 成功」「❌ 完全不觸發」)。此結果在
-`prototypes/save-format-skeleton-2026-08-21/README.md` 驗證 C 的讀取側毒藥向量表中
-獨立重現(「`Signal`/`RID`/`Callable`」一列標註「✅ ✅ ✅ **對稱閘門**(引擎完全不擋)」)。
-
-> **這張表本身即回答了指示中所附四象限表格是否有誤的問題**:核對後**未發現錯誤**——
-> 指示中的表格與上述證據逐格相符,可直接採用。
+完整的二維測試矩陣(型別 × 寫入/讀取側)見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 2–4 節,不在此重複整份
+表格 —— 下方機制一之二「為什麼需要獨立閘門」已內嵌一份精簡版,足以支撐該節的閘門
+設計。**結論**:`Object`(24)僅讀取側被引擎擋下,寫入側完全不擋;`RID`(23)/
+`Callable`(25)/`Signal`(26)**兩側皆不擋**。此表格已於 2026-08-24 對照原始探針證據
+逐格核實,未發現錯誤。
 
 ---
 
@@ -131,48 +109,16 @@ Proposed
 但**通過閘門之後的命運完全不同**,危害性質也不同——這正是原 ADR 用單一句子
 （「型別白名單問題結構性地不存在」）沒有能力表達的地方。
 
-##### Signal —— 同行程內是全功能物件,`is_null()` 不能當守衛
+##### Signal / RID / Callable —— 逐型別細節見引擎參考文件
 
-- **同行程**:還原後 `get_object()` 拿到的是**活體物件**(與來源 `get_instance_id()`
-  完全相同),`connect()` 回傳 `0`(OK),`emit()` **處理函式真的執行**
-  (`emit_count` 從 0 變 1)。
-  **證據**:`prototypes/xcheck-adr0003-2026-08-21/README.md` 探針 G「結果 / G-1」表
-  Signal 欄;逐字 log 見
-  `prototypes/xcheck-adr0003-2026-08-21/logs/probeG-callable-resource-unfiltered.txt`。
-- **跨行程**:`get_object()` 變回 `<Object#null>`,`connect()` 回傳
-  `3`(`ERR_UNCONFIGURED`,報 `Parameter "obj" is null."`),`emit()` 未送達。
-  但 **`is_null()` 仍回傳 `false`**——這個守衛在跨行程情境下**會誤判為「非空」**,
-  必須改用 `get_object() != null` 判定。
-  **證據**:`prototypes/save-format-skeleton-2026-08-21/README.md` 階段 2「F-2 `Signal`」
-  表,及「判讀陷阱」第 9 項(逐字:「`Signal.is_null()` 回 `false` 但 `get_object()`
-  回 `null`——跨行程還原的 Signal 會通過 `is_null()` 這個守衛」)。
+三者「通過閘門後命運不同」的完整逐型別細節(Signal 同行程/跨行程行為、RID 跨行程
+決定性碰撞與實測號碼、Callable 空殼呼叫中止)見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 4 節。
 
-##### RID —— 跨行程 id 可重現,指向真實存在的活體資源
-
-`RID` 沒有 `Signal`/`Object` 那種「跨行程變惰性」的降級行為——它的 id 直接是伺服器
-配置計數器的產物,**沒有 validator 計數這種保護**。實測:行程 1 存下
-`get_id()=94489280512`,行程 2 **第一個** `PhysicsServer2D.body_create()` 配到的 id
-**完全相同**,`還原的RID == 本行程新配的RID` 為 `true`。
-
-**證據**:`prototypes/save-format-skeleton-2026-08-21/README.md` 階段 2「F-3 `RID`」
-(逐字:「這一格就是『最壞情況』,而且實測成立」「這不是機率碰撞——兩次獨立執行
-逐字相同」),同行程對照見 `prototypes/xcheck-adr0003-2026-08-21/README.md` 探針 G
-「G-1e 的 RID 來源」段(採用 `PhysicsServer2D.body_create()`,量到
-`is_valid=true`/`get_id=94489280512`)。**⚠️ 範圍限定**:僅實測
-`PhysicsServer2D`,`RenderingServer`/`NavigationServer` 等其他伺服器**未查證**
-(見 skeleton README「(d) 未查證」第 4 項)。
-
-##### Callable —— 空殼,但呼叫它會中止呼叫端函式
-
-還原後是 `null::null` 空殼(`is_valid()=false`、`get_object()=<Object#null>`)——
-綁定資訊(bound method 的目標物件、lambda 的閉包)從未寫進位元組流,裸值只有
-4 bytes(僅型別標頭)。**呼叫這個空殼會中止呼叫端函式**:
-`SCRIPT ERROR: Attempt to call function "null::null (Callable)" on a null instance.`,
-且常見的守衛寫法(`has()`、`is Callable`)**兩者都會通過**,不會攔下這個中止。
-
-**證據**:`prototypes/xcheck-adr0003-2026-08-21/README.md` 探針 G「結果 / G-1」表
-Callable 欄與「G-N1」項;逐位元組編碼相同性見同檔「Callable 的細節」段。
-
+⚠️ **兩項原本只存在於本 ADR、參考文件尚未收錄的補充事實,已於本次搬遷一併移入該檔**:
+(1) RID 跨行程風險僅實測 `PhysicsServer2D`,`RenderingServer`/`NavigationServer` 等
+其他伺服器未查證;(2) `Callable` 空殼的常見守衛寫法(`has()`、`is Callable`)兩者都會
+判定為「合法」,不會攔下呼叫空殼導致的中止,必須改用 `is_valid()`。
 ##### 資料是垃圾 vs. 控制代碼跨界指向活體資源——兩種不同性質的問題
 
 - **`Object`(EncodedObjectAsID)是「資料是垃圾」型**:寫入側靜默遺失欄位,讀出的
@@ -770,61 +716,22 @@ func _build_nested_iteratively(depth: int) -> Dictionary:
 
 #### 1. `HashingContext` 完整方法簽章
 
-`HashingContext` 是登記類別,以下簽章來自 `ClassDB` 內省(非文件外推):
-
-| 方法 | 簽章 | 回傳 |
-|---|---|---|
-| `start` | `start(type: HashingContext.HashType) -> Error` | `Error`(int) |
-| `update` | `update(chunk: PackedByteArray) -> Error` | `Error`(int) |
-| `finish` | `finish() -> PackedByteArray` | `PackedByteArray` |
-
-本 ADR 採 `HashingContext.HASH_SHA256`。
-
-**證據**:`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節(168-176 行);
-探針 F3(`prototypes/xcheck-adr0003-2026-08-21/logs/probeF2-main-unfiltered.txt` 尾段)。
-
+完整簽章表(`start`/`update`/`finish`,含回傳型別)見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節。本 ADR 採
+`HashingContext.HASH_SHA256`。
 #### 2. 狀態機與誤用回傳碼(完整表)
 
-錯誤碼數值(已由 log 逐字印出確認):`OK=0`、`FAILED=1`、`ERR_UNCONFIGURED=3`、
-`ERR_ALREADY_IN_USE=22`。
-
-**證據**:`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
-第 165 行逐字:`J7: ERR_ALREADY_IN_USE=22  ERR_UNCONFIGURED=3  FAILED=1`。
-
-| # | 操作序列 | 回傳 / 結果 |
-|---|---|---|
-| 1 | 全新 `HashingContext` → `start()` | `OK(0)` |
-| 2 | `start()` 後**未餵資料**就再 `start()` | 第二次回 `ERR_ALREADY_IN_USE(22)` |
-| 3 | `start()` → `update()` 餵過資料後,再 `start()` | 同樣回 `ERR_ALREADY_IN_USE(22)`,**且不重置**——見下方 3a 的載重宣稱 |
-| 4 | `finish()` 之後再 `update()` | `ERR_UNCONFIGURED(3)` |
-| 5 | `finish()` 呼叫第二次(不重新 `start()`) | 回**空** `PackedByteArray`(`size=0`) |
-| 6 | 未 `start()` 就 `finish()` | 同樣回空 `PackedByteArray`(`size=0`) |
-| 7 | `finish()` 後重新 `start()` + `update()` + `finish()` | 正常運作,可重用同一個 `HashingContext` 實例 |
-| 8 | `update()` 傳入空 `PackedByteArray` | 回 `FAILED(1)`,但**不影響**該次 `finish()` 的正確性——若這是唯一一次 `update()`,`finish()` 仍給出空輸入的標準 SHA-256(`e3b0c442...`) |
+完整 8 種操作序列與回傳碼的對照表見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節。錯誤碼數值:
+`OK=0`、`FAILED=1`、`ERR_UNCONFIGURED=3`、`ERR_ALREADY_IN_USE=22`(皆由 log 逐字印出
+確認)。**其中「已餵資料後再 `start()` 被拒但不重置」這一格的獨立驗證證據見下方 3a。**
 
 ##### 3a. 載重宣稱:「已餵資料後再 `start()` 被拒,但不重置,會接續累積」
 
 這是本節唯一標記為載重(load-bearing)的宣稱,獨立驗證兩次:
 
-- **探針 J6**(尚未餵資料就重複 `start()`):log 顯示
-  `J6-D1: start() 第一次 err=0,第二次 err=22`,而
-  `J6-D1: 二次 start 後 finish() size=32 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`
-  ——這個 hex 等於單次 `SHA256("abc")` 的標準值,說明**未餵資料時**重複 `start()`
-  雖被拒絕,但狀態沒有被破壞。
-- **探針 J7**(刻意補測「已餵資料後」的情境,J6 沒測到這格):
-  ```
-  J7a: start err=0
-  J7a: update(abc) err=0
-  J7a: 已餵資料後再 start() err=22
-  J7a: update(abc) 第二次 err=0
-  J7a: finish hex=bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
-    對照 SHA256(abc)    = ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
-    對照 SHA256(abcabc) = bbb59da3af939f7af5f360f2ceb80a496e3bae1cd87dde426db0ae40677e1c2c
-  ```
-  `finish()` 的輸出與**同一行印出的獨立複算** `"abcabc".sha256_text()` 逐字元相同,
-  而與單次 `SHA256("abc")` 不同。這代表第二次 `start()` 回 `ERR_ALREADY_IN_USE` 之後,
-  context **沒有被重置**,後續 `update("abc")` 是接在第一次的 `"abc"` 之後繼續累積雜湊,
-  而不是靜默開了一個新的雜湊。
+**證據**:完整 J6/J7 探針 log 與逐字 hex 對照(含獨立複算 `"abcabc".sha256_text()`)
+見 `docs/engine-reference/godot/modules/core-serialization.md` 第 5 節。
 
 **後果**:呼叫端若不檢查 `start()` 的 `Error` 回傳值,並誤以為「呼叫了 `start()`
 就代表雜湊器已重新開始」,會在跨區塊重用同一個 `HashingContext` 實例時,把上一個
@@ -833,27 +740,12 @@ func _build_nested_iteratively(depth: int) -> Dictionary:
 獨立的 `HashingContext.new()` 實例**,不得跨區塊重用同一個實例(即使呼叫端有檢查
 `Error` 也不建議重用,重用只在明確需要「串接多個緩衝區算同一份雜湊」時使用)。
 
-**證據**:`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
-第 128-129 行(J6-D1)、第 165-177 行(J7a,含逐字 hex 對照)。
+##### 3b. `size()==0` 與「兩個空陣列相等」的交互 —— 為何 `hash_matches()` 要先比長度
 
-##### 3b. `size()==0` 與「兩個空陣列相等」的交互——為何 `hash_matches()` 要先比長度
-
-探針 J6-D6 同時記錄了两件事:未 `start()` 就 `finish()` 得到 `size=0` 的
-`PackedByteArray`,而且 `PackedByteArray() == PackedByteArray()` 為 **`true`**：
-
-```
-J6-D6: 未 start 就 finish size=0  == PackedByteArray() -> true
-J6-D6: 兩個空 PackedByteArray 相等 -> true
-```
-
-這意味著:若某處雜湊計算因為任何原因失敗而回傳空陣列(例如契約 3a 提到的誤用,
-或呼叫端忘記檢查 `HashingContext` 方法的 `Error` 回傳值),而比對的另一側也剛好因為
-另一個獨立的原因回傳空陣列,單純寫 `computed_hash == stored_hash` 會得到 `true`——
-兩邊都失敗,卻判定為「雜湊相符」。
-
-**證據**:`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
-第 160-161 行。
-
+`PackedByteArray() == PackedByteArray()` 為 `true`(探針 J6-D6 實測),與 `HashingContext`
+在未 `start()`/已 `finish()` 後回傳空陣列的失敗模式相疊加時,會讓「**兩邊都失敗**」被
+誤判為「雜湊相符」。完整探針 log 與後果說明見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節。
 因此本 ADR 規定雜湊比對一律走以下契約(先驗長度,長度不合法就直接判失敗,絕不
 落入內容比較):
 
@@ -875,23 +767,11 @@ static func hash_matches(computed: PackedByteArray, stored: PackedByteArray) -> 
 
 #### 3. `PackedByteArray` 沒有 `sha256_buffer()` —— 三段式是唯一路徑
 
-`sha256_buffer()` / `sha256_text()` 只存在於 `String`,`PackedByteArray` 上呼叫會是
-編譯期錯誤(逐字):
-
-```
-Parse Error: Cannot find member "sha256_buffer" in base "PackedByteArray".
-```
-
-本 ADR 的雜湊輸入是區塊序列化後的 `PackedByteArray` 緩衝區,不是 `String`,因此三段式
-`start()`/`update()`/`finish()` 沒有更簡潔的便利方法可以替代——先前草案在
-Verification Required 提過「`godot-specialist` 低信心度觀察,可能存在一次性便利方法」
-一項,本節據此關閉:**不存在**,已用逐字錯誤訊息驗證,非推測。
-
-**證據**:`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節
-(193-196 行);探針 F3c1/F3c2/F3c3
-(`prototypes/xcheck-adr0003-2026-08-21/scripts/f3c1_pba_sha256_buffer.gd` 等三個腳本,
-`prototypes/xcheck-adr0003-2026-08-21/logs/probeF2-main-unfiltered.txt`)。
-
+已用逐字錯誤訊息驗證(非推測):`PackedByteArray` 沒有 `sha256_buffer()`/`sha256_text()`,
+該便利方法只存在於 `String`。完整錯誤訊息與探針證據見
+`docs/engine-reference/godot/modules/core-serialization.md` 第 5 節。本 ADR 的雜湊輸入
+一律是序列化後的 `PackedByteArray`,故三段式 `HashingContext` 是唯一路徑,無簡化空間
+—— `Verification Required` 第 3a 項據此關閉。
 #### 4. 雜湊輸入必須是固定順序的陣列,不能是 Dictionary
 
 **引擎事實**:兩個 `==` 相等、鍵值完全相同、但**插入順序不同**的 `Dictionary`,
@@ -933,18 +813,12 @@ b-1 指出的洞:草案原文宣稱「不依賴容器迭代順序」,但範圍�
 #### 5. 新開的未查證項
 
 **HashingContext.update() 傳入空 `PackedByteArray` 之後,同一個 context 後續的
-`update()` 是否仍正常累積?** 探針 J6-D5 只測了「單次空 `update()` 之後直接
-`finish()`」這一種情境(`c3.start()` → `c3.update(PackedByteArray())` 回 `FAILED(1)`
-→ 直接 `c3.finish()`,得到空輸入的標準 SHA-256)。**沒有測過**「空 `update()` 之後
-再餵一次正常資料、再 `finish()`」的情境——也就是說,`FAILED` 回傳之後 context
-是否仍處於可用狀態、後續正常 `update()` 是否會被正確累積,目前無出處可引用。
+`update()` 是否仍正常累積?** 未查證。完整說明與已測範圍見
+`docs/engine-reference/godot/modules/core-serialization.md`「未查證」表第 6 項。
 本 ADR 的實作規則因此保守處理:一旦任何 `update()` 呼叫回傳非 `OK` 的 `Error`,
 呼叫端應視整個雜湊計算為失敗、捨棄該 `HashingContext` 實例重新開始,不依賴
 「空 `update()` 之後還能繼續正常餵資料」這個未驗證的行為。
 
-**證據(僅涵蓋已測部分)**:
-`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/logs/probeJ-run3-unfiltered.txt`
-第 148-154 行(J6-D5)。
 
 #### 未涵蓋 / 明確排除的宣稱
 
@@ -1171,120 +1045,7 @@ func submit_current_names(enum_id: String, current_names: Array[String]) -> void
 - **`var_to_bytes()`/`bytes_to_var()` 並非對稱地「安全失敗」——已實機驗證,結果比訓練資料推測更差**:讀取側對 `Object` 確實安全失敗(整包原子性失敗,不崩潰、不中止呼叫函式),但寫入側對 `Object`/`Resource` 完全不會失敗,而是靜默編碼並遺失欄位資料,零錯誤訊息(`core-serialization.md` 第 2-3 節)。機制一原本「僅靠格式選擇即可達成型別安全」的論證因此不成立,已改為依賴機制一之二(寫入側 + 讀取側各一道獨立遞迴型別閘門)——這代表本 ADR 需要維護並測試一段自己寫的閘門程式碼,不再是單純依賴引擎原生行為,是本次修訂新增的、真實存在的維護面。
 - **逐區塊獨立序列化增加了微量的序列化呼叫次數**(每個區塊一次 `var_to_bytes()`,而非整份存檔一次)——對本系統實際規模(數個區塊、每槽數十 KB)而言可忽略,但這是明確的、非零的取捨,不是零成本的設計。
 
-- **信封層對未知額外鍵寬容,與 `blocks` 額外條目被忽略,合起來產生兩塊不受完整性標記涵蓋的區域** —— 兩者單獨看都有理由,合起來看是存檔裡有兩塊沒人管、也沒人驗的區域。詳見下方專節。
-
-#### 兩塊未受完整性標記涵蓋的區域(組合後果)
-
-**執行者**:security-engineer。**擬併入位置**:ADR-0003「Consequences → Negative」。
-**性質**:組合後果分析,結合兩項已各自存在、但從未合併檢視的既有決策/行為。
-**建議處置**:登記為延後項,**不阻擋本次修訂**——等實作階段再決定是否擴大頂層雜湊
-的涵蓋範圍。
-
-##### 背景:兩項各自獨立、各自有理由的決定
-
-1. **信封層未知額外鍵——2026-08-24 管理者裁決:忽略,不拒絕。**
-   裁決理由:
-   「與骨架 c-14 的既有行為一致,與延後清單 D-13 記錄的決定一致……換到的是:未來加
-   欄位不必升版本號、新舊版存檔仍可互通」。
-2. **`blocks` 字典的額外條目——骨架既有行為 c-4。**
-   `prototypes/save-format-skeleton-2026-08-21/README.md`「(c) 設計沒講到」表 c-4:
-   「`blocks` 的鍵集合不被任何雜湊涵蓋。manifest 少一條 → 頂層雜湊抓到;但 `blocks`
-   少一條 → 頂層雜湊完全看不到」,決定為「在 S4 加明確守衛……刻意不把它提前到 S1B」,
-   其副作用逐字記載:「**`blocks` 裡多出來的條目會被靜默忽略(從未讀取、從未檢查)**」。
-
-兩項單獨看都有各自的工程理由(前者換取格式演進彈性,後者是「manifest↔blocks
-交叉檢查該放哪一關」這個設計張力下的必要取捨,c-4 原文明說「兩者不能同時滿足」)。
-
-##### 頂層雜湊的實際涵蓋範圍(用於界定「未受涵蓋」的精確意思)
-
-頂層雜湊的輸入是 `(ruleset_version, block_manifest 依 source_id 字典序排列的 tuple
-清單)`——**不包含** `blocks` 字典本身的鍵集合,也不包含信封層任何未列在
-必要鍵清單中的欄位。**證據**(本文件內部):
-機制二的 manifest 結構定義(「manifest 頂層雜湊
-(涵蓋規則集版本號 + 逐區塊 tuple 清單……)」)、機制四的重算公式、以及 Key Interfaces 的
-`compute_top_level_hash(ruleset_version, block_manifest)` 簽章——參數只有這兩個。
-
-##### 組合後果:兩塊區域都不受頂層雜湊涵蓋,但風險輪廓不同——不可等量齊觀
-
-合起來看,存檔裡確實存在**兩塊不受頂層雜湊涵蓋的區域**。但這兩塊區域被下一層
-防線(型別閘門)涵蓋的程度**並不相同**,必須分開講清楚,否則會把兩者的風險
-誤判為同一等級。
-
-###### 區域一:信封層未知額外鍵——型別閘門仍會掃到
-
-依機制一之二的讀取側接入點,`deserialize_manifest()` 的順序是
-`bytes_to_var()` → **`SaveTypeGate.scan_envelope(整個信封)`** → `check_shape()`。
-型別閘門跑在形狀檢查**之前**,而且掃描對象是**整個信封 Dictionary**(遞迴掃描
-所有鍵與值)。因此即使信封層出現一個未列在必要鍵清單中的額外鍵,它的**內容**仍會
-被這道閘門掃過。
-
-| 未知欄位能夾帶什麼 | 是否可行 |
-|---|---|
-| `RID`/`Object`/`Callable`/`Signal`(危險型別,見上半篇二維框架) | ❌ **擋得住**——型別閘門涵蓋整個信封,§2 表格四個危險型別無論放在信封的哪個位置都會被掃到並拒絕 |
-| 一般資料(字串、數字、陣列等白名單型別) | ✅ 可夾帶,且**不受頂層雜湊保護**——放進去之後,即使被外部竄改,`top_level_hash` 比對仍會通過(因為它本來就沒涵蓋這個鍵) |
-
-**⚠️ 界線務必寫準,不要誇大**:管理者的裁決只開放了「任意資料」這一面,
-**沒有**開放「危險型別」那一面。這一點在原提問時沒有明講,此處補記以免日後
-誤解裁決範圍。**依據**:機制一之二的讀取側接入點順序(型別閘門先於形狀檢查、且掃整個信封),
-與此處的判定一致。
-
-###### 區域二:`blocks` 的額外條目——型別閘門**不會**掃到內容,是更深的盲區
-
-`blocks` 字典本身是信封的一部分,所以它的**外層形狀**(每個值的外層型別是否為
-`PackedByteArray`)會被信封層型別閘門掃到。但 `blocks` 的值是**已經序列化過的
-巢狀 `PackedByteArray`**——依機制一之二的既定設計(已序列化的巢狀
-`PackedByteArray` 不打開來掃、視為葉節點;該節已明文記載此決策與其代價),
-信封層型別閘門**不會
-解碼**這個 `PackedByteArray` 的內容,只把它當成一個不透明的葉節點通過。這個設計
-本身已由 F4'-a 驗證為安全前提的一部分(manifest 層讀取不遞迴解讀區塊內容,
-見上半篇 §2 引用的 `core-serialization.md`)。
-
-而**具體到 `blocks` 額外條目**——即 `blocks` 字典裡存在一個 `source_id` 不在
-`block_manifest` 中的條目——c-4 已明文記載這種條目「從未讀取、從未檢查」,也就是
-它**永遠不會被送進 `deserialize_block()`**(該函式才是真正對區塊內容做
-「讀取側對稱型別閘門」的地方,見骨架驗證 C 讀取側毒藥向量表)。
-
-**結論(推論,綜合上述兩項已測事實推導,非單獨一次量測)**:`blocks` 額外條目的
-**位元組內容**,目前的設計下**不會被任何一道型別閘門檢查**——既不是信封層閘門
-(視為葉節點,不開封)、也不是逐區塊閘門(從未被選中解碼)。它比區域一更深一層:
-區域一至少保證「危險型別擋得住,只有一般資料能夾帶」;區域二連這個保證都沒有——
-一段完整編碼的危險型別位元組理論上可以原封不動地放在一個孤兒 `blocks` 條目裡,
-不觸發雜湊不符,也不觸發任何一道型別閘門的拒絕。**但需同時說清楚它不是一個可
-即時利用的攻擊面**:因為這段位元組從未被 `bytes_to_var()` 解碼,危險型別本身
-不會被「解出」成活體 `Signal`/`RID` 控代碼或空殼 `Callable`——它就是一段永遠
-不會被讀取的死位元組,除非未來實作變更成「遍歷 `blocks` 全部鍵」而非「只依
-`block_manifest` 選讀」,那時才需要重新評估是否要在該路徑上補一道閘門(這是
-針對假設中的未來變更的推論,不是對現行程式碼的宣稱)。
-
-###### 兩塊區域的風險輪廓對照
-
-| | 區域一:信封層未知額外鍵 | 區域二:`blocks` 額外條目 |
-|---|---|---|
-| 受頂層雜湊涵蓋 | ❌ 否 | ❌ 否 |
-| 受型別閘門涵蓋(危險型別會被擋) | ✅ 是 | ❌ 否(內容從未被開封檢查) |
-| 可夾帶什麼而不觸發任何檢查 | 一般資料(字串/數字/陣列) | 任意位元組,理論上包含危險型別的完整編碼 |
-| 該危險型別是否會被「解出」成活體控代碼 | 不適用(已被閘門擋下,不會寫入/讀出) | 不會——除非未來變更讀取路徑改為遍歷全部 `blocks` 鍵 |
-| 目前性質 | 未受完整性保護的「合法資料」旁路 | 未受完整性保護**且**未受型別檢查的「不透明位元組」盲區,目前不可觸發解碼 |
-
-##### 建議登記為延後項
-
-建議在延後清單(依循 `adr-0003-deferred-to-implementation.md` 既有格式)新增一條,
-記錄以下待實作階段裁決的問題:
-
-- 是否要把頂層雜湊的涵蓋範圍擴大到包含 `blocks` 的鍵集合(可偵測「多了/少了
-  一個區塊」而不必依賴 S4 的個別守衛)?
-- 若日後任何程式碼路徑改為遍歷 `blocks` 全部鍵(而非只依 `block_manifest` 選讀),
-  是否需要在該路徑上額外掛一道型別閘門(現行 `deserialize_block()` 那一道只在
-  被 manifest 選中時才會執行)?
-- 信封層是否需要一個「已知但未使用」的稽核記錄(例如記錄下有哪些未知鍵/孤兒
-  區塊被忽略),供人工排查存檔異常時使用?這不是安全性要求,是可觀測性要求。
-
-**威脅模型範圍註記**:以上分析全部在單機、無連線威脅模型下進行——攻擊面是本機
-存檔檔案被使用者本人或本機其他程式修改,不涉及網路傳輸或多人連線。所有引用的
-量測結果均取自 debug/headless 建置,release build 下是否維持一致**未查證**
-(`core-serialization.md`「未查證」第 1 項;`save-format-skeleton-2026-08-21/README.md`
-「(d) 未查證」第 1 項),本文不宣稱這些行為在 release build 下同樣成立。
-
+- **信封層對未知額外鍵寬容,與 `blocks` 額外條目被忽略,合起來產生兩塊不受完整性標記涵蓋的區域** —— 兩者單獨看都有理由,合起來看是存檔裡有兩塊沒人管、也沒人驗的區域。**風險輪廓不同,不可等量齊觀**:信封層額外鍵仍會被型別閘門掃到(危險型別擋得住,只能夾帶一般資料);`blocks` 額外條目的內容目前不會被任何一道型別閘門檢查(但也不是可即時利用的攻擊面 —— 它是永遠不會被讀取的死位元組,除非未來讀取路徑改為遍歷全部 `blocks` 鍵)。**登記為延後項,不阻擋本次修訂** —— 完整組合後果分析(含三項待實作階段裁決的問題)已移至 `docs/architecture/adr-0003-deferred-to-implementation.md` 第七節。
 ### Risks
 
 | 風險 | 緩解 |
@@ -1294,7 +1055,7 @@ func submit_current_names(enum_id: String, current_names: Array[String]) -> void
 | **超大 Delta Log(數百小時遊玩)下 `var_to_bytes()`/`bytes_to_var()` 或 SHA-256 計算是否有效能懸崖**(原 Verification Required 第 5 項,已關閉於**實務規模**,非無條件關閉) | **已測,實務規模內無效能懸崖**:32MB/64MB 緩衝區與 100k/500k 筆記錄的編解碼與 SHA-256 皆線性成長、往返 byte-identical(`core-serialization.md` 第 8 節,探針 F5)。GDD 自身估計單槽規模為數十 KB,遠低於已測規模六個數量級。⚠️ **這不是「上限已排除」的無條件結論**:測試**刻意未逼近** `var_to_bytes()` 理論上限(~2GB,逼近會 OOM),64MB 是目前唯一確認的線性上界;若未來內容規模假設改變(例如角色數量政策翻轉),須重新測到更大規模才能維持「無懸崖」的結論,已在 GDD Tuning Knobs 標記為連動項目 |
 | **`SaveBlockRegistry` 與各擁有系統的初始化時序**(若某系統忘記在讀取發生前呼叫 `register()`,該區塊會被誤判為「無驗證器宣告」而非「尚未初始化」) | 這是 fail-closed 設計的刻意結果,不是需要避免的缺陷——GDD 明文「未宣告視為錯誤」,一個忘記註冊驗證器的系統理應無法通過讀取,而非靜默略過語意檢查。具體的初始化順序保證(確保所有擁有系統在任何讀取發生前完成註冊)留待 `/create-architecture` 決定 |
 | **外層 manifest 最終寫入磁碟時,若下一份 ADR 選擇直接呼叫 `FileAccess.store_var()` 而非 `store_buffer()` 寫入本 ADR 產生的最終位元組緩衝區**(2026-08-18 `godot-specialist` 驗證發現)——`store_var()` 自 4.4 起回傳型別為 `bool`(原為 `void`,見 `breaking-changes.md` 4.3→4.4 表格) | 下一份 ADR(原子寫入)設計 Core Rules #14 步驟 1「確保寫入成功」的具體實作時,若使用 `store_var()` 寫入,須檢查此 `bool` 回傳值以偵測寫入失敗,不可假設呼叫必然成功;此為本 ADR 與下一份 ADR 的介面交接提醒,不影響本 ADR 自身決策 |
-| **`HashingContext` 三段式呼叫(`start`/`update`/`finish`)是否有更簡潔的一次性便利方法**(原為 `godot-specialist` 低信心度觀察,已查證關閉) | **答案是:不存在——這不是「風險已排除」,而是「這個簡化機會本身不存在」**。`PackedByteArray` 沒有 `sha256_buffer()` 方法,呼叫是編譯期錯誤(逐字:`Parse Error: Cannot find member "sha256_buffer" in base "PackedByteArray".`);該便利方法只存在於 `String`。本 ADR 的雜湊輸入一律是序列化後的 `PackedByteArray` 緩衝區,不是 `String`,因此三段式 `HashingContext` 呼叫是**唯一路徑**,沒有更簡潔的替代寫法可用。**證據**:`core-serialization.md` 第 5 節(193-196 行);探針 F3c1/F3c2/F3c3 |
+| **`HashingContext` 三段式呼叫(`start`/`update`/`finish`)是否有更簡潔的一次性便利方法**(原為 `godot-specialist` 低信心度觀察,已查證關閉) | **答案是:不存在——這不是「風險已排除」,而是「這個簡化機會本身不存在」**。`PackedByteArray` 沒有 `sha256_buffer()` 方法,呼叫是編譯期錯誤(逐字錯誤訊息見 `docs/engine-reference/godot/modules/core-serialization.md` 第 5 節);該便利方法只存在於 `String`。本 ADR 的雜湊輸入一律是序列化後的 `PackedByteArray` 緩衝區,不是 `String`,因此三段式 `HashingContext` 呼叫是**唯一路徑**,沒有更簡潔的替代寫法可用。**證據**:`core-serialization.md` 第 5 節;探針 F3c1/F3c2/F3c3 |
 
 ## GDD Requirements Addressed
 
