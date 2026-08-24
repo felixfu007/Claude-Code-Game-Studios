@@ -9,9 +9,12 @@ Last verified: 2026-08-24 | Engine: Godot 4.7.1
 > 轉換行為,分別是本專案多份技術設計文件已被實機驗證推翻的位置,省略引用會讓
 > 下一次修訂重蹈覆轍。這不是對 150 行規則的靜默違反,是記錄在案的例外。
 >
-> **2026-08-24 補充兩節(第 6、7 節,約 45 行)後,檔案來到約 260 行**——新增內容
-> 是 `Callable`/`RefCounted` 生命週期與 `StringName`/`String` 鍵互通這兩項邊界事實,
-> 借了本檔「型別/物件邊界行為」的定義域,詳見兩節各自開頭的範圍說明。
+> **2026-08-24 分兩次補充,共三節(第 6、7、8 節),檔案來到 327 行**——第 6、7 節
+> (約 45 行)新增 `Callable`/`RefCounted` 生命週期與 `StringName`/`String` 鍵互通
+> 這兩項邊界事實,借了本檔「型別/物件邊界行為」的定義域;第 8 節(約 43 行,同日
+> 稍晚追加)記載 `class_name` 全域註冊的 headless 雙向陷阱(未匯入時的假否證、
+> 匯入成功時的假確認)——性質上更接近工具鏈/探針方法論而非語言型別行為,是否該
+> 另立模組檔待管理者裁決,目前先留在本檔。三節各自開頭均有範圍說明。
 
 ## 1. 巢狀型別容器不支援
 
@@ -198,7 +201,9 @@ J1d/J1e(`prototypes/xcheck-adr0003-2026-08-21/xcheck-gdscript-shape-2026-08-21/l
 `Callable` 本身**不會**讓它綁定的 `RefCounted` 續命(不增加引用計數)。⚠️
 **`get_method()` 在物件已死之後仍然「看起來正常」**——它是這張表裡唯一一個不反映
 失效狀態的查詢方法。若驗證邏輯誤用「`get_method()` 有沒有回傳值」判斷 Callable 是否
-仍可用,會得出錯誤的「還活著」結論。正確的存活判斷必須用 `is_valid()`。
+仍可用,會得出錯誤的「還活著」結論。正確的存活判斷應使用 `is_valid()`——上表測過的
+三個查詢方法(`is_valid()`、`get_object()`、`get_method()`)裡,唯一正確反映死亡
+狀態的是這一個,未窮舉其他可能路徑。
 
 **證據**:`prototypes/save-format-skeleton-2026-08-21/scripts/t_h_callable_lifetime.gd`
 第 7–26 行;`prototypes/save-format-skeleton-2026-08-21/logs/run1-unfiltered.txt` 第
@@ -295,15 +300,28 @@ ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
 本節初版寫「快取能成功生成,即代表該目錄下所有腳本都通過剖析,可作為『這批腳本編譯
 得過』的獨立佐證」。**這是假的,已由探針否證。**
 
-`--import` 只掃描 `class_name` 宣告以建立全域索引,**不編譯方法主體**。實測:一個含
-`Parse Error`(跨檔裸引用另一檔的內部 enum)、`reload()` 明確回傳 parse error 的腳本,
-在匯入階段**零錯誤訊息、exit 0**,而且它的 `class_name` **照樣被登記進快取**。
+**量測到的事實**:一個含 `Parse Error`(跨檔裸引用另一檔的內部 enum)、`reload()`
+明確回傳 parse error 的腳本,在「Registering global classes」這個登記步驟本身**零
+錯誤訊息**,而且它的 `class_name` **照樣被登記進快取**;`Parse Error` 要到執行期
+`reload()` 才被回報。
 
-**證據**:`prototypes/xcheck-adr0002-review-2026-08-24/` —— `logs/00-import.txt`
-(16 行,`Parse Error` 零命中,exit 0)、`.godot/global_script_class_cache.cfg`
+⚠️ **以下是機制解讀,不是量測**:「`--import`/快取生成只掃描 `class_name` 宣告以
+建立全域索引,不編譯方法主體」是對上述行為最簡單的解釋,但本庫沒有讀過匯入器原始碼
+佐證這就是實際機制——標示方式比照本檔其他推論一律加此警語,不與量測到的事實混寫。
+
+**證據**:`prototypes/xcheck-adr0002-review-2026-08-24/` —— `logs/00-editor-cache-build.txt`
+(登記事件逐字列出 `BareRefOtherFile`/`OuterHolder`/`QualifiedRefOtherFile` 三個
+`class_name`,`Parse Error` 零命中)、`.godot/global_script_class_cache.cfg`
 (三個 class_name 全數登記,含編譯失敗的 `BareRefOtherFile`)、
-`logs/run-final-unfiltered.txt`(執行期才報出 `Parse Error: Could not find type "MyEnum"`)。
+`logs/run1-unfiltered.txt`(逐字 `EXIT_CODE=0`;執行期才報出
+`Parse Error: Could not find type "MyEnum"`)。
+⚠️ 同目錄下另有 `logs/00-import.txt`/`logs/run-final-unfiltered.txt` 兩份 2026-08-24
+同日稍晚補跑的 log——**不要引用它們**:前者因快取已存在而沒有再次觸發登記事件,也
+沒有留下 `EXIT_CODE`;後者同樣沒有 `EXIT_CODE` 這一行。本節初版曾誤引這兩份較弱的
+log,寫出一句沒有依據的「exit 0」,已修正。詳見該目錄 `README.md`「附帶用途」段。
 
-**所以**:`--import` 成功**只能**證明「全域類別索引已建立」,**不能**用來推論任何腳本
-編譯得過。判斷編譯與否唯一可靠的方式是取 `ResourceLoader.load()` 後 `reload()` 的
-`Error` 回傳值 —— 這也是本庫既有探針一貫的做法。
+**所以**:`--import`/快取生成成功**只能**證明「全域類別索引已建立」,**不能**用來
+推論任何腳本編譯得過。判斷編譯與否,本庫探針方法論目前**唯一驗證過、也唯一使用過**
+的方式是取 `ResourceLoader.load()` 後 `reload()` 的 `Error` 回傳值——這不代表已經
+窮舉 Godot 所有可能的偵測路徑(例如編輯器 GUI 診斷面板從未測試過),只代表本庫至今
+所有探針一貫且沒有例外地採用這個方法。

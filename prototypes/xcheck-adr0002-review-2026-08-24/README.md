@@ -79,3 +79,27 @@ Interfaces 的閱讀提醒被放進獨立檔案 `affinity_read_result.gd`,而機
 
 **已結案。** 此為一次性的 Step 5.5 覆核驗證探針,結論已回報進審查意見,不預期後續
 擴充。
+
+## 附帶用途(2026-08-24 同日稍晚,違反上一段「不預期後續擴充」的宣告)
+
+**這一段記錄一次不該發生的重跑,如實寫下,不修飾。** 本目錄已在上方宣告「已結案、
+不預期後續擴充」,但同一天約 16:08(比本探針原始執行的 16:07 晚約一分鐘),
+`godot-specialist` 又在同一個目錄裡重跑了一次,目的與本探針原本的假設(ADR-0002
+裸引用檔案邊界問題)完全無關——這次是拿本目錄現成的素材(`bare_ref_other_file.gd`
+含編譯期 `Parse Error`,但仍是合法登記的 `class_name`),去驗證另一個完全不同的
+問題:「`class_name` 全域快取生成成功,是否代表該腳本的方法主體通過編譯」(結論:
+不代表,見 `docs/engine-reference/godot/modules/scripting-typing.md` 第 8 節)。
+
+這次重跑:
+
+- 沒有在本 README 留下任何紀錄,直到 2026-08-24 覆核時才被回頭發現並補記於此
+- 產生了 `logs/00-import.txt`、`logs/run-final-unfiltered.txt` 兩份新 log,而不是
+  沿用原本該引用的 `logs/00-editor-cache-build.txt`、`logs/run1-unfiltered.txt`
+- 因為 `.godot/` 快取在原始執行(16:06–16:07)時已經建立,`00-import.txt` 這次
+  **沒有**再次觸發「Registering global classes」登記事件,也沒有留下 `EXIT_CODE`
+  這一行——`scripting-typing.md` 第 8 節初版因此引用了這兩份證據力較弱的 log,寫出
+  一句在被引用的檔案裡找不到依據的「exit 0」,已於 2026-08-24 覆核時修正引用來源。
+
+這是「探針目錄已結案後被靜默挪用做另一個實驗,README 未同步更新」的一個實例,
+違反 `.claude/rules/prototype-code.md` 對 README 必須反映實際測試內容與假設的
+要求。

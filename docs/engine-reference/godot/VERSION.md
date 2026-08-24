@@ -48,7 +48,7 @@ Agent 的查閱起點是本檔。**新增模組檔時必須同時更新此表**,
   `_with_objects` 跨行程實例化自訂類別
 - `modules/scripting-typing.md` — 型別化容器邊界、enum 型別化參數、`@abstract`、
   中止 vs 靜默矩陣、`Callable` 綁 `RefCounted` 的生命週期、`StringName`/`String` 當鍵、
-  `class_name` 全域註冊的 headless 假否證陷阱
+  `class_name` 全域註冊的 headless 雙向陷阱(未匯入時的假否證、匯入成功時的假確認)
 
 兩份刻意超出 README 的 150 行上限,理由在各自檔頭「格式偏離說明」——記錄在案的例外。
 

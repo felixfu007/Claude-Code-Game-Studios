@@ -57,11 +57,20 @@ ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
 
 **正確做法:先跑 `--headless --path . --import` 產生快取,再執行。**
 匯入完成後 `global_script_class_cache.cfg` 內同時列出 `SaveEnvelope` 與 `SaveFormat`
-兩個項目 —— **快取能生成本身就已經是「兩檔在匯入期都通過剖析」的證據。**
+兩個項目。
 
 > 若沒有做這一步就下結論,會得到「雙向 `class_name` 引用在 Godot 4.7.1 不可行」
 > 這個**完全相反且錯誤**的判定,並據此把架構改成不必要的單向形狀。
 > **後續任何用到 `class_name` 的 headless 探針都必須先 `--import`。**
+
+⚠️ **2026-08-24 事後修正(同日,由另一支探針否證)**:本節初版曾寫「快取能生成
+本身就已經是『兩檔在匯入期都通過剖析』的證據」——**這是假的**。本探針裡兩檔確實
+都編譯得過,是 Step 1 用 `reload()` 的 `Error` 回傳值**分別**驗證出來的,不是靠快取
+生成推論出來的;快取生成與方法主體是否編譯得過**沒有必然關係**。決定性反例見
+`prototypes/xcheck-adr0002-review-2026-08-24/`(一個含 `Parse Error` 的腳本一樣被
+登記進快取,匯入階段零錯誤),完整說明見
+`docs/engine-reference/godot/modules/scripting-typing.md` 第 8 節。快取生成**只能**
+證明「全域類別索引已建立」,判斷編譯與否仍須回到 Step 1 這種逐檔 `reload()` 檢查。
 
 ## 未涵蓋
 
