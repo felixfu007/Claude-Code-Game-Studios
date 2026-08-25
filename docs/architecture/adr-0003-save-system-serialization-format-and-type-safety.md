@@ -561,6 +561,13 @@ const MANIFEST_ENTRY_FIELDS: Array[String] = [
 const HASH_LEN: int = 32
 
 static func compute_top_level_hash(ruleset_version: int, block_manifest: Array) -> PackedByteArray:
+	# 🔴 前置條件(2026-08-25 明訂):呼叫端必須先確保 block_manifest 已通過
+	# SaveEnvelope.check_shape()(機制三步驟 1)。本函式對條目做 `var entry: Dictionary = e`
+	# 型別指派與 entry.get(field_name, null) 欄位讀取,若條目本身不是 Dictionary
+	# (即形狀檢查未跑過的未驗證輸入),其行為未定義。canonical_block_order() 適用同一
+	# 前置條件——它需要讀取每個條目的 source_id 進行排序,同樣假設條目已是齊全欄位的
+	# Dictionary。本函式無法自行拒絕不合形狀的輸入,故比照 ADR-0002 `pair_of()` 的既有
+	# 作法:以明文前置條件約束呼叫端。
 	var ordered: Array = canonical_block_order(block_manifest)
 	if ordered.size() != block_manifest.size():
 		return PackedByteArray()
@@ -689,10 +696,24 @@ func _build_nested_iteratively(depth: int) -> Dictionary:
 
 `save-system.md` Core Rules #16 本輪鎖定的完整讀取路徑順序——**#8 頂層完整性標記 → #5 規則集版本比對(`VERSION_TOO_NEW` 短路)→ #9 型別白名單閘門 → #7 語意驗證/#5 遷移鏈**——機制二的分層結構讓這個順序在位元組層級自然成立,不需要額外的流程控制邏輯去「假裝」某個步驟先發生:
 
-1. `bytes_to_var(buffer)` 解碼外層結構,取得 `ruleset_version`、`block_manifest`(含逐區塊雜湊)、`top_level_hash`,以及尚未解碼的 `blocks` 字典(僅取得 `PackedByteArray` 參照,不解讀內容)。
+1. **呼叫 `SaveFormat.deserialize_manifest(buffer)`** —— 依其定義(見上方「讀取側接入點」的 `_deserialize_gated()`)**依序**執行四步,**順序不得調換**:`bytes_to_var(buffer)` 解碼外層結構 → `decoded is Dictionary` 判定(非 `Dictionary` 一律 `DATA_CORRUPTED`)→ **`SaveTypeGate.scan_envelope(decoded)`** 型別白名單閘門(拒絕集合 {23 `RID`、24 `Object`、25 `Callable`、26 `Signal`})→ **`SaveEnvelope.check_shape(decoded)`** 信封欄位形狀檢查(必要鍵存在、型別正確、`top_level_hash` 長度恰為 `HASH_LEN`、`block_manifest` 每筆條目欄位齊全且型別正確、`source_id` 不重複)。完整依據見上方「`deserialize_manifest()` 的順序(不得調換)」段落。
+
+   通過後取得 `ruleset_version`、`block_manifest`(含逐區塊雜湊)、`top_level_hash`,以及尚未解碼的 `blocks` 字典(僅取得 `PackedByteArray` 參照,不解讀內容)。
+
+   > 🔴 **本步驟通過是步驟 2 的前置條件**(2026-08-25 補上):步驟 2 呼叫的 `compute_top_level_hash()` / `canonical_block_order()` 對 `block_manifest` 每個條目做**無守衛的** `Dictionary` 型別指派與欄位讀取,其安全性**完全依賴** `check_shape()` 已經先跑過。本節先前只列了雜湊、版本、區塊三段,**沒有提到信封層這兩步存在** —— 而 `TR-save-011` 指名本節「逐項對應」該鎖定順序,照舊版實作等於不會實作信封層閘門,而那道閘門正是「未知欄位夾帶不了危險型別」這個性質的**機制來源**。
 2. 以 `(ruleset_version, block_manifest 依 source_id 字典序排列的 tuple 清單)` 重算頂層雜湊,與讀出的 `top_level_hash` 比對——不符則 `DATA_CORRUPTED`,**在此步驟終止,不繼續任何後續步驟**(不嘗試解碼任何區塊,不比對版本)。
 3. 比對 `ruleset_version` 與目前遊戲版本——若前者較高,回傳 `VERSION_TOO_NEW`,**在此步驟終止**(不解碼任何區塊 payload,不觸發型別白名單閘門)。這個順序把 `VERSION_TOO_NEW` 判定完全建立在一個整數比較上,不依賴任何區塊解碼是否成功,直接消除 GDD 自陳的「新版本存檔在舊版本遊戲上被誤判為 `DATA_CORRUPTED`(因為含有未登記型別)」缺陷。
-4. 對每個需要處理的區塊(格式版本不等於目前版本、或屬於完整讀取範圍者):先以其 `block_manifest` 條目的 `block_hash` 對該區塊**尚未解碼的原始位元組**(`blocks[source_id]` 本身的 `PackedByteArray` 內容)重算 SHA-256 比對——不符則該次讀取視為 `DATA_CORRUPTED`,**在嘗試 `bytes_to_var()` 解碼該區塊之前就終止**,即區塊層級的雜湊驗證先於該區塊的型別白名單解碼發生,把「可能觸發非預期解碼行為的位元組」阻擋在解碼呼叫之外。
+4. 對每個需要處理的區塊(格式版本不等於目前版本、或屬於完整讀取範圍者):
+
+   **4a. 存在性與型別守衛**(2026-08-25 補上;此形狀已由骨架 `prototypes/save-format-skeleton-2026-08-21/scripts/save_reader.gd` 驗證):先查 `blocks.has(source_id)` —— **缺鍵一律 `DATA_CORRUPTED`**,`detail` 明說「頂層雜湊涵蓋不到這件事」。再查 `typeof(blocks[source_id]) == TYPE_PACKED_BYTE_ARRAY` —— 不符一律 `DATA_CORRUPTED`。
+
+   > **為何是必修,不是建議**:缺鍵的裸 subscript 讀取**已實測會中止呼叫函式**(2026-08-20 探針 A,登記於 `docs/registry/architecture.yaml` 的 `death_marks_prefill_or_unguarded_read` 之 `why:` 欄)。中止**沒有回傳值**,而 `SaveReader.read_block()` 的契約承諾回傳結構化的 `SaveFormat.ReadRejection`。少了這道守衛,一份 `block_manifest` 列了 `blocks` 沒有的 `source_id` 的存檔,**不會**回 `DATA_CORRUPTED`,而是讓讀取函式從中間斷掉 —— 這正是本 ADR 威脅模型(手動改壞的存檔)的正中央。
+   >
+   > **為何刻意不提前到步驟 1 的形狀檢查**:形狀檢查驗的是 `block_manifest` **自身**欄位是否齊全;`blocks` 與 `block_manifest` 之間的**交叉一致性**,規格指定由步驟 2 的頂層雜湊攔下。提前攔會搶走那個情境本該被攔的位置(見 `adr-0003-deferred-to-implementation.md` D-16)。
+   >
+   > ⚠️ **本專案未量測**把非 `PackedByteArray` 值指派給 `PackedByteArray` 靜態型別變數的確切引擎行為。第二道守衛只保證「型別不符會被攔下並回傳結構化拒絕碼」,**不對「省略此守衛會發生什麼」做任何宣稱**。
+
+   **4b. 通過 4a 後**:以其 `block_manifest` 條目的 `block_hash` 對該區塊**尚未解碼的原始位元組**(`blocks[source_id]` 本身的 `PackedByteArray` 內容)重算 SHA-256 比對——不符則該次讀取視為 `DATA_CORRUPTED`,**在嘗試 `bytes_to_var()` 解碼該區塊之前就終止**,即區塊層級的雜湊驗證先於該區塊的型別白名單解碼發生,把「可能觸發非預期解碼行為的位元組」阻擋在解碼呼叫之外。
 5a. 通過雜湊驗證的區塊,以 `bytes_to_var(buffer)` 解碼其 `PackedByteArray`,取得結果 `decoded`。**這一步只擋一件事**:若位元組流本應解碼出一個 `Object`(typeof 24,含所有 `Resource`/`RefCounted`/`Node` 子類別),`bytes_to_var()` 對此整包解碼原子性失敗,回傳值不是 `Dictionary`。判定一律用 `decoded is Dictionary`,不用 `!= null`——全零 16 bytes 是合法的 NIL 編碼,`bytes_to_var()` 對它回傳 `null` 且零錯誤訊息,`!= null` 會把這種損毀誤判為成功。`decoded` 不是 `Dictionary`(涵蓋 Object 解碼失敗與任何其他非預期型別)一律視為 `DATA_CORRUPTED`。
 
 5b. 對 5a 取得的 `decoded` payload,呼叫 `SaveTypeGate.scan(decoded)`(機制一之二)做獨立遞迴掃描,拒絕集合為 {23 `RID`、24 `Object`、25 `Callable`、26 `Signal`}。**這一步擋的是 5a 完全不擋的三個型別**:`RID`/`Callable`/`Signal` 在引擎讀取側不觸發任何拒絕行為,會被 `bytes_to_var()` 成功解碼並回傳,只有這道獨立掃描會擋。**這一步必須在步驟 6(語意驗證/遷移鏈)之前執行**——遷移函數操作的是已解碼的資料,型別閘控若晚於遷移鏈,危險型別會先被遷移函數讀取過一輪才被擋下(見機制七)。掃描結果是機制一之二定義的 `SaveTypeGate.GateResult`,其 `rejection` 欄位型別是 `GateRejection`——**不是** `SaveFormat.ReadRejection`;呼叫端讀到 `not gate.ok()` 時,對外一律轉譯為 `SaveFormat.ReadRejection.DATA_CORRUPTED`,兩個列舉本身不互通、不可混用其數值。
@@ -888,7 +909,10 @@ GDD Open Question 4 問的是:若採「扁平聯集」型別白名單,存在攻�
                                          ▼                原子置換序列寫入磁碟
 
                     讀取路徑(Core Rules #16 鎖定順序):
-                    bytes_to_var(外層 buffer) ──▶ ①頂層雜湊比對 ──▶ ②版本比對(VERSION_TOO_NEW 短路)
+                    bytes_to_var(外層 buffer) ──▶ decoded is Dictionary?
+                                              ──▶ SaveTypeGate.scan_envelope(信封)
+                                              ──▶ SaveEnvelope.check_shape(信封)
+                                              ──▶ ①頂層雜湊比對 ──▶ ②版本比對(VERSION_TOO_NEW 短路)
                                                               │
                                           ┌───────────────────┘
                                           ▼
@@ -972,7 +996,10 @@ class_name SaveEnumRegistry extends RefCounted
 func submit_current_names(enum_id: String, current_names: Array[String]) -> void
 ```
 
-**enum 轉換慣例**(適用於任何持久化 enum 欄位,所有擁有系統的 `to_dict()`/`from_dict()` 一致遵循,參見 ADR-0002 機制八):正向(enum → 字串)用 `EnumName.find_key(value)`;反向(字串 → enum)用 `EnumName[name_string]`,並以 `EnumName.values().has(...)` 風格檢查guard 非法字串輸入,對應查無此名稱時回傳 `MIGRATION_FAILED`(依 GDD Core Rules #10,需要一個顯式遷移函數處理改名/移除,不是 `DATA_CORRUPTED`)。
+**enum 轉換慣例**(適用於任何持久化 enum 欄位,所有擁有系統的 `to_dict()`/`from_dict()` 一致遵循;**權威版本見 ADR-0002 機制八的 R7-P3 段落**,對應登記表 `docs/registry/architecture.yaml` 的 `raw_enum_name_subscript_from_untrusted_string` 禁令):正向(enum → 字串)用 `EnumName.find_key(value)`;反向(字串 → enum)**先**用 `EnumName.keys().has(name_string)` 做存在性檢查,通過後才 `EnumName[name_string]`——**不是** `EnumName.values().has(...)`:`values()` 檢查的是**序數**(`int`),`keys()` 檢查的才是**名稱**(`String`),兩者定義域不同、不可互換(見 `docs/engine-reference/godot/modules/scripting-typing.md` 的用途綁定表)。查無此名稱時回傳 `MIGRATION_FAILED`(依 GDD Core Rules #10,需要一個顯式遷移函數處理改名/移除,不是 `DATA_CORRUPTED`)。
+
+> ⚠️ **本段守衛若寫錯(例如誤用 `values().has()` 去檢查字串名稱),後果不只是守衛本身失效**:若合法存檔的名稱因此被守衛擋下,實作者最直覺的下一步會是**把守衛整個拿掉**、直接寫 `EnumName[name_string]`——那正是上述禁令的形狀:非法名稱字串動態組出時是**執行期中止呼叫函式**,字面量時是**編譯期 Parse Error**,兩者都會讓本段承諾的結構化 `MIGRATION_FAILED` 回傳**永遠回不去**。**守衛失效會誘導出更糟的替代寫法**,這是它必須寫對的理由。
+> (⚠️ 本專案**未量測** `values().has(<String>)` 的實際回傳值——探針 D 只測過 `int` 輸入。上述警告不依賴該回傳值為何,只依賴「守衛未能放行合法名稱」這個條件。)
 
 **本次修訂新增的類別與常數**(契約細節不在此重述,見對應機制節):
 

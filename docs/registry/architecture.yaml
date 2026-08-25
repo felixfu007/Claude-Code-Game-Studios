@@ -322,7 +322,7 @@ interfaces:
     consumers:
       - save-system
     adr: docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md
-    signal_signature: "SaveBlockRegistry.register(source_id: String, validator: Callable) — validator: Callable(Dictionary) -> ValidationResult, pure, no state mutation"
+    signal_signature: "SaveBlockRegistry.register(source_id: String, validator: Callable) — validator: Callable(Dictionary) -> ImportResult, pure, no state mutation"
     notes: >
       Every persisted data block's owning system MUST expose a pure validate_semantics()
       function and register it against its source_id at startup, before any save read can
@@ -768,12 +768,24 @@ api_decisions:
       ResourceLoader.load()'s standard path has no type-filter parameter and instantiates
       any class declared in the file — Core Rules #9's deserialization type whitelist is
       "near-unenforceable" through it without a custom ResourceFormatLoader. Plain
-      bytes_to_var() refuses to decode any Object/Resource instance, eliminating the
-      type-whitelist problem at the engine level rather than requiring app-level whitelist
-      maintenance. JSON was rejected for float round-trip loss (conflicts with save-
-      system.md AC-24's tolerance assumption) and weaker type fidelity. Resolves
-      save-system.md Open Question 3 and 4 (whitelist version-domain scope becomes moot
-      since no custom types exist at all).
+      bytes_to_var() refuses to decode any Object/Resource instance — but that closes only
+      1 of the 4 engine-unfiltered Variant types (Object/24), and only on the READ side.
+      RID/23, Callable/25 and Signal/26 pass through bytes_to_var() untouched on read, and
+      var_to_bytes() on WRITE silently encodes any Object/Resource as EncodedObjectAsID
+      (see core-serialization.md and resource_based_save_payload below). The remaining 3
+      types and the entire write side are closed only by ADR-0003's own SaveTypeGate — a
+      hand-built recursive scanner run on BOTH the serialize and deserialize paths
+      (mechanism 1-2), independent of and additional to anything bytes_to_var() does
+      natively. CORRECTED 2026-08-25: this field previously claimed the format choice
+      "eliminat[ed] the type-whitelist problem at the engine level" and that the
+      version-domain question was "moot since no custom types exist at all". ADR-0003's
+      own §1 refuted that framing; the registry had not been updated, so anyone reading
+      only this entry got the opposite of the current decision. JSON was rejected for float
+      round-trip loss (conflicts with save-system.md AC-24's tolerance assumption) and
+      weaker type fidelity. Resolves save-system.md Open Question 3 and 4 — the whitelist's
+      version-domain-scope question still applies (see mechanism 7), but the whitelist
+      itself is SaveTypeGate's fixed, version-independent 4-code rejection set, not an
+      absence of custom types.
 
       CALL SHAPE CORRECTED 2026-08-21 (measured, prototypes/xcheck-adr0003-2026-08-21/,
       probe F1): the global functions take EXACTLY ONE argument. There is no allow_objects
@@ -1570,7 +1582,10 @@ forbidden_patterns:
     why: >
       save-system.md's chosen serialization mechanism (plain var_to_bytes()/bytes_to_var(),
       see save_serialization_format above) refuses to DECODE any Object/Resource-derived
-      instance — this is the entire basis of the project's type-whitelist security argument
+      instance — this is ONE LAYER of the project's type-whitelist security argument, not
+      the entire basis of it (CORRECTED 2026-08-25): bytes_to_var() alone closes only
+      Object/24 and only on the read side; RID/Callable/Signal and the whole write side are
+      closed by ADR-0003's separate SaveTypeGate scan (see save_serialization_format above)
       (save-system.md Core Rules #9). A future system (e.g. the not-yet-designed
       living-board terrain-evolution system, which game-concept.md already flags as likely
       to use Resource subclasses for gameplay convenience) that hands a raw Resource to the

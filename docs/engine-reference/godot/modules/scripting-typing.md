@@ -68,13 +68,26 @@ if _records.has(pair):
 | `Pair.keys().has("NO_SUCH_PAIR")`(方法呼叫) | 編譯通過,乾淨回傳 `false` | 乾淨回傳 `false` |
 | `Pair.values().has(999)`(越界序數) | — | 乾淨回傳 `false`,不中止 |
 
-**規則**:對不可信的字串/數值一律用 `.keys().has()` / `.values().has()` 做存在性
-檢查,**絕不對不可信輸入裸用 `[]` subscript**——這是形狀上的規則,不是「來源可信
-與否」的規則:即使明知字串來自不可信來源,寫成方法呼叫就是安全的,寫成 subscript
-就不是。
+**規則(依用途綁定方法,三者定義域不可互換)**:
+
+| 用途 | 方法 | 輸入型別 |
+|---|---|---|
+| 查「名稱」是否存在 | `.keys().has(name)` | `String` |
+| 查「序數」是否存在 | `.values().has(ordinal)` | `int` |
+| 依「值」反查名稱 | `.find_key(value)` | `int`(找不到回傳 `null`) |
+
+拿字串去對 `.values().has()`、或拿序數去對 `.keys().has()`,都是把檢查對象換成
+上表沒有量測過的輸入型別組合——不在本節任何一項結論的涵蓋範圍內,不能假設安全。
+
+不論哪一種用途,**絕不對不可信輸入裸用 `[]` subscript**——這是形狀上的規則,不是
+「來源可信與否」的規則:即使明知字串來自不可信來源,寫成方法呼叫就是安全的,寫成
+subscript 就不是。
 
 **證據**:`prototypes/xcheck-round7-2026-08-20/README.md` 探針 A(缺鍵讀取)、探針 C
-(字面量 subscript)、探針 D(`.has()` 對稱可用)。
+(字面量 subscript;同探針 C5 另測得 `find_key(999)` 對不存在的值乾淨回傳 `null`,
+`typeof` 為 0,見 `logs/probeC-v2-unfiltered.txt` 第 43–47 行)、探針 D(`.keys().has()`
+對合法/非法名稱字串、`.values().has()` 對越界序數皆對稱可用;`.values().has()` 只測過
+`int` 輸入,見 `logs/probeD-unfiltered.txt`)。
 
 ### 容器層的型別退化
 
