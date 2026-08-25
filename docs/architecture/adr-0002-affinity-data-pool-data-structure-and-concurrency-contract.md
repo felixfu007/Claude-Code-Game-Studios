@@ -18,9 +18,13 @@
 >
 > **本 ADR 不自陳修訂後的需求涵蓋分佈** —— 留給全新 session 的獨立第八輪 `/architecture-review`。**優先查核點**:修正 A/H(Step 5.5 第一輪之後才產生)、`can_write()` 是本次唯一改變既有公開簽章回傳型別之處、`pair_of()` 的呼叫端義務不與其他 7 個入口同級。
 
+> **2026-08-24 修訂(範圍:同檔強制規則)**:`AffinityReadResult`/`ShapeFeatureResult` 因跨檔裸引用 `AffinityDataPool` 巢狀 enum 在 Godot 4.7.1 是編譯期限制(探針 `prototypes/xcheck-adr0002-review-2026-08-24/`),兩者由獨立 `class_name` 改為 `AffinityDataPool` 同檔的並列 inner class。⚠️ **範圍聲明的限度**:本則的範圍依據是「哪些地方帶 2026-08-24 日期標記」這一個訊號,兩次獨立 `grep` 確認全文只有兩處帶此標記——但這只證明「沒有更多帶標記的痕跡」,**不證明那一波沒有做過不帶日期標記的其他修改**。本則不宣稱這是 2026-08-24 那一波變更的完整範圍,只記載可追溯到日期標記的部分。
+>
+> **2026-08-25 修訂(第八輪覆核前的收斂批次)**:補完 `ImportResult`、`AdvanceRejection`、`DeathNotifyResult` 三個先前只被當成回傳型別使用、本體從未宣告的型別;`AffinityRecordList.get_at()` 契約修訂為越界不中止、回傳 `null`(VR#11 關閉);VR#9(`match typeof(x)` 對 `TYPE_NIL` 分支)、VR#12(`int`/`float` 序列化型別往返保真)兩項由探針關閉;Risks 表全域 `class_name` 命名碰撞計數修正;機制八「與 ADR-0003 的分工」段落範圍收窄並修正引號位置;`ADR Dependencies` 的 `Ordering Note` 補上對 ADR-0003/ADR-0004 兩條邊的「不構成 `Depends On`」防線。**本 ADR 不自陳修訂後的需求涵蓋分佈**——留給獨立的第八輪 `/architecture-review` 重新推導,理由與前幾次修訂相同。
+
 ## Date
 
-2026-08-18(初版) / 2026-08-19(C1/C3 銜接缺口修訂) / 2026-08-20(引擎行為實機驗證修訂) / 2026-08-21(第七輪 17 項修訂)
+2026-08-18(初版) / 2026-08-19(C1/C3 銜接缺口修訂) / 2026-08-20(引擎行為實機驗證修訂) / 2026-08-21(第七輪 17 項修訂) / 2026-08-24(Key Interfaces 閱讀提醒段落所載的同檔強制規則,`AffinityReadResult`/`ShapeFeatureResult` 改為 inner class) / 2026-08-25(補完 `ImportResult`/`AdvanceRejection`/`DeathNotifyResult`、`get_at()` 契約修訂、機制八「與 ADR-0003 的分工」段落措辭修正、Risks 表計數修正)
 
 ## Engine Compatibility
 
@@ -31,7 +35,7 @@
 | **Knowledge Risk** | MEDIUM——本領域無 `breaking-changes.md` 列出的 4.7 專屬破壞性變更(`Dictionary`/`enum`/`Mutex`/`RefCounted` 皆為 4.0 起語意穩定的機制),但仍屬 2026-01 訓練截止後未經本專案實機驗證的版本;無專屬模組參考文件(`docs/engine-reference/godot/modules/` 只有 animation/audio/input/navigation/networking/physics/rendering/ui,無 core/scripting)。**2026-08-20 更新**:本領域已首次取得實機驗證,八項 Verification Required 中六項關閉——其中一項(#6)推翻了本 ADR 的核心宣告。風險等級維持 MEDIUM 而非下調,理由是仍有兩項未查證,且 #7 屬本專案目前無法查證的類別 |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md` |
 | **Post-Cutoff APIs Used** | 無——`Dictionary[K,V]` 型別化容器語法(4.4 起)、`enum`、`RefCounted`、`Mutex`、`Time.get_ticks_msec()`,以及 `Resource.DEEP_DUPLICATE_ALL`(本 ADR 不使用深拷貝,見 Decision,故此 API 與本 ADR 無交集)皆非本 ADR 依賴項。**2026-08-20 修正**:原本把 `Dictionary[K,V]` 一律當成「4.4 起語意穩定、非依賴項」——該判斷在**巢狀**用法上不成立(4.7.1 明確不支援巢狀型別容器,見 Verification Required #6)。單層型別化容器仍為穩定機制;本 ADR 修訂後**只使用單層**。另新增依賴 `typeof()` 與 `Variant.Type` 常數(機制八的型別檢查),兩者皆為 4.0 起穩定的核心 API |
-| **Verification Required** | **2026-08-20 全欄改寫,五項擴為八項。六項已關閉、兩項仍開。** 詳表見下方「Verification Required 明細」 |
+| **Verification Required** | **2026-08-20 全欄改寫,五項擴為八項,六項已關閉、兩項仍開;2026-08-21 第七輪修訂新增 #9–#12 共四項(其中 #10 新增即關閉),達十二項、七項已關閉、五項仍開(此中間狀態先前未寫回本欄,是本次一併修正的計數漂移,與 A-5 同一種錯);2026-08-25 回填 #9/#11/#12 的核准階段判定後:十二項,十項已關閉、兩項仍開(#4 `Mutex` 可重入、#7 export release 建置下的容器驗證行為)。** 詳表見下方「Verification Required 明細」 |
 
 **引擎知識落差聲明**:`godot-specialist` 於 2026-08-18 對本 ADR 初稿逐項查核(型別化 Dictionary 語意、enum 作為鍵、`RefCounted`+signal 的正確性、`Mutex` 用法、序列化替代方案 `inst_to_dict()`/`dict_to_inst()`、`class_name` 命名空間風險),結論(**⚠️ 2026-08-21 加限定語,R7E-16**:該覆核是 2026-08-18 的**靜態**覆核,當時本專案尚未取得實機執行證據;其「零 BLOCKING」結論已於 2026-08-20 被實機驗證**推翻一項** —— VR #6,巢狀型別容器無法編譯,即本 ADR 的原核心宣告。本段保留作為歷史紀錄,**不得再被引用為現況**):零 BLOCKING 級的機制決策問題(`Dictionary`/`RefCounted`/`enum`/`Mutex`/DI 擁有模式的選擇本身皆確認為 4.7.1 慣用做法),但發現初稿的 Key Interfaces **完整性缺口**——共用列舉(`Pair`/`Character`/`Source`)若不集中包裝於單一 `class_name`,會造成跨檔案引用無法編譯,已修訂為 `AffinityTypes` 包裝類別(見機制二)。另提出 5 項 minor notes,已全數採納並反映於機制四/七/八與本節、Risks 表。
 
@@ -47,19 +51,19 @@
 | **6** | GDScript 4.7.1 是否支援巢狀型別容器 | **已查證(2026-08-20):不支援**——`Parse Error: Nested typed collections are not supported`,class member(無初始化)/ 函式參數 / 回傳型別三種語法形狀皆同,兩個獨立專案重現。**本項為新增,原 VR 表沒有它,而它擊落了本 ADR 的核心宣告**(見機制二 BLOCKING 修訂) |
 | **7** | **export release 建置下,C++ 容器驗證(層二)是否仍生效** | **未查證,且本專案目前無法查證**:`%APPDATA%/Godot/export_templates/` 存在但完全是空的、全域零個 `.tpz`;三條替代路皆已排除(`--headless` 只換 DisplayServer、`OS.is_debug_build()` 不可切換、無 template binary)。**🔴 2026-08-21 誠實改寫(R7E-7 / C7)**:本欄原寫「本 ADR **只**依賴層 A(容器驗證是否丟棄寫入),ADR-0005 依賴層 B(VM 中止語意)」—— **兩半都不成立**。(a) 本 ADR **同時依賴層 A 與層 B**:層 A 已由機制四之二的規則二降為縱深防禦,但**層 B 尚未降級** —— 機制四之三的整個論證押在「型別錯誤的阻擋方式是整段呼叫端函式中止」,Risks 表更明寫「失敗會表現為呼叫端函式靜默中止(在 release 建置下甚至可能連錯誤都不列印)」。(b) **ADR-0005 全文對層 B、export release、2026-08-20 的 spike 零命中** —— 本 ADR 單方面替它記帳,與第三輪的 C6 同一形狀。**ADR-0005 是否依賴層 B,由該 ADR 自行認定,本 ADR 不代為記帳。** C7 因此**只關本 ADR 這一半**,另一半需 ADR-0005 第四次修訂補上對應文字。另依 R7E-3,層二的定義域已擴為同時涵蓋鍵與值兩條路徑,故**本項的影響面比原記載更寬**。**建議的關閉方式不是手動測一次**,而是把探針改成建置無關(只斷言容器 `size()`,不管中止與否),掛進 CI 的 release-export job 成為永久回歸測試。**證據等級誠實聲明**:層 A 的關鍵論證是 `ERR_FAIL_COND_V(cond, false)` 的 `return false` 與錯誤列印在同一巨集內、巨集若被編掉則兩者一起消失——此推論的前提(4.7 的實際巨集定義)無 C++ 原始碼可查,屬**訓練資料推論** |
 | **8** | 型別錯配的 `Variant` 傳給內建函式、比較運算子、與型別化賦值時的行為 | **已查證(2026-08-20,`XCHECK-4`)**:內建函式(`is_finite`/`is_nan`/`is_inf`)與比較運算子(`==`/`>=`)對 `String` **皆中止所在函式**,無一會靜默回傳 `false`;但 `var t: int = <float 1.5>` **靜默截斷為 `1`**,不中止不報錯。中止不往上層傳染。**本項為新增**——它坐實了機制八「先 `typeof()` 內省、後值域運算」的排序,並揭露了 `t`/`c` 型別檢查不可寬鬆到「int 或 float 皆可」的靜默截斷風險 |
-| **9** | `match typeof(x)` 對 `TYPE_NIL` 分支的比對行為(機制五的 `t_query` 三分支閘門所依賴) | **未查證(2026-08-21 新增)**。`XCHECK-4` 已間接查證「比較運算子對 `String` 中止」這一半,但 `match typeof(x)` 本身對 `TYPE_NIL` 的比對**未直接測**。不假設 |
+| **9** | `match typeof(x)` 對 `TYPE_NIL` 分支的比對行為(機制五的 `t_query` 三分支閘門所依賴) | **已查證(2026-08-24,探針 `prototypes/xcheck-adr0002-vr9-vr11-2026-08-24/probe-vr9-match-typeof/`)**:`match typeof(null)` 確實命中 `TYPE_NIL` 分支;`TYPE_NIL` 具名常數與字面量 `0` 作為 case 標籤行為相同(13/13 組一致,額外覆蓋 `TYPE_FLOAT`/`TYPE_INT`/`TYPE_STRING`/`TYPE_BOOL`/`Array`/`Dictionary`/`Vector2`);完全沒有 `TYPE_NIL` 分支時 `null` 乾淨落入 `_`。**本項關閉。** 另量到一項獨立的實作陷阱(`_` 提前吃掉 `null` 的順序陷阱),已移出本欄,改記於機制五 `t_query` 型別閘門旁的實作提醒 |
 | **10** | `AffinityTypes.Pair.values().has(int)` 與 `keys().has(String)` 對**越界 / 非法**輸入的回傳值 | **已查證(2026-08-21,探針 D)**:皆**乾淨回傳 `false`、不中止**,字面量與執行期動態組出兩形同行為。**新增即關閉。** 這是機制四步驟 4/5 的序數檢查與機制八名稱存在性檢查的共同地基 |
-| **11** | **型別化 `Array` 對越界索引的讀取行為**(`AffinityRecordList.get_at(index)` 所依賴) | **未查證(2026-08-21 新增)**。四支探針測的全是型別化 **`Dictionary`** 對缺鍵 subscript(中止),**不得沿用到 `Array`** —— 不同容器、不同操作。本項直接決定 `get_at()` 是否需要自帶邊界檢查 |
-| **12** | `var_to_bytes()` / `bytes_to_var()` 對 `int` 與 `float` 的**型別往返保真** | **未查證(2026-08-21 新增),歸屬 ADR-0003**。機制八對 `m` 嚴格 `TYPE_FLOAT` 的理由引用了這個前提,而 ADR-0003 把該 API 家族列為 Knowledge Risk **HIGH** 且其 5 項 VR **沒有一項是型別往返保真** —— 這是該 ADR 選擇二進位 Variant 序列化的整個賣點,卻從未被列為要驗證的項目。**本 ADR 只登記依賴,不代為記帳**(與 C7 的立場一致) |
+| **11** | **型別化 `Array` 對越界索引的讀取行為**(`AffinityRecordList.get_at(index)` 所依賴) | **已查證(2026-08-24,`prototypes/xcheck-adr0002-vr9-vr11-2026-08-24/probe-vr11-array-bounds/logs/run1-unfiltered.txt`)**:`[]` subscript 越界中止呼叫函式;`.get()` 越界印 ERROR 但不中止、回傳 `null`;負索引 `-1` 在非空陣列取到最後一筆,空陣列則中止。**`get_at()` 已依此重新設計(2026-08-25,見機制二契約修訂),本項關閉** |
+| **12** | `var_to_bytes()` / `bytes_to_var()` 對 `int` 與 `float` 的**型別往返保真** | **已查證(2026-08-25,探針 `prototypes/xcheck-adr0002-vr12-2026-08-25/`)**:機制八對 `m` 嚴格 `TYPE_FLOAT`、`t`/`c` 嚴格 `TYPE_INT` 這兩條拒絕規則的前提——在測過的所有情況下(整數值/非整數值/極端量級 float、含超過 32 位元的 int、`export_state()` 實際容器巢狀形狀、`INF`/`-INF`/`NAN` 特殊值)——型別往返完整保真,無一被序列化過程本身改變型別。**⚠️ 窄劃界,不可弄丟**:本項只關閉 ADR-0002 自己這條窄依賴(「合法輸出的型別往返不會被序列化過程本身改變」),**不代表 ADR-0003 選擇二進位 Variant 序列化這個格式決策整體的 Knowledge Risk HIGH 評級一併降級**——探針測的範圍只是 ADR-0002 機制八用到的兩個具體純量欄位形狀,不是該格式決策涉及的其他面向(`Object` 靜默編碼、`Dictionary` 鍵順序敏感等)。**本 ADR 只登記依賴,不代為記帳**(與 C7 的立場一致) |
 
 ## ADR Dependencies
 
 | Field | Value |
 |-------|-------|
-| **Depends On** | None |
+| **Depends On** | None(**見下方 `Ordering Note`——本 ADR 有兩處具體點名其他 ADR 的構造,皆已於該欄位確認不構成 `Depends On` 意義的依賴**) |
 | **Enables** | `docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md`(2026-08-18 已寫入,`TR-save-001` 及其下游)——引用本 ADR 的 `export_state()`/`import_state()`/`validate_semantics()` 通用 `Dictionary` 契約與反序列化語意驗證規則,決定實際容器格式;好感度—位置連鎖系統、敘事解鎖與結局分支系統、技能卡牌系統、支援對話系統、章節/戰役結構、戰棋移動與交戰系統(陣亡通知呼叫方)的後續設計/實作 |
 | **Blocks** | 好感度數值池相關 story 的 `/create-stories`/`/dev-story`——目前 24 項 `TR-affinity-*` 缺口全數卡在此 |
-| **Ordering Note** | 本 ADR 刻意**不**依賴尚未撰寫的存檔系統 ADR(序列化格式、寫入並發模型皆為該 ADR 的範圍)——`affinity-data-pool.md` Dependencies 章節明文本系統「仍是唯一不需要等待其他系統設計完成即可實作的資料層」,若本 ADR 反過來依賴存檔系統 ADR 的格式/執行模型決策,會違反這個明文的獨立性宣告,並造成循環等待(存檔系統 ADR 大概率會想引用本 ADR 的邏輯結構)。本 ADR 對「序列化生命週期權杖集合是否需要 Mutex 保護」的決定已在本 ADR 內**無條件**拍板(見 Decision),不等待存檔系統執行模型定案 |
+| **Ordering Note** | 本 ADR 刻意**不**依賴尚未撰寫的存檔系統 ADR(序列化格式、寫入並發模型皆為該 ADR 的範圍)——`affinity-data-pool.md` Dependencies 章節明文本系統「仍是唯一不需要等待其他系統設計完成即可實作的資料層」,若本 ADR 反過來依賴存檔系統 ADR 的格式/執行模型決策,會違反這個明文的獨立性宣告,並造成循環等待(存檔系統 ADR 大概率會想引用本 ADR 的邏輯結構)。本 ADR 對「序列化生命週期權杖集合是否需要 Mutex 保護」的決定已在本 ADR 內**無條件**拍板(見 Decision),不等待存檔系統執行模型定案。**2026-08-25 新增,兩條邊的防線一次交代**:本 ADR 有兩處具體點名其他 ADR 的構造——(a) 機制七『逐權杖惰性逾時清除』引用 ADR-0004 擁有的 `TOKEN_TIMEOUT_MS`;(b) 機制八引用 ADR-0003 機制一之二的 `SaveTypeGate`(見『與 ADR-0003 的分工』段落)。**兩者皆不構成 `Depends On` 意義的依賴**,理由分開講:(a) 機制七的**主要**逾時清除確確實實在引用這個常數——本文件已就地把它標為 `Depends On: None` 的一個**既存例外**(見機制七的 C1 銜接缺口段落)。本 ADR 不把它升格為 `Depends On`,理由是本 ADR 擁有逾時**機制**的執行,不擁有 `TOKEN_TIMEOUT_MS` 這個**數字**,而該數字變動不會改變本 ADR 任何機制決策(定值依據、推導公式皆由 ADR-0004 掌握)。`_reclaimed_tokens` 的**次要**逾時已改為固定容量 FIFO、不再引用任何外部常數——這只是把例外面縮小為「機制七主要逾時清除」這一處,**不是**兩處都不再引用,不可拿次要逾時的事實去支撐整條邊已經沒有引用的結論。(b) 本 ADR 對 `SaveTypeGate` 的決定依據是「引擎原生 `allow_objects` 閘門只擋 `Object`」這個引擎事實,不是「ADR-0003 選擇用 `SaveTypeGate` 補洞」這個設計決定。**若這兩處被誤讀為 `Depends On`,會繞成 `ADR-0002 → ADR-0004 → ADR-0003 → ADR-0002` 的循環**(`ADR-0004 → {ADR-0003, ADR-0002}`、`ADR-0003 → ADR-0002` 已成立)——這正是為何本欄位維持 `None`,且兩處引用都只是「登記依賴,不代為記帳」(比照 VR#12 的既有寫法),不是反向依賴。 |
 
 ## Context
 
@@ -145,7 +149,7 @@ var _items: Array[AffinityRecord] = []      # 私有,唯一寫入路徑是 appen
 
 func append(record: AffinityRecord) -> void
 func size() -> int
-func get_at(index: int) -> AffinityRecord
+func get_at(index: int) -> AffinityRecord   # 可為 null,見下方 2026-08-25 契約修訂
 ```
 
 **2026-08-21 修訂(R7E-12,使用者裁決)**:`items` 由公開欄位改為私有 `_items` + 最小存取面。
@@ -180,7 +184,24 @@ Parse Error: Nested typed collections are not supported.
 
 > **不可引用 `get_class()` 的輸出作為此結論的證據**:它回傳**原生**類別,任何 `RefCounted` 子類別都印 `RefCounted`,無法區辨包裝類別、也從未碰到內層。2026-08-20 的覆核推翻了 spike 原本以 `get_class()` 為依據的同一結論——結論湊巧為真,證據無效。此處引用的是覆核者改測的三項。
 
-**代價**:多一個全域 `class_name`(碰撞風險見 Risks 表既有列,前綴 `Affinity` 與其餘六個一致),以及所有存取多一層方法呼叫(`append()`/`size()`/`get_at()`;**2026-08-21 修訂前為 `.items` 屬性存取**)。**收益**:內層元素型別由 `AffinityRecordList` 自身的宣告式 `var _items: Array[AffinityRecord] = []` **加上 `append()` 的型別化參數簽章**共同保證,**不經任何 subscript 型別推斷路徑**(見機制四的實作提醒——subscript 賦值已實測**不**推斷元素型別)。
+**代價**:多一個全域 `class_name`(碰撞風險見 Risks 表既有列,前綴 `Affinity` 與其餘三個同帶字首者一致,但全域類別總數與字首比例已於 Risks 表修正(2026-08-25,見該表「全域 `class_name` 命名碰撞」列)——本句不再自行複述總數與比例,避免同一件事第三處各自維護),以及所有存取多一層方法呼叫(`append()`/`size()`/`get_at()`;**2026-08-21 修訂前為 `.items` 屬性存取**)。**收益**:內層元素型別由 `AffinityRecordList` 自身的宣告式 `var _items: Array[AffinityRecord] = []` **加上 `append()` 的型別化參數簽章**共同保證,**不經任何 subscript 型別推斷路徑**(見機制四的實作提醒——subscript 賦值已實測**不**推斷元素型別)。
+
+**`get_at()` 契約修訂(2026-08-25,VR#11 關閉)**:`prototypes/xcheck-adr0002-vr9-vr11-2026-08-24/probe-vr11-array-bounds/logs/run1-unfiltered.txt` 實測——型別化 `Array` 的 `[]` subscript 對越界索引**中止呼叫函式**(`SCRIPT ERROR: Out of bounds get index`);`.get()` 存在,越界時印 ERROR 但**不中止、回傳 `null`**;負索引 `-1` 在非空陣列乾淨取到最後一個元素,空陣列則中止。**管理者裁決:`get_at()` 改為越界不中止、回傳 `null`**——中止正是本 ADR 花最大力氣在防的失敗形狀(機制八「逐欄位型別+值域」段落與其下的實測表:中止讓契約承諾的結構化回傳「永遠回不去」),且回 `null` 與 `from_dict()` 既有的失敗語意一致。
+
+**簽章不變,仍為 `-> AffinityRecord`**:GDScript 允許 `null` 賦值給任何 Object 衍生型別的回傳值,`from_dict()` 已是同一種先例,不需要改成 `Variant`。
+
+**實作:自行邊界檢查,不依賴 `.get()` 或 `[]` 對負索引的原生語意**:
+```gdscript
+func get_at(index: int) -> AffinityRecord:
+    if index < 0 or index >= _items.size():
+        return null
+    return _items[index]
+```
+**負索引刻意不沿用引擎原生語意**:探針顯示型別化 `Array` 對負索引的原生行為在非空/空陣列下不一致(非空陣列的 `-1` 取到最後一筆,空陣列則中止)——這種「行為隨陣列當下狀態而變」的語意若直接暴露給呼叫端,會讓同一段呼叫端程式碼在不同時間點得到不同種類的失敗。`get_at()` 統一把任何 `index < 0` 或 `index >= size()` 都視為越界,一律回傳 `null`;`AffinityRecordList` 不對外提供「取倒數第 N 筆」語意,呼叫端若需要最後一筆,應自行 `get_at(size() - 1)` 表達(`size() == 0` 時該式為 `-1`,依本規則同樣回傳 `null`,**但仍受下方呼叫端義務約束,必須檢查 `null`**——呼叫端不需要另外判斷空陣列這件事本身,不代表可以省略檢查)。
+
+**呼叫端義務**:所有呼叫端必須檢查 `get_at()` 回傳值是否為 `null`,不得假設索引一定落在合法範圍。
+
+**Validation Criteria 11(b) 需同步擴充**:原「先 `append()` 一筆記錄後再斷言 `_records[pair].get_at(0) is AffinityRecord`」方向不變;**新增**:對空 list 呼叫 `get_at(0)`、對非空 list 呼叫 `get_at(-1)`/`get_at(size())`,斷言三者皆乾淨回傳 `null`、不中止。
 
 `AffinityDataPool` 內部儲存:
 
@@ -342,9 +363,9 @@ func append_record(pair: AffinityTypes.Pair, m: float, source: AffinityTypes.Sou
 | 2 | `narrative_depth_read(t_query: Variant)` | 同上 |
 | 3 | `shape_feature_read(t_query: Variant)` | 同上 |
 | 4 | `import_state(data)` / `validate_semantics(data)` 的**欄位內容** | 機制八的「先 `typeof()`、後值域」 |
-| 5 | **`AffinityRecord.from_dict(d: Dictionary)`** | 機制八:方法**自己內部**先 `keys().has(name)`,遇非法名稱**回傳 `null`** |
+| 5 | **`AffinityRecord.from_dict(d: Dictionary)`** | 機制八:方法**自己內部**呼叫共用的 `AffinityRecord.check_record_fields()`(鍵集合 + 名稱合法性 + `m`/`t`/`c` 型別合法性,2026-08-25 補強),任一檢查失敗**回傳 `null`** |
 
-> **第 5 條是 2026-08-21 Step 5.5 覆核抓到的漏項**:第 4 條已把稽核範圍從「型別字面為 `Variant`」擴大到「參數是 `Dictionary` 但內容是不可信 `Variant`」——**一旦接受這個更寬的範圍,`from_dict()` 必須在列**。它是**公開靜態方法**,任何呼叫方可直接 `AffinityRecord.from_dict({"pair": "GARBAGE"})`,**完全繞過 `validate_semantics()` → `import_state()` 的兩段式契約**,精準命中探針 C 實測的動態非法字串索引中止。**防線放在方法自己裡面,不依賴呼叫方一定先跑 `validate_semantics()`。**
+> **第 5 條是 2026-08-21 Step 5.5 覆核抓到的漏項**:第 4 條已把稽核範圍從「型別字面為 `Variant`」擴大到「參數是 `Dictionary` 但內容是不可信 `Variant`」——**一旦接受這個更寬的範圍,`from_dict()` 必須在列**。它是**公開靜態方法**,任何呼叫方可直接 `AffinityRecord.from_dict({"pair": "GARBAGE"})`,**完全繞過 `validate_semantics()` → `import_state()` 的兩段式契約**,精準命中探針 C 實測的動態非法字串索引中止。**防線放在方法自己裡面,不依賴呼叫方一定先跑 `validate_semantics()`。**2026-08-25 補強**:原本的防線只擋列舉名稱非法,未擋 `m`/`t`/`c` 的型別錯配(例如直接呼叫 `AffinityRecord.from_dict({"pair":"C1_C2","source":"COMBAT_CARD","m":<Callable>,"t":1,"c":0})` 先前可繞過);現由共用的 `check_record_fields()` 同時檢查兩者,見機制八之二。**
 
 **`Variant` 出口(本系統 → 外部),共 4 條 + 1 條本次消滅**
 
@@ -402,6 +423,44 @@ static func is_valid_source(s: Source) -> bool
 >
 > **兩條路徑的一致性義務**:`AffinityTypes.is_valid_*()`(公開靜態,低頻)與 `AffinityDataPool` 內部讀快取的檢查(熱路徑)**語意必須完全相同**。這是「同一個檢查散寫在兩個地方」的形狀,已新增 Validation Criteria 斷言兩條路徑對同一輸入回傳一致結果。
 
+```gdscript
+# 2026-08-25 補完:AdvanceRejection/DeathNotifyResult 兩個 enum 全文從未被
+# 宣告本體,只被當成回傳型別使用,與 ImportResult 是同一種毛病。成員清單
+# 依下列來源逐一蒐齊:
+#   - 機制七 advance_campaign_tick() -> AdvanceRejection 宣告旁的註解:
+#     「目前僅 SERIALIZATION_WINDOW_ACTIVE 一種拒絕情境」→ AdvanceRejection
+#   - 機制七 notify_death() -> DeathNotifyResult 宣告旁的註解:
+#     「SERIALIZATION_WINDOW_ACTIVE / DUPLICATE_DEATH_NOTIFICATION」→ DeathNotifyResult 原始兩值
+#   - 機制三「陣亡標記表」段落:notify_death() 冪等性拒絕回傳 DUPLICATE_DEATH_NOTIFICATION
+#   - 機制四之四「8 個帶 enum 參數的入口統一序數驗證」的修法列表:
+#     「DeathNotifyResult 新增 INVALID_CHARACTER」→ 第三個值
+#   - 機制七「操作進行中」判準段落:三個寫入方法(含這兩個)皆受
+#     SERIALIZATION_WINDOW_ACTIVE 拒絕,確認該值同時屬於兩個 enum
+# 維持巢狀於 AffinityDataPool 內(機制二「共用列舉的檔案歸屬」段落已明訂,
+# 歸屬不重新決定)。
+#
+# ⚠️ NONE 是本次補完時的決定,不是對既有事實的推定 —— 這兩個 enum 從未被
+# 宣告,本 ADR 是其唯一權威,因此不存在可供推定的既有事實。決定沿用 NONE
+# 作為第一個成員,理由:兩者都是拒絕碼型 enum(回答「這次呼叫有沒有被拒
+# 絕」),與 WriteRejection/ReadRejection 同型,而該型別在本 ADR 一律以 NONE
+# 表示「未被拒絕」。EndTokenResult({ RELEASED, TIMED_OUT_RECLAIMED,
+# INVALID_TOKEN })沒有 NONE 並非例外,而是不同型別:它回報的是「發生了什
+# 麼」(權杖被正常釋放/被逾時回收/根本不存在),三個值地位對等,沒有一個
+# 是「沒事發生」。因此本 ADR 的結果 enum 分兩型:拒絕碼型一律有 NONE,事
+# 件回報型沒有。新增結果 enum 時先判斷屬於哪一型,不要套用單一通則。
+enum AdvanceRejection {
+    NONE,
+    SERIALIZATION_WINDOW_ACTIVE,
+}
+
+enum DeathNotifyResult {
+    NONE,
+    SERIALIZATION_WINDOW_ACTIVE,
+    DUPLICATE_DEATH_NOTIFICATION,
+    INVALID_CHARACTER,          # 2026-08-21 新增(R7-P1 修法的一部分,機制四之四)
+}
+```
+
 ```
 func advance_campaign_tick() -> AdvanceRejection   # 目前僅 SERIALIZATION_WINDOW_ACTIVE 一種拒絕情境
 func notify_death(character: AffinityTypes.Character) -> DeathNotifyResult   # SERIALIZATION_WINDOW_ACTIVE / DUPLICATE_DEATH_NOTIFICATION
@@ -452,6 +511,8 @@ match typeof(t_query):
     TYPE_INT:   pass          # 繼續後續值域檢查
     _:          return <rejection = INVALID_T_QUERY_TYPE 的結果物件>
 ```
+
+**實作提醒(2026-08-25,VR#9 探針關閉時的衍生發現,`prototypes/xcheck-adr0002-vr9-vr11-2026-08-24/probe-vr9-match-typeof/`)**:上方三分支 `match` 的 case **順序不可交換**。實測——若把 `_` 預設分支寫在 `TYPE_NIL` 分支**之前**,`null` 會被 `_` 提前吃掉,`TYPE_NIL` 分支變成不可達的死碼,且**引擎既不擋編譯、執行期也不印任何警告**(該檔案編譯成功,log 對 `warn`/`error` 零匹配)。這不是本 ADR 目前寫法的錯誤(`TYPE_NIL`/`TYPE_INT` 兩個具名分支已寫在 `_` 之前),而是**未來任何人重排這段 `match` 時的無聲陷阱**——沒有編譯期或執行期訊號會提醒重排已經改變行為。實作時不應調整這三個 `case` 的先後順序;若確實需要調整,須額外撰寫回歸測試斷言 `combat_strength_read`/`narrative_depth_read`/`shape_feature_read` 對 `t_query = null` 仍走「條件式預設查詢時點」分支,而非落入 `INVALID_T_QUERY_TYPE`。
 
 **明文禁止** `if t_query != null and t_query > _t_now` —— 對 `String` 會在**比較運算子處中止所在函式**(2026-08-20 `XCHECK-4` 實測)。`t_query` 的型別判定**只能用 `typeof()`**:不可用 `!= null`、不可用比較、不可用賦值進型別化變數當檢查。**`TYPE_FLOAT` 一律拒絕**(不接受 `3.0`)——與機制八對 `t`/`c` 嚴格 `TYPE_INT` 的立場一致,理由同 R7-P2:浮點截斷後落入合法範圍會靜默通過所有後續值域檢查,而 `t_query` 決定的是整份 Delta Log 的截止點。
 
@@ -628,7 +689,14 @@ class AffinityRecord:
     static func from_dict(d: Dictionary) -> AffinityRecord
     # 2026-08-21(修正 D):本方法是**公開靜態**方法,任何呼叫方可直接呼叫並繞過
     # validate_semantics() → import_state() 的兩段式契約。因此防線放在方法自己內部:
-    # 名稱一律先 keys().has(name) 檢查,**遇非法名稱回傳 null**(而非中止),呼叫端須檢查。
+    # 2026-08-25 補強(管理者裁決,補檢查而非禁止外部呼叫):呼叫共用的
+    # check_record_fields(d)(見機制八之二),涵蓋鍵集合、pair/source 名稱、
+    # m/t/c 型別五類檢查;任一失敗**回傳 null**(而非中止,失敗語意與名稱
+    # 非法時一致,不新增第二種失敗語意),呼叫端須檢查。
+    # 與 validate_semantics() 的關係:兩者共用同一份 check_record_fields()
+    # 邏輯,不是各自維護一份同義判斷——validate_semantics() 逐筆呼叫它,
+    # 自己只額外負責 check_record_fields() 管不到的頂層鍵集合、m/t/c 值域、
+    # death_marks/campaign_tick_marks 容器級檢查、5 條跨結構不變量。
     # 不依賴呼叫方一定先跑 validate_semantics()。
 ```
 
@@ -636,7 +704,7 @@ class AffinityRecord:
 
 - `pair`/`source` 一律以**字串名稱**持久化,直接滿足 `TR-affinity-018`。**轉換方式(2026-08-18 `godot-specialist` 驗證發現修訂)**:正向轉換(enum → 字串)使用 `AffinityTypes.Pair.find_key(pair_value)`(GDScript enum 在執行期以類 `Dictionary` 物件呈現,`find_key()` 做的是**依值查鍵**,不受成員排列順序或未來是否出現非連續數值影響);反向轉換(字串 → enum)**必須先 `AffinityTypes.Pair.keys().has(name_string)` 做存在性檢查,通過後才 `AffinityTypes.Pair[name_string]`**(2026-08-21 明訂,R7-P3:原文寫「以 `values().has(...)` 風格的檢查 guard」——`values()` 檢查的是**序數**,`keys()` 檢查的才是**名稱**,兩者不可互換;且「風格」這個措辭不足以構成規則)。**不採用**原草稿描述的「依 `keys()[pair]` 位置索引」寫法——那是位置查找,一旦列舉成員未來被指派非連續或重新排列的底層數值就會靜默出錯,`find_key()`/`enum[name]` 的依值/依鍵查找沒有這個風險。**「退役名稱永久保留、不得重新指派」的治理規則與 CI 檢查本身,依 GDD Dependencies 明文屬於存檔系統的職責**(「並由存檔系統維護『字串名稱↔目前 enum 定義』的對照表」)——本 ADR 只負責提供穩定的字串轉換原語(`to_dict`/`from_dict`),不建立獨立的退役名稱登記機制,避免與存檔系統的既有機制重複實作。**已考慮並拒絕的內建替代方案**:Godot 提供 `inst_to_dict()`/`dict_to_inst()` 可自動將 `Object` 衍生實例的屬性轉為/還原自 `Dictionary`,但它會把 enum 欄位序列化成原始 `int`(而非 `TR-affinity-018` 要求的字串名稱),且還原時內嵌腳本路徑依賴——與本 ADR 刻意追求的「格式無關、enum 以字串名稱持久化」需求不符,故不採用,改以手寫 `to_dict()/from_dict()` 逐欄位轉換。
 - **反序列化語意驗證規則,本系統為唯一權威**(`TR-affinity-019`,直接對應 GDD「反序列化語意驗證規則宣告」章節):`import_state()` 內部依序執行——
-  1. **逐欄位型別 + 值域**(2026-08-20 實機驗證後擴充)——**必須先以 `typeof()` 內省確認型別,通過後才允許賦值或做任何值域運算。順序不可顛倒,檢查手段不可代換**:
+  1. **逐欄位型別 + 值域**(2026-08-20 實機驗證後擴充)——**必須先以 `typeof()` 內省確認型別,通過後才允許賦值或做任何值域運算。順序不可顛倒,檢查手段不可代換**(**2026-08-25 收窄措辭,避免假警報**:此規則指**對任一欄位,該欄位的 `typeof()` 檢查必須排在對該欄位的任何值域運算之前**;欄位與欄位之間**不要求**排序——`check_record_fields()` 先查 `pair`/`source` 的型別與名稱、再查 `m`/`t`/`c` 的型別,是實作選擇的欄位順序,不構成違規。原規則的理由與下方的『操作 / `Variant` 實際持有錯誤型別時 / 判定』實測表**不變、不撤回任何一項結論**,本次只收窄描述範圍。`docs/registry/architecture.yaml` 的 `forbidden_patterns` 目前沒有任何一項編碼「型別先於值域」這個順序規則,故此處收窄不與登記表衝突):
      - **型別**(以 `typeof(raw)` 比對 `Variant.Type` 常數,**不可用賦值當檢查**):**頂層 `data` 須恰含 3 個鍵**(`records`/`campaign_tick_marks`/`death_marks`)——**缺鍵或多鍵皆回傳結構化失敗**(2026-08-21 新增,R7E-9:原文只對 `records` 的元素寫了「恰含這 5 個鍵」,頂層完全未驗,而缺 `death_marks` 即是缺鍵存取,與 R7E-2 同類);`pair`/`source` 為 `TYPE_STRING`;**`m` 嚴格為 `TYPE_FLOAT`,不接受 `TYPE_INT`**(2026-08-21 明訂,R7E-10);**`t`/`c` 必須嚴格為 `TYPE_INT`——不可寬鬆到「`int` 或 `float` 皆可」**;`records` 為 `TYPE_ARRAY` 且每個元素為 `TYPE_DICTIONARY`、恰含這 5 個鍵;`campaign_tick_marks` 為 `TYPE_ARRAY` 且每個元素為 `TYPE_INT`;`death_marks` 為 `TYPE_DICTIONARY` 且鍵為 `TYPE_STRING`、值為 `TYPE_INT`。
 
        > **`m` 為何嚴格 `TYPE_FLOAT`(R7E-10)**:`export_state()` 的唯一生產者是 `AffinityRecord.m: float`(靜態型別),而 `var_to_bytes()` 保留 `Variant` 型別 —— 因此**任何合法存檔的 `m` 必為 `TYPE_FLOAT`**;還原後為 `TYPE_INT` 只可能來自人工編輯或位元損壞,**拒絕是正確行為**。不放寬為「int 或 float 皆可」,方向與 `t`/`c` 一致。
@@ -666,12 +734,156 @@ class AffinityRecord:
 
   **中止的傳染範圍**:實測只影響直接執行該操作的函式,不往上層傳染。因此把每一項檢查放在 `validate_semantics()` 內是安全的——但那正是為什麼**不能靠中止當防線**:中止是無回傳值的失敗,而本方法的契約是回傳結構化 `ImportResult`。**先 `typeof()`** 讓每一種損壞都落在 `ImportResult` 裡,而不是變成一次未分類的執行期中止。
 
-  **與 ADR-0003 的分工**:ADR-0003 的格式選擇讓「自訂 `Object` 結構上不可能被產生」——那擋掉的是**類別**注入;本項擋的是**內建型別錯配**與**靜默截斷**。兩者互補,不重疊。`TR-affinity-019` 明訂本系統是反序列化語意驗證規則的唯一權威,故此規則歸本 ADR,不歸 ADR-0003。
+  **與 ADR-0003 的分工,範圍限定為存檔系統的正常讀取管線**(2026-08-25;原文「結構上不可能被產生」的用詞形狀與 `docs/consistency-failures.md` 2026-08-21 條目記錄的同型失誤——ADR-0004 草稿主張某機制「結構上不可能被實例化」,被 Step 5.5 抓出探針只測了直接構造路徑——是同一種錯):ADR-0003 的格式選擇(引擎原生解碼閘門 + 機制一之二 `SaveTypeGate`,拒絕集合 `{23,24,25,26}`)讓「`Object`/`RID`/`Callable`/`Signal` 四種型別」**在經由 `SaveFormat.deserialize_*() → SaveTypeGate` 這條存檔系統管線時**結構上不可能通過抵達本系統——那擋掉的是跨型別家族的注入(不分內建/自訂)。**這是存檔系統管線提供的架構保證,不是引擎層級的結構保證**:`SaveTypeGate` 是 ADR-0003 自寫的遞迴掃描器,其正確性本身依賴人工紀律(ADR-0003 機制一之二明文:「任何遞迴呼叫一律呼叫 `_walk()`,絕不可呼叫 `_walk_body()`」)。
+
+  **本 ADR 自己就示範了不經過這條管線的入口**:`AffinityRecord.from_dict()` 是公開靜態方法,任何呼叫方可直接呼叫並繞過 `validate_semantics()` → `import_state()` 的兩段式契約,因此也完全不經過 `SaveTypeGate`(見機制八的 `from_dict()` 型別防線)。「四種型別結構上不可能抵達本系統」這句話只在存檔系統管線這一條路徑上成立,對 `from_dict()` 這條路徑本來不成立。
+
+  本項(欄位級型別錯配檢查)擋的是**通過該四型別閘門之後、仍在合法內建型別範圍內的欄位級型別錯配**(如 `m` 應為 `TYPE_FLOAT` 卻還原成 `TYPE_STRING`)與**靜默截斷**,且在 `from_dict()` 補強之後,**對本 ADR 目前登記的兩條入口(存檔管線 / `from_dict()` 直接呼叫)成立;新增第三條入口時本句需重新評估**,兩者互補,不重疊。
+
+  ⚠️ 本段對 ADR-0003 `SaveTypeGate`/機制一之二的具體點名,不構成 `Depends On` 意義的依賴——完整論證見 ADR Dependencies 的 `Ordering Note`,此處不重複第三份論證。
 
   **重建 `_records` 時一律經型別化邊界**:`from_dict()` 產出 `AffinityRecord` 後,以 `_records[pair].append(record)` 寫入(**先預填 10 對空 list,再逐筆 `append()`** —— 見機制二),其中 `pair` 必須是由字串名稱**先經 `keys().has(name)` 存在性檢查、通過後**才轉換的列舉值(**絕不裸用 `Pair[name]`**,見上方形狀規則)——**不得**把還原自存檔的原始 `Variant` 直接當作 subscript 鍵(見機制四之二的兩條邊界規則與 registry 的 `raw_variant_subscript_into_typed_container`)。**存檔還原是唯一一條「外來資料進入 `_records`」的路徑,層三空隙在這裡的暴露面最大。**
 
   任一檢查失敗回傳結構化 `ImportResult`(標明失敗的具體規則),對應存檔系統 `SEMANTIC_VALIDATION_FAILED` 路徑的輸入。**本方法回傳的失敗結果與 `append_record()` 等寫入端拒絕規則是兩個不同層級的檢查**(GDD「範圍聲明」段落已明訂),不共用同一個錯誤碼列舉,避免呼叫端誤判兩種來源的驗證失敗為同一件事。
 - **容器格式本身由存檔系統 ADR 決定**:`export_state()`/`import_state()` 只交換通用 `Dictionary`,不論存檔系統最終選 `Resource`/`.tres`、JSON 或自訂二進位,只需在其序列化層外包一次 `Dictionary ↔ 目標格式` 的轉換,不需要碰觸本系統內部。
+
+### 機制八之二:`ImportResult` 型別宣告
+
+```gdscript
+# ─── import_result.gd ────────────────────────────────────────
+# 2026-08-24 補完:此型別先前只被兩處方法簽章引用(見機制八),
+# 本體從未被宣告。亦為 ADR-0003 機制六 SaveBlockRegistry 的通用驗證器回傳
+# 型別(任何向該登記表註冊驗證器的系統皆可回傳同一型別,不限本系統)。
+class_name ImportResult extends RefCounted
+
+# 粗粒度分類——刻意跨系統通用,不編碼任何單一系統專屬的規則名稱。
+# 「哪一條具體規則」由 rule_id 承載(見下方),不由本列舉承載。
+enum Rejection {
+    NONE,                                  # 驗證通過
+    STRUCTURE_KEY_MISMATCH,                # 容器的鍵集合不符預期(缺鍵或多鍵)
+    FIELD_TYPE_MISMATCH,                   # 逐欄位型別檢查失敗(typeof() 不符預期)
+    FIELD_VALUE_OUT_OF_RANGE,              # 逐欄位值域檢查失敗(型別正確但值不合法)
+    CROSS_STRUCTURE_INVARIANT_VIOLATED,    # 跨結構不變量檢查失敗
+}
+
+var rejection: Rejection = Rejection.NONE
+
+# 命名空間化的規則識別碼(如 "affinity.invariant.tick_exceeds_now")。
+# 僅供測試精確斷言「是哪一條規則」與診斷輸出使用——
+# 呼叫端的程式邏輯分支一律只依 rejection 判斷,不得依 rule_id 判斷。
+# 成功時為空字串。
+var rule_id: String = ""
+
+# 人類可讀定位字串(如 "records[3].m"、"death_marks['CHARACTER_9']")。
+# 純診斷用途,不作為程式判斷依據。成功時為空字串。
+var offending_path: String = ""
+
+# 人類可讀說明,純診斷用途,不作為程式判斷依據。成功時為空字串。
+var detail: String = ""
+
+func ok() -> bool:
+    return rejection == Rejection.NONE
+```
+
+`AffinityDataPool` 自己的規則識別碼(定義於 `affinity_data_pool.gd`,不進 `import_result.gd`——這正是兩層設計要達成的擁有權分離):
+
+```gdscript
+# 於 affinity_data_pool.gd 內,供 validate_semantics() 內部使用:
+const RULE_TOP_LEVEL_KEY_COUNT := "affinity.structure.top_level_key_count"
+const RULE_RECORD_KEY_COUNT := "affinity.structure.record_key_count"
+const RULE_DEATH_MARK_CHARACTER_NAME := "affinity.value.invalid_death_mark_character_name"
+const RULE_INVARIANT_MARKS_EMPTY_WITH_RECORDS := "affinity.invariant.marks_empty_with_records"
+const RULE_INVARIANT_TICK_EXCEEDS_NOW := "affinity.invariant.tick_exceeds_now"
+const RULE_INVARIANT_TIMESTAMP_NOT_STRICT := "affinity.invariant.timestamp_not_strictly_increasing"
+const RULE_INVARIANT_COUNT_SENTINEL_CONFUSED := "affinity.invariant.count_sentinel_confused"
+const RULE_INVARIANT_DEATH_MARK_EXCEEDS_NOW := "affinity.invariant.death_mark_exceeds_now"
+```
+
+**架構張力與兩層式設計的理由**:機制八要求失敗要標明具體規則,而 ADR-0003 機制六把 `ImportResult` 定位成跨系統共用的驗證器回傳型別——`SaveBlockRegistry` 任何未來的區塊擁有者都回傳同一個 `ImportResult`。若 `Rejection` 列舉塞滿 Affinity 系統專屬的規則名,未來無關的系統要嘛硬塞進一個語意不合的既有值,要嘛得回頭改 `import_result.gd` 這個不屬於它的檔案。解法:`Rejection` 列舉保持粗粒度、跨系統通用,精確到「哪一條具體規則」交給命名空間化的 `rule_id` 字串,由各擁有系統自己定義自己的常數。`rule_id` 只供測試斷言與診斷輸出讀取,呼叫端的程式分支邏輯只能依 `rejection` 判斷。
+
+**與其他型別的關係,四層失敗回報堆疊**(彼此不共用列舉):
+
+```
+SaveTypeGate.GateRejection     ← ADR-0003 機制一之二,解碼樹遞迴走訪,擋 {23,24,25,26}
+SaveFormat.ReadRejection       ← ADR-0003 機制三,區塊級格式/雜湊失敗
+ImportResult.Rejection         ← 本 ADR 機制八,單一區塊擁有者的語意驗證
+(ADR-0004 尚待撰寫的更高層碼)  ← 上方非 NONE 一律粗化為 SEMANTIC_VALIDATION_FAILED
+
+AffinityDataPool.WriteRejection ← 完全無關的另一條路徑:即時執行期 append_record() 呼叫
+```
+
+`ImportResult.Rejection` 與 `AffinityDataPool.WriteRejection` 是兩個獨立宣告的 enum**型別**,滿足機制八「本方法回傳的失敗結果與 `append_record()` 等寫入端拒絕規則是兩個不同層級的檢查⋯不共用同一個錯誤碼列舉」這條規則——**這裡的「不共用」指的是型別身分不可混用,不是要求成員名稱零重複**。`NONE` 這個名稱在 `WriteRejection`(機制四)、`ReadRejection`(機制五)、`ImportResult.Rejection`、`RecordFieldCheck` 中重複出現,是本 ADR 結果型別的通用命名慣例,**不違反**上述規則的要求;⚠️ 但**不是全部**結果型別都有 `NONE`——`EndTokenResult`(機制七:`{ RELEASED, TIMED_OUT_RECLAIMED, INVALID_TOKEN }`)沒有,`AdvanceRejection`/`DeathNotifyResult`(見機制七之二補完)採 `NONE` 是本次補完時的**決定**,不是推定——判準是「拒絕碼型 vs 事件回報型」(見機制七之二的說明),不是逐一猜測。**不應假設本 ADR 所有結果 enum 都有 `NONE`,先判斷屬於哪一型,不要套用單一通則。**
+
+**單筆記錄的欄位合法性檢查**(由 `from_dict()` 與 `validate_semantics()` 的逐筆記錄檢查兩處共同呼叫,規則只在這裡定義一次):
+
+```gdscript
+# ─── affinity_record.gd(新增部分)─────────────────────────
+class_name AffinityRecord extends RefCounted
+# ...既有欄位不變...
+
+enum RecordFieldCheck {
+    OK,
+    RECORD_KEY_MISMATCH,   # 該筆記錄的鍵集合不恰為 {pair,m,t,c,source} 五個(缺鍵或多鍵)
+    INVALID_PAIR_TYPE,     # pair 不是 TYPE_STRING
+    UNKNOWN_PAIR_NAME,     # pair 是 String 但不是合法 Pair 列舉名稱
+    INVALID_SOURCE_TYPE,   # source 不是 TYPE_STRING
+    UNKNOWN_SOURCE_NAME,   # source 是 String 但不是合法 Source 列舉名稱
+    INVALID_M_TYPE,        # m 不是 TYPE_FLOAT
+    INVALID_T_TYPE,        # t 不是 TYPE_INT
+    INVALID_C_TYPE,        # c 不是 TYPE_INT
+}
+
+static func check_record_fields(d: Dictionary) -> RecordFieldCheck:
+    if d.size() != 5 or not (d.has("pair") and d.has("m") and d.has("t") and d.has("c") and d.has("source")):
+        return RecordFieldCheck.RECORD_KEY_MISMATCH
+    if typeof(d.get("pair")) != TYPE_STRING:
+        return RecordFieldCheck.INVALID_PAIR_TYPE
+    if not AffinityTypes.Pair.keys().has(d.get("pair")):
+        return RecordFieldCheck.UNKNOWN_PAIR_NAME
+    if typeof(d.get("source")) != TYPE_STRING:
+        return RecordFieldCheck.INVALID_SOURCE_TYPE
+    if not AffinityTypes.Source.keys().has(d.get("source")):
+        return RecordFieldCheck.UNKNOWN_SOURCE_NAME
+    if typeof(d.get("m")) != TYPE_FLOAT:
+        return RecordFieldCheck.INVALID_M_TYPE
+    if typeof(d.get("t")) != TYPE_INT:
+        return RecordFieldCheck.INVALID_T_TYPE
+    if typeof(d.get("c")) != TYPE_INT:
+        return RecordFieldCheck.INVALID_C_TYPE
+    return RecordFieldCheck.OK
+```
+
+**`RecordFieldCheck` → `ImportResult.Rejection` 對應表**:
+
+| `RecordFieldCheck` 值 | → `ImportResult.Rejection` | `rule_id` |
+|---|---|---|
+| `RECORD_KEY_MISMATCH` | `STRUCTURE_KEY_MISMATCH` | `RULE_RECORD_KEY_COUNT` |
+| `INVALID_PAIR_TYPE` | `FIELD_TYPE_MISMATCH` | (空,由 `offending_path` 定位) |
+| `UNKNOWN_PAIR_NAME` | `FIELD_VALUE_OUT_OF_RANGE` | (空) |
+| `INVALID_SOURCE_TYPE` | `FIELD_TYPE_MISMATCH` | (空) |
+| `UNKNOWN_SOURCE_NAME` | `FIELD_VALUE_OUT_OF_RANGE` | (空) |
+| `INVALID_M_TYPE` | `FIELD_TYPE_MISMATCH` | (空) |
+| `INVALID_T_TYPE` | `FIELD_TYPE_MISMATCH` | (空) |
+| `INVALID_C_TYPE` | `FIELD_TYPE_MISMATCH` | (空) |
+
+`OK` 不需要對應列(成功不產生 `Rejection`),故本表為 8 列,對應 `RecordFieldCheck` 的 8 個非 `OK` 值。
+
+`check_record_fields()` 管不到、由 `validate_semantics()` 自己額外負責的部分(**此表現在與機制八「逐欄位型別+值域」段落逐項對應,無遺漏**):
+
+| 檢查 | → `ImportResult.Rejection` | `rule_id` |
+|---|---|---|
+| 頂層 3 鍵不符(`records`/`campaign_tick_marks`/`death_marks`,缺鍵或多鍵) | `STRUCTURE_KEY_MISMATCH` | `RULE_TOP_LEVEL_KEY_COUNT` |
+| `records` 不為 `TYPE_ARRAY` | `FIELD_TYPE_MISMATCH` | (空,`offending_path` = `"records"`) |
+| `records` 某元素不為 `TYPE_DICTIONARY` | `FIELD_TYPE_MISMATCH` | (空,`offending_path` = `"records[i]"`) |
+| `campaign_tick_marks` 不為 `TYPE_ARRAY` | `FIELD_TYPE_MISMATCH` | (空,`offending_path` = `"campaign_tick_marks"`) |
+| `campaign_tick_marks` 某元素不為 `TYPE_INT` | `FIELD_TYPE_MISMATCH` | (空,`offending_path` = `"campaign_tick_marks[i]"`) |
+| `death_marks` 不為 `TYPE_DICTIONARY`,或其鍵不為 `TYPE_STRING`,或其值不為 `TYPE_INT` | `FIELD_TYPE_MISMATCH` | (空,`offending_path` = `"death_marks"` 或 `"death_marks[key]"`) |
+| `m` 非零且有限 / `t ≥ 1` / `c ≥ 0`(型別檢查通過後的值域,三個子檢查合併一列) | `FIELD_VALUE_OUT_OF_RANGE` | (空,`offending_path` = `"records[i].m"`/`.t`/`.c`) |
+| `death_marks` 鍵非法角色名 | `FIELD_VALUE_OUT_OF_RANGE` | `RULE_DEATH_MARK_CHARACTER_NAME` |
+| 陣亡標記表值 `≥ 0` | `FIELD_VALUE_OUT_OF_RANGE` | (空,`offending_path` = `"death_marks[key]"`) |
+| 跨結構不變量 1–5 | `CROSS_STRUCTURE_INVARIANT_VIOLATED` | 對應 5 個 `RULE_INVARIANT_*` |
+
+**明文維護義務**:新增 `RecordFieldCheck` 值或新增機制八的欄位/容器層檢查時,必須同時在本兩張表新增對應列——這兩張表、`check_record_fields()`、`ImportResult.Rejection`、機制八「逐欄位型別+值域」的散文,是同一組事實的四種呈現,任一處變更未同步即視為未完成。
 
 ### 機制九:全作用域封鎖成因登記處——維持文件層,提供窄範圍執行期查詢(部分升級)
 
@@ -785,7 +997,7 @@ class_name AffinityRecordList extends RefCounted
 var _items: Array[AffinityRecord] = []
 func append(record: AffinityRecord) -> void: ...
 func size() -> int: ...
-func get_at(index: int) -> AffinityRecord: ...
+func get_at(index: int) -> AffinityRecord: ...   # 2026-08-25:索引越界回傳 null,不中止(見機制二契約修訂)
 
 # ─── affinity_data_pool.gd ───────────────────────────────────
 class_name AffinityDataPool extends RefCounted
@@ -905,7 +1117,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 | **`AffinityTypes.Pair` 的 10 個成員在角色系統定案實際命名前只是佔位符**,若角色系統設計時發現主角規模政策變動(理論上已由 `game-concept.md` 主角群規模裁決鎖定 5 人,但仍是一個交叉文件的相依) | 若角色數量變動,`Pair`/`Character` enum 需要重新生成(10 對 → 其他組合數),`AffinityTypes.pair_of()` 的查表邏輯集中在單一函式,重新生成的影響範圍侷限,不擴散到呼叫端邏輯 |
 | **export release 建置下 C++ 容器驗證(層二)可能被編譯掉**,使錯誤型別的值寫入 `_records` 時既不中止也不被丟棄。⚠️ 最壞影響不是崩潰,是**靜默存檔損壞且出貨版本專屬**:壞值經 ADR-0003 的 `var_to_bytes()` 序列化並通過兩層 SHA-256 雜湊鏈(雜湊驗位元組完整性、不驗語意),形成「debug 測得出、release 測不出」的不一致 | 三重,且三者對應**不同**的進入路徑:(i) **機制四之二的規則二(值邊界)**——值一律經靜態型別建構賦值、從不經 `Variant` 中介,層一在賦值處即受檢(編譯期,建置無關),層二因此只是同一件事的第二道確認;**規則一(鍵邊界)關的是層三,與本列無關**——本次修訂的初稿曾把兩者混為一談,已由 Step 5.5 覆核抓出並改正;(ii) **`validate_semantics()` 的逐欄位檢查已擴充為「型別 + 值域」**(機制八)——這是唯一涵蓋 `import_state()` 那條外來資料路徑的防線,app 層、與建置組態無關;(iii) Verification Required #7 記錄了建置無關的探針設計與 CI 回歸測試建議 |
 | **型別錯誤是本 ADR 拒絕碼機制唯一涵蓋不到的失敗類別**:型別化參數的阻擋方式是整段**呼叫端**函式中止(2026-08-20 實測),不是可判斷的回傳值。上游若持有來源不明的 `Variant` 並直接傳入,失敗有**兩種形式**(**2026-08-21 改寫,R7E-4**:原文只寫了第一種)——(a) **`String` 一類** → 呼叫端函式**中止**(在 release 建置下甚至可能連錯誤都不列印,見 VR #7);(b) **數值近親一類**(`float 3.7`、`bool true`)→ **不中止,靜默截斷為合法序數,成功回傳 `WriteRejection.NONE`,資料寫入錯誤配對**。**(b) 比 (a) 嚴重** —— (a) 至少會停,(b) 會靜默寫壞資料並經 ADR-0003 的兩層 SHA-256 雜湊鏈寫進存檔(雜湊驗位元組完整性,不驗語意合法性) | 明文列為**呼叫端義務**(機制四之三):上游必須在呼叫前自行以 `typeof()` 收斂型別。本系統 7 類拒絕碼的範圍界線同時明文化為「值域與狀態的非法,不含型別的非法」。**本 ADR 刻意不新增 `INVALID_TYPE` 拒絕碼**——那會是一個結構上不可能被回傳的死碼,反而誤導呼叫方以為型別錯誤會被本系統攔下並回報 |
-| **全域 `class_name` 命名碰撞**(2026-08-18 `godot-specialist` 驗證發現,低風險前瞻性提醒):`class_name` 註冊是專案級扁平命名空間,`AffinityRecord`/`AffinityRecordList`/`HypotheticalEntry`/`AffinityReadResult`/`ShapeFeatureResult`/`AffinityDataPool`/`AffinityTypes` **七**個全域類別名稱(2026-08-20 由六增為七,新增 `AffinityRecordList`)未來可能與其他系統或第三方 addon 的類別名稱碰撞 | 七個名稱中六個皆帶 `Affinity` 字首(`AffinityTypes` 包裝三個共用 enum,避免了原草稿 `Pair`/`Character`/`Source` 這類過於通用、碰撞風險較高的裸命名),目前 `src/` 為空、無碰撞對象;此為一次性命名慣例,無需額外機制 |
+| **全域 `class_name` 命名碰撞**(2026-08-18 `godot-specialist` 驗證發現,低風險前瞻性提醒;**2026-08-25 修正計數與字首統計,兩處算錯**):`class_name` 註冊是專案級扁平命名空間,`AffinityRecord`/`AffinityRecordList`/`HypotheticalEntry`/`AffinityDataPool`/`AffinityTypes`/`ImportResult` **六**個全域類別名稱(2026-08-20 由六增為七,新增 `AffinityRecordList`;**2026-08-25 由七改回六**——`AffinityReadResult`/`ShapeFeatureResult` 因**Key Interfaces 閱讀提醒段落所載的 2026-08-24 同檔強制規則**移入 `AffinityDataPool` 同檔的並列 inner class,不再是全域 `class_name`;同時新增 `ImportResult` 補上原本從未宣告的型別本體,見機制八之二)未來可能與其他系統或第三方 addon 的類別名稱碰撞。**⚠️ 字首統計本身也需要修正**:修訂前的原文寫「七個名稱中六個皆帶 `Affinity` 字首」,這個算法本身就是錯的——`HypotheticalEntry`/`ShapeFeatureResult` 兩者皆不帶字首,原本應是「五之七」;本次改寫的上一版草稿沿用了同一種算法,誤寫成「六個名稱中五個皆帶字首」。**重算:六個名稱中只有四個帶 `Affinity` 字首**(`AffinityRecord`/`AffinityRecordList`/`AffinityTypes`/`AffinityDataPool`),**兩個不帶**(`HypotheticalEntry`/`ImportResult`) | 四個帶字首的名稱碰撞風險低,目前 `src/` 為空、無碰撞對象,此為一次性命名慣例,無需額外機制。**兩個不帶字首者風險不對等,需分開講**:`ImportResult` 是刻意設計——ADR-0003 機制六已明訂它是 `SaveBlockRegistry` 消費的跨系統共用驗證器回傳型別,加 `Affinity` 字首反而誤導其他系統實作者以為它是本系統專屬。**`HypotheticalEntry` 才是更值得留意的一個**:「Hypothetical」是常見英文詞,比 `ImportResult` 更可能與其他系統或第三方 addon 的命名(例如任何做「假設性/預判」功能的系統)撞上,且它不像 `ImportResult` 有「必須通用」的架構理由支撐不加字首——純粹是初版命名時沿用了「不帶字首」的做法、從未重新檢視。若未來真的發生碰撞,修正只需重新命名此一類別並更新 `speculative_read()` 的呼叫端型別標註,影響面小,故本次不強制改名,但列為比 `ImportResult` 更應優先關注的候選。 |
 
 ## GDD Requirements Addressed
 
