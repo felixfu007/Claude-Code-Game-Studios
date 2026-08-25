@@ -145,17 +145,32 @@ cd -
 **尚待探針作者判讀**:這對 ADR-0002 的 `get_at()` 是否需要自帶邊界檢查意味著什麼、
 以及負索引可用這件事是否構成新的風險面。**協調者不代為推論。**
 
-### VR9(`match typeof()` 對 `TYPE_NIL`)—— ❌ 未完成,探針本身編譯不過
+### VR9(`match typeof()` 對 `TYPE_NIL`)—— 2026-08-25 補接線後 ✅ 跑完,結果明確
 
-未過濾 log:`probe-vr9-match-typeof/logs/run1-unfiltered.txt`,逐字:
+**2026-08-24 首次執行紀錄(已修復,以下為歷史)**:`runner.gd:111` 呼叫的
+`_classify_default_before_nil()` 從未定義,`runner.gd` Parse Error,A/B/D 三組
+一併拿不到結果。已由 `godot-gdscript-specialist` 診斷並修復——病因是撰寫者已經
+把「`_` 提前於 `TYPE_NIL`」這個編譯結果不確定的測項正確隔離到獨立檔案
+`probe_order_test.gd`,也寫好了 `_load_checked()` 編譯檢查輔助函式,但 context
+用盡前沒有把 C 組的呼叫端接上這個輔助函式,仍直接呼叫一支不存在的本地函式。
+修復範圍**僅限接線**:C 組改為呼叫 `_load_checked("res://scripts/probe_order_test.gd")`
+載入、檢查編譯結果,成功才 `.new()` 呼叫 `classify(null)`;`probe_order_test.gd`
+本身(那個 `_` 在前的待測形狀)與 A/B/D 三組邏輯**一個字未動**。
 
-```
-SCRIPT ERROR: Parse Error: Function "_classify_default_before_nil()" not found in base self.
-   at: GDScript::reload (res://scripts/runner.gd:111)
-ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
-```
+未過濾 log:`probe-vr9-match-typeof/logs/run1-unfiltered.txt`(2026-08-25 重跑,
+引擎 `4.7.1.stable.official.a13da4feb`,exit 0,零 WARNING/ERROR 行)。完整逐字
+內容與四個子問題的判定見該子目錄 `README.md` 的「結果」「結論」兩節,摘要:
 
-`runner.gd` 呼叫了一個**未定義的函式** —— 撰寫者在收尾前停止(context 用盡),
-`_classify_default_before_nil()` 沒有寫出來。**本項仍為 ADR-0002 核准條件一的開放缺口。**
+| 子問題 | 判定 |
+|---|---|
+| `typeof(null)` 是否命中 `TYPE_NIL` 分支? | ✅ 是(已量測) |
+| `TYPE_NIL` 常數 vs 字面量 `0`,行為是否等價? | ✅ 是,13/13 組 `agree=MATCH`(已量測) |
+| `_` 提前於 `TYPE_NIL`,`null` 是否被提前吃掉? | ✅ 會——且**靜默**編譯成功、靜默執行,log 無任何警告或錯誤行(已量測) |
+| 完全沒有 `TYPE_NIL` case,`null` 是否落入 `_`? | ✅ 是(已量測) |
 
-⚠️ 協調者**未修改**這支探針的任何程式碼 —— 補上那個函式屬撰寫者的職責。
+⚠️ **這支探針沒有回答**:`match x`(直接對 Variant 比對而非 `match typeof(x)`)、
+`_` 提前是否也吃掉非 null 的其他型別輸入(只測了 null 一種順序組合)、
+`TYPE_OBJECT`/`TYPE_CALLABLE` 等額外型別分支——不要用本探針的結果外推到這些
+問題。是否影響 ADR-0002 機制五三分支閘門設計、以及編譯器對此形狀不印警告
+這件事能否外推到其他詳細度設定,留給 ADR-0002 撰寫者/架構總監判讀,
+探針作者不代為裁決架構結論。

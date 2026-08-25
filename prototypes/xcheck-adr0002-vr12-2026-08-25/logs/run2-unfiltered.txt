@@ -1,0 +1,46 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== VR12 probe: var_to_bytes()/bytes_to_var() int/float round-trip fidelity / Godot 4.7.1-stable (official) ===
+
+--- 1: float round-trip, integer-valued ---
+RESULT float_integer_valued value=2.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=0000000000000040 hex_after=0000000000000040
+RESULT float_integer_valued value=0.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=0000000000000000 hex_after=0000000000000000
+RESULT float_integer_valued value=-1.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=000000000000f0bf hex_after=000000000000f0bf
+RESULT float_integer_valued value=10000000000.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=000000205fa00242 hex_after=000000205fa00242
+
+--- 2: float round-trip, non-integer / extreme magnitude ---
+RESULT float_non_integer value=3.14 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=1f85eb51b81e0940 hex_after=1f85eb51b81e0940
+RESULT float_non_integer value=0.1 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=9a9999999999b93f hex_after=9a9999999999b93f
+RESULT float_non_integer value=179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=ffffffffffffef7f hex_after=ffffffffffffef7f
+RESULT float_non_integer value=0.0 typeof_before=3(float) typeof_after=3(float) value_equal=true bit_equal=true hex_before=0000000000000000 hex_after=0000000000000000
+
+--- 2b: follow-up isolation -- is the smallest-magnitude literal already 0.0 at parse time? ---
+RESULT literal_parse_subnormal_min literal=4.9406564584124654e-324 typeof=3(float) value=0.0 hex=0000000000000000 is_zero=true
+RESULT literal_parse_normal_min literal=2.2250738585072014e-308 typeof=3(float) value=0.0 hex=0000000000000000 is_zero=true
+RESULT literal_parse_subnormal_mid literal=1.0e-310 typeof=3(float) value=0.0 hex=0000000000000000 is_zero=true
+
+--- 3: int round-trip, incl. beyond-32-bit ---
+RESULT int_roundtrip value=0 typeof_before=2(int) typeof_after=2(int) value_equal=true bit_equal=true hex_before=0000000000000000 hex_after=0000000000000000
+RESULT int_roundtrip value=1 typeof_before=2(int) typeof_after=2(int) value_equal=true bit_equal=true hex_before=0100000000000000 hex_after=0100000000000000
+RESULT int_roundtrip value=-1 typeof_before=2(int) typeof_after=2(int) value_equal=true bit_equal=true hex_before=ffffffffffffffff hex_after=ffffffffffffffff
+RESULT int_roundtrip value=9007199254740993 typeof_before=2(int) typeof_after=2(int) value_equal=true bit_equal=true hex_before=0100000000002000 hex_after=0100000000002000
+
+--- 4: container shape matching export_state() (Dictionary[Array[Dictionary], Array[int], Dictionary]) ---
+RESULT container_top_level typeof_before=27(Dictionary) typeof_after=27(Dictionary)
+RESULT container_field_m typeof_before=3(float) typeof_after=3(float) value_before=2.0 value_after=2.0 value_equal=true bit_equal=true
+RESULT container_field_t typeof_before=2(int) typeof_after=2(int) value_before=10 value_after=10 value_equal=true
+RESULT container_field_c typeof_before=2(int) typeof_after=2(int) value_before=3 value_after=3 value_equal=true
+RESULT container_field_pair typeof_before=4(String) typeof_after=4(String) value_equal=true
+RESULT container_field_source typeof_before=4(String) typeof_after=4(String) value_equal=true
+RESULT container_field_campaign_tick_marks typeof_array_before=28(Array) typeof_array_after=28(Array) elem0_typeof_before=2(int) elem0_typeof_after=2(int) value_equal=true
+RESULT container_field_death_marks typeof_before=27(Dictionary) typeof_after=27(Dictionary) key_typeof_before=4(String) key_typeof_after=4(String) value_typeof_before=2(int) value_typeof_after=2(int) value_equal=true
+RESULT VERDICT_m_strict_TYPE_FLOAT_after_container_roundtrip = true
+RESULT VERDICT_t_strict_TYPE_INT_after_container_roundtrip = true
+RESULT VERDICT_c_strict_TYPE_INT_after_container_roundtrip = true
+
+--- 5: special float values (INF/-INF/NAN) ---
+RESULT special_INF typeof_before=3(float) typeof_after=3(float) value_equal=true is_inf_after=true is_finite_after=false
+RESULT special_NEG_INF typeof_before=3(float) typeof_after=3(float) value_equal=true is_inf_after=true is_finite_after=false
+RESULT special_NAN typeof_before=3(float) typeof_after=3(float) is_nan_after=true naive_equal_would_be=false is_finite_after=false
+
+=== PROBE VR12 COMPLETE ===

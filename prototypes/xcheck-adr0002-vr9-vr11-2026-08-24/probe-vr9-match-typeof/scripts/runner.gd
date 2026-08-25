@@ -108,8 +108,14 @@ func _ready() -> void:
 
 	print("")
 	print("--- C: does a `_` default placed BEFORE TYPE_NIL in source order swallow null? ---")
-	var order_result: String = _classify_default_before_nil(null)
-	print("RESULT case=null(order_test) branch=%s" % order_result)
+	var check_result: Dictionary = _load_checked("res://scripts/probe_order_test.gd")
+	if check_result["ok"]:
+		var order_script: GDScript = check_result["script"]
+		var order_instance: Object = order_script.new()
+		var order_result: Variant = order_instance.call("classify", null)
+		print("RESULT case=null(order_test) compile=OK branch=%s" % str(order_result))
+	else:
+		print("RESULT case=null(order_test) compile=FAILED status=%s branch=N/A" % check_result["status"])
 
 	print("")
 	print("--- D: with no TYPE_NIL case at all, does null fall through to `_`? ---")

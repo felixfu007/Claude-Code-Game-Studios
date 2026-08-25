@@ -1,7 +1,30 @@
 Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
 
-SCRIPT ERROR: Parse Error: Function "_classify_default_before_nil()" not found in base self.
-   at: GDScript::reload (res://scripts/runner.gd:111)
-ERROR: Failed to load script "res://scripts/runner.gd" with error "Parse error".
-   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
-run exit=0
+=== VR9 probe: match typeof(x) branch selection / Godot 4.7.1-stable (official) ===
+
+--- A: does typeof(null) actually hit the TYPE_NIL branch? ---
+RESULT case=null             typeof=0   named_branch=TYPE_NIL     literal0_branch=TYPE_NIL(as literal 0)   agree=MATCH
+
+--- B: TYPE_NIL constant vs literal 0 as case label, across several typeof() values ---
+--- (also covers required TYPE_FLOAT / TYPE_INT / TYPE_STRING, plus TYPE_BOOL/array/dict/Vector2 for extra coverage) ---
+RESULT case=null             typeof=0   named_branch=TYPE_NIL     literal0_branch=TYPE_NIL(as literal 0)   agree=MATCH
+RESULT case=int_0            typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=int_5            typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=int_neg1         typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=float_3.14       typeof=3   named_branch=TYPE_FLOAT   literal0_branch=TYPE_FLOAT               agree=MATCH
+RESULT case=float_0.0        typeof=3   named_branch=TYPE_FLOAT   literal0_branch=TYPE_FLOAT               agree=MATCH
+RESULT case=string_hello     typeof=4   named_branch=TYPE_STRING  literal0_branch=TYPE_STRING              agree=MATCH
+RESULT case=string_empty     typeof=4   named_branch=TYPE_STRING  literal0_branch=TYPE_STRING              agree=MATCH
+RESULT case=bool_true        typeof=1   named_branch=TYPE_BOOL    literal0_branch=TYPE_BOOL                agree=MATCH
+RESULT case=bool_false       typeof=1   named_branch=TYPE_BOOL    literal0_branch=TYPE_BOOL                agree=MATCH
+RESULT case=array_empty      typeof=28  named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+RESULT case=dict_empty       typeof=27  named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+RESULT case=vector2          typeof=5   named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+
+--- C: does a `_` default placed BEFORE TYPE_NIL in source order swallow null? ---
+RESULT case=null(order_test) compile=OK branch=DEFAULT(placed first in source)
+
+--- D: with no TYPE_NIL case at all, does null fall through to `_`? ---
+RESULT case=null(no_nil_case_test) branch=DEFAULT
+
+=== PROBE VR9 COMPLETE ===

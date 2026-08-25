@@ -82,12 +82,85 @@ mkdir -p logs
 
 ## 結果
 
-*(待協調者實跑後回填。預期 log 位置:`logs/run1-unfiltered.txt`,搜尋
-`RESULT case=` 前綴可抓出全部 13+2 行結論。)*
+**接線修復**:原 `runner.gd:111` 呼叫的 `_classify_default_before_nil()` 從未定義,
+已改為透過既有的 `_load_checked("res://scripts/probe_order_test.gd")` 載入
+`probe_order_test.gd`、檢查 `reload()` 的 `Error` 回傳值,成功才 `.new()` 並用
+`Object.call("classify", null)` 呼叫其 `classify()`。這是**接線層修改**——
+`probe_order_test.gd` 本身(那個 `_` 寫在 `TYPE_NIL` 前面的待測形狀)一個字都沒動,
+A/B/D 三組的邏輯也一個字都沒動。
+
+引擎:`4.7.1.stable.official.a13da4feb`,headless,先 `--import` 再執行,
+exit code `0`。以下逐字貼自 `logs/run1-unfiltered.txt`:
+
+```
+--- A: does typeof(null) actually hit the TYPE_NIL branch? ---
+RESULT case=null             typeof=0   named_branch=TYPE_NIL     literal0_branch=TYPE_NIL(as literal 0)   agree=MATCH
+
+--- B: TYPE_NIL constant vs literal 0 as case label, across several typeof() values ---
+--- (also covers required TYPE_FLOAT / TYPE_INT / TYPE_STRING, plus TYPE_BOOL/array/dict/Vector2 for extra coverage) ---
+RESULT case=null             typeof=0   named_branch=TYPE_NIL     literal0_branch=TYPE_NIL(as literal 0)   agree=MATCH
+RESULT case=int_0            typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=int_5            typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=int_neg1         typeof=2   named_branch=TYPE_INT     literal0_branch=TYPE_INT                 agree=MATCH
+RESULT case=float_3.14       typeof=3   named_branch=TYPE_FLOAT   literal0_branch=TYPE_FLOAT               agree=MATCH
+RESULT case=float_0.0        typeof=3   named_branch=TYPE_FLOAT   literal0_branch=TYPE_FLOAT               agree=MATCH
+RESULT case=string_hello     typeof=4   named_branch=TYPE_STRING  literal0_branch=TYPE_STRING              agree=MATCH
+RESULT case=string_empty     typeof=4   named_branch=TYPE_STRING  literal0_branch=TYPE_STRING              agree=MATCH
+RESULT case=bool_true        typeof=1   named_branch=TYPE_BOOL    literal0_branch=TYPE_BOOL                agree=MATCH
+RESULT case=bool_false       typeof=1   named_branch=TYPE_BOOL    literal0_branch=TYPE_BOOL                agree=MATCH
+RESULT case=array_empty      typeof=28  named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+RESULT case=dict_empty       typeof=27  named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+RESULT case=vector2          typeof=5   named_branch=DEFAULT      literal0_branch=DEFAULT                  agree=MATCH
+
+--- C: does a `_` default placed BEFORE TYPE_NIL in source order swallow null? ---
+RESULT case=null(order_test) compile=OK branch=DEFAULT(placed first in source)
+
+--- D: with no TYPE_NIL case at all, does null fall through to `_`? ---
+RESULT case=null(no_nil_case_test) branch=DEFAULT
+```
+
+`grep -i "warn\|error\|script error" logs/run1-unfiltered.txt` 在這次成功執行中
+**零匹配**——整份 log 除了引擎版本行與上述 `RESULT`/區塊標題行之外沒有其他輸出。
 
 ## 結論
 
-*(待回填。)*
+以下每條都直接對應上面某一行 log,推論的部分明白標註「推論、未量測」。
+
+**四個子問題**:
+
+1. **`match typeof(null)` 是否命中 `TYPE_NIL` 分支?—— 是,已量測。**
+   A 組與 B 組第一行皆為 `named_branch=TYPE_NIL`。
+2. **`TYPE_NIL` 常數 vs 字面量 `0`,行為是否相同?—— 是,已量測,13/13 組
+   `agree=MATCH`。** 涵蓋 null、三種 int、兩種 float、兩種 string、兩種 bool、
+   空 array、空 dict、Vector2,無一 `MISMATCH`。
+3. **`_` 寫在 `TYPE_NIL` 前面,`null` 會不會被提前吃掉?—— 會,已量測。**
+   `probe_order_test.gd` 該檔**編譯成功**(`compile=OK`,`_load_checked()` 的
+   `reload()` 回傳 `OK`,log 中也沒有任何 Parse Error 或警告行),但執行期
+   `classify(null)` 回傳 `DEFAULT(placed first in source)`——`_` 分支吃掉了
+   `null`,寫在其後的 `TYPE_NIL` 分支變成不可達的死碼,且**引擎既不擋編譯、
+   這次執行也沒有印出任何警告訊息**。README 原本「不確定是印警告還是直接
+   Parse Error」的疑慮,現已解決為第三種結果:**兩者都不是——靜默編譯成功、
+   靜默執行、死碼完全不被察覺**,連 A/B/D 三組的結果都不會被拖累(它們在同一次
+   執行裡正常跑完並輸出),因為 `probe_order_test.gd` 是獨立檔案,`_load_checked()`
+   的失敗路徑本來就設計成不中止呼叫端。
+4. **完全沒有 `TYPE_NIL` 分支,`null` 是否乾淨落到 `_`?—— 是,已量測。**
+   D 組回傳 `DEFAULT`。
+
+**額外覆蓋(非必測,但同批量測到)**:`TYPE_FLOAT`/`TYPE_INT`/`TYPE_STRING`/
+`TYPE_BOOL` 各自命中專屬分支、彼此不越界;`Array`/`Dictionary`/`Vector2` 在
+沒有專屬 case 時乾淨落入 `DEFAULT`,沒有觀察到 ADR-0002 已知「enum 型別化參數
+對數值近親靜默轉換」那種跨型別誤判在 `match typeof(x)` 上重演。
+
+**未回答的部分**(README「未涵蓋」節原已列出,這裡不重複判定,只重申仍未測):
+`match x`(直接對 Variant 比對,而非 `match typeof(x)`)、`TYPE_OBJECT`/
+`TYPE_CALLABLE` 等其他型別分支、`_` 提前吃掉「非 null 輸入」(例如 int)的
+交叉組合——本次只用 `null` 一種輸入測了順序問題,這支探針**沒有回答**
+「`_` 提前是否也吃掉 int/float 等其他型別」。
+
+**推論、未量測**:log 中沒有任何警告行,但這只代表**這次執行的 stdout 沒有
+印出警告**,不代表 GDScript 編譯器在所有詳細度(verbosity)設定下都不會對
+「`_` 之後有不可達 case」發出警告——本探針沒有調整過任何警告層級設定,
+也沒有查證 Godot 4.7.1 是否存在這類靜態分析規則,這點是外推,不是量測。
 
 ## 未涵蓋
 
