@@ -1,5 +1,9 @@
 # Systems Index:《弈緣》(暫定)
 
+> **2026-08-25 範疇裁決**:本表 MVP 層級自 12 個系統收斂為 **9 個**(垂直切片 5 個),
+> 依據 `game-concept.md`「MVP 定義」節。降級:#2 存檔系統、#7 章節/戰役結構、#12 教學系統。
+> **完整理由與兩項連帶處置寫在下方 Priority Tiers 節**,修訂本表任何層級標記前必須先讀該節。
+
 > **Status**: Draft
 > **2026-08-18 更新(架構階段:Foundation 層 ADR 系列)**:同日晚間以 `/architecture-decision` 連續撰寫三份 ADR,皆 `Proposed`——**ADR-0002 好感度數值池資料結構與並發契約**(**24 項 `TR-affinity-*` 為 21 完整 / 3 部分 / 0 缺口** —— 2026-08-20 第七輪 `/architecture-review` 獨立重推;⚠️ **2026-08-21 修正**:本處原寫「涵蓋全部 24 項」,那是過度宣稱(零缺口成立,「全部涵蓋」不成立),第六、七輪已各自點名而本索引未跟上。**注意同一行的 `TR-save-*` 部分早已修正為 22/7/1** —— 這一行先前只被修了一半:per-pair 索引 `Dictionary` 滿足 GDD 已鎖定的 `O(n_p+m)` 契約、獨立戰役刻度標記列表/陣亡標記表、單調遞增 int 權杖 + **無條件** `Mutex`、依賴注入擁有模式非 Autoload);**ADR-0003 存檔系統序列化格式與型別安全**(解決 `save-system.md` Open Question 3:選 `var_to_bytes()`/`bytes_to_var(bytes, false)` 二進位 Variant 序列化,使 Core Rules #9 型別白名單在引擎層級**結構性消除**而非靠應用層維護清單,並一併消解 Open Question 4;逐區塊 `PackedByteArray` 分層緩衝區支撐 manifest-only 讀取路徑;雙層 SHA-256 雜湊鏈依 `source_id` 字典序;回填修訂 ADR-0002 新增 `validate_semantics()`);**ADR-0004 存檔系統原子寫入與遷移執行模型**(可替換 `SaveIOBackend` 抽象把 Open Question 9 的主機 SDK 未知性限縮至單一檔案、Core Rules #14 六步驟原子置換含 Step 0 分支、`await scene_tree.process_frame` 分步遷移沿用 ADR-0001 已驗證的跨幀生命週期約束、單一進入/單一釋放的逐槽重入鎖——GDScript 無 `try`/`finally` 下唯一能保證無條件釋放的結構;**至此 30 項 `TR-save-*` 為 22 項完整涵蓋、7 項部分涵蓋、1 項缺口**(`TR-save-030` 雲端同步;2026-08-18 第二輪 `/architecture-review` 獨立推導修正,原宣稱「全數覆蓋」不成立))。三份皆經 `godot-specialist` 驗證,各抓到並修正 BLOCKING 級問題(ADR-0002:裸列舉跨檔無法編譯,已包裝為 `AffinityTypes`;ADR-0003:`get_var(true,false)` 雙參數形式與「記憶體內 `FileAccess`」路徑皆不存在,已改用 `var_to_bytes`/`bytes_to_var`;ADR-0004:誤引 `@abstract` 先例〔全專案實際從未用過〕+ 語法與專案唯一已查證範例互斥)。`docs/registry/architecture.yaml` 累計 **38 項**架構立場(7 state-ownership、6 interface contracts、15 API decisions、10 forbidden patterns)。**2026-08-18 第二輪 `/architecture-review` 已於全新 session 執行完畢**——判定 **FAIL**,130 項需求為 50 ✅ / 24 ⚠️ / 56 ❌(首輪為 5/16/109);`traceability-index.md` 全部 130 列標記已重建。唯一硬阻塞為**單一游標/高亮狀態系統 19 項需求零涵蓋**(Foundation 層)。報告:`docs/architecture/architecture-review-2026-08-18-round2.md`。
 >
@@ -24,17 +28,17 @@
 | # | System Name | Category | Priority | Status | Design Doc | Depends On |
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 好感度數值池(Delta Log) | Core | MVP | Approved(2026-08-10 第十二輪核准,見下方註記) | design/gdd/affinity-data-pool.md | 戰棋移動與交戰系統(2026-08-10 第九輪新增,窄介面依賴——僅需「陣亡通知」單一方法的呼叫契約,不需等待該系統其餘設計定案;不透過好感度—位置連鎖系統轉接以避免循環依賴,見 `affinity-data-pool.md` Dependencies) |
-| 2 | 存檔系統(含跨規則集遷移) | Persistence | MVP | Approved(2026-08-13 第十五輪核准,見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目) | design/gdd/save-system.md | — |
+| 2 | 存檔系統(含跨規則集遷移) | Persistence | **Vertical Slice**(2026-08-25 自 MVP 降級,見檔頭裁決) | Approved(2026-08-13 第十五輪核准,見 `design/gdd/reviews/save-system-review-log.md` 第十五輪條目) | design/gdd/save-system.md | — |
 | 3 | 單一游標/高亮狀態系統 | Core | MVP | Approved(2026-08-13 第十六輪核准,使用者裁決收斂,見 `design/gdd/reviews/cursor-highlight-state-review-log.md` 第十六輪條目) | design/gdd/cursor-highlight-state.md | — |
 | 4 | 戰棋移動與交戰系統(含武器射程分層) | Gameplay | MVP | **Designed,尚未 Approved(2026-08-18 更新)**——`/design-system` 已於 2026-08-17 完成全部必要節 + Visual/Audio + UI + Open Questions;**已經歷四輪 `/design-review`**(第一輪 6 項、第二輪 5 項、第三輪 7 項、第四輪 6 項 BLOCKING-NOW,四輪皆判 NEEDS REVISION 且皆於同輪修訂落地,見 `design/gdd/reviews/tactical-combat-system-review-log.md`)。**目前無待清償 BLOCKING,但依 Phase 0b 收斂規則仍需連續兩輪 body-scoped 零 BLOCKING 才得判 Approved,故尚不得移交 `/create-architecture`**。第四輪的架構級契約已外移至 **ADR-0001**(`docs/architecture/adr-0001-tactical-query-atomicity-contract.md`,Proposed)<br>📌 **UX Flag**:本系統有實質 UI 需求。Pre-Production 須先跑 `/ux-design` 產出 UX spec,**再**寫 epic;實作故事引用 `design/ux/[screen].md`,不得直接引用本 GDD | design/gdd/tactical-combat-system.md | 單一游標/高亮狀態系統(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統已被 `cursor-highlight-state.md` 施加至少 5 條硬性義務,但依賴圖從未登記);**好感度—位置連鎖系統(#5)的 `Φ` 輸出(2026-08-17 新增的反向依賴,見下方第 5 列註記)** |
 | 5 | 好感度—位置連鎖系統(含陣亡處理) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統。**⚠️ 雙向依賴(2026-08-17 補登):本系統同時是戰棋移動與交戰系統的上游——後者的傷害公式以本系統的 `Φ`(好感度—位置修正)為輸入,且 `Φ_max` 與 `enemy_advantage_pct` 負有硬性交叉校準義務(不得各自獨立調整)。本系統設計時須與 `tactical-combat-system.md` Dependencies 及 Open Questions OQ-1/OQ-15 對齊** |
-| 6 | 技能卡牌系統(含好感度對話卡牌) | Gameplay | MVP | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
-| 7 | 章節/戰役結構 | Narrative | MVP | Not Started | — | 存檔系統、好感度數值池(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統須呼叫 `affinity-data-pool.md` 的「前進戰役刻度」介面,但依賴圖從未登記) |
-| 8 | 支援對話系統 | Narrative | MVP | Not Started | — | 好感度數值池、章節/戰役結構 |
+| 6 | 技能卡牌系統(含好感度對話卡牌) | Gameplay | MVP(**範圍收窄 2026-08-25**:MVP 只需好感度對話卡牌這一種子類型;「完整卡牌技能池」是 `game-concept.md` 的 MVP 明確不做項) | Not Started | — | 好感度數值池、戰棋移動與交戰系統 |
+| 7 | 章節/戰役結構 | Narrative | **Vertical Slice**(2026-08-25 自 MVP 降級,見檔頭裁決) | Not Started | — | 存檔系統、好感度數值池(2026-08-06 補上,回應 `/review-all-gdds` 發現該系統須呼叫 `affinity-data-pool.md` 的「前進戰役刻度」介面,但依賴圖從未登記) |
+| 8 | 支援對話系統 | Narrative | MVP | Not Started | — | 好感度數值池、章節/戰役結構。⚠️ **2026-08-25 範圍降級的連帶處置**:章節/戰役結構已自 MVP 降級,本系統的上游因此在 MVP 階段懸空。**MVP 解法**:3 段支援對話以寫死的觸發點掛在 5 場手工關卡之間,不需要排程系統;對「排程於戰鬥之間」的完整依賴在垂直切片階段才回來。**設計本系統時不得因此去等章節/戰役結構定案。** |
 | 9 | 好感度視覺呈現 UI | UI | MVP | Not Started | — | 好感度—位置連鎖系統、單一游標/高亮狀態系統 |
-| 10 | 戰鬥 HUD | UI | MVP | Not Started | — | 戰棋移動與交戰系統、單一游標/高亮狀態系統 |
+| 10 | 戰鬥 HUD | UI | MVP(**範圍收窄 2026-08-25**:MVP 只需驗收協議 1 要求的「預判標記」互動,其餘 HUD 元件留待垂直切片) | Not Started | — | 戰棋移動與交戰系統、單一游標/高亮狀態系統 |
 | 11 | 支援對話 UI | UI | MVP | Not Started | — | 支援對話系統、單一游標/高亮狀態系統 |
-| 12 | 教學/上手引導系統 | Meta | MVP | Not Started | — | 戰棋移動與交戰系統、好感度—位置連鎖系統、技能卡牌系統、單一游標/高亮狀態系統 |
+| 12 | 教學/上手引導系統 | Meta | **Vertical Slice**(2026-08-25 自 MVP 降級,見檔頭裁決)。⚠️ **MVP 仍需一張手工教學關卡** —— 驗收協議 1 明文要求「新手測試者在教學關卡後的前 2-3 場戰鬥」;降級的是「引導系統」這套程式,不是那張關卡,關卡屬內容製作項而非系統 | Not Started | — | 戰棋移動與交戰系統、好感度—位置連鎖系統、技能卡牌系統、單一游標/高亮狀態系統 |
 | 13 | 敘事解鎖與結局分支系統 | Narrative | Vertical Slice | Not Started | — | 好感度數值池、章節/戰役結構 |
 | 14 | 活棋盤地形演變系統 | Gameplay | Vertical Slice | Not Started | — | 戰棋移動與交戰系統、章節/戰役結構 |
 
@@ -59,10 +63,35 @@
 
 | Tier | Definition | Target Milestone | Design Urgency |
 |------|------------|------------------|----------------|
-| **MVP** | 核心迴圈能運作、且能執行 MVP 驗收協議所需的最小系統集合 | 首個可玩原型/正式 MVP 建置 | 優先設計 |
-| **Vertical Slice** | 完整一個章節體驗所需,含劇情分支雛形與活棋盤演變 | 垂直切片 | 次優先設計 |
+| **MVP** | `game-concept.md`「MVP 必要內容」5 項所需的最小系統集合。**9 個系統**:#1 #3 #4 #5 #6 #8 #9 #10 #11 | 首個可玩原型/正式 MVP 建置 | 優先設計 |
+| **Vertical Slice** | 完整一個章節體驗所需,含劇情分支雛形與活棋盤演變。**5 個系統**:#2 #7 #12 #13 #14 | 垂直切片 | 次優先設計 |
 
 *本專案角色規模固定為 5 人(2026-07-30 裁決),不存在因招募擴充角色數而新增的 Alpha/完整願景專屬系統——範疇分級表的 Alpha 與完整願景層級只涉及內容量與打磨程度,不涉及新系統。*
+
+> **2026-08-25 範疇裁決(管理者)——本表的兩個層級以 `game-concept.md` 為權威來源。**
+>
+> **問題**:本檔案原將 14 個系統裡的 **12 個**標為 MVP,而 `game-concept.md`「MVP 定義」節
+> 明列的 MVP 必要內容只有 5 項、範疇分級表寫 MVP 時程為「數週」。兩份都是專案正式文件,
+> 而它們對「MVP 是什麼」的說法差了一個量級。原標記法的根因是**把「MVP 會碰到的系統」
+> 全部算成「MVP 必需的系統」**,於是存檔、章節結構、教學系統都被拉進來。
+>
+> **裁決**:以 `game-concept.md` 為準。把該節 5 項必要內容逐項對照回系統,得 **MVP 9 個、
+> 垂直切片 5 個**。降級的三個是 **#2 存檔系統、#7 章節/戰役結構、#12 教學/上手引導系統**;
+> 另有兩個維持 MVP 但範圍收窄(#6 只做好感度對話卡牌、#10 只做預判標記),依據是
+> `game-concept.md`「MVP 明確不做」清單已明文排除「完整卡牌技能池」。
+>
+> **理由**:概念文件的 MVP 帶有可量測的驗收協議,其唯一目的是驗證一個假說
+> (「好感度佈局是通關的自然高效路徑」)。加上存檔與章節結構不會讓那個假說測得更準,
+> 只會把第一次能玩到東西的時間往後推。
+>
+> ⚠️ **降級不等於那些工作白做。** #2 存檔系統的 GDD 已 Approved、兩份架構文件已完成
+> (ADR-0003 已核准、ADR-0004 為草案)。存檔終究要做 —— 本裁決只認定**它不在通往可玩
+> 版本的最短路徑上**,不影響已完成成果的效力。
+>
+> ⚠️ **降級的連帶處置(兩項,已就地寫入對應列,不得漏讀)**:
+> (一)#8 支援對話系統的上游 #7 被降級,其 MVP 解法見該列;
+> (二)#12 降級的是「引導系統」這套程式,**MVP 仍需一張手工教學關卡**,否則驗收協議 1
+> 無法執行,見該列。
 
 ---
 
@@ -101,20 +130,24 @@
 
 ## Recommended Design Order
 
+> **2026-08-25:Order 欄是穩定編號,不是現在的施作順序。** 本次範疇裁決把 #2、#7、#12
+> 降級為垂直切片,但**編號刻意不重排** —— 全庫多處以「Order N」指路,重排會讓那些引用
+> 靜默指向別的系統。**讀法**:依 Order 由小到大進行,遇到標 `Vertical Slice` 的列直接跳過。
+> MVP 的實際施作順序因此是 1 → 3 → 4 → 5 → 6 → 8 → 9 → 10 → 11。
 | Order | System | Priority | Layer | Agent(s) | Est. Effort |
 |-------|--------|----------|-------|----------|-------------|
 | 1 | 好感度數值池(Delta Log) | MVP | Foundation | systems-designer | M |
-| 2 | 存檔系統 | MVP | Foundation | systems-designer, engine-programmer | M |
+| 2 | 存檔系統 | **Vertical Slice**(2026-08-25 降級) | Foundation | systems-designer, engine-programmer | M |
 | 3 | 單一游標/高亮狀態系統 | MVP | Foundation | ux-designer, gameplay-programmer | S |
 | 4 | 戰棋移動與交戰系統(含武器射程分層) | MVP | Core | game-designer, systems-designer, ai-programmer | L |
 | 5 | 好感度—位置連鎖系統(含陣亡處理) | MVP | Core | game-designer, systems-designer | L |
-| 6 | 技能卡牌系統(含好感度對話卡牌) | MVP | Core | game-designer, systems-designer | M |
-| 7 | 章節/戰役結構 | MVP | Core | narrative-director, game-designer | S |
+| 6 | 技能卡牌系統(含好感度對話卡牌) | MVP(僅對話卡牌) | Core | game-designer, systems-designer | M |
+| 7 | 章節/戰役結構 | **Vertical Slice**(2026-08-25 降級) | Core | narrative-director, game-designer | S |
 | 8 | 支援對話系統 | MVP | Feature | narrative-director, game-designer | M |
 | 9 | 好感度視覺呈現 UI | MVP | Presentation | ux-designer, ui-programmer, art-director | M |
-| 10 | 戰鬥 HUD | MVP | Presentation | ux-designer, ui-programmer | S |
+| 10 | 戰鬥 HUD | MVP(僅預判標記) | Presentation | ux-designer, ui-programmer | S |
 | 11 | 支援對話 UI | MVP | Presentation | ux-designer, ui-programmer | S |
-| 12 | 教學/上手引導系統 | MVP | Polish | ux-designer, game-designer | S |
+| 12 | 教學/上手引導系統 | **Vertical Slice**(2026-08-25 降級) | Polish | ux-designer, game-designer | S |
 | 13 | 敘事解鎖與結局分支系統 | Vertical Slice | Feature | narrative-director, writer | L |
 | 14 | 活棋盤地形演變系統 | Vertical Slice | Feature | level-designer, game-designer | M |
 
@@ -199,12 +232,12 @@
 | Design docs started | 4(2026-08-17 更新——新增戰棋移動與交戰系統) |
 | Design docs reviewed | **4**(2026-08-18 更新——戰棋移動與交戰系統已歷四輪 `/design-review`,補計入;前三份於 2026-08-09 核算時已各經歷至少一輪 `/design-review` 與該次 `/review-all-gdds`) |
 | Design docs approved | **3**(2026-08-13 更新;2026-08-18 覆核維持不變——好感度數值池〔第十一、十二輪〕、存檔系統〔第十五輪〕、單一游標/高亮狀態系統〔第十六輪,使用者裁決收斂〕皆已核准 Approved,見 Systems Enumeration 第 1-3 列)<br>**⚠️ 本指標定義與 Status 欄在戰棋移動與交戰系統上會分歧,不得默默選一邊(2026-08-18 明文化)**:本指標的原定義是「**目前無待清償 Blocking**」的系統數,而戰棋移動與交戰系統目前**確實無待清償 Blocking**(四輪發現皆於同輪修訂落地),但它**不計入本數**——因為 `/design-review` Phase 0b 的收斂規則另外要求**連續兩輪 body-scoped 零 BLOCKING** 才得判 Approved,該系統連續零 BLOCKING 輪數目前為 **0**。換言之:「無待清償 Blocking」是 Approved 的必要而非充分條件。本指標追蹤的是**已判 Approved 的系統數**,以 Status 欄為準 |
-| MVP systems designed | 4/12(2026-08-17 更新——戰棋移動與交戰系統已 Designed,尚未 Approved) |
-| Vertical Slice systems designed | 0/2 |
-| ADRs written | **4**(2026-08-18 新增此指標——ADR-0001 戰棋查詢原子性、ADR-0002 好感度數值池、ADR-0003 存檔序列化格式/型別安全、ADR-0004 存檔原子寫入/遷移執行模型) |
-| ADRs Accepted | **0**——全部 4 份皆為 `Proposed`。依 `docs/CLAUDE.md`,引用 `Proposed` ADR 的 story 會被自動阻擋,故目前**尚無任何 ADR 可支撐 story 實作** |
-| 架構立場已登記(`docs/registry/architecture.yaml`) | **38**(7 state-ownership、6 interface contracts、15 API decisions、10 forbidden patterns) |
-| ADR 缺口清單剩餘項 | **3/6**(已撰寫:好感度數值池、存檔格式/型別、存檔原子寫入/遷移。尚未動筆:單一游標裝置權威輸入架構、戰棋盤面演算法層、回合結構擁有權 + 缺席的 AI/遭遇系統——見 `docs/architecture/traceability-index.md`) |
+| MVP systems designed | **3/9**(2026-08-25 更新——分母自 12 改為 9〔見 Priority Tiers 的 2026-08-25 裁決〕;分子為好感度數值池、單一游標/高亮狀態系統〔皆 Approved〕、戰棋移動與交戰系統〔Designed 未 Approved〕。⚠️ 存檔系統雖已 Approved 但不再計入本欄,它現屬垂直切片層) |
+| Vertical Slice systems designed | **1/5**(2026-08-25 更新——分母自 2 改為 5〔存檔系統、章節/戰役結構、教學系統降級進本層〕;分子為存檔系統,已 Approved) |
+| ADRs written | **5**(2026-08-25 更新;本欄先前寫 4,漏計 ADR-0005 單一游標裝置權威輸入架構〔2026-08-18 建立〕) |
+| ADRs Accepted | **2**(2026-08-25 更新——ADR-0002 好感度數值池、ADR-0003 存檔序列化格式,管理者同批裁決,專案首次有 ADR 離開 `Proposed`。ADR-0001/0004/0005 三份仍為 `Proposed`)。⚠️ 本欄先前寫 **0** 並附「尚無任何 ADR 可支撐 story 實作」——該句已不成立:引用 ADR-0002 的好感度資料層 story 現在可以動工 |
+| 架構立場已登記(`docs/registry/architecture.yaml`) | **85**(2026-08-25 更新;10 state-ownership、11 interface contracts、29 API decisions、35 forbidden patterns)。⚠️ 本欄歷來落後於登記表,**數字有疑義時一律以 `docs/registry/architecture.yaml` 為準** |
+| ADR 缺口清單剩餘項 | **2/6**(2026-08-25 更新——已撰寫:好感度數值池、存檔格式/型別、存檔原子寫入/遷移、**單一游標裝置權威輸入架構**〔ADR-0005,2026-08-18 建立,本欄先前漏計〕。尚未動筆:戰棋盤面演算法層、回合結構擁有權 + 缺席的 AI/遭遇系統——見 `docs/architecture/traceability-index.md`) |
 
 ---
 
