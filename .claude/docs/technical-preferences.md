@@ -90,6 +90,67 @@
 其餘 27 項由 ADR-0001~0005 各自推導,**一律查登記表,不在此複述**。
 查法:`docs/registry/architecture.yaml` 的 `forbidden_patterns` 節,每項都有
 `pattern:`(名稱)、`adr:`(來源文件)、`why:`(完整理由與實測依據)。
+## 流程劑量上限(2026-08-25 管理者裁決,自即日生效)
+
+**權威全文在 `production/milestones/one-year-plan.md` 第六節②。本節是每次對話開場都會載入的
+執行摘要** —— 寫在這裡的理由是計畫檔不會自動載入,規則若只寫在那裡就不會被遵守。
+
+| | 規則 | 超過時怎麼辦 |
+|---|---|---|
+| 1 | 每個系統的設計文件 **≤ 400 行** | 拆系統,不是加行數 |
+| 2 | 每份設計文件 `/design-review` **≤ 2 輪** | 第 2 輪殘留項降級為實作期處理,不開第 3 輪 |
+| 3 | 架構文件(ADR)**只在跨系統契約時才寫** | 單一系統內部技術細節寫在該系統設計文件裡 |
+| 4 | 同一份文件**不做第三次以上修訂** | 要改第 3 次表示該重寫或該擱置,不是該再修 |
+
+⚠️ **只往後生效,不追改已完成的 5 份 ADR。** 拿新規則回頭砍已寫好的東西是重工而非改善。
+**裁決背景**:28 天內產出 4 份設計文件 8857 行、16 輪 `/design-review`、7 輪
+`/architecture-review`、**0 行遊戲程式碼**。該流程實測抓出過 18 處會讓程式跑不起來的呼叫寫法
+與一個擴散到兩份文件的編譯期錯誤 —— **問題是劑量,不是有無。**
+**實務後果**:剩下 6 個系統預期只會再產生 0~1 份新 ADR。
+
+## 美術方向與像素風專案設定
+
+**權威全文在 `design/art/art-direction.md`。** 2026-08-25 管理者裁決:像素風、開發者本人繪製、
+**480×270 套裝**(立繪 128×128、棋盤單格 32×32、棋子 32×40、64 色、1px 描邊、
+對話正文用一般繁體中文字型而非像素字型)。
+
+### `project.godot` 相關設定(2026-08-25 `godot-specialist` 實機驗證)
+
+驗證方式:本機 `Godot_v4.7.1-stable_win64_console.exe --headless`,於系統暫存目錄建立拋棄式
+空專案,用 `ProjectSettings.get_setting()` / `get_property_list()` 直接向引擎讀取真實預設值與
+enum 值域,並實際匯入測試 PNG 檢查產生的 `.import` 檔。**未觸碰專案根目錄。**
+
+| 設定鍵 | 建議值 | 來源等級 |
+|---|---|---|
+| `display/window/size/viewport_width` / `_height` | `480` / `270` | (A) 鍵名與預設值 1152×648 已實測 |
+| `display/window/stretch/mode` | `"disabled"` 或 `"canvas_items"` | (A) enum 三值已實測,預設 `disabled` |
+| `display/window/stretch/aspect` | `"keep"` | (A) enum 已實測,預設即 `keep`;選用理由屬 (C) 設計推理 |
+| `display/window/stretch/scale_mode` | `"integer"` | (A) enum 僅 `fractional` / `integer` 兩值,已實測 |
+| `rendering/textures/canvas_textures/default_texture_filter` | `0`(Nearest) | (A) 預設實測為 `1`(Linear);已實測此設定**不寫入 `.import` 檔** |
+
+**來源等級三分法**:(A) 實機驗證 / (B) 專案參考庫明文記載 / (C) 訓練資料推測、未經驗證。
+**(C) 級不得當成既定事實引用** —— 本專案已實測抓到 18 處憑記憶寫錯的呼叫寫法。
+
+### ⚠️ 三項會反噬的實測事實
+
+1. **`stretch/mode` 絕不可設 `"viewport"`。** `godot-specialist` 第一輪建議該值,第二輪自行撤回:
+   已實測 `CanvasLayer` 的繼承鏈為 `CanvasLayer → Node → Object`,**不繼承 `Viewport`**,
+   因此該模式下介面**無法**逃脫低解析度緩衝區,對話文字會模糊。**照第一輪報告寫入的話,
+   要等到排完介面才會發現。**
+2. **貼圖濾波是最可逆的設定,不是不可逆的。** 它不是逐檔案的匯入期設定;即使匯入 30 張圖
+   才發現模糊,改該單一設定即可,**無須重新匯入任何檔案**。唯一副作用:若有節點的
+   `texture_filter` 被手動從 `Inherit` 蓋掉,需人工挑出改回。
+   **真正不可逆的只有基礎解析度。**
+3. **世界層/介面層分層要用 `SubViewport` + `SubViewportContainer`**,並以
+   `SubViewportContainer.stretch_shrink` 讓引擎自動反推內部緩衝區尺寸 ——
+   **不可手動設定 `SubViewport.size`**(容器會在下一 frame 覆寫回去)。
+   另:`SubViewportContainer.texture_filter` 預設 `Inherit`,**須手動覆寫為 Nearest**,
+   否則世界層貼回外層畫面那一步仍會被 Linear 模糊一次。此項極易漏掉。
+
+⚠️ **跨文件衝突(尚未處理)**:分層後畫面同時存在兩套座標系,轉換係數隨螢幕尺寸變動。
+若 **ADR-0005**(游標/高亮狀態,1609 行)假設全螢幕僅一套座標系,該假設不成立。
+**這使「ADR-0005 是否凍結」有了具體答案方向:現在凍結是錯的。**
+
 ## Allowed Libraries / Addons
 
 <!-- Add approved third-party dependencies here -->
