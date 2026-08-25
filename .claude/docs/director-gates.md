@@ -361,8 +361,9 @@ it is marked Accepted
 > and rationale? Are the rejected alternatives genuinely considered? Does the
 > Consequences section acknowledge the trade-offs honestly? Is the engine version
 > stamped? Are post-cutoff API risks flagged? Does it link to the GDD requirements
-> it covers? Return APPROVE, CONCERNS [specific gaps], or REJECT [the decision is
-> underspecified or makes unsound technical assumptions]."
+> it covers? Does it read the `Depends On` field and report the current status
+> of each upstream ADR named there? Return APPROVE, CONCERNS [specific gaps], or
+> REJECT [the decision is underspecified or makes unsound technical assumptions]."
 
 **Verdicts**: APPROVE / CONCERNS / REJECT
 

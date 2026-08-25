@@ -66,9 +66,27 @@ Before checking any stories, load reference documents once (not per-story):
   validate TR-IDs in stories. If the file does not exist, note it once; TR-ID
   checks will auto-pass for all stories (registry predates stories, so missing
   registry means stories are from before TR tracking was introduced).
-- All ADR status fields — for each unique ADR referenced across the stories being
-  checked, read the ADR file and note its `Status:` field. Cache these so you
-  don't re-read the same ADR for every story.
+- All ADR status fields and their dependency chains — for each unique ADR
+  referenced across the stories being checked, read the ADR file and note its
+  `Status:` field. Then read that ADR's `Depends On` field and recurse: read
+  each upstream ADR it names, note its `Status:`, and read its own `Depends On`
+  field in turn, until every branch terminates at an ADR whose `Depends On` is
+  `None`. Cache every ADR's status and parsed `Depends On` list so you don't
+  re-read or re-walk the same ADR twice across stories.
+  - **Parsing `Depends On`**: the field's wording differs across files (`None`,
+    `None(本專案第一份 ADR)`, `**None**。...`, a single file path with an
+    explanatory parenthetical, multiple file paths separated by `;`). Apply
+    this rule: strip markdown bold markers (`**`), then if the remaining text
+    starts with `None` → no upstream ADRs. Otherwise, extract every substring
+    matching `adr-\d{4}-[a-z0-9-]+\.md` from the field — each match is one
+    upstream dependency. Ignore bare `ADR-NNNN` mentions elsewhere in the same
+    field's explanatory prose (e.g. text arguing a reference is "not a
+    Depends-On-sense dependency") — only actual filename matches count as an edge.
+  - **Cycle detection**: walk the chain depth-first, keeping the current path's
+    visited ADR IDs. If an ADR already in the current path is reached again,
+    stop that branch and record the cycle path (e.g.
+    `ADR-0002 → ADR-0004 → ADR-0003 → ADR-0002`) instead of recursing further.
+    Do not loop indefinitely.
 - The current sprint file (if scope is `sprint`) — to identify Must Have /
   Should Have priority for escalation decisions
 
@@ -106,14 +124,31 @@ items pass or are explicitly marked N/A with a stated reason.
 - [ ] **ADR referenced or N/A stated**: The story references at least one ADR,
   OR explicitly states "No ADR applies" with a brief reason.
   A story with no ADR reference and no explicit N/A note fails this check.
-- [ ] **ADR is Accepted (not Proposed)**: For each referenced ADR, check its
-  `Status:` field using the cached ADR statuses loaded in Section 2.
-  - If `Status: Accepted` → pass.
+- [ ] **ADR is Accepted (not Proposed), including its full dependency chain**:
+  For each referenced ADR, check its `Status:` field using the cached ADR
+  statuses loaded in Section 2.
+  - If `Status: Accepted` → continue to the dependency-chain check below.
   - If `Status: Proposed` → **BLOCKED**: the ADR may change before it is accepted,
     and the story's implementation guidance could be wrong.
     Fix: `BLOCKED: ADR-NNNN is Proposed — wait for acceptance before implementing.`
   - If the ADR file does not exist → **BLOCKED**: referenced ADR is missing.
   - Auto-pass if story has an explicit "No ADR applies" N/A note.
+  - **Dependency chain walk**: using the `Depends On` chain resolved in
+    Section 2, check every ADR upstream of the one the story directly
+    references — not just that one ADR.
+    - If every ADR in the chain has `Status: Accepted` → pass.
+    - If any ADR anywhere in the chain is not `Accepted` → **BLOCKED**: the
+      story's directly-referenced ADR rests on a contract that can still
+      change. Name the full path in the report, e.g.
+      `story → ADR-0004 → ADR-0003 (Proposed)`.
+      Fix: `BLOCKED: ADR-NNNN depends on ADR-MMMM, which is Proposed — wait
+      for ADR-MMMM's acceptance before implementing.`
+    - If the chain contains a cycle (an ADR reachable from itself) →
+      **BLOCKED**: report the exact cycle path detected in Section 2, e.g.
+      `ADR-0002 → ADR-0004 → ADR-0003 → ADR-0002`. A cycle is unresolvable by
+      definition — this is a hard stop per
+      `docs/architecture/adr-acceptance-criteria.md`, not a "wait and recheck"
+      condition.
 - [ ] **TR-ID is valid and active**: If the story contains a `TR-[system]-NNN`
   reference, look it up in the TR registry loaded in Section 2.
   - If the ID exists and `status: active` → pass.
