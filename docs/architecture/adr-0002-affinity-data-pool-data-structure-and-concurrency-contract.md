@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed**
+**Accepted**
 
 > **2026-08-19 修訂(銜接缺口 C1/C3,不改動任何機制決策)**:連續三輪 `/architecture-review` 判定為仍開的兩項跨 ADR 銜接缺口。**C1** —— `TOKEN_TIMEOUT_MS` 的**定值責任**已由 ADR-0004 明文接下(該 ADR 掌握遷移鏈深度上界與兩階段回寫最壞 I/O 時間,本 ADR 對兩者一無所知);本 ADR 仍擁有逾時**機制**的執行(機制七逐權杖惰性清除),但不擁有那個數字。**C3** —— `TR-affinity-016` 是條件式需求,其條件(「若選擇背景執行緒序列化」)已由 ADR-0004 判為「否」;`Mutex` 決策**不變**,但理由由「必要」改為**縱深防禦**,措辭不再宣稱它是「全專案唯一已成立的執行緒安全義務」。兩項皆為措辭與擁有權澄清,**未新增、未移除、未改變任何資料結構或介面契約**。
 
@@ -21,6 +21,10 @@
 > **2026-08-24 修訂(範圍:同檔強制規則)**:`AffinityReadResult`/`ShapeFeatureResult` 因跨檔裸引用 `AffinityDataPool` 巢狀 enum 在 Godot 4.7.1 是編譯期限制(探針 `prototypes/xcheck-adr0002-review-2026-08-24/`),兩者由獨立 `class_name` 改為 `AffinityDataPool` 同檔的並列 inner class。⚠️ **範圍聲明的限度**:本則的範圍依據是「哪些地方帶 2026-08-24 日期標記」這一個訊號,兩次獨立 `grep` 確認全文只有兩處帶此標記——但這只證明「沒有更多帶標記的痕跡」,**不證明那一波沒有做過不帶日期標記的其他修改**。本則不宣稱這是 2026-08-24 那一波變更的完整範圍,只記載可追溯到日期標記的部分。
 >
 > **2026-08-25 修訂(第八輪覆核前的收斂批次)**:補完 `ImportResult`、`AdvanceRejection`、`DeathNotifyResult` 三個先前只被當成回傳型別使用、本體從未宣告的型別;`AffinityRecordList.get_at()` 契約修訂為越界不中止、回傳 `null`(VR#11 關閉);VR#9(`match typeof(x)` 對 `TYPE_NIL` 分支)、VR#12(`int`/`float` 序列化型別往返保真)兩項由探針關閉;Risks 表全域 `class_name` 命名碰撞計數修正;機制八「與 ADR-0003 的分工」段落範圍收窄並修正引號位置;`ADR Dependencies` 的 `Ordering Note` 補上對 ADR-0003/ADR-0004 兩條邊的「不構成 `Depends On`」防線。**本 ADR 不自陳修訂後的需求涵蓋分佈**——留給獨立的第八輪 `/architecture-review` 重新推導,理由與前幾次修訂相同。
+
+> **2026-08-25 核准(`Proposed` → `Accepted`)**:由本專案管理者裁決核准,依據為 `docs/architecture/adr-acceptance-criteria.md` 的五個必要條件。**五條逐項成立**——**條件一**(所依賴的引擎行為每一項都在真的引擎上跑過):由 `prototypes/` 各探針關閉,VR#9(`match typeof()` 對 `TYPE_NIL`)、VR#11(`get_at()` 越界)、VR#12(`int`/`float` 序列化型別往返保真)為 2026-08-25 關閉的最後三項;**條件二**(沒有任何一句話被測試結果否證):被實測否證的敘述已全數修畢,含機制二核心宣告改採 `AffinityRecordList` 包裝類別;**條件三**(全稱句改為逐條清單或有自動檢查):範圍宣告已改為逐一列名,不再以項數表述——該項數曾連續被低估三次;**條件四**(兩道覆核都跑過且無「必須先修」級問題):`godot-gdscript-specialist` 與 `godot-specialist` 雙軌覆核,兩軌互不知情而各自查到同一反例,17 筆變更全部在寫入前攔下並修畢,**零項落進檔案**;**條件五**(依賴的上游文件已先核准):本 ADR `Depends On: None`,無上游,條件恆成立。
+>
+> ⚠️ **核准的定義**(門檻文件第二節):核准的意思是「**可以安全開始照這份文件寫正式程式碼**」,**不等於「完美無缺」**。仍開的不阻擋待辦——證據搬家(987 → 約 700 行)、登記表三項提案、`Mutex` 是否可重入(VR#4)與 export release 建置行為(VR#7)兩項未量測——記於 `production/session-state/active.md` 的「第六批」一節,依門檻文件第四節皆不阻擋本核准。
 
 ## Date
 

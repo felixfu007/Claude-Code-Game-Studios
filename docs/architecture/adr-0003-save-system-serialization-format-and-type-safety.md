@@ -2,7 +2,11 @@
 
 ## Status
 
-Proposed
+Accepted
+
+> **2026-08-25 核准(`Proposed` → `Accepted`)**:由本專案管理者裁決核准,**與 ADR-0002 為同一次動作**,依據為 `docs/architecture/adr-acceptance-criteria.md` 的五個必要條件。**條件一~四獨立成立**——**條件一**(所依賴的引擎行為每一項都在真的引擎上跑過):已由 `prototypes/xcheck-adr0003-2026-08-21/`(四支探針,皆 exit 0)與 `prototypes/save-format-skeleton-2026-08-21/`(三階段皆 exit 0)關閉,其中第 1 項的答案是**推翻原假設**(全文 18 處逐字採用的呼叫寫法為 Parse Error,已全部改正);**條件二**(沒有任何一句話被測試結果否證):被實測否證的敘述已修畢;**條件三**(全稱句改為逐條清單或有自動檢查):範圍宣告已改為逐一列名,並明訂不再於正文寫入項數與行號;**條件四**(兩道覆核都跑過且無「必須先修」級問題):`godot-specialist`、`security-engineer`、`technical-director` 三道覆核跑過,三項必修全部修畢落檔——**值得留在紀錄裡的是三道關卡各自抓到 0 / 1 / 2 項,證明單軌覆核不足以涵蓋**。**條件五**(依賴的上游文件已先核准):本 ADR `Depends On` 指向 ADR-0002,該份於同一次動作核准,故條件五於本核准生效的同時成立。
+>
+> ⚠️ **核准的定義**(門檻文件第二節):核准的意思是「**可以安全開始照這份文件寫正式程式碼**」,**不等於「完美無缺」**。`technical-director` 列出的 8 項不阻擋待辦(B-1~B-8,其中 B-6 已修)與 `adr-0003-deferred-to-implementation.md` 的延後項,記於 `production/session-state/active.md` 的「第六批」一節,依門檻文件第四節皆不阻擋本核准。
 
 ## Date
 

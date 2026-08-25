@@ -63,3 +63,4 @@ subagent 各自載入一次**。2026-08-21 實測該檔 **37,994 字元,而其�
 | 日期 | 變更 |
 |---|---|
 | 2026-08-21 | 建立。自 `technical-preferences.md` 第 102–110 行逐字搬入(27,779 字元)。起因:該檔每次對話開場載入,而四行佔其 68%。 |
+| 2026-08-25 | **核准紀錄:ADR-0002 與 ADR-0003 由 `Proposed` → `Accepted`,管理者同批裁決。** 這是本專案第一次有任何 ADR 進入 `Accepted`,亦即 `src/` 正式開發的自動阻擋首次解除。**兩份必須同批**的理由:ADR-0003 的 `Depends On` 指向 ADR-0002,其核准條件五(上游已核准)只有在同一次動作中才成立。核准依據為 `docs/architecture/adr-acceptance-criteria.md` 的五個必要條件,逐條成立說明就地寫在兩份各自的 `## Status` 區塊。**核准的定義是「可以安全開始照它寫正式程式碼」,不等於「完美無缺」**;兩份仍開的不阻擋待辦記於 `production/session-state/active.md` 的「第六批」一節。**本次連帶修改的檔案**:`.claude/docs/technical-preferences.md`(現況表兩列 + 立場項數 81→85 修正,原數字漏掉 ADR-0003 上一輪新增的 4 項 forbidden pattern)、`docs/registry/architecture.yaml`(`last_updated`,零條目異動)、`.claude/skills/story-readiness/SKILL.md` 與 `.claude/docs/director-gates.md`(補上遞迴追 `Depends On` 鏈與循環偵測 —— 沒有這一步,「已核准壓在草案上」會被自動放行,那正是 2026-08-24 誤判的實際成因)。 |
