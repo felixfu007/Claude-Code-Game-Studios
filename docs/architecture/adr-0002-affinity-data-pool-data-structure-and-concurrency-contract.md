@@ -73,7 +73,7 @@
 
 ### Problem Statement
 
-`design/gdd/affinity-data-pool.md`(Foundation 層,已 Approved,歷經 12 輪 `/design-review` 收斂)是《弈緣》好感度系統的唯一資料來源,但在架構層完全零覆蓋——`docs/architecture/architecture-review-2026-08-18.md` 記錄該文件 24 項技術需求(`TR-affinity-001` 至 `-024`)全數為缺口,且明文列為「全專案最高優先的 ADR 缺口」,理由是其中 `TR-affinity-016` 是**全專案唯一已宣告的執行緒安全義務**(**2026-08-19 C3 修訂後的現況說明**:此句是 2026-08-18 首輪稽核當時把本 ADR 列為最高優先的**理由**,不是本 ADR 現在的宣稱。`TR-affinity-016` 的條件句此後已由 ADR-0004 判為「否」,`Mutex` 保留為縱深防禦——見機制七的 C3 段落)。GDD 本身已把「要做什麼」定案得極其詳盡(五輪以上的對抗性覆核收斂出逐欄位值域、7 類拒絕情境、跨結構不變量、權杖式並發語意),但完全沒有回答「用什麼 Godot/GDScript 資料結構、什麼並發機制實作」——這是本 ADR 存在的理由:把 GDD 已鎖定的義務對應到具體、可實作、可測試的型別與介面,讓下游 `/create-architecture`、`/create-stories`、`/dev-story` 有型別可依循。
+`design/gdd/affinity-data-pool.md`(Foundation 層,已 Approved,歷經 12 輪 `/design-review` 收斂)是《盲目於微光》好感度系統的唯一資料來源,但在架構層完全零覆蓋——`docs/architecture/architecture-review-2026-08-18.md` 記錄該文件 24 項技術需求(`TR-affinity-001` 至 `-024`)全數為缺口,且明文列為「全專案最高優先的 ADR 缺口」,理由是其中 `TR-affinity-016` 是**全專案唯一已宣告的執行緒安全義務**(**2026-08-19 C3 修訂後的現況說明**:此句是 2026-08-18 首輪稽核當時把本 ADR 列為最高優先的**理由**,不是本 ADR 現在的宣稱。`TR-affinity-016` 的條件句此後已由 ADR-0004 判為「否」,`Mutex` 保留為縱深防禦——見機制七的 C3 段落)。GDD 本身已把「要做什麼」定案得極其詳盡(五輪以上的對抗性覆核收斂出逐欄位值域、7 類拒絕情境、跨結構不變量、權杖式並發語意),但完全沒有回答「用什麼 Godot/GDScript 資料結構、什麼並發機制實作」——這是本 ADR 存在的理由:把 GDD 已鎖定的義務對應到具體、可實作、可測試的型別與介面,讓下游 `/create-architecture`、`/create-stories`、`/dev-story` 有型別可依循。
 
 ### Constraints
 

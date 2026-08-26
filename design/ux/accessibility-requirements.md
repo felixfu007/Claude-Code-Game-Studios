@@ -1,4 +1,4 @@
-# Accessibility Requirements:《弈緣》(暫定)
+# Accessibility Requirements:《盲目於微光》
 
 > **Status**: **Tier Committed**(2026-08-19 使用者裁決;此前為 2026-08-06 建立的最小骨架)
 > **Author**: ux-designer(骨架)/ 2026-08-19 Tier 定案
