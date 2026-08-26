@@ -167,7 +167,15 @@ enum 值域,並實際匯入測試 PNG 檢查產生的 `.import` 檔。**未觸�
 ## Allowed Libraries / Addons
 
 <!-- Add approved third-party dependencies here -->
-- [None configured yet — add as dependencies are approved]
+- **GdUnit4 v6.2.1** — 單元測試框架。**本專案第一個相依套件**,2026-08-26 安裝。
+  來源 `godot-gdunit-labs/gdUnit4`(倉庫已自 `MikeSchulze/gdUnit4` 遷移)。
+  🔴 **`addons/gdUnit4/` 進版控**(272 檔,約 484 KB 原始碼)。理由:版本被釘死在提交裡,
+  CI 不需要抓取步驟,任何人 clone 下來測試指令就能跑。抓取式安裝會讓 CI 多一個對外相依,
+  而且不同時間 clone 可能拿到不同版本 —— 本專案已為「憑記憶對著沒驗證過的 API 寫程式」
+  付過代價,不需要再加一個「不同人跑的是不同版本」的變數。
+  ⚠️ **測試報告 `reports/` 不進版控**(每次執行重新產生,已加入 `.gitignore`)。
+  ⚠️ **GdUnit4 預設拒絕 headless 模式**,CI 指令必須帶 `--ignoreHeadlessMode`,
+  詳見 `coding-standards.md` 的 CI 指令列(含 exit code 101 的完整說明)。
 
 ## Architecture Decisions Log
 

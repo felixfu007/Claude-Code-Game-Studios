@@ -45,6 +45,10 @@ dist/
 .godot/
 *.translation
 export_presets.cfg
+
+# GdUnit4 test reports (regenerated on every run; `reports/report_N/` XML + HTML).
+# Added 2026-08-26 when GdUnit4 v6.2.1 was first installed and actually executed.
+reports/
 # Uncomment if using Godot:
 # *.import
 
