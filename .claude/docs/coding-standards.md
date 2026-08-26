@@ -85,5 +85,17 @@ All stories must have appropriate test evidence before they can be marked Done:
       It was written before GdUnit4 had ever been installed, so it could never have worked,
       and nothing revealed that until the suite was first actually run on 2026-08-26. The
       runner has since been rewritten against the real entry point.
+    - 🔴 **A fresh checkout must run `godot --headless --path . --import` once before the runner.**
+      Verified 2026-08-26, the day the first `class_name`-declaring scripts entered the repo
+      (`Board`, `LineOfSight`): without it the runner fails with
+      `Parse Error: Identifier "Board" not declared in the current scope`, because
+      `.godot/global_script_class_cache.cfg` does not exist yet. Two specialists hit this
+      independently, and it was reproduced on a throwaway clone in the scratchpad: no import →
+      fails/hangs; import first → 25 tests, 0 failures, exit 0. The import is idempotent and
+      one-time per working copy; it is a prerequisite, not a change to the test command.
+      ⚠️ **Unverified: whether `MikeSchulze/gdUnit4-action@v1` performs this import itself.**
+      CI uses the action, not this runner, so the failure may never surface there. Read the
+      first real CI result rather than assuming either way — and note the addon repo has since
+      moved to `godot-gdunit-labs/gdUnit4`, so the action reference may be stale too.
   - **Unity**: `game-ci/unity-test-runner@v4` (GitHub Actions)
   - **Unreal**: headless runner with `-nullrhi` flag
