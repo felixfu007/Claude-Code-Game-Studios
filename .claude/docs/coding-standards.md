@@ -61,18 +61,29 @@ All stories must have appropriate test evidence before they can be marked Done:
 - No merge if tests fail — tests are a blocking gate in CI
 - Never disable or skip failing tests to make CI pass — fix the underlying issue
 - Engine-specific CI commands:
-  - **Godot**: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit`
-    - ⚠️ **`--ignoreHeadlessMode` is mandatory, not optional.** GdUnit4 refuses to run under
-      `--headless` without it (`Headless mode is not supported!`, exit 103) because the engine
-      does not deliver `InputEvent`s in headless mode, so UI-interaction tests would silently
-      do nothing. Verified 2026-08-26 against GdUnit4 v6.2.1 / Godot 4.7.1.
+  - **Godot**: `godot --headless --path . -s tests/gdunit4_runner.gd`
+    - The runner wraps GdUnit4's own CLI entry point and supplies the mandatory flags, so CI
+      does not have to remember them. Verified 2026-08-26: 9 tests, 0 failures, 0 orphans,
+      exit 0, against GdUnit4 v6.2.1 / Godot 4.7.1.
+    - 🔴 **The failure mode to watch for is a false green light.** GdUnit4 discards every
+      argument before the token containing `GdUnitCmdTool.gd`; omit that token and it silently
+      degrades to printing help text and exiting **0** — tests never ran, and CI reports pass.
+      This was hit live while rewriting the runner. A test line that cannot fail is worse than
+      one that fails.
+    - Direct invocation, if the runner is ever bypassed:
+      `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit`
+      `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,
+      exit 103) because the engine delivers no `InputEvent`s headless, so UI-interaction tests
+      would silently do nothing.
     - ⚠️ **Exit code 101 means PASSED WITH WARNINGS, not failure.** Read from GdUnit4 source:
       `errors + failures > 0` → 100; `orphan_count > 0` → **101**; otherwise → 0. A run that
       reports `0 failures` can still exit 101 purely because a test leaked nodes.
       **The fix is to stop leaking nodes — never to treat 101 as success, and never to stop
       checking the exit code.** That check is the only place the whole test line is enforced.
-    - The previous command in this row (`--script tests/gdunit4_runner.gd`) was written before
-      GdUnit4 had ever been installed and could never have worked: that entry point has no
-      `run_tests()` method. Recorded here because "never executed" is how it survived.
+    - History, because "never executed" is how it survived: this row's original command used
+      `--script` against a runner that called a `run_tests()` method GdUnit4 does not have.
+      It was written before GdUnit4 had ever been installed, so it could never have worked,
+      and nothing revealed that until the suite was first actually run on 2026-08-26. The
+      runner has since been rewritten against the real entry point.
   - **Unity**: `game-ci/unity-test-runner@v4` (GitHub Actions)
   - **Unreal**: headless runner with `-nullrhi` flag

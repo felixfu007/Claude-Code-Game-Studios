@@ -63,14 +63,14 @@ func test_fresh_subviewportcontainer_default_filter_is_inherit_not_nearest() -> 
 	# 不代表 GameRoot.tscn 裡的覆寫失效（那件事由下一個測試單獨驗證）。
 
 	# Arrange
-	var container := SubViewportContainer.new()
+	# auto_free()（非 queue_free()）：queue_free() 是延後到下一影格才真正釋放，
+	# 但 GdUnit4 的孤兒節點檢查在那之前就跑完了，會誤報孤兒節點。
+	var container: SubViewportContainer = auto_free(SubViewportContainer.new())
 
 	# Act — 無（讀剛建立節點的預設值）
 
 	# Assert
 	assert_int(container.texture_filter).is_equal(0)  # 0 == Inherit
-
-	container.queue_free()
 
 
 func test_game_root_scene_world_container_overrides_filter_to_nearest() -> void:
@@ -78,7 +78,8 @@ func test_game_root_scene_world_container_overrides_filter_to_nearest() -> void:
 	var packed: PackedScene = load("res://src/ui/GameRoot.tscn")
 	assert_object(packed).is_not_null()
 
-	var instance: Node = packed.instantiate()
+	# auto_free()（非 queue_free()）：見上一個測試的註解。
+	var instance: Node = auto_free(packed.instantiate())
 
 	# Act
 	var world_container: Node = instance.get_node("WorldViewportContainer")
@@ -89,13 +90,12 @@ func test_game_root_scene_world_container_overrides_filter_to_nearest() -> void:
 	assert_bool(world_container.stretch).is_true()
 	assert_int(world_container.stretch_shrink).is_equal(1)
 
-	instance.queue_free()
-
 
 func test_game_root_scene_has_world_viewport_and_ui_layer() -> void:
 	# Arrange
 	var packed: PackedScene = load("res://src/ui/GameRoot.tscn")
-	var instance: Node = packed.instantiate()
+	# auto_free()（非 queue_free()）：見前面測試的註解。
+	var instance: Node = auto_free(packed.instantiate())
 
 	# Act
 	var world_container: Node = instance.get_node("WorldViewportContainer")
@@ -105,5 +105,3 @@ func test_game_root_scene_has_world_viewport_and_ui_layer() -> void:
 	# Assert
 	assert_bool(world_viewport is SubViewport).is_true()
 	assert_bool(ui_layer is CanvasLayer).is_true()
-
-	instance.queue_free()
