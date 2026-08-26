@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[node name="GameRoot" type="Node2D" unique_id=647369372]
+
+[node name="WorldViewportContainer" type="SubViewportContainer" parent="." unique_id=1984994227]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+stretch = true
+
+[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer" unique_id=362421407]
+
+[node name="UILayer" type="CanvasLayer" parent="." unique_id=691067289]

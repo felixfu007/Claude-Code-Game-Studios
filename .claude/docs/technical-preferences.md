@@ -143,7 +143,20 @@ enum 值域,並實際匯入測試 PNG 檢查產生的 `.import` 檔。**未觸�
    **真正不可逆的只有基礎解析度。**
 3. **世界層/介面層分層要用 `SubViewport` + `SubViewportContainer`**,並以
    `SubViewportContainer.stretch_shrink` 讓引擎自動反推內部緩衝區尺寸 ——
-   **不可手動設定 `SubViewport.size`**(容器會在下一 frame 覆寫回去)。
+   **不可手動設定 `SubViewport.size`**。
+   ⚠️ **2026-08-26 修正機制描述**:本項原寫「容器會在下一 frame 覆寫回去」,
+   實機驗證(`godot-specialist`,headless,`stretch=true` 時對 `SubViewport.size`
+   手動賦值 `(9999, 9999)`)顯示這個描述**不準確**——引擎並非「先改了、下一格再
+   改回來」,而是**當場拒絕這個賦值**,賦值前後讀回的值一路維持容器反推出的
+   `(480, 270)`,從未變成 `(9999, 9999)` 哪怕一個畫格。引擎印出的警告逐字:
+   ```
+   WARNING: Can't change the size of a `SubViewport` with a `SubViewportContainer`
+   parent that has `stretch` enabled. Set `SubViewportContainer.stretch` to `false`
+   to allow changing the size manually.
+      at: _internal_set_size (scene/main/viewport.cpp:5627)
+   ```
+   **結論不變**(不要手動設定 `SubViewport.size`),但機制是「賦值被擋下」不是
+   「賦值後被覆寫」——除錯時循「賦值生效但被覆寫」的方向找,會找錯地方。
    另:`SubViewportContainer.texture_filter` 預設 `Inherit`,**須手動覆寫為 Nearest**,
    否則世界層貼回外層畫面那一步仍會被 Linear 模糊一次。此項極易漏掉。
 
