@@ -93,9 +93,18 @@ All stories must have appropriate test evidence before they can be marked Done:
       independently, and it was reproduced on a throwaway clone in the scratchpad: no import →
       fails/hangs; import first → 25 tests, 0 failures, exit 0. The import is idempotent and
       one-time per working copy; it is a prerequisite, not a change to the test command.
-      ⚠️ **Unverified: whether `MikeSchulze/gdUnit4-action@v1` performs this import itself.**
-      CI uses the action, not this runner, so the failure may never surface there. Read the
-      first real CI result rather than assuming either way — and note the addon repo has since
-      moved to `godot-gdunit-labs/gdUnit4`, so the action reference may be stale too.
+      ✅ **Verified 2026-08-26: the action performs the import itself.** CI checks the repo out
+      from scratch every run, so had it not, the `class_name`-declaring scripts could not have
+      parsed — instead the first real green run (`380472b`) reported `51 passed, 0 failed and
+      0 skipped`. The import prerequisite above therefore binds local working copies only, not
+      CI. The action reference moved to `godot-gdunit-labs/gdUnit4-action@v1` in the same
+      commit, matching the addon's own move; the old `MikeSchulze` path 301s to it.
+      🔴 **Getting to that first green meant reading the log, not the tests.** Every run from
+      the day GdUnit4 was installed was red — never on a test, always inside the action's own
+      `dorny/test-reporter` step, which needs `checks: write` to create a check run and was
+      handed a read-only token. The suite was running and reporting into the void, and the
+      workflow's own comment pointed the next reader at the wrong suspect (4.7.1 support).
+      **A red CI is unread until its actual failing step is named. The failing step is not
+      always the tests.**
   - **Unity**: `game-ci/unity-test-runner@v4` (GitHub Actions)
   - **Unreal**: headless runner with `-nullrhi` flag

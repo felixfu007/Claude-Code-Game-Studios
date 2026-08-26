@@ -33,7 +33,7 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 | **測試** | ✅ **51 個(原 25 + 戰鬥 15 + 單位 11),0 失敗、0 孤兒、exit 0** |
 | CI 指令 | ✅ `godot --headless --path . -s tests/gdunit4_runner.gd` |
 
-## 🔴 四個會咬人的實測事實(寫程式前必看)
+## 🔴 五個會咬人的實測事實(寫程式前必看)
 
 1. **`stretch/mode` 絕不可設 `"viewport"`** —— `CanvasLayer` 不繼承 `Viewport`,對話文字會模糊,
    而且**要等排完介面才會發現**。
@@ -46,8 +46,20 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
    `godot --headless --path . --import`,否則 `Parse Error: Identifier "X" not declared`。
    2026-08-26 由兩位專家各自獨立撞到,並於暫存目錄的全新 clone 上複驗:
    **未匯入直接測 → 卡住/失敗;先匯入再測 → 25 個全過、exit 0。**
-   ⚠️ **CI 用的是 `MikeSchulze/gdUnit4-action@v1` 而非本專案 runner,該 action 是否自行處理匯入
-   尚未查證** —— 首次 push 後請看 CI 實際結果,不要預設它沒事,也不要預設它會壞。
+   ✅ **2026-08-26 已查證:action 自己會做匯入。** CI 每次都是全新 checkout,若它不做匯入,
+   宣告 `class_name` 的那些檔案不可能解析成功;而首次真實綠燈(`380472b`)回報
+   `51 passed, 0 failed and 0 skipped`。**因此上面這條匯入前置只約束本機工作複本,不約束 CI。**
+   action 引用同時改為 `godot-gdunit-labs/gdUnit4-action@v1`(舊路徑 301 轉址至此)。
+
+5. 🔴 **CI 從裝上 GdUnit4 那天起連紅四次,而且一次都不是測試失敗。**
+   失敗點在 action 內部的 `dorny/test-reporter`:它要建立 check run,需要 `checks: write`,
+   而本 repo 給 workflow 的 token 是唯讀 → `HttpError: Resource not accessible by integration`。
+   **測試一直在跑、一直在把結果寫進沒人看得到的地方。**
+   更糟的是 workflow 自己的註解寫著「若首次真實執行失敗,優先懷疑 action 對 4.7.1 的支援」——
+   那是**已被日誌否證的方向**,會把下一個人指往錯路。註解已改寫成依證據排序的排查順序。
+   已修:`permissions:` 補上 `contents: read` / `actions: read` / `checks: write`
+   (依據 `dorny/test-reporter` README 範例段落),提交 `380472b`,首次綠燈。
+   ⚠️ **教訓:紅燈在指出它實際敗在哪一步之前,等於還沒讀過。敗的那一步不一定是測試。**
 
 ## 下一步(依順序)
 
@@ -129,6 +141,13 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 <!-- /STATUS -->
 
 **最後更新**:2026-08-26(**第十四批**)—— **三包平行派工,三包全中**:`systems-designer` 產出 77 行暫定數值表(含對局長度與 MP 推導算式),`godot-gdscript-specialist` 產出 `CombatRules`(傷害/敵方縮放/射程/攻擊合法性,零 RNG)與 `Unit` + 10 人名冊資料檔。測試 25 → **51 全過、0 孤兒、exit 0**,主 session 以自己找到的 Godot 執行檔獨立複跑確認。**派工紀律第三次複驗成功**(短派工單、答案直接貼進去、檔案零重疊)。本批主 session 另核出兩項 Agent 沒說或說得太輕的量測目標,見上方規格問題 5、6。
+
+**同批第二段:CI 從裝上測試框架起就沒綠過,原因與程式無關。** 連紅四次,全部敗在 action 內部
+`dorny/test-reporter` 缺 `checks: write`,而 workflow 註解還把人指向已被否證的方向(4.7.1 支援)。
+補上 `permissions:` 三個 scope 後**首次真實綠燈**(`380472b`),check run 回報
+`51 passed, 0 failed and 0 skipped` —— 與本機一致。連帶查證兩件懸案:action **確實**支援 4.7.1、
+**確實**自行處理匯入(否則全新 checkout 解析不了 `class_name`)。既有的臨時守衛步驟依其自身
+退場條件移除(留 3 行註解記錄它存在過與不得加回的理由)。**教訓見上方實測事實第 5 項。**
 
 **前一批**:2026-08-26(**第十三批**)—— **專案第一段遊戲邏輯落地**:棋盤資料層 + 可達格 Dijkstra + 視線遮蔽,三個新程式檔、一個地圖資料檔、兩個測試檔。測試 9 → 25 全過、0 孤兒、exit 0,並在暫存目錄的全新 clone 上獨立複驗。派工方式改為「兩張約 300 字的短派工單平行派工」,一次成功。
 
