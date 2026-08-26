@@ -6,6 +6,22 @@ on:
   pull_request:
     branches: [main]
 
+# 權限設定位置：workflow 層級
+#
+# 理由：GitHub Actions 的 permissions 可以寫在 workflow 層或 job 層。workflow 層在此更恰當，
+# 因為本 workflow 只有一個 job，且所有步驟都使用相同的權限需求。減少重複，集中管理。
+#
+# 本設定的目的：dorny/test-reporter@v3 (被 gdUnit4-action 內部調用) 需要建立 GitHub Check Run。
+# 若無 `checks: write` 權限，test-reporter 會因 HttpError 403 "Resource not accessible by integration"
+# 而失敗，導致整個 workflow 失敗，即使測試本身已執行完畢。
+#
+# 若日後 workflow 在同一處紅燈，請查看 GitHub Actions 執行日誌的
+# "Run dorny/test-reporter@v3" 段落是否出現 HttpError；如是，先確認本權限區塊是否完整無誤。
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
 jobs:
   test:
     name: Run GdUnit4 Tests
@@ -47,16 +63,25 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      # ⚠️ 兩項未查證項(建立時專案無 Godot 執行環境可實測):
-      #   1. MikeSchulze/gdUnit4-action@v1 對 Godot 4.7.1 的支援 —— 4.7 為訓練截止
-      #      (2026-01)後發布,action 是否已跟上未經確認。若首次真實執行失敗,
-      #      優先懷疑此處,並回頭核對 action 的 README 支援矩陣。
+      # ⚠️ 已驗證項與待查證項:
+      #   1. godot-gdunit-labs/gdUnit4-action@v1 對 Godot 4.7.1 的支援 ✅ 已驗證
+      #      2026-08-26 CI 執行日誌證實 action 成功快取並使用了 Godot 4.7.1-stable:
+      #      GDUNIT_VERSION: v6.2.1
+      #      CACHE_NAME: Linux-Godot_v4.7.1-stable
+      #      RUN_GDSCRIPT_TESTS: true
+      #      該次執行一路運行至 publish-test-report 步驟才因 dorny/test-reporter 權限不足而失敗。
+      #      此權限問題已由本檔案上方的 permissions 區塊予以解決。
+      #
+      #      ⚠️ 若日後 workflow 紅燈，應依下列順序排查:
+      #      (1) 查檢 GitHub Actions 日誌中 "Run dorny/test-reporter@v3" 步驟是否有 HttpError
+      #      (2) 確認本檔案上方的 permissions 區塊是否完整（contents: read, actions: read, checks: write）
+      #      (3) 若 test-reporter 日誌正常，再查 gdUnit4-action 的版本/支援矩陣
       #   2. godot-version 值取自 docs/engine-reference/godot/VERSION.md 的釘選版本。
       #      該版本若變更,此處必須同步 —— tests/unit/harness/harness_selfcheck_test.gd
       #      的 test_engine_version_matches_pinned_version() 是這件事的自動化下限。
       - name: Run GdUnit4 Tests
         if: steps.guard.outputs.skip == 'false'
-        uses: MikeSchulze/gdUnit4-action@v1
+        uses: godot-gdunit-labs/gdUnit4-action@v1
         with:
           godot-version: '4.7.1'
           paths: |
