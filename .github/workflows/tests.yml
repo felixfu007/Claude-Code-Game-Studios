@@ -33,35 +33,9 @@ jobs:
         with:
           lfs: true
 
-      # ── 暫時性守衛(建立於 2026-08-19)────────────────────────────────
-      # 目前 repo 內尚無 project.godot —— Godot 專案本身還沒建立,src/ 為空。
-      # 沒有守衛的話,CI 從第一次 push 起就是紅的,而長期紅燈會訓練所有人忽略 CI,
-      # 比沒有 CI 更糟。
-      #
-      # 這不是「關掉失敗的測試」(.claude/docs/coding-standards.md 明文禁止):
-      # 現在根本還沒有測試可跑。守衛只在「專案不存在」時跳過,一旦 project.godot
-      # 進 repo 就自動放行,不需要任何人記得改。
-      #
-      # ⚠️ 何時移除本守衛:project.godot 建立、且 GdUnit4 安裝完成(addons/gdUnit4/)
-      #    之後的第一次 CI 綠燈確認,即可刪除本步驟與下方兩處 if 條件。
-      #    在那之前,綠燈只代表「跳過了」,不代表「測試通過」——見下方 Summary 輸出。
-      - name: Guard — 檢查 Godot 專案是否已建立
-        id: guard
-        run: |
-          if [ -f project.godot ]; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "project.godot 存在,執行測試。" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            {
-              echo "### ⚠️ 測試已跳過,並非通過"
-              echo ""
-              echo "repo 內找不到 \`project.godot\` —— Godot 專案尚未建立,沒有測試可執行。"
-              echo "本次綠燈**不代表任何測試通過**。"
-              echo ""
-              echo "建立專案後本守衛會自動放行;確認首次真實綠燈後,請刪除 workflow 內的守衛步驟。"
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+      # 守衛已於 2026-08-26 首次真實綠燈(380472b: 51 passed, 0 failed)後移除。
+      # 存在目的是防止專案建立前 CI 長期紅燈造成人員忽視。
+      # 此後如 project.godot 缺失，應讓測試明確失敗，不能安靜跳過。
 
       # ⚠️ 已驗證項與待查證項:
       #   1. godot-gdunit-labs/gdUnit4-action@v1 對 Godot 4.7.1 的支援 ✅ 已驗證
@@ -80,7 +54,6 @@ jobs:
       #      該版本若變更,此處必須同步 —— tests/unit/harness/harness_selfcheck_test.gd
       #      的 test_engine_version_matches_pinned_version() 是這件事的自動化下限。
       - name: Run GdUnit4 Tests
-        if: steps.guard.outputs.skip == 'false'
         uses: godot-gdunit-labs/gdUnit4-action@v1
         with:
           godot-version: '4.7.1'
@@ -90,7 +63,7 @@ jobs:
           report-name: test-results
 
       - name: Upload Test Results
-        if: always() && steps.guard.outputs.skip == 'false'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
