@@ -5,6 +5,7 @@ config_version=5
 
 config/name="盲目於微光"
 config/features=PackedStringArray("4.7")
+run/main_scene="res://src/ui/battle/BattleScreen.tscn"
 
 [display]
 
@@ -13,6 +14,8 @@ window/size/viewport_height=270
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 window/stretch/scale_mode="integer"
+window/size/window_width_override=960
+window/size/window_height_override=540
 
 [input]
 
