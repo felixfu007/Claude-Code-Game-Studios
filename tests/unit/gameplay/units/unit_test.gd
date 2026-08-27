@@ -32,20 +32,20 @@ func test_from_csv_line_parses_jia_every_field_correctly() -> void:
 
 
 func test_from_csv_line_initializes_hp_equal_to_hp_max() -> void:
-	# Arrange
-	var line: String = "6,E1,ENEMY,33,20,8,6,1,1,10,0"
+	# Arrange — E1 分級後的數值（見 vs01_roster.txt）
+	var line: String = "6,E1,ENEMY,36,20,10,6,1,1,10,0"
 
 	# Act
 	var unit: Unit = Unit.from_csv_line(line)
 
 	# Assert
 	assert_int(unit.hp).is_equal(unit.hp_max)
-	assert_int(unit.hp).is_equal(33)
+	assert_int(unit.hp).is_equal(36)
 
 
 func test_from_csv_line_parses_enemy_faction() -> void:
-	# Arrange
-	var line: String = "7,E2,ENEMY,33,20,8,5,1,2,11,1"
+	# Arrange — 只測 faction 解析，數值不是重點，用明顯的測試夾具而非真實敵人資料
+	var line: String = "7,TEST_B,ENEMY,10,10,10,5,1,2,11,1"
 
 	# Act
 	var unit: Unit = Unit.from_csv_line(line)
@@ -120,6 +120,39 @@ func test_roster_from_text_loads_vs01_roster_file_without_crashing() -> void:
 	assert_str(roster[9].code_name).is_equal("E5")
 
 
+func test_roster_from_text_enemy_hp_max_values_are_all_distinct() -> void:
+	# 迴歸測試 — 修這次之前，五隻敵人的數值完全相同（33/20/8），是本次要修的缺陷。
+	# 沒有這個測試守著，下次重算數值時可能又塌回同一組數字而沒人發現。
+	# Arrange
+	var text: String = FileAccess.get_file_as_string("res://assets/data/units/vs01_roster.txt")
+	var roster: Array[Unit] = Unit.roster_from_text(text)
+
+	# Act — 收集所有敵人的 hp_max
+	var enemies_by_code: Dictionary = {}
+	var enemy_hp_values: Array[int] = []
+	for unit in roster:
+		if unit.faction == Unit.Faction.ENEMY:
+			enemies_by_code[unit.code_name] = unit
+			enemy_hp_values.append(unit.hp_max)
+
+	var unique_hp_values: Dictionary = {}
+	for hp_value in enemy_hp_values:
+		unique_hp_values[hp_value] = true
+
+	# Assert — 五隻敵人，hp_max 互不相同
+	assert_array(enemy_hp_values).has_size(5)
+	assert_int(unique_hp_values.size()).is_equal(5)
+
+	# Assert — E5 最大、E3 最小
+	var e3: Unit = enemies_by_code["E3"]
+	var e5: Unit = enemies_by_code["E5"]
+	for hp_value in enemy_hp_values:
+		if hp_value != e5.hp_max:
+			assert_int(e5.hp_max).is_greater(hp_value)
+		if hp_value != e3.hp_max:
+			assert_int(e3.hp_max).is_less(hp_value)
+
+
 # ---- is_alive() / take_damage() -------------------------------------------
 
 func test_take_damage_clamps_at_zero_never_negative() -> void:
@@ -159,8 +192,8 @@ func test_take_damage_partial_amount_keeps_unit_alive() -> void:
 
 
 func test_is_alive_true_immediately_after_construction() -> void:
-	# Arrange & Act
-	var unit: Unit = Unit.from_csv_line("6,E1,ENEMY,33,20,8,6,1,1,10,0")
+	# Arrange & Act — 只測 is_alive()，數值不是重點，用明顯的測試夾具而非真實敵人資料
+	var unit: Unit = Unit.from_csv_line("6,TEST_A,ENEMY,10,10,10,6,1,1,10,0")
 
 	# Assert
 	assert_bool(unit.is_alive()).is_true()
