@@ -52,6 +52,35 @@ const TERRAIN_PATH: String = "res://assets/data/levels/vs01_terrain.txt"
 ## (through [method BattleState.create]).
 const ROSTER_PATH: String = "res://assets/data/units/vs01_roster.txt"
 
+## UI-facing display strings, centralized here as the single point a future
+## localization pass has to touch. Per [code].claude/rules/ui-code.md[/code]
+## ("all UI text must go through the localization system — no hardcoded
+## user-facing strings") this project does not yet have one (task brief,
+## 2026-08-27) — building one is explicitly out of scope for this change.
+## Every read site below uses one of these constants instead of a literal;
+## when a localization system exists, each constant becomes a
+## [method tr] call and this is the only block that has to change.
+const TEXT_STATUS_FORMAT: String = "第 %d 回合．%s"
+const TEXT_FACTION_PLAYER: String = "我方行動"
+const TEXT_FACTION_ENEMY: String = "敵方行動"
+const TEXT_RESULT_VICTORY: String = "勝利"
+const TEXT_RESULT_DEFEAT: String = "戰敗"
+## Always-on control hint, drawn in the bottom margin strip below the board
+## (board occupies y=[39,231) per [member BoardCoords.BOARD_ORIGIN] and its
+## 192px height — this strip starts at y=231, so it can never overlap a
+## board tile no matter what the text says). Deliberately one line covering
+## all three input devices rather than a togglable full panel: a toggle
+## would need its own input action bound on both keyboard and gamepad, and
+## a 2026-08-27 [InputMap] probe against this exact project found no
+## built-in action with both bindings that isn't already claimed by
+## [code]battle_confirm[/code]/[code]battle_end_phase[/code] (the only
+## keyboard+gamepad-bound candidate, [code]ui_select[/code], shares its
+## Space keybinding with [code]battle_confirm[/code] — reusing it would fire
+## both actions on the same keypress). Width measured against
+## [code]ThemeDB.fallback_font[/code] at size 16 (452px, see task report) —
+## fits inside the ~464px usable width of the 480px-wide strip with margin.
+const TEXT_CONTROLS_HINT: String = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　結束回合 Esc/B"
+
 ## Keyboard/gamepad directional actions this screen listens for, mapped to the
 ## grid delta they apply to the pad-tracked cursor cell. All four are Godot's
 ## built-in [code]ui_*[/code] actions — verified (2026-08-27, headless
@@ -69,6 +98,7 @@ const _DIRECTION_VECTORS: Dictionary = {
 @onready var _board_view: BoardView = $WorldViewportContainer/WorldViewport/BoardView
 @onready var _status_label: Label = $UILayer/StatusLabel
 @onready var _result_label: Label = $UILayer/ResultLabel
+@onready var _controls_hint_label: Label = $UILayer/ControlsHintBg/ControlsHintLabel
 
 var _state: BattleState
 var _order: TurnOrder
@@ -99,6 +129,8 @@ var _direction_was_pressed: Dictionary = {}
 
 
 func _ready() -> void:
+	_controls_hint_label.text = TEXT_CONTROLS_HINT
+
 	var terrain_rows: PackedStringArray = _read_terrain_rows(TERRAIN_PATH)
 	var roster_text: String = FileAccess.get_file_as_string(ROSTER_PATH)
 	_state = BattleState.create(terrain_rows, roster_text)
@@ -304,10 +336,10 @@ func _refresh_view() -> void:
 
 
 func _update_status_label() -> void:
-	var faction_text: String = "PLAYER" if _order.current_faction() == TurnOrder.Side.PLAYER else "ENEMY"
-	_status_label.text = "Round %d | %s phase" % [_order.round_number(), faction_text]
+	var faction_text: String = TEXT_FACTION_PLAYER if _order.current_faction() == TurnOrder.Side.PLAYER else TEXT_FACTION_ENEMY
+	_status_label.text = TEXT_STATUS_FORMAT % [_order.round_number(), faction_text]
 
 
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
-	_result_label.text = "VICTORY" if outcome == BattleState.Outcome.VICTORY else "DEFEAT"
+	_result_label.text = TEXT_RESULT_VICTORY if outcome == BattleState.Outcome.VICTORY else TEXT_RESULT_DEFEAT

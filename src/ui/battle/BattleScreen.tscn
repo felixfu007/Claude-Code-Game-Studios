@@ -40,3 +40,23 @@ offset_bottom = 20.0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "VICTORY"
+
+[node name="ControlsHintBg" type="ColorRect" parent="UILayer"]
+offset_left = 0.0
+offset_top = 231.0
+offset_right = 480.0
+offset_bottom = 270.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="ControlsHintLabel" type="Label" parent="UILayer/ControlsHintBg"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
+mouse_filter = 2
+vertical_alignment = 1
+text = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　結束回合 Esc/B"
