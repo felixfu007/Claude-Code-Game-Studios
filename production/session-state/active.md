@@ -7,11 +7,25 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 
 ## 🔴 接手第一件事
 
-**這一批起是「寫程式」的批次。** 要接著寫,讀這三份:
+**下一件事:把三塊接起來。** `Board` 的佔位表、`Unit` 的 `start_pos`、`CombatRules` 的判定
+**現在互不認識,沒有任何程式把它們串起來** —— 接起來就是這個專案第一個真的會動的東西。
+
+**做這件事要讀這三份**:
 
 1. `design/gdd/vertical-slice-level-01.md`(162 行)—— **要做的那一關**,含棋盤佈局文字網格
-2. `design/quick-specs/affinity-position-provisional.md` —— **Φ 的三個暫定數字**與「切片要量出什麼」
+2. `design/quick-specs/unit-stats-provisional.md`(**第二版**,122 行)—— 十個單位的數值與算式。
+   ⚠️ 敵人已分級,**不是五隻一樣**;`player_baseline` 取「對應武器分層的主角本人」而非平均
 3. `design/gdd/tactical-combat-system.md` —— 戰棋規則與公式的權威來源(1026 行,按需查閱)
+
+**現有程式**:`src/gameplay/board/`(棋盤+視線)、`src/gameplay/units/unit.gd`、
+`src/gameplay/combat/combat_rules.gd`。資料:`assets/data/levels/vs01_terrain.txt`、
+`assets/data/units/vs01_roster.txt`。
+
+**寫程式不需要讀的**:`design/narrative/characters.md`(五人姓名/職業/關係)與
+`gameplay-flow-decisions.md`、`endings.md` 的劇情裁決 —— **那些是寫台詞與美術時才要的**。
+⚠️ 但要知道兩件事:五人已有姓名(藍亭萱/徐培恩/董振豪/秦亦柔/麥子健),而
+`vs01_roster.txt` 的 `code_name` 欄**仍存代號甲乙丙丁戊** —— 代號是內部識別碼,刻意不改。
+另:**五人的 voice profile 尚未存在,依 `.claude/rules/narrative.md` 不得先寫台詞。**
 
 **劇情/世界觀的 23 項裁決在 `gameplay-flow-decisions.md` 與 `endings.md`,寫棋盤程式時不需要讀。**
 
