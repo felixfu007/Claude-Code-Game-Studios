@@ -154,6 +154,20 @@ Task: 🟢 **2026-08-27 第十五批。`TurnOrder` + `BattleState` 兩包平行�
     ⚠️ 實務上單次 `resolve_attack()` 不可能同時造成兩者(它只傷害目標,不傷害攻擊者),
     所以這是靜態排序的裁決,不是承重行為。
 
+13. ✅ **GitHub CLI 已可用(2026-08-27 安裝)—— 從此可自本機直接查 CI 結果與失敗日誌。**
+    位置 `C:\Users\felixfu007\AppData\Local\Programs\gh\bin\gh.exe`,已加入**使用者層級** PATH
+    (`[Environment]::SetEnvironmentVariable(...,'User')`,非 `setx` —— `setx` 會在 1024 字元處截斷 PATH)。
+    **新開的終端機直接打 `gh` 即可;既有的 shell 要重開才吃得到。**
+    授權狀態:已登入 `felixfu007`(憑證在 Windows 金鑰庫,與 git push 同一組),
+    scopes `gist, read:org, repo` —— **不需要再跑 `gh auth login`。**
+    ⚠️ **`winget` 在本機是壞的**:`0x8a15000f : Data required by the source is missing`,
+    `winget source update` 能過但 `install` 仍失敗,而修復用的 `winget source reset` 需要
+    系統管理員權限(公司電腦,沒有)。**故本工具是官方免安裝 zip 解壓而來,不是 winget 裝的。**
+    日後要裝其他工具時,直接走免安裝版,不要在 winget 上耗時間。
+    **首次實際用途**:查證提交 `da7b638` 的 CI 執行(run 33032145345)——
+    `success`、43 秒、`Overall Summary: 83 test cases | 0 errors | 0 failures | 0 orphans`,
+    與本機完全一致。
+
 ## 🟡 待管理者裁決(皆不阻擋寫程式)
 
 1. ✅ ~~五個角色的名字~~ **2026-08-26 定案**:藍亭萱(甲/女/消防員)、徐培恩(乙/男/救護技術員)、
