@@ -1,33 +1,36 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: 🟢 **《盲目於微光》—— 第一段真正的遊戲邏輯已落地**
-Feature: 垂直切片《迷霧岔口》。**棋盤、視線、單位數值、傷害與射程規則完成**,下一步是回合順序
-Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰鬥規則三包平行落地。51 個測試全過、0 孤兒、exit 0,主 session 獨立複驗。**
+Epic: 🟢 **《盲目於微光》—— 這個專案第一次有「一場戰鬥」**
+Feature: 垂直切片《迷霧岔口》。**棋盤、視線、數值、傷害、回合順序、戰局整合層全部完成**,下一步是敵方 AI 與最小可玩迴圈
+Task: 🟢 **2026-08-27 第十五批。`TurnOrder` + `BattleState` 兩包平行落地,三塊零件終於互相認識。83 個測試全過、0 孤兒、exit 0,主 session 獨立複驗 + 實機探針。**
 
 ## 🔴 接手第一件事
 
-**下一件事:把三塊接起來。** `Board` 的佔位表、`Unit` 的 `start_pos`、`CombatRules` 的判定
-**現在互不認識,沒有任何程式把它們串起來** —— 接起來就是這個專案第一個真的會動的東西。
+**下一件事:讓它真的能被玩一次。** 資料層已經完整 —— `BattleState` 能開局、移動、判定攻擊、
+結算傷害、判定輸贏;`TurnOrder` 能管回合與行動旗標。**但沒有任何東西在驅動它們**:
+沒有敵方 AI、沒有輸入、沒有畫面。
 
-**做這件事要讀這三份**:
+**兩條路可選,建議依序**:
 
-1. `design/gdd/vertical-slice-level-01.md`(162 行)—— **要做的那一關**,含棋盤佈局文字網格
-2. `design/quick-specs/unit-stats-provisional.md`(**第二版**,122 行)—— 十個單位的數值與算式。
-   ⚠️ 敵人已分級,**不是五隻一樣**;`player_baseline` 取「對應武器分層的主角本人」而非平均
-3. `design/gdd/tactical-combat-system.md` —— 戰棋規則與公式的權威來源(1026 行,按需查閱)
+1. **最小驅動迴圈(純程式,無畫面)** —— 寫一個把 `TurnOrder` 與 `BattleState` 串起來的
+   `BattleLoop`,加上最陽春的敵方 AI(朝最近的主角移動、在射程內就攻擊),然後用測試
+   跑完整一場戰鬥。**這一步做完,`vertical-slice-level-01.md` 的預期回合數 4~6 就能第一次被實測。**
+   ⚠️ 目前 `Φ` 恆為 0(好感度系統 Not Started),所以量到的會是「無 Φ」那條曲線。
+2. **畫面與輸入** —— 把棋盤畫出來、能點擊移動。歸 `godot-specialist`(場景/Control 節點)。
 
-**現有程式**:`src/gameplay/board/`(棋盤+視線)、`src/gameplay/units/unit.gd`、
-`src/gameplay/combat/combat_rules.gd`。資料:`assets/data/levels/vs01_terrain.txt`、
-`assets/data/units/vs01_roster.txt`。
+**做這件事要讀的**:
 
-**寫程式不需要讀的**:`design/narrative/characters.md`(五人姓名/職業/關係)與
-`gameplay-flow-decisions.md`、`endings.md` 的劇情裁決 —— **那些是寫台詞與美術時才要的**。
-⚠️ 但要知道兩件事:五人已有姓名(藍亭萱/徐培恩/董振豪/秦亦柔/麥子健),而
+1. `src/gameplay/battle/battle_state.gd` 與 `turn_order.gd` —— **兩份都有完整 `##` 文件註解,讀註解即可,不必逐行讀實作**
+2. `design/gdd/vertical-slice-level-01.md`(162 行)—— 要做的那一關,含棋盤佈局與勝敗條件
+3. `design/quick-specs/unit-stats-provisional.md`(第二版,122 行)—— 十個單位的數值與算式
+4. `design/gdd/tactical-combat-system.md` —— 戰棋規則權威來源(1026 行,按需查閱)
+
+**寫程式不需要讀的**:`design/narrative/characters.md`、`gameplay-flow-decisions.md`、
+`endings.md` 的劇情裁決 —— **那些是寫台詞與美術時才要的**。
+⚠️ 但要知道:五人已有姓名(藍亭萱/徐培恩/董振豪/秦亦柔/麥子健),而
 `vs01_roster.txt` 的 `code_name` 欄**仍存代號甲乙丙丁戊** —— 代號是內部識別碼,刻意不改。
 另:**五人的 voice profile 尚未存在,依 `.claude/rules/narrative.md` 不得先寫台詞。**
-
-**劇情/世界觀的 23 項裁決在 `gameplay-flow-decisions.md` 與 `endings.md`,寫棋盤程式時不需要讀。**
 
 ## 已經能跑的東西(全部實機驗證過)
 
@@ -44,7 +47,9 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 | **`src/gameplay/units/unit.gd`** | ✅ **新** `Unit`、`Faction` 列舉、`from_csv_line()`/`roster_from_text()`、`take_damage()` 夾在 0。**刻意不含任何戰鬥數學**(那在 `CombatRules`) |
 | **`assets/data/units/vs01_roster.txt`** | ✅ **新** 10 個單位(5 主角 + E1~E5),含武器分層與起始座標 |
 | **`design/quick-specs/unit-stats-provisional.md`** | ✅ **新** 77 行暫定數值表,含對局長度與 MP 的推導算式 |
-| **測試** | ✅ **51 個(原 25 + 戰鬥 15 + 單位 11),0 失敗、0 孤兒、exit 0** |
+| **`src/gameplay/battle/turn_order.gd`** | ✅ **新** 陣營輪替(玩家先手)、每單位移動/攻擊兩個獨立旗標、順序自由、可暫緩、`end_unit_turn()` 主動結束。🔴 **重置掛在陣營階段推進本身,不掛在「已行動」狀態** —— 規格裡最容易做錯的一條 |
+| **`src/gameplay/battle/battle_state.gd`** | ✅ **新** 把 `Board`×`Unit`×`CombatRules` 接起來。`create()` 擺盤、`legal_moves()`、`move_unit()`、`can_attack()`、`resolve_attack()`、`outcome()` 三態。**單位不擋視線**(只傳 `board.blocks_sight`)、**敵方攻擊 phi 強制歸零**、**陣亡當場釋放佔位** |
+| **測試** | ✅ **83 個(原 52 + 回合順序 10 + 戰局 9,另含既有檔重整),0 失敗、0 錯誤、0 孤兒、exit 0** |
 | CI 指令 | ✅ `godot --headless --path . -s tests/gdunit4_runner.gd` |
 
 ## 🔴 五個會咬人的實測事實(寫程式前必看)
@@ -78,13 +83,17 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 ## 下一步(依順序)
 
 1. ✅ ~~單位資料層~~ **第十四批完成** —— `Unit` + `vs01_roster.txt`,數值出自 `unit-stats-provisional.md`
-2. 🔵 **回合順序與行動旗標**(移動/攻擊各一次,可暫緩)—— **下一個要做的**
+2. ✅ ~~回合順序與行動旗標~~ **第十五批完成** —— `TurnOrder`。⚠️ **回合推進形式(玩家全體先動 →
+   敵方全體動 → 回合+1)是 2026-08-27 管理者裁決,不是 GDD 內容** —— `tactical-combat-system.md`
+   Core Rules #9 明文聲明它只定義單位層行動經濟、不定義回合結構。日後若改成單位混合排序,
+   旗標邏輯不必重寫,換的是排序規則
 3. ✅ ~~攻擊合法性~~ **第十四批完成** —— `CombatRules.is_attack_legal()`
 4. ✅ ~~傷害結算~~ **第十四批完成** —— `CombatRules.damage()`,零 RNG 已全庫 grep 複驗
-5. 🔵 把三塊接起來:`Board` 的佔位表 × `Unit` 的 `start_pos` × `CombatRules` 的判定
-   —— **目前三者互不認識,沒有任何程式把它們串起來**
-6. 🔵 最小的「這兩人現在給你 +N」提示(**不做整套好感度 UI**)
-7. 🔵 玩一次,量 `affinity-position-provisional.md` 第 5 節那五項,外加下方兩項本批新增的量測目標
+5. ✅ ~~把三塊接起來~~ **第十五批完成** —— `BattleState`。三塊零件現在互相認識了
+6. 🔵 **最小驅動迴圈 + 陽春敵方 AI** —— **下一個要做的**。做完才能第一次實測預期回合數 4~6
+7. 🔵 畫面與輸入(棋盤畫出來、能點擊移動)—— 歸 `godot-specialist`
+8. 🔵 最小的「這兩人現在給你 +N」提示(**不做整套好感度 UI**)
+9. 🔵 玩一次,量 `affinity-position-provisional.md` 第 5 節那五項,外加下方兩項第十四批新增的量測目標
 
 ## 🟡 本批新產生的規格問題(皆不阻擋)
 
@@ -119,6 +128,31 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
    `C:\Users\felixfu007\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe`。
    `coding-standards.md` 的 CI 指令列寫的是裸 `godot`,本機直接複製貼上會得到 `command not found`(exit 127)。
    CI 用的是 GitHub Action、不受影響,**但本機開發者會撞**。
+
+### 第十五批新增
+
+10. 🔴 **對已陣亡單位查詢,不會中止,會回一個看起來正常的錯誤答案。這是同一失效模式第三次出現。**
+    **實機探針證實(2026-08-27,非推理)**:讓 6 號敵人陣亡後呼叫 `BattleState.legal_moves(6)`,
+    引擎印出 `SCRIPT ERROR: Out of bounds get index '6' (on base: 'Dictionary')`,
+    **然後照樣回傳 17 格** —— 那 17 格是從 `Vector2i(0,0)`(缺鍵的預設值)算出來的,
+    與該單位死前站的位置無關。`can_attack()` 走同一條 `position_of()` 路徑,同樣情形。
+    **為什麼危險**:不中止 → 測試不會紅 → 錯誤只存在於沒人看的日誌裡。
+    ⚠️ **這與第 2 項(地圖檔寫短了默默補成空地)、第 8 項(名冊格式錯誤在 release 靜默吃下垃圾值)
+    是同一族失效模式的第三次出現。**
+    **建議處置:不要各補一個 `if`** —— 那正是前兩次的做法,而它讓同一個坑挖了三次。
+    等關卡/名冊載入系統出現時,三處用同一套輸入驗證一起處理。
+    **現在不擋任何事**:目前沒有任何呼叫端會拿死人去查移動,`TurnOrder.remove_unit()` 也已備妥
+    讓死者退出回合輪替 —— 但**驅動迴圈(下一步第 6 項)正是第一個會同時碰到兩者的東西**,
+    寫它的人必須先讀本項。
+
+11. **`resolve_attack()` 不自行檢查攻擊合法性。** 它是純結算,呼叫端必須先問過 `can_attack()`。
+    這是刻意的分工(與 `CombatRules` 全 `static` 純數學同一風格),不是疏漏 —— 但下一步的
+    驅動迴圈若忘了先問,會結算出一次不合法的攻擊而毫無警告。
+
+12. **`outcome()` 的優先序:先判失敗,再判勝利。** 若同一瞬間「敵人全滅」與「某主角陣亡」
+    同時成立,判定為**失敗**。依據 `vertical-slice-level-01.md` 勝敗條件「任一人 HP 歸零即關卡失敗」。
+    ⚠️ 實務上單次 `resolve_attack()` 不可能同時造成兩者(它只傷害目標,不傷害攻擊者),
+    所以這是靜態排序的裁決,不是承重行為。
 
 ## 🟡 待管理者裁決(皆不阻擋寫程式)
 
@@ -196,7 +230,13 @@ Task: 🟢 **2026-08-26 第十四批。暫定數值表 + 單位資料層 + 戰�
 本批授權來自使用者開場的明確指示(「將適合的工作指派給專業Agent」),**不自動延伸到下一批。**
 <!-- /STATUS -->
 
-**最後更新**:2026-08-26(**第十四批**)—— **三包平行派工,三包全中**:`systems-designer` 產出 77 行暫定數值表(含對局長度與 MP 推導算式),`godot-gdscript-specialist` 產出 `CombatRules`(傷害/敵方縮放/射程/攻擊合法性,零 RNG)與 `Unit` + 10 人名冊資料檔。測試 25 → **51 全過、0 孤兒、exit 0**,主 session 以自己找到的 Godot 執行檔獨立複跑確認。**派工紀律第三次複驗成功**(短派工單、答案直接貼進去、檔案零重疊)。本批主 session 另核出兩項 Agent 沒說或說得太輕的量測目標,見上方規格問題 5、6。
+**最後更新**:2026-08-27(**第十五批**)—— **兩包平行派工,兩包全中,派工紀律第四次驗證成功**。`TurnOrder`(回合輪替 + 行動旗標)與 `BattleState`(棋盤×單位×戰鬥規則整合層)雙雙落地,**這是本專案第一次存在「一場完整的戰鬥」** —— 能開局、能移動、能判定攻擊、能結算傷害、能判定輸贏。測試 52 → **83 全過、0 錯誤、0 失敗、0 孤兒、exit 0**,主 session 獨立複跑確認。
+
+**本批主 session 另做兩件 Agent 沒做的事**:(1) 逐行審查兩份程式碼並對照 GDD 條文,確認三條最貴的規則都做對了 —— 回合重置的獨立性、單位不擋視線、Φ 只作用於我方攻擊;(2) **寫了一支拋棄式探針實測**,抓出「對死者查詢會靜默回錯答案」這個第三次出現的失效模式(見規格問題 10)。**探針檔已刪除,未進版控。**
+
+⚠️ **本批唯一的派工設計缺陷,記錄以免重蹈**:兩包的**檔案**確實零重疊,但**測試指令是共用的** —— A 跑全套測試時會連 B 還沒寫完的檔案一起編譯,導致 A 花了額外輪次處理不屬於它的編譯錯誤,最後沒回報通過數與 exit code。**下次並行派工時,應要求各自只跑自己那個測試檔**(`-a tests/unit/gameplay/battle/xxx_test.gd`),全套由主 session 收尾時跑一次即可。
+
+**前一批**:2026-08-26(**第十四批**)—— **三包平行派工,三包全中**:`systems-designer` 產出 77 行暫定數值表(含對局長度與 MP 推導算式),`godot-gdscript-specialist` 產出 `CombatRules`(傷害/敵方縮放/射程/攻擊合法性,零 RNG)與 `Unit` + 10 人名冊資料檔。測試 25 → **51 全過、0 孤兒、exit 0**,主 session 以自己找到的 Godot 執行檔獨立複跑確認。**派工紀律第三次複驗成功**(短派工單、答案直接貼進去、檔案零重疊)。本批主 session 另核出兩項 Agent 沒說或說得太輕的量測目標,見上方規格問題 5、6。
 
 **同批第二段:CI 從裝上測試框架起就沒綠過,原因與程式無關。** 連紅四次,全部敗在 action 內部
 `dorny/test-reporter` 缺 `checks: write`,而 workflow 註解還把人指向已被否證的方向(4.7.1 支援)。
