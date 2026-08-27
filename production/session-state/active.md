@@ -98,28 +98,27 @@ Task: 🟢 **2026-08-27 第十五批。`TurnOrder` + `BattleState` 兩包平行�
 | 丙是不是真的一碰就死? | ⚠️ **機制上可及,但笨 AI 把他用壞了,不算數。要真人玩才算** |
 | 4~6 回合這個目標對不對? | ❌ **未回答。** 要等好感度加成非零、且真人操作 |
 
-## 🔴 `src/ui/GameRoot.tscn` 目前是壞的(2026-08-27 實測,尚未修)
+## ✅ `src/ui/GameRoot.tscn` 已修(2026-08-27,同日發現同日修畢)
 
-**`SubViewportContainer` 掛在 `Node2D` 底下時,滿版錨點永遠不生效。** 而 `src/ui/GameRoot.tscn`
-的根節點正是 `Node2D`。實機逐字結果(**非 headless、真實 GPU**,主 session 獨立複驗):
+**曾經壞在哪**:`SubViewportContainer` 掛在 `Node2D` 底下時滿版錨點永遠不生效,容器恆 `(0,0)`、
+內部畫布恆 `(2,2)` —— 世界層的內容會被擠進 2×2 像素再拉伸,**不是稍微模糊,是整片糊成一塊顏色**。
+**沒人受害只因為當時還沒有任何東西畫進去。**
 
+**修法**:根節點 `Node2D` → `Node`(治本,非腳本補償)。該節點未使用任何 `Node2D` 的
+position/rotation/scale,零功能損失。
+
+**主 session 獨立複驗**(自建臨時場景 instance 真實的 `GameRoot.tscn`、真實視窗、等三個 frame,
+用完即刪):
 ```
-VERIFY 父節點型別=Node2D       容器尺寸=(0.0, 0.0)      內部畫布尺寸=(2, 2)
-VERIFY 父節點型別=Node         容器尺寸=(480.0, 270.0)  內部畫布尺寸=(480, 270)
-VERIFY 父節點型別=Control      容器尺寸=(0.0, 0.0)      內部畫布尺寸=(2, 2)
-VERIFY 父節點型別=CanvasLayer  容器尺寸=(480.0, 270.0)  內部畫布尺寸=(480, 270)
+MAIN_VERIFY 根節點型別=Node 容器=(480.0, 270.0) 內部畫布=(480, 270) 濾波=1
 ```
+✅ 尺寸解得出來。✅ **`texture_filter=1` 仍在**(手動覆寫成 Nearest,漏掉的話世界層貼回螢幕會被
+Linear 再模糊一次,`technical-preferences.md` 明載此項極易漏)。✅ 滿版錨點、`stretch=true`、
+`UILayer`、三個節點名稱逐字未動。✅ 全套 97 測試 `REAL_EXIT=0`。
 
-**後果**:世界層的內容會被擠進一張 2×2 像素的材質再拉伸貼回螢幕 —— 不是「稍微模糊」,是**整片糊成一塊顏色**。
-**現在沒人受害,只因為還沒有任何東西畫進去。** 第一個要畫棋盤的人會立刻撞上。
-
-🔴 **建議修法:根節點 `Node2D` → `Node`**(實測解得出來,且該節點目前不使用任何 `Node2D` 的
-position/rotation/scale,改型別零功能損失)。**未執行 —— `src/` 的 `.tscn` 依檔案路由表歸
-`godot-specialist`,且需要管理者同意動正式檔案。**
-
-⚠️ **不要照試作報告原文把根節點改成裸 `Control`** —— 報告原句寫「`Node`/`Control`/`CanvasLayer` 全部正常」
-太寬,主 session 複驗證實**裸 `Control` 同樣壞掉**(它自己沒被撐開)。
-「`Control` 自己也錨定滿版時會不會好」**未量測,是未查證項不是已否證項。**
+⚠️ **記一個會咬人的副作用**:執行 `--import` 會**改寫 `project.godot`** ——
+本批執行者回報它刪掉了 `window/stretch/aspect="keep"` 一行(引擎視其為預設值),已 `git checkout` 還原。
+**動完 `--import` 後請養成 `git status` 一次的習慣**,那個檔案是承重的。
 
 ## 🟢 座標換算已解(2026-08-27 試作實測)
 

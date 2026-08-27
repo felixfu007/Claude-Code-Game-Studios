@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[node name="GameRoot" type="Node2D" unique_id=647369372]
+[node name="GameRoot" type="Node" unique_id=647369372]
 
 [node name="WorldViewportContainer" type="SubViewportContainer" parent="." unique_id=1984994227]
 texture_filter = 1
