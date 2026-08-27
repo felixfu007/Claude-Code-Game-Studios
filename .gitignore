@@ -157,3 +157,11 @@ $RECYCLE.BIN/
 # but added zero log files — [Ll]ogs/ above had silently swallowed them all.
 !prototypes/**/logs/
 !prototypes/**/logs/**
+
+# === QA evidence screenshots: the .import companions only ===
+# 截圖本身要進版控(它們是 coding-standards.md 要求的 UI 變更驗證證據),
+# 但 Godot 會為專案內每個檔案產生 .import 伴隨檔,而這些截圖**從來不會被遊戲載入** ——
+# 它們不是素材,那個 .import 純粹是雜訊,而且每次有人跑 --import 就會多出一個。
+# 素材本身的 .import 仍然進版控(見上方 Godot 區塊刻意未啟用的 *.import 規則),
+# 這裡只排除證據目錄。加於 2026-08-27,第一次出現 evidence/*.png.import 之後。
+production/qa/evidence/*.import
