@@ -1,0 +1,1 @@
+- [No search tool for name verification](feedback_name_verification_no_search_tool.md) — celebrity/politician name-collision checks here are knowledge-based only, not live search; disclose this every time and flag surname-level political associations too
