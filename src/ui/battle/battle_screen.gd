@@ -52,6 +52,14 @@ const TERRAIN_PATH: String = "res://assets/data/levels/vs01_terrain.txt"
 ## (through [method BattleState.create]).
 const ROSTER_PATH: String = "res://assets/data/units/vs01_roster.txt"
 
+## Affinity pairing table, read once in [method _ready] via
+## [method AffinityLink.links_from_text] and wired into [member _phi]. Unlike
+## [constant TERRAIN_PATH] / [constant ROSTER_PATH], a file that parses to
+## zero links is a legal, expressible design state (see [method _ready]) —
+## only [constant LoadFailure.MISSING] / [constant LoadFailure.UNREADABLE]
+## block the load for this path.
+const AFFINITY_PATH: String = "res://assets/data/affinity/vs01_affinity_links.txt"
+
 ## Classification of why loading terrain/roster data failed, checked
 ## independently per file in [method _ready]. Ordered from "never got to open
 ## the file" through "opened it but the content was useless" so a single
@@ -71,6 +79,14 @@ enum LoadFailure {
 # is not user-facing text under .claude/rules/ui-code.md's localization rule.
 const _LOG_LOAD_FAILURE_FORMAT: String = "BattleScreen: failed to load %s (%s)"
 
+# Developer-facing log line for the affinity table's zero-links case, which is
+# a legal design state and therefore never blocks the load (see _ready()) —
+# push_warning() rather than push_error(), and never routed through
+# _fail_load(). The second slot is a LoadFailure name (EMPTY_CONTENT or
+# PARSED_EMPTY) borrowed purely as a diagnostic label so a truly empty file is
+# distinguishable in the log from a file containing only comments/blank lines.
+const _LOG_AFFINITY_ZERO_LINKS_FORMAT: String = "BattleScreen: %s parsed to zero affinity links (%s) — proceeding with no pairings"
+
 ## UI-facing display strings, centralized here as the single point a future
 ## localization pass has to touch. Per [code].claude/rules/ui-code.md[/code]
 ## ("all UI text must go through the localization system — no hardcoded
@@ -84,6 +100,17 @@ const TEXT_FACTION_PLAYER: String = "我方行動"
 const TEXT_FACTION_ENEMY: String = "敵方行動"
 const TEXT_RESULT_VICTORY: String = "勝利"
 const TEXT_RESULT_DEFEAT: String = "戰敗"
+
+## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
+## Mode A/B/C). [constant TEXT_AFFINITY_PREVIEW_FORMAT] is Mode A ("if I move
+## here"); [constant TEXT_AFFINITY_CURRENT_FORMAT] is Mode B (cursor resting on
+## a linked unit, no move in progress); [constant TEXT_DAMAGE_PREVIEW_FORMAT] is
+## Mode C (cursor on an attackable enemy). Measured against [member _info_label]'s
+## 288px width at font size 16 — see the task report for the longest formatted
+## string's measured pixel width.
+const TEXT_AFFINITY_PREVIEW_FORMAT: String = "好感度 %+d→%+d"
+const TEXT_AFFINITY_CURRENT_FORMAT: String = "好感度 %+d"
+const TEXT_DAMAGE_PREVIEW_FORMAT: String = "打擊 %d　血量 %d→%d"
 
 ## Message template shown on [member _load_error_label] when terrain or
 ## roster data fails to load. Slot 1 is one of the TEXT_LOAD_REASON_*
@@ -155,6 +182,10 @@ const _DIRECTION_VECTORS: Dictionary = {
 @onready var _world_viewport_container: SubViewportContainer = $WorldViewportContainer
 @onready var _board_view: BoardView = $WorldViewportContainer/WorldViewport/BoardView
 @onready var _status_label: Label = $UILayer/StatusLabel
+## Right-aligned readout for the affinity/damage cursor preview — see
+## [method _refresh_view]'s Mode A/B/C. Narrowed [member _status_label] from
+## its old x=8..472 span to x=8..180 to make room for this at x=184..472.
+@onready var _info_label: Label = $UILayer/InfoLabel
 @onready var _result_label: Label = $UILayer/ResultLabel
 @onready var _controls_hint_label: Label = $UILayer/ControlsHintBg/ControlsHintLabel
 ## Backing bar for [member _controls_hint_label] — only referenced directly
@@ -169,6 +200,42 @@ var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
 var _device: DeviceAuthority
+
+## Injected Φ provider for [member _controller]'s [code]phi_provider: Callable[/code]
+## constructor argument. [b]MUST stay a member field — never a local variable
+## in [method _ready].[/b] [method BattleController._compute_phi] re-checks
+## [method Callable.is_valid] immediately before every single attack rather
+## than caching the result, and a [Callable] bound to a [RefCounted] instance
+## method does NOT keep that instance alive on its own (it does not increment
+## the bound object's reference count) — see
+## [code]docs/engine-reference/godot/modules/scripting-typing.md[/code]
+## section 6 ("`Callable` 綁定 `RefCounted` 實例方法的生命週期") for the
+## measured engine behavior. If this were a local, it would go out of scope
+## the moment [method _ready] returns, [member _controller]'s bound
+## [Callable] would silently go invalid, and Φ would silently degrade to a
+## constant 0 forever — no error, no failing test, just wrong numbers on
+## screen. Keeping the reference here is what keeps [AffinityPhiProvider]
+## alive for [member _controller]'s entire lifetime.
+var _phi: AffinityPhiProvider
+
+## Last cell rendered into the preview by [method _refresh_view] — compared
+## against [member _cursor_cell] in [method _update_cursor_visual] so a full
+## [method _refresh_view] rebuild only happens on an actual cell change, not
+## once per frame. See [method _update_cursor_visual] for the gating logic.
+var _rendered_cursor_cell: Vector2i = Vector2i(-1, -1)
+
+## Whether the cursor currently has a valid on-board position — false while
+## mouse authority holds the pointer off the board (see
+## [method _update_cursor_visual]). Distinct from [member _cursor_cell]
+## staying at its last valid value: this flag is what lets the preview logic
+## in [method _refresh_view] tell "cursor really is here" apart from "cursor
+## is nowhere, this is just a stale coordinate".
+var _cursor_active: bool = false
+
+## Last [member _cursor_active] value rendered into the preview — the second
+## half of the [member _rendered_cursor_cell] gating pair. See
+## [method _update_cursor_visual].
+var _rendered_cursor_active: bool = false
 
 ## Set once in [method _ready] if terrain or roster data failed to load.
 ## Checked at the top of [method _process] and [method _input] as a second
@@ -219,8 +286,40 @@ func _ready() -> void:
 		roster_units = Unit.roster_from_text(roster_text)
 		roster_failure = classify_content(roster_text, roster_units.size())
 
-	if terrain_failure != LoadFailure.NONE or roster_failure != LoadFailure.NONE:
-		_fail_load(terrain_failure, roster_failure)
+	# Affinity table load — deliberately a DIFFERENT policy from terrain/roster
+	# above. classify_file_access() alone still gates this file (MISSING /
+	# UNREADABLE): it ships with the game, so its absence is a packaging
+	# defect, not a design choice — the same class of bug fixed earlier today
+	# when a data file was not packed into the .exe and the game silently
+	# drew an empty board while 151 tests stayed green. But unlike
+	# terrain/roster, a file that PARSES to zero links is never escalated to
+	# a load failure: it is a legal, expressible design state meaning
+	# "nobody is paired" (unit 5, 戊, deliberately has no links, and a test
+	# pins that) — blocking it would make "remove all pairings" impossible to
+	# express. So classify_content() still runs here, but purely to pick a
+	# diagnostic label for the push_warning() below (EMPTY_CONTENT vs
+	# PARSED_EMPTY, so a truncated file stays distinguishable from a
+	# comments-only file in the log) — its result is never written back into
+	# affinity_failure, so it can never reach _fail_load(). affinity_failure
+	# therefore only ever carries MISSING / UNREADABLE / NONE forward.
+	var affinity_text: String = ""
+	var links: Array[AffinityLink] = []
+	var affinity_failure: LoadFailure = classify_file_access(AFFINITY_PATH)
+	if affinity_failure == LoadFailure.NONE:
+		affinity_text = FileAccess.get_file_as_string(AFFINITY_PATH)
+		links = AffinityLink.links_from_text(affinity_text)
+		if links.is_empty():
+			var diagnostic: LoadFailure = classify_content(affinity_text, links.size())
+			push_warning(
+				_LOG_AFFINITY_ZERO_LINKS_FORMAT % [AFFINITY_PATH, LoadFailure.keys()[diagnostic]]
+			)
+
+	if (
+		terrain_failure != LoadFailure.NONE
+		or roster_failure != LoadFailure.NONE
+		or affinity_failure != LoadFailure.NONE
+	):
+		_fail_load(terrain_failure, roster_failure, affinity_failure)
 		return
 
 	_state = BattleState.create(terrain_rows, roster_text)
@@ -232,7 +331,13 @@ func _ready() -> void:
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		enemy_ids.append(unit.id)
 	_order = TurnOrder.new(player_ids, enemy_ids)
-	_controller = BattleController.new(_state, _order)
+	# _phi is stored as a member (see its own doc comment on why a local here
+	# would be a bug) so BattleController's bound Callable stays valid for the
+	# controller's entire lifetime. The enemy attack path is untouched:
+	# BattleState.resolve_attack() already forces phi to 0 for ENEMY
+	# attackers by design, regardless of what this provider returns.
+	_phi = AffinityPhiProvider.new(_state, links)
+	_controller = BattleController.new(_state, _order, Callable(_phi, "phi"))
 	_device = DeviceAuthority.new()
 
 	_controller.unit_selected.connect(func(_id: int) -> void: _refresh_view())
@@ -326,6 +431,83 @@ static func cells_excluding(
 	return result
 
 
+## Maps an [enum AffinityLineStatus.State] to the display-only [enum
+## BoardView.LineTone] vocabulary [method BoardView.set_affinity_lines]
+## expects. [BoardView] deliberately does not know about
+## [AffinityLineStatus] (see that class's own doc comment on why it keeps its
+## own enum), so this screen — the one class allowed to know both sides — is
+## where the mapping lives. A [code]match[/code] rather than an index cast:
+## the two enums are not guaranteed to share ordinal order, and a cast would
+## silently produce the wrong tone (or a range error) the moment either enum
+## gains or reorders a value.
+static func line_tone_for(state: AffinityLineStatus.State) -> BoardView.LineTone:
+	match state:
+		AffinityLineStatus.State.POSITIVE:
+			return BoardView.LineTone.POSITIVE
+		AffinityLineStatus.State.NEGATIVE:
+			return BoardView.LineTone.NEGATIVE
+		AffinityLineStatus.State.NEUTRAL:
+			return BoardView.LineTone.MUTED
+		_:
+			return BoardView.LineTone.MUTED
+
+
+## Converts a list of [AffinityLineStatus] into the
+## [code]{"from": Vector2i, "to": Vector2i, "tone": int}[/code] dictionaries
+## [method BoardView.set_affinity_lines] expects, reading both endpoints from
+## [param positions] — deliberately NOT from any live [BattleState]. This is
+## what lets a caller pass a hypothetical layout (e.g.
+## [method AffinityPhiProvider.positions_with]) and get preview lines back
+## that reflect a move that has not actually happened yet (see
+## [method _refresh_view]'s Mode A). A status whose [member
+## AffinityLineStatus.unit_id] or [member AffinityLineStatus.partner_id] is
+## absent from [param positions] is silently skipped — matches
+## [AffinityRules]'s own "absence means dead or off the board" convention,
+## and a caller building [param positions] from a live snapshot can never
+## produce such a status in the first place, so this only guards a
+## caller-constructed [param positions] that omits an entry.
+static func affinity_line_dicts(
+	statuses: Array[AffinityLineStatus], positions: Dictionary[int, Vector2i]
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for status: AffinityLineStatus in statuses:
+		if not positions.has(status.unit_id) or not positions.has(status.partner_id):
+			continue
+		result.append({
+			"from": positions[status.unit_id],
+			"to": positions[status.partner_id],
+			"tone": line_tone_for(status.state),
+		})
+	return result
+
+
+## Projected HP after taking [param damage], floored at 0 — the same floor
+## [method CombatRules.damage] itself already applies to the damage value, so
+## this can never disagree with the number the settlement path will actually
+## produce.
+static func projected_hp(current_hp: int, damage: int) -> int:
+	return maxi(0, current_hp - damage)
+
+
+## Formats [constant TEXT_AFFINITY_PREVIEW_FORMAT] for Mode A of
+## [method _refresh_view] — "if I move here, my bonus changes from X to Y".
+static func format_affinity_preview(current_bonus: int, preview_bonus: int) -> String:
+	return TEXT_AFFINITY_PREVIEW_FORMAT % [current_bonus, preview_bonus]
+
+
+## Formats [constant TEXT_AFFINITY_CURRENT_FORMAT] for Mode B of
+## [method _refresh_view] — cursor resting on a linked unit, no move in
+## progress.
+static func format_affinity_current(bonus: int) -> String:
+	return TEXT_AFFINITY_CURRENT_FORMAT % bonus
+
+
+## Formats [constant TEXT_DAMAGE_PREVIEW_FORMAT] for Mode C of
+## [method _refresh_view] — cursor on an attackable enemy.
+static func format_damage_preview(damage: int, target_hp: int, target_hp_after: int) -> String:
+	return TEXT_DAMAGE_PREVIEW_FORMAT % [damage, target_hp, target_hp_after]
+
+
 ## Classifies whether [param path] can even be opened, independent of its
 ## content: [constant LoadFailure.MISSING] if the file does not exist,
 ## [constant LoadFailure.UNREADABLE] if it exists but [method FileAccess.open]
@@ -396,15 +578,19 @@ static func _parse_terrain_rows(text: String) -> PackedStringArray:
 	return rows
 
 
-# Called from _ready() once at least one of terrain/roster failed. Logs every
-# failing file (both, if both failed) but only ever shows one on screen —
-# terrain checked before roster — since _load_error_label's fixed 464x254px
-# area only fits a single message. Never constructs _state/_order/_controller/
-# _device: BattleState.create() is skipped entirely, so there is no
-# half-built battle for anything downstream to touch. set_process(false) /
-# set_process_input(false) are the primary guard; _load_failed is the second
-# guard _process()/_input() check directly, in case processing is ever
-# re-enabled from outside this script.
+# Called from _ready() once at least one of terrain/roster/affinity failed.
+# Logs every failing file (all three, if all three failed) but only ever
+# shows one on screen — terrain checked before roster before affinity — since
+# _load_error_label's fixed 464x254px area only fits a single message. Never
+# constructs _state/_order/_controller/_device/_phi: BattleState.create() is
+# skipped entirely, so there is no half-built battle for anything downstream
+# to touch. set_process(false) / set_process_input(false) are the primary
+# guard; _load_failed is the second guard _process()/_input() check directly,
+# in case processing is ever re-enabled from outside this script.
+#
+# affinity_failure only ever arrives here as MISSING or UNREADABLE — see
+# _ready()'s affinity-loading block for why a zero-link table is never
+# escalated to a failure and therefore never reaches this method.
 #
 # Also hides _controls_hint_bg, for two reasons (measured 2026-08-28): (a)
 # BattleScreen.tscn's LoadErrorLabel was enlarged to y=8..262 so the full
@@ -414,17 +600,35 @@ static func _parse_terrain_rows(text: String) -> PackedStringArray:
 # message exists to make sure the player can act on; (b) the battle hasn't
 # started (BattleState was never built), so a hint about moving/confirming/
 # ending a turn on an empty board would be actively misleading.
-func _fail_load(terrain_failure: LoadFailure, roster_failure: LoadFailure) -> void:
+#
+# Also hides _info_label: LoadErrorLabel spans y=8..262, which fully overlaps
+# InfoLabel's y=8..32 — left visible, InfoLabel's stale/empty text would sit
+# on top of the failure message.
+func _fail_load(
+	terrain_failure: LoadFailure, roster_failure: LoadFailure, affinity_failure: LoadFailure
+) -> void:
 	if terrain_failure != LoadFailure.NONE:
 		push_error(_LOG_LOAD_FAILURE_FORMAT % [TERRAIN_PATH, LoadFailure.keys()[terrain_failure]])
 	if roster_failure != LoadFailure.NONE:
 		push_error(_LOG_LOAD_FAILURE_FORMAT % [ROSTER_PATH, LoadFailure.keys()[roster_failure]])
+	if affinity_failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [AFFINITY_PATH, LoadFailure.keys()[affinity_failure]])
 
-	var display_failure: LoadFailure = terrain_failure if terrain_failure != LoadFailure.NONE else roster_failure
-	var display_path: String = TERRAIN_PATH if terrain_failure != LoadFailure.NONE else ROSTER_PATH
+	var display_failure: LoadFailure = LoadFailure.NONE
+	var display_path: String = ""
+	if terrain_failure != LoadFailure.NONE:
+		display_failure = terrain_failure
+		display_path = TERRAIN_PATH
+	elif roster_failure != LoadFailure.NONE:
+		display_failure = roster_failure
+		display_path = ROSTER_PATH
+	else:
+		display_failure = affinity_failure
+		display_path = AFFINITY_PATH
 	_load_error_label.text = load_failure_message(display_failure, display_path)
 	_load_error_label.visible = true
 	_status_label.visible = false
+	_info_label.visible = false
 	_controls_hint_bg.visible = false
 
 	_load_failed = true
@@ -497,25 +701,104 @@ func _end_faction_phase_pressed() -> void:
 
 # Repositions/toggles the self-drawn cursor sprite based on current device
 # authority — never native Control hover/focus, per the class doc comment.
+#
+# Also owns the preview's refresh gating. _refresh_view() rebuilds every
+# piece, highlight and line node on the board, so calling it once per frame
+# would free and re-create ~50 nodes every frame for no reason. Instead the
+# resolved (cell, active) pair is compared against the pair _refresh_view()
+# recorded the last time it ran, and a rebuild happens only when that pair
+# actually changed.
+#
+# _cursor_active is the "cursor is nowhere" flag. Under mouse authority the
+# pointer can sit off the board entirely, and that is a genuinely different
+# state from "cursor is still on its last cell": the preview has to clear
+# rather than keep showing a projection for a tile the player is no longer
+# pointing at.
 func _update_cursor_visual() -> void:
 	if _device.current() == DeviceAuthority.Device.MOUSE:
 		var local_pos: Vector2 = _last_mouse_canvas_pos - _world_viewport_container.global_position
 		var cell: Vector2i = BoardCoords.local_to_grid(local_pos)
 		if BoardCoords.is_in_bounds(cell):
 			_cursor_cell = cell
+			_cursor_active = true
 			_board_view.set_cursor(cell)
 		else:
+			_cursor_active = false
 			_board_view.clear_cursor()
 	else:
+		_cursor_active = true
 		_board_view.set_cursor(_cursor_cell)
 
+	if _cursor_cell != _rendered_cursor_cell or _cursor_active != _rendered_cursor_active:
+		_refresh_view()
 
-# Full redraw from BattleState — pieces, then highlights for whatever is
-# currently selected (both empty when nothing is selected). Simpler and
-# safer than incremental patching for a 13x6 board with 10 units: every
-# signal BattleController emits (select/deselect/move/attack) triggers this,
-# so there is exactly one code path that can ever go stale.
+
+# Full redraw from BattleState — the cursor preview first, then pieces, then
+# highlights for whatever is currently selected. Simpler and safer than
+# incremental patching for a 13x6 board with 10 units: every signal
+# BattleController emits (select/deselect/move/attack) triggers this, as does
+# a cursor cell change (see _update_cursor_visual), so there is exactly one
+# code path that can ever go stale.
 func _refresh_view() -> void:
+	# 游標預覽必須先算,因為棋子的血量數字要吃 hp_preview。
+	#
+	# 三種模式互斥,依序判定:
+	#   A 移動預覽 —— 選了單位、游標停在它走得到的格(或它自己腳下)。
+	#     線的兩端改從假設座標取,所以游標一移動,線就當場跟著甩過去。
+	#     管理者的原話是「我無法得知如何移動才能增加角色能力值」——
+	#     線會跟著游標動就是這句話的答案,只畫現況等於沒做。
+	#   C 傷害預覽 —— 選了單位、游標停在打得到的敵人身上。
+	#   B 其餘 —— 畫現況;游標停在有關係線的單位上時,順帶報它目前的加成。
+	var positions: Dictionary[int, Vector2i] = _phi.positions()
+	var links: Array[AffinityLink] = _phi.links()
+	var selected: int = _controller.selected_unit()
+
+	var line_positions: Dictionary[int, Vector2i] = positions
+	var line_statuses: Array[AffinityLineStatus] = AffinityRules.board_lines(positions, links)
+	var info_text: String = ""
+	var preview_target_id: int = -1
+	var preview_target_hp: int = -1
+
+	var attack_target_id: int = -1
+	if selected != -1 and _cursor_active:
+		attack_target_id = _cursor_attack_target_id()
+
+	if selected != -1 and _cursor_active and _is_move_preview_cell(selected):
+		var hypo: Dictionary[int, Vector2i] = _phi.positions_with(selected, _cursor_cell)
+		line_positions = hypo
+		line_statuses = AffinityRules.board_lines(hypo, links)
+		info_text = format_affinity_preview(
+			AffinityRules.bonus_for(selected, positions, links),
+			AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
+		)
+	elif attack_target_id != -1:
+		# Φ 一律經由 _phi.phi() 取得 —— 那正是結算路徑呼叫的同一個函式,不是
+		# 另外推導一次。呼叫點相同,是「畫面上的預覽數字不可能跟實際傷害對不上」
+		# 唯一的結構性保證。
+		var attacker: Unit = _state.unit_by_id(selected)
+		var target: Unit = _state.unit_by_id(attack_target_id)
+		var phi: int = _phi.phi(selected, attack_target_id)
+		var damage: int = CombatRules.damage(attacker.atk, target.def, phi)
+		preview_target_id = attack_target_id
+		preview_target_hp = projected_hp(target.hp, damage)
+		info_text = format_damage_preview(damage, target.hp, preview_target_hp)
+	elif _cursor_active:
+		var hovered: Unit = _state.unit_at(_cursor_cell)
+		if hovered != null and _unit_has_link(hovered.id, links):
+			info_text = format_affinity_current(
+				AffinityRules.bonus_for(hovered.id, positions, links)
+			)
+
+	_info_label.text = info_text
+	_board_view.set_affinity_lines(affinity_line_dicts(line_statuses, line_positions))
+
+	# 只有「選取中的單位」與「游標指著的那一格」會顯示精確數字,其餘只有血條。
+	# 理由是量出來的,不是偏好:五名我方單位開局全部直向並排在第 0 欄,
+	# 每人都掛一組數字時,每個數字都壓在下一個人的頭上,整欄不可讀
+	# (2026-08-28 截圖實測)。下棋要用的兩個數字反而是最讀不到的。
+	# 綁在游標而非滑鼠 hover:游標由鍵盤/手把/滑鼠三種裝置共同驅動
+	# (DeviceAuthority),所以主機端沒有指標也一樣看得到。
+	var focus_cell: Vector2i = _cursor_cell if _cursor_active else Vector2i(-1, -1)
 	var pieces: Array[Dictionary] = []
 	for unit: Unit in _state.units_of(Unit.Faction.PLAYER):
 		pieces.append({
@@ -527,6 +810,8 @@ func _refresh_view() -> void:
 			"sprite_index": clampi(unit.id - 1, 0, 4),
 			"hp": unit.hp,
 			"hp_max": unit.hp_max,
+			"hp_preview": -1,
+			"show_hp_text": unit.id == selected or _state.position_of(unit.id) == focus_cell,
 		})
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		pieces.append({
@@ -535,10 +820,11 @@ func _refresh_view() -> void:
 			"sprite_index": 0,
 			"hp": unit.hp,
 			"hp_max": unit.hp_max,
+			"hp_preview": preview_target_hp if unit.id == preview_target_id else -1,
+			"show_hp_text": _state.position_of(unit.id) == focus_cell,
 		})
 	_board_view.render_pieces(pieces)
 
-	var selected: int = _controller.selected_unit()
 	if selected != -1:
 		var move_cells: Array[Vector2i] = _controller.move_targets()
 		var attack_cells: Array[Vector2i] = _controller.attack_targets()
@@ -572,6 +858,47 @@ func _refresh_view() -> void:
 		_board_view.set_attack_highlights([])
 
 	_update_status_label()
+
+	# 記錄這次畫的是哪一格 —— _update_cursor_visual() 的閘門靠這一對值判斷
+	# 「游標真的變了嗎」,少了這兩行就會變成每畫格重建一次整個棋盤。
+	_rendered_cursor_cell = _cursor_cell
+	_rendered_cursor_active = _cursor_active
+
+
+# True when the cursor is resting on a tile the selected unit could legally
+# move to this turn, or on its own current tile ("stay put" is a real option
+# and its affinity consequence is worth previewing too). Drives Mode A of
+# _refresh_view(). Not static: it asks BattleController and BattleState what
+# is legal rather than deciding anything itself.
+func _is_move_preview_cell(selected: int) -> bool:
+	if _cursor_cell == _state.position_of(selected):
+		return true
+	return _controller.move_targets().has(_cursor_cell)
+
+
+# Id of the enemy under the cursor that the selected unit can attack right
+# now, or -1. Drives Mode C of _refresh_view(). The faction re-check is
+# defence in depth: attack_targets() already only returns enemies, but a
+# damage projection painted onto an ally would be a serious misread and this
+# costs one comparison.
+func _cursor_attack_target_id() -> int:
+	if not _controller.attack_targets().has(_cursor_cell):
+		return -1
+	var target: Unit = _state.unit_at(_cursor_cell)
+	if target == null or target.faction != Unit.Faction.ENEMY:
+		return -1
+	return target.id
+
+
+# True when unit_id appears on at least one link in the pairing table. Used
+# by Mode B to stay quiet about units that have no relationships at all —
+# unit 5 (戊) is deliberately unpaired, so reporting "好感度 +0" on him would
+# imply a line exists that never will.
+static func _unit_has_link(unit_id: int, links: Array[AffinityLink]) -> bool:
+	for link: AffinityLink in links:
+		if link.involves(unit_id):
+			return true
+	return false
 
 
 func _update_status_label() -> void:
