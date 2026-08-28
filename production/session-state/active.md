@@ -3,9 +3,88 @@
 <!-- STATUS -->
 Epic: 🟢 **《盲目於微光》—— 這個專案第一次有「一場戰鬥」**
 Feature: 垂直切片《迷霧岔口》。🟢 **可以玩,也可以寄出去了** —— 操作說明在畫面上、獨立執行檔已產出、外部測試者回饋單已備。下一步是真人玩一場並量數字
-Task: 🟢 **2026-08-27 第十九批。畫面上有操作說明、UI 已中文化、**接線層第一支自動測試**、以及**可寄給外人的獨立執行檔**。151 個測試全過、exit 0。🔴 本批最重要的發現:測試曾 145 個全綠而遊戲跑不起來,是被匯出抓到的。🔵 下一步:真人玩一場並寄給測試者。**
+Task: 🔴 **2026-08-28 第二十批。管理者雙擊匯出的 exe,看到一片空白 —— 打包漏收 `assets/data/` 底下兩個 `.txt`。已修 `include_filter`、重新匯出、`export_presets.cfg` 納入版控;並補上資料載入失敗的明確報錯(四種失敗分開判定 + 畫面中文訊息)。163 個測試全過、exit 0。🔴 本批最重要的發現:**「測試全綠 + 匯出無錯」對「遊戲跑不跑得起來」仍然不代表任何事** —— 靜默失敗是這條線上最後一個沒有守衛的位置。🔵 下一步:真人玩一場(順便補上最新版 exe 的畫面證據)。**
 
-## 🔴 接手第一件事
+## 🔴 接手第一件事(2026-08-28 第二十批寫入)
+
+🔵 **去雙擊 `build\windows\BlindInTheFaintLight.exe`,確認棋盤在,然後玩一場。**
+
+**為什麼這是第一件事,而不只是「下一步」**:本批修好的東西缺**最新版的畫面證據**。
+時序是「修打包 → 截圖確認棋盤回來 → 加報錯機制 → 重新匯出」,
+**截圖拍在加報錯機制之前**。之後截圖工具開始抓到 0×0 空視窗,五次皆失敗
+(拉長等待到 25s、於輪詢中重讀 window handle、指定 `--resolution` 都試過;
+已把兩項修正寫回 `<scratchpad>/capture.ps1`,但仍 `BAD_RECT`)。
+
+間接證據強但不是證據:`BlindInTheFaintLight.console.exe` 跑 25 秒**零錯誤零警告**
+(若資料讀不到,`_fail_load()` 會 `push_error()`,它沒印),163 個測試含
+`battle_screen_scene_test.gd` 會實際 `instantiate()` 戰鬥畫面。
+**但「跑起來長什麼樣」沒有人看過。**
+
+### 本批做了什麼
+
+**症狀**:管理者雙擊匯出的 exe,視窗開得起來、狀態列寫著「第 1 回合 · 我方行動」、
+底部操作提示正常,**中間整片空白**。棋盤、地形、10 個單位、游標全不見。
+
+**根因(兩層)**:
+
+1. **打包層**。`battle_screen.gd` 用 `FileAccess.get_file_as_string()` 讀
+   `res://assets/data/levels/vs01_terrain.txt` 與 `res://assets/data/units/vs01_roster.txt`。
+   `export_presets.cfg` 是 `export_filter="all_resources"` + `include_filter=""`,
+   而 **`.txt` 不是 Godot 匯入的 resource,不會被打包**。
+   對舊 `.pck` 位元組搜尋複驗:`BattleScreen.tscn`/`board_view.gd`/`cursor_outline` FOUND,
+   `vs01_terrain`/`vs01_roster` **MISSING**。
+   **專案路徑執行從未受影響** —— 這就是 151 個測試全綠、匯出 exit 0 卻仍送出壞版本的原因。
+2. 🔴 **靜默層(更嚴重)**。`get_file_as_string()` 對不存在的檔回傳 `""`,
+   而 `Board.from_ascii("")` 與 `Unit.roster_from_text("")` **都欣然接受**,
+   產生空棋盤空名冊。**零紀錄、零失敗、畫面零提示。**
+
+**修法**:
+
+| 檔案 | 改了什麼 |
+|---|---|
+| `export_presets.cfg` | `include_filter=""` → `"assets/data/*"`(整個目錄,日後新增資料檔不必再改一次)。**其餘設定逐行 diff 確認未動** |
+| `.gitignore` | 移除 `export_presets.cfg` 那行,附上原因註解。**管理者 2026-08-28 裁決納入版控** —— 否則修正只存在一台機器,任何 fresh clone 都會再匯出同一個壞版本 |
+| `src/ui/battle/BattleScreen.tscn` | 新增 `UILayer/LoadErrorLabel`(`visible=false`、`autowrap_mode=3`、8/8/472/262) |
+| `src/ui/battle/battle_screen.gd` | `enum LoadFailure{NONE,MISSING,UNREADABLE,EMPTY_CONTENT,PARSED_EMPTY}`;`classify_file_access()`/`classify_content()`/`load_failure_message()` 三支 **`static`、零節點**(所以測得到);`_fail_load()` 顯示中文訊息 + `push_error()` + **不建立半套 `BattleState`** + `set_process(false)`/`set_process_input(false)` + `_load_failed` 旗標雙保險;**失敗時一併隱藏 `ControlsHintBg`** |
+| `tests/unit/ui/battle_screen_load_guard_test.gd` | 新檔,11 支 |
+| `tests/unit/ui/battle_screen_scene_test.gd` | +1 支,確認 `LoadErrorLabel` 存在且型別正確 |
+
+**證據**(皆在 `production/qa/evidence/`,已進版控):
+
+- `pck-data-fix-verification-2026-08-28.png` —— 匯出的 exe、960×540、231 色。
+  棋盤、綠色掩體、我方五色塊、敵方五個深紫塊、全部血條,逐元素比對通過。
+  ⚠️ **拍攝於加入報錯機制之前**(見本節開頭)。
+- `load-failure-message-2026-08-28.png` —— 失敗路徑,以「常數暫時指向不存在路徑」製造
+  (**未刪改任何真實資料檔**,跑完即還原,已 grep 複驗無 `MISSING_PROBE` 殘留於常數)。
+
+**測試**:16 suites / **163 cases** / 0 failures / 0 orphans / **exit 0**(本批前 151)。
+協調者獨立跑過兩次。
+
+### ⚠️ 本批的三個未關閉項
+
+1. **最新版 exe 無畫面證據**(見本節開頭)。
+2. **`UNREADABLE` 分支無自動測試** —— headless 造不出「存在但打不開」的檔案。
+   程式有這條分支,是全部四種裡唯一沒被測到的。檔頭已註明原因。
+3. **四種失敗只有 `MISSING` 跑過實機**。其餘三種共用同一條顯示路徑,
+   但那是**推論不是證據** —— 本批已因「用推論代替查證」被抓到一次(見下)。
+
+### 🔴 過程教訓(比修法本身值得記)
+
+- **「訊息沒被裁切」是推論出來的,不是看圖看出來的。** 工程師據版面數字回報「完整顯示」,
+  協調者開圖發現最後一行「回報問題時請附上這個畫面。」被 `ControlsHintBg` 切掉。
+  實測:8 行 × 26px = 208px 文字塞進 192px 框、`vertical_alignment=1` 上下各溢 8px、
+  下緣 y≈236 撞上 y=231 的提示列。**那正是這則訊息最不能被切掉的一行。**
+  第二輪修法(框放大到 254px + 失敗時隱藏提示列)是對的 ——
+  戰鬥沒開始還教玩家按 Enter,本身就是誤導。
+- **四位 agent 先後在半句話中間耗盡預算結束**,留下半成品。其中一次留下的
+  `battle_screen.gd` 只有宣告沒有實作,且引用場景裡不存在的 `$UILayer/LoadErrorLabel`。
+  處理方式:**存 patch 到 scratchpad → `git checkout` 還原 → 換人接手時當草稿**。
+  有效的做法是**把診斷先做完再派工**(位元組搜尋已證明缺哪兩個檔、行高已算出溢出多少),
+  派工單愈精確,接手的人愈不會重新摸索一遍。
+- **匯出漏檔這類問題,位元組搜尋 `.pck` 是廉價且確定性的檢查**,應該排在截圖之前 ——
+  若這步沒過,截圖不必拍。
+
+## 📌 上一批(2026-08-27 第十九批)的接手說明
 
 🟢 **遊戲現在可以被人玩了。下一件事是:去玩它,然後量。**
 
@@ -3036,16 +3115,19 @@ G 的實測數字:**雙方各 5 人全部存活、零傷害。** 協調者一個
 (棋盤 `39+192=231` 結束,**一格未遮**,以版面數值與畫面雙向驗證)、
 `mouse_filter=2` 不吃點擊、字型為一般中文字型非像素字型。
 
-### ⚠️ 仍未處理
+### ⚠️ 仍未處理(2026-08-28 更新)
 
 - **真人沒有實際玩過一場**;執行檔也還沒寄給任何人
+- **最新版 exe 無畫面證據** —— 截圖工具五次抓到 0×0(2026-08-28 新增,見本檔第二十批段)
 - **攻擊結算仍無畫面證據**(勝敗顯示已由回饋單第五部分第 3 題轉為外部驗證)
-- `export_presets.cfg` 不進版控 → 匯出設定無法重現(**待管理者裁決**)
+- **`UNREADABLE` 失敗分支無自動測試**;四種載入失敗只有 `MISSING` 跑過實機(2026-08-28 新增)
+- ~~`export_presets.cfg` 不進版控~~ → ✅ **2026-08-28 管理者裁決納入版控,已執行**
 - console 版執行檔要不要一起寄(**待管理者裁決**)
 
-### 下一步(接手順序)
+### 下一步(接手順序,2026-08-28 更新)
 
-1. 🔵 **真人玩一場**(`PLAY.bat` 雙擊),量對局長度與丙的存活率
+1. 🔵 **真人玩一場**(雙擊 `build\windows\BlindInTheFaintLight.exe`),
+   **順便補上最新版 exe 的畫面證據**,並量對局長度與丙的存活率
 2. 🔵 **把 `build/windows/` 寄給外部測試者**,搭配回饋單
 3. 🔵 最小 Φ 提示 —— 管道已存在(`phi_provider`)且已有測試
 4. 🟡 補攻擊結算的畫面證據
