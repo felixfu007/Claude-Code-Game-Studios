@@ -108,3 +108,19 @@ func test_controls_hint_label_node_resolves_with_correct_type() -> void:
 	# Assert
 	assert_object(node).is_not_null()
 	assert_bool(node is Label).is_true()
+
+
+# 同一個風險的最新一例：2026-08-28 新增的 battle_screen.gd 載入失敗畫面
+# （@onready var _load_error_label = $UILayer/LoadErrorLabel）同樣是「.tscn 若漏了
+# 這個節點，_ready() 就會整個當掉」的模式——這份測試確保 .tscn 這一次確實補上了。
+func test_load_error_label_node_resolves_with_correct_type() -> void:
+	# Arrange
+	var instance: Node = auto_free(load(SCENE_PATH).instantiate())
+	add_child(instance)
+
+	# Act
+	var node: Node = instance.get_node("UILayer/LoadErrorLabel")
+
+	# Assert
+	assert_object(node).is_not_null()
+	assert_bool(node is Label).is_true()

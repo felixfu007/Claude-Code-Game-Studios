@@ -44,7 +44,15 @@ dist/
 # === Engine: Godot ===
 .godot/
 *.translation
-export_presets.cfg
+
+# export_presets.cfg is deliberately TRACKED (2026-08-28 manager ruling).
+# It was ignored here until an exported build shipped with an empty battlefield:
+# include_filter was "" so the .txt data files under assets/data/ were never
+# packed, and the game booted with its UI chrome but no board, no terrain and
+# no units. The one-line fix lived only on one machine; any fresh clone would
+# have re-exported the same broken build, with no error anywhere to explain it.
+# Verified 2026-08-28: this file holds no credentials, keystores or signing
+# secrets — only export paths, filters and platform options.
 
 # GdUnit4 test reports (regenerated on every run; `reports/report_N/` XML + HTML).
 # Added 2026-08-26 when GdUnit4 v6.2.1 was first installed and actually executed.

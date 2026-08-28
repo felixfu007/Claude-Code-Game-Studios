@@ -60,3 +60,14 @@ offset_bottom = -2.0
 mouse_filter = 2
 vertical_alignment = 1
 text = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　結束回合 Esc/B"
+
+[node name="LoadErrorLabel" type="Label" parent="UILayer"]
+visible = false
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 472.0
+offset_bottom = 262.0
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

@@ -52,6 +52,25 @@ const TERRAIN_PATH: String = "res://assets/data/levels/vs01_terrain.txt"
 ## (through [method BattleState.create]).
 const ROSTER_PATH: String = "res://assets/data/units/vs01_roster.txt"
 
+## Classification of why loading terrain/roster data failed, checked
+## independently per file in [method _ready]. Ordered from "never got to open
+## the file" through "opened it but the content was useless" so a single
+## failing file always maps to exactly one value — see [method
+## classify_file_access] and [method classify_content] for how each value is
+## reached.
+enum LoadFailure {
+	NONE,
+	MISSING,
+	UNREADABLE,
+	EMPTY_CONTENT,
+	PARSED_EMPTY,
+}
+
+# Developer-facing log line only (never shown to the player) — deliberately
+# not one of the TEXT_* UI-string constants below, since push_error() output
+# is not user-facing text under .claude/rules/ui-code.md's localization rule.
+const _LOG_LOAD_FAILURE_FORMAT: String = "BattleScreen: failed to load %s (%s)"
+
 ## UI-facing display strings, centralized here as the single point a future
 ## localization pass has to touch. Per [code].claude/rules/ui-code.md[/code]
 ## ("all UI text must go through the localization system — no hardcoded
@@ -65,6 +84,45 @@ const TEXT_FACTION_PLAYER: String = "我方行動"
 const TEXT_FACTION_ENEMY: String = "敵方行動"
 const TEXT_RESULT_VICTORY: String = "勝利"
 const TEXT_RESULT_DEFEAT: String = "戰敗"
+
+## Message template shown on [member _load_error_label] when terrain or
+## roster data fails to load. Slot 1 is one of the TEXT_LOAD_REASON_*
+## constants below; slot 2 is the failing file's [code]res://[/code] path.
+## Kept to 6 lines including the two blank separators so the full formatted
+## message (reason + path, each on their own line, plus this template's own
+## 4 lines) fits within the capacity of [member _load_error_label].
+##
+## Measured 2026-08-28 against the control's current size, 464x254px
+## ([code]offset_left/top/right/bottom[/code] 8/8/472/262 in
+## [code]BattleScreen.tscn[/code]): line height is 26px at
+## [code]ThemeDB.fallback_font[/code] size 16 (480x270 base resolution;
+## measured from a 960x540 screenshot at ~52px line spacing, halved for the
+## 2x scale), giving a capacity of 254 / 26 ≈ 9 lines. The formatted message
+## actually renders as 8 lines (these 6 plus the path wrapping to 2) — a
+## ~208px text block that, vertically centered, leaves ~23px of margin top
+## and bottom. That 1 line of headroom exists because path length varies:
+## the probe path
+## [code]res://assets/data/levels/vs01_terrain_MISSING_PROBE.txt[/code]
+## (55 chars) is what was measured, and it wraps to 2 lines cleanly; the
+## longest real path in this file, [constant TERRAIN_PATH] (41 chars), is
+## 14 chars shorter, so its worst case falls inside the verified range.
+##
+## The control was previously 456x192px, which was too small — a screenshot
+## proved the 208px text block overflowed the 192px box and the last line
+## ("回報問題時請附上這個畫面。", the one line this message can least afford to
+## lose) ended up covered by ControlsHintBg. See [method _fail_load] for the
+## rest of that fix — enlarging the control alone was not enough; hiding
+## ControlsHintBg was the other half.
+const TEXT_LOAD_FAILURE_FORMAT: String = "遊戲資料載入失敗,無法開始戰鬥。\n\n%s\n檔案:%s\n\n請重新下載完整的安裝檔案。\n回報問題時請附上這個畫面。"
+## Reason text for [constant LoadFailure.MISSING].
+const TEXT_LOAD_REASON_MISSING: String = "找不到必要的資料檔案。"
+## Reason text for [constant LoadFailure.UNREADABLE].
+const TEXT_LOAD_REASON_UNREADABLE: String = "資料檔案存在,但無法讀取。"
+## Reason text for [constant LoadFailure.EMPTY_CONTENT].
+const TEXT_LOAD_REASON_EMPTY_CONTENT: String = "資料檔案是空的。"
+## Reason text for [constant LoadFailure.PARSED_EMPTY].
+const TEXT_LOAD_REASON_PARSED_EMPTY: String = "資料檔案沒有可用的內容。"
+
 ## Always-on control hint, drawn in the bottom margin strip below the board
 ## (board occupies y=[39,231) per [member BoardCoords.BOARD_ORIGIN] and its
 ## 192px height — this strip starts at y=231, so it can never overlap a
@@ -99,11 +157,25 @@ const _DIRECTION_VECTORS: Dictionary = {
 @onready var _status_label: Label = $UILayer/StatusLabel
 @onready var _result_label: Label = $UILayer/ResultLabel
 @onready var _controls_hint_label: Label = $UILayer/ControlsHintBg/ControlsHintLabel
+## Backing bar for [member _controls_hint_label] — only referenced directly
+## (rather than through the label) so [method _fail_load] can hide the whole
+## bar, not just its text. See [method _fail_load] for why.
+@onready var _controls_hint_bg: ColorRect = $UILayer/ControlsHintBg
+## Failure-mode message box — hidden by default in the scene
+## ([code]BattleScreen.tscn[/code]), shown only when [method _fail_load] runs.
+@onready var _load_error_label: Label = $UILayer/LoadErrorLabel
 
 var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
 var _device: DeviceAuthority
+
+## Set once in [method _ready] if terrain or roster data failed to load.
+## Checked at the top of [method _process] and [method _input] as a second
+## guard even though both are also disabled there via [method
+## Node.set_process] / [method Node.set_process_input] — see [method
+## _fail_load].
+var _load_failed: bool = false
 
 ## Pad-authority cursor cell — moved one tile per directional press, clamped
 ## to the board. Also doubles as the last-known cell under mouse authority
@@ -131,8 +203,26 @@ var _direction_was_pressed: Dictionary = {}
 func _ready() -> void:
 	_controls_hint_label.text = TEXT_CONTROLS_HINT
 
-	var terrain_rows: PackedStringArray = _read_terrain_rows(TERRAIN_PATH)
-	var roster_text: String = FileAccess.get_file_as_string(ROSTER_PATH)
+	var terrain_text: String = ""
+	var terrain_rows: PackedStringArray = PackedStringArray()
+	var terrain_failure: LoadFailure = classify_file_access(TERRAIN_PATH)
+	if terrain_failure == LoadFailure.NONE:
+		terrain_text = FileAccess.get_file_as_string(TERRAIN_PATH)
+		terrain_rows = _parse_terrain_rows(terrain_text)
+		terrain_failure = classify_content(terrain_text, terrain_rows.size())
+
+	var roster_text: String = ""
+	var roster_units: Array[Unit] = []
+	var roster_failure: LoadFailure = classify_file_access(ROSTER_PATH)
+	if roster_failure == LoadFailure.NONE:
+		roster_text = FileAccess.get_file_as_string(ROSTER_PATH)
+		roster_units = Unit.roster_from_text(roster_text)
+		roster_failure = classify_content(roster_text, roster_units.size())
+
+	if terrain_failure != LoadFailure.NONE or roster_failure != LoadFailure.NONE:
+		_fail_load(terrain_failure, roster_failure)
+		return
+
 	_state = BattleState.create(terrain_rows, roster_text)
 
 	var player_ids: Array[int] = []
@@ -162,11 +252,15 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _load_failed:
+		return
 	_device.resolve_frame()
 	_update_cursor_visual()
 
 
 func _input(event: InputEvent) -> void:
+	if _load_failed:
+		return
 	if _controller.phase() == BattleController.Phase.FINISHED:
 		return
 
@@ -204,11 +298,67 @@ static func clamp_cursor_move(cell: Vector2i, delta: Vector2i) -> Vector2i:
 	)
 
 
-# Reads a terrain data file into the PackedStringArray Board.from_ascii()
+## Classifies whether [param path] can even be opened, independent of its
+## content: [constant LoadFailure.MISSING] if the file does not exist,
+## [constant LoadFailure.UNREADABLE] if it exists but [method FileAccess.open]
+## still fails (permissions, locked file, etc.), or [constant LoadFailure.NONE]
+## if the file opened cleanly. Uses [method FileAccess.file_exists] rather
+## than inferring absence from an empty read — [method
+## FileAccess.get_file_as_string] silently returns [code]""[/code] for a
+## missing file, which is indistinguishable from a genuinely empty one unless
+## existence is checked separately first. Pure and node-independent so it can
+## be unit tested without starting this scene — see
+## [code]tests/unit/ui/battle_screen_load_guard_test.gd[/code].
+static func classify_file_access(path: String) -> LoadFailure:
+	if not FileAccess.file_exists(path):
+		return LoadFailure.MISSING
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return LoadFailure.UNREADABLE
+	file.close()
+	return LoadFailure.NONE
+
+
+## Classifies an already-read file's content: [constant
+## LoadFailure.EMPTY_CONTENT] if [param text] is empty once [method
+## String.strip_edges] removes surrounding whitespace, [constant
+## LoadFailure.PARSED_EMPTY] if the text was non-empty but its parser
+## ([method Board.from_ascii] / [method Unit.roster_from_text], counted by
+## the caller into [param parsed_count]) still produced zero usable entries
+## (e.g. a roster file containing only comment/blank lines), or [constant
+## LoadFailure.NONE] otherwise.
+static func classify_content(text: String, parsed_count: int) -> LoadFailure:
+	if text.strip_edges().is_empty():
+		return LoadFailure.EMPTY_CONTENT
+	if parsed_count == 0:
+		return LoadFailure.PARSED_EMPTY
+	return LoadFailure.NONE
+
+
+## Builds the on-screen message for [param failure] at [param path] from
+## [constant TEXT_LOAD_FAILURE_FORMAT]. Never called with [constant
+## LoadFailure.NONE] — callers check for [constant LoadFailure.NONE] before
+## reaching the failure-display path (see [method _fail_load]).
+static func load_failure_message(failure: LoadFailure, path: String) -> String:
+	var reason: String = ""
+	match failure:
+		LoadFailure.MISSING:
+			reason = TEXT_LOAD_REASON_MISSING
+		LoadFailure.UNREADABLE:
+			reason = TEXT_LOAD_REASON_UNREADABLE
+		LoadFailure.EMPTY_CONTENT:
+			reason = TEXT_LOAD_REASON_EMPTY_CONTENT
+		LoadFailure.PARSED_EMPTY:
+			reason = TEXT_LOAD_REASON_PARSED_EMPTY
+	return TEXT_LOAD_FAILURE_FORMAT % [reason, path]
+
+
+# Parses already-read terrain text into the PackedStringArray Board.from_ascii()
 # (via BattleState.create()) expects: one row per line, blank lines dropped.
-# Strips \r defensively in case the file is ever saved with CRLF endings.
-static func _read_terrain_rows(path: String) -> PackedStringArray:
-	var text: String = FileAccess.get_file_as_string(path)
+# Strips \r defensively in case the file is ever saved with CRLF endings. Split
+# from file-reading (previously _read_terrain_rows(path)) so _ready() can read
+# the file once and reuse the same text for classify_content().
+static func _parse_terrain_rows(text: String) -> PackedStringArray:
 	var rows: PackedStringArray = PackedStringArray()
 	for raw_line: String in text.split("\n"):
 		var line: String = raw_line.replace("\r", "")
@@ -216,6 +366,42 @@ static func _read_terrain_rows(path: String) -> PackedStringArray:
 			continue
 		rows.append(line)
 	return rows
+
+
+# Called from _ready() once at least one of terrain/roster failed. Logs every
+# failing file (both, if both failed) but only ever shows one on screen —
+# terrain checked before roster — since _load_error_label's fixed 464x254px
+# area only fits a single message. Never constructs _state/_order/_controller/
+# _device: BattleState.create() is skipped entirely, so there is no
+# half-built battle for anything downstream to touch. set_process(false) /
+# set_process_input(false) are the primary guard; _load_failed is the second
+# guard _process()/_input() check directly, in case processing is ever
+# re-enabled from outside this script.
+#
+# Also hides _controls_hint_bg, for two reasons (measured 2026-08-28): (a)
+# BattleScreen.tscn's LoadErrorLabel was enlarged to y=8..262 so the full
+# failure message fits without clipping, and that bottom edge now overlaps
+# ControlsHintBg's y=231 start — left visible, the hint bar would paint over
+# the message's last line ("回報問題時請附上這個畫面。"), the one line this
+# message exists to make sure the player can act on; (b) the battle hasn't
+# started (BattleState was never built), so a hint about moving/confirming/
+# ending a turn on an empty board would be actively misleading.
+func _fail_load(terrain_failure: LoadFailure, roster_failure: LoadFailure) -> void:
+	if terrain_failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [TERRAIN_PATH, LoadFailure.keys()[terrain_failure]])
+	if roster_failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [ROSTER_PATH, LoadFailure.keys()[roster_failure]])
+
+	var display_failure: LoadFailure = terrain_failure if terrain_failure != LoadFailure.NONE else roster_failure
+	var display_path: String = TERRAIN_PATH if terrain_failure != LoadFailure.NONE else ROSTER_PATH
+	_load_error_label.text = load_failure_message(display_failure, display_path)
+	_load_error_label.visible = true
+	_status_label.visible = false
+	_controls_hint_bg.visible = false
+
+	_load_failed = true
+	set_process(false)
+	set_process_input(false)
 
 
 # Left-click handling: computes the clicked cell directly from the event's
