@@ -10,9 +10,11 @@ script = ExtResource("1_bv_script")
 
 [node name="MoveHighlightLayer" type="Node2D" parent="."]
 
-[node name="AttackHighlightLayer" type="Node2D" parent="."]
-
 [node name="PiecesLayer" type="Node2D" parent="."]
+
+[node name="ThreatHighlightLayer" type="Node2D" parent="."]
+
+[node name="AttackHighlightLayer" type="Node2D" parent="."]
 
 [node name="CursorSprite" type="Sprite2D" parent="."]
 visible = false

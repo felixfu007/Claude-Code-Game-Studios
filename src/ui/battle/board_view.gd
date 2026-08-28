@@ -19,6 +19,26 @@
 ## self-drawn from explicit calls, so it works identically for mouse and
 ## gamepad callers. This batch wires no input at all; that is deliberate
 ## (see the task brief) and left for the controller that consumes this view.
+##
+## [b]Layer order is deliberate and asymmetric[/b] (child order in
+## [code]BoardView.tscn[/code], which is what Node2D draws in): TerrainLayer,
+## MoveHighlightLayer, PiecesLayer, ThreatHighlightLayer,
+## AttackHighlightLayer, CursorSprite. The move layer sits BELOW the pieces
+## while the threat and attack layers sit ABOVE them, for a measured reason:
+## the placeholder piece textures are fully opaque 32x40 blocks (verified
+## 2026-08-28 by reading their pixels — [code]piece_enemy_01.png[/code] is a
+## single solid color across all 1280 pixels), and a piece is anchored to
+## cover its whole 32x32 cell plus an 8px overhang. Anything drawn under a
+## piece on an occupied cell is therefore completely invisible.
+## [br]
+## Move-range cells can never be occupied ([method Board.reachable_tiles]
+## excludes occupied tiles), so that layer loses nothing by staying below.
+## Threat-range and attack-range cells are the opposite case — the whole
+## point of both is to mark cells that enemies are standing on — so they
+## must draw on top or they mark nothing the player can see. This is not
+## hypothetical: before 2026-08-28 the attack layer was below the pieces and
+## its highlight was 100% hidden behind the enemy sprite on every cell it
+## ever drew.
 class_name BoardView
 extends Node2D
 
@@ -49,6 +69,16 @@ const ENEMY_SPRITE_PATH: String = "res://assets/art/placeholder/piece_enemy_01.p
 
 const MOVE_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_move.png"
 const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_attack.png"
+
+## Threat-range highlight — a hollow yellow ring, unlike the two solid
+## translucent fills above. The shape difference is load-bearing, not
+## decorative: this layer draws ABOVE [code]PiecesLayer[/code] (see the
+## class doc comment's layer-order note), so a solid fill would hide the
+## piece art underneath. It is also the non-color channel that keeps the
+## three highlight kinds distinguishable for a colorblind player — ring vs
+## fill survives any hue confusion between yellow and orange.
+const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_threat.png"
+
 const CURSOR_PATH: String = "res://assets/art/placeholder/cursor_outline.png"
 
 ## Piece sprite height in pixels. Measured 2026-08-27 (see task evidence):
@@ -66,6 +96,11 @@ const HP_BAR_GAP_ABOVE_PIECE: int = 4
 @onready var _terrain_layer: Node2D = $TerrainLayer
 @onready var _move_highlight_layer: Node2D = $MoveHighlightLayer
 @onready var _attack_highlight_layer: Node2D = $AttackHighlightLayer
+## Threat-range layer. Sits ABOVE [code]PiecesLayer[/code] in
+## [code]BoardView.tscn[/code] — see the class doc comment's layer-order
+## note for why that asymmetry with [member _move_highlight_layer] is
+## deliberate.
+@onready var _threat_highlight_layer: Node2D = $ThreatHighlightLayer
 @onready var _pieces_layer: Node2D = $PiecesLayer
 @onready var _cursor_sprite: Sprite2D = $CursorSprite
 
@@ -137,6 +172,20 @@ func set_move_highlights(cells: Array[Vector2i]) -> void:
 ## to clear all attack highlights.
 func set_attack_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_attack_highlight_layer, cells, ATTACK_HIGHLIGHT_PATH)
+
+
+## Replaces the set of highlighted threat-range cells — the cells this unit
+## could attack this turn if it moves first, as opposed to
+## [method set_attack_highlights]'s "can be hit from where it stands right
+## now". Pass an empty array to clear all threat highlights.
+##
+## The caller decides which cells to pass; this method draws exactly what it
+## is given and makes no rule decision of its own (same contract as every
+## other method on this node). [BattleScreen] passes the threat envelope
+## minus the move cells minus the currently-attackable cells, so the three
+## highlight kinds never overlap on screen.
+func set_threat_highlights(cells: Array[Vector2i]) -> void:
+	_render_highlight_layer(_threat_highlight_layer, cells, THREAT_HIGHLIGHT_PATH)
 
 
 ## Shows the cursor outline centered on [param cell].

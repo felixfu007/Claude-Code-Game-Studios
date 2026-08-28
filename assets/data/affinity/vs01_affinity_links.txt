@@ -1,0 +1,29 @@
+# vs01 好感度配對表 — 固定欄位順序:
+# unit_a,unit_b,polarity,amp
+#
+# unit_a / unit_b:vs01_roster.txt 的單位 id(1=甲 2=乙 3=丙 4=丁 5=戊)
+# polarity:POSITIVE(正關係)或 NEGATIVE(負關係)
+# amp:倍率,目前一律 1(保留給未來的對話卡牌加乘效果)
+#
+# ── 兩個不同的權威來源,不要混為一談 ──────────────────────────────
+#
+# 1)「誰跟誰有關係、是正還是負」= 角色設定,不是程式決定的。
+#    來源:design/narrative/characters.md 第三節「關係」(Canon level: Established,
+#    管理者三輪裁決定案)。逐條對應:
+#      甲乙合作(正)→ 1,2,POSITIVE
+#      丙丁對立(負)→ 3,4,NEGATIVE
+#
+# 2)「距離幾格加幾點」= 數值曲線,不在這個檔案裡。
+#    來源:prototypes/affinity-position-concept-v5/prototype.html 的
+#    affinityDelta(),已在原型實測驗證。實作於 src/gameplay/affinity/affinity_rules.gd
+#    的具名常數。改數值請改那裡,改關係請改這裡。
+#
+# ⚠️ 戊(麥子健)沒有任何配對,這是刻意的,不是漏寫。
+#    characters.md 第三節:「戊中立 —— 算計過的自我保護」,同節並說明
+#    「丙戊為何不會自動結盟」,預先擋掉直覺聯想。管理者已明確接受
+#    「麥子健站哪都一樣」這個玩起來的後果。要新增他的線,先改 characters.md。
+#
+# ⚠️ 原型裡的 A~E 只是抽象代號,與本作五名角色的實際關係無關。
+#    照原型的 A-B/C-D/B-E 抄過來會是錯的(2026-08-28 已發生過一次並修正)。
+1,2,POSITIVE,1
+3,4,NEGATIVE,1

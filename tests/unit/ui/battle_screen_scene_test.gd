@@ -124,3 +124,80 @@ func test_load_error_label_node_resolves_with_correct_type() -> void:
 	# Assert
 	assert_object(node).is_not_null()
 	assert_bool(node is Label).is_true()
+
+
+# ---- BoardView 高亮圖層 —— 2026-08-28 新增 ------------------------------------
+#
+# 同一個「.tscn 漏節點就整個當掉」的模式,這次是 board_view.gd 的
+# @onready var _threat_highlight_layer = $ThreatHighlightLayer。
+const BOARD_VIEW_PATH: String = "WorldViewportContainer/WorldViewport/BoardView"
+
+
+func test_threat_highlight_layer_node_resolves_with_correct_type() -> void:
+	# Arrange
+	var instance: Node = auto_free(load(SCENE_PATH).instantiate())
+	add_child(instance)
+
+	# Act
+	var node: Node = instance.get_node(BOARD_VIEW_PATH + "/ThreatHighlightLayer")
+
+	# Assert
+	assert_object(node).is_not_null()
+	assert_bool(node is Node2D).is_true()
+
+
+# 這一條擋的不是「節點不存在」,而是「節點存在但畫出來看不見」——比前者難抓得多,
+# 因為場景載得起來、測試全過、程式也確實把 sprite 加進去了,只是玩家一個像素都
+# 看不到。
+#
+# 背景(2026-08-28 實測):佔位棋子貼圖是完全不透明的 32x40 色塊
+# (piece_enemy_01.png 的 1280 個像素全是同一個顏色,以 Image.get_pixel() 逐點讀出
+# 確認),而棋子的錨點讓它蓋滿整格 32x32 再往上多出 8px。因此任何畫在棋子「下面」
+# 又落在有人站的格子上的東西,會被 100% 遮住。
+#
+# AttackHighlightLayer 在此之前就是排在 PiecesLayer 前面(=畫在下面),而它標記的
+# 正好只有「敵人所在的格」——也就是說「現在打得到誰」這個高亮從來沒有被畫面顯示過
+# 一次。ThreatHighlightLayer 標記的格子同樣可能有人站。兩者都必須排在 PiecesLayer
+# 之後。
+#
+# MoveHighlightLayer 則刻意留在 PiecesLayer 之前:可移動的格依定義不可能有人站
+# (Board.reachable_tiles() 會跳過被佔的格),所以它不會被遮到,留在下面還能讓棋子
+# 的上緣正常疊在高亮之上。這個不對稱是刻意的,不是疏漏。
+func test_threat_and_attack_layers_draw_above_pieces_layer_but_move_layer_below() -> void:
+	# Arrange
+	var instance: Node = auto_free(load(SCENE_PATH).instantiate())
+	add_child(instance)
+	var board_view: Node = instance.get_node(BOARD_VIEW_PATH)
+
+	# Act — Node2D 的繪製順序就是子節點順序,get_index() 越大越晚畫(越上層)
+	var move_index: int = board_view.get_node("MoveHighlightLayer").get_index()
+	var pieces_index: int = board_view.get_node("PiecesLayer").get_index()
+	var threat_index: int = board_view.get_node("ThreatHighlightLayer").get_index()
+	var attack_index: int = board_view.get_node("AttackHighlightLayer").get_index()
+
+	# Assert
+	assert_int(move_index).is_less(pieces_index)
+	assert_int(threat_index).is_greater(pieces_index)
+	assert_int(attack_index).is_greater(pieces_index)
+
+
+# set_threat_highlights() 是純繪製呼叫:給幾格就畫幾個 sprite,給空陣列就清空。
+# 與 set_move_highlights()/set_attack_highlights() 共用 _render_highlight_layer(),
+# 這裡驗證第三層確實接上了同一條路徑,而不是宣告了卻沒有人畫。
+func test_set_threat_highlights_renders_one_sprite_per_cell_and_clears_on_empty() -> void:
+	# Arrange
+	var instance: Node = auto_free(load(SCENE_PATH).instantiate())
+	add_child(instance)
+	var board_view: BoardView = instance.get_node(BOARD_VIEW_PATH)
+	var layer: Node2D = board_view.get_node("ThreatHighlightLayer")
+	var cells: Array[Vector2i] = [Vector2i(0, 0), Vector2i(3, 1), Vector2i(12, 5)]
+
+	# Act
+	board_view.set_threat_highlights(cells)
+	var drawn_count: int = layer.get_child_count()
+	board_view.set_threat_highlights([])
+	var cleared_count: int = layer.get_child_count()
+
+	# Assert
+	assert_int(drawn_count).is_equal(cells.size())
+	assert_int(cleared_count).is_equal(0)

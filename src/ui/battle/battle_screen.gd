@@ -298,6 +298,34 @@ static func clamp_cursor_move(cell: Vector2i, delta: Vector2i) -> Vector2i:
 	)
 
 
+## Returns every cell of [param source] that does not appear in
+## [param excluded], preserving [param source]'s existing order. Static and
+## public purely so it is unit-testable without standing up a whole screen.
+##
+## Used by [method _refresh_view] to keep the three highlight layers
+## mutually exclusive — see the comment there for why the layers are made
+## disjoint rather than stacked. This is a display-composition helper, not a
+## rules query: it never asks what is legal, it only partitions arrays that
+## [BattleController] already decided the contents of.
+##
+## [param excluded] is loaded into a [Dictionary] used as a set, so this is
+## O(n+m) rather than O(n*m); [param source]'s order is taken from the
+## caller and never re-sorted here, which is what makes the result stay in
+## [BattleController]'s documented ascending (y, x) order.
+static func cells_excluding(
+	source: Array[Vector2i], excluded: Array[Vector2i]
+) -> Array[Vector2i]:
+	var excluded_set: Dictionary = {}
+	for cell: Vector2i in excluded:
+		excluded_set[cell] = true
+
+	var result: Array[Vector2i] = []
+	for cell: Vector2i in source:
+		if not excluded_set.has(cell):
+			result.append(cell)
+	return result
+
+
 ## Classifies whether [param path] can even be opened, independent of its
 ## content: [constant LoadFailure.MISSING] if the file does not exist,
 ## [constant LoadFailure.UNREADABLE] if it exists but [method FileAccess.open]
@@ -512,10 +540,35 @@ func _refresh_view() -> void:
 
 	var selected: int = _controller.selected_unit()
 	if selected != -1:
-		_board_view.set_move_highlights(_controller.move_targets())
-		_board_view.set_attack_highlights(_controller.attack_targets())
+		var move_cells: Array[Vector2i] = _controller.move_targets()
+		var attack_cells: Array[Vector2i] = _controller.attack_targets()
+
+		# 三層高亮刻意互斥,每一格最多只帶一種標記。這是純粹的呈現取捨
+		# (哪一層畫哪些格),不是規則判斷 —— 三個查詢的答案都由
+		# BattleController 決定,這裡只決定畫面怎麼排。
+		#
+		# 威脅範圍要扣掉三種格:
+		#   1. move_cells —— 已經有藍色外框了,再疊黃斜線只會讓兩者都難認。
+		#   2. attack_cells —— 已經有紅色角標了,那是更強的資訊(現在就打得到)。
+		#   3. 我方單位所在格 —— threat_targets() 依設計回傳的是「射程涵蓋範圍」,
+		#      包含友軍站的格;但畫面上在自己人身上標「打得到這裡」會被讀成
+		#      「可以攻擊隊友」。這一格的排除只在呈現層做,查詢本身維持純幾何。
+		var ally_cells: Array[Vector2i] = []
+		for ally: Unit in _state.units_of(Unit.Faction.PLAYER):
+			ally_cells.append(_state.position_of(ally.id))
+		var threat_excluded: Array[Vector2i] = []
+		threat_excluded.append_array(move_cells)
+		threat_excluded.append_array(attack_cells)
+		threat_excluded.append_array(ally_cells)
+
+		_board_view.set_move_highlights(move_cells)
+		_board_view.set_threat_highlights(
+			cells_excluding(_controller.threat_targets(), threat_excluded)
+		)
+		_board_view.set_attack_highlights(attack_cells)
 	else:
 		_board_view.set_move_highlights([])
+		_board_view.set_threat_highlights([])
 		_board_view.set_attack_highlights([])
 
 	_update_status_label()

@@ -185,7 +185,61 @@ func test_can_attack_ignores_a_living_unit_standing_between_attacker_and_target(
 	assert_bool(legal).is_true()
 
 
-# ---- outcome() — (e) 三態各一 -------------------------------------------------
+# ---- is_attack_reachable() — (e) 假設起點的純幾何/視線查詢 --------------------
+#
+# is_attack_reachable() 是 can_attack() 拆分出來的純謂詞：只問「從 from 這一格
+# 打 to 這一格，射程與視線合不合法」，不問存活、不問陣營、也不問 to 格是否有人
+# 站著。以下測試分別驗證：(1) from 可以是攻擊方根本沒站過的假設格；(2) 答案完全
+# 不受 to 格佔位狀態影響（不管是空地、友軍、敵軍都一樣）；(3) 中央倒木堆對距離
+# ≥2 的假設查詢一樣生效，且用同距離、無倒木的對照格證明真的是視線在擋，而不是
+# 單純射程判斷。
+
+func test_is_attack_reachable_true_for_hypothetical_origin_attacker_never_stood_at() -> void:
+	# Arrange — 丙（id 3，射程 2-4）實際站在 (1,3)，從未去過 (0,0)。查詢一個
+	# 丙根本沒站過的假設起點 (0,0) 打 (2,0)，距離 2、全開闊地、無倒木
+	var state: BattleState = _load_state()
+	assert_vector(state.position_of(3)).is_equal(Vector2i(1, 3))
+
+	# Act
+	var reachable: bool = state.is_attack_reachable(3, Vector2i(0, 0), Vector2i(2, 0))
+
+	# Assert — 合法，且丙的實際位置完全沒被這次查詢動過
+	assert_bool(reachable).is_true()
+	assert_vector(state.position_of(3)).is_equal(Vector2i(1, 3))
+
+
+func test_is_attack_reachable_ignores_occupancy_of_both_endpoints() -> void:
+	# Arrange — 起點 (0,3) 目前站著單位 2（乙，同陣營），終點 (0,4) 目前站著
+	# 單位 4（丁，同陣營）；用單位 1（甲，射程 1）查詢這兩格之間的假設攻擊。
+	# is_attack_reachable() 不做存活/陣營檢查，也不管兩端是否有人佔位——純幾何。
+	var state: BattleState = _load_state()
+	assert_vector(state.position_of(2)).is_equal(Vector2i(0, 3))
+	assert_vector(state.position_of(4)).is_equal(Vector2i(0, 4))
+
+	# Act
+	var reachable: bool = state.is_attack_reachable(1, Vector2i(0, 3), Vector2i(0, 4))
+
+	# Assert — 距離 1，落在射程內，兩端各自站著人完全不影響答案
+	assert_bool(reachable).is_true()
+
+
+func test_is_attack_reachable_false_when_los_blocked_true_for_unblocked_cell_at_same_distance() -> void:
+	# Arrange — 中央 (5,3)/(6,3) 是倒木。假設起點 (3,3) 打 (7,3)（第 3 列，
+	# 距離 4，直線穿過兩格倒木）應該被擋；同一顆假設起點打 (3,5)→(7,5)
+	# 位於第 5 列（全開闊地，距離同樣是 4）的對照組應該合法——證明擋下來的
+	# 真的是視線，不是單純距離判斷。丙（id 3，射程 2-4）從未實際移動過。
+	var state: BattleState = _load_state()
+
+	# Act
+	var blocked: bool = state.is_attack_reachable(3, Vector2i(3, 3), Vector2i(7, 3))
+	var unblocked: bool = state.is_attack_reachable(3, Vector2i(3, 5), Vector2i(7, 5))
+
+	# Assert
+	assert_bool(blocked).is_false()
+	assert_bool(unblocked).is_true()
+
+
+# ---- outcome() — (f) 三態各一 -------------------------------------------------
 
 func test_outcome_fresh_battle_is_ongoing() -> void:
 	# Arrange / Act

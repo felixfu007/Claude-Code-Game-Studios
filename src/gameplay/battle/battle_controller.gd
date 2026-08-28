@@ -184,6 +184,30 @@ func attack_targets() -> Array[Vector2i]:
 	return _attack_targets_for(_selected_unit_id)
 
 
+## Returns every in-bounds board cell the currently selected unit could
+## legally attack this turn, counting both "attack from where I stand" and
+## "move first, then attack" — the union, over the unit's current tile plus
+## every tile in [method move_targets], of the cells legally attackable from
+## that tile. Ordered ascending by (y, x). Empty if nothing is selected, the
+## selection cannot attack this phase, or the controller is outside
+## PLAYER_INPUT — the same gating [method attack_targets] applies (a unit
+## that already attacked threatens nothing further this turn). Always a
+## freshly built array — never a reference into any internal container.
+##
+## This is a reach envelope, not a per-target legality list: enemy-occupied
+## and ally-occupied cells are both included when legally reachable from
+## some origin. The selected unit's own current tile is deliberately
+## excluded from the result even though it may otherwise satisfy
+## range/line-of-sight from some other origin tile — a unit can never
+## attack the tile it is standing on, and drawing it as attackable would
+## make the display say "you can attack yourself"; this is a deliberate,
+## documented exclusion, not an oversight. [method attack_targets] remains
+## the separate "which enemies can I actually hit right now" query — the
+## two answer different questions and both stay.
+func threat_targets() -> Array[Vector2i]:
+	return _threat_targets_for(_selected_unit_id)
+
+
 ## Returns the current battle outcome, delegated to [method BattleState.outcome].
 func outcome() -> BattleState.Outcome:
 	return _state.outcome()
@@ -369,6 +393,49 @@ func _attack_targets_for(unit_id: int) -> Array[Vector2i]:
 	for enemy: Unit in _state.units_of(opposing):
 		if _state.can_attack(unit_id, enemy.id):
 			result.append(_state.position_of(enemy.id))
+	result.sort_custom(_tile_less)
+	return result
+
+
+# Shared threat-cell computation for threat_targets(). Same gating as
+# _attack_targets_for() (phase, selection, TurnOrder.can_attack()) — a unit
+# that has already attacked threatens nothing further this turn even if it
+# still has movement left. The origin set is the unit's current tile plus
+# every tile in _move_targets_for(unit_id); _move_targets_for() already
+# returns [] when TurnOrder.can_move() is false, which is correct here too
+# — a unit that already moved can only threaten from where it stands.
+# Board.reachable_tiles() never includes the origin tile itself, which is
+# why the current tile has to be added to the origin set explicitly. Every
+# in-bounds cell is tried as a candidate against every origin via
+# BattleState.is_attack_reachable() (pure geometry/LoS, no occupancy or
+# faction check), and the unit's own current tile is excluded from the
+# result regardless of which origin would have "reached" it — see
+# threat_targets()'s doc comment for why. Deduplicated via a Dictionary
+# used purely as a set; the final array is still explicitly sorted, never
+# relying on Dictionary iteration order.
+func _threat_targets_for(unit_id: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	if _phase != Phase.PLAYER_INPUT or unit_id == -1:
+		return result
+	if not _order.can_attack(unit_id):
+		return result
+
+	var current_pos: Vector2i = _state.position_of(unit_id)
+	var origins: Array[Vector2i] = _move_targets_for(unit_id)
+	origins.append(current_pos)
+
+	var threatened: Dictionary = {}
+	for origin: Vector2i in origins:
+		for y: int in range(Board.BOARD_HEIGHT):
+			for x: int in range(Board.BOARD_WIDTH):
+				var cell: Vector2i = Vector2i(x, y)
+				if cell == current_pos:
+					continue
+				if _state.is_attack_reachable(unit_id, origin, cell):
+					threatened[cell] = true
+
+	for cell: Vector2i in threatened:
+		result.append(cell)
 	result.sort_custom(_tile_less)
 	return result
 

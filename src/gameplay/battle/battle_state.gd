@@ -102,6 +102,15 @@ func move_unit(id: int, dest: Vector2i) -> bool:
 ## units never occlude, dead or alive, friend or foe, regardless of where
 ## they stand between attacker and target. This is a project rule, not an
 ## incidental omission.
+##
+## The final legality step (range + line of sight) is delegated to
+## [method is_attack_reachable], queried with attacker_id's and target_id's
+## actual current positions. The alive check and faction check above are
+## this method's own responsibility and are deliberately NOT duplicated in
+## [method is_attack_reachable] — that method answers a narrower,
+## occupant-agnostic question so it can also be asked about a hypothetical
+## origin tile or an unoccupied cell, which this method's target_id
+## parameter cannot express.
 func can_attack(attacker_id: int, target_id: int) -> bool:
 	var attacker: Unit = unit_by_id(attacker_id)
 	var target: Unit = unit_by_id(target_id)
@@ -109,10 +118,32 @@ func can_attack(attacker_id: int, target_id: int) -> bool:
 		return false
 	if target.faction == attacker.faction:
 		return false
+	return is_attack_reachable(attacker_id, position_of(attacker_id), position_of(target_id))
+
+
+## Returns [code]true[/code] if attacker_id, hypothetically standing at
+## [param from], could legally attack the cell [param to] — [method
+## CombatRules.is_attack_legal] evaluated against attacker_id's own
+## [member Unit.min_range]/[member Unit.max_range], with the same
+## terrain-only occlusion callable [method can_attack] builds ([method
+## Board.blocks_sight]).
+##
+## This is a pure predicate with no side effects. [param from] is allowed to
+## be a tile attacker_id is not currently standing on — it need not equal
+## [method position_of](attacker_id). It performs no faction check, no alive
+## check, and does not care whether [param to] is occupied at all: those are
+## the caller's business, not this method's. The answer is independent of
+## unit occupancy, because only terrain ever occludes (see the note on
+## [method can_attack] that units never occlude) — this is exactly what
+## makes it safe to query from a hypothetical origin, since the check never
+## consults who is standing where, only the two endpoints and the terrain
+## between them.
+func is_attack_reachable(attacker_id: int, from: Vector2i, to: Vector2i) -> bool:
+	var attacker: Unit = unit_by_id(attacker_id)
 	var is_occluding: Callable = func(cell: Vector2i) -> bool:
 		return board.blocks_sight(cell)
 	return CombatRules.is_attack_legal(
-		position_of(attacker_id), position_of(target_id),
+		from, to,
 		attacker.min_range, attacker.max_range,
 		is_occluding
 	)
