@@ -185,8 +185,10 @@ enum 值域,並實際匯入測試 PNG 檢查產生的 `.import` 檔。**未觸�
 
 **核准門檻**:`docs/architecture/adr-acceptance-criteria.md`(白話,含五個必要條件與
 五項明確不阻擋核准的事)。**立場登記表(權威來源)**:`docs/registry/architecture.yaml`,
-目前 **85** 項(10 state-ownership、11 interface contracts、29 API decisions、35 forbidden patterns)。
-⚠️ 本行歷來落後於登記表(2026-08-25 修正:原寫 81 項/31 forbidden,漏掉 ADR-0003 上一輪新增的 4 項)。
+目前 **87** 項(10 state-ownership、13 interface contracts、29 API decisions、35 forbidden patterns)。
+⚠️ 本行歷來落後於登記表(2026-08-25 修正:原寫 81 項/31 forbidden,漏掉 ADR-0003 上一輪新增的 4 項;
+2026-08-31 修正:原寫 85 項/11 interface,漏掉 `/design-review affinity-position-chain.md` 第一輪
+新增的 2 項 interface contracts —— 該輪刻意以登記表兩列取代兩份 ADR)。
 **數字有疑義時一律以 `docs/registry/architecture.yaml` 為準,本行是摘要不是來源。**
 
 ✅ **2026-08-25:ADR-0002、ADR-0003 兩份已 `Accepted`**(管理者同批裁決;0003 的核准條件五就是

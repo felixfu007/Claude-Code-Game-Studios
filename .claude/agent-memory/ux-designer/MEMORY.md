@@ -5,3 +5,4 @@
 - [Cursor-highlight-state.md review cycle](project_cursor_highlight_state_review.md) — round 12+, gated by two related mouse-reclaim defects (lock + snap-back), D-pad/analog untested, accessibility doc needs sync
 - [Root-cause sibling sweep](feedback_root_cause_sibling_sweep.md) — when a defect's root-cause mechanism is identified, check every other rule sharing that mechanism before accepting a fix scoped to just the rule where the symptom was first found
 - [Tactical-combat-system.md review cycle](project_tactical_combat_review.md) — round 2, recurring failure mode = enumerated-checklist drift (gamepad-parity op list, non-color state list both under-enumerated)
+- [Affinity-position-chain.md review cycle](project_affinity_position_chain_review.md) — round 1, d-pad preview dwell-time gap, panel-count drift vs tactical-combat OQ-6, 3rd recurrence of singular-vs-plural requirement gap (now cross-doc)

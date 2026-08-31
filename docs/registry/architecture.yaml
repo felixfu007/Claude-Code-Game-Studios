@@ -597,6 +597,73 @@ interfaces:
       cursor_state_write_from_own_signal_handler. The specified handler only sets a bool.
     added: 2026-08-19
     revised: "2026-08-19c"
+  - contract: affinity_pairing_data_per_query_refetch
+    status: active
+    pattern: method_call
+    producer: affinity-data-pool
+    consumers:
+      - affinity-position-linkage   # system #5; reads polarity+strength to compute Phi
+    adr: none                       # no new ADR — upstream (ADR-0002) already Accepted and
+                                    # already names combat_strength_read. What was missing is
+                                    # a RECORDED OBLIGATION, not a decision between options.
+    signal_signature: "AffinityDataPool.combat_strength_read(pair, t_query=t_now) -> result (polarity+strength, float)"
+    notes: >
+      PAIRING DATA MUST BE RE-FETCHED ON EVERY Phi QUERY — same freshness class as the
+      position snapshot, NOT loaded once at construction.
+      Measured 2026-08-31: AffinityPhiProvider._links is loaded once in _init() and never
+      re-read (its own doc comment says "fixed for the provider's lifetime"), while
+      positions() IS correctly rebuilt every call. That asymmetry silently breaks
+      affinity-position-chain.md's States-and-Transitions promise ("always reflects the
+      polarity at query time"): a dialogue card that flips a pair's polarity mid-battle
+      would not be seen until the provider is reconstructed.
+      The vertical slice additionally reads a STATIC FILE
+      (assets/data/affinity/vs01_affinity_links.txt) rather than the pool at all — that is a
+      known stopgap, and migrating it is the story this obligation governs. Migrating the
+      data SOURCE without also fixing the per-call re-fetch would satisfy the letter of the
+      migration and still ship the bug.
+      OPEN, DELIBERATELY UNDECIDED: the pool returns an unbounded real; Phi's formula
+      consumes an int amp. The quantisation (round / bucket / sign-only) is NOT decided here
+      — amp's value range is owned by the card system (#6), and deciding now would be a
+      guess. Today amp is hardcoded 1, i.e. sign-only: pairs at strength 0.05 and 500 yield
+      an IDENTICAL Phi. See affinity-position-chain.md OQ-3.
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - design/gdd/affinity-data-pool.md
+    added: 2026-08-31
+    revised: ""
+
+  - contract: phi_curve_enemy_advantage_cross_calibration
+    status: open_gap
+    pattern: shared_resource
+    producer: affinity-position-linkage      # owns the four R3 curve constants
+    consumers:
+      - tactical-combat-system               # owns enemy_advantage_pct (currently 0.20)
+    adr: none                                # nothing to DECIDE — only to record and enforce.
+    signal_signature: "n/a — numeric coupling across two GDDs, no runtime interface"
+    notes: >
+      THE FOUR R3 CONSTANTS (+3 / -1 / -1 / +2) AND enemy_advantage_pct MUST NOT BE TUNED
+      INDEPENDENTLY. affinity-position-chain.md states this obligation in prose, but there is
+      NO equation linking them, no shared source of truth, and no failing test — its
+      "cross-calibration result" section is a MEASUREMENT, not a derivation. The two values
+      live in different documents, so whoever tunes enemy_advantage_pct has no way to
+      discover this obligation exists. This row IS the discovery mechanism.
+      Required on any change to either side: re-verify "output-channel Phi >= enemy advantage
+      gap" and record the result in BOTH documents.
+      SCOPE LIMIT, MEASURED: Phi covers only the OUTPUT channel (enemy DEF inflation, gap
+      2-3 pts). The DAMAGE-TAKEN channel (enemy ATK inflation, gap up to 6 pts) is NOT
+      covered by Phi at all — Phi is an attacker-side one-way bonus. Players can hit harder;
+      they cannot take less.
+      status is open_gap (not active) because BOTH sides are still uncalibrated: the current
+      build needs ~6 hits to kill against a 4-hit target. Enforcement lands as an ADVISORY-
+      level AC deliberately, NOT blocking — a blocking assertion here would be red from day
+      one for a reason nobody should act on yet, which is exactly the unreadable-red-CI
+      failure this project's own CI standards warn about. It becomes a meaningful gate once
+      calibration happens.
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - design/gdd/tactical-combat-system.md
+    added: 2026-08-31
+    revised: ""
 # Example:
 #
 # interfaces:
