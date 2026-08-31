@@ -39,6 +39,57 @@ All stories must have appropriate test evidence before they can be marked Done:
 | **UI** (menus, HUD, screens) | Manual walkthrough doc OR interaction test | `production/qa/evidence/` | ADVISORY |
 | **Config/Data** (balance tuning) | Smoke check pass | `production/qa/smoke-[date].md` | ADVISORY |
 
+## Screenshot Evidence Rules
+
+A screenshot must prove it is **the thing it claims to be** — not merely that it is not
+blank. These rules exist because on 2026-08-31 a Godot **boot splash screen** was written
+into `production/qa/evidence/` as evidence of the exported build. It was caught, but not
+by any rule that existed at the time.
+
+🔴 **"Count the distinct colours to prove it is not blank" does not work.** Measured on the
+two images that day:
+
+| | Real gameplay frame | Godot boot splash |
+|---|---|---|
+| Dimensions | 960×540 ✅ correct | 960×540 ✅ correct |
+| Distinct colours | 247 | **493** |
+
+The splash has **more** colours than the real frame, because a logo's antialiased gradients
+produce more distinct values than a pixel-art scene's large flat fills. **"More colours reads
+as more real" points the wrong way.** The colour count only rules out a uniformly blank
+frame, which is the narrow case it was written for.
+
+### Required checks before an image counts as evidence
+
+1. **Dimensions** match the expected window size exactly.
+2. **Multi-point sampling** — sample at least 12 spread coordinates; require **≥ 3 distinct
+   colours** among them. (Splash: all 12 identical. Real frame: 7 distinct.)
+3. **Dominant colour share ≤ 80%** of all pixels. (Splash: 94.62%. Real frame: 43.06%.)
+4. **Pixel-art integer-scale grid integrity** — each source pixel must map to a clean
+   N×N block of identical colour, proving no resampling occurred.
+   ⚠️ **Measure the world layer only.** Whole-image measurement is *inverted* here and will
+   judge backwards: the project deliberately renders body text in a normal Chinese font
+   rather than a pixel font (`design/art/art-direction.md`), and that antialiased text
+   produces more grid violations in a real frame (3.157%) than the splash logo does (1.748%).
+   Restricted to the board region the signal is clean: real frame 0 of 66300 blocks,
+   splash 2265.
+5. 🔴 **A human opens the image and confirms it shows what it claims.** The checks above are
+   a filter, not a substitute. Every visual defect found on this project so far was found by
+   a person opening the file; the automated suite has never caught one.
+
+### Rules for capture tooling
+
+- **Validate before writing.** Capture, check, retry while the check fails, and on exhaustion
+  **error out and write nothing**. A tool that can emit false evidence is worse than no tool,
+  because false evidence is trusted.
+- **Never capture the full screen**, even intending to crop afterwards — the developer's
+  desktop contains private content. Crop in memory or capture the window directly.
+- **Window existence ≠ content drawn.** Waiting for a visible window is not waiting for the
+  game; the boot splash satisfies that condition. This is a race, not a rare event: the same
+  script captured gameplay and the splash nine minutes apart.
+- Current tool: `tools/build/capture_window.ps1` (Godot exported builds on Windows). Its
+  header records four traps in detail; read it before writing another capture tool.
+
 ## Automated Test Rules
 
 - **Naming**: `[system]_[feature]_test.[ext]` for files; `test_[scenario]_[expected]` for functions
@@ -70,6 +121,19 @@ All stories must have appropriate test evidence before they can be marked Done:
       degrades to printing help text and exiting **0** — tests never ran, and CI reports pass.
       This was hit live while rewriting the runner. A test line that cannot fail is worse than
       one that fails.
+    - 🔴 **`godot` is not on PATH in the local Git Bash shell, and the failure is silent.**
+      The command above works in CI because the action supplies the engine. Locally it does
+      not resolve, and if the invocation is piped into `grep`/`sed` the `command not found`
+      message is consumed — leaving an **empty result in about one second**, which is
+      indistinguishable from a clean pass. Verified 2026-08-31; only the implausibly short
+      runtime gave it away. **An empty result is not a passing result — check the exit code
+      of the engine itself, not of the pipeline.**
+      Local invocation needs the full path to the engine binary (machine-specific — the
+      value below is this development machine's, not a project constant):
+      `"C:/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe" --headless --path . ...`
+    - ⚠️ **A failing test aborts the remaining tests in its own suite.** Verified 2026-08-31:
+      a suite of 5 reported `4 test cases` when the 4th failed — the 5th never ran.
+      **"1 failure" never means "one thing is broken".** Re-run after fixing.
     - Direct invocation, if the runner is ever bypassed:
       `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit`
       `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,
