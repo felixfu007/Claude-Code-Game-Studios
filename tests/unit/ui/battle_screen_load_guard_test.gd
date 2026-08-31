@@ -12,12 +12,41 @@
 # comment），因此這裡全程不 load()/instantiate() BattleScreen 場景——場景樹相關
 # 的冒煙測試在 tests/unit/ui/battle_screen_scene_test.gd。
 #
-# ⚠️ UNREADABLE（檔案存在但 FileAccess.open() 失敗，例如權限被拒或檔案被其他
-# 行程鎖定）刻意不測：在 headless CI 環境下沒有可靠、確定性的方式製造「檔案
-# 存在但打不開」這個狀態而不真的動到磁碟權限（.claude/docs/coding-standards.md
-# 「Unit tests do not call external APIs, databases, or file I/O」），勉強做出來
-# 也會因平台而異、不確定性。分類邏輯本身（classify_file_access 的 file == null
-# 分支）很單純，风险低到不值得為了測它而引入一個不確定的測試。
+# ⚠️ UNREADABLE（檔案存在但 FileAccess.open() 失敗）刻意不測 —— 這不是懶得測，
+# 是實機驗證過兩種製造手段都做不出決定性結果之後的結論（2026-08-31 任務，godot
+# 4.7.1 headless，本機 Windows）：
+#
+#   1. 把目錄路徑當檔案路徑丟給 classify_file_access()，指望 file_exists() 為
+#      true 但 open() 失敗。實測結果：
+#        res://assets/data/levels   exists=false opened=false open_error=12
+#        res://assets/data          exists=false opened=false open_error=12
+#        res://tests/unit/ui        exists=false opened=false open_error=12
+#      FileAccess.file_exists() 對目錄本身就回傳 false，classify_file_access()
+#      的第一個 if 就已經判成 MISSING —— 這條路徑完全不會命中 UNREADABLE 分支，
+#      不是比較弱，是根本走不到那一行。
+#
+#   2. 在暫存目錄建一個真實檔案、chmod 000，指望 open() 失敗。實機結果：
+#        chmod 000 後 ls -la 顯示 -r--r--r--（唯讀屬性，不是拒讀）
+#        FileAccess.open(path, FileAccess.READ) → exists=true opened=true open_error=0
+#      在這台機器的 NTFS 上 chmod 000 只映射成唯讀屬性，FileAccess.READ 模式本來
+#      就不管可不可寫，所以照樣開得起來。若改用 icacls 之類 Windows 專屬的拒讀
+#      ACL 或許能逼出失敗，但那與 CI 用的 Linux runner 行為會不一致 ——
+#      ⚠️ Linux 上實際行為未實機驗證，這是推定，不是量測到的事實；但即使沒驗證，
+#      「同一條測試在兩個平台給出不同答案」這件事本身就已經是拒絕這條路的理由，
+#      不需要等兩邊都測過才能下判斷。
+#
+#   兩條路都繞不開一件事：無論哪種手段都是讓測試結果依賴作業系統的檔案系統/
+#   權限狀態，直接違反 .claude/rules/test-standards.md 第 10 行「Unit tests
+#   must not depend on external state (filesystem, network, database)」。
+#
+# 若日後真的要涵蓋這條分支，正確做法不是想辦法在磁碟層面製造失敗，而是把
+# classify_file_access() 開檔那一步抽成可注入的相依，讓測試端塞一個永遠回傳
+# null 的假 Callable 進去，命中 UNREADABLE 且 100% 決定性、不碰磁碟。例如
+# 讓函式簽章多一個 opener: Callable 參數，預設指向真正的開檔呼叫。
+# ⚠️ 這只是方向提示，不是可直接抄的解法 —— 本專案已實測抓到過 18 處憑記憶
+# 寫錯的呼叫寫法，「對類別本身（而非實例）的靜態方法建 Callable」這類寫法尤其
+# 容易寫錯，動手前請先實機驗證語法。這個改動屬於 src/ui/battle/battle_screen.gd
+# 的產品程式碼，需要另外走核准，不在這份測試檔的授權範圍內。
 #
 # 命名慣例依 tests/unit/ui/board_coords_test.gd 先例：
 # test_[scenario]_[expected]，extends GdUnitTestSuite。
