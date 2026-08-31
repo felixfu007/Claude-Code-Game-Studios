@@ -372,11 +372,21 @@
 
 ### 跨系統校準義務(硬性)
 
-`enemy_advantage_pct` 與 `Φ_max` **不得各自獨立校準**。Core Rules #7 指定好感度佈局帶來的加成是抵銷敵方數值優勢的主要機制(本系統無隨機判定可作為變數),因此兩者必須滿足(⚠️ **2026-08-31 修訂:原寫「唯一」;下列不等式僅對「輸出通道」成立,承傷通道 `Φ` 不覆蓋,見 Core Rules #7 修訂註**。本耦合義務已登記於 `docs/registry/architecture.yaml` 的 `phi_curve_enemy_advantage_cross_calibration` 條目 —— 那是唯一會讓日後調整任一方的人發現本義務存在的機制):
+`enemy_advantage_pct` 與 `Φ_max` **不得各自獨立校準**。Core Rules #7 指定好感度佈局帶來的加成是抵銷敵方數值優勢的主要機制(本系統無隨機判定可作為變數),因此兩者必須滿足(⚠️ **2026-08-31 修訂:原寫「唯一」;下列不等式僅對「輸出通道」成立,承傷通道 `Φ` 不覆蓋,見 Core Rules #7 修訂註**。本耦合義務已登記於 `docs/registry/architecture.yaml` 的 `phi_curve_enemy_advantage_cross_calibration` 條目):
 
 > `Φ` 在合理佈局下可提供的實際加成幅度 **≥** `enemy_advantage_pct` 造成的數值差
 
 若此不等式不成立,「以弱勝強」在數學上不可達成,Core Rules #7 與 Player Fantasy 第一段的承諾同時失效。**#5 好感度—位置連鎖系統定案 `Φ` 值域時,必須回頭與本旋鈕交叉校準,並在雙方文件記錄校準結果**——此義務同時登記於 Dependencies 對 #5 的待補項。
+
+> 🔴 **誰會真的發現這項義務?目前的答案是「只有讀到本節的人」(2026-08-31 第二輪查核更正)。**
+> 本節原本寫著登記表那一列「是唯一會讓日後調整任一方的人發現本義務存在的機制」。
+> 該句已刪除,因為經 grep 兩次獨立複驗:**沒有任何 skill 會讀 `docs/registry/architecture.yaml`**
+> ——`/architecture-review`、`/create-stories`、`/dev-story`、`/story-readiness` 全數 0 次引用,
+> 只有 `/architecture-decision` 會讀,而它只在**撰寫新 ADR 時**才跑。
+> 登記表那一列是**可查閱的紀錄**,不是會主動攔住人的閘門。
+> **實務後果**:調 `enemy_advantage_pct` 的人若沒讀到本節,不會有任何東西提醒他。
+> 回訪時機由本文件 OQ-14 / OQ-15 擁有(觸發條件:首次可玩建置後的平衡校準)——
+> **那兩項才是目前真正在追蹤「何時該回來看」的地方。**
 
 ## Visual/Audio Requirements
 

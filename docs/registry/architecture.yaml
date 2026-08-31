@@ -16,10 +16,30 @@
 #     stance list themselves in referenced_by.
 #
 # WRITTEN BY: /architecture-decision (Phase 5 — after ADR is approved)
-# READ BY:    /architecture-decision (Step 2 — before authoring begins)
-#             /architecture-review (Phase 4 — cross-ADR conflict baseline)
-#             /create-stories (to embed architectural constraints in stories)
-#             /dev-story (to check implementation against accepted stances)
+#
+# READ BY (MEASURED 2026-08-31 — grep for "architecture.yaml" in each SKILL.md):
+#             /architecture-decision  ✅ 6 hits (Step 2 — before authoring begins)
+#             /architecture-review    ❌ 0 hits — DOES NOT read this file
+#             /create-stories         ❌ 0 hits — DOES NOT read this file
+#             /dev-story              ❌ 0 hits — DOES NOT read this file
+#             /story-readiness        ❌ 0 hits — DOES NOT read this file
+#
+# 🔴 THIS HEADER USED TO CLAIM ALL FOUR OF THE ABOVE READ THIS FILE. THREE OF THOSE
+#    CLAIMS WERE FALSE, and the one that is true only runs while AUTHORING A NEW ADR.
+#    Corrected 2026-08-31 (round-2 /design-review of affinity-position-chain.md,
+#    verified twice independently by grep).
+#
+#    WHAT THIS MEANS FOR ANYONE RELYING ON A ROW HERE: a stance registered in this
+#    file is NOT mechanically enforced anywhere. Contrast a real ADR, which carries a
+#    Blocks/TR-ID field that /story-readiness walks via the Status/Depends-On chain —
+#    that is how ADR-0002 actually holds back its 24 TR-affinity-* items. A row in
+#    this registry has no equivalent; its only enforcement path is a human happening
+#    to read the GDD that points at it.
+#
+#    So: registering a stance HERE INSTEAD OF writing an ADR is a real trade — it is
+#    cheaper and avoids an unnecessary decision document, but it buys documentation
+#    WITHOUT enforcement. If a row must actually block work, it needs a test, a
+#    TR-ID, or an ADR. Do not assume this file gates anything on its own.
 #
 # SEARCH PATTERNS (for skills using Grep):
 #   All state owners:       Grep pattern="^  - state:" path="docs/registry/architecture.yaml"
@@ -653,6 +673,11 @@ interfaces:
       2-3 pts). The DAMAGE-TAKEN channel (enemy ATK inflation, gap up to 6 pts) is NOT
       covered by Phi at all — Phi is an attacker-side one-way bonus. Players can hit harder;
       they cannot take less.
+      WHEN TO REVISIT — this row does NOT own the trigger. tactical-combat-system.md's
+      OQ-14 and OQ-15 already own it ("首次可玩建置後的平衡校準" — after the first playable
+      build; owner 使用者 + systems-designer). Added 2026-08-31 round-2: this row was
+      written without cross-referencing them, so the project had a tracked revisit trigger
+      and a recorded obligation sitting in two places that did not point at each other.
       status is open_gap (not active) because BOTH sides are still uncalibrated: the current
       build needs ~6 hits to kill against a 4-hit target. Enforcement lands as an ADVISORY-
       level AC deliberately, NOT blocking — a blocking assertion here would be red from day

@@ -22,6 +22,10 @@ const VS01_LINKS_PATH: String = "res://assets/data/affinity/vs01_affinity_links.
 # （真實關係只在 affinity_link_test.gd／test 2、6 用到的 vs01 真實檔案裡斷言）。
 const LINK_1_2_POSITIVE: String = "1,2,POSITIVE,1"
 
+# 跟 LINK_1_2_POSITIVE 同一對單位、同一個 amp，只把 polarity 反過來，用來合成
+# 「這一對關係被翻轉之後」的配對表——見 test_phi_reflects_a_pairing_polarity_flip_made_after_construction。
+const LINK_1_2_NEGATIVE: String = "1,2,NEGATIVE,1"
+
 
 func _links(text: String) -> Array[AffinityLink]:
 	return AffinityLink.links_from_text(text)
@@ -169,3 +173,52 @@ func test_battle_controller_attack_damage_reflects_positive_link_phi_bonus_and_e
 	assert_int(result_no_phi["damage"]).is_equal(CombatRules.damage(ATK, DEF, 0))
 	assert_int(result_no_phi["damage"]).is_equal(10)
 	assert_int(result_with_phi["damage"]).is_greater(result_no_phi["damage"])
+
+
+# ---- (7) phi()：配對資料的逐查詢義務（反快取測試——registry 契約
+# affinity_pairing_data_per_query_refetch，本檔目前唯一一支預期會 FAIL 的測試）--
+
+# 這支測試釘的是 docs/registry/architecture.yaml 的 interface contract
+# affinity_pairing_data_per_query_refetch：配對資料（polarity/strength）必須
+# 跟 positions() 同一個新鮮度等級——每一次 phi() 查詢都要重新取得，不能只在
+# 建構當下讀一次就固定終身。來源是 design/gdd/affinity-position-chain.md
+# Interactions①與 States-and-Transitions：一張中途翻轉某對關係極性的對話卡牌，
+# 效果必須在下一次 phi() 查詢就看得到，不必等 provider 被重新建構。
+#
+# ⚠️ 這支測試預期在目前實作下會 FAIL，而且這是刻意的、已核准的結果——不是
+# 測試寫錯，缺陷是真的、還沒修。affinity_phi_provider.gd 的 _links 只在
+# _init() 賦值一次，它自己的文件註解就寫著「fixed for the provider's
+# lifetime」；phi() 讀的是這個凍結欄位，不會重新查詢，跟 positions() 每次呼叫
+# 都重新從 _state 讀不對稱（registry 該筆 notes 的實測紀錄）。
+#
+# 為什麼「翻轉」要用重新指派本地變數到一份全新配對表、而不是直接改寫傳給
+# provider 建構子的那個陣列裡的物件的 polarity 欄位：後者今天就會「看似通
+# 過」——GDScript 的 Array 是傳參考（已在本次調查用 array_ref_check.gd 對照組
+# 實測驗證：原地修改陣列元素的欄位，透過另一個持有同一份陣列的變數立刻可見），
+# provider._links 跟呼叫端手上的陣列是同一份資料，直接改欄位會「意外」穿透，
+# 但那穿透的是語言本身的參考語意，不是 provider 有重新查詢的邏輯。真正對應
+# 「配對資料來源在建構之後被替換成新的一份」（未來 AffinityDataPool 每次查詢
+# 都會回傳的東西，而不是呼叫端手上還留著的同一個物件）的重現方式，是把本地
+# 變數重新指派成一份全新陣列——這才是 _links 目前「建構時凍結、之後永不重讀」
+# 這個缺陷唯一會被打中的路徑。
+func test_phi_reflects_a_pairing_polarity_flip_made_after_construction() -> void:
+	# Arrange — 單位 1、2 相距 1 格，初始配對為正關係（distance=1 → Φ = +3）
+	const EXPECTED_PHI_AFTER_FLIP: int = -1  # delta(NEGATIVE, distance=1, amp=1)
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,10,0,0,1,1,0,0",
+		"2,P2,PLAYER,20,10,0,0,1,1,1,0",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster))
+	var links: Array[AffinityLink] = _links(LINK_1_2_POSITIVE)
+	var provider: AffinityPhiProvider = AffinityPhiProvider.new(state, links)
+
+	# Act — provider 建構完成之後，配對表的來源被替換成同一對單位但極性翻轉
+	# 的一份全新資料（模擬對話卡牌中途翻轉極性，且模擬的是「來源給出新資料」
+	# 而非「原地改寫舊物件」）；provider 從未被要求重讀，若它真的做到逐查詢
+	# 重新取得，這裡應該還是要看到新的極性
+	links = _links(LINK_1_2_NEGATIVE)
+	var phi_after_flip: int = provider.phi(1, 999)
+
+	# Assert — 通過代表缺陷已修好；目前預期 FAIL（provider 仍回報翻轉前的 +3，
+	# 而不是這裡斷言的 -1），因為 _links 在 _init() 就已經凍結成翻轉前的那份陣列
+	assert_int(phi_after_flip).is_equal(EXPECTED_PHI_AFTER_FLIP)

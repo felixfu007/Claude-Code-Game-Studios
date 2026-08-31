@@ -1,5 +1,44 @@
 name: Automated Tests
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 🔴 本 workflow 目前預期是紅的，而且只預期紅在一條測試上。
+#    登記日：2026-08-31（管理者裁決）。若你正因為看到紅燈而打開這個檔案，先讀這一段。
+#
+#    預期失敗的那一條，逐字：
+#      tests/unit/gameplay/affinity/affinity_phi_provider_test.gd
+#        > test_phi_reflects_a_pairing_polarity_flip_made_after_construction
+#      Expecting: -1  but was: 3
+#
+#    預期的整體數字（2026-08-31 本機 Godot 4.7.1 實跑）：
+#      241 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+#      引擎離開碼 100（= errors+failures > 0；不是 101，101 是孤兒節點警告）
+#
+#    ✅ 這樣算正常，不必處理。
+#    🔴 失敗數 ≠ 1，或失敗的不是上面那一條 —— **那就是真的壞了，照常處理。**
+#       ⚠️ 特別注意：一條測試失敗會中止它同一個 suite 的其餘測試
+#       （見 .claude/docs/coding-standards.md），所以「1 failures」不保證只有一件事壞。
+#       修好之後要重跑，別拿第一次的數字當結論。
+#
+#    為什麼刻意讓它紅著：它釘住的是一個**真實存在、正在出貨的缺陷** ——
+#    AffinityPhiProvider 的配對資料在建構時就被快取住，對話卡牌若在戰鬥中翻轉極性，
+#    Φ 完全看不到。契約登記於 docs/registry/architecture.yaml 的
+#    `affinity_pairing_data_per_query_refetch` 條目。
+#    缺陷無法用小改動修好（GDScript 的參照語義使「來源被換掉」在現行的
+#    Array[AffinityLink] 參數形狀下不可觀測，已由引擎探針實測確認）；
+#    真正的修法是 AffinityDataPool 整合故事。
+#
+#    ⏳ 何時消失：AffinityDataPool 整合故事落地時。
+#       🔴 **但它不會「自動轉綠」，它必須被改寫。** 這條測試目前是用「呼叫端把自己的
+#       區域變數重新指派成一份新陣列」來模擬來源換了資料 —— 而那件事在語言層
+#       **任何實作都不可能觀測到**。也就是說：**它在現行的建構子形狀下永遠不會通過。**
+#       它是一支釘在程式庫上的紅旗，不是一支會自己變綠的測試。
+#       等 provider 改成向池逐次查詢之後，這條要改成對著池斷言，才是真的測試。
+#       屆時請一併刪除本段註解 —— 留著一段描述不再存在的紅燈，比沒有註解更糟。
+#
+#    ⚠️ 絕不可為了讓 CI 變綠而關閉、跳過或改寫這條測試的斷言值
+#       （專案編碼標準明文禁止）。要綠就修缺陷。
+# ═══════════════════════════════════════════════════════════════════════════
+
 on:
   push:
     branches: [main]
