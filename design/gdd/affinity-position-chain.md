@@ -1,6 +1,6 @@
 # 好感度—位置連鎖系統(含陣亡處理)
 
-> **Status**: In Design
+> **Status**: **Approved(2026-08-31 管理者裁決)** —— 可以開始照本文件寫正式程式碼。<br>核准 ≠ 完美無缺(定義見 `docs/architecture/adr-acceptance-criteria.md` 第二節);本文件核准後仍可修訂。<br>⚠️ 四項殘留未決項皆已判定不阻擋實作,見 Open Questions 與 `design/gdd/reviews/affinity-position-chain-review-log.md` 第二輪條目。
 > **Author**: 管理者 + design-system(協調者) + 專家群(lean 模式)
 > **Last Updated**: 2026-08-31
 > **系統索引編號**: #5 ｜ **Priority**: MVP ｜ **Category**: Gameplay
