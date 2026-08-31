@@ -1,13 +1,36 @@
 # 戰棋移動與交戰系統(含武器射程分層)
 
-> **Status**: **Revised** —— `/design-review` **第四輪**(完整模式,7 位專家:`game-designer`、`systems-designer`、`qa-lead`、`ux-designer`、`gameplay-programmer`、`performance-analyst`、`godot-specialist` + `creative-director` 資深綜整)判定 NEEDS REVISION。原始發現 15 項,經 `creative-director` 去重後為 **6 項 BLOCKING-NOW 設計內容缺陷**(B-1 盤面異動邊界與不可重入模型缺席〔四位專家從四個角度撞到同一根樑〕、B-2「單一快照原子性」的原子單位未定義〔橫向並存疊加圖 + 縱向多敵聯集皆破〕、B-3 Core Rules #6a 呼叫域超出 `affinity-data-pool.md` 陣亡標記表鍵域且無失敗處理、B-4 ②b 與 Core Rules #8「語意相同」為事實錯誤、B-5 同一規範性斷言三處重述、公式四在佔位軸上低估卻宣稱「絕不低估」)+ 2 項低成本補項(AC-9 未涵蓋公式三/四、武器分層結構不變量分級不對稱),**已於同一輪修訂完成**(見 **新增 Core Rules #11「結算步的不可重入邊界」**、Core Rules #10 a/b/c 三項各自擴充、Core Rules #6a 陣營限定、Core Rules #5 步驟②b 關係說明、Formulas 公式四「保守性的邊界」、**新增 AC-23/AC-24**、AC-6/9/11/20/22 修訂、Open Questions **新增 OQ-21** + OQ-4/13/16 擴充,各處 2026-08-18 標記)。**尚未經第五輪 `/design-review` 覆核**,不得視為 Approved,不得移交 `/create-architecture`。
-> **收斂狀態(Phase 0b)**:連續零 BLOCKING-NOW 輪數 = **0**(第一輪 6 項、第二輪 5 項、第三輪 7 項、第四輪 6 項,四輪皆為 body-scoped)。距 APPROVED 尚需**連續兩輪** body-scoped 零 BLOCKING-NOW。
+> **Status**: ✅ **Approved(2026-08-31 管理者裁決)** —— 可以開始照本文件寫正式程式碼。
+> **核准依據**:與 #5 同一裁定 —— 劑量裁決位階高於 `/design-review` 的收斂規則(下一行的
+> 「連續零 BLOCKING 輪數 = 0」**不再是不核准的理由**,該規則已於 2026-08-31 明文讓步)。
+> 本文件四輪審查的發現全數同輪修畢,目前**無待清償 BLOCKING**;第四輪的結構性診斷已確認
+> 連續四輪原生設計零發現(見下)。核准 ≠ 完美無缺,核准後仍可修訂。
+> 🔴 **但核准本文件不會解鎖程式工作,鎖在三處他方**(2026-08-31 查核):
+> ①**ADR-0001 仍為 `Proposed`** —— 引用草案 ADR 的 story 一律判 BLOCKED。它卡在核准門檻
+> 條件一(自列 6 項待驗證全部未做,需碰真引擎)與條件四(架構總監覆核從未跑過,五份皆然)。
+> ⚠️ 注意 ADR-0001 **已經**由 `godot-specialist` 查核過文件層並產出三條新約束,
+> 缺的是引擎層 —— 詳見 `.claude/docs/technical-preferences.md` 該列的 2026-08-31 更正。
+> ②**OQ-2 我方基準數值表無人擁有**(非「等別人」,是沒人被指派),公式二無它無法實作。
+> ③**OQ-16(b) 單場戰鬥敵方單位數上限無人擁有**,它是效能成本的乘數。
+> **②③ 皆為本文件自列的「架構工作開始前必須解決」項。**
+>
+> **前次狀態(保留供追溯)**:**Revised** —— `/design-review` **第四輪**(完整模式,7 位專家:`game-designer`、`systems-designer`、`qa-lead`、`ux-designer`、`gameplay-programmer`、`performance-analyst`、`godot-specialist` + `creative-director` 資深綜整)判定 NEEDS REVISION。原始發現 15 項,經 `creative-director` 去重後為 **6 項 BLOCKING-NOW 設計內容缺陷**(B-1 盤面異動邊界與不可重入模型缺席〔四位專家從四個角度撞到同一根樑〕、B-2「單一快照原子性」的原子單位未定義〔橫向並存疊加圖 + 縱向多敵聯集皆破〕、B-3 Core Rules #6a 呼叫域超出 `affinity-data-pool.md` 陣亡標記表鍵域且無失敗處理、B-4 ②b 與 Core Rules #8「語意相同」為事實錯誤、B-5 同一規範性斷言三處重述、公式四在佔位軸上低估卻宣稱「絕不低估」)+ 2 項低成本補項(AC-9 未涵蓋公式三/四、武器分層結構不變量分級不對稱),**已於同一輪修訂完成**(見 **新增 Core Rules #11「結算步的不可重入邊界」**、Core Rules #10 a/b/c 三項各自擴充、Core Rules #6a 陣營限定、Core Rules #5 步驟②b 關係說明、Formulas 公式四「保守性的邊界」、**新增 AC-23/AC-24**、AC-6/9/11/20/22 修訂、Open Questions **新增 OQ-21** + OQ-4/13/16 擴充,各處 2026-08-18 標記)。~~**尚未經第五輪 `/design-review` 覆核**,不得視為 Approved,不得移交 `/create-architecture`。~~ 🔴 **此句已由 2026-08-31 管理者裁決取代**(見上方 Status):第五輪不再是核准前提,劑量裁決明訂上限 2 輪而本文件已跑四輪。**但「不得移交 `/create-architecture`」那半句仍然成立,理由不同** —— OQ-2 與 OQ-16(b) 兩張無人擁有的表,本文件自己標明須在架構工作開始前解決。
+> **收斂狀態(Phase 0b)**:連續零 BLOCKING-NOW 輪數 = **0**(第一輪 6 項、第二輪 5 項、第三輪 7 項、第四輪 6 項,四輪皆為 body-scoped)。~~距 APPROVED 尚需**連續兩輪** body-scoped 零 BLOCKING-NOW。~~ 🔴 **該要求已於 2026-08-31 由管理者裁決讓步,不再是核准的前提** —— 劑量裁決明訂每份文件 `/design-review` ≤ 2 輪,收斂規則在該上限之下**結構上不可能達成**。本文件已跑四輪,遠超上限。
 > **第四輪的結構性診斷(`creative-director`,決定下一步策略)**:本輪 15 項原始發現中,落在文件**原生設計**(Core Rules #1–#4/#7/#8、公式一/二/三、AC-1 至 AC-19)的數量為 **0**——連續四輪未再產生任何發現。100% 的發現落在第二至四輪由審查自己新增的材料(公式四、UI §1/§1a、Core Rules #10、AC-20/21/22)。診斷:**設計本身已收斂,未收斂的是治理層**——第三輪的 Core Rules #10 是反應式寫成的通則,把症狀一般化(「查詢輸出要正確」)而非成因一般化(「盤面何時允許改變」),故本輪由 Core Rules #11 補上缺席的異動邊界模型。**使用者裁決:採選項 B**——本輪先完成內容修法,接著把架構級契約(Core Rules #10 b/c 的內部機制、#11 的重入防護實作)外移至專屬 ADR,GDD 只保留玩家可觀測義務,使第五輪的 GDD 審查標的縮回玩法與規則正確性,治理層改由 `/architecture-review` 承接。
 > **Author**: 使用者 + agents(`systems-designer`〔Formulas〕、`art-director`〔Visual/Audio〕、`qa-lead`〔Acceptance Criteria〕;第一/二/四輪 `/design-review` 完整模式:game-designer、systems-designer、qa-lead、ux-designer、gameplay-programmer、performance-analyst、godot-specialist、creative-director;第三輪目標型:qa-lead、godot-specialist、ux-designer)
 > **Last Updated**: 2026-08-18 —— `/design-review` 第四輪修訂
 > **Phase 5a-ter 永久封鎖事件檢查(第四輪重新執行)**:**本輪未新增任何永久封鎖成因**——第四輪的修訂全屬盤面異動邊界、查詢原子性、跨系統呼叫域收斂、AC 覆蓋補完與措辭修正,無一新增或改寫「使某好感度來源對某配對永久不可寫入」的規則。**特別查核 B-3(Core Rules #6a 收斂為僅我方單位呼叫陣亡通知)**:此修訂**縮小**了呼叫範圍,不新增封鎖成因——敵方單位本就不在 `affinity-data-pool.md` 陣亡標記表的鍵域(5 名固定主角)內,其陣亡從來不會產生任何好感度封鎖效果;本次只是讓文件字面與既有事實一致。陣亡機制(既有成因)本身未被觸動,仍在冊於 `affinity-data-pool.md` 全作用域封鎖成因登記處第 1 列。**已確認 `game-concept.md` D-1 的通則無須修改即涵蓋現況**;本輪覆核目標非 `game-concept.md`,故**未**編輯該檔(依 `/design-review` Phase 5 的分支規定)。回指與權威歸屬提醒見 Dependencies 章節。
 > **📌 UX Flag**:本系統有實質 UI 需求。Pre-Production 須先執行 `/ux-design` 產出 UX spec,再撰寫 epic;實作故事應引用 `design/ux/[screen].md`,不得直接引用本文件。
-> **下一步**:(1) ~~建立 ADR~~ **已完成(2026-08-18)**——依使用者裁決的選項 B,**ADR-0001「戰棋查詢介面原子性契約」**(`docs/architecture/adr-0001-tactical-query-atomicity-contract.md`,狀態 **Proposed**)已承接 Core Rules #10 b/c 與 #11 的內部機制細節(版本戳記 `board_version`、`settlement_in_progress` 不可重入閘門、`Dictionary[Vector2i, int]` 邏輯佔位表),本文件三處指標已回填。`godot-specialist` 驗證該 ADR 零 BLOCKING。**本文件與該 ADR 的修訂方向為單向**:本文件的義務變更須回頭檢查 ADR 是否仍能滿足;ADR 的機制變更**不得**擴大或縮小本文件的義務範圍。(2) 於**全新 session** 執行第五輪 `/design-review design/gdd/tactical-combat-system.md`。**第五輪的驗證判準(`creative-director` 提供)**:若新發現仍落在查詢介面義務/AC 治理層,代表治理層錯置尚未解決;若落在 Core Rules #1–#9 或公式一至三,才是設計本身真的還有問題。
+> **下一步**:(1) ~~建立 ADR~~ **已完成(2026-08-18)**——依使用者裁決的選項 B,**ADR-0001「戰棋查詢介面原子性契約」**(`docs/architecture/adr-0001-tactical-query-atomicity-contract.md`,狀態 **Proposed**)已承接 Core Rules #10 b/c 與 #11 的內部機制細節(版本戳記 `board_version`、`settlement_in_progress` 不可重入閘門、`Dictionary[Vector2i, int]` 邏輯佔位表),本文件三處指標已回填。`godot-specialist` 驗證該 ADR 零 BLOCKING。**本文件與該 ADR 的修訂方向為單向**:本文件的義務變更須回頭檢查 ADR 是否仍能滿足;ADR 的機制變更**不得**擴大或縮小本文件的義務範圍。(2) ~~於**全新 session** 執行第五輪 `/design-review`~~ **已取消(2026-08-31 管理者裁決)** —— 劑量裁決上限 2 輪,本文件已跑四輪,不再開第五輪。第四輪 `creative-director` 提供的驗證判準(新發現若落在治理層代表錯置未解、落在 Core Rules #1–#9 或公式一至三才是設計真有問題)**未曾被執行過**,保留在此作為日後若真的重啟審查時的判準,而非待辦事項。
+>
+> 🔴 **(3) 真正擋著實作的三件事(2026-08-31 查核新增,取代原本的「跑第五輪」)**:
+> **(a) ADR-0001 從 `Proposed` 推進到 `Accepted`** —— 需要跑完它自列的 6 項實機驗證,
+> 以及架構總監覆核(該覆核對五份 ADR 皆從未跑過,不是本份獨有的問題)。
+> 在此之前,凡引用它的 story 一律被 `/story-readiness` 判 BLOCKED。
+> **(b) 指派 OQ-2 的擁有者** —— 我方單位 HP/攻/防基準表,全專案 14 個系統無一擁有它,
+> 而公式二吃它當輸入。**這是「沒有人被指派」,不是「等別人定案」,不指派就永遠不會動。**
+> **(c) 指派 OQ-16(b) 的擁有者** —— 單場戰鬥的敵方單位數上限,同樣無人擁有,
+> 而它是效能成本的乘數(每名存活敵人各跑一次威脅範圍計算)。
 > **Implements Pillar**: 支柱一(精準可預判的戰術)、支柱三(確定性代價,而非隨機懲罰)——核心戰鬥迴圈本身;支柱四(羈絆是雙面刃)透過陣亡對好感度連鎖的影響間接服務
 
 ## Overview
