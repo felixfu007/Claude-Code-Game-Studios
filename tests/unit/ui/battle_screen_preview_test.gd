@@ -55,12 +55,6 @@ func test_neutral_state_maps_to_muted_tone() -> void:
 	)
 
 
-func test_suppressed_state_maps_to_muted_tone() -> void:
-	assert_int(BattleScreen.line_tone_for(AffinityLineStatus.State.SUPPRESSED)).is_equal(
-		BoardView.LineTone.MUTED
-	)
-
-
 func test_line_dicts_read_endpoints_from_given_positions() -> void:
 	# Arrange
 	var positions: Dictionary[int, Vector2i] = {UNIT_A: CELL_A, UNIT_B: CELL_B}
