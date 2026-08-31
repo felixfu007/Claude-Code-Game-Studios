@@ -29,8 +29,8 @@ marrow/
 # machines. The rule outlived its premise, so it is gone. The file is tracked.
 
 # === Build Output ===
-build/
-builds/
+/build/
+/builds/
 bin/
 obj/
 out/
@@ -64,8 +64,8 @@ reports/
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
-[Bb]uild/
-[Bb]uilds/
+/[Bb]uild/
+/[Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 *.csproj
