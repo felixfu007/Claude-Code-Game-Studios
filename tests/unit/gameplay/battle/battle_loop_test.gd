@@ -15,6 +15,16 @@
 extends GdUnitTestSuite
 
 
+# 「無視 can_move 旗標」decide 自我上限，只給
+# test_battle_aborts_when_decide_ignores_can_move_flag() 用。旗標閘門正常運作時
+# 這個上限永遠碰不到（該測試裡玩家單位每輪只會被問到 2 次就因旗標已花掉而
+# did_something 為 false、觸發 end_unit_turn()）——手法與命名對照
+# tests/unit/gameplay/battle/battle_controller_test.gd 的
+# _RELENTLESS_DECIDE_CALL_LIMIT，兩者守的是同一類「閘門失效會讓同步無限
+# 迴圈掛住整個測試 job」的缺陷，故意讓讀起來一眼看出是同一個手法。
+const _RELENTLESS_DECIDE_CALL_LIMIT: int = 50
+
+
 # ---- victory + dead-unit-removal from turn order ---------------------------
 #
 # 場景：玩家 1 人 vs 敵人 2 人，三者互為射程 1 內的鄰居，mp=0（誰都無法移動，
@@ -123,6 +133,21 @@ func test_battle_aborts_at_max_rounds_without_hanging() -> void:
 # mp=1 可達，因此 state.move_unit() 每次都會合法成功，完全不管 can_move
 # 是否已經是 false——這正是探針重現的手法。敵人單位永遠不動不打，只是
 # 陪著撐住 ONGOING，不讓 outcome() 提前用「沒有敵人」的空集合判定 VICTORY。
+#
+# 🔴 這條測試曾經是「閘門失效時不會失敗，而是掛住」的缺陷本身：GDScript 是
+# 同步執行，while 迴圈裡沒有 await，GdUnit4 的逾時機制攔不住一個同步無限
+# 迴圈，斷言那幾行永遠執行不到——CI 上的後果不是紅燈，是整個 job 卡死等
+# 外部逾時。修法對照 battle_controller_test.gd 的
+# test_run_enemy_phase_terminates_when_injected_decide_ignores_flags()：
+# decide 本身帶了 _RELENTLESS_DECIDE_CALL_LIMIT 這個自我上限——耍賴滿 50
+# 次之後改回傳「什麼都不做」，讓迴圈必然終止。這不是為了讓測試「通過」而
+# 妥協：旗標閘門正常運作時，玩家單位每輪只會被問到 2 次（一次因旗標未花掉
+# 而合法移動、一次因旗標已花掉而被擋下、did_something 為 false、觸發
+# end_unit_turn()），3 輪跑滿共 6 次，上限永遠碰不到，語意與行為完全不變。
+# 上限只在閘門失效那一分支才有意義：它把「run() 永遠不返回」變成「run()
+# 會返回，但 call_counts 遠高於 6」——讓下面的 assert 真的執行得到、真的
+# 能印出「期望值是什麼、實際值是什麼」，而不是讓整個測試 job 卡死等外部
+# 逾時。
 func test_battle_aborts_when_decide_ignores_can_move_flag() -> void:
 	# Arrange
 	var roster_text: String = "\n".join([
@@ -131,9 +156,13 @@ func test_battle_aborts_when_decide_ignores_can_move_flag() -> void:
 	])
 	var state: BattleState = BattleState.create(PackedStringArray(), roster_text)
 	var order: TurnOrder = TurnOrder.new([1], [2])
+	var call_counts: Dictionary = {}
 	var relentless_move: Callable = func(
 		decide_state: BattleState, unit_id: int, _can_move: bool, _can_attack: bool
 	) -> Dictionary:
+		call_counts[unit_id] = call_counts.get(unit_id, 0) + 1
+		if call_counts[unit_id] > _RELENTLESS_DECIDE_CALL_LIMIT:
+			return {"move_to": null, "attack": -1}
 		var unit: Unit = decide_state.unit_by_id(unit_id)
 		if unit.faction == Unit.Faction.ENEMY:
 			return {"move_to": null, "attack": -1}
@@ -144,8 +173,9 @@ func test_battle_aborts_when_decide_ignores_can_move_flag() -> void:
 		return {"move_to": target_pos, "attack": -1}
 	var loop: BattleLoop = BattleLoop.new(state, order, relentless_move)
 
-	# Act — 修好之前這行會真的掛住；沒有 timeout 保護是因為修好之後它必須
-	# 正常返回，這條測試存在的意義正是「它在修好之前必須失敗/掛住」
+	# Act — 旗標閘門生效的話，無論 decide 怎麼耍賴，run() 必須在
+	# call_counts 遠低於自我上限的第 6 次呼叫附近就正常返回；閘門若失效，
+	# 這行仍然會返回（因為自我上限保底），但下面的斷言會清楚失敗
 	var result: Dictionary = loop.run(3)
 
 	# Assert
@@ -153,6 +183,7 @@ func test_battle_aborts_when_decide_ignores_can_move_flag() -> void:
 	var rounds: int = result["rounds"]
 	assert_bool(aborted).is_true()
 	assert_int(rounds).is_equal(3)
+	assert_int(call_counts.get(1, 0)).is_equal(6)
 
 
 # ---- rounds count, isolated from outcome complexity ------------------------
