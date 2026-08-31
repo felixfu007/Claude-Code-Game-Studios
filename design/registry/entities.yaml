@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: "2026-08-17"
+last_updated: "2026-08-31"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -430,6 +430,60 @@ constants:
       tactical-combat-system.md Open Questions OQ-2(標記為阻擋 /create-architecture
       的項目)。"
     added: 2026-08-17
+    revised: ""
+
+  - name: phi_max
+    status: active
+    source: design/gdd/affinity-position-chain.md
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - design/gdd/tactical-combat-system.md   # 公式一的 Φ 上界,OQ-1 待此值收斂
+    value: 12
+    unit: damage_points
+    notes: "Φ 的硬性夾限上界。等於 N=4(每角色關係線上限)在 amp=1 下的理論邊界:
+      4 條正向線全部相鄰 = 4×(+3)。⚠️ 假設 amp=1;對話卡牌加乘系統(#6)定案後必須重算。
+      ⚠️ 來源 GDD 狀態為 Designed(尚未經 /design-review),此值待審查確認。"
+    added: 2026-08-31
+    revised: ""
+
+  - name: phi_min
+    status: active
+    source: design/gdd/affinity-position-chain.md
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - design/gdd/tactical-combat-system.md
+    value: -4
+    unit: damage_points
+    notes: "Φ 的硬性夾限下界。等於 4 條線各取最差值(−1)。與 phi_max 同批推導,
+      同樣假設 amp=1。⚠️ 來源 GDD 狀態為 Designed,待 /design-review 確認。"
+    added: 2026-08-31
+    revised: ""
+
+  - name: affinity_links_per_character_max
+    status: active
+    source: design/gdd/affinity-position-chain.md
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+    value: 4
+    unit: links
+    notes: "每角色關係線數量上限(結構層約束)。🔴 非自由旋鈕 —— 由棋盤拓樸決定:
+      棋盤僅正交四鄰(已於 src/gameplay/board/board.gd _get_orthogonal_neighbors() 實機驗證),
+      故一個單位最多只有 4 格距離恰為 1。第 5 條線起上限不再增加(最佳僅能落於距離 2 的死區),
+      但下限持續惡化 —— N>4 是純下檔風險。棋盤若改為八方向須重算為 8。"
+    added: 2026-08-31
+    revised: ""
+
+  - name: enemy_hp_ceiling_for_affinity_feel
+    status: active
+    source: design/gdd/affinity-position-chain.md
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+    value: 36
+    unit: hp
+    notes: "敵人血量上限,超過則好感度加成感覺不到。由管理者 2026-08-31 校準目標反推:
+      目標為『基礎 4 下擊殺、有加成 3 下』,需 Φ ≥ 敵人血量÷12;Φ=+3 時得 HP ≤ 36。
+      ⚠️ E5 現有 41 HP,已在此線之外(見該 GDD Open Questions OQ-1)。"
+    added: 2026-08-31
     revised: ""
 
 # Example:
