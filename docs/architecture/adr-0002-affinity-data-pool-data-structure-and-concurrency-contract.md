@@ -689,7 +689,15 @@ func import_state(data: Dictionary) -> ImportResult
 # 更高層流程保證，本方法本身不做部分套用）。
 
 class AffinityRecord:
-    func to_dict() -> Dictionary       # {"pair": "C1_C2", "m": 2.0, "t": 10, "c": 3, "source": "combat_card"}
+    func to_dict() -> Dictionary       # {"pair": "C1_C2", "m": 2.0, "t": 10, "c": 3, "source": "COMBAT_CARD"}
+                                       # 🔴 2026-09-01 稽核更正:原範例寫小寫 "combat_card"。
+                                       # enum 成員名是 COMBAT_CARD,機制八的 find_key() 產生的也是大寫名,
+                                       # 而 check_record_fields() 用 Source.keys().has(d.get("source")) 檢查
+                                       # —— 小寫字串在本 ADR 定義的任何路徑上都產不出來,也通不過檢查。
+                                       # 全檔七處只有這一處是小寫,同一行的 "pair" 卻是大寫 → 是漏改。
+                                       # ⚠️ 後果的形狀:照原範例實作,存檔【寫得出來、雜湊也通過】
+                                       # (那層驗位元組不驗語意),壞在讀回時每一筆記錄都被判非法
+                                       # → 整個存檔讀不回來。失敗點離寫入點很遠,且要等玩家存過檔才會出現。
     static func from_dict(d: Dictionary) -> AffinityRecord
     # 2026-08-21(修正 D):本方法是**公開靜態**方法,任何呼叫方可直接呼叫並繞過
     # validate_semantics() → import_state() 的兩段式契約。因此防線放在方法自己內部:

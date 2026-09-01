@@ -369,6 +369,60 @@ it is marked Accepted
 
 ---
 
+### TD-MANIFEST — Control Manifest Review
+
+> 🔴 **Added 2026-09-01.** `/create-control-manifest` has been instructing agents to
+> "spawn `technical-director` using gate **TD-MANIFEST** (`.claude/docs/director-gates.md`)"
+> — **and no such gate was defined here.** The failure was silent: the agent found no standard,
+> improvised one, and returned a review report that looked entirely normal. The review criteria
+> below are **not newly invented** — they are lifted verbatim from what the skill already
+> specifies; only the gate registration was missing.
+
+**Trigger**: `/create-control-manifest` Phase 5, after the Control Manifest Preview is built,
+before the manifest is written
+
+**Context to pass**:
+- The Control Manifest Preview (rule counts per layer, full extracted rule list)
+- The list of ADRs covered
+- Engine version
+- Any rules sourced from `technical-preferences.md` or the engine reference docs
+
+**Prompt**:
+> "Review this Control Manifest against its source ADRs. Are all mandatory ADR patterns
+> captured and accurately stated? Are the forbidden approaches complete and correctly
+> attributed to their source ADR? Were any rules added that lack a source ADR or preference
+> document? Are the performance guardrails consistent with the ADR constraints? Return
+> APPROVE, CONCERNS [specific gaps], or REJECT [rules are unsourced or contradict their ADRs]."
+
+**Verdicts**: APPROVE / CONCERNS / REJECT
+
+---
+
+### TD-CHANGE-IMPACT — Design Change Impact Review
+
+> 🔴 **Added 2026-09-01, same cause as TD-MANIFEST.** `/propagate-design-change` referenced
+> this gate ID; it was undefined. `.claude/agents/technical-director.md` also cited both IDs
+> as if they were real gates.
+
+**Trigger**: `/propagate-design-change`, after the stale-ADR impact set is computed,
+before resolutions are applied
+
+**Context to pass**:
+- The revised GDD and what changed in it
+- The list of ADRs flagged as potentially stale, with the reason each was flagged
+- The traceability index entries affected
+
+**Prompt**:
+> "A design document has been revised. Review the computed impact set. Is any downstream ADR
+> affected but missing from the list? Is any ADR on the list actually unaffected (false
+> positive costs a needless revision)? For each genuinely stale ADR, is the proposed
+> resolution — revise, supersede, or accept-as-is — the right one? Return APPROVE,
+> CONCERNS [specific gaps], or REJECT [the impact set is materially wrong]."
+
+**Verdicts**: APPROVE / CONCERNS / REJECT
+
+---
+
 ### TD-ENGINE-RISK — Engine Version Risk Review
 
 **Trigger**: When making architecture decisions that touch post-cutoff engine APIs,

@@ -1000,7 +1000,30 @@ class_name SaveEnumRegistry extends RefCounted
 func submit_current_names(enum_id: String, current_names: Array[String]) -> void
 ```
 
-**enum 轉換慣例**(適用於任何持久化 enum 欄位,所有擁有系統的 `to_dict()`/`from_dict()` 一致遵循;**權威版本見 ADR-0002 機制八的 R7-P3 段落**,對應登記表 `docs/registry/architecture.yaml` 的 `raw_enum_name_subscript_from_untrusted_string` 禁令):正向(enum → 字串)用 `EnumName.find_key(value)`;反向(字串 → enum)**先**用 `EnumName.keys().has(name_string)` 做存在性檢查,通過後才 `EnumName[name_string]`——**不是** `EnumName.values().has(...)`:`values()` 檢查的是**序數**(`int`),`keys()` 檢查的才是**名稱**(`String`),兩者定義域不同、不可互換(見 `docs/engine-reference/godot/modules/scripting-typing.md` 的用途綁定表)。查無此名稱時回傳 `MIGRATION_FAILED`(依 GDD Core Rules #10,需要一個顯式遷移函數處理改名/移除,不是 `DATA_CORRUPTED`)。
+**enum 轉換慣例**(適用於任何持久化 enum 欄位,所有擁有系統的 `to_dict()`/`from_dict()` 一致遵循;**權威版本見 ADR-0002 機制八的 R7-P3 段落**,對應登記表 `docs/registry/architecture.yaml` 的 `raw_enum_name_subscript_from_untrusted_string` 禁令):正向(enum → 字串)用 `EnumName.find_key(value)`;反向(字串 → enum)**先**用 `EnumName.keys().has(name_string)` 做存在性檢查,通過後才 `EnumName[name_string]`——**不是** `EnumName.values().has(...)`:`values()` 檢查的是**序數**(`int`),`keys()` 檢查的才是**名稱**(`String`),兩者定義域不同、不可互換(見 `docs/engine-reference/godot/modules/scripting-typing.md` 的用途綁定表)。查無此名稱時的回傳值 —— 🔴 **見下方 2026-09-01 稽核警告,本句在寫成程式碼前不可照抄。**
+
+> 🔴 **2026-09-01 稽核:本段與本 ADR 自己的列舉定義互斥,尚未裁決,照抄會編譯失敗。**
+>
+> 本句原文為「查無此名稱時回傳 **`MIGRATION_FAILED`**(依 GDD Core Rules #10……不是
+> `DATA_CORRUPTED`)」,而**同一節往上約 50 行**的 `enum ReadRejection` 定義明文寫著:
+>
+> > `# MIGRATION_FAILED / SEMANTIC_VALIDATION_FAILED 由下一份 ADR(遷移執行模型)擴充此列舉,`
+> > `# 本 ADR 只定義格式/型別安全直接產生的兩種拒絕代碼`
+>
+> 同檔 `TR-save-010` 那一列再述一次同樣的分工。**亦即本 ADR 要求回傳一個它明說自己不定義的值**
+> —— `SaveFormat.ReadRejection.MIGRATION_FAILED` 不存在,寫下去是**編譯期錯誤**。
+>
+> **還有第二層衝突**:同一個輸入(存檔裡出現不認識的 enum 名稱),ADR-0002 的
+> `check_record_fields()` 判為 `UNKNOWN_PAIR_NAME`/`UNKNOWN_SOURCE_NAME` → `ImportResult` →
+> 被四層失敗回報堆疊粗化為 **`SEMANTIC_VALIDATION_FAILED`**。**兩份已核准的 ADR,對同一個輸入
+> 給出兩個不同的最終拒絕碼,而兩者對玩家的後果不同**(觸發遷移函數 vs 判存檔語意損毀)。
+>
+> **本輪不裁決哪邊讓步** —— 收斂需要 ADR-0004(遷移執行模型擁有 `MIGRATION_FAILED`)與
+> `design/gdd/save-system.md` Core Rules #10 原文,超出本次稽核的文件對帳範圍。
+> 已登記於 `docs/reviews/doc-audit-2026-09-01.md` 第三節第 2 項,待管理者指派。
+>
+> **在裁決前,本段的守衛規則(`keys().has()` 先檢查、不可用 `values().has()`)仍然有效且必須遵守
+> —— 失效的只有「回傳什麼」這一半。**
 
 > ⚠️ **本段守衛若寫錯(例如誤用 `values().has()` 去檢查字串名稱),後果不只是守衛本身失效**:若合法存檔的名稱因此被守衛擋下,實作者最直覺的下一步會是**把守衛整個拿掉**、直接寫 `EnumName[name_string]`——那正是上述禁令的形狀:非法名稱字串動態組出時是**執行期中止呼叫函式**,字面量時是**編譯期 Parse Error**,兩者都會讓本段承諾的結構化 `MIGRATION_FAILED` 回傳**永遠回不去**。**守衛失效會誘導出更糟的替代寫法**,這是它必須寫對的理由。
 > (⚠️ 本專案**未量測** `values().has(<String>)` 的實際回傳值——探針 D 只測過 `int` 輸入。上述警告不依賴該回傳值為何,只依賴「守衛未能放行合法名稱」這個條件。)

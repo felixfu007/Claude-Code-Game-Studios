@@ -80,14 +80,35 @@ detected in Phase 1:
 
 **Godot 4:**
 ```bash
-godot --headless --script tests/gdunit4_runner.gd 2>&1
+godot --headless --path . -s tests/gdunit4_runner.gd; echo "ENGINE_EXIT=$?"
 ```
-If the GDUnit4 runner script does not exist at that path, try:
-```bash
-godot --headless -s addons/gdunit4/GdUnitRunner.gd 2>&1
-```
-If neither path exists, note: "GDUnit4 runner not found — confirm the runner
-path for your test framework."
+
+🔴 **You MUST capture and report the engine's own exit code. Corrected 2026-09-01 —
+before this, both commands here were broken and this gate could not fail.**
+
+- `0` = pass · `100` = failures · **`101` = passed but leaked nodes — NOT a success** ·
+  `103` = headless refused, tests never ran.
+- The **exit code is the only place the whole test line is enforced.** Output parsing is not a
+  substitute: a run reporting `0 failures` can still exit `101`, and a run that never started
+  can print nothing at all.
+
+⚠️ **Three traps, all verified in this repo:**
+1. **`godot` is often not on PATH** (it is not, on this project's dev machine), and the failure
+   is **silent** — if the invocation is piped into `grep`/`sed`, the `command not found` message
+   is consumed, leaving an empty result in about one second that is **indistinguishable from a
+   clean pass**. An empty result is not a passing result.
+2. The old fallback command pointed at `addons/gdunit4/GdUnitRunner.gd`. **That file does not
+   exist at any casing** (`find addons -iname "GdUnitRunner*"`), so the fallback could never fire.
+3. A **failing test aborts the remaining tests in its own suite** — "1 failure" never means
+   "one thing is broken". Re-run after fixing.
+
+If the engine is not on PATH, use its absolute path rather than declaring NOT RUN.
+On this machine: `"C:/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe"`
+(machine-specific, not a project constant).
+
+**A fresh checkout must run `godot --headless --path . --import` once before the runner** —
+otherwise `class_name` declarations are not in the global cache and the run fails with
+`Parse Error: Identifier "Board" not declared`. Idempotent, one-time per working copy.
 
 **Unity:**
 Unity tests require the editor and cannot be run headlessly via shell in most
@@ -118,12 +139,25 @@ Frontend or CI pipeline. Please confirm test status manually."
 on PATH, runner script not found, etc.), report clearly:
 
 "Automated tests could not be executed — engine binary not found on PATH.
-Status will be recorded as NOT RUN. Confirm test results from your local IDE
-or CI pipeline. Unconfirmed NOT RUN is treated as PASS WITH WARNINGS, not
-FAIL — the developer must manually confirm results."
+Status recorded as NOT RUN. **This is not a pass.** Retry with the engine's
+absolute path before reporting. If it still cannot run, the developer must
+confirm results from their local IDE or CI, and that confirmation — not this
+skill — is what resolves the gate."
 
-Do not treat NOT RUN as an automatic FAIL. Record it as a warning. The
-developer's manual confirmation in Phase 4 can resolve it.
+🔴 **Corrected 2026-09-01. This block previously read "Unconfirmed NOT RUN is treated as
+PASS WITH WARNINGS, not FAIL" and "Do not treat NOT RUN as an automatic FAIL."**
+
+Combined with the two broken commands above (engine not on PATH; fallback path that does not
+exist), that rule made this gate **structurally incapable of failing on this machine**: the
+engine never ran, and the skill reported PASS WITH WARNINGS. **A QA hand-off gate that cannot
+fail is worse than no gate, because its green light is trusted.**
+
+**The rule now:**
+- NOT RUN is **NOT** a pass. Report it as NOT RUN and say plainly that the suite did not execute.
+- Retry with the engine's absolute path **before** reporting NOT RUN.
+- NOT RUN does not auto-FAIL either — it **blocks the gate from returning a verdict at all**.
+  Only a human confirming real results (Phase 4) can move it. Do not soften this into a warning
+  and proceed.
 
 Parse runner output and extract:
 - Total tests run

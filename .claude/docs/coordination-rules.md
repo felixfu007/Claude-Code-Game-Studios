@@ -22,10 +22,24 @@ Skills and agents are assigned to model tiers based on task complexity:
 | **Sonnet** | `claude-sonnet-4-6` | Implementation, design authoring, analysis of individual systems — default for most work |
 | **Opus** | `claude-opus-4-6` | Multi-document synthesis, high-stakes phase gate verdicts, cross-system holistic review |
 
-Skills with `model: haiku`: `/help`, `/sprint-status`, `/story-readiness`, `/scope-check`,
+Skills with `model: haiku` (7): `/help`, `/sprint-status`, `/scope-check`,
 `/project-stage-detect`, `/changelog`, `/patch-notes`, `/onboard`
 
-Skills with `model: opus`: `/review-all-gdds`, `/architecture-review`, `/gate-check`
+Skills with `model: opus` (3): `/review-all-gdds`, `/architecture-review`, `/gate-check`
+
+> 🔴 **Corrected 2026-09-01.** This list previously included `/story-readiness` under Haiku;
+> the file is `model: sonnet`. Sonnet is the correct tier for it — it walks ADR `Depends On`
+> chains recursively with cycle detection and caching (~390 lines) and its `allowed-tools`
+> includes `Task`, so it can spawn subagents. That is not "read-only status check, no creative
+> judgement" as the Haiku row below defines it. **The other direction is clean**: no skill file
+> declares a tier the list omits. Verified by reading all 73 skill frontmatters:
+> `for d in .claude/skills/*/; do awk '/^---$/{n++;next} n==1&&/^model:/{print FILENAME, $2}' "$d/SKILL.md"; done`
+>
+> ⚠️ **Six skills declare `model: sonnet` while their `agent:` points at an Opus agent**
+> (`adopt`, `content-audit`, `create-architecture`, `create-control-manifest`, `create-epics`,
+> `propagate-design-change`). Whether the skill's `model:` overrides or is ignored for
+> agent-bearing skills **is documented nowhere** — registered as open in
+> `docs/reviews/doc-audit-2026-09-01.md`, not resolved here.
 
 All other skills default to Sonnet. When creating new skills, assign Haiku if the
 skill only reads and formats; assign Opus if it must synthesize 5+ documents with

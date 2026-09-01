@@ -1,7 +1,16 @@
 # Coding Standards
 
 - All game code must include doc comments on public APIs
-- Every system must have a corresponding architecture decision record in `docs/architecture/`
+- Write an architecture decision record in `docs/architecture/` **only for cross-system contracts**.
+  A single system's internal technical detail belongs in that system's design document.
+  > 🔴 **Changed 2026-09-01 (manager ruling).** This line previously read *"Every system must have a
+  > corresponding architecture decision record"* — which **directly contradicted** the process-dosage
+  > rule of 2026-08-25 (`production/milestones/one-year-plan.md` §6②, summarised in
+  > `technical-preferences.md`), and **both files are auto-loaded every session**. Whoever read this
+  > one first would write six more ADRs; the dosage rule expects **0–1** more for the remaining six
+  > systems. The dosage ruling is the newer decision and wins.
+  > `docs/WORKFLOW-GUIDE.md`'s "minimum 3 Foundation ADRs" gate wording is the third copy of this
+  > rule and is **still unreconciled** — registered in `docs/reviews/doc-audit-2026-09-01.md`.
 - Gameplay values must be data-driven (external config), never hardcoded
 - All public methods must be unit-testable (dependency injection over singletons)
 - Commits must reference the relevant design document or task ID

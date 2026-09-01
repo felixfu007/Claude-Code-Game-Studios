@@ -133,23 +133,44 @@ A failed test suite blocks merging.
 
 #### Godot 4 (`Engine: Godot`)
 
-Create `tests/gdunit4_runner.gd`:
+Create `tests/gdunit4_runner.gd`.
 
-```gdscript
-# GdUnit4 test runner — invoked by CI and /smoke-check
-# Usage: godot --headless --script tests/gdunit4_runner.gd
-extends SceneTree
+> 🔴 **STOP — do not write a runner from scratch. The template that used to live here could
+> never have worked, and its failure mode was a false green light.** (Removed 2026-09-01 by
+> full-repo audit.)
+>
+> The removed template did three things wrong, all verified against this repo:
+> 1. It loaded `res://addons/gdunit4/GdUnitRunner.gd`. **No such file exists at any casing** —
+>    the directory is `addons/gdUnit4/` (capital U) and the only near-match is
+>    `src/core/GdUnitRunnerConfig.gd`. Verify: `find addons -iname "GdUnitRunner*"`.
+> 2. It called `instance.run_tests()`. **GdUnit4 has no such method.** The real entry point is
+>    `GdUnitTestCIRunner` — a Node you must `add_child()` into the tree, which drives a
+>    `_process()` state machine and calls `get_tree().quit(exit_code)` itself.
+> 3. It ended with an unconditional `quit(0)`. **That reports success whether or not any test
+>    ran.** `coding-standards.md` records this exact class of failure: "A test line that cannot
+>    fail is worse than one that fails."
+>
+> This is not a hypothetical. `coding-standards.md` documents that the project's original CI
+> command was written from this template **before GdUnit4 had ever been installed**, so it could
+> never have worked, and nothing revealed that until the suite was first actually run on
+> 2026-08-26. **The runner was fixed then; this template was not** — so running this skill again
+> would have overwritten the working runner with the broken one.
 
-func _init() -> void:
-    var runner := load("res://addons/gdunit4/GdUnitRunner.gd")
-    if runner == null:
-        push_error("GdUnit4 not found. Install via AssetLib or addons/.")
-        quit(1)
-        return
-    var instance = runner.new()
-    instance.run_tests()
-    quit(0)
+**Instead: copy the working runner from this repo** — `tests/gdunit4_runner.gd`. Its header
+documents four traps in detail (including why the CI runner silently prints help text and exits
+`0` when the command line lacks a `GdUnitCmdTool.gd` token). Read that header before changing it.
+
+If you are scaffolding a *different* project and have no working runner to copy, do **not**
+invent one: invoke GdUnit4's own CLI entry point directly, which needs no custom runner —
+
+```bash
+godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd \
+      --ignoreHeadlessMode -a tests/unit
 ```
+
+`--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`, exit 103).
+**Always check the engine's own exit code** — `0` = pass, `100` = failures, `101` = passed but
+leaked nodes (still not a success), `103` = never ran.
 
 Create `tests/unit/.gdignore_placeholder` with content:
 `# Unit tests go here — one subdirectory per system (e.g., tests/unit/combat/)`

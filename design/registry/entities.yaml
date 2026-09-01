@@ -440,9 +440,15 @@ constants:
       - design/gdd/tactical-combat-system.md   # 公式一的 Φ 上界,OQ-1 待此值收斂
     value: 12
     unit: damage_points
-    notes: "Φ 的硬性夾限上界。等於 N=4(每角色關係線上限)在 amp=1 下的理論邊界:
-      4 條正向線全部相鄰 = 4×(+3)。⚠️ 假設 amp=1;對話卡牌加乘系統(#6)定案後必須重算。
-      ⚠️ 來源 GDD 狀態為 Designed(尚未經 /design-review),此值待審查確認。"
+    notes: "Φ 的硬性夾限上界,值為 12。🔴 2026-09-01 稽核改寫推導語言(數值不變):
+      本欄原寫『等於 N=4(**每角色關係線上限**)在 amp=1 下的理論邊界』—— 那個上限已被
+      來源 GDD 撤銷(見本表 affinity_links_per_character_max 條目,status: retracted)。
+      **正確的推導依據是幾何事實,不是關係線上限**:曼哈頓距離恰為 1 的格子只有 4 個
+      (棋盤為正交四鄰),故同時享有『緊鄰』加成的線最多 4 條,4×(+3) = 12。
+      ⚠️ 差別是實質的:關係線本身**不設上限**,第 5 條以上合法且會計入 Φ —— 只是拿不到
+      緊鄰的最高加成。夾限之所以是硬性的,正因為線數無界而 Φ 必須有界。
+      ⚠️ 假設 amp=1;對話卡牌加乘系統(#6)定案後必須重算。
+      ⚠️ 來源 GDD 已於 2026-08-31 Approved(本欄原寫 Designed,同日稽核一併更正)。"
     added: 2026-08-31
     revised: ""
 
@@ -454,24 +460,31 @@ constants:
       - design/gdd/tactical-combat-system.md
     value: -4
     unit: damage_points
-    notes: "Φ 的硬性夾限下界。等於 4 條線各取最差值(−1)。與 phi_max 同批推導,
-      同樣假設 amp=1。⚠️ 來源 GDD 狀態為 Designed,待 /design-review 確認。"
+    notes: "Φ 的硬性夾限下界,值為 −4。等於距離恰為 1 的 4 個格子各取最差值(−1)。
+      🔴 2026-09-01 稽核:與 phi_max 同批,推導依據由『每角色關係線上限 N=4』改為
+      『曼哈頓距離恰為 1 的格子只有 4 個』這個幾何事實 —— 前者已被來源 GDD 撤銷。數值不變。
+      同樣假設 amp=1。⚠️ 來源 GDD 已於 2026-08-31 Approved(本欄原寫 Designed,一併更正)。"
     added: 2026-08-31
     revised: ""
 
   - name: affinity_links_per_character_max
-    status: active
+    status: retracted
     source: design/gdd/affinity-position-chain.md
-    referenced_by:
-      - design/gdd/affinity-position-chain.md
-    value: 4
+    referenced_by: []
+    value: null
     unit: links
-    notes: "每角色關係線數量上限(結構層約束)。🔴 非自由旋鈕 —— 由棋盤拓樸決定:
-      棋盤僅正交四鄰(已於 src/gameplay/board/board.gd _get_orthogonal_neighbors() 實機驗證),
-      故一個單位最多只有 4 格距離恰為 1。第 5 條線起上限不再增加(最佳僅能落於距離 2 的死區),
-      但下限持續惡化 —— N>4 是純下檔風險。棋盤若改為八方向須重算為 8。"
+    notes: "🔴 2026-09-01 全庫稽核撤銷本條目。它與自己 source: 欄指向的文件【正面相反】。
+      該文件(2026-08-31 管理者核准)R7 明文:『單一角色的關係線數量**不設上限**(管理者裁決:
+      不限制敘事)』;公式二標題明文『本節取代舊版 N=4 由棋盤形狀決定的推導 —— **舊推導是錯的**,
+      錯法記錄於下方』,並附反例(4 條正向緊鄰 +12 再加 1 條負向疏遠 +2,是**合法佈局**不是資料錯誤);
+      Edge Cases 亦明文『某角色關係線達 5 條以上:🔴 **合法,不是資料錯誤**』。
+      本條目 added 與該文件的撤銷是**同一天**,抄的正是它已推翻並移除的舊結論。
+      ⚠️ 加重情節:同一個錯誤在同一天已被協調者從 docs/registry/architecture.yaml 查證刪除過一次
+      (理由逐字:『該條目不存在,引用是虛構的』),卻在本姊妹登記表以正式登記之姿復發。
+      ⚠️ 本登記表的存在理由就是當跨文件事實的單一真值來源 —— 它正在做它被創造來防止的事。
+      **保留 retracted 而非刪除,是為了讓下一個查到 N=4 的人看到它為什麼是錯的。**"
     added: 2026-08-31
-    revised: ""
+    revised: 2026-09-01
 
   - name: enemy_hp_ceiling_for_affinity_feel
     status: active

@@ -56,6 +56,26 @@ Agent 的查閱起點是本檔。**新增模組檔時必須同時更新此表**,
 `navigation` / `networking` / `physics` / `rendering` / `ui`(其中 `ui` 有部分經
 2026-08-05 游標 spike 驗證)。
 
+### 🔴 這 8 份全部停在 Godot 4.6,而專案釘的是 4.7.1(2026-09-01 稽核)
+
+實測:8 份的檔頭皆為 `Last verified: 2026-02-12 | Engine: Godot 4.6` —— **比 4.7 發布早四個月,
+也比本專案的 Project Pinned(2026-07-28)早近半年。** 只有頂層四份(本檔、`breaking-changes.md`、
+`current-best-practices.md`、`deprecated-apis.md`)與兩份 ✅ 模組更新到了 4.7.1。
+
+**最要命的巧合**:本檔上方「Knowledge Gap Warning」自己點名的 4.7 三大高風險是
+**鍵盤/滑鼠裝置 ID 重編號**、**Control offset transforms**、**shader 前處理器限縮**。
+前兩項各有對應模組檔,而實測 `input.md` 對「裝置 ID 重編號」、`ui.md` 對「Control offset
+transforms」**各自零命中**。
+
+> **後果**:`modules/` 存在的意義,就是讓查特定子系統的人不必讀完整份 `current-best-practices.md`。
+> 但在本專案自己列為重災區的那兩處,這條捷徑是**空的** —— 而且它看起來是滿的
+> (檔案存在、內容詳盡、只是停在舊版)。**照這條捷徑查完就停下的人,不會知道自己漏了什麼。**
+>
+> ⚠️ **這兩項的正確內容確實寫在 `current-best-practices.md` 裡**,所以資訊沒有遺失,
+> 遺失的是**查閱路徑的可靠性**。在這 8 份補到 4.7.1 之前:
+> **查 input / UI 相關 API,一律以 `current-best-practices.md` 與 `breaking-changes.md` 為準,
+> 不得只查 `modules/`。**
+
 > **「未驗證」不等於錯,但要當成待查證而非既定事實。** 2026-08-21 之前本庫有一個
 > **看似合理的錯誤範例**擴散到兩份技術設計文件、造成 13 處編譯期錯誤(已修正,見
 > `current-best-practices.md` 的 `@abstract` 段)。這個庫是承重結構。
