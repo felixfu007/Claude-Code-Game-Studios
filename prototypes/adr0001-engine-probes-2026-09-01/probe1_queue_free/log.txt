@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+P1-1: before queue_free() -- is_instance_valid=true, is_child=true
+P1-2: immediately after queue_free(), same call stack -- is_instance_valid=true, is_child=true, is_queued_for_deletion=true
+P1-3: after one process_frame await -- is_instance_valid=false

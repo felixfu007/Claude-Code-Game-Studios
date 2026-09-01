@@ -1,0 +1,51 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+==============================================================================
+ADR-0005 ENGINE PROBES — SAFE/HEADLESS SECTION (#13 echo filter, #3 agile flushing key)
+日期:2026-09-01  Godot: 4.7.1-stable (official)
+==============================================================================
+
+------------------------------------------------------------------------------
+[13] InputMap.event_is_action() 是否過濾 InputEventKey.echo
+     來源:ADR-0005 VR #13
+------------------------------------------------------------------------------
+  event_is_action(pressed=true,  echo=false, ui_up) = true
+  event_is_action(pressed=true,  echo=true,  ui_up) = true
+  event_is_action(pressed=false, echo=false, ui_up) = true   (對照組:放開鍵)
+
+  判定:echo 事件【沒有】被 event_is_action() 過濾 —— pressed+echo=true 與
+        pressed+echo=false 回傳結果相同(皆 true)。機制四之二 classify_action()
+        若不自行加 `event is InputEventKey and event.echo` 過濾,玩家按住方向鍵
+        產生的每一個重複事件都會被判為 NAVIGATION、每一影格都主張裝置權威。
+        ADR-0005 第 404-406 行的疑慮成立,VR #13 由『未查證』轉為『已查證:不過濾』。
+
+
+------------------------------------------------------------------------------
+[3] Agile Event Flushing 設定鍵真名(corroborate 2026-08-20 spike F-4)
+     來源:ADR-0005 VR #3
+------------------------------------------------------------------------------
+  ADR-0005 推測鍵名    : input_devices/buffering/agile_event_flushing
+  has_setting(推測值)  : true
+  get_setting(推測值)  : false
+
+  ── 名稱以 'input_devices' 開頭的全部已知鍵(交叉核對)──
+    input_devices/pointing/android/enable_long_press_as_right_click = false
+    input_devices/pointing/android/enable_pan_and_scale_gestures = false
+    input_devices/pointing/android/rotary_input_scroll_axis = 1
+    input_devices/pointing/android/override_volume_buttons = false
+    input_devices/pointing/android/disable_scroll_deadzone = false
+    input_devices/compatibility/legacy_just_pressed_behavior = false
+    input_devices/sensors/enable_accelerometer = false
+    input_devices/sensors/enable_gravity = false
+    input_devices/sensors/enable_gyroscope = false
+    input_devices/sensors/enable_magnetometer = false
+    input_devices/joypads/ignore_joypad_on_unfocused_application = false
+    input_devices/pen_tablet/driver = 
+    input_devices/pen_tablet/driver.windows = 
+    input_devices/buffering/agile_event_flushing = false
+    input_devices/pointing/emulate_touch_from_mouse = false
+    input_devices/pointing/emulate_mouse_from_touch = true
+
+==============================================================================
+REPORT COMPLETE (safe section)
+==============================================================================

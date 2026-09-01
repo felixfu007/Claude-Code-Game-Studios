@@ -1,0 +1,9 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+P2-A0: scenario A (no settlement between suspend and resume)
+P2-A1: query starts, start_version=0
+P2-A2: query resumed, resumed_version=0, changed=false (ADR requires: abort_and_recompute == false)
+P2-B0: scenario B (settlement commits while query is suspended)
+P2-B1: query starts, start_version=0
+P2-B-settle: committed settlement synchronously (no yield), version now=1
+P2-B2: query resumed, resumed_version=1, changed=true (ADR requires: abort_and_recompute == true)

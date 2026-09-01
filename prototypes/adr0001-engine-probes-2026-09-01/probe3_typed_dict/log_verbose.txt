@@ -1,0 +1,31 @@
+WorkerThreadPool: 14 threads, 4 max low-priority.
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Using "default" pen tablet driver...
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 3769296884
+EDITOR API HASH: 3146738256
+Loading resource: res://probe3_typed_dict/probe3_typed_dict.gd remapped: res://probe3_typed_dict/probe3_typed_dict.gd
+Completed load for: 'res://probe3_typed_dict/probe3_typed_dict.gd' remapped 'res://probe3_typed_dict/probe3_typed_dict.gd' at thread -1
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres remapped: C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres
+Completed load for: 'C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres' remapped 'C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres' at thread -1
+EditorSettings: Load OK!
+EditorTheme: Generating new theme for the config '3810048042'.
+EditorTheme: Generating new icons.
+EditorTheme: Generating new fonts.
+EditorTheme: Generating new styles.
+Loaded system CA certificates
+P3-1: uninitialized typed Dictionary field -- b._occupied = {  } (size=0)
+P3-2: is_occupied(1,2)=true occupant_of(1,2)=42
+P3-3: is_occupied(9,9)=false occupant_of(9,9)=-1
+P3-4: size=2
+P3-5: key=(1, 2) (is Vector2i=true) value=42 (is int=true)
+P3-5: key=(3, 4) (is Vector2i=true) value=7 (is int=true)
+P3-6: local typed dict literal works, size=1
+EditorSettings: Save OK!
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"

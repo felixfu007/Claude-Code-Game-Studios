@@ -1,0 +1,24 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+; 2026-08-20 spike (F-14) 已確定 headless 跑法必須開這個,否則 print() 全被緩衝。
+run/flush_stdout_on_print=true
+
+config/name="ADR-0005 Engine Probes (2026-09-01)"
+config/description="Throwaway spike answering ADR-0005 Verification Required #2/#3/#5/#9/#10/#13. See README.md."
+run/main_scene="res://scenes/Probe13And3.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=800
+window/size/viewport_height=600

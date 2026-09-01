@@ -1,0 +1,15 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+P4-start: start_version=0, will commit settlement on _process call #4, looping 8 resumes
+P4-resume[0]: frame=1 version=0 settlement_committed_by_now=false
+P4-resume[1]: frame=2 version=0 settlement_committed_by_now=false
+P4-resume[2]: frame=3 version=0 settlement_committed_by_now=false
+P4-settle (in _process chain): frame=4 committed, version now=1
+P4-resume[3]: frame=4 version=1 settlement_committed_by_now=true
+P4-resume[4]: frame=5 version=1 settlement_committed_by_now=true
+P4-resume[5]: frame=6 version=1 settlement_committed_by_now=true
+P4-resume[6]: frame=7 version=1 settlement_committed_by_now=true
+P4-resume[7]: frame=8 version=1 settlement_committed_by_now=true
+P4-query-loop-complete: final version=1, start_version was 0
+P4-CRITICAL-RESUME: first resume after settlement -> frame=4 version=1 (expect 1) -> OK
+P4-FINAL-VERDICT: settlement_committed_at_frame=4, first_post_settle_saw_increment=true, no_premature_leak=true, records=[[1, 0, false], [2, 0, false], [3, 0, false], [4, 1, true], [5, 1, true], [6, 1, true], [7, 1, true], [8, 1, true]]

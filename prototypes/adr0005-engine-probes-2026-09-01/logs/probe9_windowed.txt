@@ -1,0 +1,22 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+==============================================================================
+ADR-0005 PROBE #9 —— focus_mode = FOCUS_NONE 是否也排除 Control 主題的滑鼠 hover 繪製
+Godot: 4.7.1-stable (official)
+==============================================================================
+btn.focus_mode = 0  (Control.FOCUS_NONE = 0)
+
+── 模擬滑鼠移動到按鈕中心之前 ──
+  is_hovered()    = false
+  get_draw_mode() = 0
+
+── 模擬滑鼠移動到按鈕中心之後(get_viewport().push_input(InputEventMouseMotion)) ──
+  is_hovered()    = true
+  get_draw_mode() = 2   (NORMAL=0 PRESSED=1 HOVER=2 DISABLED=3 HOVER_PRESSED=4)
+
+判定:FOCUS_NONE【不】排除滑鼠 hover 主題繪製 —— is_hovered()=true 且 draw_mode=HOVER。
+      機制十四僅靠 focus_mode 只封住『鍵盤/手把焦點環』這一條管線;
+      滑鼠 hover 主題繪製是結構上獨立的第二條管線,FOCUS_NONE 管不到它。
+      ADR-0005 VR #9 由『godot-specialist 判斷大概率不排除』轉為『已查證:確實不排除』。
+

@@ -1,0 +1,9 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+P3-1: uninitialized typed Dictionary field -- b._occupied = {  } (size=0)
+P3-2: is_occupied(1,2)=true occupant_of(1,2)=42
+P3-3: is_occupied(9,9)=false occupant_of(9,9)=-1
+P3-4: size=2
+P3-5: key=(1, 2) (is Vector2i=true) value=42 (is int=true)
+P3-5: key=(3, 4) (is Vector2i=true) value=7 (is int=true)
+P3-6: local typed dict literal works, size=1

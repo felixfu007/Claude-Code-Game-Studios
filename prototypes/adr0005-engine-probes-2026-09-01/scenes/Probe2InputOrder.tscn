@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/probe2_main.gd" id="1"]
+
+[node name="Probe2InputOrder" type="Node"]
+script = ExtResource("1")
