@@ -260,7 +260,7 @@ subagent 中斷至少會弄壞程式庫;這個不會。
 
 ### 🔴 畫面架構裁決(2026-09-01 管理者裁決,連帶改動上表)
 
-**權威全文在 `design/art/art-direction.md` 第七節,逐項數字與 log 在
+**權威全文在 `design/art/screen-architecture.md`,逐項數字與 log 在
 `prototypes/ui-canvas-scale-spike-2026-09-01/README.md`。本節只記會影響寫程式的三件事:**
 
 1. **`window/stretch/mode` 改為 `"disabled"`** —— 原 `"canvas_items"` 下,`keep`+`integer` 的
