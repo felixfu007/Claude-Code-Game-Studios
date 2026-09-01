@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game_root_scenario2.gd" id="1"]
+
+[node name="GameRootScenario2" type="Node"]
+script = ExtResource("1")
+
+[node name="WorldViewportContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+stretch = true
+
+[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer"]
+
+[node name="UIReferenceLayer" type="CanvasLayer" parent="."]
