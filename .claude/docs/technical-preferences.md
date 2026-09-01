@@ -136,9 +136,9 @@ enum 值域,並實際匯入測試 PNG 檢查產生的 `.import` 檔。**未觸�
 | 設定鍵 | 建議值 | 來源等級 |
 |---|---|---|
 | `display/window/size/viewport_width` / `_height` | `480` / `270` | (A) 鍵名與預設值 1152×648 已實測 |
-| `display/window/stretch/mode` | `"disabled"` 或 `"canvas_items"` | (A) enum 三值已實測,預設 `disabled` |
-| `display/window/stretch/aspect` | `"keep"` | (A) enum 已實測,預設即 `keep`;選用理由屬 (C) 設計推理 |
-| `display/window/stretch/scale_mode` | `"integer"` | (A) enum 僅 `fractional` / `integer` 兩值,已實測 |
+| `display/window/stretch/mode` | 🔴 **`"disabled"`(2026-09-01 管理者裁決)** | (A) enum 三值已實測;**裁決依據見下方「畫面架構裁決」** |
+| `display/window/stretch/aspect` | `"keep"` | (A) enum 已實測,預設即 `keep`;選用理由屬 (C) 設計推理。⚠️ `mode="disabled"` 下本鍵不再產生作用 |
+| `display/window/stretch/scale_mode` | `"integer"` | (A) enum 僅 `fractional` / `integer` 兩值,已實測。⚠️ 同上,`disabled` 下不再產生作用 |
 | `rendering/textures/canvas_textures/default_texture_filter` | `0`(Nearest) | (A) 預設實測為 `1`(Linear);已實測此設定**不寫入 `.import` 檔** |
 
 **來源等級三分法**:(A) 實機驗證 / (B) 專案參考庫明文記載 / (C) 訓練資料推測、未經驗證。
@@ -248,12 +248,33 @@ subagent 中斷至少會弄壞程式庫;這個不會。
 不必為世界層/介面層各維護一套。**條件二是紀律要求,不是自動保證** —— 手刻公式在非 16:9
 視窗會悄悄算錯而不報錯。
 
-🔴 **仍然開著的是另一半**:ADR-0005 該假設的第二句(「承載自繪游標的 `CanvasLayer`
-全程維持恆等變換」)**未被本次 spike 涵蓋** —— 那支 spike 的 `UILayer` 只放了一個 `Label`,
-沒有自繪游標、也沒測過非恆等變換的 `CanvasLayer`。它是 ADR-0005 的 VR #11b,在該 ADR 內仍判 **高風險**。
-**而它取決於 `design/art/art-direction.md` 第七節待決項 3「介面設計基準畫布尺寸」** ——
-該值目前**完全無定義**,若最後定成 480×270 與螢幕實際解析度以外的第三個數字,
-該 `CanvasLayer` 就會帶上縮放變換,VR #11b 當場成立。
+✅ **另一半也已於 2026-09-01 關閉**(VR #11b:「承載自繪游標的 `CanvasLayer` 全程維持恆等變換」)。
+`prototypes/ui-canvas-scale-spike-2026-09-01/` 實測結論:**決定它安不安全的不是介面基準畫布選什麼,
+而是游標圖層有沒有自己獨佔一顆節點** —— 而 ADR-0005 本來就是這樣設計的(Autoload `CursorStateHost`
+持專屬 `CanvasLayer`),專屬節點下四種解析度實測全部恆等。同批實測另確認本檔原先推導的前提成立:
+該 Autoload 掛在 `/root`、不在 `SubViewport` 內,四種解析度下 `get_viewport() == get_tree().root` 皆為真。
+
+🔴 **但它留下一條實作義務,不是「沒事了」**:若架構上誤把游標圖層與介面圖層混成同一顆節點,
+實測誤差為 1080p **1440px** / 2K **2178px** / 4K **3304px** —— 游標系統實質失效。
+**必須把「游標圖層 transform 恆等」寫成一條會執行的自動化測試,不得只靠紀律。**
+
+### 🔴 畫面架構裁決(2026-09-01 管理者裁決,連帶改動上表)
+
+**權威全文在 `design/art/art-direction.md` 第七節,逐項數字與 log 在
+`prototypes/ui-canvas-scale-spike-2026-09-01/README.md`。本節只記會影響寫程式的三件事:**
+
+1. **`window/stretch/mode` 改為 `"disabled"`** —— 原 `"canvas_items"` 下,`keep`+`integer` 的
+   縮放很少剛好填滿視窗(2K 為 480×5.333 → 取整 5),**剩下那圈留白是引擎渲染目標沒有涵蓋的範圍,
+   物理上不存在,任何 transform 都畫不進去**(實測:2560×1440 視窗截圖尺寸為 2400×1350)。
+2. **介面設計基準畫布 = 當下螢幕實際解析度**,不設固定基準、不做二次縮放。
+   理由是 HUD 用的 Cubic 11 是 11×11 點陣且放大 2 倍使用,固定 1920×1080 基準在 2K 上
+   合併縮放為 2.667 倍,實測像素塊 2/3px 交錯、肉眼可見鋸齒。
+3. **世界層縮放與定位改為手動管理**,引擎不再自動整數縮放 —— **整數對齊要自己保證。**
+
+⚠️ **兩項連帶義務,不會自動解決**:世界層倍率/位置要自己寫程式管;**字級要自己訂一套隨螢幕
+調整的規則**(基準等於實際解析度,代表 20px 的字在 4K 上仍是 20px,相對螢幕顯著變小)。
+後者是 `ux-designer` 同日評估中最擔心的一項,**本裁決沒有消除它,是把它從引擎自動處理
+換成我們自己處理。排介面前必須先訂這套規則。**
 
 ⚠️ **同一支 spike 另外抓到一個正式檔案的缺陷並已修掉**:`src/ui/GameRoot.tscn` 原本根節點是
 `Node2D`,而 `SubViewportContainer` 掛在 `Node2D` 底下**錨點永遠不生效**(容器恆 `(0,0)`、
