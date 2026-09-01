@@ -526,7 +526,7 @@ interfaces:
       - settings-ui               # non-modal settings sidebar (AC-60's own example, Not Started)
       - notification-toast        # achievement toast (AC-60's own example, Not Started)
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
-    signal_signature: "register_native_pointer_exception(node: Control) -> RegisterResult  |  unregister_native_pointer_exception(node: Control) -> RegisterResult  |  is_native_pointer_exception(node: Node) -> bool"
+    signal_signature: "register_native_pointer_exception(node: Control) -> ExceptionRegisterResult  |  unregister_native_pointer_exception(node: Control) -> ExceptionRegisterResult  |  is_native_pointer_exception(node: Node) -> bool"
     notes: >
       ADDED 2026-08-19c (ADR-0005 round-5 fixes R5-6 + Step-5.5 finding F). The SECOND
       registration table on CursorSurfaceRegistry, structurally independent of the first
@@ -546,7 +546,7 @@ interfaces:
       FAILURE DIRECTION IS DELIBERATE: a missing or unmatched registration costs only AC-60's
       convenience; the previous denylist form failed toward violating Core Rules #5.
     added: "2026-08-19c"
-    revised: ""
+    revised: "2026-09-01 (TD-ADR gate). signal_signature return type read RegisterResult, one revision behind the ADR. ADR-0005 revision 4 introduced a dedicated ExceptionRegisterResult because RegisterResult carries a duplicate-label error code and this table has no label concept. This registry is the designated authority for disputes, so an implementer following it would have written the wrong type."
 
   - contract: cursor_state_change_signals
     status: active

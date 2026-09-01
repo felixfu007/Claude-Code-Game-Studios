@@ -22,7 +22,7 @@
 
 > **2026-08-21 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層)**:第七輪已逐項附行號證據確認八項**全開**,**其中 5 項是第三次修訂自己新產生的**。**機制層面的實質變更**:刪除 `handoff_before_unload()` 的懸空 `surface` 參數(R6-6);`equals()` 定案為**只比表面 + `id`**、`is_valid` 翻轉納入 `target_changed()`(R6-7,使用者裁決沿用既有訊號而非新增);CanvasLayer 下**拆為三個節點**(R6-8,`modulate.a` 只掛自繪游標);「兩兩相異」明訂管轄**角色之間**(R6-9);閘門反方向失敗改記 `_pending_reseed` 旗標而非丟棄(R6-10);provider 失效由「座標層 fallback」升為**系統層降級**(R6-11,失敗方向從「靜默凍結」翻成「大聲停用」);`process_priority` 必須在 `add_child()` **之前**設定(R6-12);第二張登記表拆出 `ExceptionRegisterResult` + `tree_exited` 自動反登記(R6-13)。**私有路徑因此 4 → 6**(新增 `_target_changed_from()` 與 `_drain_pending_reseed()`)。
 >
-> **事實層五項**:8 處 `@abstract func ...: pass` 改**裸簽章**(已實測;**連同根因的指示句一起改** —— 該句原本明文要求「沿用 `current-best-practices.md` 的冒號 + `pass` 形式」,而那個範例本身是錯的,只刪 `pass` 不改那句,下一個實作者會照著加回來);`Constraints` 的「**無 Godot 執行環境可供實機驗證**」刪除(已實證可本機 headless 執行、已跑兩批 spike 與四支探針);VR #12/#15 標為已查證(#1/#3 維持未查證);**C7 的另一半** —— 本 ADR 自己認定依賴層 B,不再被 ADR-0002 單方面記帳;R6-1 的 −50 計數落差**已關閉**(以 `git log` 確認第三次修訂 `5593d58` 之後該檔案從未被改動,故第六輪看到的與現行是同一份;`−50` 是 **U+2212 全角減號**,精確 **3 處**〔412/433/1359〕，**第六輪的「4 處」是單純計數失誤**,不是有人事後改掉)。
+> **事實層五項**:8 處 `@abstract func ...: pass` 改**裸簽章**(已實測;**連同根因的指示句一起改** —— 該句原本明文要求「沿用 `current-best-practices.md` 的冒號 + `pass` 形式」,而那個範例本身是錯的,只刪 `pass` 不改那句,下一個實作者會照著加回來);`Constraints` 的「**無 Godot 執行環境可供實機驗證**」刪除(已實證可本機 headless 執行、已跑兩批 spike 與四支探針);VR #12/#15 標為已查證(#1/#3 維持未查證);**C7 的另一半** —— 本 ADR 自己認定依賴層 B,不再被 ADR-0002 單方面記帳;R6-1 的 −50 計數落差**已關閉**(以 `git log` 確認第三次修訂 `5593d58` 之後該檔案從未被改動,故第六輪看到的與現行是同一份;`−50` 是 **U+2212 全角減號**(🔴 **2026-09-01 `TD-ADR` 覆核更正**:此處原寫「精確 **3 處**〔412/433/1359〕」,**當場數為 0 處,且那三個行號指向 `return`、一句禁令註解、一句偵測說明,與該數值完全無關**。行號已漂移到無法重現,故刪除數字與行號 —— 這句話的用途本來就是證明「我有好好數過」,而它自己正是它反對的東西。`.claude/rules/design-docs.md:34` 明文禁止行號指路,理由即此)，**第六輪的「4 處」是單純計數失誤**,不是有人事後改掉)。
 >
 > **寫入前執行 Step 5.5 雙軌覆核**(`godot-gdscript-specialist` + `godot-specialist`,使用者明文授權),共回傳 **2 項 BLOCKING + 11 項非阻塞**,並**關閉了草稿自己標記的全部 3 處「需覆核」**。兩項 BLOCKING 皆為「**寫了行為,沒寫接線**」與「**數字必然改變**」這兩種本專案慣性缺陷:**B-1** —— 變更六描述「provider 無效時 `evaluate()` 整段跳過」,但 `_safe_mouse_position() -> Vector2` 失效時回傳陳舊座標,**呼叫方結構上無從得知**(與 R6-6 懸空參數、R5-1 無合法呼叫路徑同型),已改為在 `arbitrate_device_authority()` 內前置檢查 `_mouse_position_provider.is_valid()`;**B-2** —— 變更二與變更五各需一個共用私有方法,使全文**至少 7 處**「四條私有路徑」的宣告當場失效(協調者另發現其中第 705 行的「三者」**在本次修訂之前就已與第 774 行的「四個」不一致**)。**另一項自我修正**:VR #15 初稿誤判為「未查證」,實際量測在更早那批 spike 裡 —— 「未查證」在多批探針並存時易被誤讀為「哪一批都沒測」,已把這個檢索紀律教訓寫進 Constraints。
 >
@@ -30,7 +30,7 @@
 
 ## Date
 
-2026-08-18(初版) / 2026-08-19(第一次修訂,F1~F5+N1~N4) / 2026-08-19(第二次修訂,R4-1~R4-7 + `TR-cursor-015` 兩項落差 + 三項新事實) / 2026-08-19(**第三次修訂,R5-1~R5-6 + S-1~S-5 + Step 5.5 新發現 A/B/2b/D/F/G**)
+2026-08-18(初版) / 2026-08-19(第一次修訂,F1~F5+N1~N4) / 2026-08-19(第二次修訂,R4-1~R4-7 + `TR-cursor-015` 兩項落差 + 三項新事實) / 2026-08-19(**第三次修訂,R5-1~R5-6 + S-1~S-5 + Step 5.5 新發現 A/B/2b/D/F/G**) / 2026-08-21(**第四次修訂** —— 🔴 2026-09-01 `TD-ADR` 覆核補上:本欄原先漏列此次修訂,而同檔上方第 23 行與開場載入的 `technical-preferences.md` 都明確記載它存在)
 
 ## Engine Compatibility
 
@@ -87,7 +87,7 @@
 | 7 | **暫停/模態的讓路手段** —— GDD Open Question 問「`SceneTree.paused` + `process_mode` 是否足以涵蓋專案內全部彈出情境」。**本 ADR 機制九不採用 `SceneTree.paused` 作為判準**(見機制九的拒絕理由),因此此 Open Question 對本 ADR 的實作可行性不再構成阻擋;仍須於 `/create-architecture` 盤點彈窗情境以確認機制九的顯式旗標有被正確呼叫 | GDD Open Question(第六輪) | 低(已被機制九降級) |
 | 10 | **`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT` 相對 `process_priority`(`_process()` 執行序)的時序完全未定義**——若 FOCUS_IN 在部分節點 `_process()` 已跑完、部分未跑的中途觸發,`force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 可能讓部分下游在同影格讀到新舊混合的視覺狀態 | 第三輪 `/architecture-review`(**N2**,godot-specialist 於該輪額外發現) | 中——印象等級(信心度偏高),參考庫零涵蓋 |
 | 11a | **~~機制八的淨位移計算受 `CanvasLayer` 變換影響~~ —— 第四輪引擎專家更正:此項為虛驚,已降級為資訊項**。機制八全程只是兩個 viewport-space 座標相減求距離(`current_mouse_position.distance_to(_seed)`),兩個座標都來自 `get_viewport().get_mouse_position()`,**從未轉進 `CanvasLayer` 的局部空間** → 結構上不受該層是否恆等變換影響 | 第一次修訂列為風險;**第四輪 `godot-specialist` 更正並降級** | **低**(原判高)——保留登記供追溯,不佔用 Day-1 spike 額度 |
-| 11b | **機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響** —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出——**綁在一起會讓 Day-1 spike 的範圍設計過寬,或反過來稀釋真正該驗的這一半** | **高**——這才是原 #11 的真風險所在,Day-1 spike 應只針對此半 |
+| 11b | ✅ **已於 2026-09-01 關閉。** 依據 `prototypes/ui-canvas-scale-spike-2026-09-01/`(非 headless、真實 GPU、1080p/2K/4K/超寬四種解析度)+ 同日管理者畫面架構裁決(`design/art/screen-architecture.md`)。**結論的形狀與本項原本問的問題不同**:決定安不安全的**不是介面基準畫布選什麼,而是游標圖層有沒有自己獨佔一顆節點** —— 而本 ADR 機制十二本來就是這樣設計的(Autoload `CursorStateHost` 持專屬 `CanvasLayer`),專屬節點下四種解析度實測**全部恆等**。同批實測另確認該 Autoload 掛 `/root`、不在 `SubViewport` 內,四種解析度 `get_viewport() == get_tree().root` 皆為真。<br>**原文如下(保留供追溯)**:機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響 —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出;**2026-09-01 由畫面架構 spike 關閉** | 🔴 **原判高,現為已關閉 —— 但留下一條實作義務**:誤把游標圖層與介面圖層混成同一顆節點的實測誤差為 1080p **1440px** / 2K **2178px** / 4K **3304px**,游標系統實質失效。**已補為 Validation Criteria 第 20 條。本項不再佔用 Day-1 spike 額度。** |
 | 13 | **`InputMap.event_is_action()` 是否過濾 `InputEventKey.echo`**(2026-08-19 第四輪修訂新增)——若不過濾,玩家**按住**方向鍵產生的重複 echo 事件會與初次按下同樣被機制四之二判為 `NAVIGATION`,亦即每一影格都在主張裝置權威。這會直接餵進機制八觸發點 (d)(同幀否決)與 E1 缺陷(類比搖桿持續按住造成滑鼠奪權永久鎖死)的因果鏈——**上一版 ADR 對此完全未討論** | 第四輪 `godot-specialist` 判定為「本次最值得回頭確認的一項」 | **高**——若不過濾,機制四之二須自行加 `event is InputEventKey and event.echo` 過濾,且該過濾要不要套用於觸發點 (d) 需回頭對照 GDD;但**該子機制已凍結**,此處只登記、不預先設計修法 |
 | 12 | **已查證(2026-08-20,`engine-verification-spike-2026-08-20`,探針 `c1_bare_with_signal.gd`)**:`@abstract` 類別內**可以**同時含 `signal` 與多個 `@abstract func` —— 該探針測的正是 `MouseReclaimPolicy` 這個形狀(一個 `signal` + 四個 `@abstract func`)。連帶查證:正確語法是**裸簽章**(`@abstract func f() -> T`,無冒號無主體),對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆成立;`@abstract func ...: pass` 是 `Parse Error: An abstract function cannot have a body.`;漏實作抽象方法是編譯期錯誤且訊息指名缺哪一個。**本 ADR 原有的 8 處 `pass` 主體已於 2026-08-21 全部刪除。** 原文如下(保留供追溯):`@abstract` 類別內同時宣告 `signal` 與多個 `@abstract func`(機制八 F3 修訂新增 `reset_triggered` 訊號)是否有語法限制 | 本次修訂新增(**godot-specialist** 標記 **UNVERIFIABLE-FLAG-AS-RISK**,與既有 `@abstract` 語法賭注同一風險等級) | 高——寫錯屬編譯期錯誤,擋下整個檔案 |
 | 9 | **`focus_mode = FOCUS_NONE` 是否也排除 Control 主題內建的滑鼠 hover 繪製** —— `godot-specialist` 判斷**大概率不排除**(兩條獨立管線)。最小 spike:`Button` 設 `FOCUS_NONE` 後滑鼠懸停是否仍畫 hover 主題。決定機制十四第 2 項條件是硬性要求或防禦性建議 | **本 ADR Step 5.5 驗證新發現** | **高** —— 若不排除,單靠 `focus_mode` 的機制十四只封住兩條管線中的一條,原決策已據此修訂 |
@@ -139,10 +139,31 @@
 - **參考文件的兩個核心模組落後一個大版本**(見上方 Engine Compatibility)。
 - **裸 enum 跨檔無法編譯**(ADR-0002 撰寫時由 `godot-specialist` 查核發現的 BLOCKING 問題,已包裝為 `AffinityTypes` 解決)——機制二不得重蹈。
 - **`process_priority` 不管 `_input()` 的順序**,只管 `_process`/`_physics_process`。這是機制五/六形狀的直接決定因素。
-- **既有架構立場**(`docs/registry/architecture.yaml`,41 項):`autoload_singleton_for_testable_data_layers`、`enum_value_positional_string_conversion`、`mutable_container_as_dictionary_key`、`relying_on_container_iteration_order`、`returning_internal_container_references` 五項 forbidden pattern 與本 ADR 直接相關。
+- **既有架構立場**(`docs/registry/architecture.yaml`,**項數不在此複述**(2026-09-01 `TD-ADR` 覆核:原寫 41 項,實測 87。手抄必漂移,要數就當場數:見 `.claude/docs/technical-preferences.md` 的 awk 指令)):`autoload_singleton_for_testable_data_layers`、`enum_value_positional_string_conversion`、`mutable_container_as_dictionary_key`、`relying_on_container_iteration_order`、`returning_internal_container_references` 五項 forbidden pattern 與本 ADR 直接相關。
 - **全手把平權**(`.claude/docs/technical-preferences.md`):所有 UI 須同等支援滑鼠 hover/click 與 d-pad/類比搖桿導覽,主機無游標,不得有 hover-only 互動。
 - **子機制凍結**:滑鼠奪權(Core Rules #3 空間門檻)的重新設計已由使用者明文暫停,不得在本 ADR 內重啟設計。
 - **單一根 Viewport 假設(2026-08-19 修訂新增,F2)**:機制八的滑鼠淨位移計算、機制十三/十三之二的原生指標判定與 hover 查詢,全程假設專案只有一個根 Viewport,滑鼠座標一律取自 `get_viewport().get_mouse_position()`,承載自繪游標/待機指示的 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉)。若未來引入分割畫面或多個獨立 Viewport,此假設須重新驗證(見 Verification Required 第 11 項)。
+
+  🔴 **2026-09-01:本條自己寫的觸發條件已經發生,且已重新驗證完畢 —— 結論不變。**
+  (`TD-ADR` 覆核發現。上一版此處只有觸發器,沒有人回頭啟動它。)
+
+  管理者的畫面架構裁決(`design/art/screen-architecture.md`)已在 `src/ui/GameRoot.tscn`
+  引入**第二個 Viewport**(世界層專用的 `SubViewport`)—— **正是本條原文說「若發生須重新驗證」的情況。**
+
+  **重新驗證結果:本 ADR 依賴的三條路徑全部不受影響**,依據
+  `prototypes/ui-canvas-scale-spike-2026-09-01/` 與 `prototypes/board-render-input-spike-2026-08-27/`:
+
+  1. **滑鼠座標**:`CursorStateHost` 是 Autoload、掛 `/root`、**不在 `SubViewport` 內**,
+     四種解析度實測 `get_viewport() == get_tree().root` 皆為真 → 取到的恆為根視窗座標。
+  2. **自繪游標定位**:同層同座標系,專屬 `CanvasLayer` 四種解析度實測**全部恆等**。
+  3. **hover 判定**:棋盤格在內層 `SubViewport`,`gui_get_hovered_control()` 查不到 ——
+     **而第三次修訂的白名單反轉讓「查不到」的預設答案正好是正確答案。**
+     ⚠️ **這一條是被一個為了別的目的所做的修改順手保護到的,不是設計出來的。**
+     **若白名單反轉日後被撤回,本條必須重驗。**
+
+  🔴 **因此本假設的正確措辭應為**:本 ADR 依賴的是「**游標宿主所在的那一層**只有一個
+  Viewport 座標系」,**不是**「整個專案只有一個 Viewport」。後者今日起已是假的,
+  而讀者打開 `GameRoot.tscn` 就會看到第二個 Viewport。
 - **AC-60 原生指標例外表面須明文登記(2026-08-19 第三次修訂新增,R5-6 + 發現 F)**:機制十三之二的 hover 判定由黑名單反轉為白名單後,任何希望在手把/鍵盤持權威期間仍讓玩家看得見原生滑鼠指標的**未登記表面**(GDD AC-60 舉例:非模態設定側欄、成就吐司通知),必須主動呼叫 `CursorSurfaceRegistry.register_native_pointer_exception(node)`。未登記的後果是該表面上原生指標維持隱藏——**失敗方向刻意偏向 Core Rules #5 這條硬性規則**,不偏向 AC-60 的便利性例外。此項為本 ADR 對下游新增的唯一一項義務,已明文記錄其代價(見機制十三之二)。
 - **下游確認動作判讀的執行位置(2026-08-19 修訂新增,F1)**:任何下游系統解讀確認類 `ui_*` action 並查詢本系統狀態時,該判讀邏輯必須落在該系統自己的 `_process()`——若觸發來源是 `_physics_process()` 或其他回呼,呼叫方須自行轉呼叫延後至 `_process()`,不得直接在 `_physics_process()`/`_input()`/`_unhandled_input()` 內完成判讀(`process_priority` 只排序 `_process`/`_physics_process` 各自的鏈,兩鏈之間、以及 `_input()`/`_unhandled_input()` 相對兩鏈皆無排序保證,`godot-specialist` 本次修訂驗證明確指出此點)。
 
@@ -907,7 +928,7 @@ func reclaim_progress() -> float
 | 乙分支需要「寫入 + 無條件帶 `SURFACE_HANDOFF` 重置」 | 通用 `set_target()` 走的是「目標確實改變才 `TARGET_CHANGED`」;三種可能的讀法全部不成立(見機制十一 R5-1 修法) |
 | 乙分支 `handoff_after_mount()` 回傳 `SetTargetResult`,就必須做 `set_target()` 那套「表面已註冊 / 類型合法」驗證 | 不能重用公開的 `set_target()` 借驗證(撞閘門);若因此**跳過驗證**直接寫入,等於允許把未註冊或非法表面的目標寫進來,而且是掛在 `SURFACE_HANDOFF` 這個沒人檢查的信任假設下(`godot-specialist` 判定為「本次批量修法最可能製造的下一個 R5-x」) |
 
-**修法**:把私有路徑由一條擴為四條(2026-08-21 再增為六條,見上表)(見上方程式碼區塊與本表),讓每一個公開入口都有一條**不掛閘門**的路可走,不必回頭借用另一個公開入口。
+**修法**:把私有路徑由一條擴為**六條**(2026-08-19 第三次修訂先增為四條,2026-08-21 第四次修訂再增為六條 —— 🔴 2026-09-01 `TD-ADR` 覆核更正:本句原寫「擴為四條」而定案是六條,同檔另四處皆已是六)(見上方程式碼區塊與本表),讓每一個公開入口都有一條**不掛閘門**的路可走,不必回頭借用另一個公開入口。
 
 **紀律**:公開入口**不得**互相呼叫。任何「一個公開入口需要另一個公開入口的行為」的情境,一律把共用邏輯下放到私有方法,由兩個入口各自呼叫——這是 GDScript 無 `try`/`finally` 下唯一能保證「旗標的設與清恰好配對一次」的形狀(同一理由見 ADR-0004 的單一進入/單一釋放每槽重入鎖)。呼叫方若需要在訊號處理函式內串聯狀態變更,應以 `call_deferred()` 延後到下一影格,不得期待同步生效。
 
@@ -1595,6 +1616,16 @@ class_name CursorNavigationApplier extends Node
 17. **R5-6 白名單 fail-safe 測試(2026-08-19 第三次修訂新增)**:權威為 `KEYBOARD_GAMEPAD` 時,(i) 滑鼠位於已註冊表面上 → 斷言 `Input.mouse_mode == MOUSE_MODE_HIDDEN`;(ii) 滑鼠位於**未登記且未列入例外白名單**的表面上 → 斷言**仍為 HIDDEN**(這是與上一版黑名單行為相反的一項,是本次反轉的直接證據);(iii) 滑鼠位於**已登記的 AC-60 例外表面**上 → 斷言 VISIBLE;(iv) 把某個已註冊表面的祖先鏈節點設為 `MOUSE_FILTER_IGNORE`、或把根節點換成非 `Control` 型別 → 斷言 (i) 的結果**不變**(仍為 HIDDEN)——這一項是 R5-6 與專家發現 F 各自的迴歸測試,上一版黑名單下兩者皆會錯誤地變成 VISIBLE。另斷言 `Input.mouse_mode` 在值未改變的影格**不被重複賦值**(S-2)。
 18. **S-1 provider 失效測試(2026-08-19 第三次修訂新增,**2026-08-21 依 R6-11 改寫**)**:注入一個綁定到「隨後即被釋放的物件」的 `mouse_position_provider`,斷言 **(a) `evaluate()` 不被呼叫**(滑鼠奪權進入停用狀態,而非「淨位移恆為 0」那種看起來在運作的凍結);**(b) `push_error()` 恰一次**(連續多幀不重複,由 `_provider_error_reported` 守衛);**(c) `diagnostic_invalid_mouse_provider_count` 持續累加**。🔴 **原文把「回傳上一次成功取得的座標」斷言為期望結果 —— 那正是 R6-11 指出的「靜默凍結」**:穩態必然是 `_seed == 陳舊座標` → 淨位移恆為 0 → 滑鼠側奪權**永久失效且完全無聲**。`_safe_mouse_position()` 自己的失效契約(回傳上次成功座標)**維持不變**並仍應被獨立測試,但那是為了它的**一次性播種**呼叫點,不是 `evaluate()` 這條持續 polling 的路徑。⚠️ 本測試的前提(`Callable.is_valid()` 對已釋放綁定物件的偵測行為)本身列為 Verification Required #15,須先跑 Day-1 spike 確認,否則本測試驗的是一個未查證的假設。
 19. **後續 `/architecture-review`**(須於**全新 session** 執行)判定本 ADR 與 ADR-0001~0004 無衝突,且對 19 項 `TR-cursor-*` 的涵蓋由獨立審查重新推導——本 ADR **不預先自陳修訂後的涵蓋分佈**(見 GDD Requirements Addressed 涵蓋結論)。**第三次修訂補充**:本次修訂已約定為 ADR-0005 的**最後一次全面修訂**,第六輪審查的範圍應為「R5-1~R5-6、S-1~S-5 與本次 Step 5.5 新發現 A/D/F/G 是否確實關閉」,而非全域重推 130 項需求。
+
+20. 🔴 **游標圖層變換恆等(2026-09-01 畫面架構裁決導出,`TD-ADR` 覆核補入)**:斷言
+    `CursorStateHost` 持有的全域 `CanvasLayer`(機制十二)其 `transform` 全程等於
+    `Transform2D.IDENTITY`,於 1080p / 2K / 4K 三種解析度各驗一次。
+    **這一條不是防禦性冗餘,是必需**:實測若該圖層與介面圖層共用同一顆節點,誤差為
+    1080p **1440px** / 2K **2178px** / 4K **3304px** —— 不是游標歪一點,是游標系統實質失效。
+    **為什麼寫在這裡而不是留在散文**:該義務原本只寫在 `design/art/screen-architecture.md` 的
+    敘述中,2026-09-01 `TD-ADR` 覆核指出**本 ADR 原有的 19 條驗收條件沒有任何一條涵蓋它**,
+    亦即沒有任何 skill、測試或閘門會執行它 —— 正是本專案已登記的
+    「規則寫了、沒人執行、而且不執行不留痕跡」失效模式(見 `docs/consistency-failures.md`)。
 
 **反向驗證(本 ADR 若錯了會如何顯現)**:若機制一的分離不徹底(邏輯洩漏進 Autoload 薄殼),會表現為某些 AC 的單元測試開始需要 `add_child()` 或全域狀態清理 —— 驗證條件 2 會直接攔截。若機制六的 `_process` 定序前提不成立(`_input()` 未在 `_process()` 前全數完成),會表現為同幀仲裁結果隨事件抵達時序漂移 —— 驗證條件 4 會攔截,但**只在多次執行下才會顯現**,因此該測試須重複執行而非單次通過即算過。若機制十三的自繪載體未正確讀取 `reclaim_progress()`,會表現為漸進回饋視覺與判定值脫節(玩家看到指標淡入但奪權未發生,或反之)—— 這是 GDD Player Fantasy 明訂要消除的「探測性輸入後仍不確定」失敗情境本身。
 

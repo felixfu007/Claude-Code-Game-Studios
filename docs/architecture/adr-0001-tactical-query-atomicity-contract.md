@@ -16,7 +16,7 @@ Proposed
 | **Domain** | Core(狀態管理與排程) |
 | **Knowledge Risk** | **HIGH**(4.7 為 LLM 訓練截止後發布);**但本 ADR 所依賴的具體事實已於 2026-08-18 由 `godot-specialist` 對照 engine-reference 逐項查核通過** |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md` |
-| **Post-Cutoff APIs Used** | **無**。本 ADR 只使用 Godot 4.0 以來語意穩定的機制(`Dictionary`、`Vector2i`、`await`、`queue_free()` 的延後移除語意)。4.6/4.7 的變更(Jolt 預設、D3D12 預設、輸入裝置 ID 重新編號、Control offset transforms)皆與本 ADR 無交集——本系統的可達格/視線計算為純格狀幾何,不觸及物理伺服器或渲染管線 |
+| **Post-Cutoff APIs Used** | **無**。本 ADR 只使用 Godot 4.0 以來語意穩定的機制(`Dictionary`、`Vector2i`、`await`、`queue_free()` 的延後移除語意)。⚠️ **2026-09-01 `TD-ADR` 覆核補上一項本清單原先漏列的**:機制一實際使用的是**型別化** `Dictionary[Vector2i, int]`,而型別化容器是 4.4 引入(**此版本歸屬為 (C) 級推測,專案參考庫未記載引入版本**)。本欄結論「無 Post-Cutoff API」仍成立(4.4 在訓練截止之前),但支撐它的清單原先不完整 —— 而本 ADR 自列的待驗證第 (3) 項要驗的正是這個型別。4.6/4.7 的變更(Jolt 預設、D3D12 預設、輸入裝置 ID 重新編號、Control offset transforms)皆與本 ADR 無交集——本系統的可達格/視線計算為純格狀幾何,不觸及物理伺服器或渲染管線 |
 | **Verification Required** | (1) 確認 `queue_free()` 在 4.7.1 實際仍延後至幀尾生效(本 ADR 的 §機制三 以此為前提,雖已對照文件查核,仍建議實機以最小測試場景確認);(2) 跨幀展開若採 `await get_tree().process_frame`,須實測確認該 await 前後 `board_version` 的讀取行為符合本 ADR 的中止語意;**(3) 確認型別化 `Dictionary[Vector2i, int]`(struct-like key + 型別化容器)在 4.7.1 編譯無警告**;**(4) 實測「同幀可見性」順序保證——若結算發生在某跨幀查詢的 await 恢復點之前,該查詢恢復時必須讀到遞增後的 `board_version`(本 ADR 的中止語意隱含此假設,但未經實測)**;**(5) `settlement_in_progress` 卡死斷言的自動化測試(見 Validation Criteria 第 7 項)**;**(6) 程式碼審查明文檢查項:結算呼叫鏈中不存在任何 `call_deferred()` 或 `CONNECT_DEFERRED` 連線——此項無法靠搜尋 `await` 字樣抓到**(項次 3–6 為 2026-08-18 `godot-specialist` 驗證後新增) |
 
 **引擎知識落差聲明**:`godot-specialist` 於 `/design-review tactical-combat-system.md` 第四輪針對本 ADR 涵蓋的四個面向逐項查核,結論為零 BLOCKING:(a) `queue_free()` 的幀尾延後移除語意在 4.6/4.7 未變,亦無新增的立即移除 API 使本 ADR 的邏輯佔位方案過時;(b) 巢狀 Resource 的 `duplicate()` 自 4.5 起不建議使用、應改用 `duplicate_deep()`(本 ADR 的版本戳記方案不複製盤面,故此項僅在未來若改採深拷貝快照時才相關);(c) 本 ADR 明確排除以 `PhysicsServer`/`RayCast` 實作視線,故 Jolt 預設化與本 ADR 無關;(d) 跨幀 Dijkstra 在 GDScript 中可正確實作,但需要本 ADR 提供的架構約束才能保證原子性——這正是本 ADR 存在的理由之一。
@@ -53,7 +53,7 @@ Proposed
 本 ADR 須同時滿足 `tactical-combat-system.md` 的下列義務(義務原文以該文件為準,此處僅列出機制須支撐的內容):
 
 1. **即時性(Core Rules #10a)**:任一查詢輸出恆等於「以呼叫/重繪當下的盤面從頭重算一次」的結果;且任一改變某查詢正確答案的已提交結算邊界事件發生時,顯示中的輸出至少須被標記為過期,不得以過期輸出接受下一個玩家輸入。
-2. **單一快照原子性(Core Rules #10b)**:單一查詢的計算須對單一盤面快照完成;**且被合併判讀為單一畫面的一組輸出**(UI §1a 強制並存的移動範圍與威脅範圍疊加圖、`threat_range_all(E)` 的多敵聯集)**視為同一次查詢、共用同一份快照**,不得由對應不同時刻的多份快照拼接。
+2. **單一快照原子性(Core Rules #10b)**:單一查詢的計算須對單一盤面快照完成;**且被合併判讀為單一畫面的一組輸出**(UI §1a 強制並存的移動範圍與威脅範圍疊加圖、`threat_range_all(E)` 的多敵聯集)**視為同一次查詢、共用同一份快照**,不得由對應不同時刻的多份快照拼接。<br>🔴 **2026-09-01 補述**:GDD 原文另有「期間變動**須排入佇列**於計算結束後處理」一句,**本點原先漏述**。本 ADR 依該條末句的明文授權裁定改採**中止重算**而非佇列,理由見機制一該段。**漏述本身是缺陷** —— 本 ADR 的 `Ordering Note` 明文禁止縮小 GDD 的義務,而只轉述前半句就是縮小。
 3. **佔位資料所有權(Core Rules #10c)**:`occupied(tile)` 須由邏輯資料結構承載,不得由場景/節點樹存在性或視覺/動畫狀態導出;須隨任一改變單位邏輯位置或存活狀態的事件同步更新(陣亡、移動邏輯完成皆為實例,非窮盡)。
 4. **結算步不可重入(Core Rules #11)**:結算步(①→②→③→④)進行中不接受任何操作輸入;②c 的卡牌效果須同步、不得於結算中要求玩家輸入;邏輯狀態為唯一權威。
 5. **跨幀展開的合法性**:OQ-16 預告 `reachable_set` 可能需要有界前緣展開、並可能攤到多幀以壓進單幀預算。本 ADR 須讓跨幀實作合法且安全,不得禁止它。
@@ -73,10 +73,27 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 盤面持有一個單調遞增的整數 `board_version`,初始值 0。
 
 - **唯一遞增時機**:每個**已提交的結算邊界**完成時 `+1`。「已提交的結算邊界」定義為 Core Rules #5 結算步④執行完畢、或一次已確認的移動邏輯完成、或任一其他改變盤面權威狀態的已提交指令完成。**不得**因為玩家移動游標、開關疊加圖、觸發預判等唯讀操作而遞增(這些依 Core Rules #8/#10 皆為零寫入)。
-- **每個查詢結果攜帶它所計算的版本號**。結果的有效性判準:`result.version == board.current_version`。
+- **每個查詢結果攜帶它所計算的版本號**。結果的有效性判準:`result.version == board.board_version`。
 - **過期(stale)的定義即為版本不符**。這直接實現 Core Rules #10a 新增的最低限度過期標記義務——不需要另一套失效通知機制,版本比對本身就是過期偵測。
 - **合成查詢的一致性由版本相等斷言保證**:並存疊加圖、`threat_range_all(E)` 的 N 個子計算,全部必須攜帶**同一個**版本號;任一子結果版本不符,整組作廢重算。這實現 Core Rules #10b 的合成原子性,且**不需要**協調多份快照的生命週期。
-- **跨幀展開的原子性**:一趟跨幀計算在開始時記下 `start_version`;每次跨幀恢復時比對 `board.current_version != start_version` 即**中止並重算**(不是套用部分結果,也不是繼續用舊資料算完)。因為 Core Rules #11 保證盤面只在結算邊界改變,而結算邊界期間不接受玩家操作,這種中止在實務上罕見(只會發生在跨幀計算橫跨一次已提交結算的情形)。
+- **跨幀展開的原子性**:一趟跨幀計算在開始時記下 `start_version`;每次跨幀恢復時比對 `board.board_version != start_version` 即**中止並重算**(不是套用部分結果,也不是繼續用舊資料算完)。因為 Core Rules #11 保證盤面只在結算邊界改變,而結算邊界期間不接受玩家操作,這種中止在實務上罕見(只會發生在跨幀計算橫跨一次已提交結算的情形)。
+
+  🔴 **關於「盤面變動要不要排隊」—— 本 ADR 行使 GDD 的明文授權,裁定不排隊**
+  (2026-09-01 `TD-ADR` 覆核發現本節與 GDD 的字面落差,補寫此段;**決定未變**)
+
+  `tactical-combat-system.md` Core Rules #10b 的文字是「計算期間發生的盤面變動不得中途套用,
+  **須排入佇列於計算結束後處理**」,而本 ADR 選的是**中止並重算**。兩者看似相反,實際不是:
+  **同一條規則的末句已把「佇列處理方式」指名交給本 ADR 定案**,並自陳「本條只定案玩家可觀測的
+  正確性義務」。隔壁 Core Rules #11 的同型句子把括號內容寫成「輸入佇列/**丟棄**策略」——
+  **可見「不佇列」本就在被授權的選項集合內。**
+
+  **本 ADR 的裁定與理由**:不佇列盤面變動,改為中止並重算。理由是佇列會讓已提交的結算
+  等待一趟計算跑完,而 Core Rules #11 明文要求結算進行中的操作嘗試「不得靜默丟棄
+  也不得排入無限期等待」。中止重算同時滿足 #10b 的可觀測義務(變動從未被中途套用)
+  與 #11 的即時性。
+
+  ⚠️ **兩種做法對玩家是可分辨的**:佇列 = 確認後停頓數幀才生效;中止 = 疊加圖閃一次重畫。
+  本 ADR 選後者。**實作者不得自行改採佇列** —— 那會牴觸 #11。
 - **跨幀計算主體的生命週期約束(2026-08-18 `godot-specialist` 驗證發現)**:跨幀展開若以 `await get_tree().process_frame` 實作(該訊號在 4.4–4.7 語意未變,是正確的原語選擇),**持有該協程的物件必須是生命週期涵蓋整場戰鬥的物件**(例如 Board 自身或戰鬥層級的 manager),**不得**掛在可能隨場景切換、UI 面板關閉而被釋放的暫時性節點上。理由:GDScript 協程若在 `await` 期間其宿主實例被 `queue_free()` 或回收,恢復時會嘗試回呼一個已不存在的實例,結果是靜默丟失或執行期錯誤,而非本 ADR 定義的「中止並重算」——這會直接違反 AC-9 的確定性承諾。**每次 `await` 恢復後須先以 `is_instance_valid()`(或等效防衛)確認宿主仍存活,否則一律視為中止。**
 
 ### 機制二:結算步的不可重入閘門
@@ -85,7 +102,7 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 
 - 結算步①開始時設為 `true`,④完成(含所有跨系統呼叫回傳)後設為 `false`,並於此時遞增 `board_version`。
 - **`settlement_in_progress == true` 期間,所有玩家輸入一律拒絕並觸發拒絕回饋**(使用者裁決;比照 UI Requirements §6 的既有合法性閘門機制)。**不採佇列**——理由見下方 Alternatives。
-- 結算步**不得**跨幀讓出。②c 的卡牌效果契約為同步執行、不得要求玩家輸入(見 `tactical-combat-system.md` Core Rules #11 對 #6 的契約)。這使結算步天然是單幀原子的,`settlement_in_progress` 實務上只在單一幀內為 `true`。
+- **結算步執行於 `_process` 鏈**(2026-09-01 `TD-ADR` 覆核補上,原先只在卡死偵測處隱含以 `_process` 幀計數,從未明講)。⚠️ **這一句有後果**:ADR-0005 記載 `process_priority` 只排序 `_process`/`_physics_process` 各自的鏈、**兩鏈之間無排序保證**,故若實作者把結算放進 `_physics_process`,該 ADR 的全部定序保證會**靜默失效且不報錯**。<br>- 結算步**不得**跨幀讓出。②c 的卡牌效果契約為同步執行、不得要求玩家輸入(見 `tactical-combat-system.md` Core Rules #11 對 #6 的契約)。這使結算步天然是單幀原子的,`settlement_in_progress` 實務上只在單一幀內為 `true`。
 - **禁止 deferred 路徑介入結算(2026-08-18 `godot-specialist` 驗證發現)**:結算步內任何改動 `occupied` 或 `board_version` 的呼叫,**禁止**經由 `call_deferred()` 或以 `CONNECT_DEFERRED` 旗標連線的訊號執行。理由:Godot 的 deferred 機制會把該呼叫排到本幀稍後的安全點才執行,而非立即同步生效——效果等同於在結算步中間插入一個讓出點,**但呼叫端不會出現任何 `await` 字樣**,程式碼審查時看不出來。這是與「意外引入 `await`」同源、但更隱蔽的一條失效路徑(`queue_free()` 本身正是靠此機制實作延後移除,見機制三)。
 - **卡死偵測(2026-08-18 `godot-specialist` 驗證發現的一個比重入更嚴重的失效模式)**:`settlement_in_progress` **不得跨越兩個連續的 `_process` 幀仍為 `true`**;若偵測到,須以 `push_error()` 明確曝光。理由:旗標的防禦性推理隱含假設「意外引入的 `await` 終將恢復」。但若該 `await` 永遠不恢復(等待一個不再發出的訊號、或等待的節點被釋放導致協程掛死),旗標會永遠停在 `true`,後果不是「一次可觀測的拒絕」而是**整場戰鬥輸入永久鎖死且無任何錯誤訊息**——比本旗標原本要防的情境更糟。此斷言可直接寫成自動化測試(見 Validation Criteria)。
 
@@ -137,7 +154,7 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
                     │  呈現層 (戰鬥 HUD #10)  │
                     │                        │
                     │  有效 ⇔ version ==     │
-                    │        current_version │
+                    │        board_version   │
                     │  合成畫面 ⇒ 各子結果    │
                     │        version 須相等   │
                     └────────────────────────┘
@@ -156,6 +173,10 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 以下為本 ADR 定案的契約形狀。**具體命名與型別簽章可在實作時微調,但語意不得改變**;任何改變語意的調整須回頭修訂本 ADR。
 
 > **閱讀提醒**:以下為**概念契約**,不是可直接貼上的單一檔案。Godot 每個 `.gd` 檔只能有一個 `class_name`,實作時各類別應落在各自檔案(如 `board.gd`、`query_result.gd`)。
+>
+> 🔴 **2026-09-01 `TD-ADR` 覆核補強**:以下的 `func` 宣告**刻意只有簽章、主體從略**,直接貼上會是 GDScript 的 Parse Error。
+> ⚠️ **不要「順手加個 `pass` 讓它能編譯」** —— 帶 `pass` 主體撞上專案級禁令 `abstract_func_with_body`(已實機驗證為編譯期錯誤,見 `docs/registry/architecture.yaml`)。
+> **本專案已為「照 ADR 的示意程式碼直接寫」付過 18 處編譯錯誤的代價**,故此處明寫而非只靠上一句提醒。
 
 ```gdscript
 # ─── board.gd ────────────────────────────────────────────────
@@ -289,5 +310,6 @@ static func assert_same_version(results: Array[QueryResult]) -> bool
 - `design/gdd/reviews/tactical-combat-system-review-log.md` — 第四輪條目記載本 ADR 的成因(結構性診斷與選項 B 裁決)。
 - `design/gdd/systems-index.md` — Cross-System Obligations Registry 的兩列(Core Rules #10 查詢介面義務、Core Rules #11 對 #6 的同步契約)。
 - `design/gdd/affinity-data-pool.md` — Core Rules #1(陣亡通知介面與同結算步呼叫順序義務)。
+- `docs/architecture/adr-0005-cursor-device-authority-input-architecture.md` — **雙向關係,2026-09-01 `TD-ADR` 覆核補上**(此前為單向:ADR-0005 有回指本份,本份對它零提及)。該 ADR 沿用本 ADR 的兩條禁令;其優先序梯把「游標改標」排在「確認鍵讀取」之前,**本 ADR 給呈現層的「`is_stale()` 為真時不得接受玩家輸入」義務能否成立,依賴該排序**。兩份對延後執行的禁令方向一致,非牴觸(該 ADR 另有專節說明兩者易被誤判為矛盾)。
 - `docs/engine-reference/godot/` — VERSION.md、breaking-changes.md、deprecated-apis.md、current-best-practices.md。
 - **待建**:戰棋移動與交戰系統的實作 ADR(演算法層:有界前緣展開、N 敵成本控制),應在 OQ-16 的棋盤規模與敵方單位數上限定案後撰寫。
