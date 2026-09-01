@@ -1,0 +1,27 @@
+WorkerThreadPool: 14 threads, 4 max low-priority.
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Using "default" pen tablet driver...
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 3769296884
+EDITOR API HASH: 3146738256
+Loading resource: res://probe_a_getonly.gd remapped: res://probe_a_getonly.gd
+Completed load for: 'res://probe_a_getonly.gd' remapped 'res://probe_a_getonly.gd' at thread -1
+SceneTreeFTI: traversal method DEFAULT
+A1: initial board_version = 0
+A2: after bump_internal(), board_version = 1
+A3: after direct assignment attempt, board_version = 1
+Loading resource: C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres remapped: C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres
+Completed load for: 'C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres' remapped 'C:/Users/felixfu007/AppData/Roaming/Godot/editor_settings-4.7.tres' at thread -1
+EditorSettings: Load OK!
+EditorTheme: Generating new theme for the config '3810048042'.
+EditorTheme: Generating new icons.
+EditorTheme: Generating new fonts.
+EditorTheme: Generating new styles.
+Loaded system CA certificates
+EditorSettings: Save OK!
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"

@@ -1,0 +1,11 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+B1: initial board_version = 0
+B2: after two internal bumps, board_version = 2
+WARNING: board_version is read-only from outside Board; ignoring external write of 999
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] @board_version_setter (res://probe_b_getset_guard.gd:20)
+       [1] _init (res://probe_b_getset_guard.gd:32)
+B3: after external write attempt, board_version = 2 (should still be 2, not 999)
+B4: external_write_attempts = 1

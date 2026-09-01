@@ -184,9 +184,29 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 # 是已提交的結算邊界。
 
 class_name Board
+# ⚠️ 2026-09-01:`class_name Board` 已被 `src/gameplay/board/board.gd` 佔用(2026-08-26 進 repo,
+#    166 行,地形/移動成本/視線/佔位的幾何雛形,與本契約職責不重疊)。Godot 專案內
+#    `class_name` 全域唯一 —— 落地時須二選一:把本契約併進該檔(順帶把它的 `_occupants`
+#    改名對齊 `_occupied`),或改掉其中一個名字。**已登記,未處置。**
 
-var board_version: int          # 單調遞增,只在結算邊界 +1
-var settlement_in_progress: bool
+# board_version / settlement_in_progress 皆為對外唯讀屬性。
+# 外部 `board.board_version = x` 會觸發 setter 的 push_error() 並拒絕寫入 —— 已實機驗證,
+# 證據:prototypes/adr0001-board-property-spike-2026-09-01/(逐字 log 見該檔 README)。
+# 內部合法寫入一律走底線私有欄位,不經過本屬性自己的 setter。
+
+var _board_version: int = 0            # 單調遞增,只在結算邊界 +1
+var board_version: int:
+	get:
+		return _board_version
+	set(value):
+		push_error("board_version is read-only outside Board; rejected external write of %d" % value)
+
+var _settlement_in_progress: bool = false
+var settlement_in_progress: bool:
+	get:
+		return _settlement_in_progress
+	set(value):
+		push_error("settlement_in_progress is read-only outside Board; rejected external write of %s" % value)
 
 # 邏輯佔位表:key = 座標,value = unit_id(int)
 # 注意 value 型別是 int —— `unit_id` 是該 int 值的語意名稱,不是型別名
@@ -287,7 +307,16 @@ static func assert_same_version(results: Array[QueryResult]) -> bool
 
 ## Migration Plan
 
-不適用——本專案尚無任何實作程式碼(`src/` 為空,專案處於設計階段)。本 ADR 為前瞻性決策,不涉及既有程式碼遷移。
+🔴 **2026-09-01 更正**:本節原寫「本專案尚無任何實作程式碼(`src/` 為空,專案處於設計階段)」——
+**該句撰寫當下(2026-08-18)為真,現已不成立**:`src/gameplay/board/board.gd`(166 行)與
+`line_of_sight.gd`(95 行)已於 2026-08-26 進 repo。
+
+**但本 ADR 仍不涉及既有程式碼遷移** —— 那兩份是地形/移動成本/視線的幾何雛形,
+`board_version` / `settlement_in_progress` / `_occupied` **三項零命中**。
+
+⚠️ **真正需要遷移的是命名**:`board.gd` 已佔用 `class_name Board`,而 Godot 專案內
+`class_name` 全域唯一。落地時須二選一(併檔或改名),詳見上方 Key Interfaces 的警告。
+**已登記,未處置。**
 
 ## Validation Criteria
 
@@ -301,6 +330,7 @@ static func assert_same_version(results: Array[QueryResult]) -> bool
 6. **後續 `/architecture-review`** 判定本 ADR 與其他 ADR 無衝突、且對 GDD 需求的涵蓋無缺口。
 7. **`settlement_in_progress` 卡死防衛斷言**(2026-08-18 `godot-specialist` 驗證後新增):自動化測試斷言該旗標不得跨越兩個連續 `_process` 幀仍為 `true`。此測試是「意外引入永不恢復的 await」這個最壞情況的安全網——該情況的後果是整場戰鬥輸入永久鎖死且無錯誤訊息,比本旗標原本要防的重入更嚴重。
 8. **查詢結果容器獨立性測試**(同上):取得一份查詢結果後,對 board 執行一次已提交結算,斷言該結果攜帶的容器內容**未被回溯改變**(只有 `is_stale()` 轉為 true)——此測試攔截「查詢回傳 board 內部結構參照」的錯誤實作。
+9. 🔴 **對外寫入攔截測試**(2026-09-01 `TD-ADR` 覆核導出,已實機驗證):自 `Board` 外部對 `board.board_version` 或 `board.settlement_in_progress` 賦值,斷言觸發 `push_error()` 且**欄位值不變**。證據與三種做法的比較見 `prototypes/adr0001-board-property-spike-2026-09-01/`。⚠️ **本條落地前有一個未查證項**:GdUnit4 要如何斷言 `push_error()` 被觸發,本專案尚未確認,spike 已明文登記為未查。
 
 **反向驗證(本 ADR 若錯了會如何顯現)**:若版本戳記的粒度過粗(某些改變答案的事件未遞增版本),會表現為玩家看到過期疊加圖而系統未察覺——即 Player Fantasy 具名的「顯示與實際結算不一致」失敗模式。若粒度過細(唯讀操作也遞增),會表現為所有查詢恆為過期、每次操作都全量重算,在 N 敵盤面上直接撞上效能預算。
 

@@ -68,7 +68,7 @@ state_ownership:
     status: active
     owner_system: tactical-combat-system
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
-    interface: "Board.board_version (read-only int, monotonic). Query results carry the version they were computed against; a result is valid iff result.version == board.board_version."
+    interface: "Board.board_version (read-only int, monotonic). Query results carry the version they were computed against; a result is valid iff result.version == board.board_version. ENFORCEMENT (added 2026-09-01, TD-ADR gate): implemented as a GDScript property with a setter that push_error()s and rejects external writes — NOT a bare var. A bare var would leave this read-only claim unenforced in code; verified on-engine, see prototypes/adr0001-board-property-spike-2026-09-01/."
     write_access: board-only
     notes: "Increments ONLY at committed settlement boundaries. Must NOT increment on read-only operations (cursor movement, overlay toggle, prediction marker) — those are zero-write per tactical-combat-system.md Core Rules #8/#10."
     referenced_by:
@@ -92,7 +92,7 @@ state_ownership:
     status: active
     owner_system: tactical-combat-system
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
-    interface: "Board.settlement_in_progress (read-only bool). True from settlement step 1 start until step 4 completion."
+    interface: "Board.settlement_in_progress (read-only bool). True from settlement step 1 start until step 4 completion. ENFORCEMENT (added 2026-09-01, TD-ADR gate): same property-setter mechanism as board_version — see prototypes/adr0001-board-property-spike-2026-09-01/."
     write_access: board-only
     notes: "While true, ALL player input is rejected with explicit feedback (not queued). Must not remain true across two consecutive _process frames — if it does, push_error(); that state means a never-resuming await has permanently deadlocked input."
     referenced_by:
