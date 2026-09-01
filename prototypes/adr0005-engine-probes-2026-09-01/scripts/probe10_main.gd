@@ -5,13 +5,16 @@ extends Node
 
 const Recorder := preload("res://scripts/probe10_recorder.gd")
 
-const MAX_FRAMES := 720   # ~12s @60fps 安全逾時,足以涵蓋外部腳本的 alt-tab 排程
+const MAX_FRAMES := 900   # ~15s @60fps 安全逾時(2026-09-01 第一輪實測:引擎未鎖 FPS 時實測約 146fps,
+# 720 影格在 PowerShell 腳本走完 alt-tab 排程前就跑完,只錄到 FOCUS_OUT 沒有 FOCUS_IN。
+# 修法:_ready() 開頭鎖 Engine.max_fps = 60,並把影格數拉高留安全邊際。)
 
 var _log: Array = []
 var _seq: int = 0
 
 
 func _ready() -> void:
+	Engine.max_fps = 60   # 鎖 FPS,讓「影格數」與「外部腳本的秒數排程」可以對得上(見上方 2026-09-01 修法說明)
 	get_window().title = "AdrProbe10Window"
 	print("=".repeat(78))
 	print("ADR-0005 PROBE #10 —— NOTIFICATION_APPLICATION_FOCUS_IN/_OUT 相對 process_priority 的時序")

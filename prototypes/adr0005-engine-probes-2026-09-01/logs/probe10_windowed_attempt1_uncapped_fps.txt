@@ -1,0 +1,29 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+==============================================================================
+ADR-0005 PROBE #10 —— NOTIFICATION_APPLICATION_FOCUS_IN/_OUT 相對 process_priority 的時序
+Godot: 4.7.1-stable (official)
+視窗標題已設為: AdrProbe10Window
+==============================================================================
+本視窗只負責記錄與逾時(720 影格)自動結束 —— 需要外部腳本製造真實 OS 焦點切換
+(alt-tab away / back),本檔不主動模擬焦點事件(那樣就只是在測自己的程式碼)。
+
+2915  frame=000583  FOCUS_OUT R(-100)
+2916  frame=000583  FOCUS_OUT R(-60)
+2917  frame=000583  FOCUS_OUT R(-25)
+2918  frame=000583  FOCUS_OUT R(0)
+2919  frame=000583  FOCUS_OUT R(100)
+
+── FINISH,已跑滿 720 影格,開始分析 ──
+── 偵測到的全部 FOCUS 事件(5 筆)──
+  seq=2915  frame=000583  FOCUS_OUT R(-100)
+  seq=2916  frame=000583  FOCUS_OUT R(-60)
+  seq=2917  frame=000583  FOCUS_OUT R(-25)
+  seq=2918  frame=000583  FOCUS_OUT R(0)
+  seq=2919  frame=000583  FOCUS_OUT R(100)
+
+── 逐影格分析(僅列有 FOCUS 事件的影格)──
+  frame=000583  FOCUS 命中數=5/5  focus_seq範圍=[2915,2919]  process_seq範圍=[2920,2924]
+    => 該影格內,全部 FOCUS 通知先於全部 PROCESS —— 乾淨的『先通知後處理』
+

@@ -1,0 +1,65 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+==============================================================================
+ADR-0005 PROBE #10 —— NOTIFICATION_APPLICATION_FOCUS_IN/_OUT 相對 process_priority 的時序
+Godot: 4.7.1-stable (official)
+視窗標題已設為: AdrProbe10Window
+==============================================================================
+本視窗只負責記錄與逾時(900 影格)自動結束 —— 需要外部腳本製造真實 OS 焦點切換
+(alt-tab away / back),本檔不主動模擬焦點事件(那樣就只是在測自己的程式碼)。
+
+0120  frame=000024  FOCUS_OUT R(-100)
+0121  frame=000024  FOCUS_OUT R(-60)
+0122  frame=000024  FOCUS_OUT R(-25)
+0123  frame=000024  FOCUS_OUT R(0)
+0124  frame=000024  FOCUS_OUT R(100)
+1170  frame=000233  FOCUS_IN  R(-100)
+1171  frame=000233  FOCUS_IN  R(-60)
+1172  frame=000233  FOCUS_IN  R(-25)
+1173  frame=000233  FOCUS_IN  R(0)
+1174  frame=000233  FOCUS_IN  R(100)
+2385  frame=000475  FOCUS_OUT R(-100)
+2386  frame=000475  FOCUS_OUT R(-60)
+2387  frame=000475  FOCUS_OUT R(-25)
+2388  frame=000475  FOCUS_OUT R(0)
+2389  frame=000475  FOCUS_OUT R(100)
+3035  frame=000604  FOCUS_IN  R(-100)
+3036  frame=000604  FOCUS_IN  R(-60)
+3037  frame=000604  FOCUS_IN  R(-25)
+3038  frame=000604  FOCUS_IN  R(0)
+3039  frame=000604  FOCUS_IN  R(100)
+
+── FINISH,已跑滿 900 影格,開始分析 ──
+── 偵測到的全部 FOCUS 事件(20 筆)──
+  seq=0120  frame=000024  FOCUS_OUT R(-100)
+  seq=0121  frame=000024  FOCUS_OUT R(-60)
+  seq=0122  frame=000024  FOCUS_OUT R(-25)
+  seq=0123  frame=000024  FOCUS_OUT R(0)
+  seq=0124  frame=000024  FOCUS_OUT R(100)
+  seq=1170  frame=000233  FOCUS_IN  R(-100)
+  seq=1171  frame=000233  FOCUS_IN  R(-60)
+  seq=1172  frame=000233  FOCUS_IN  R(-25)
+  seq=1173  frame=000233  FOCUS_IN  R(0)
+  seq=1174  frame=000233  FOCUS_IN  R(100)
+  seq=2385  frame=000475  FOCUS_OUT R(-100)
+  seq=2386  frame=000475  FOCUS_OUT R(-60)
+  seq=2387  frame=000475  FOCUS_OUT R(-25)
+  seq=2388  frame=000475  FOCUS_OUT R(0)
+  seq=2389  frame=000475  FOCUS_OUT R(100)
+  seq=3035  frame=000604  FOCUS_IN  R(-100)
+  seq=3036  frame=000604  FOCUS_IN  R(-60)
+  seq=3037  frame=000604  FOCUS_IN  R(-25)
+  seq=3038  frame=000604  FOCUS_IN  R(0)
+  seq=3039  frame=000604  FOCUS_IN  R(100)
+
+── 逐影格分析(僅列有 FOCUS 事件的影格)──
+  frame=000024  FOCUS 命中數=5/5  focus_seq範圍=[120,124]  process_seq範圍=[125,129]
+    => 該影格內,全部 FOCUS 通知先於全部 PROCESS —— 乾淨的『先通知後處理』
+  frame=000233  FOCUS 命中數=5/5  focus_seq範圍=[1170,1174]  process_seq範圍=[1175,1179]
+    => 該影格內,全部 FOCUS 通知先於全部 PROCESS —— 乾淨的『先通知後處理』
+  frame=000475  FOCUS 命中數=5/5  focus_seq範圍=[2385,2389]  process_seq範圍=[2390,2394]
+    => 該影格內,全部 FOCUS 通知先於全部 PROCESS —— 乾淨的『先通知後處理』
+  frame=000604  FOCUS 命中數=5/5  focus_seq範圍=[3035,3039]  process_seq範圍=[3040,3044]
+    => 該影格內,全部 FOCUS 通知先於全部 PROCESS —— 乾淨的『先通知後處理』
+
