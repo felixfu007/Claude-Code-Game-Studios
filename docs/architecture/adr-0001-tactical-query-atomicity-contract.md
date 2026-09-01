@@ -28,7 +28,7 @@ Proposed
 | **Depends On** | None(本專案第一份 ADR) |
 | **Enables** | 未來的「戰棋移動與交戰系統」實作 ADR/epic;戰鬥 HUD(#10)的渲染架構決策;技能卡牌系統(#6)的效果掛鉤介面設計 |
 | **Blocks** | 戰棋移動與交戰系統的任何實作 epic——本 ADR 未 Accepted 前,`reachable_set`/`threat_range`/佔位資料的實作缺少定案的正確性機制 |
-| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed,`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進 |
+| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed。<br>🔴 **2026-09-01 事實更正**:本欄原寫「`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進」。**該句已不成立** —— 該 GDD 已於 **2026-08-31 由管理者裁決 Approved**(依據:劑量裁決位階高於收斂規則;四輪發現全數同輪修畢、無待清償 BLOCKING;第五輪 `/design-review` 已取消。見 `design/gdd/systems-index.md` 第 4 列)。**因此「兩者應一併推進」不再適用:上游已到位,現在單向卡在本 ADR。** |
 
 ## Context
 
