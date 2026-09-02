@@ -1,0 +1,38 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+==============================================================================
+STORY 001 — @abstract COMPILE PROBE — 2026-09-02
+Godot version: 4.7.1-stable (official)
+==============================================================================
+
+[1] 四種回傳型別(bool/float/void/Vector2)+ signal 同檔共存並編譯
+    腳本:mouse_reclaim_policy_probe.gd
+  結果:COMPILED OK
+
+[2] 對照組:完整實作全部 4 個 @abstract 方法的具體子類別
+    腳本:complete_subclass_probe.gd
+  結果:COMPILED OK
+
+[3] 子類別只實作 3 個(故意漏 diagnostic_seed_position())
+    腳本:incomplete_subclass_probe.gd
+    預期:編譯失敗,且錯誤訊息指名缺少的是 diagnostic_seed_position
+SCRIPT ERROR: Parse Error: Class "incomplete_subclass_probe.gd" must implement "ProbeMouseReclaimPolicy.diagnostic_seed_position()" and other inherited abstract methods or be marked as "@abstract".
+   at: GDScript::reload (res://incomplete_subclass_probe.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://runner.gd:45)
+       [1] _initialize (res://runner.gd:34)
+ERROR: Failed to load script "res://incomplete_subclass_probe.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://runner.gd:45)
+       [1] _initialize (res://runner.gd:34)
+SCRIPT ERROR: Parse Error: Class "incomplete_subclass_probe.gd" must implement "ProbeMouseReclaimPolicy.diagnostic_seed_position()" and other inherited abstract methods or be marked as "@abstract".
+   at: GDScript::reload (res://incomplete_subclass_probe.gd:5)
+   GDScript backtrace (most recent call first):
+       [0] _report (res://runner.gd:52)
+       [1] _initialize (res://runner.gd:34)
+  結果:FAILED (reload=Parse error) -- 見上方引擎錯誤訊息(含指名缺少的方法)
+
+==============================================================================
+REPORT COMPLETE
+==============================================================================
