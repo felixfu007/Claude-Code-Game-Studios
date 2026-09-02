@@ -1,12 +1,12 @@
 # Story 001:共用列舉、目標值型別與策略契約
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:Complete
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:S(約 3–4 小時)
 > **Manifest Version**:2026-09-02
-> **Last Updated**:[由 /dev-story 於實作開始時設定]
+> **Last Updated**:2026-09-02
 
 ## Context
 
@@ -60,6 +60,21 @@
 
 - **AC-53(表面類型共用列舉型別契約驗證,回應 qa-lead 審查發現——AC-47 只驗證同標籤實例基數 ≤1,未驗證每個標籤本身確實來自同一份共用列舉,見 Core Rules #7「表面類型標籤的型別契約」)**: **GIVEN** 目前系統中所有已掛載 UI 表面所使用的表面類型標籤集合,**WHEN** 檢視每個標籤的宣告來源,**THEN** 全部標籤皆為 Core Rules #7 所定義之單一共用列舉的成員,不存在任何下游系統自行發明的獨立字串或型別。**(驗證方式:程式碼審查/靜態分析——確認共用列舉的成員定義與各下游系統實際使用的標籤來源一致。)**
 
+🔴 **AC-53 在本 story 只做得到部分涵蓋(2026-09-02 實作時登記,`/code-review` 獨立確認)**
+
+AC-53 原文要求檢視「目前系統中**所有已掛載** UI 表面」的標籤來源。**Story 002(狀態容器)與
+003(註冊表)尚未實作,系統裡沒有任何已掛載表面可檢視** —— 這一半在本 story 的時間點
+**結構上不可驗**,不是省略。
+
+**本 story 實際驗到的是**:共用列舉是單一份宣告、成員與順序與 ADR-0005 機制二完全一致
+(順序也驗,因為底層 int 值會進入相等判定與未來的持久化)。
+
+**還沒驗到的是**:下游有沒有人另開一份自己的標籤。**那要等 Story 003 有真實掛載表面才驗得到。**
+
+⚠️ **本註記刻意寫在 story 檔而不只寫在測試檔註解裡** —— 原本只寫在
+`tests/unit/cursor/shared_types_test.gd` 的檔頭,而**只讀 story 檔、不翻測試碼的人看不到**,
+會誤以為 AC-53 已經完整結案。
+
 ---
 
 *以下 3 條為**本 story 自訂**的驗收條文,編號 `AC-S001-*`,不佔用 GDD 的 AC 號碼。*
@@ -107,7 +122,12 @@
 **Story Type**:Logic
 **必要證據**:`tests/unit/cursor/shared_types_test.gd`
 
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立(2026-09-02)—— `tests/unit/cursor/shared_types_test.gd`,8 條測試全過。
+
+**驗證方式**:主 session 自行重跑全庫測試,不採信 subagent 回報。
+`Overall Summary: 249 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans`,
+引擎實際 exit code **100** —— 唯一失敗是既有的**故意紅**測試
+(`affinity_phi_provider_test.gd`),與本 story 無關。本 story 8 條 **0 failures / 0 orphans**。
 
 ---
 
@@ -115,3 +135,50 @@
 
 - **Depends on**:無
 - **Unlocks**:002, 003, 004, 006, 014
+
+---
+
+## Completion Notes
+
+**Completed**:2026-09-02
+**Verdict**:COMPLETE WITH NOTES
+
+**Criteria**:4/4 —— 其中 **AC-53 為部分涵蓋**(共用列舉本身已驗;「下游有無另開一份」
+結構上要等 Story 003 有真實掛載表面才驗得到,理由見上方 Acceptance Criteria 節的登記)。
+其餘三條(AC-S001-a/b/c)完整涵蓋。**零 UNTESTED。**
+
+**Test Evidence**:`tests/unit/cursor/shared_types_test.gd`,8 條。
+AC-S001-c 的負面半段(漏實作一個方法會編譯失敗)由外部探針驗證,
+`prototypes/story-001-abstract-probe-2026-09-02/scripts/real-type-verification/`。
+🔴 **第二輪探針用的是專案正式的 `MouseReclaimPolicy`,不是替身型別** —— 第一輪用 `int` 佔位,
+被 `/code-review` 判定不符本專案 (A) 級量測的定義(「執行了專案的程式碼,還是重新實作了一份」),
+已重跑。log 的錯誤訊息逐字指名 `MouseReclaimPolicy.diagnostic_seed_position()`。
+
+**Code Review**:Complete(`/code-review` 2026-09-02)。
+三方平行覆核:`godot-gdscript-specialist`(程式品質)、`godot-specialist`(ADR 合規)、
+`qa-tester`(測試涵蓋)。**架構層零違規、零偏移;測試無假通過。**
+判定 CHANGES REQUIRED,**五項發現全數修畢後才結案**。
+
+**驗證方式**:主 session 自行重跑全庫測試,不採信 subagent 回報 ——
+`249 test cases | 0 errors | 1 failures | 0 orphans`,引擎實際 exit code 100
+(唯一失敗為既有的故意紅測試,與本 story 無關)。
+
+### Deviations(兩項 ADVISORY,皆已登記至 `docs/tech-debt-register.md`)
+
+1. **`assert()` 前置條件防呆在正式發行版建置會被移除** —— 本機無匯出範本,
+   **此點未經實測驗證,登記為待查證而非既定事實**。
+2. **AC-53 的下游檢查待 Story 003** —— 見上方登記。
+
+### 一項曾被誤判為偏離、實際不是的事(留痕以免下一個人改錯方向)
+
+`encode_tile()` / `decode_tile()` 的**兩參數**簽章一度被記為「刻意偏離 ADR」。
+**那個判斷是錯的**:ADR-0005 的 `Key Interfaces` 節(明文「本 ADR 定案的契約形狀」)
+本身寫的就是兩參數,單參數只出現在機制三一句較早的說明性文字。
+🔴 **程式碼註解原本寫著「deliberate deviation」,會誘導後人改回單參數 —— 那才會真的違約。**
+該註解已於 `/code-review` 後修正。
+
+### 範圍外但同批處理的獨立變更(非 Story 001 內容)
+
+`src/ui/battle/device_authority.gd` 與其測試:平手裁決由「滑鼠優先」改為「方向鍵/手把優先」,
+執行 2026-09-02 管理者裁決(推翻 `active.md` 第十七批的平手條款)。
+**與 Story 001 無關**,是本日派工時查既有程式碼撞見的矛盾,已另行提交。
