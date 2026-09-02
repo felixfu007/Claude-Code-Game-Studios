@@ -7,6 +7,10 @@ config/name="盲目於微光"
 config/features=PackedStringArray("4.7")
 run/main_scene="res://src/ui/battle/BattleScreen.tscn"
 
+[autoload]
+
+CursorStateHost="*res://src/ui/cursor/cursor_state_host.gd"
+
 [display]
 
 window/size/viewport_width=480
