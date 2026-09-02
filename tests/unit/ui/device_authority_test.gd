@@ -48,9 +48,9 @@ func test_resolve_frame_pad_input_only_grants_pad() -> void:
 	assert_int(authority.current()).is_equal(DeviceAuthority.Device.PAD)
 
 
-func test_resolve_frame_both_devices_same_frame_mouse_wins() -> void:
-	# Arrange — 起始主權為 PAD，確保平手裁決真的把它「搶」過來，而不是恰好維持原狀
-	var authority: DeviceAuthority = DeviceAuthority.new(DeviceAuthority.Device.PAD)
+func test_resolve_frame_both_devices_same_frame_pad_wins() -> void:
+	# Arrange — 起始主權為 MOUSE，確保平手裁決真的把它「搶」過來，而不是恰好維持原狀
+	var authority: DeviceAuthority = DeviceAuthority.new(DeviceAuthority.Device.MOUSE)
 
 	# Act — 同一畫格兩個旗標都亮
 	authority.note_mouse_motion()
@@ -59,7 +59,7 @@ func test_resolve_frame_both_devices_same_frame_mouse_wins() -> void:
 
 	# Assert
 	assert_bool(changed).is_true()
-	assert_int(authority.current()).is_equal(DeviceAuthority.Device.MOUSE)
+	assert_int(authority.current()).is_equal(DeviceAuthority.Device.PAD)
 
 
 func test_resolve_frame_mouse_set_down_then_pad_picked_up_authority_transfers_to_pad() -> void:

@@ -3,17 +3,22 @@
 ## recorded in [code]production/session-state/active.md[/code] 第十七批
 ## 管理者裁決(游標裝置權威 = 最後動作者優先): mouse motion claims
 ## authority, pad input claims authority, and if both happen within the
-## same resolved frame, mouse wins the tie.
+## same resolved frame, [b]PAD wins the tie[/b]. The tie-break direction was
+## reversed by a later ruling — search [code]production/session-state/
+## active.md[/code] for "2026-09-02 管理者裁決:平手時" for the full text.
+## The original 第十七批 tie-break had mouse winning; that clause is
+## superseded. The other two rules from 第十七批 are unchanged: mouse
+## motion claims authority, pad input claims authority.
 ## [br]
-## [b]The mouse-wins clause is a tie-break, not a steady-state.[/b] It only
+## [b]The pad-wins clause is a tie-break, not a steady-state.[/b] It only
 ## applies when both devices report activity within the same frame.
-## Implementing this as "mouse always has authority" would make the gamepad
-## unusable whenever a mouse is present, and is a no-op on platforms with no
-## mouse cursor at all — [code]technical-preferences.md[/code] requires full
-## gamepad parity on console. The scenario this class exists to fix: a
-## player sets the mouse down and picks up the gamepad — the mouse never
-## moves again, so authority must still transfer to PAD on the next pad
-## input, not stay stuck on MOUSE forever.
+## Implementing this as "pad always has authority" would make the mouse
+## unusable whenever a gamepad reports any input, which breaks
+## [code]technical-preferences.md[/code]'s requirement that keyboard/mouse
+## remain the primary PC input method. The scenario this class exists to
+## fix: a player sets the mouse down and picks up the gamepad — the mouse
+## never moves again, so authority must still transfer to PAD on the next
+## pad input, not stay stuck on MOUSE forever.
 ## [br]
 ## Deliberately a two-phase pattern: callers call [method note_mouse_motion]
 ## and [method note_pad_input] from wherever they translate raw
@@ -27,6 +32,18 @@
 ## forbidden pattern [code]reading_input_event_device_id[/code]. Keeping
 ## that classification out of this class is also what lets it be
 ## constructed with a bare [code]new()[/code] and tested fully headless.
+## [br]
+## [b]Pending consolidation — do not extend.[/b] [enum Device] has only two
+## values ([code]MOUSE[/code] / [code]PAD[/code]) and no keyboard entry.
+## ADR-0005's [code]CursorTypes.Authority[/code] has three
+## ([code]UNINITIALIZED[/code] / [code]MOUSE[/code] /
+## [code]KEYBOARD_GAMEPAD[/code], treating keyboard and gamepad as a single
+## authority). The two representations will converge into one at Story 005
+## ([code]production/epics/cursor-highlight-state/
+## story-005-frame-buffer-ordering.md[/code]). Until that story lands, this
+## class keeps running as-is — the battle screen depends on it and there is
+## nothing to replace it with yet — but it must not gain new states, new
+## devices, or new call sites beyond what already exists.
 class_name DeviceAuthority
 extends RefCounted
 
@@ -68,17 +85,18 @@ func note_pad_input() -> void:
 ## Call exactly once per frame (from [method Node._process] or equivalent).
 ## Resolves authority from this frame's recorded flags, then clears both
 ## flags regardless of outcome — so the next frame always starts from a
-## clean slate. If both flags are set, MOUSE wins (the manager's tie-break
-## ruling — see class doc). If neither flag is set, authority is left
-## unchanged and nothing is emitted. Returns [code]true[/code] if authority
-## changed as a result of this call (in which case [signal authority_changed]
-## fires exactly once), [code]false[/code] otherwise.
+## clean slate. If both flags are set, PAD wins (the manager's 2026-09-02
+## tie-break ruling — see class doc). If neither flag is set, authority is
+## left unchanged and nothing is emitted. Returns [code]true[/code] if
+## authority changed as a result of this call (in which case
+## [signal authority_changed] fires exactly once), [code]false[/code]
+## otherwise.
 func resolve_frame() -> bool:
 	var next: Device = _current
-	if _mouse_moved_this_frame:
-		next = Device.MOUSE
-	elif _pad_input_this_frame:
+	if _pad_input_this_frame:
 		next = Device.PAD
+	elif _mouse_moved_this_frame:
+		next = Device.MOUSE
 
 	_mouse_moved_this_frame = false
 	_pad_input_this_frame = false
