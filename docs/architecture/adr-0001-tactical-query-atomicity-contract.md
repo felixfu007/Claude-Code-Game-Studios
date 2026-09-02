@@ -18,7 +18,7 @@
 > | 五、上游依賴已核准 | ✅ `Depends On: None` |
 >
 > ⚠️ **核准本份不等於戰棋系統可以開工**:`design/gdd/tactical-combat-system.md` 另受其自身的
-> **OQ-2(我方基準數值表無人擁有)**阻擋。本 ADR 不是它唯一的鎖。
+> **OQ-2(我方基準數值表)**阻擋 —— ✅ 2026-09-02 已指派 `systems-designer`,**但表尚未產出,仍然阻擋**。本 ADR 不是它唯一的鎖。
 >
 > **本次核准明確未涵蓋**(依門檻文件第四節,皆不阻擋核准):`battle_controller.gd` 現有的
 > 攻擊/移動解算是否已構成本 ADR 定義的結算邊界(無人評估);`class_name Board` 命名衝突的處置;
@@ -48,7 +48,7 @@
 | **Depends On** | None(本專案第一份 ADR) |
 | **Enables** | 未來的「戰棋移動與交戰系統」實作 ADR/epic;戰鬥 HUD(#10)的渲染架構決策;技能卡牌系統(#6)的效果掛鉤介面設計 |
 | **Blocks** | 戰棋移動與交戰系統的任何實作 epic——本 ADR 未 Accepted 前,`reachable_set`/`threat_range`/佔位資料的實作缺少定案的正確性機制 |
-| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed。<br>🔴 **2026-09-01 事實更正**:本欄原寫「`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進」。**該句已不成立** —— 該 GDD 已於 **2026-08-31 由管理者裁決 Approved**(依據:劑量裁決位階高於收斂規則;四輪發現全數同輪修畢、無待清償 BLOCKING;第五輪 `/design-review` 已取消。見 `design/gdd/systems-index.md` 第 4 列)。**因此「兩者應一併推進」不再適用:上游 GDD 已 Approved。**<br>⚠️ **但本 ADR 不是該 GDD 唯一的鎖**(2026-09-01 `TD-ADR` 覆核指出本句初稿寫成「單向卡在本 ADR」不準確,已更正):該 GDD 的實作**另受其自身的 OQ-2 阻擋**(我方基準數值表無人擁有 —— 非「等別人」,是沒人被指派;公式二無它無法實作),見該檔檔頭第 13 行。**即使本 ADR 今日核准,該 GDD 仍不得移交 `/create-architecture`。** |
+| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed。<br>🔴 **2026-09-01 事實更正**:本欄原寫「`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進」。**該句已不成立** —— 該 GDD 已於 **2026-08-31 由管理者裁決 Approved**(依據:劑量裁決位階高於收斂規則;四輪發現全數同輪修畢、無待清償 BLOCKING;第五輪 `/design-review` 已取消。見 `design/gdd/systems-index.md` 第 4 列)。**因此「兩者應一併推進」不再適用:上游 GDD 已 Approved。**<br>⚠️ **但本 ADR 不是該 GDD 唯一的鎖**(2026-09-01 `TD-ADR` 覆核指出本句初稿寫成「單向卡在本 ADR」不準確,已更正):該 GDD 的實作**另受其自身的 OQ-2 阻擋**(我方基準數值表;公式二無它無法實作)—— ✅ **2026-09-02 已指派 `systems-designer`**(管理者裁決),**但表尚未產出,仍然阻擋**。查法:在該檔搜尋 `OQ-2`(權威敘述在 Open Questions 節的同名列)。<br>⚠️ 本處原寫「見該檔檔頭第 13 行」,已改為搜尋字串 —— 行號指路是 `.claude/rules/design-docs.md` 明文禁止的寫法,而該行今日確實動過。**即使本 ADR 今日核准,該 GDD 仍不得移交 `/create-architecture`。** |
 
 ## Context
 
