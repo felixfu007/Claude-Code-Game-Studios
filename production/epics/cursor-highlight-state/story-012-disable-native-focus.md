@@ -1,0 +1,104 @@
+# Story 012:已註冊表面禁用原生 focus/hover(兩項條件)
+
+> **Epic**:單一游標/高亮狀態系統
+> **Status**:Ready
+> **Layer**:Core
+> **Type**:UI
+> **Estimate**:[待 sprint 規劃時填]
+> **Manifest Version**:2026-09-02
+> **Last Updated**:[由 /dev-story 於實作開始時設定]
+
+## Context
+
+**GDD**:`design/gdd/cursor-highlight-state.md`(2026-08-13 第十六輪 Approved)
+**Requirement**:TR-cursor-018
+*(需求原文在 `docs/architecture/tr-registry.yaml`,審查時請當場讀最新版)*
+
+**Governing ADR**:ADR-0005 單一游標/高亮狀態系統:裝置權威輸入架構(**Accepted** 2026-09-01)
+**本 story 對應的機制**:機制十四(已註冊表面禁用原生 Control focus/hover)
+
+**Engine**:Godot 4.7.1 | **Risk**:HIGH
+**引擎注意事項**:本系統的兩個核心領域(Input、UI)在 4.6 與 4.7 **各有一項直接相關的破壞性變更**。
+🔴 **引擎判斷一律以 `docs/engine-reference/godot/breaking-changes.md` 與 `current-best-practices.md` 為準**
+—— `modules/input.md` 與 `modules/ui.md` 停在 4.6,對這兩項變更**各自零命中**。
+
+**控制清單規則(本 story 適用)**:
+- 🔴 **必須**:已註冊表面的根 Control **同時**滿足兩項條件(見下)。
+- **禁止**:`native_control_hover_or_focus_on_registered_surface`
+
+---
+
+## Implementation Notes
+
+*出自 ADR-0005 機制十四:*
+
+**兩項條件,缺一不可**:
+
+1. **`focus_mode = FOCUS_NONE`** —— 關掉鍵盤/手把的焦點通道。
+2. **不得帶有內建滑鼠 hover 主題狀態** —— 根 Control 不得是 `Button` 或任何在主題中內建 hover StyleBox 的節點型別;若因其他理由**必須**使用此類型別,**必須顯式清空其 hover/focus StyleBox**。
+
+🔴 **第 2 項是硬性要求,不是防禦性建議 —— 這是實測結論,不是推測。**
+已實測(2026-09-01,非 headless):`Button` 設 `FOCUS_NONE` 後滑鼠懸停,`is_hovered()` 由 false 轉 **true**、`get_draw_mode()` 由 0(NORMAL)轉 **2(HOVER)**。
+**焦點與懸停確為兩條獨立管線** —— 只設 `focus_mode` **只封住兩條管線中的一條**。
+證據:`prototypes/adr0005-engine-probes-2026-09-01/logs/probe9_windowed.txt`
+
+**未註冊表面仍可用原生 focus**(GDD AC-60 明文承認),且其上的方向鍵導覽**仍會轉移裝置權威** —— 這是**正確行為**,裝置權威是全域的。
+
+**高亮只讀 `CursorState`**,不得各表面自行維護。
+
+---
+
+## ⚠️ 本 story 無專屬 AC —— 這是刻意的,不是漏掉
+
+機制十四的效果由 **AC-2**(任一影格跨全部表面恰有一個 hover/游標高亮,不為 0 也不為 2)
+這條不變式**間接**驗證:若原生 hover 也在畫,就會出現兩個高亮。
+
+**因此本 story 的驗收方式是**:
+1. **程式碼審查/靜態分析** —— 逐一確認每個已註冊表面的根 Control 兩項條件皆成立;
+2. **執行期** —— 在每個已註冊表面上重跑 AC-2,含滑鼠懸停情境。
+
+⚠️ **AC-2 的主要歸屬在 Story 002。本 story 是它的另一條必要條件。**
+**兩張都過,AC-2 才真的成立。**
+
+---
+
+## Out of Scope
+
+- Story 003:註冊表本體
+- Story 011:白名單例外表面的原生指標恢復
+
+---
+
+## Acceptance Criteria
+
+*本 story 無專屬 AC —— 驗收方式見下方「QA Test Cases」。*
+
+---
+
+## QA Test Cases
+
+🔴 **本批未經 qa-lead 產生測試規格**(管理者 2026-09-02 裁決:精簡模式,覆核關卡不跑;
+且本工作環境未經授權不得動用 Agent)。
+
+**替代做法**:上方驗收標準**本身就寫成 GIVEN / WHEN / THEN 形式**,直接作為測試規格使用。
+這不是省略 —— 該 GDD 的 AC 是 qa-lead 於 2026-08-03 諮詢草擬、並經十六輪審查修訂的成果,
+明文要求「所有標準以可觀測不變式書寫,避免『感覺清楚』等無法驗證的措辭」。
+
+⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
+**停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## Test Evidence
+
+**Story Type**:UI
+**必要證據**:`production/qa/evidence/disable-native-focus-evidence.md`
+
+**Status**:[ ] 尚未建立
+
+---
+
+## Dependencies
+
+- **Depends on**:003
+- **Unlocks**:無
