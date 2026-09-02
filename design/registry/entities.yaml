@@ -353,7 +353,7 @@ constants:
     value: 0.20
     unit: ratio
     notes: "安全範圍 [0, 1.0)。與 #5 的 Φ_max 強耦合 — 兩者必須滿足『Φ 可提供的
-      實際加成 ≥ 本值造成的數值差』,否則「以弱勝強」機制錨點失效。定義與校準
+      實際加成 ≥ 本值造成的數值差』,否則 Core Rules #7(敵方數值優勢)機制錨點失效。定義與校準
       義務見 tactical-combat-system.md Tuning Knobs #1 與「跨系統校準義務」。"
     added: 2026-08-17
     revised: ""
