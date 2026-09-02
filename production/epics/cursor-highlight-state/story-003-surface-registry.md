@@ -1,7 +1,7 @@
 # Story 003:表面註冊表(兩份獨立登記表)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:In Progress
+> **Status**:Complete
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:M(約 4–6 小時)
@@ -99,3 +99,55 @@
 
 - **Depends on**:001
 - **Unlocks**:007, 011, 012
+
+---
+
+## Completion Notes(2026-09-02 結案)
+
+**Status:Complete。** 走完 `/story-readiness` → `/dev-story` → `/code-review`(三方)→ 修正 → `/story-done`。
+
+### 交付物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/ui/cursor/cursor_surface_registry.gd` | `CursorSurfaceRegistry`。**兩張結構獨立的表**:`_surfaces`(`Dictionary`)與 `_native_pointer_exceptions`(`Array`),刻意不合併 |
+| `tests/unit/cursor/surface_registry_test.gd` | 26 條(含覆核後新增的 2 條空值拒絕),全過 |
+
+**實測(主 session 獨立複跑)**:`tests/unit/cursor` 48 條 exit 0、0 orphans。
+
+### 四條驗收標準的誠實涵蓋狀態
+
+- **AC-47(至多一個掛載實例)—— 充分。** 驗到「拒絕」與「原註冊未被覆寫」兩件事,
+  比 AC 自己宣稱的驗證方式(程式碼審查)更強。
+- **AC-5 —— 拆成兩個子句分別標記(覆核後修正)。** 泛化性子句(新表面走同一泛型 API、
+  無型別分支)**本層完整可驗**;單一高亮不變式子句**本層不可驗**,因為它把 AC-2 列為自身
+  成功條件,而 AC-2 尚未驗證。📌 **一條把別條 AC 列為成功條件的 AC,在那一條未驗證前
+  不可能「完整驗證」** —— 原檔頭寫「fully verifiable」是過度宣稱,已改窄。
+- **AC-4 / AC-51 —— 不足,已登記。** AC-4 的行為那一半(一表面輸入→另一表面高亮消失)
+  屬 `CursorState`;AC-51 的「每個下游表面」目前是空集合,且它是**持續義務不是一次性補驗**。
+  **沒有造假下游表面湊數**(測試涵蓋覆核逐條查證確認)。
+
+### ✅ 今天到期的欠帳:Story 001 的 AC-53 補驗 —— 已執行,結論為否定
+
+AC-53 後半段(「所有已掛載表面的標籤是否都來自同一份共用列舉」)原註明
+「Story 003 完成時必須回頭補驗」。**已補驗,答案是擋不住。**
+標籤在 GDScript 裡本質是整數,型別標註不產生執行期防線 —— 拿另一份「數字恰好相同」的
+自製清單呼叫 `register()` **會成功,而且不會有任何錯誤訊息**。
+加執行期成員檢查只擋得掉越界數字,**擋不掉真正要防的那件事**。
+📌 **管理者 2026-09-02 裁決:誠實登記為「依賴呼叫端紀律,無結構性保證」,不以「已補驗」外觀結案。**
+後續義務與全文見 `docs/tech-debt-register.md`。
+
+### 一項副產物:引擎行為發現已升為實測級
+
+實作期發現「傳入已釋放但非 null 的節點時,GDScript 在**呼叫邊界**就中止呼叫端,
+函式體根本進不去,所以裡面的 `is_instance_valid()` 防禦沒有機會執行」。
+原本只寫在註解裡、無物證,依專案證據等級規範不成立。
+**引擎覆核者自建拋棄式探針實跑驗證,宣稱屬實**,四組對照與逐字輸出留檔於
+`prototypes/adr0005-story003-freed-control-boundary-probe-2026-09-02/`。
+另確認它與 2026-08-20 的 C2/F-10 **是不同機制**(那次是呼叫方法時中止,這次早一步)。
+
+### 覆核結論
+
+三方:測試涵蓋 INCOMPLETE → 修正後關閉;GDScript 品質 CHANGES REQUIRED → 修正後關閉;
+引擎/ADR 契約 **APPROVED**(0 BLOCKING)。修正見提交 `eda2225`,其中本 story 相關的是
+`register()` 新增 `INVALID_NODE`(原本傳 `null` 會回報「註冊成功」並**永久佔用該標籤**)。

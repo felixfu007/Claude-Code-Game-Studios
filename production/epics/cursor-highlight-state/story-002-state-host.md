@@ -1,7 +1,7 @@
 # Story 002:Autoload 薄殼 + 依賴注入核心 + 三欄位狀態
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:In Progress
+> **Status**:Complete
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:M(約 5–6 小時)
@@ -101,3 +101,52 @@
 
 - **Depends on**:001
 - **Unlocks**:005, 007, 008, 010, 014
+
+---
+
+## Completion Notes(2026-09-02 結案)
+
+**Status:Complete。** 走完 `/story-readiness` → `/dev-story` → `/code-review`(三方)→ 修正 → `/story-done`。
+
+### 交付物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/ui/cursor/cursor_state.gd` | `CursorState`,`RefCounted` 依賴注入核心。**本階段只有建構子** —— 七個公開入口屬 Story 007、緩衝裁決屬 Story 005 |
+| `src/ui/cursor/cursor_state_host.gd` | `CursorStateHost`,Autoload 薄殼,`process_priority = -100` |
+| `project.godot` | 新增 `[autoload]` 節。**專案第一個 Autoload** |
+| `tests/unit/cursor/state_host_test.gd` | 14 條,全過 |
+
+**實測(主 session 獨立複跑)**:`tests/unit/cursor` 48 條 exit 0;全套 `tests/unit` 289 條、
+0 orphans,唯一失敗是既有那條刻意紅且已核准的 `affinity_phi_provider` 測試。
+**註冊 Autoload 沒有弄壞任何既有測試。**
+
+### 四條驗收標準的誠實涵蓋狀態
+
+- **AC-1(恰三個頂層欄位)—— 充分。** 用 `get_script_property_list()` 反射,排除兩個具名協作者
+  欄位後斷言剩餘**恰為**三個;另有一條反向測試確認被排除的名字**確實存在**,防止排除清單指到
+  不存在的名字而假陽性通過。
+- **AC-2 / AC-15 / AC-16 —— 不足,已登記。** 此階段系統裡沒有任何已掛載表面、沒有高亮視覺、
+  沒有裁決邏輯,三條只能對測試替身斷言。**沒有造假湊數**(測試涵蓋覆核逐條查證確認)。
+  補驗時機見 `docs/tech-debt-register.md`。
+
+### 🔴 本 story 產生的一項事故與其教訓
+
+程式碼註解一度寫著「這是管理者 2026-09-02 的裁決」—— **那項裁決從未發生**。成因是派工單寫的
+「**我的理解**(你可以推翻)」被升格成了「管理者裁決」。三處(程式碼、本檔、測試檔)現已改為
+明寫「**本問題上不存在管理者裁決 —— 不要引用一個**」,主動擋住下一個人再犯。
+📌 **凡寫下「已裁決」,必須同時指出它記錄在哪個檔案的哪一行。指不出來就不是裁決。**
+(該判斷本身經兩位覆核者獨立查證成立,要改的是措辭不是行為。)
+
+### 🔴 相依圖缺陷(影響後續排程,務必傳下去)
+
+**本 story 宣告 `Depends on: 001`,實際還需要 003 的 `CursorSurfaceRegistry`** ——
+ADR 契約段的 `CursorState._init(reclaim, registry, mouse_position_provider)` 需要它。
+該相依**只存在於 ADR 簽章,本檔內文從未出現過該類別名**,因此
+**`/story-readiness` 結構上抓不到** —— 它不檢查「ADR 契約是否需要別張 story 的產出」。
+**代價:一位專家 105 分鐘、零產出。** 交接文件原寫「002/003/004 可平行開」是錯的。
+
+### 覆核結論
+
+三方:測試涵蓋 INCOMPLETE → 修正後關閉;GDScript 品質 CHANGES REQUIRED → 修正後關閉;
+引擎/ADR 契約 **APPROVED**(0 BLOCKING)。五項修正全數完成,見提交 `eda2225`。
