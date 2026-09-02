@@ -66,6 +66,15 @@ Task: 🟢 **2026-09-02 第二十八批:Story 001 `Complete`。** 三個型別�
 - **`docs/architecture/architecture.md` 不存在**(`/create-architecture` 從未執行)。不阻擋。
 - **`class_name Board` 撞名** —— ADR-0001 契約的 `Board` 與既有 `src/gameplay/board/board.gd`。
 - **引擎參考 `modules/` 8 份停在 4.6**,專案釘 4.7.1。
+- **8 個 `.uid` 檔未進版控,且沒有人決定過該不該進**(2026-09-02 發現,僅口頭提過,現補記)。
+  位置:`prototypes/adr0001-board-property-spike-2026-09-01/` 與
+  `prototypes/adr0001-engine-probes-2026-09-01/` 底下,昨天那批探針的引擎自動產生檔。
+  **它們是 Godot 4.4+ 用來釘住資源身分的側檔,慣例上應該進版控** —— 而今天新增的
+  `src/ui/cursor/` 與 `tests/unit/cursor/` 的 `.uid` **已經跟著進去了**,
+  兩邊處理方式不一致純粹是因為前者在 `git add` 的路徑之外。
+  ⚠️ **每次有人重新匯入專案,它們就會再出現在 `git status` 裡** —— 不決定的話會一直當背景雜訊,
+  而背景雜訊會讓人漏看真正該注意的未追蹤檔。**兩種處置都可以(收進版控 / 加進 `.gitignore`),
+  但要挑一種。**
 - **三道覆核關卡(`TD-MANIFEST` / `PR-EPIC` / `QL-STORY-READY`)未跑** —— lean 模式。
   ⚠️ 本批的 `QL-TEST-COVERAGE` 亦因 lean 模式跳過,**但 `/code-review` 有實際跑 `qa-tester`**,
   涵蓋範圍逐條判定過(見 story-001 的 Completion Notes)。
