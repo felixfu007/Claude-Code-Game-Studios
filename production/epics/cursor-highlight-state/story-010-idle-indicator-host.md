@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:UI
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:S(約 3–4 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -83,6 +83,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**有固定成本,已計入預算**:ADR 明載機制十二/十三的全域 `CanvasLayer` 合計新增**至多 3 個繪製元素**,對專案 `< 1000` 的 draw call 預算無實質影響。
+
+📌 本 story 負責其中的待機指示元件。它常駐,但每幀不做運算。
+
+*權威來源:ADR-0005 `Performance Implications` 節、`.claude/docs/technical-preferences.md`。*
 
 ---
 

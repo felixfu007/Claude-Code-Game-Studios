@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Logic
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:S(約 3–4 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -62,6 +62,22 @@
 
 ---
 
+*以下 3 條為**本 story 自訂**的驗收條文,編號 `AC-S001-*`,不佔用 GDD 的 AC 號碼。*
+*🔴 來源為 **ADR-0005**,不是 GDD —— 每條都標了它抄自哪一節,查證時一律以 ADR 原文為準。*
+
+- **AC-S001-a(目標值型別的相等判定)** —— *源自 ADR-0005 機制三,`CursorTarget.equals()` 的 2026-08-21 定案(R6-7)*:
+  **GIVEN** 兩個 `CursorTarget` 實例,**WHEN** 兩者的 `surface` 與 `id` 皆相同、但 `is_valid` 一為 `true` 一為 `false`,**THEN** `equals()` 回傳 `true` —— `is_valid` **不參與**比較。**AND WHEN** `surface` 或 `id` 任一不同,**THEN** 回傳 `false`。
+  🔴 **這條守著一個會讓整條路徑失效的陷阱**:若 `is_valid` 參與比較,機制十的 `mark_pending_reresolve()` 會**恆回 `STALE_NOT_APPLIED`**,該入口整條廢掉。
+
+- **AC-S001-b(棋盤座標編解碼為雙射)** —— *源自 ADR-0005 機制三,`CursorTypes.encode_tile()` / `decode_tile()`*:
+  **GIVEN** 任一合法棋盤座標 `Vector2i`,**WHEN** 先 `encode_tile()` 再 `decode_tile()`,**THEN** 得回完全相同的座標。**AND GIVEN** 任兩個相異的合法座標,**THEN** 兩者的編碼結果相異(不得碰撞)。
+
+- **AC-S001-c(策略抽象契約的形狀與編譯期強制)** —— *源自 ADR-0005 機制八,含 2026-08-19 第四輪 R4-2 修訂*:
+  **GIVEN** `MouseReclaimPolicy` 基底類別,**WHEN** 檢視其宣告,**THEN** 含 1 個 `signal reset_triggered(trigger: CursorTypes.ResetTrigger)` 與 **4 個** `@abstract func`(回傳型別分別為 `bool` / `float` / `void` / `Vector2`),且每一個皆為**裸簽章、無主體**。**AND WHEN** 建立一個子類別只實作其中 3 個,**THEN** 編譯期失敗,且錯誤訊息**指名缺少的是哪一個**。
+  📌 這條把實作備註裡「四種回傳型別各建一檔分別編譯」從備註升格為**會被驗收的條件** —— 備註可以跳過,驗收條文不行。
+
+---
+
 ## QA Test Cases
 
 🔴 **本批未經 qa-lead 產生測試規格**(管理者 2026-09-02 裁決:精簡模式,覆核關卡不跑;
@@ -73,6 +89,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**無效能影響預期** —— 本 story 只產出型別宣告與純函式編解碼,不在任何逐幀路徑上。
+
+⚠️ **一個要記著的連帶**:`CursorTarget.equals()` 會被機制十的每幀競態判定呼叫,`CursorTypes.encode_tile()` / `decode_tile()` 亦可能落在每幀路徑。兩者現行皆為 O(1)(兩欄位比較 / 一次算術)。**若日後任一變得非 O(1),須回頭重估本節。**
+
+*本系統效能宣稱的權威來源為 ADR-0005 `Performance Implications` 節,本節不複述其內容。*
 
 ---
 

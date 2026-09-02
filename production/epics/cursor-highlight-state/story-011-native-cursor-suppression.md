@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Visual/Feel
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:L(約 8–10 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -82,6 +82,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**落在逐幀路徑,成本已由 ADR 量化**:呈現層平滑器每影格一次 `move_toward()`;機制十三之二每影格一次 `gui_get_hovered_control()` O(1) 快取查詢。
+
+繪製成本與 Story 010 共用同一筆預算(機制十二/十三合計**至多 3 個繪製元素**)。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 

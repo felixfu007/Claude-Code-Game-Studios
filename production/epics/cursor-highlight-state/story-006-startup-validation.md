@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Logic
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:S(約 2–3 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -69,6 +69,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**不在逐幀路徑** —— ADR 明載 `CursorStartupValidator.validate()` 遍歷全部 `ui_*` action 一次,發生於啟動。
+
+📌 它計入的是**載入時間**,不是幀預算。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 

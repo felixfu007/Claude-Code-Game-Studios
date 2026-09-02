@@ -154,25 +154,35 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 **14 張,零 Blocked**(ADR-0005 已 `Accepted`,無 story 引用草案文件)。
 **依 `Depends on` 順序推進** —— 每張 story 的該欄寫明它要等哪幾張完成。
 
-| # | Story | 型別 | 狀態 | 對應機制 | 依賴 |
-|---|---|---|---|---|---|
-| 001 | [共用列舉、目標值型別與策略契約](story-001-shared-types.md) | Logic | Ready | 二、三、八(契約) | — |
-| 002 | [Autoload 薄殼 + DI 核心 + 三欄位狀態](story-002-state-host.md) | Logic | Ready | 一 | 001 |
-| 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | Ready | 三 | 001 |
-| 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | Ready | 四、四之二 | 001 |
-| 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | Ready | 五、六 | 002, 004 |
-| 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | Ready | 七 | 001 |
-| 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | Ready | 十 | 002, 003 |
-| 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | Ready | 九 | 002, 005 |
-| 009 | [跨畫面交接生命週期(甲/乙/丙)](story-009-screen-handoff.md) | Integration | Ready | 十一 | 007 |
-| 010 | [全域待機指示宿主 + 專屬 CanvasLayer](story-010-idle-indicator-host.md) | UI | Ready | 十二 | 002 |
-| 011 | [原生游標隱藏 + 自繪載體 + 白名單例外](story-011-native-cursor-suppression.md) | Visual/Feel | Ready | 十三、十三之二 | 003, 010 |
-| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | Ready | 十四 | 003 |
-| 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | Ready | 十五 | 005, 011 |
-| 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | Ready | 八 | 001, 002 |
+| # | Story | 型別 | 狀態 | 估時 | 對應機制 | 依賴 |
+|---|---|---|---|---|---|---|
+| 001 | [共用列舉、目標值型別與策略契約](story-001-shared-types.md) | Logic | Ready | S(約 3–4 小時) | 二、三、八(契約) | — |
+| 002 | [Autoload 薄殼 + DI 核心 + 三欄位狀態](story-002-state-host.md) | Logic | Ready | M(約 5–6 小時) | 一 | 001 |
+| 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | Ready | M(約 4–6 小時) | 三 | 001 |
+| 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | Ready | M(約 4–6 小時) | 四、四之二 | 001 |
+| 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | Ready | L(約 8–10 小時) | 五、六 | 002, 004 |
+| 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | Ready | S(約 2–3 小時) | 七 | 001 |
+| 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | Ready | L(約 8–10 小時) | 十 | 002, 003 |
+| 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | Ready | M(約 5–6 小時) | 九 | 002, 005 |
+| 009 | [跨畫面交接生命週期(甲/乙/丙)](story-009-screen-handoff.md) | Integration | Ready | M(約 4–6 小時) | 十一 | 007 |
+| 010 | [全域待機指示宿主 + 專屬 CanvasLayer](story-010-idle-indicator-host.md) | UI | Ready | S(約 3–4 小時) | 十二 | 002 |
+| 011 | [原生游標隱藏 + 自繪載體 + 白名單例外](story-011-native-cursor-suppression.md) | Visual/Feel | Ready | L(約 8–10 小時) | 十三、十三之二 | 003, 010 |
+| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | Ready | S(約 2–3 小時) | 十四 | 003 |
+| 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | Ready | S(約 3–4 小時) | 十五 | 005, 011 |
+| 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | Ready | M(約 6–8 小時) | 八 | 001, 002 |
+
+**估時合計:約 65–86 小時**(2026-09-02 補;原為 `[待 sprint 規劃時填]` 佔位符,
+`/story-readiness` 判定「無估時的 story 無法排程」)。**這是粗估,不是承諾。**
+專案尚無 `production/sprints/`,估時直接寫在各 story,不為了填一個欄位去建整套排程流程。
 
 **驗收標準涵蓋**:GDD 的 **70 條有效 AC 全部分派完畢,零遺漏**(另 3 個編號是「本條已移除」的公告行,
 正確排除)。逐條為**原文轉錄**,未改寫。
+
+🔴 **另有 7 條 story 自訂驗收條文(`AC-S001-*` / `AC-S012-*` / `AC-S013-*`),來源是 ADR-0005 不是 GDD。**
+它們於 2026-09-02 補上,因 001 / 012 / 013 三張未達 `/story-readiness` 的最低條文數門檻
+(Logic 需 3、UI 需 2)。**每一條都標了它源自 ADR 的哪一節,查證時以 ADR 原文為準。**
+⚠️ **這是本專案最貴失效模式的一個新曝險面** —— 同一事實的第二份抄本。
+**ADR-0005 若改動這幾處,這 7 條必須同步。** 編號刻意加 `S` 前綴,不佔用 GDD 號碼,便於整批搜出。
 
 🔴 **兩張 story 綁著隨核准生效的硬性義務,不得跳過**:
 - **Story 010** —— 「游標圖層 transform 恆等」必須寫成會執行的自動化測試

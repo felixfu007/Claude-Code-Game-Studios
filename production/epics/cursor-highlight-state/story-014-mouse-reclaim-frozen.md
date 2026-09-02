@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Logic
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:M(約 6–8 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -97,6 +97,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**無效能影響預期** —— ADR 明載 `MouseReclaimPolicy.evaluate()` 為一次 `Vector2` 距離計算加一次表面類型查表,O(1),每幀一次。
+
+🔴 **凍結區:不得為效能理由改動本檔任何邏輯。** 見本 story 標題。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 

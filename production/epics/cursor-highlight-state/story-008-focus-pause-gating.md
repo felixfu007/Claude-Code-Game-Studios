@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Integration
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:M(約 5–6 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -73,6 +73,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**無效能影響預期** —— 焦點通知為引擎事件驅動(`NOTIFICATION_APPLICATION_FOCUS_*`),非逐幀輪詢;閘控本身是一次 `bool` 檢查。
+
+📌 **反向的效能效果才是重點**:失焦期間全程不運算,是省下工作而非增加。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 

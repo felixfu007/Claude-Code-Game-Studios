@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Logic
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:M(約 4–6 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -73,6 +73,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**無效能影響預期,但有一項呼叫端紀律。** ADR 明載註冊表上界為 `SurfaceType` 成員數(目前 4),`Dictionary` 查找 O(1)。
+
+⚠️ **`registered_surfaces_sorted()` 每次呼叫都會排序。** ADR 要求遍歷一律走它(不得直接迭代內部 `Dictionary`),但**沒有說它可以放進逐幀迴圈**。n 目前是 4、成本可忽略,**呼叫端仍應快取結果而非每幀重排**。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 

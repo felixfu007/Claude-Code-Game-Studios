@@ -4,7 +4,7 @@
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:Logic
-> **Estimate**:[待 sprint 規劃時填]
+> **Estimate**:M(約 4–6 小時)
 > **Manifest Version**:2026-09-02
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
 
@@ -79,6 +79,16 @@
 
 ⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
 **停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
+
+---
+
+## 效能影響
+
+**落在逐幀路徑,但成本已由 ADR 量化為可忽略**:`classify()` 為常數次 `is` 判定,`classify_action()` 為常數次 `InputMap.event_is_action()` 查詢。
+
+📌 **echo 過濾在本 story 發生 —— 它同時是正確性要求與效能保護**:不濾的話,玩家按住方向鍵會每一影格都被判為導覽,下游每幀多做一輪無謂的權威主張。
+
+*權威來源:ADR-0005 `Performance Implications` 節。*
 
 ---
 
