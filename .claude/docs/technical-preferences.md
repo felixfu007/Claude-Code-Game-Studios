@@ -294,6 +294,29 @@ subagent 中斷至少會弄壞程式庫;這個不會。
 內部畫布恆 `2×2px`,世界層會整片糊掉)。實測 `Node` 與 `CanvasLayer` 兩種父節點正常,
 **裸 `Control` 同樣壞掉**。現行檔案根節點已是 `Node`。
 
+## Autoloads(已註冊清單)
+
+**本節於 2026-09-02 建立,起因是專案註冊了第一個 Autoload,而當時沒有任何地方登記它**
+(引擎覆核指出的治理缺口)。**新增 Autoload 時必須同時更新此表,否則後來的人找不到它存在。**
+
+| 名稱 | 掛載腳本 | 用途 | 備註 |
+|---|---|---|---|
+| `CursorStateHost` | `src/ui/cursor/cursor_state_host.gd` | 游標/高亮狀態系統的生命週期宿主(ADR-0005 機制一)。**薄殼,不持有狀態、不含裁定邏輯** —— 狀態與邏輯全在可 `new()` 的 `CursorState`(`RefCounted`)裡 | 2026-09-02 註冊(Story 002) |
+
+🔴 **載入順序由 `project.godot` 的 `[autoload]` 節內宣告順序決定(由上而下)。**
+目前只有一個項目,無跨 Autoload 依賴問題;**新增第二個時,若彼此有初始化順序要求,必須在此明文記錄。**
+
+⚠️ **註冊 Autoload 會讓它在每一個場景啟動,包含全部測試場景。**
+新增時必須實跑全套 `tests/unit` 確認沒有新失敗 —— `CursorStateHost` 註冊時已如此驗證
+(287 條、0 orphans、唯一失敗是既有那條刻意紅且已核准的 `affinity_phi_provider` 測試)。
+
+⚠️ **`class_name` 不可與 Autoload 名稱同名** —— 會產生 parse-time 衝突。
+`cursor_state_host.gd` 因此刻意不宣告 `class_name`(檔內註解有記錄實測到的錯誤訊息)。
+
+📌 **Autoload 測試的固有代價**:同一個 Autoload 實例被全部測試共用。目前 `state_host_test.gd`
+的相關測試皆為唯讀斷言,彼此不污染、執行順序無關。**但 Story 005/007 一旦出現會改寫全域狀態的
+測試,就會產生順序相依風險** —— 屆時需要顯式 setup/teardown 紀律,落地前先確認 GdUnit4 的隔離行為。
+
 ## Allowed Libraries / Addons
 
 <!-- Add approved third-party dependencies here -->

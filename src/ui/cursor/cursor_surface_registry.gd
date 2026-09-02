@@ -40,7 +40,19 @@ extends RefCounted
 ## (2026-08-21, R6-13): sharing one enum let [constant DUPLICATE_TAG_REJECTED]
 ## (a tag concept) leak into table 2's return type, which explicitly has no
 ## tag concept.
-enum RegisterResult { REGISTERED, DUPLICATE_TAG_REJECTED, UNREGISTERED_NOT_FOUND }
+## [b]INVALID_NODE added 2026-09-02 (three-way-review remediation)[/b]: before
+## this, [method register] had no validity check on [param node] at all — an
+## invalid/[code]null[/code] node was silently accepted, reported as
+## [constant REGISTERED], stored, and then permanently squatted the tag (a
+## later, genuine registration under the same tag would be rejected as
+## [constant DUPLICATE_TAG_REJECTED] with no way to tell why). This mirrors
+## the check [method register_native_pointer_exception] already had for table
+## 2; the two tables now handle the same failure the same way. No enum member
+## was removed or reordered, so no existing caller comparing against the
+## other three named members is affected — see
+## [code]tests/unit/cursor/surface_registry_test.gd[/code] for the
+## corresponding tests.
+enum RegisterResult { REGISTERED, DUPLICATE_TAG_REJECTED, UNREGISTERED_NOT_FOUND, INVALID_NODE }
 
 ## Result of [method register_native_pointer_exception] /
 ## [method unregister_native_pointer_exception] (table 2 only).
@@ -62,7 +74,32 @@ var _native_pointer_exceptions: Array[Control] = []
 ## does not require registered surfaces to be [Control] (機制十四 "專家發現 F"):
 ## forcing a single type would upgrade a presentation-layer constraint into an
 ## architectural restriction on how the tactical board is implemented.
+##
+## [b]is_instance_valid() is checked BEFORE the duplicate-tag check[/b] (added
+## 2026-09-02, three-way-review remediation), matching
+## [method register_native_pointer_exception]'s existing discipline for table
+## 2. Without this, a [code]null[/code] [param node] was silently accepted,
+## reported as [constant REGISTERED], and the tag was then permanently
+## unusable — [method get_surface] returns the invalid value forever, and no
+## later genuine registration under that tag can ever succeed, since it will
+## report [constant DUPLICATE_TAG_REJECTED] against an entry nobody can see
+## is broken. Per this project's release-build-safe error handling ruling
+## (`production/session-state/active.md`, 2026-09-02 "裁決二": guards that
+## must survive into shipping builds return an explicit failure value rather
+## than rely on [method @GlobalScope.assert], which the engine may strip from
+## release export builds), this returns [constant INVALID_NODE] rather than
+## asserting.
+##
+## [b]As with [method register_native_pointer_exception] (see that method's
+## own "Engine finding" note)[/b]: for a statically typed [Node] parameter
+## like this one, an already-freed (non-null) argument never reaches this
+## method's body at all — GDScript's typed-parameter boundary check rejects
+## it and aborts the CALLER before this line runs. [constant INVALID_NODE] is
+## therefore only reachable in practice via a [code]null[/code] argument, not
+## a use-after-free of a previously-valid reference.
 func register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult:
+	if not is_instance_valid(node):
+		return RegisterResult.INVALID_NODE
 	if _surfaces.has(surface):
 		return RegisterResult.DUPLICATE_TAG_REJECTED
 	_surfaces[surface] = node

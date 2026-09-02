@@ -15,10 +15,16 @@
 ## signature. They are injected wiring the DI core needs to do its job in
 ## later stories (機制十's [code]_validate_target_writable()[/code] and the
 ## mouse-reclaim evaluation path), not undeclared/hidden GDD state — AC-1's
-## own text says it verifies "no undocumented fourth field", not "at most
-## three declared variables total" (this project's manager ruling, 2026-09-02,
-## on this exact question). [code]tests/unit/cursor/state_host_test.gd[/code]'s
-## AC-1 test operationalizes this distinction and excludes both by name.
+## own source text (2026-08-04 第五輪修訂,
+## [code]production/epics/cursor-highlight-state/story-002-state-host.md[/code])
+## says it verifies "no undocumented fourth field", not "at most three
+## declared variables total". [b]No manager ruling exists on this question —
+## do not cite one.[/b] The reading above is this story's own argument from
+## AC-1's text, independently checked during the 2026-09-02 three-way review
+## (both the GDScript-quality and Engine/ADR-contract reviewers verified it
+## against the source text before this comment was corrected).
+## [code]tests/unit/cursor/state_host_test.gd[/code]'s AC-1 test
+## operationalizes this distinction and excludes both by name.
 ##
 ## [b]This story (002) is the constructor + field shape only[/b] — nothing
 ## else on this class exists yet:
@@ -40,6 +46,21 @@
 ## layer versus deferred to a later story.
 class_name CursorState
 extends RefCounted
+
+## Exact [method @GlobalScope.push_error] message [method _init] emits when
+## [param mouse_position_provider] is not a valid [Callable] (ADR-0005
+## Negative Consequences, line ~1530: "`_init()` 內對
+## `mouse_position_provider.is_valid()` 斷言,失敗即立刻爆而非在第一次滑鼠移動
+## 時才顯現" — fail immediately and visibly, not deferred to the first
+## mouse-move call site). Kept as a named constant, not an inline literal, so
+## [code]tests/unit/cursor/state_host_test.gd[/code] can assert on it without
+## hand-duplicating the string.
+const ERR_INVALID_MOUSE_POSITION_PROVIDER: String = (
+	"CursorState._init(): mouse_position_provider is not a valid Callable. " +
+	"Construction proceeds anyway (a constructor cannot refuse to return an " +
+	"object), but every later call site that invokes it will fail at that " +
+	"point instead of here. Fix the caller's Callable binding now."
+)
 
 # Core Rules #1's three top-level state fields — no fourth (AC-1):
 var _target: CursorTarget                      ## current cursor target; the validity flag is CursorTarget's own internal field, not a separate top-level one
@@ -67,6 +88,18 @@ func _init(
 	registry: CursorSurfaceRegistry,
 	mouse_position_provider: Callable
 ) -> void:
+	# ADR-0005 requires this failure to surface AT CONSTRUCTION rather than
+	# on the first mouse-move call site (see ERR_INVALID_MOUSE_POSITION_PROVIDER's
+	# doc comment for the exact ADR line). The ADR's own wording models this
+	# as an assert(); this uses push_error() INSTEAD of assert() — not as a
+	# weaker substitute, but a stricter one — because assert() preconditions
+	# are documented as possibly stripped by the engine from release export
+	# builds (docs/tech-debt-register.md, 2026-09-02 "Open" entry; unverified
+	# on this machine, no export template installed). push_error() is not
+	# compiled out of any build configuration, so this guard holds in every
+	# build, not only editor/debug ones.
+	if not mouse_position_provider.is_valid():
+		push_error(ERR_INVALID_MOUSE_POSITION_PROVIDER)
 	_reclaim = reclaim
 	_registry = registry
 	_mouse_position_provider = mouse_position_provider

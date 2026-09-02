@@ -31,9 +31,11 @@
 ##   [member CursorState._registry] and [member CursorState._mouse_position_provider]
 ##   are excluded from the count by name: they are constructor-injected
 ##   collaborators the frozen ADR-0005 Key Interfaces contract names
-##   explicitly, not undocumented GDD state (this project's manager ruling,
-##   2026-09-02, on this exact question — see [code]cursor_state.gd[/code]'s
-##   class doc comment).
+##   explicitly, not undocumented GDD state. [b]No manager ruling exists on
+##   this question — do not cite one.[/b] The reading is this story's own
+##   argument from AC-1's source text, independently checked during the
+##   2026-09-02 three-way review (see [code]cursor_state.gd[/code]'s class doc
+##   comment for the full argument and the review confirmation).
 ## - [b]AC-2[/b] (narrowed — "exactly one hover highlight across all mounted
 ##   surfaces"): no surface is mounted and nothing renders a highlight yet, so
 ##   the full invariant cannot be exercised. What IS verified here is the

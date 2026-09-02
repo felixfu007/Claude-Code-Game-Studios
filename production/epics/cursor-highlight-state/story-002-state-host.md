@@ -1,12 +1,12 @@
 # Story 002:Autoload 薄殼 + 依賴注入核心 + 三欄位狀態
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:In Progress
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:M(約 5–6 小時)
 > **Manifest Version**:2026-09-02
-> **Last Updated**:[由 /dev-story 於實作開始時設定]
+> **Last Updated**:2026-09-02
 
 ## Context
 

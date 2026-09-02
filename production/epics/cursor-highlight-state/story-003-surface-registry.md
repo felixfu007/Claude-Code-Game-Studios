@@ -1,12 +1,12 @@
 # Story 003:表面註冊表(兩份獨立登記表)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:In Progress
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:M(約 4–6 小時)
 > **Manifest Version**:2026-09-02
-> **Last Updated**:[由 /dev-story 於實作開始時設定]
+> **Last Updated**:2026-09-02
 
 ## Context
 

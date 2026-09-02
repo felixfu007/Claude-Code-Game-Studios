@@ -1,0 +1,57 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== ADR-0005 Story 003 freed-Control call-boundary probe / Godot 4.7.1-stable (official) ===
+
+--- Case A: Control freed via immediate .free() (synchronous) ---
+  after .free(): is_instance_valid(freed_ref_a)=false  freed_ref_a==null:true
+    >> Case A -> Callee.typed_control_param(freed_ref_a) [typed Control param] : calling...
+      >> wrapper entering. is_instance_valid=false  ==null:true
+SCRIPT ERROR: Invalid type in function 'typed_control_param' in base 'GDScript'. The Object-derived class of argument 1 (previously freed) is not a subclass of the expected argument class.
+   at: test_typed_control_param_with_freed_object (res://scripts/probe_tests.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] test_typed_control_param_with_freed_object (res://scripts/probe_tests.gd:26)
+       [1] _run_str (res://scripts/runner.gd:27)
+       [2] _ready (res://scripts/runner.gd:46)
+    << Case A -> Callee.typed_control_param(freed_ref_a) [typed Control param] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> Case A -> Callee.typed_node_param(freed_ref_a) [typed Node param] : calling...
+      >> wrapper entering. is_instance_valid=false  ==null:true
+SCRIPT ERROR: Invalid type in function 'typed_node_param' in base 'GDScript'. The Object-derived class of argument 1 (previously freed) is not a subclass of the expected argument class.
+   at: test_typed_node_param_with_freed_object (res://scripts/probe_tests.gd:35)
+   GDScript backtrace (most recent call first):
+       [0] test_typed_node_param_with_freed_object (res://scripts/probe_tests.gd:35)
+       [1] _run_str (res://scripts/runner.gd:27)
+       [2] _ready (res://scripts/runner.gd:50)
+    << Case A -> Callee.typed_node_param(freed_ref_a) [typed Node param] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+    >> Case A -> Callee.untyped_variant_param(freed_ref_a) [untyped Variant param, control case] : calling...
+      >> wrapper entering. is_instance_valid=false  ==null:true
+      >> untyped_variant_param: ENTERED BODY, param is_instance_valid()=false
+      >> wrapper: call returned [REACHED END untyped_variant_param], about to return
+    << Case A -> Callee.untyped_variant_param(freed_ref_a) [untyped Variant param, control case] : returned [REACHED END wrapper result=[REACHED END untyped_variant_param]]
+
+--- Case B: Control in the SceneTree, queue_free()'d, awaited 2 process frames ---
+  after queue_free()+2 frames: is_instance_valid(freed_ref_b)=false  freed_ref_b==null:true
+    >> Case B -> Callee.typed_control_param(freed_ref_b) [typed Control param] : calling...
+      >> wrapper entering. is_instance_valid=false  ==null:true
+SCRIPT ERROR: Invalid type in function 'typed_control_param' in base 'GDScript'. The Object-derived class of argument 1 (previously freed) is not a subclass of the expected argument class.
+   at: test_typed_control_param_with_freed_object (res://scripts/probe_tests.gd:26)
+   GDScript backtrace (most recent call first):
+       [0] test_typed_control_param_with_freed_object (res://scripts/probe_tests.gd:26)
+       [1] _run_str (res://scripts/runner.gd:27)
+       [2] _ready (res://scripts/runner.gd:71)
+    << Case B -> Callee.typed_control_param(freed_ref_b) [typed Control param] : returned EMPTY STRING -- ABORTED (zero value for -> String)
+
+--- Control group: still-VALID Control through the same typed-param call ---
+    >> Control group -> Callee.typed_control_param(valid_control) [typed Control param, NOT freed] : calling...
+      >> wrapper entering (control case: still-valid object). is_instance_valid=true
+      >> typed_control_param: ENTERED BODY, param is_instance_valid()=true
+      >> wrapper: call returned [REACHED END typed_control_param], about to return
+    << Control group -> Callee.typed_control_param(valid_control) [typed Control param, NOT freed] : returned [REACHED END wrapper result=[REACHED END typed_control_param]]
+
+--- Control group: literal null through the same typed-param call ---
+    >> Control group -> Callee.typed_control_param(null) [typed Control param, literal null] : calling...
+      >> wrapper entering (control case: literal null)
+      >> typed_control_param: ENTERED BODY, param is_instance_valid()=false
+      >> wrapper: call returned [REACHED END typed_control_param], about to return
+    << Control group -> Callee.typed_control_param(null) [typed Control param, literal null] : returned [REACHED END wrapper result=[REACHED END typed_control_param]]
+
+=== PROBE COMPLETE ===

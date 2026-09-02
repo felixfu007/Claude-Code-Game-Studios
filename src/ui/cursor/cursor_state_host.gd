@@ -57,8 +57,22 @@ extends Node
 var _state: CursorState
 
 
-func _ready() -> void:
+## [b]process_priority set here, not in [method _ready][/b] (2026-09-02,
+## three-way-review remediation) — ADR-0005's R6-12 explicitly mandates
+## [code]process_priority[/code] be set BEFORE [method Node.add_child]
+## (機制一/機制六: 行為者① must be the earliest of the six process-priority
+## actors), and [method _init] runs before this Autoload is ever added to
+## [code]/root[/code], while [method _ready] runs after. The prior placement
+## in [method _ready] was very likely harmless in practice — an Autoload's
+## [method _ready] runs before the first [method Node._process] pass, so no
+## frame's processing order was ever observed while the priority was still
+## unset — but "likely harmless" was reasoning, not a measurement, and moving
+## it costs nothing. Do not move it back to [method _ready] without a reason.
+func _init() -> void:
 	process_priority = -100
+
+
+func _ready() -> void:
 	_state = CursorState.new(
 		null,  # MouseReclaimPolicy — Story 014, see class doc comment above
 		CursorSurfaceRegistry.new(),

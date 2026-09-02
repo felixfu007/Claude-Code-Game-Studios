@@ -23,14 +23,28 @@
 ##   registered and independently retrievable AT THE SAME TIME, with no
 ##   coupling between them — the precondition for a single external state
 ##   source (not the registry) to serve both.
-## - [b]AC-5[/b] ("a new, previously nonexistent third-party surface — e.g.
-##   card selection — plugs into the shared read/write interface without
-##   modifying this system's own code"): fully verifiable at this layer.
-##   [constant CursorTypes.SurfaceType.CARD_SLOT] is registered through the
-##   exact same generic [method CursorSurfaceRegistry.register] API used for
+## - [b]AC-5[/b] (narrowed — corrected 2026-09-02, three-way-review
+##   remediation; the original wording here overclaimed "fully verifiable"):
+##   the GDD text has two clauses, and only one is provable at this layer.
+##   [b]Generalization clause[/b] ("a new, previously nonexistent third-party
+##   surface — e.g. card selection — plugs into the shared read/write
+##   interface [b]without modifying this system's own code[/b]"): fully
+##   verifiable at this layer. [constant CursorTypes.SurfaceType.CARD_SLOT] is
+##   registered through the exact same generic
+##   [method CursorSurfaceRegistry.register] API used for
 ##   [constant CursorTypes.SurfaceType.BOARD_TILE], with identical contract
 ##   behavior (duplicate rejection, retrieval, sorted iteration) and no
 ##   surface-type-specific branch anywhere in the production code.
+##   [b]Single-highlight-invariant clause[/b] ("that surface's hover highlight
+##   [b]correctly participates in AC-2's single-highlight invariant[/b]"): NOT
+##   verifiable here — the registry itself holds no highlight state (see the
+##   AC-4 note above), and AC-2 is [code]CursorState[/code]/Story 002's own AC,
+##   honestly narrowed in
+##   [code]tests/unit/cursor/state_host_test.gd[/code] as only partially
+##   verified pending Story 007 (real mounted surfaces) / Story 010 (real
+##   rendered highlight). An AC that names another AC as its own success
+##   condition cannot be "fully verified" while the named AC is not. Deferred
+##   to the same Story 007/010 boundary as AC-2 itself.
 ## - [b]AC-47[/b] ("at most 1 mounted instance per surface tag at any point in
 ##   time"): fully verifiable at this layer — this IS
 ##   [constant CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED].
@@ -67,6 +81,39 @@ func test_register_new_tag_returns_registered() -> void:
 	# Arrange
 	var registry := CursorSurfaceRegistry.new()
 	var node: Node = auto_free(Node.new())
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, node
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+	assert_object(registry.get_surface(CursorTypes.SurfaceType.BOARD_TILE)).is_equal(node)
+
+
+func test_register_null_node_returns_invalid_node() -> void:
+	# Arrange — 2026-09-02 three-way-review remediation: before this fix,
+	# register() had no validity check at all and a null node was silently
+	# accepted and reported as REGISTERED (see production doc comment).
+	var registry := CursorSurfaceRegistry.new()
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, null
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.INVALID_NODE)
+
+
+func test_register_null_node_does_not_occupy_the_tag() -> void:
+	# Arrange — the specific failure mode this fix closes: a rejected null
+	# registration must NOT permanently squat the tag. A real registration
+	# under the same tag afterward must still succeed.
+	var registry := CursorSurfaceRegistry.new()
+	var node: Node = auto_free(Node.new())
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, null)
 
 	# Act
 	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
