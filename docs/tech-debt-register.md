@@ -98,6 +98,57 @@
   `production/epics/cursor-highlight-state/story-003-surface-registry.md`、
   `production/epics/cursor-highlight-state/story-007-write-read-interface.md`
 
+
+- **2026-09-03**(Story 004 裝置分類 + 動作語意分類):
+  🔴 **本引擎有 91 個 `ui_*` action,三份分類清單只涵蓋 14 個,77 個未分類** ——
+  ADR-0005 機制七 (c) 的載入期完整性驗證器(**Story 006 的產出**)若照現行設計原樣實作,
+  **每次啟動會噴出 77 行 `UI_ACTION_UNCLASSIFIED`**。
+  ⚠️ **這正是 ADR 的 R4-5 段落選擇三分割方案時明文說要避免的結果**
+  (原文:「會在啟動時把數十個引擎內建 `ui_* action` 全部報成待分類,噪音大到會被實作者
+  直接關掉,反而製造比靜默更糟的結果」)。**探針把那句擔憂變成了具體數字。**
+  那 77 項經引擎覆核者獨立複核,**全屬編輯器控制項語意**(`ui_text_*` / `ui_graph_*` /
+  `ui_filedialog_*` / `ui_colorpicker_*`),**沒有任何一項該被移入 `NAVIGATION_ACTIONS`** ——
+  亦即這是**噪音量**的問題,不是分類錯誤的問題。
+  🔴 **要防的風險是真的**:將來新增一個語意上屬導覽的 `ui_*` action 卻忘了登記,
+  會被靜默歸為非導覽、失去主張裝置權威的資格,而沒有任何檢查會攔下。
+  📌 **需管理者裁決,已於 2026-09-03 呈報。此處不記錄任何裁決結論** ——
+  在本行被更新為指向實際紀錄位置之前,**不存在關於本項的裁決,不要引用一個**。
+  證據:`prototypes/story-004-ui-action-probe-2026-09-03/logs/probe_output.txt`(91/14/77 全清單)
+  追蹤來源:`production/epics/cursor-highlight-state/story-006-startup-validation.md`
+
+- **2026-09-03**(Story 004 覆核發現,引擎覆核者):
+  **`battle_screen.gd` 那份「機制四行內複本」其實不是同一段邏輯的複製,兩份的 echo 語意
+  可能本來就不等價** —— 先前(2026-09-02)登記的收斂項只涵蓋 `DeviceAuthority` 的
+  **列舉兩值 vs 三值**,**沒有記錄這一件事**。實測差異:
+  `src/ui/battle/battle_screen.gd:659-667` 的方向鍵用 `Input.is_action_pressed()`
+  **逐幀輪詢 + 手動 edge-detection**;`src/ui/cursor/cursor_types.gd` 用
+  `InputMap.event_is_action()` **逐事件分類**。確認鍵(L.383/387)走的又是第三個 API:
+  `InputEvent.is_action_pressed()`。
+  🔴 **三個不同的引擎 API,對 echo 的預設處理是否一致「本次未實機查證,屬推測」**
+  (覆核者原話)。**今天兩者表現一致很可能只是巧合** —— `battle_confirm` 從未被
+  壓住不放測試過。
+  ⚠️ **Story 005 收斂兩份時必須實機驗證 `InputEvent.is_action_pressed()` 的 echo 預設行為,
+  不得假設等價。** 這正是本專案 R2 記載過的失效模式(兩份實作「只是今天答案一致」)。
+  追蹤來源:`production/epics/cursor-highlight-state/story-005-frame-buffer-ordering.md`、
+  `docs/reviews/story-004-engine-review-2026-09-03.md`
+
+- **2026-09-03**(Story 004 覆核發現,引擎覆核者):
+  **ADR-0005 的 `Key Interfaces` 契約段從未列出 `classify()`** —— 只列了
+  `classify_action()`(L.1349)。這是 ADR 自己在 2026-08-19 修訂新增 `classify_action()`
+  時的登記遺漏,**不是 Story 004 的缺陷**(該 story 已依既有先例把兩者放在 `cursor_types.gd`,
+  覆核判 PASS)。
+  ⚠️ **後果**:契約段是本專案明訂「衝突時以此為準」的權威位置。一個實際存在、
+  且被機制四明文定案的靜態方法不在契約段裡,**下一個比對契約段的人會找不到它**。
+  追蹤來源:`docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`
+
+- **2026-09-03**(Story 004 覆核發現,引擎覆核者,低嚴重度):
+  **echo 的確認類事件被折疊進 `OTHER`,與「真正未分類」變得不可區分** ——
+  `classify_action()` 的 echo 過濾在所有查詢之前,對 NAVIGATION 與 CONFIRM 一律生效。
+  覆核者追蹤 ADR-0005 全部下游消費點後確認 **CONFIRM 與 OTHER 目前完全同構**,
+  折疊沒有可觀察的行為差異,**故判 PASS,非缺陷**。
+  ⚠️ 但這是**設計選擇的已知代價**:若 Story 005/006 未來需要區分這兩者,
+  現在的輸出形狀已經丟失該資訊。**知悉即可,現在不必動。**
+  追蹤來源:`docs/reviews/story-004-engine-review-2026-09-03.md`
 ## Resolved
 
 *(尚無)*

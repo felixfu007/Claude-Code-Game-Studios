@@ -1,12 +1,12 @@
 # Story 004:裝置分類 + 動作語意分類(含 echo 過濾)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:Complete
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:M(約 4–6 小時)
 > **Manifest Version**:2026-09-02
-> **Last Updated**:[由 /dev-story 於實作開始時設定]
+> **Last Updated**:2026-09-03(實作、兩方覆核、覆核修正皆於當日完成)
 
 ## Context
 
@@ -70,8 +70,20 @@
 
 ## QA Test Cases
 
-🔴 **本批未經 qa-lead 產生測試規格**(管理者 2026-09-02 裁決:精簡模式,覆核關卡不跑;
-且本工作環境未經授權不得動用 Agent)。
+🔴 **本節的原始內容已於 2026-09-03 更正 —— 它描述的條件在本 story 完成當天就不成立了。**
+
+**原文如下(保留供追溯)**:「本批未經 qa-lead 產生測試規格(管理者 2026-09-02 裁決:精簡模式,
+覆核關卡不跑;且本工作環境未經授權不得動用 Agent)。」
+
+✅ **實際情形:2026-09-03 管理者授權動用專家,`qa-lead` 確實對本 story 做了測試證據覆核**,
+報告在 `docs/reviews/story-004-test-evidence-review-2026-09-03.md`(判定 ADEQUATE),
+並抓到三項本 story 內處理掉的問題(見 Completion Notes)。同日另有 `godot-specialist` 的
+引擎/ADR 契約覆核(`docs/reviews/story-004-engine-review-2026-09-03.md`,六項全 PASS)。
+
+⚠️ **為什麼要更正而不是刪掉**:一張標著 Complete 的工作單若留著「未經覆核」的字樣,
+下一個人會據此以為這張沒被檢查過,並可能重跑一次已經做完的覆核。
+📌 **2026-09-02 那項裁決本身是真的**(紀錄在 `production/session-state/active.md` 第二十七批,
+已由引擎覆核者查證),它只是被 2026-09-03 的新授權取代了。
 
 **替代做法**:上方驗收標準**本身就寫成 GIVEN / WHEN / THEN 形式**,直接作為測試規格使用。
 這不是省略 —— 該 GDD 的 AC 是 qa-lead 於 2026-08-03 諮詢草擬、並經十六輪審查修訂的成果,
@@ -97,11 +109,83 @@
 **Story Type**:Logic
 **必要證據**:`tests/unit/cursor/device_classification_test.gd`
 
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立並通過 —— `tests/unit/cursor/device_classification_test.gd`(15 條、0 失敗、0 orphans)
 
 ---
 
 ## Dependencies
 
 - **Depends on**:001
-- **Unlocks**:005
+- **Unlocks**:005, **006**
+
+> 🔴 **`Unlocks` 於 2026-09-03 相依稽核補上 006。** 機制七 (c) 的分類完整性驗證需要本張產出的
+> 三份 action 清單常數(ADR-0005 L.617 / Key Interfaces L.1346)。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+
+---
+
+## Completion Notes(2026-09-03)
+
+### 產出物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/ui/cursor/cursor_types.gd`(+120 行) | 三份 action 清單常數、`classify()`、`classify_action()`(含 echo 過濾) |
+| `tests/unit/cursor/device_classification_test.gd`(新建) | 15 條測試、含常數內容釘死斷言 |
+| `prototypes/story-004-ui-action-probe-2026-09-03/` | headless 探針 + log,直接呼叫 `CursorTypes.classify_action()` 本人 |
+
+**測試**:全套 289 → **304 條**(+15)、0 errors、1 failures(既有已核准的
+`affinity_phi_provider`,無新增)、**0 orphans**、引擎自印 `Exit code: 100`。
+主 session 於實作者回報後**獨立複跑兩次**,數字一致。
+
+### 🔴 AC 涵蓋範圍(誠實版 —— 多數 AC 在本層只能部分驗證)
+
+本 story 的產出是**兩個零狀態的純靜態函式**。權威轉移的狀態欄位在 Story 002、
+裁決邏輯在 Story 005 —— 因此多數 AC 的「結果」不在本層可驗,本層只驗它的**分類前提**。
+
+| AC | 本 story 驗到的 | 未涵蓋 / 歸屬 |
+|---|---|---|
+| AC-6 | 未映射到任何 `ui_*` 的事件 → `OTHER` | 「權威與目標皆不變」的結果 → Story 005 |
+| AC-7 | `.device` 為 `-1/0/1/16/999` 時分類結果恆定(鍵盤、滑鼠兩分支各驗) | 未模擬引擎的裝置 ID 重編號事件本身;因程式完全不讀該欄位,無中間狀態需驗 |
+| AC-8 | 滑鼠事件一律 `OTHER`;探針實測本專案**零個** `ui_*` 綁滑鼠 | 「合成注入」本身無法在單元測試層模擬 |
+| AC-9 | **僅補充性質**:純函式重複呼叫結果零漂移 + 程式碼審查確認無計時器/無成員狀態 | 🔴 **AC-9 真正要驗的「權威持續維持」不在本層** → Story 002 / 005 |
+| AC-34 | 4 個導覽 action 的真實 `InputEventKey` 與 `InputEventJoypadButton` 皆 → `NAVIGATION` | 「零門檻立即轉移」的仲裁行為 → Story 005 |
+| AC-34b | 真實 `InputEventJoypadMotion` → `NAVIGATION`(探針證實引擎預設已含搖桿綁定) | 死區能否濾除硬體飄移 → GDD Open Questions |
+| AC-35 | **僅鍵盤路徑**:`ui_accept`/`ui_cancel` → `CONFIRM` 且明確斷言 ≠ `NAVIGATION` | 🔴 **手把路徑未涵蓋** —— 探針證實本引擎這兩個 action **只綁鍵盤、無手把綁定**,測試抓不到手把事件。刻意**不偽造**假事件補洞:`classify_action()` 對 CONFIRM 無分裝置分支,假事件會走完全相同的路徑,不增加涵蓋力。**此缺口由 qa-lead 覆核抓出,原自評未揭露。** |
+
+### 覆核(兩方,皆 2026-09-03)
+
+- **`godot-specialist`** 引擎/ADR 契約 —— **六項全 PASS**,`reading_input_event_device_id`
+  禁令零違反,探針 (A) 級證據宣稱**成立**。報告:`docs/reviews/story-004-engine-review-2026-09-03.md`
+- **`qa-lead`** 測試證據 —— **ADEQUATE**,未發現高報。
+  報告:`docs/reviews/story-004-test-evidence-review-2026-09-03.md`
+
+### 覆核後的三項修正(皆已套用並複驗)
+
+1. 🔴 **S2 —— 三條測試在特定情況下會「零斷言通過」**:原本全部斷言包在
+   `for action in CursorTypes.NAVIGATION_ACTIONS` 迴圈裡,**清單若被清空則迴圈零次、零斷言,
+   GdUnit4 判定通過**(覆核者查過框架原始碼,確認無「零斷言即失敗」機制)。
+   已在三處迴圈前加 `contains_exactly()` **釘死清單實際成員**(不只斷言非空 ——
+   那擋不掉「被改成別的內容」)。
+   ⚠️ **這比空殼測試更隱蔽**:那三條看起來斷言豐富,只是全部藏在一個可能不執行的迴圈裡。
+2. **S3 —— AC-35 手把路徑缺口**:已在測試註解與上表明文揭露,不偽造事件補洞。
+3. **AC-9 迴圈 10,000 次 → 5 次**:純函式第 2 次呼叫起不再提供新資訊,
+   10,000 次只增加執行時間而非偵測力。實作者採納,未推翻。
+
+### 隨本 story 生效的硬性義務:已履行
+
+ADR-0005 核准時生效的兩條義務之一 —— **`classify_action()` 自行過濾 `InputEventKey.echo`** ——
+已實作。引擎的 `InputMap.event_is_action()` **不過濾**(VR #13 實測)。
+
+✅ **該過濾的迴歸偵測力經兩條獨立路徑確認**:實作者實際把過濾停用、確認測試變紅、
+再以雜湊比對還原;`qa-lead` 另從測試碼獨立推導,結論一致。
+
+### 交給後續 story 的四項(已登記於 `docs/tech-debt-register.md`)
+
+1. 🔴 **91 個 `ui_*` action、77 個未分類** → Story 006 的載入期驗證器照現行設計會每次啟動噴 77 行,
+   **正是 ADR R4-5 明文說要避免的結果。需管理者裁決,已呈報。**
+2. **`battle_screen.gd` 的「複本」其實用了三個不同的引擎 API**,echo 語意等價性**未查證(推測)**
+   → Story 005 收斂時必須實機驗證,不得假設等價。
+3. **ADR-0005 `Key Interfaces` 契約段從未列出 `classify()`** —— ADR 自身的登記遺漏,非本 story 缺陷。
+4. **echo 的確認類事件折疊進 `OTHER`,與「真正未分類」不可區分** —— 目前兩者同構、無行為差異,
+   屬設計選擇的已知代價,Story 005/006 知悉即可。
