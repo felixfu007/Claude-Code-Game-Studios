@@ -82,7 +82,7 @@ ADR-0005 實質承擔該角色:它有完整的模組圖(Architecture Diagram)與
 | TR-cursor-013 | 寫入介面標記待重新解析:須回傳結構化結果,**絕不靜默** | ✅ 機制十 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢 + 裝置權威查詢,兩者拒絕回饋須可區分 | ✅ 機制十(**刻意兩個獨立查詢**) |
 | TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙三分支 | ✅ 機制十一 |
-| TR-cursor-016 | 全域每裝置待機指示元件須存在於每個畫面 | ✅ 機制十二 |
+| TR-cursor-016 | 🔴 **2026-09-03 管理者裁決取消,需求本身不再存在** —— 原文:全域每裝置待機指示元件須存在於每個畫面 | ❌ 不適用(原:機制十二)。裁決依據見 `production/session-state/active.md` 第三十二批 |
 | TR-cursor-017 | 原生游標須在權威非滑鼠時隱藏,例外是連續漸變的奪權回饋 | ⚠️ **部分 —— 回饋那半凍結** |
 | TR-cursor-018 | 全鍵盤/手把平權;已註冊表面不得使用原生 Control 焦點/懸停主題 | ✅ 機制十四(**兩項條件**) |
 | TR-cursor-019 | 交接視覺延遲硬性上限(最多 1 幀)與奪權收斂上限,皆需幀精準量測 | ✅ 機制十五 |
@@ -165,7 +165,7 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 | 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | Ready | L(約 8–10 小時) | 十 | 002, 003 |
 | 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | Ready | M(約 5–6 小時) | 九 | 002, 005 |
 | 009 | [跨畫面交接生命週期(甲/乙/丙)](story-009-screen-handoff.md) | Integration | Ready | M(約 4–6 小時) | 十一 | 007 |
-| 010 | [全域待機指示宿主 + 專屬 CanvasLayer](story-010-idle-indicator-host.md) | UI | Ready | S(約 3–4 小時) | 十二 | 002 |
+| 010 | [專屬游標 `CanvasLayer` + 圖層變換恆等防護測試](story-010-idle-indicator-host.md) | UI | Ready | S(約 2–3 小時) | 十二 | 002 |
 | 011 | [原生游標隱藏 + 自繪載體 + 白名單例外](story-011-native-cursor-suppression.md) | Visual/Feel | Ready | L(約 8–10 小時) | 十三、十三之二 | 003, 010 |
 | 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | Ready | S(約 2–3 小時) | 十四 | 003 |
 | 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | Ready | S(約 3–4 小時) | 十五 | 005, 011 |

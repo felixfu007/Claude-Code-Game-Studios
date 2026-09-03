@@ -1217,8 +1217,24 @@ api_decisions:
       how AC-31 can be validated. This decision picks the option that HOLDS UNDER BOTH
       verification outcomes: if the native pointer turns out to support continuous alpha,
       the self-drawn carrier is still the superior option and this ADR needs no revision.
-      Marginal cost is near zero because the global CanvasLayer already exists for the
-      per-device idle indicator (TR-cursor-016).
+      REVISED 2026-09-03 (manager ruling cancelled TR-cursor-016, the per-device idle
+      indicator requirement — see production/session-state/active.md "2026-09-03 batch 32"):
+      the original sentence here read "marginal cost is near zero because the global
+      CanvasLayer already exists for the per-device idle indicator (TR-cursor-016)". That
+      premise no longer holds — TR-cursor-016 is cancelled, so the CanvasLayer is no longer
+      infrastructure the self-drawn carrier rides for free. godot-specialist's 2026-09-03
+      determination (engineering-cost judgment, not a design ruling, so settled within this
+      ADR rather than escalated): the DECISION ITSELF still holds, on two grounds that do not
+      depend on TR-cursor-016 at all. (1) The dominance argument was always the load-bearing
+      one and is untouched: self-drawn wins or ties under BOTH verification outcomes, so
+      waiting for the VR#4 spike can never flip the decision, only delay it. (2) The
+      CanvasLayer host was never exclusively a TR-cursor-016 free-ride in the first place —
+      mechanism 13a (the unregistered-surface hover check enforcing Core Rules #5's
+      fail-safe) independently needs the same cross-screen visual host regardless of the
+      idle indicator's existence, so the host's cost is still shared between two mechanisms,
+      just not the same two as before. Recomputed draw-call budget after removing the idle
+      indicator node is 2 elements (down from 3), confirming the host's absolute cost was
+      always small on its own terms, not small because it was "already built".
       AC-31'S ASSERTION TARGET IS THEREFORE FIXED: the self-drawn node's visible /
       modulate.a — NOT Input.mouse_mode, which degenerates to vacuously true for
       progressive feedback under this design (the GDD predicted this correctly).

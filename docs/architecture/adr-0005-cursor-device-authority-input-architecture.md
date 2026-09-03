@@ -90,7 +90,7 @@
 | `mouse_filter` | ~~機制十四~~ **2026-08-19 第三次修訂:機制十四已明文不約束 `mouse_filter`**(白名單反轉後與本系統判定無關,見機制十三之二 R5-6 修法);保留登記是因為 `MOUSE_FILTER_IGNORE` 仍影響 `gui_get_hovered_control()` 對**例外白名單表面**的回傳(失敗方向為「隱藏」,安全) | 僅 `modules/ui.md`(**4.6,版本落後**) |
 | `InputMap.event_is_action()`(2026-08-19 修訂新增,N1) | 機制四之二(`ActionClass` 語意分類,機制六仲裁資格判定的輸入依賴——第三輪審查發現此依賴原本完全不在本表) | **零命中**(與 `get_actions()`/`action_get_events()` 同系列 API,已由第十輪 `godot-specialist` 覆核為穩定,但本表此前漏列)。**第四輪追加兩項未查證語意**:(i) 對 `InputEventMouseMotion` 必然回傳 `false`(與本設計一致,但上一版未明講,現明文記錄於機制四之二);(ii) **印象中不過濾 `InputEventKey.echo`** —— 已列為 Verification Required #13 |
 | `Viewport.gui_get_hovered_control()`(2026-08-19 修訂新增,N3) | 機制十三之二(未登記表面 hover 時暫時恢復原生指標) | **零命中** |
-| `CanvasLayer` 座標變換與 `get_viewport().get_mouse_position()` 的互動(2026-08-19 修訂新增,F2;**第四輪拆項**)——本 ADR 明文假設全域游標/待機指示 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉) | **僅**機制十三/十三之二的**視覺定位**(VR #11b)。機制八的淨位移計算**已由第四輪引擎專家更正為不受影響**(全程停留在 viewport 座標系,兩座標相減,從未轉進該層局部空間,VR #11a 降級為資訊項) | **零命中**——`godot-specialist` 於第一次修訂驗證中標記 **UNVERIFIABLE-FLAG-AS-RISK**,第四輪同一專家縮小其影響面至視覺定位一半 |
+| `CanvasLayer` 座標變換與 `get_viewport().get_mouse_position()` 的互動(2026-08-19 修訂新增,F2;**第四輪拆項**)——本 ADR 明文假設全域游標(2026-09-03:原文「全域游標/待機指示」,該元件已取消,自本句移除)`CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉) | **僅**機制十三/十三之二的**視覺定位**(VR #11b)。機制八的淨位移計算**已由第四輪引擎專家更正為不受影響**(全程停留在 viewport 座標系,兩座標相減,從未轉進該層局部空間,VR #11a 降級為資訊項) | **零命中**——`godot-specialist` 於第一次修訂驗證中標記 **UNVERIFIABLE-FLAG-AS-RISK**,第四輪同一專家縮小其影響面至視覺定位一半 |
 | `Node.add_child()` + 子節點獨立 `process_priority`(2026-08-19 第四輪修訂新增,R4-1) | 機制五/六的 `CursorNavigationApplier`(−25)—— `process_priority` 是**逐節點**屬性,同一節點不可能同時位於 −100 與 −25,故 GDD 四步序列的步驟一與步驟三必須落在兩個節點上 | **零命中**(與既有 `process_priority` 零命中同一缺口;Autoload 節點於 `_ready()` 內 `add_child()` 為基本 Node API,風險等級低於 `process_priority` 語意本身) |
 | `Callable` 作為建構子注入的取值管道(2026-08-19 第四輪修訂新增,新發現 B;**第三次修訂追加 `Callable.is_valid()` 語意**) | 機制十 `CursorState._init()` 的 `mouse_position_provider` —— 讓 `RefCounted` 核心在無場景樹的情況下仍能取得滑鼠座標,同時讓單元測試可直接假造(Validation Criteria #2 的前提)。**第三次修訂追加**:S-1 的每次取值前 `is_valid()` 防禦,其可靠性取決於 `is_valid()` 對「已釋放的綁定物件」的偵測行為;本 ADR 因此把注入形式由 lambda 字面量改為**具名方法綁定**(見 Verification Required #15) | **零命中**(GDScript 語言層基本型別,非引擎子系統 API;`is_valid()` 對 lambda 隱式捕獲 `self` 的行為則為**未查證**,風險已獨立登記) |
 
@@ -109,7 +109,7 @@
 | 7 | **暫停/模態的讓路手段** —— GDD Open Question 問「`SceneTree.paused` + `process_mode` 是否足以涵蓋專案內全部彈出情境」。**本 ADR 機制九不採用 `SceneTree.paused` 作為判準**(見機制九的拒絕理由),因此此 Open Question 對本 ADR 的實作可行性不再構成阻擋;仍須於 `/create-architecture` 盤點彈窗情境以確認機制九的顯式旗標有被正確呼叫 | GDD Open Question(第六輪) | 低(已被機制九降級) |
 | 10 | ✅ **已查證(2026-09-01):時序乾淨,擔心的交錯情形未發生。** 實測 2 個完整 OUT/IN 循環、4 個含 FOCUS 事件的影格,**每一格皆為「全部 FOCUS 通知先於全部 PROCESS」**(例:frame 24 之 focus_seq [120,124] 全早於 process_seq [125,129]),跨 5 個 `process_priority` 一致。非 headless、真實 OS 焦點切換(外部 PowerShell 腳本奪焦,已存檔為 `prototypes/adr0005-engine-probes-2026-09-01/logs/focus_steal_script_used.ps1`)。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed.txt`。<br>⚠️ **執行過程撞到一個真坑並保留了失敗證據**:第一次嘗試未鎖 FPS,只錄到半筆資料;`prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed_attempt1_uncapped_fps.txt` 保留供追溯。<br>**原文如下(保留供追溯)**:**`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT` 相對 `process_priority`(`_process()` 執行序)的時序完全未定義**——若 FOCUS_IN 在部分節點 `_process()` 已跑完、部分未跑的中途觸發,`force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 可能讓部分下游在同影格讀到新舊混合的視覺狀態 | 第三輪 `/architecture-review`(**N2**,godot-specialist 於該輪額外發現) | 中——印象等級(信心度偏高),參考庫零涵蓋 |
 | 11a | **~~機制八的淨位移計算受 `CanvasLayer` 變換影響~~ —— 第四輪引擎專家更正:此項為虛驚,已降級為資訊項**。機制八全程只是兩個 viewport-space 座標相減求距離(`current_mouse_position.distance_to(_seed)`),兩個座標都來自 `get_viewport().get_mouse_position()`,**從未轉進 `CanvasLayer` 的局部空間** → 結構上不受該層是否恆等變換影響 | 第一次修訂列為風險;**第四輪 `godot-specialist` 更正並降級** | **低**(原判高)——保留登記供追溯,不佔用 Day-1 spike 額度 |
-| 11b | ✅ **已於 2026-09-01 關閉。** 依據 `prototypes/ui-canvas-scale-spike-2026-09-01/`(非 headless、真實 GPU、1080p/2K/4K/超寬四種解析度)+ 同日管理者畫面架構裁決(`design/art/screen-architecture.md`)。**結論的形狀與本項原本問的問題不同**:決定安不安全的**不是介面基準畫布選什麼,而是游標圖層有沒有自己獨佔一顆節點** —— 而本 ADR 機制十二本來就是這樣設計的(Autoload `CursorStateHost` 持專屬 `CanvasLayer`),專屬節點下四種解析度實測**全部恆等**。同批實測另確認該 Autoload 掛 `/root`、不在 `SubViewport` 內,四種解析度 `get_viewport() == get_tree().root` 皆為真。<br>**原文如下(保留供追溯)**:機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響 —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出;**2026-09-01 由畫面架構 spike 關閉** | 🔴 **原判高,現為已關閉 —— 但留下一條實作義務**:誤把游標圖層與介面圖層混成同一顆節點的實測誤差為 1080p **1440px** / 2K **2178px** / 4K **3304px**,游標系統實質失效。**已補為 Validation Criteria 第 20 條。本項不再佔用 Day-1 spike 額度。** |
+| 11b | ✅ **已於 2026-09-01 關閉。** 依據 `prototypes/ui-canvas-scale-spike-2026-09-01/`(非 headless、真實 GPU、1080p/2K/4K/超寬四種解析度)+ 同日管理者畫面架構裁決(`design/art/screen-architecture.md`)。**結論的形狀與本項原本問的問題不同**:決定安不安全的**不是介面基準畫布選什麼,而是游標圖層有沒有自己獨佔一顆節點** —— 而本 ADR 機制十二本來就是這樣設計的(Autoload `CursorStateHost` 持專屬 `CanvasLayer`),專屬節點下四種解析度實測**全部恆等**。同批實測另確認該 Autoload 掛 `/root`、不在 `SubViewport` 內,四種解析度 `get_viewport() == get_tree().root` 皆為真。🔴 **2026-09-03 理由更新(條文本身不變)**:機制十二現在的存在理由是服務機制十三/十三之二(TR-cursor-016 待機指示已取消,見機制十二),但本項驗證的是同一顆 `CanvasLayer` 節點的變換恆等性,與它承載哪些子節點無關——結論不受影響。<br>**原文如下(保留供追溯)**:機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響 —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出;**2026-09-01 由畫面架構 spike 關閉** | 🔴 **原判高,現為已關閉 —— 但留下一條實作義務**:誤把游標圖層與介面圖層混成同一顆節點的實測誤差為 1080p **1440px** / 2K **2178px** / 4K **3304px**,游標系統實質失效。**已補為 Validation Criteria 第 20 條。本項不再佔用 Day-1 spike 額度。** |
 | 13 | 🔴 **已查證(2026-09-01):不過濾 —— 落在危險的那一側,ADR 的疑慮坐實。** `event_is_action(pressed=true, echo=true, ui_up)` 與 `echo=false` 回傳**相同**(皆 `true`)。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe13_and_3_headless.txt`。<br>**後果**:機制四之二 `classify_action()` 若不自行加 `event is InputEventKey and event.echo` 過濾,玩家**按住**方向鍵會每一影格都被判為 `NAVIGATION`、亦即每一影格都在主張裝置權威。<br>🔴 **本次另確認一項新事實**:E1 缺陷(「類比搖桿持續按住造成滑鼠奪權永久鎖死」)原本**只有手把路徑的實測證據**,現確認**鍵盤持續按鍵會餵進同一條因果鏈**。<br>⚠️ **本項後果全部落在管理者明文凍結的滑鼠奪權子機制內。** 依 `adr-acceptance-criteria.md` 第四節第 4 項「凍結是決定,不是缺陷」,**不阻擋核准**;此處**只登記事實與因果鏈,不提修法**(執行者已依此界線回報)。<br>**原文如下(保留供追溯)**:**`InputMap.event_is_action()` 是否過濾 `InputEventKey.echo`**(2026-08-19 第四輪修訂新增)——若不過濾,玩家**按住**方向鍵產生的重複 echo 事件會與初次按下同樣被機制四之二判為 `NAVIGATION`,亦即每一影格都在主張裝置權威。這會直接餵進機制八觸發點 (d)(同幀否決)與 E1 缺陷(類比搖桿持續按住造成滑鼠奪權永久鎖死)的因果鏈——**上一版 ADR 對此完全未討論** | 第四輪 `godot-specialist` 判定為「本次最值得回頭確認的一項」 | **高**——若不過濾,機制四之二須自行加 `event is InputEventKey and event.echo` 過濾,且該過濾要不要套用於觸發點 (d) 需回頭對照 GDD;但**該子機制已凍結**,此處只登記、不預先設計修法 |
 | 12 | **已查證(2026-08-20,`engine-verification-spike-2026-08-20`,探針 `c1_bare_with_signal.gd`)**:`@abstract` 類別內**可以**同時含 `signal` 與多個 `@abstract func` —— 該探針測的正是 `MouseReclaimPolicy` 這個形狀(一個 `signal` + 四個 `@abstract func`)。連帶查證:正確語法是**裸簽章**(`@abstract func f() -> T`,無冒號無主體),對 `Array[T]`/`bool`/`float`/`void`/`Vector2` 五種回傳型別皆成立;`@abstract func ...: pass` 是 `Parse Error: An abstract function cannot have a body.`;漏實作抽象方法是編譯期錯誤且訊息指名缺哪一個。**本 ADR 原有的 8 處 `pass` 主體已於 2026-08-21 全部刪除。** 原文如下(保留供追溯):`@abstract` 類別內同時宣告 `signal` 與多個 `@abstract func`(機制八 F3 修訂新增 `reset_triggered` 訊號)是否有語法限制 | 本次修訂新增(**godot-specialist** 標記 **UNVERIFIABLE-FLAG-AS-RISK**,與既有 `@abstract` 語法賭注同一風險等級) | 高——寫錯屬編譯期錯誤,擋下整個檔案 |
 | 9 | ✅ **已查證(2026-09-01):不排除 —— 與該專家原本的判斷一致。** `Button` 設 `FOCUS_NONE` 後滑鼠懸停,`is_hovered()` 由 false 轉 true、`get_draw_mode()` 由 0(NORMAL)轉 **2(HOVER)**。**焦點與懸停確為兩條獨立管線**,故機制十四第 2 項條件是**硬性要求而非防禦性建議** —— 只靠 `focus_mode` 只封住兩條管線中的一條。非 headless。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe9_windowed.txt`。<br>**原文如下(保留供追溯)**:**`focus_mode = FOCUS_NONE` 是否也排除 Control 主題內建的滑鼠 hover 繪製** —— `godot-specialist` 判斷**大概率不排除**(兩條獨立管線)。最小 spike:`Button` 設 `FOCUS_NONE` 後滑鼠懸停是否仍畫 hover 主題。決定機制十四第 2 項條件是硬性要求或防禦性建議 | **本 ADR Step 5.5 驗證新發現** | **高** —— 若不排除,單靠 `focus_mode` 的機制十四只封住兩條管線中的一條,原決策已據此修訂 |
@@ -150,7 +150,7 @@
 同時,本系統有兩項超出「尚未定案」的問題:
 
 1. **兩項已確認、尚未修復的缺陷**(GDD `Known Confirmed Defects` 節):類比搖桿持續按住造成滑鼠奪權永久鎖死(E1,spike log 實測,100% 可重現);滑鼠奪權成功後被反方向零門檻豁免規則秒搶回(E2,真人口語觀察)。兩者已由使用者裁決降級為建議事項、子機制重新設計暫停。
-2. **一項擁有權缺口**:全域每裝置待機指示元件須存在於每個畫面,但 GDD 記載「現有候選擁有者皆為畫面範圍,無一符合」。
+2. 🔴 **一項擁有權缺口(2026-09-03 管理者裁決取消,不再是問題)**:全域每裝置待機指示元件須存在於每個畫面,但 GDD 記載「現有候選擁有者皆為畫面範圍,無一符合」。該需求本身已取消(見機制十二),缺口隨之消失,本 ADR 不再需要為它提供答案。原文保留供追溯。
 
 架構階段的責任因此有三層:選定實作機制、**不在翻譯過程中弄丟任何一條已收斂的規則**、以及**不假裝已凍結的問題已被解決**。
 
@@ -164,7 +164,7 @@
 - **既有架構立場**(`docs/registry/architecture.yaml`,**項數不在此複述**(2026-09-01 `TD-ADR` 覆核:原寫 41 項,實測 87。手抄必漂移,要數就當場數:見 `.claude/docs/technical-preferences.md` 的 awk 指令)):`autoload_singleton_for_testable_data_layers`、`enum_value_positional_string_conversion`、`mutable_container_as_dictionary_key`、`relying_on_container_iteration_order`、`returning_internal_container_references` 五項 forbidden pattern 與本 ADR 直接相關。
 - **全手把平權**(`.claude/docs/technical-preferences.md`):所有 UI 須同等支援滑鼠 hover/click 與 d-pad/類比搖桿導覽,主機無游標,不得有 hover-only 互動。
 - **子機制凍結**:滑鼠奪權(Core Rules #3 空間門檻)的重新設計已由使用者明文暫停,不得在本 ADR 內重啟設計。
-- **單一根 Viewport 假設(2026-08-19 修訂新增,F2)**:機制八的滑鼠淨位移計算、機制十三/十三之二的原生指標判定與 hover 查詢,全程假設專案只有一個根 Viewport,滑鼠座標一律取自 `get_viewport().get_mouse_position()`,承載自繪游標/待機指示的 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉)。若未來引入分割畫面或多個獨立 Viewport,此假設須重新驗證(見 Verification Required 第 11 項)。
+- **單一根 Viewport 假設(2026-08-19 修訂新增,F2)**:機制八的滑鼠淨位移計算、機制十三/十三之二的原生指標判定與 hover 查詢,全程假設專案只有一個根 Viewport,滑鼠座標一律取自 `get_viewport().get_mouse_position()`,承載自繪游標(2026-09-03:原文含「/待機指示」,該元件已取消,自本句移除)的 `CanvasLayer` 全程維持恆等變換(無位移/縮放/旋轉)。若未來引入分割畫面或多個獨立 Viewport,此假設須重新驗證(見 Verification Required 第 11 項)。
 
   🔴 **2026-09-01:本條自己寫的觸發條件已經發生,且已重新驗證完畢 —— 結論不變。**
   (`TD-ADR` 覆核發現。上一版此處只有觸發器,沒有人回頭啟動它。)
@@ -213,6 +213,8 @@
 GDD 留下三個看似無關的架構缺口——**全域狀態的生命週期宿主**(TR-cursor-001,「Autoload 類機制」)、**全域每裝置待機指示元件的擁有者**(TR-cursor-016,「現有候選皆為畫面範圍,無一符合」)、**原生游標連續 alpha 的替代載體**(TR-cursor-017,「原生指標可能不支援逐幀連續 alpha」)——三者的共同結構是:**需要一個生命週期跨越所有畫面、且能承載視覺節點的宿主**。
 
 一旦承認第一個問題的答案是「一個 Autoload」,另外兩個就不再是缺口,而是同一個 Autoload 順理成章的兩個掛載點。這也解釋了為什麼 GDD 找不到 TR-cursor-016 的擁有者:它一直在畫面範圍的候選者裡找,而正確答案在畫面範圍之外——而那個東西在 GDD 寫作當下還不存在,因為它正是本 ADR 要建立的。
+
+🔴 **2026-09-03 更正**:TR-cursor-016 已由管理者裁決取消(見機制十二)。三個缺口現在剩兩個(TR-cursor-001、TR-cursor-017),但「一個 Autoload 提供跨畫面宿主」這個核心洞見不受影響——它現在只是少了一個受益方,不影響其餘兩個問題為何需要同一個答案的推導。上方兩段原文保留供追溯,不改寫。
 
 ### 機制一:擁有模式 —— Autoload 薄殼 + 依賴注入核心
 
@@ -523,7 +525,7 @@ func _process(_delta: float) -> void:
 | ② 呼叫方主動改標 | 任何因遊戲語意事件(非 `ui_*` 觸發,例如單位死亡)需呼叫 `mark_pending_reresolve()`/`set_target()` 的下游系統,於**該系統自己的節點** `_process()` | **−60**(架構強制;必須落在**開區間** −100 < ② < −25,**兩個端點皆不可取**,此為參考值——見下方「R5-2 修法」) | GDD 四步序列**步驟二** |
 | ③(第四輪新增)緩衝內導覽寫入 | `CursorNavigationApplier`——`CursorStateHost` 於 `_ready()` 內 `add_child()` 的專屬子節點 | **−25**(架構強制;必須嚴格介於 ② 與 ④ 之間,且**不得與 ② 同值**——見下方「R5-2 修法」) | `apply_buffered_navigation(events)` 依①已裁定的權威套用緩衝內導覽類 `ui_*` 目標寫入(GDD 四步序列**步驟三**),**並清空緩衝區**(該影格緩衝的最後一個消費者) |
 | ④ 已註冊表面 | 各 `CursorSurface` | **0**(預設) | 讀取狀態,渲染自己的高亮/待重新解析視覺 |
-| ⑤ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 待機指示、奪權漸進回饋載體、機制十三之二的 hover 判定 —— **2026-08-21 修訂(R6-8):三者為三個獨立節點,不是同一節點**(見下方 ⑤ 的展開說明);同為呈現層這**一個角色的三個實例**,彼此無定序需求,故同值 50 不違反「兩兩相異」(該規則管轄角色之間,見 R6-9 的範圍限定)。原文寫「同一節點單一 `_process()` 內完成,避免與其他 priority=50 節點的同層排序未定義問題) |
+| ⑤ 全域視覺層 | `CursorStateHost` 持有的 CanvasLayer 子節點 | **50** | 奪權漸進回饋載體(自繪游標)、機制十三之二的 hover 判定 —— **2026-08-21 修訂(R6-8):原為三個獨立節點,另含待機指示器**;**2026-09-03 因 TR-cursor-016 取消,降為兩個獨立節點**(見下方 ⑤ 的展開說明);同為呈現層這**一個角色的兩個實例**,彼此無定序需求,故同值 50 不違反「兩兩相異」(該規則管轄角色之間,見 R6-9 的範圍限定)。原文寫「同一節點單一 `_process()` 內完成,避免與其他 priority=50 節點的同層排序未定義問題) |
 | ⑥ 下游讀取方(含確認動作判讀) | 戰鬥 HUD、好感度視覺 UI、支援對話 UI,於**該系統自己的節點** `_process()` | **100** | 讀取游標目標更新自己的呈現;**GDD 四步序列步驟四**——任何解讀確認類 `ui_*` action 並查詢 `is_current_target_valid()`/`get_device_authority()` 的邏輯必須落在此處,絕不可掛 `_input()`/`_unhandled_input()`(見 Requirements 第 11 項、Constraints「下游確認動作判讀的執行位置」) |
 
 **定序對照(這是本修法唯一要證明的事)**:①(−100)→ ②(−60)→ ③(−25)→ ⑥(100),即 GDD 明文的 **1 → 2 → 3 → 4**,逐步對齊、無融合。④⑤ 是純讀取的渲染方,不屬 GDD 四步序列的任何一步,插在 ③ 與 ⑥ 之間不影響該序列。
@@ -1040,15 +1042,41 @@ func handoff_after_mount(target: CursorTarget) -> SetTargetResult      # 第三�
 
 **裝置權威不隨目標交接重置**:`set_target()` 只在 `from_ui_action == true` 時連動裝置權威轉移。🔴 **2026-09-03 管理者裁決:此承諾明文「暫不實作」。** 三項事實使它今天無法兌現:①**本 ADR 從未說要轉移給哪一個裝置**;②`set_target(target, from_ui_action)` 的簽章**不帶任何裝置資訊**,結構上無從得知;③**今天沒有任何呼叫端會傳 `true`** —— 甲/乙/丙三分支明文一律傳 `false`,玩家導覽走 `apply_buffered_navigation()`。**現況因此是:`true` 與 `false` 的行為完全相同。** 這是待決事項,**不是可以依賴的契約** —— 下游不得寫出任何依賴「傳 `true` 會轉移權威」的程式碼。⚠️ **刻意保留參數而非刪除**(第四次修訂曾以 R6-6 刪掉 `handoff_before_unload()` 的懸空 `surface` 參數,本項刻意不比照):理由是**機制六(Story 005)正是會發現「到底需不需要」的那一份工作**,現在刪掉、屆時需要就要再加回來,等於改兩次已凍結的簽章。**代價已知且登記在案**:這留下一個目前沒有作用的參數,正是本專案上次親手刪掉的那種形狀。🔴 **回答期限:Story 005 完成時必須定案**(實作、或永久刪除),不得再次延後而不留紀錄。甲/乙/丙三分支的呼叫皆為系統主動改標,`from_ui_action` 一律傳 `false`——裝置權威維持不變(GDD Core Rules #4:裝置權威與游標目標是正交欄位)。
 
-### 機制十二:全域每裝置待機指示宿主 —— Autoload 持有的 CanvasLayer
+### 機制十二:全域游標視覺宿主 —— Autoload 持有的 CanvasLayer
 
-**決策**:`CursorStateHost` 持有一層 `CanvasLayer`(高 layer 值,恆在所有畫面內容之上),作為全域每裝置待機指示元件的宿主。
+🔴 **2026-09-03 管理者裁決:TR-cursor-016(全域每裝置待機指示元件)本身已取消。** 依據與原文
+見 `production/session-state/active.md`「2026-09-03 第三十二批」——待機指示是**第二條**重複的
+裝置變動回饋管道:滑鼠側已有機制十三的「滑鼠奪權漸進回饋」硬性要求,鍵盤/手把側「按一下方向鍵
+即刻取得權威,無門檻無延遲」本身就是可觀察的回饋。取消指示元件不會讓 GDD 明訂的失敗模式
+(玩家將「裝置未持有權威」與「功能故障」在視覺上混淆)回來。
 
-**這解決了 TR-cursor-016**——GDD 記載「戰鬥 HUD 是候選,但支援對話 UI 等非戰鬥畫面情境下這個指示元件如何呈現、由誰擁有,同樣需要答案」,結論是「現有候選擁有者皆為畫面範圍,無一符合」。**問題不在於候選者不夠好,而在於需求本身(存在於每個畫面)排除了任何畫面範圍的擁有者。** 一旦機制一建立了生命週期跨所有畫面的 Autoload,正確的宿主就存在了。
+**本節因此理由換人,但 `CanvasLayer` 本體不移除**——機制十三的自繪替代游標節點與機制十三之二
+的 hover 判定器仍需要一個生命週期跨越所有畫面、能承載視覺節點的宿主,而機制一建立的 Autoload
+仍是唯一候選:候選者若限定在畫面範圍內,無一能滿足「存在於每個畫面」這個前提——這正是原
+TR-cursor-016 論證的形狀,只是現在服務的是機制十三/十三之二,不是待機指示。
 
-**本 ADR 定案宿主與行為契約,不定案視覺樣式**:具體美術樣式留待 `/art-bible`,比照 GDD 對「待重新解析」視覺的同一分工。ADR 保證的是:該元件存在於每個畫面、由單一擁有者渲染、不需要任何下游系統各自實作。
+**決策(改寫)**:`CursorStateHost` 持有一層 `CanvasLayer`(高 layer 值,恆在所有畫面內容之上),
+作為機制十三(自繪替代游標)與機制十三之二(hover 判定器)的宿主。**本節不再擁有或定案任何
+待機指示相關的行為契約或視覺樣式**——原「未解決的部分」段落(留待 `/art-bible` 決定待機指示
+呈現方式)隨需求一併移除,不留待辦。
 
-**未解決的部分**:GDD 的 Open Question 還問「非戰鬥畫面情境下這個指示元件**如何呈現**」——那是 UX/美術問題,本 ADR 不回答,已登記為 `producer`/`ux-designer` 於下游 UI 系統設計時的義務(GDD 已同步至 `systems-index.md` 跨系統義務登記表)。
+> **原文如下(保留供追溯,2026-08-18 初版至 2026-09-01 核准版本一致)**:
+>
+> 決策:`CursorStateHost` 持有一層 `CanvasLayer`(高 layer 值,恆在所有畫面內容之上),作為
+> 全域每裝置待機指示元件的宿主。
+>
+> 這解決了 TR-cursor-016——GDD 記載「戰鬥 HUD 是候選,但支援對話 UI 等非戰鬥畫面情境下這個
+> 指示元件如何呈現、由誰擁有,同樣需要答案」,結論是「現有候選擁有者皆為畫面範圍,無一符合」。
+> 問題不在於候選者不夠好,而在於需求本身(存在於每個畫面)排除了任何畫面範圍的擁有者。一旦
+> 機制一建立了生命週期跨所有畫面的 Autoload,正確的宿主就存在了。
+>
+> 本 ADR 定案宿主與行為契約,不定案視覺樣式:具體美術樣式留待 `/art-bible`,比照 GDD 對
+> 「待重新解析」視覺的同一分工。ADR 保證的是:該元件存在於每個畫面、由單一擁有者渲染、
+> 不需要任何下游系統各自實作。
+>
+> 未解決的部分:GDD 的 Open Question 還問「非戰鬥畫面情境下這個指示元件如何呈現」——那是
+> UX/美術問題,本 ADR 不回答,已登記為 `producer`/`ux-designer` 於下游 UI 系統設計時的義務
+> (GDD 已同步至 `systems-index.md` 跨系統義務登記表)。
 
 ### 機制十三:原生游標二元隱藏 + 自繪載體承擔連續 alpha
 
@@ -1100,7 +1128,34 @@ func _process(_delta: float) -> void:
 
 **理由**:GDD 第五輪 Open Question 指出「原生指標若實際上不支援逐幀連續 alpha 動畫(4.7.1 下未經驗證),需改用下游自繪的替代游標圖形」,並指出此載體選擇會連動影響 AC-31 的驗證方式(`Input.mouse_mode` 斷言可能對自繪方案退化為恆真)與 Core Rules #5 抑制義務的掛載對象。
 
-**本 ADR 直接選擇自繪載體,不等驗證結果**——理由不是悲觀,而是**自繪方案在兩種驗證結果下都成立**,而原生方案只在其中一種下成立。既然機制十二已經因為 TR-cursor-016 建立了那層 CanvasLayer,自繪載體的邊際成本接近零。這讓 Verification Required 第 4 項從阻擋項降為資訊項:若實測證實原生指標支援連續 alpha,本 ADR **不需要**修訂(自繪仍是上位方案)。
+**本 ADR 直接選擇自繪載體,不等驗證結果**——理由不是悲觀,而是**自繪方案在兩種驗證結果下都成立**,而原生方案只在其中一種下成立。
+
+🔴 **2026-09-03 事實層更正**:原文接著寫「既然機制十二已經因為 TR-cursor-016 建立了那層
+CanvasLayer,自繪載體的邊際成本接近零」——**TR-cursor-016 已於管理者裁決取消**(見機制十二),
+這句論證的前提不再成立:那層 `CanvasLayer` 不再是「因為另一項需求而已經建好、自繪只是搭便車」,
+建立與維護它的**全部**成本現在都要算在機制十三/十三之二自己頭上,不再是邊際成本。
+
+🔴 **2026-09-03 `godot-specialist` 判定(技術層工程判斷,非設計裁決,故由本 ADR 自行判定,不上呈)**:
+**「不等驗證結果直接選自繪載體」這個決策仍然成立,但支撐它的理由必須換掉「邊際成本接近零」,
+不能只是刪掉那句話不管。** 理由有二,兩者都不依賴 TR-cursor-016:
+
+1. **主論證本來就不靠成本論證,不受影響**:自繪方案在兩種驗證結果下都成立、原生方案只在其中
+   一種下成立——這是一個**優勢論證(dominance argument)**,不論 VR #4 的 spike 結果為何,
+   自繪都不會是更差的選擇,故等驗證結果不會改變決策,只會延遲它。這一點在移除邊際成本論證前
+   後完全不變。
+2. **`CanvasLayer` 宿主的成本從來就不是專屬於 TR-cursor-016 的搭便車,而是機制十三/十三之二
+   自身結構性需要的東西**:即使 TR-cursor-016 從未存在,機制十三(自繪替代游標,回應
+   TR-cursor-017)與機制十三之二(hover 判定器,執行 Core Rules #5 的白名單 fail-safe)仍然
+   各自需要一個生命週期跨所有畫面、位於介面最上層的視覺宿主——這正是機制十二在移除待機指示後
+   剩下的角色。換言之,「兩個機制共用一層 `CanvasLayer`,分攤建置成本」這件事本身沒有消失,
+   消失的只是**分攤對象從待機指示換成彼此**。重算後的繪製元素預算(2 個,見 Consequences →
+   Performance Implications)證實這個結構性宿主的絕對成本本來就低,不是靠「已經建好」才顯得低。
+
+**因此本 ADR 判定:決策(直接選自繪載體、不等 VR #4)仍然成立,理由改列上述兩點,不再引用
+「邊際成本接近零/已經建好」的框架。** 若管理者或下游設計端認為此判斷需要更高層級的覆核,
+本判定不阻擋重新提出——但就工程成本本身而言,判定沒有變成待決事項。
+
+這讓 Verification Required 第 4 項從阻擋項降為資訊項:若實測證實原生指標支援連續 alpha,本 ADR **不需要**修訂(自繪仍是上位方案)。
 
 **AC-31 的驗證掛載點因此定案**:斷言對象是自繪節點的 `visible`/`modulate.a`,**不是** `Input.mouse_mode`——後者在自繪方案下對漸進回饋確實退化為恆真,GDD 的預判正確。`Input.mouse_mode` 的斷言仍用於驗證原生指標的二元抑制(Core Rules #5),兩者是兩個不同的驗證目標。
 
@@ -1108,13 +1163,13 @@ func _process(_delta: float) -> void:
 
 **問題**(第三輪 `/architecture-review` 引擎專家額外發現):`Input.mouse_mode` 是**全域**設定(整個應用程式視窗),依裝置權威切換;但裝置權威是全域欄位,與玩家當下實際把滑鼠移到哪個表面無關。GDD AC-60 明文允許「未登記表面」(例如非模態設定側欄)使用原生 hover、不受本系統管轄——但手把持權威時原生指標全域隱藏,玩家想用滑鼠點這類側欄時,側欄自己的 hover 樣式仍會畫出來(`mouse_entered`/`mouse_exited` 不依賴游標可見性),玩家卻完全看不到滑鼠指標在哪。這是真實體感落差,原版本未處理也未承認。
 
-**決策(2026-08-21 修訂,R6-8)**:**hover 判定器是 CanvasLayer 底下的第三個獨立節點**(priority = 50),**不是**與機制十三的自繪載體同一節點。原文寫「同一節點」在三節點方案下是**事實錯誤**。
+**決策(2026-08-21 修訂,R6-8;2026-09-03 因 TR-cursor-016 取消調整為兩節點)**:**hover 判定器是 CanvasLayer 底下的一個獨立節點**(priority = 50),**不是**與機制十三的自繪載體同一節點。R6-8 當時的原文寫「第三個獨立節點」,因為當時 CanvasLayer 底下還有待機指示器;該元件已取消(見機制十二),故現在是**兩個**獨立節點:自繪游標(機制十三)與 hover 判定器(本節)。
 
-> **🔴 為何必須拆(R6-8)**:`modulate.a` 是**逐節點**屬性。機制十三的 `_process()` 末尾寫 `modulate.a = _presented_alpha` —— 若三者真是同一節點,那一行會把**待機指示一起淡出**,而待機指示的可見性依 `TR-cursor-016` 由**裝置權威**決定、與奪權進度無關,**這是行為錯誤**。反之若是兩個節點,機制六 ⑤ 的「同一節點」就不成立,而該句的理由正是「避免同層排序未定義」—— 兩個節點都在 50,直接落入 R5-2 新訂的「架構強制值必須兩兩相異」。
+> **🔴 為何必須拆(R6-8)**:`modulate.a` 是**逐節點**屬性。機制十三的 `_process()` 末尾寫 `modulate.a = _presented_alpha` —— 若與 hover 判定器同一節點,那一行會讓 hover 判定器一併被漸進回饋的透明度收斂影響,而 hover 判定器的可見性判定不應被奪權進度牽動,**這是行為錯誤**。反之若是兩個節點,機制六 ⑤ 的「同一節點」就不成立,而該句的理由正是「避免同層排序未定義」—— 兩個節點都在 50,直接落入 R5-2 新訂的「架構強制值必須兩兩相異」。
 >
-> **三節點的職責與同值理由**:待機指示器(純讀取,`TR-cursor-016`)、自繪游標(**唯一**承載 `modulate.a = _presented_alpha`,`TR-cursor-017`)、hover 判定器(執行 Core Rules #5)。三者同為**呈現層這一個角色的三個實例**,依 R6-9 的範圍限定,同一角色的多實例之間本 ADR 不提供定序保證 —— 而三者**彼此無定序需求**:待機指示器與自繪游標各讀各的狀態、互不依賴;hover 判定器寫的是 `Input.mouse_mode`(全域設定),不被另外兩者讀取。**三者皆不寫 `CursorState`**,故無同幀競寫問題。
+> **兩節點的職責與同值理由(2026-09-03 更正:原為三節點,另含待機指示器,該元件已因 TR-cursor-016 取消移除)**:自繪游標(**唯一**承載 `modulate.a = _presented_alpha`,`TR-cursor-017`)、hover 判定器(執行 Core Rules #5)。兩者同為**呈現層這一個角色的兩個實例**,依 R6-9 的範圍限定,同一角色的多實例之間本 ADR 不提供定序保證 —— 而兩者**彼此無定序需求**:自繪游標讀自己的呈現狀態、不依賴 hover 判定器;hover 判定器寫的是 `Input.mouse_mode`(全域設定),不被自繪游標讀取。**兩者皆不寫 `CursorState`**,故無同幀競寫問題。
 >
-> ⚠️ **待機指示器的資料來源尚未定義(Step 5.5 新發現,誠實登記)**:`TR-cursor-016` 要求「每裝置待機指示」,代表它至少要知道「當前哪個裝置閒置中」,而 `CursorState` 的頂層欄位裡**沒有任何 idle 概念**。這**不是本次拆分造成的**(拆分前被「同一節點」的措辭蓋住了),但既然本次要正式拆成獨立節點並寫進 registry,就不應留一個空殼契約。**本 ADR 不在此臆造一個 idle 欄位** —— 列為下一輪必須處理的缺口,並明文記錄它先前被掩蓋的原因。
+> ⚠️ ~~待機指示器的資料來源尚未定義(Step 5.5 新發現,誠實登記)~~ 🔴 **2026-09-03:本項因 TR-cursor-016 取消而失去對象,不再是待辦缺口。** 原文保留供追溯:`TR-cursor-016` 要求「每裝置待機指示」,代表它至少要知道「當前哪個裝置閒置中」,而 `CursorState` 的頂層欄位裡沒有任何 idle 概念——這不是拆分造成的(拆分前被「同一節點」的措辭蓋住了),曾列為下一輪必須處理的缺口。**該缺口隨需求移除一併消失,不需回頭定義,也不需要任何後續動作。**
 
 新增每影格 hover 檢查:
 
@@ -1267,12 +1322,13 @@ var diagnostic_reclaim_progress_history: Array[float]   # 取樣自繪節點每�
                     │                                                 │
                     │  ┌───────────────────────────────────────────┐  │
                     │  │ CanvasLayer (機制十二/十三) priority = 50  │  │
-                    │  │  ├ 全域每裝置待機指示   ← TR-cursor-016    │  │
                     │  │  ├ 自繪奪權漸進回饋游標 ← TR-cursor-017    │  │
                     │  │  │   (唯一承載 modulate.a = _presented_alpha) │  │
                     │  │  └ hover 判定器 ← 機制十三之二/Core Rules #5 │  │
-                    │  │      (2026-08-21 R6-8:三個獨立節點,同為  │  │
-                    │  │       呈現層角色的實例,priority 皆 50)   │  │
+                    │  │      (2026-09-03:原為三節點,另含待機指示   │  │
+                    │  │       器←TR-cursor-016,需求已取消,降為     │  │
+                    │  │       兩個獨立節點,同為呈現層角色的實例,   │  │
+                    │  │       priority 皆 50)                    │  │
                     │  │      modulate.a = _presented_alpha (呈現層平滑器) │  │
                     │  │        上升立即同步 / 下降收斂 / (d) 瞬間歸零     │  │
                     │  │      訂閱 _state.reclaim_reset_triggered (R5-3)   │  │
@@ -1478,7 +1534,7 @@ class_name CursorNavigationApplier extends Node
 
 - **Description**:`CursorState` 由最上層的遊戲根節點建構一次,經建構子/setter 逐層注入所有需要它的畫面與表面。
 - **Pros**:最符合 forbidden pattern 的字面與精神;零全域狀態;測試最乾淨。
-- **Cons**:TR-cursor-015 的跨畫面交接是本系統的硬性需求——甲/乙/丙三分支橫跨「舊表面拆除前」與「新表面掛載後」兩個畫面的生命週期。純 DI 下,注入鏈在任何一個畫面轉場處斷掉,交接就靜默失效,而「注入鏈完整」沒有任何結構性保證。此外 TR-cursor-016 要求的全域待機指示元件在純 DI 下重新變成無主(這正是 GDD 找不到擁有者的原因)。
+- **Cons**:TR-cursor-015 的跨畫面交接是本系統的硬性需求——甲/乙/丙三分支橫跨「舊表面拆除前」與「新表面掛載後」兩個畫面的生命週期。純 DI 下,注入鏈在任何一個畫面轉場處斷掉,交接就靜默失效,而「注入鏈完整」沒有任何結構性保證。~~此外 TR-cursor-016 要求的全域待機指示元件在純 DI 下重新變成無主(這正是 GDD 找不到擁有者的原因)。~~ 🔴 **2026-09-03:TR-cursor-016 已取消,此句不再是本 Alternative 的拒絕理由之一。** 前段 TR-cursor-015 的理由單獨即足以支撐本 Alternative 的 Rejection Reason,不受影響。
 - **Rejection Reason**:它把一個**結構性保證**(生命週期涵蓋所有畫面)降級為**紀律要求**(記得逐層注入)。GDD 明文把生命週期需求寫進 TR-cursor-001 而非留給實作,正是因為這件事不能靠紀律。**機制一的薄殼方案取得了兩者:Autoload 提供不可能斷的生命週期,DI 核心提供乾淨的可測性——兩個目標並不衝突,先前只是被當成二選一。**
 
 ### Alternative 3:裁決在 `_input()` 的最後一次呼叫,不進 `_process()`
@@ -1497,6 +1553,10 @@ class_name CursorNavigationApplier extends Node
 
 ### Alternative 5:待機指示元件交由戰鬥 HUD 擁有
 
+🔴 **2026-09-03:本 Alternative 已因 TR-cursor-016 取消而失去討論對象**(見機制十二)——它比較的
+是「待機指示元件」該由誰擁有,而該元件本身已不存在。以下原文保留供追溯,不再是本 ADR 現行決策
+需要考慮的替代方案。
+
 - **Description**:依 GDD 記載的候選方向,由戰鬥 HUD(#10)渲染全域每裝置待機指示。
 - **Pros**:戰鬥 HUD 持久呈現於戰鬥畫面,是最自然的候選;不需要本 ADR 建立新的視覺宿主。
 - **Cons**:需求是「存在於**每個**畫面」。支援對話畫面、暫停選單、讀檔畫面都沒有戰鬥 HUD。GDD 自己的結論就是「現有候選擁有者皆為畫面範圍,無一符合」。
@@ -1509,7 +1569,7 @@ class_name CursorNavigationApplier extends Node
 - **第二輪 `/architecture-review` 的唯一 FAIL 成因(游標系統 19/19 零涵蓋、Foundation 層)得以關閉。** ⚠️ **2026-08-19 第四輪修訂刪除此處原有的「19 項全部有機制支撐(其中 3 項為部分)」自陳**——它是初版寫下的 16/3 分佈,第三輪已獨立推翻為 11/8、第四輪再重推為 13/6,而 Status 自第一次修訂起即宣告「本 ADR 不自陳涵蓋分佈」。舊句與該宣告直接矛盾,且是同一個「自評膨脹」模式被連續兩輪抓到後仍留在文件裡的第三次。**涵蓋分佈一律以最新一輪獨立 `/architecture-review` 的推導為準,本節不再複述任何數字。**
 - **自第四輪起懸而未決的「表面類型 enum 實作位置」定案**(機制二),且沿用已查證的 `AffinityTypes` 先例,不重蹈 ADR-0002 撞過的裸列舉編譯問題。
 - **三個 GDD 標記為 `/create-architecture`「建議優先安排」的 Open Question 被降級**:暫停讓路手段(機制九不採 `SceneTree.paused`,不需要回答該 OQ)、原生游標連續 alpha 載體(機制十三選了在兩種驗證結果下都成立的方案)、型別白名單式的設定驗證(機制七的 `has_setting()` 防衛讓未知鍵名在執行期自我暴露)。
-- **TR-cursor-016 的擁有權缺口被結構性解決**(機制十二),而非再次轉交給下游。
+- ~~**TR-cursor-016 的擁有權缺口被結構性解決**(機制十二),而非再次轉交給下游。~~ 🔴 **2026-09-03:TR-cursor-016 已取消,本項不再成立**——機制十二現在的存在理由是服務機制十三/十三之二,不是解決一個已不存在的擁有權缺口。原文保留供追溯。
 - **凍結的子機制被隔離在單一檔案**(機制八),未來重啟重新設計不需要動到其他四個機制。
 - **對兩項 post-cutoff breaking change 結構性免疫**:4.7 裝置 ID 重新編號(機制四從不讀 `.device`)、4.6 雙焦點(機制十四禁用原生 focus/hover)。
 - **`process_priority` 定序讓交接在同一影格內完成**,比 GDD 定案的 ≤1 影格上限更強。
@@ -1545,7 +1605,7 @@ class_name CursorNavigationApplier extends Node
 | **`focus_mode = FOCUS_NONE` 只關掉鍵盤/手把焦點,不關掉 Control 主題內建的滑鼠 hover 繪製**(`godot-specialist` Step 5.5 驗證發現,判斷為大概率成立) | 機制十四已據此修訂為**兩項**條件(第 2 項:已註冊表面根 Control 不得帶內建 hover 主題,或須清空其 hover/focus StyleBox)。Verification Required 第 9 項的最小 spike 成本極低,應優先執行。**若只實作第 1 項條件,本系統會在某些節點型別上重現 GDD 明訂的最高風險失敗情境「兩種高亮同時存在」,且該失敗與本系統邏輯是否正確完全無關** |
 | **薄殼被後續開發者加入邏輯** | 登記為 forbidden pattern 候選 `logic_in_cursor_autoload_shell`,由程式碼審查攔截 |
 | **下游系統在 `_input()`/`_unhandled_input()` 判讀確認動作(2026-08-19 修訂新增,F1)**——`process_priority` 無法強制這條規則,完全依賴紀律 | 登記為 forbidden pattern 候選 `confirm_action_read_in_unhandled_input`,由程式碼審查攔截;違反時的具體症狀(確認讀取先於裁定者完成)已明文記錄於機制六,便於審查者辨識 |
-| **`CanvasLayer` 承載自繪游標/待機指示/hover 判定,若帶非恆等變換會使座標計算脫節(2026-08-19 修訂新增,F2/N3)** | `godot-specialist` 標記 **UNVERIFIABLE-FLAG-AS-RISK**,已列 Verification Required 第 11 項為 Day-1 spike。緩解措施是明文約束該 `CanvasLayer` 全程維持恆等變換,不做為長期解法 |
+| **`CanvasLayer` 承載自繪游標/hover 判定(2026-09-03:原文含「待機指示」,該元件已取消,自本列移除),若帶非恆等變換會使座標計算脫節(2026-08-19 修訂新增,F2/N3)** | `godot-specialist` 標記 **UNVERIFIABLE-FLAG-AS-RISK**,已列 Verification Required 第 11 項為 Day-1 spike。緩解措施是明文約束該 `CanvasLayer` 全程維持恆等變換,不做為長期解法 |
 | **`@abstract` 類別內含 `signal` 的語法組合未經確認(2026-08-19 修訂新增,F3)** | 與既有 `@abstract` 語法賭注同一風險等級,已併入 Verification Required 第 12 項與 Day-1 spike 排程 |
 | **下游在訊號處理函式內同步呼叫寫入介面被 `REJECTED_REENTRANT` 拒絕而非預期生效(2026-08-19 修訂新增,N4)** | 已於 Consequences → Negative 明文記錄行為差異;`set_target()`/`mark_pending_reresolve()` 的回傳值本就要求呼叫方檢查,`REJECTED_REENTRANT` 沿用既有「絕不靜默」紀律,可在整合測試階段及早發現。**第三次修訂補充**:三個回傳 `void` 的入口(含新增的 `reseed_reclaim_on_focus_regained()`)沒有回傳值可檢查,只能靠 `diagnostic_reentrant_rejection_count` 在測試環境事後發現 |
 | **`CursorState` 的公開寫入入口互相呼叫(2026-08-19 第四輪修訂新增,R4-4)**——最誘人的寫法是 `apply_buffered_navigation()` 直接重用公開 `set_target()`,結果會被自己剛設下的 `_mutation_in_progress` 判為重入而拒絕,**緩衝內導覽寫入在正常路徑上靜默失效** | 登記為 forbidden pattern `public_cursor_write_entry_calling_another`,由程式碼審查攔截;Validation Criteria #13 為其自動化下限(斷言 `apply_buffered_navigation()`/`handoff_before_unload()`/`handoff_after_mount()` 三者後狀態確實改變,而非靜默 no-op) |
@@ -1578,7 +1638,7 @@ class_name CursorNavigationApplier extends Node
 | TR-cursor-013 | 寫入介面「標記待重新解析」:須回傳結構化的已套用/已過期結果,絕不靜默 | 機制十:`mark_pending_reresolve(expected) -> MarkResult`,`STALE_NOT_APPLIED` 為明確回傳值;競態判定依賴機制三的 `CursorTarget.equals()` 值語意 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢 + 裝置權威查詢,兩者拒絕回饋須可區分 | 機制十:刻意分為**兩個獨立查詢**而非一個合併布林 —— 兩種拒絕的正確補救動作相反(等待重新解析 vs 移動滑鼠取回權威),合併會讓呼叫方結構上無法產生可區分回饋 |
 | TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙分支 | 機制十一:`handoff_before_unload()` + 三分支呼叫慣例;三分支 `from_ui_action` 一律 `false`,裝置權威不隨交接重置。**2026-08-19 第四輪修訂關閉第三輪的兩項未編號落差**(第一次修訂依 9 項清單作業因而漏掉):**(a)** 甲/乙兩分支皆須把滑鼠奪權累積位移量**重置為 0**、起點更新為當下滑鼠座標(GDD Core Rules #7 F2-2 明訂,上一版全文零字)——新增第五個 `ResetTrigger` 值 `SURFACE_HANDOFF`(來源為 Core Rules #7 而非 #3 的四點,呈現層待遇同 (a)(b)(c) 收斂、非瞬間歸零);**(b)** 丙分支上一版寫成無條件「依 Core Rules #6 重新計算」,**收窄了 GDD 義務**(AC-63b 原文為「若原目標在取消後仍然有效,得直接以原目標值重新設定,不需要重新計算;僅當原目標已失效時才依 Core Rules #6 計算」),牴觸本 ADR 自己 Ordering Note 的單向修訂約束——已改為兩條路徑並存,有效性判定歸呼叫方(本系統不理解遊戲實體語意)。**2026-08-19 第三次修訂(R5-1,BLOCKING)**:第五輪判定落差 (a) 的修法**只對甲分支成立**——乙分支重用通用 `set_target()`,而該入口走的是「目標確實改變才 `TARGET_CHANGED`」,三種可能讀法(呼叫方自己碰 `_reclaim` 私有欄位 / `set_target()` 內部分辨分支 / 無條件改發 `SURFACE_HANDOFF`)全部不成立,且乙分支目標恰等於當下目標時會靜默不重置。**已新增乙分支專用公開入口 `handoff_after_mount(target)`**,與甲的 `handoff_before_unload()` 成對,內部走 `_write_target_internal(target, UNCONDITIONAL)`;另補完私有路徑地圖(`_mark_pending_reresolve_internal()`/`_validate_target_writable()`),一併關閉「甲分支呼叫公開 `mark_pending_reresolve()` 會被自己的重入閘門鎖死」這項同源缺陷 |
-| TR-cursor-016 | **全域每裝置待機指示元件須存在於每個畫面**;現有候選擁有者皆為畫面範圍,無一符合 | 機制十二:`CursorStateHost` 持有的全域 `CanvasLayer` 為宿主。**缺口成因是需求本身排除了畫面範圍擁有者**,機制一建立的 Autoload 是本專案第一個跨所有畫面的實體。視覺樣式仍留 `/art-bible` |
+| TR-cursor-016 | 🔴 **2026-09-03 管理者裁決取消,需求本身不再存在**——原文:全域每裝置待機指示元件須存在於每個畫面;現有候選擁有者皆為畫面範圍,無一符合 | ~~機制十二:`CursorStateHost` 持有的全域 `CanvasLayer` 為宿主。缺口成因是需求本身排除了畫面範圍擁有者,機制一建立的 Autoload 是本專案第一個跨所有畫面的實體。視覺樣式仍留 `/art-bible`~~ **不適用——需求已移除,機制十二現在的存在理由改為服務機制十三/十三之二,不再回答本列。** 依據見 `production/session-state/active.md`「2026-09-03 第三十二批」 |
 | TR-cursor-017 | 原生游標須在權威≠滑鼠時隱藏,唯一例外是連續漸變的奪權回饋 —— **連續透明度動畫在 4.7.1 可能不受原生游標支援** | **2026-08-19 修訂(F3/F4/N3)**:機制十三原版本 `modulate.a` 直綁判定值,對觸發點 (a)(b)(c) 必然違反 AC-41——已改為呈現層平滑器(`_presented_alpha` 逐幀 `move_toward()` 收斂,僅觸發點 (d) 瞬間歸零),由新增的 `reset_triggered` 訊號驅動;機制十五的收斂上限診斷欄位同步改為取樣呈現值而非判定值(F4)。另新增機制十三之二:未登記表面 hover 時暫時恢復原生指標(N3),處理 `Input.mouse_mode` 全域性與 AC-60 未登記表面例外的落差。AC-31 驗證掛載點仍為自繪節點的 `modulate.a`。**2026-08-19 第四輪修訂(R4-3)**:上一版的平滑器對**上升方向也限速**,而 `reclaim_visual_convergence_max_frames` 的實際下限為 2(配置為 1 即等於單影格瞬間歸零,自我矛盾)→ `max_step ≤ 0.5`,常見滑鼠速度下 2–3 影格即跨過門檻 → `_presented_alpha` **結構上不可能**在跨門檻當下達到 1.0,純數學上必然違反 GDD「達到門檻的當下透明度達 100%」。已改為**上升立即同步、只對下降方向(且非觸發點 (d))限速**;機制十五的量測隨之明文只採計下降區段。**2026-08-19 第三次修訂(R5-6 + 專家發現 F)**:第五輪 `godot-specialist` 發現機制十三之二的黑名單判定有兩條失效路徑(`gui_get_hovered_control()` 不回傳 `MOUSE_FILTER_IGNORE` 節點;已註冊表面若非 `Control` 型別則從來就不在 GUI hover 管線裡),兩者都導向**錯誤恢復原生指標**、直接違反 Core Rules #5。已把判定**反轉為白名單**(只有明文登記的 AC-60 例外表面才恢復),失敗方向翻轉至安全側,兩條路徑一次關閉;`CursorSurfaceRegistry` 因此新增第二份獨立登記表(機制三)。另 `Input.mouse_mode` 補上賦值前守衛(S-2,第四輪已建議、第二次修訂未採納) |
 | TR-cursor-018 | 全鍵盤/手把平權;已註冊表面不得使用原生 Control 焦點/懸停主題(4.6 雙焦點分離) | 機制十四(2026-08-18 Step 5.5 後修訂為**兩項**條件):`focus_mode = FOCUS_NONE`(關鍵盤/手把焦點通道)**加上**根 Control 不得帶內建 hover 主題 / 須清空 hover-focus StyleBox(關滑鼠 hover 管線)——`focus_mode` 單獨**不足以**涵蓋此需求,兩者是獨立管線。高亮只讀 `CursorState`。**未註冊表面仍可用原生 focus**(GDD AC-60 明文承認),且其上的方向鍵導覽仍會轉移裝置權威 —— 這是正確行為,裝置權威是全域的 |
 | TR-cursor-019 | 交接視覺延遲硬性上限(最多 1 幀)與奪權收斂上限,皆需幀精準量測機制 | 機制十五:`diagnostic_last_authority_change_frame` 等三個 QA-only 診斷欄位;機制六的定序讓交接在**同一影格**完成,量測應驗證這個更強保證。**2026-08-19 修訂(F4)**:`diagnostic_reclaim_progress_history` 原量測判定值(量錯對象),已改為量測機制十三呈現層的實際 `modulate.a` |
@@ -1602,7 +1662,7 @@ class_name CursorNavigationApplier extends Node
 - **CPU**:`_input()` 每事件僅一次 `Array.append`,O(1)。`arbitrate_device_authority()` 與 `apply_buffered_navigation()`(2026-08-19 第四輪修訂拆分,兩者各自)對該影格事件數線性,而一影格內的輸入事件數是個位數量級(滑鼠移動事件最密,約每影格 1–2 個)。`classify()` 為常數次 `is` 判定,**2026-08-19 修訂新增**`classify_action()` 為常數次 `InputMap.event_is_action()` 查詢(N1)。`MouseReclaimPolicy.evaluate()` 為一次 `Vector2` 距離計算 + 一次表面類型查表,O(1)。**2026-08-19 修訂新增**:機制十三的呈現層平滑器每影格一次 `move_toward()`(F3);機制十三之二每影格一次 `gui_get_hovered_control()` O(1) 快取查詢(N3)。**全部落在每影格路徑,但總量遠低於 16.6ms 預算的任何可觀比例。**
 - **Memory**:`_frame_events` 每影格清空,峰值與單影格事件數成正比。`CursorSurfaceRegistry` 上界為 `SurfaceType` 成員數(目前 4)。`diagnostic_reclaim_progress_history` 為診斷用,須有上界(建議環形緩衝,具體大小留實作)。
 - **Load Time**:`CursorStartupValidator.validate()` 遍歷全部 `ui_*` action 一次,發生於啟動,非每幀路徑。
-- **Draw Calls**:機制十二/十三的全域 CanvasLayer 新增至多 **3** 個繪製元素(待機指示、自繪游標、hover 判定器;**2026-08-21 R6-8 由 2 改為 3** —— hover 判定器本身通常不繪製,計入是為了與節點數一致、避免下一輪再對不上),對 `<1000` 的專案預算(`technical-preferences.md`)無實質影響。
+- **Draw Calls**:機制十二/十三/十三之二的全域 CanvasLayer 新增至多 **2** 個繪製元素(自繪游標、hover 判定器;**2026-08-21 R6-8 曾由 2 改為 3**〔當時另有待機指示器〕,**2026-09-03 因 TR-cursor-016 取消,待機指示器隨之移除,降回 2**——hover 判定器本身通常不繪製,計入是為了與節點數一致、避免下一輪再對不上),對 `<1000` 的專案預算(`technical-preferences.md`)無實質影響。
 - **Network**:不適用(單人遊戲;`networking_features` 為專案級 forbidden pattern)。
 
 **明確未定案**:各表面類型的 `reclaim_threshold_px` 具體值(GDD 初步校準數據:單一合成測試表面約 50–100px 手感自然,**非最終值,亦未依表面類型分別測試**,待垂直切片階段各表面分別校準);`reclaim_visual_convergence_max_frames` 具體值(僅約束嚴格大於 0)。
@@ -1646,6 +1706,11 @@ class_name CursorNavigationApplier extends Node
     `Transform2D.IDENTITY`,於 1080p / 2K / 4K 三種解析度各驗一次。
     **這一條不是防禦性冗餘,是必需**:實測若該圖層與介面圖層共用同一顆節點,誤差為
     1080p **1440px** / 2K **2178px** / 4K **3304px** —— 不是游標歪一點,是游標系統實質失效。
+
+    🔴 **2026-09-03 理由更新(斷言本身不變)**:機制十二現在的存在理由是服務機制十三
+    (自繪游標)與機制十三之二(hover 判定器),不再是待機指示(TR-cursor-016 已取消)。
+    本條驗證的是同一顆 `CanvasLayer` 節點的變換恆等性,不因它承載哪些子節點而改變——
+    自繪游標與 hover 判定器一樣依賴這條保證,本條不因需求移除而失去必要性。
 
     🔴 **那三個數字有一個前提,不寫出來會讓這條被誤刪**(2026-09-01 窄範圍複驗補):
     它們是在 **`canvas_items` 模式 + 固定 1920×1080 基準畫布**下量的,

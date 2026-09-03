@@ -1,46 +1,44 @@
-# Story 010:全域待機指示宿主 + 專屬 CanvasLayer
+# Story 010:專屬游標 `CanvasLayer` + 圖層變換恆等防護測試
 
 > **Epic**:單一游標/高亮狀態系統
 > **Status**:Ready
 > **Layer**:Core
 > **Type**:UI
-> **Estimate**:S(約 3–4 小時)
-> **Manifest Version**:2026-09-02
+> **Estimate**:S(約 2–3 小時)
+> **Manifest Version**:2026-09-03
 > **Last Updated**:[由 /dev-story 於實作開始時設定]
+
+## 🔴 本張已於 2026-09-03 依管理者裁決重寫 —— 原標題與原範圍已不成立
+
+**原標題**:「全域待機指示宿主 + 專屬 CanvasLayer」。
+**管理者裁決取消了「全域每裝置待機指示」需求(TR-cursor-016)**,裁決原文與查證依據見
+`production/session-state/active.md` 第三十二批第一節。
+
+🔴 **那層 `CanvasLayer` 不會跟著消失,但它的存在理由換人了**:
+它原本是為待機指示建立的,而**機制十三的自繪替代游標節點掛在同一層**,Story 011 需要它。
+**圖層留下,待機指示移除。**
+
+⚠️ **連帶後果(誠實記錄)**:ADR 原本論證「既然這層 `CanvasLayer` 已經因為待機指示存在了,
+自繪載體的**邊際成本接近零**」。需求取消後,**這層圖層的成本不再是邊際的,現在完全由自繪載體承擔。**
+📌 **該論證改寫後「不等驗證結果直接選自繪載體」的決策是否仍成立,以 ADR-0005 機制十三該段的現行文字為準,本工作單不複述** —— 手抄的結論必然漂移,本專案 2026-09-01 稽核抓到過同一個數字在四個檔案有三個並存的值。
+
+---
 
 ## Context
 
-**GDD**:`design/gdd/cursor-highlight-state.md`(2026-08-13 第十六輪 Approved)
-**Requirement**:TR-cursor-016
-*(需求原文在 `docs/architecture/tr-registry.yaml`,審查時請當場讀最新版)*
-
-**Governing ADR**:ADR-0005 單一游標/高亮狀態系統:裝置權威輸入架構(**Accepted** 2026-09-01)
-**本 story 對應的機制**:機制十二(Autoload 持有的全域 `CanvasLayer`)
+**GDD**:`design/gdd/cursor-highlight-state.md`(2026-08-13 第十六輪 Approved,2026-09-03 依管理者裁決做範圍縮減)
+**Requirement**:🔴 **不再是 TR-cursor-016(已退役)。** 本張現在服務的是機制十三的載體需求。
+**Governing ADR**:ADR-0005(**Accepted** 2026-09-01,2026-09-03 第六次修訂)
+**本 story 對應的機制**:機制十二(Autoload 持有的全域 `CanvasLayer`,待機指示移除後只剩宿主職能)
 
 **Engine**:Godot 4.7.1 | **Risk**:HIGH
-**引擎注意事項**:本系統的兩個核心領域(Input、UI)在 4.6 與 4.7 **各有一項直接相關的破壞性變更**。
-🔴 **引擎判斷一律以 `docs/engine-reference/godot/breaking-changes.md` 與 `current-best-practices.md` 為準**
-—— `modules/input.md` 與 `modules/ui.md` 停在 4.6,對這兩項變更**各自零命中**。
 
 **控制清單規則(本 story 適用)**:
 - 🔴 **必須**:**游標圖層獨佔一顆 `CanvasLayer`**,不得與介面圖層共用。
-- **必須**:全域裝置指示須**色盲友善**。
 
 ---
 
-## Implementation Notes
-
-*出自 ADR-0005 機制十二:*
-
-1. **`CursorStateHost` 持有的全域 `CanvasLayer` 為宿主。** 這個缺口的成因是**需求本身排除了畫面範圍的擁有者** —— 機制一建立的 Autoload 是本專案第一個跨所有畫面的實體。
-2. 🔴 **必須拆成獨立節點,不可與自繪游標共用同一顆**:`modulate.a` 是**逐節點**屬性。機制十三會在 `_process()` 末尾寫 `modulate.a = _presented_alpha` —— 若三者是同一節點,那一行會把**待機指示一起淡出**。
-3. ⚠️ **待機指示器的資料來源尚未定義(ADR 誠實登記的缺口)**:`TR-cursor-016` 要求「每裝置待機指示」,代表它至少要知道「當前哪個裝置閒置中」,而 `CursorState` 的頂層欄位裡**沒有任何 idle 概念**。
-   **實作時碰到這一點請停下來問,不要自己加第四個欄位** —— 那會直接違反 AC-1。
-4. **視覺樣式仍留 `/art-bible`,不在本 story 決定。**
-
----
-
-## 🔴 本 story 綁定一條隨 ADR 核准生效的硬性義務
+## 🔴 本 story 綁定一條隨 ADR 核准生效的硬性義務(未受裁決影響,原樣保留)
 
 **「游標圖層 transform 恆等」必須寫成一條會執行的自動化測試**(ADR-0005 Validation Criteria #20),
 **不得只靠紀律。**
@@ -54,59 +52,55 @@
 
 **這條測試沒過,本 story 不得結案。**
 
+⚠️ **這條測試是本張存在的主要價值。** 待機指示移除後,若把剩下的圖層併進 Story 011,
+這條防護測試會變成附屬品 —— 協調者判定維持獨立工作單,理由記於此。
+
+---
+
+## Implementation Notes
+
+1. **`CursorStateHost` 持有一顆專屬 `CanvasLayer`。** `CursorStateHost` 是本專案唯一生命週期跨所有畫面的實體。
+2. 🔴 **必須是獨佔的節點,不得與介面圖層或其他用途共用。** 除了上方的變換恆等理由外,
+   `modulate.a` 是**逐節點**屬性 —— 機制十三會在 `_process()` 末尾寫 `modulate.a = _presented_alpha`,
+   共用節點會讓那一行波及不該被淡出的東西。
+3. **`CanvasLayer.layer`(繪製疊放順序)與 `process_priority`(更新順序)是兩個獨立概念**,
+   ADR 明文要求不得混用同一組數值。
+4. **本張不畫任何東西。** 自繪游標本體屬 Story 011。本張交付的是宿主節點與那條防護測試。
+
 ---
 
 ## Out of Scope
 
-- Story 011:自繪游標本體與原生指標隱藏
+- Story 011:自繪游標本體、原生指標隱藏、白名單例外
+- **待機指示元件** —— 🔴 **已由管理者裁決取消,不是延後,是不做。**
 
 ---
 
 ## Acceptance Criteria
 
-*以下為 `design/gdd/cursor-highlight-state.md` 的條文**原文轉錄**,未改寫:*
+🔴 **原本的 AC-27 / AC-55 已隨管理者裁決退役**,不再是本張的驗收標準。
+以下 2 條編號 `AC-S010-*`,不佔用 GDD 的 AC 號碼。
 
-- **AC-27**(2026-08-05 第九輪修訂主體,回應 ui-programmer 審查發現、使用者裁決——待機指示改為每裝置一個全域指示,不再要求下游表面各自顯示): **GIVEN** 任一裝置目前未持有游標權威,**WHEN** 檢視全域裝置狀態指示元件的呈現,**THEN** 該元件顯示與「功能故障/無回應」視覺上可區分的待機狀態指示(見 Visual/Audio Requirements 的硬性行為要求)——具體視覺呈現(顏色/動畫/圖示/載體位置)留待 `/art-bible`,但指示本身的存在與可辨識性須驗證。**範圍澄清**:本 AC 驗證的是全域裝置狀態指示元件本身,不要求四個下游 UI 表面(好感度視覺呈現 UI、戰鬥 HUD、支援對話 UI、戰棋移動與交戰系統)各自額外顯示待機視覺——各表面只需遵守 Core Rules #5 的高亮抑制規則。**(驗證方式:Visual/Feel 類證據,screenshot + lead sign-off,依 coding-standards.md 的 ADVISORY 證據等級,由擁有此全域指示元件的下游系統的 GDD 落實,擁有者待定見 Open Questions。)**
-- **AC-55(全域裝置指示色盲友善驗證,回應 ux-designer 審查發現,見 Visual/Audio Requirements「全域裝置指示的色盲友善 AC 缺口」)**: **GIVEN** 全域裝置狀態指示元件使用色彩區分裝置(滑鼠 vs. 鍵盤/手把),**WHEN** 檢視該元件的視覺呈現,**THEN** 裝置區分不僅依賴色彩本身,搭配線型、圖示、動畫或其他非色彩線索,比照 AC-36 系列的既有無障礙檢查標準。**(驗證方式:Visual/Feel 類證據,screenshot + lead sign-off,依 coding-standards.md 的 ADVISORY 證據等級,由擁有此全域指示元件的下游系統落實後執行。)**
+- **AC-S010-a(圖層變換恆等)** —— *源自 ADR-0005 Validation Criteria #20*:
+  **GIVEN** 游標圖層已建立,**WHEN** 在 1080p / 2K / 4K / 超寬四種解析度下讀取該 `CanvasLayer`
+  的變換矩陣,**THEN** 四者皆為恆等變換。
+  🔴 **失敗長相是游標畫在離滑鼠一千多到三千多像素外的地方** —— 不是歪一點,是系統實質失效。
 
+- **AC-S010-b(獨佔性)** —— *源自控制清單的硬性規則*:
+  **GIVEN** 游標圖層節點,**WHEN** 檢視其子節點與用途,**THEN** 它只承載游標系統自己的內容,
+  不與任何介面圖層共用。
 
----
-
-## QA Test Cases
-
-🔴 **本批未經 qa-lead 產生測試規格**(管理者 2026-09-02 裁決:精簡模式,覆核關卡不跑;
-且本工作環境未經授權不得動用 Agent)。
-
-> 🔴 **2026-09-03 更正:括號裡「不得動用 Agent」那半句已不成立。**
-> 管理者於 2026-09-03 開工時明文授權派工,同日稍後再次確認「由你負責派工與監督」。
-> 原文保留供追溯,**但不要照它跳過覆核** —— Story 004 正是在這句話仍寫在檔案裡的當天,
-> 實際跑完了引擎覆核與測試涵蓋覆核兩關。前半句(qa-lead 精簡模式)是否仍適用,
-> 依當次派工指示為準,不由本檔決定。
-
-**替代做法**:上方驗收標準**本身就寫成 GIVEN / WHEN / THEN 形式**,直接作為測試規格使用。
-這不是省略 —— 該 GDD 的 AC 是 qa-lead 於 2026-08-03 諮詢草擬、並經十六輪審查修訂的成果,
-明文要求「所有標準以可觀測不變式書寫,避免『感覺清楚』等無法驗證的措辭」。
-
-⚠️ **但有一項它不能替代**:AC 沒有列邊界值與失敗態。實作時若發現某條 AC 的邊界不明確,
-**停下來問,不要自己選一個** —— 本專案已有「假設錯誤的腳本順利跑完、輸出漂亮數字」的前例。
-
----
-
-## 效能影響
-
-**有固定成本,已計入預算**:ADR 明載機制十二/十三的全域 `CanvasLayer` 合計新增**至多 3 個繪製元素**,對專案 `< 1000` 的 draw call 預算無實質影響。
-
-📌 本 story 負責其中的待機指示元件。它常駐,但每幀不做運算。
-
-*權威來源:ADR-0005 `Performance Implications` 節、`.claude/docs/technical-preferences.md`。*
+⚠️ **邊界值未定義處請停下來問,不要自己選一個。**
+特別是:AC-S010-a 的「四種解析度」在 headless 測試環境下如何模擬,若做不到,
+**如實登記為未涵蓋,不要用一個測得到但驗不到東西的替代寫法** —— 本專案已有三次同形失效
+(Story 003 AC-51、Story 007 AC-32、Story 012 全案)。
 
 ---
 
 ## Test Evidence
 
 **Story Type**:UI
-**必要證據**:`production/qa/evidence/idle-indicator-host-evidence.md`
-
+**必要證據**:`production/qa/evidence/cursor-canvas-layer-evidence.md`
 **Status**:[ ] 尚未建立
 
 ---
