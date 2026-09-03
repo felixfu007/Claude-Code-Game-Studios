@@ -82,6 +82,80 @@ extends GdUnitTestSuite
 const _CursorStateHostScript: GDScript = preload("res://src/ui/cursor/cursor_state_host.gd")
 
 
+
+## The two constructor-injected collaborators AC-1 excludes from its field
+## count: the frozen ADR-0005 Key Interfaces contract names both explicitly,
+## so neither is undocumented GDD state.
+##
+## 🔴 [b]This is a script-level constant on purpose.[/b] It is consumed by BOTH
+## the AC-1 field-count test (which subtracts it) and the existence test below
+## (which asserts every name really is declared on the script). While the list
+## was hand-copied into each of those places, adding a name to one copy and not
+## the other left both tests green with AC-1's filter quietly widened. Sharing
+## one identifier makes "changed one copy only" unrepresentable
+## ([code]docs/reviews/story-007-test-evidence-review-2026-09-03.md[/code] §5).
+const EXCLUDED_COLLABORATOR_FIELDS: Array[StringName] = [
+	&"_registry", &"_mouse_position_provider",
+]
+
+## The six 機制十 fields Story 007 added to AC-1's exclusion set — same
+## single-source-of-truth reason as [constant EXCLUDED_COLLABORATOR_FIELDS]
+## above, and the same two consumers.
+##
+## 🔴 Story 007 widened this exclusion set, and every name below weakens AC-1's
+## guard by exactly one slot — a genuine fourth GDD state field could hide
+## behind a plausible-looking mechanism name. So each is justified individually,
+## not waved through as a group. The question AC-1 asks is "is there an
+## undocumented FOURTH GDD Core Rules #1 state field?", not "does the class
+## declare more than three variables" — the same reading already applied to the
+## two collaborators above. A field qualifies for exclusion only if it is not
+## part of the cursor's observable state: nothing downstream reads it to decide
+## what the cursor is pointing at, how valid it is, or which device holds
+## authority.
+##
+## · [code]_mutation_in_progress[/code] — reentrancy latch. [b]Observable BY
+##   EFFECT while it is raised[/b]: [signal CursorState.target_changed] is
+##   emitted from inside the latched region (in
+##   [method CursorState._write_target_internal], before the owning entry drops
+##   the latch), which is exactly what the reentrancy tests in
+##   [code]tests/unit/cursor/write_read_interface_test.gd[/code] exercise — a
+##   handler re-entering from there sees [code]REJECTED_REENTRANT[/code]. It is
+##   still control flow rather than cursor state: nothing downstream reads it to
+##   decide what the cursor points at, and it is always false between calls.
+##   (An earlier version of this note asserted the latch is unobservable to any
+##   caller. That was wrong in a load-bearing way — were it true, the whole
+##   reentrancy test group could not exist. Corrected per §5 of the review.)
+## · [code]_pending_reseed[/code] — "a reseed arrived while the latch was up"
+##   note-to-self, always drained before the same entry returns (R6-10). Never
+##   outlives one call.
+## · [code]_provider_error_reported[/code] — one-shot latch so
+##   [method @GlobalScope.push_error] fires once rather than per frame. Log
+##   bookkeeping. (It does outlive a call, unlike the two above; AC-1 asks
+##   whether there is a fourth GDD state field, not whether there is a fourth
+##   surviving variable.)
+## · [code]_last_mouse_position[/code] — last coordinate the provider returned
+##   (S-1 fallback). It [b]is[/b] declared, written and read by this class
+##   ([method CursorState._safe_mouse_position] writes it on success and returns
+##   it when the provider has gone invalid), it does outlive a call, and the
+##   value read back changes behaviour: it seeds
+##   [method MouseReclaimPolicy.reset]. An earlier version of this note said the
+##   field belongs to nobody here, which is not true. The real reason it is
+##   excluded is narrower: Core Rules #1's third field is the ACCUMULATED
+##   displacement, which [code]_reclaim[/code] owns. This is a seed INPUT, not
+##   that accumulator.
+##   🔴 Revisit if 機制八 ever moves the seed into [CursorState] — it would then
+##   shadow the third field.
+## · [code]diagnostic_reentrant_rejection_count[/code]
+## · [code]diagnostic_invalid_mouse_provider_count[/code] — QA-only counters,
+##   explicitly marked "downstream logic must not depend on these" (機制十五
+##   convention, as ADR-0002's [code]diagnostic_visited_count[/code]). Monotonic
+##   tallies of events, not state anything reads back.
+const EXCLUDED_MECHANISM_FIELDS: Array[StringName] = [
+	&"_mutation_in_progress", &"_pending_reseed", &"_provider_error_reported",
+	&"_last_mouse_position", &"diagnostic_reentrant_rejection_count",
+	&"diagnostic_invalid_mouse_provider_count",
+]
+
 ## Minimal concrete subclass implementing all four @abstract methods, used as
 ## a test double so [CursorState] can be constructed directly (matching the
 ## pattern already established by Story 001's [code]shared_types_test.gd[/code]
@@ -124,7 +198,9 @@ func test_ac1_cursor_state_declares_exactly_three_top_level_state_fields() -> vo
 	# behavior). get_script_property_list() returns only fields declared
 	# directly on this script, not anything inherited from RefCounted.
 	var state: CursorState = _make_state()
-	var known_collaborator_fields: Array[StringName] = [&"_registry", &"_mouse_position_provider"]
+	# The exclusion sets and the individual justification for every name in
+	# them live on the two script-level constants at the top of this file —
+	# deliberately not restated here, so there is exactly one copy to change.
 	var state_field_names: Array[StringName] = []
 
 	# Act — get_script_property_list() also returns a synthetic
@@ -137,7 +213,7 @@ func test_ac1_cursor_state_declares_exactly_three_top_level_state_fields() -> vo
 		if property.get("usage", 0) & PROPERTY_USAGE_CATEGORY != 0:
 			continue
 		var property_name: StringName = property.get("name")
-		if property_name in known_collaborator_fields:
+		if property_name in EXCLUDED_COLLABORATOR_FIELDS or property_name in EXCLUDED_MECHANISM_FIELDS:
 			continue
 		state_field_names.append(property_name)
 	state_field_names.sort()
@@ -158,7 +234,37 @@ func test_ac1_known_collaborator_fields_are_excluded_from_the_state_field_count_
 		all_field_names.append(property.get("name"))
 
 	# Assert
-	assert_array(all_field_names).contains([&"_registry", &"_mouse_position_provider"])
+	assert_int(EXCLUDED_COLLABORATOR_FIELDS.size()).append_failure_message(
+		"the collaborator exclusion set changed size. Every name in it costs AC-1 "
+		+ "one slot of guard, so the count is asserted deliberately: justify the "
+		+ "change in the constant's doc comment, then update this number."
+	).is_equal(2)
+	assert_array(all_field_names).contains(EXCLUDED_COLLABORATOR_FIELDS)
+
+
+func test_ac1_known_mechanism_fields_are_excluded_from_the_state_field_count_by_design() -> void:
+	# Arrange / Act — same discipline as the collaborator-field check above,
+	# for the six 機制十 fields Story 007 added to the exclusion list. Without
+	# this, a renamed or misspelled entry in that list would widen AC-1's
+	# filter SILENTLY: the exclusion would simply match nothing, the field it
+	# was meant to cover would reappear, and the AC-1 test would fail for a
+	# reason that looks like a real fourth state field. Worse, an entry left
+	# behind after a field is deleted would sit there permanently pre-approving
+	# a name nobody is watching.
+	var state: CursorState = _make_state()
+	var all_field_names: Array[StringName] = []
+	for property: Dictionary in state.get_script().get_script_property_list():
+		all_field_names.append(property.get("name"))
+
+	# Assert
+	assert_int(EXCLUDED_MECHANISM_FIELDS.size()).append_failure_message(
+		"the mechanism exclusion set changed size. Adding a name here is the "
+		+ "dangerous direction: it widens AC-1's filter by one slot and no other "
+		+ "assertion in this file can tell whether the new name DESERVES to be "
+		+ "excluded. Justify it in the constant's doc comment, then update this "
+		+ "number deliberately."
+	).is_equal(6)
+	assert_array(all_field_names).contains(EXCLUDED_MECHANISM_FIELDS)
 
 
 # ─── AC-2 (narrowed — see class doc comment): single-target substrate ───────

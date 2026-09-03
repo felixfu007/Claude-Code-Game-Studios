@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE1 signal.emit-as-Callable forward -> seen=42
+PROBE2 get_script_property_list -> ["Built-in script|usage=128", "_plain|usage=4096", "_vec|usage=4096", "diagnostic_n|usage=4096", "_e|usage=4096"]
+PROBE3 CAT flag = 128

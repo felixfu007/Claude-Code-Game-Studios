@@ -17,9 +17,18 @@
 ## concrete subclass is Story 014's — which, per that story's own
 ## [code]Depends on: 001, 002[/code], has not been built yet and structurally
 ## cannot exist before this one. This host therefore constructs [CursorState]
-## with [param reclaim] [code]null[/code]. This is safe for THIS story only
-## because nothing built so far ever calls a method on
-## [member CursorState._reclaim]; it is NOT a decision about the reclaim
+## with [param reclaim] [code]null[/code].
+##
+## 🔴 [b]Corrected 2026-09-03 (Story 007).[/b] This paragraph previously read
+## "This is safe for THIS story only because nothing built so far ever calls a
+## method on [member CursorState._reclaim]". [b]Story 007 falsified that[/b] —
+## it added six call sites. A null [param reclaim] is now handled explicitly
+## by [CursorState] itself: one [method @GlobalScope.push_error] at
+## construction ([constant CursorState.ERR_RECLAIM_POLICY_ABSENT]) plus a
+## guard at every call site, with [method CursorState.reclaim_progress]
+## returning [code]0.0[/code]. ADR-0005 has no position on a null
+## [param reclaim]; see that method's doc comment for why [code]0.0[/code] is
+## ambiguous downstream. It is NOT a decision about the reclaim
 ## submechanism itself, which remains user-frozen (see Story 014's own
 ## "凍結區" notice). [b]Replace the [code]null[/code] below with a real
 ## concrete [MouseReclaimPolicy] instance once Story 014 lands[/b] —
