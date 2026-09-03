@@ -405,8 +405,11 @@ awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decision
 (2026-09-01 稽核更正:本行原寫「C7 仍開」,而 `consistency-failures.md` 早已記載它關閉。
 **兩邊講相反的話,而本檔每次對話開場載入** —— 照它做的人會去找一個不存在的洞。)
 
-**重複失誤紀錄**:`docs/consistency-failures.md`(七種模式 A~G,其中「修東西反而修出新
-問題」已第九次)。撰寫或修訂 ADR 前請先讀該檔。
+**重複失誤紀錄**:`docs/consistency-failures.md`(模式 A~G)。撰寫或修訂 ADR 前請先讀該檔。
+🔴 **本行自 2026-09-03 起不再宣告任何次數。** 原文寫「七種模式 A~G,其中『修東西反而修出新問題』
+**已第九次**」,而同日實測登記表本身寫的是 **8 場** —— **兩份手抄複本,兩個互斥的數字**,
+而本檔每次對話開場載入。要次數就當場數:`grep -c '^| [0-9]\+ |' docs/consistency-failures.md` 之類,
+或直接讀該模式的表。**這正是該檔模式 D 記載的形狀,發生在指路去讀它的那一行上。**
 
 ## Engine Specialists
 
