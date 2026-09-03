@@ -1,0 +1,284 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Story 004 UI action probe (2026-09-03) ===
+Engine version: { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+
+--- All ui_* actions registered in this engine/project (91 total) ---
+  ui_colorpicker_delete_preset -> events: ["InputEventJoypadButton", "InputEventKey"]
+  ui_swap_input_direction -> events: ["InputEventKey"]
+  ui_filedialog_focus_path.macos -> events: ["InputEventKey", "InputEventKey"]
+  ui_filedialog_focus_path -> events: ["InputEventKey"]
+  ui_filedialog_find -> events: ["InputEventKey"]
+  ui_filedialog_show_hidden -> events: ["InputEventKey"]
+  ui_filedialog_refresh -> events: ["InputEventKey"]
+  ui_filedialog_up_one_level -> events: ["InputEventKey"]
+  ui_filedialog_delete -> events: ["InputEventKey"]
+  ui_graph_follow_right.macos -> events: ["InputEventKey"]
+  ui_graph_follow_right -> events: ["InputEventKey"]
+  ui_graph_follow_left.macos -> events: ["InputEventKey"]
+  ui_graph_follow_left -> events: ["InputEventKey"]
+  ui_graph_delete -> events: ["InputEventKey"]
+  ui_graph_duplicate -> events: ["InputEventKey"]
+  ui_unicode_start -> events: ["InputEventKey"]
+  ui_text_submit -> events: ["InputEventKey", "InputEventKey"]
+  ui_menu -> events: ["InputEventKey"]
+  ui_text_toggle_insert_mode -> events: ["InputEventKey"]
+  ui_text_clear_carets_and_selection -> events: ["InputEventKey"]
+  ui_text_skip_selection_for_next_occurrence -> events: ["InputEventKey"]
+  ui_text_add_selection_for_next_occurrence -> events: ["InputEventKey"]
+  ui_text_select_word_under_caret.macos -> events: ["InputEventKey"]
+  ui_text_select_word_under_caret -> events: ["InputEventKey"]
+  ui_text_select_all -> events: ["InputEventKey"]
+  ui_text_scroll_down.macos -> events: ["InputEventKey"]
+  ui_text_scroll_down -> events: ["InputEventKey"]
+  ui_text_scroll_up.macos -> events: ["InputEventKey"]
+  ui_text_scroll_up -> events: ["InputEventKey"]
+  ui_text_caret_add_above.macos -> events: ["InputEventKey"]
+  ui_text_caret_add_above -> events: ["InputEventKey"]
+  ui_text_caret_add_below.macos -> events: ["InputEventKey"]
+  ui_text_caret_add_below -> events: ["InputEventKey"]
+  ui_text_caret_document_end.macos -> events: ["InputEventKey", "InputEventKey"]
+  ui_text_caret_document_end -> events: ["InputEventKey"]
+  ui_text_caret_document_start.macos -> events: ["InputEventKey", "InputEventKey"]
+  ui_text_caret_document_start -> events: ["InputEventKey"]
+  ui_text_caret_page_down -> events: ["InputEventKey"]
+  ui_text_caret_page_up -> events: ["InputEventKey"]
+  ui_text_caret_line_end.macos -> events: ["InputEventKey", "InputEventKey", "InputEventKey"]
+  ui_text_caret_line_end -> events: ["InputEventKey"]
+  ui_text_caret_line_start.macos -> events: ["InputEventKey", "InputEventKey", "InputEventKey"]
+  ui_text_caret_line_start -> events: ["InputEventKey"]
+  ui_text_caret_down -> events: ["InputEventKey"]
+  ui_text_caret_up -> events: ["InputEventKey"]
+  ui_text_caret_word_right.macos -> events: ["InputEventKey"]
+  ui_text_caret_word_right -> events: ["InputEventKey"]
+  ui_text_caret_right -> events: ["InputEventKey"]
+  ui_text_caret_word_left.macos -> events: ["InputEventKey"]
+  ui_text_caret_word_left -> events: ["InputEventKey"]
+  ui_text_caret_left -> events: ["InputEventKey"]
+  ui_text_delete_all_to_right.macos -> events: ["InputEventKey"]
+  ui_text_delete_all_to_right -> events: []
+  ui_text_delete_word.macos -> events: ["InputEventKey"]
+  ui_text_delete_word -> events: ["InputEventKey"]
+  ui_text_delete -> events: ["InputEventKey"]
+  ui_text_backspace_all_to_left.macos -> events: ["InputEventKey"]
+  ui_text_backspace_all_to_left -> events: []
+  ui_text_backspace_word.macos -> events: ["InputEventKey"]
+  ui_text_backspace_word -> events: ["InputEventKey"]
+  ui_text_backspace -> events: ["InputEventKey", "InputEventKey"]
+  ui_text_dedent -> events: ["InputEventKey"]
+  ui_text_indent -> events: ["InputEventKey"]
+  ui_text_newline_above -> events: ["InputEventKey", "InputEventKey"]
+  ui_text_newline_blank -> events: ["InputEventKey", "InputEventKey"]
+  ui_text_newline -> events: ["InputEventKey", "InputEventKey", "InputEventKey", "InputEventKey"]
+  ui_text_completion_replace -> events: ["InputEventKey", "InputEventKey", "InputEventKey"]
+  ui_text_completion_accept -> events: ["InputEventKey", "InputEventKey", "InputEventKey"]
+  ui_text_completion_query -> events: ["InputEventKey"]
+  ui_redo -> events: ["InputEventKey", "InputEventKey"]
+  ui_undo -> events: ["InputEventKey"]
+  ui_paste -> events: ["InputEventKey", "InputEventKey"]
+  ui_focus_mode -> events: ["InputEventKey"]
+  ui_copy -> events: ["InputEventKey", "InputEventKey"]
+  ui_cut -> events: ["InputEventKey", "InputEventKey"]
+  ui_accessibility_drag_and_drop -> events: []
+  ui_end -> events: ["InputEventKey"]
+  ui_home -> events: ["InputEventKey"]
+  ui_page_down -> events: ["InputEventKey"]
+  ui_page_up -> events: ["InputEventKey"]
+  ui_down -> events: ["InputEventKey", "InputEventJoypadButton", "InputEventJoypadMotion"]
+  ui_up -> events: ["InputEventKey", "InputEventJoypadButton", "InputEventJoypadMotion"]
+  ui_right -> events: ["InputEventKey", "InputEventJoypadButton", "InputEventJoypadMotion"]
+  ui_left -> events: ["InputEventKey", "InputEventJoypadButton", "InputEventJoypadMotion"]
+  ui_focus_prev -> events: ["InputEventKey"]
+  ui_focus_next -> events: ["InputEventKey"]
+  ui_close_dialog.macos -> events: ["InputEventKey", "InputEventKey"]
+  ui_close_dialog -> events: ["InputEventKey"]
+  ui_cancel -> events: ["InputEventKey"]
+  ui_select -> events: ["InputEventJoypadButton", "InputEventKey"]
+  ui_accept -> events: ["InputEventKey", "InputEventKey", "InputEventKey"]
+
+--- Diff against CursorTypes' three classification lists ---
+  UNCLASSIFIED: ui_colorpicker_delete_preset
+  UNCLASSIFIED: ui_swap_input_direction
+  UNCLASSIFIED: ui_filedialog_focus_path.macos
+  UNCLASSIFIED: ui_filedialog_focus_path
+  UNCLASSIFIED: ui_filedialog_find
+  UNCLASSIFIED: ui_filedialog_show_hidden
+  UNCLASSIFIED: ui_filedialog_refresh
+  UNCLASSIFIED: ui_filedialog_up_one_level
+  UNCLASSIFIED: ui_filedialog_delete
+  UNCLASSIFIED: ui_graph_follow_right.macos
+  UNCLASSIFIED: ui_graph_follow_right
+  UNCLASSIFIED: ui_graph_follow_left.macos
+  UNCLASSIFIED: ui_graph_follow_left
+  UNCLASSIFIED: ui_graph_delete
+  UNCLASSIFIED: ui_graph_duplicate
+  UNCLASSIFIED: ui_unicode_start
+  UNCLASSIFIED: ui_text_submit
+  ok (ACKNOWLEDGED_OTHER): ui_menu
+  UNCLASSIFIED: ui_text_toggle_insert_mode
+  UNCLASSIFIED: ui_text_clear_carets_and_selection
+  UNCLASSIFIED: ui_text_skip_selection_for_next_occurrence
+  UNCLASSIFIED: ui_text_add_selection_for_next_occurrence
+  UNCLASSIFIED: ui_text_select_word_under_caret.macos
+  UNCLASSIFIED: ui_text_select_word_under_caret
+  UNCLASSIFIED: ui_text_select_all
+  UNCLASSIFIED: ui_text_scroll_down.macos
+  UNCLASSIFIED: ui_text_scroll_down
+  UNCLASSIFIED: ui_text_scroll_up.macos
+  UNCLASSIFIED: ui_text_scroll_up
+  UNCLASSIFIED: ui_text_caret_add_above.macos
+  UNCLASSIFIED: ui_text_caret_add_above
+  UNCLASSIFIED: ui_text_caret_add_below.macos
+  UNCLASSIFIED: ui_text_caret_add_below
+  UNCLASSIFIED: ui_text_caret_document_end.macos
+  UNCLASSIFIED: ui_text_caret_document_end
+  UNCLASSIFIED: ui_text_caret_document_start.macos
+  UNCLASSIFIED: ui_text_caret_document_start
+  UNCLASSIFIED: ui_text_caret_page_down
+  UNCLASSIFIED: ui_text_caret_page_up
+  UNCLASSIFIED: ui_text_caret_line_end.macos
+  UNCLASSIFIED: ui_text_caret_line_end
+  UNCLASSIFIED: ui_text_caret_line_start.macos
+  UNCLASSIFIED: ui_text_caret_line_start
+  UNCLASSIFIED: ui_text_caret_down
+  UNCLASSIFIED: ui_text_caret_up
+  UNCLASSIFIED: ui_text_caret_word_right.macos
+  UNCLASSIFIED: ui_text_caret_word_right
+  UNCLASSIFIED: ui_text_caret_right
+  UNCLASSIFIED: ui_text_caret_word_left.macos
+  UNCLASSIFIED: ui_text_caret_word_left
+  UNCLASSIFIED: ui_text_caret_left
+  UNCLASSIFIED: ui_text_delete_all_to_right.macos
+  UNCLASSIFIED: ui_text_delete_all_to_right
+  UNCLASSIFIED: ui_text_delete_word.macos
+  UNCLASSIFIED: ui_text_delete_word
+  UNCLASSIFIED: ui_text_delete
+  UNCLASSIFIED: ui_text_backspace_all_to_left.macos
+  UNCLASSIFIED: ui_text_backspace_all_to_left
+  UNCLASSIFIED: ui_text_backspace_word.macos
+  UNCLASSIFIED: ui_text_backspace_word
+  UNCLASSIFIED: ui_text_backspace
+  UNCLASSIFIED: ui_text_dedent
+  UNCLASSIFIED: ui_text_indent
+  UNCLASSIFIED: ui_text_newline_above
+  UNCLASSIFIED: ui_text_newline_blank
+  UNCLASSIFIED: ui_text_newline
+  UNCLASSIFIED: ui_text_completion_replace
+  UNCLASSIFIED: ui_text_completion_accept
+  UNCLASSIFIED: ui_text_completion_query
+  UNCLASSIFIED: ui_redo
+  UNCLASSIFIED: ui_undo
+  UNCLASSIFIED: ui_paste
+  UNCLASSIFIED: ui_focus_mode
+  UNCLASSIFIED: ui_copy
+  UNCLASSIFIED: ui_cut
+  UNCLASSIFIED: ui_accessibility_drag_and_drop
+  ok (ACKNOWLEDGED_OTHER): ui_end
+  ok (ACKNOWLEDGED_OTHER): ui_home
+  ok (ACKNOWLEDGED_OTHER): ui_page_down
+  ok (ACKNOWLEDGED_OTHER): ui_page_up
+  ok (NAVIGATION): ui_down
+  ok (NAVIGATION): ui_up
+  ok (NAVIGATION): ui_right
+  ok (NAVIGATION): ui_left
+  ok (ACKNOWLEDGED_OTHER): ui_focus_prev
+  ok (ACKNOWLEDGED_OTHER): ui_focus_next
+  UNCLASSIFIED: ui_close_dialog.macos
+  UNCLASSIFIED: ui_close_dialog
+  ok (CONFIRM): ui_cancel
+  ok (ACKNOWLEDGED_OTHER): ui_select
+  ok (CONFIRM): ui_accept
+
+--- Summary ---
+Total ui_* actions: 91
+Unclassified (hand to Story 006's loader validator): 77
+  - ui_colorpicker_delete_preset
+  - ui_swap_input_direction
+  - ui_filedialog_focus_path.macos
+  - ui_filedialog_focus_path
+  - ui_filedialog_find
+  - ui_filedialog_show_hidden
+  - ui_filedialog_refresh
+  - ui_filedialog_up_one_level
+  - ui_filedialog_delete
+  - ui_graph_follow_right.macos
+  - ui_graph_follow_right
+  - ui_graph_follow_left.macos
+  - ui_graph_follow_left
+  - ui_graph_delete
+  - ui_graph_duplicate
+  - ui_unicode_start
+  - ui_text_submit
+  - ui_text_toggle_insert_mode
+  - ui_text_clear_carets_and_selection
+  - ui_text_skip_selection_for_next_occurrence
+  - ui_text_add_selection_for_next_occurrence
+  - ui_text_select_word_under_caret.macos
+  - ui_text_select_word_under_caret
+  - ui_text_select_all
+  - ui_text_scroll_down.macos
+  - ui_text_scroll_down
+  - ui_text_scroll_up.macos
+  - ui_text_scroll_up
+  - ui_text_caret_add_above.macos
+  - ui_text_caret_add_above
+  - ui_text_caret_add_below.macos
+  - ui_text_caret_add_below
+  - ui_text_caret_document_end.macos
+  - ui_text_caret_document_end
+  - ui_text_caret_document_start.macos
+  - ui_text_caret_document_start
+  - ui_text_caret_page_down
+  - ui_text_caret_page_up
+  - ui_text_caret_line_end.macos
+  - ui_text_caret_line_end
+  - ui_text_caret_line_start.macos
+  - ui_text_caret_line_start
+  - ui_text_caret_down
+  - ui_text_caret_up
+  - ui_text_caret_word_right.macos
+  - ui_text_caret_word_right
+  - ui_text_caret_right
+  - ui_text_caret_word_left.macos
+  - ui_text_caret_word_left
+  - ui_text_caret_left
+  - ui_text_delete_all_to_right.macos
+  - ui_text_delete_all_to_right
+  - ui_text_delete_word.macos
+  - ui_text_delete_word
+  - ui_text_delete
+  - ui_text_backspace_all_to_left.macos
+  - ui_text_backspace_all_to_left
+  - ui_text_backspace_word.macos
+  - ui_text_backspace_word
+  - ui_text_backspace
+  - ui_text_dedent
+  - ui_text_indent
+  - ui_text_newline_above
+  - ui_text_newline_blank
+  - ui_text_newline
+  - ui_text_completion_replace
+  - ui_text_completion_accept
+  - ui_text_completion_query
+  - ui_redo
+  - ui_undo
+  - ui_paste
+  - ui_focus_mode
+  - ui_copy
+  - ui_cut
+  - ui_accessibility_drag_and_drop
+  - ui_close_dialog.macos
+  - ui_close_dialog
+
+--- Sanity: CursorTypes.classify_action() against real registered events ---
+  ui_up (event InputEventKey) -> classify_action() = 0
+  ui_down (event InputEventKey) -> classify_action() = 0
+  ui_left (event InputEventKey) -> classify_action() = 0
+  ui_right (event InputEventKey) -> classify_action() = 0
+  ui_accept (event InputEventKey) -> classify_action() = 1
+  ui_cancel (event InputEventKey) -> classify_action() = 1
+
+--- Mouse-bound ui_* actions check (relevant to AC-8) ---
+ui_* actions with a mouse-typed bound event: []
+
+=== Probe complete ===
