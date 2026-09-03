@@ -462,9 +462,19 @@ func apply_buffered_navigation(events: Array[InputEvent]) -> void:
 ## ADR-0005 promises that [code]true[/code] transfers device authority but
 ## never says TO WHICH device, and this signature carries no device
 ## information to derive it from. So today [code]true[/code] and
-## [code]false[/code] behave identically. 🔴 [b]That is an open question
-## awaiting the architecture owner — not a contract, and not something to
-## build on.[/b] Full reasoning in this method's body.
+## [code]false[/code] behave identically. 🔴 [b]Ruled 2026-09-03: explicitly
+## deferred, NOT implemented.[/b] The ruling and its full reasoning are
+## recorded in ADR-0005 機制十一, in the paragraph beginning
+## [code]**裝置權威不隨目標交接重置**[/code] — go read it there rather than
+## trusting this summary. Three facts made it unimplementable today: the ADR
+## never says which device to transfer to; this signature carries no device
+## information; and no caller passes [code]true[/code] at all. The parameter
+## is kept rather than deleted (unlike R6-6's dangling
+## [code]surface[/code]) because Story 005 is the work that will discover
+## whether it is needed — deleting now and re-adding later would change a
+## frozen signature twice. 🔴 [b]The ruling set a deadline: Story 005 must
+## settle this on completion — implement, or delete permanently.[/b]
+## Until then this is NOT a contract and nothing may be built on it.
 ##
 ## 🔴 [b]One return code means more than ADR-0005 says it does — this is an
 ## implementation choice, not contract.[/b]
@@ -506,8 +516,13 @@ func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult:
 	# earlier in the same frame, before any 步驟二 caller re-target at −60, so
 	# there is nothing left for this entry to transfer. Inventing a rule here
 	# would be exactly the "assumption that runs clean and prints pretty
-	# numbers" this project has been burned by. Raised as an open question for
-	# the architecture owner; do not close it by guessing.
+	# numbers" this project has been burned by.
+	# ✅ RULED 2026-09-03: explicitly deferred, not implemented, and the
+	# parameter is kept rather than deleted. Recorded in ADR-0005 機制十一,
+	# paragraph "裝置權威不隨目標交接重置" — read the ruling there, not here.
+	# The ruling set a deadline: Story 005 must settle it on completion
+	# (implement, or delete the parameter permanently).
+	# 🔴 Until then this is NOT a contract. Do not build on it.
 	if from_ui_action:
 		pass
 

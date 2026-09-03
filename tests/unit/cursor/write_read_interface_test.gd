@@ -1402,11 +1402,19 @@ func test_reentrant_reseed_request_is_deferred_not_discarded_and_drained_before_
 	# reopened the very gap this entry was added to close — and with a void
 	# return the caller could not even find out.
 	#
-	# ⚠️ This test deliberately does NOT assert on
+	# ⚠️ This test asserts on
 	# diagnostic_reentrant_rejection_count for this entry: ADR-0005 line ~934
-	# says the three void entries count a rejection, while R6-10 replaces the
-	# rejection with a deferral for this one, and never says whether the count
-	# still applies. Registered as an open boundary in this story's report.
+	# said the three void entries count a rejection, while R6-10 replaced the
+	# rejection with a deferral for this one, and never said whether the count
+	# still applied.
+	# ✅ RULED 2026-09-03: it still increments. The counter's meaning is
+	# "a re-entrant call that should not have happened was detected", NOT
+	# "the request was discarded" — a deferred-and-replayed request is still
+	# such a call. Recorded in ADR-0005 機制十, in the paragraph beginning
+	# "三個回傳 `void` 的入口如何表達拒絕"; read it there, not here.
+	# The deciding reason: this counter is the ONLY observable proof that
+	# this entry has a gate at all. The assertion below is therefore not a
+	# formality — remove it and nothing in the suite covers that gate.
 	#
 	# 🔴 Depends on before_test() injecting a NON-NULL MouseReclaimPolicy.
 	var _ignored: CursorTarget = _seed_valid_target(50)
@@ -1425,13 +1433,31 @@ func test_reentrant_reseed_request_is_deferred_not_discarded_and_drained_before_
 		"the handler never ran, so reentrancy was not exercised"
 	).is_equal(1)
 
+	# RULED 2026-09-03 (see the block comment above): the deferral still counts.
+	# This is the only observable proof this entry's gate exists.
+	assert_int(_state.diagnostic_reentrant_rejection_count).append_failure_message(
+		"reseed_reclaim_on_focus_regained() detected the re-entrant call but did " +
+		"not count it. Per the 2026-09-03 ruling the counter means 'a re-entrant " +
+		"call was detected', not 'the request was discarded' — a deferred request " +
+		"still counts. Without this increment nothing in the suite can show that " +
+		"this entry is gated at all."
+	).is_equal(1)
+
 	# The reseed happened at all — and by the time set_target() returned, so
 	# the only code that could have run it is the drain inside that entry.
 	var triggers: Array[CursorTypes.ResetTrigger] = _reclaim.triggers()
 	assert_array(triggers).append_failure_message(
 		"the deferred reseed was DISCARDED rather than drained: the reclaim "
 		+ "accumulator stays seeded at a stale coordinate (R6-10)."
-	).contains([CursorTypes.ResetTrigger.FOCUS_LOST_REGAINED])
+	).contains_exactly([
+		CursorTypes.ResetTrigger.TARGET_CHANGED,
+		CursorTypes.ResetTrigger.FOCUS_LOST_REGAINED,
+	])
+	# 🔴 2026-09-03: was contains([FOCUS_LOST_REGAINED]), which a broken
+	# implementation that DROPS the outer write's own reset would still pass.
+	# contains_exactly pins invariant (d) of ADR-0005 Validation Criteria #16 —
+	# the two resets carry DIFFERENT triggers and neither may be merged into or
+	# replaced by the other — plus their order and an upper bound on the count.
 	assert_int(triggers[triggers.size() - 1]).append_failure_message(
 		"the drained reseed must be the LAST thing the holding entry does "
 		+ "before clearing the latch"

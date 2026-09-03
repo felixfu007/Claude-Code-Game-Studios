@@ -166,7 +166,21 @@ state_ownership:
     owner_system: cursor-highlight-state
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     interface: "CursorState.get_device_authority() -> CursorTypes.Authority (UNINITIALIZED | MOUSE | KEYBOARD_GAMEPAD)"
-    write_access: cursor-highlight-state-only (only via arbitrate_frame, or set_target with from_ui_action == true)
+    write_access: cursor-highlight-state-only (only via arbitrate_device_authority; see note below)
+    write_access_note: >
+      🔴 2026-09-03 CORRECTED. This field previously read
+      "only via arbitrate_frame, or set_target with from_ui_action == true".
+      BOTH halves were wrong: (a) arbitrate_frame was split into
+      arbitrate_device_authority + apply_buffered_navigation in the second revision and
+      NO LONGER EXISTS — this same file already says so at the api_decision for the
+      priority ladder, so the two halves of this registry contradicted each other;
+      (b) the set_target(from_ui_action == true) path was ruled "explicitly NOT
+      implemented" on 2026-09-03 (ADR-0005 機制十一, paragraph
+      "裝置權威不隨目標交接重置") — today true and false behave identically, so listing
+      it as a write path granted authority to something that does not exist.
+      Story 005 must settle that promise on completion (implement, or delete the
+      parameter permanently); if it is implemented, this field must be updated in the
+      same change.
     notes: >
       GLOBAL and orthogonal to cursor_target (cursor-highlight-state.md Core Rules #4) —
       a surface-registration boundary constrains cursor_target only, never this field.
@@ -430,11 +444,21 @@ interfaces:
       (1) arbitrate_frame() NO LONGER EXISTS. It is split into arbitrate_device_authority()
       (GDD step 1, priority -100) and apply_buffered_navigation() (GDD step 3, priority -25
       on the CursorNavigationApplier child node) — see api decision
-      cursor_actor_process_priority_ladder. FIVE public entries are now gated, not four.
-      (2) The two void-returning entries CANNOT return REJECTED_REENTRANT; their gate
-      semantics are "no-op, no field write, no signal", plus an increment of a QA-only
+      cursor_actor_process_priority_ladder. SEVEN public entries are gated
+      (2026-09-03: this said "FIVE ... not four" — a stale copy that tracked the
+      count as it grew 4→5 and then stopped; the third revision took it to seven).
+      (2) The THREE void-returning entries CANNOT return REJECTED_REENTRANT
+      (2026-09-03: this said "two" — a stale copy predating the third revision, which
+      added reseed_reclaim_on_focus_regained as the third). Two of them —
+      arbitrate_device_authority and apply_buffered_navigation — have gate
+      semantics "no-op, no field write, no signal". The third,
+      reseed_reclaim_on_focus_regained, does NOT: per R6-10 it records _pending_reseed
+      and the latch-holder drains it, so the request is DEFERRED, not discarded.
+      All three increment the QA-only
       diagnostic_reentrant_rejection_count so a reentrant hit is visible in tests rather
-      than fully silent. The three value-returning entries are unchanged.
+      than fully silent — including the deferring one (manager ruling 2026-09-03; the
+      semantics are defined in ADR-0005 機制十, paragraph "三個回傳 `void` 的入口如何表達拒絕",
+      and are deliberately NOT restated here). The FOUR value-returning entries are unchanged.
       (3) THE GATE MUST NOT BE APPLIED TO INTERNAL WRITES. All actual mutation of _target
       goes through a PRIVATE _write_target_internal(), which does NOT check the flag — if
       apply_buffered_navigation() reused the public set_target() it would be rejected by its
@@ -464,7 +488,12 @@ interfaces:
       revision — inconsistent with the "four" table since the third revision. The six are:
       _write_target_internal(target, reset_policy),
       _mark_pending_reresolve_internal(expected), _validate_target_writable(target),
-      _safe_mouse_position(). The second closes a defect of the SAME SHAPE as R4-4 that
+      _safe_mouse_position(), _target_changed_from(old, new), _drain_pending_reseed().
+      (2026-09-03: this enumeration listed only the FIRST FOUR while the sentence above
+      it said "six" — the two added by the 2026-08-21 fourth revision were never appended
+      here. The count was right everywhere; only the list was short, which is the harder
+      version to notice.)
+      The second closes a defect of the SAME SHAPE as R4-4 that
       round 4 left unfixed: handoff_before_unload() (branch 甲) was specified as "calls
       mark_pending_reresolve()", but both are gated public entries — 甲 would be rejected by
       its own gate. The third closes the "handoff_after_mount() has nowhere to put its
@@ -1929,7 +1958,11 @@ forbidden_patterns:
     description: >
       Inside CursorState, one _mutation_in_progress-gated PUBLIC entry
       (arbitrate_device_authority / apply_buffered_navigation / set_target /
-      mark_pending_reresolve / handoff_before_unload) calling ANOTHER public gated entry —
+      mark_pending_reresolve / handoff_before_unload / handoff_after_mount /
+      reseed_reclaim_on_focus_regained — SEVEN as of the 2026-08-19 third revision;
+      this description listed only the first FIVE until 2026-09-03, a stale copy
+      predating handoff_after_mount and reseed_reclaim_on_focus_regained)
+      calling ANOTHER public gated entry —
       most temptingly, apply_buffered_navigation() reusing set_target() to perform its
       buffered navigation write. All actual _target mutation must instead go through the
       PRIVATE, UNGATED _write_target_internal().
