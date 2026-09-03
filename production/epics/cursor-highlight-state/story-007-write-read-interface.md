@@ -109,4 +109,8 @@
 ## Dependencies
 
 - **Depends on**:002, 003
-- **Unlocks**:009
+- **Unlocks**:**005**, **008**, 009, **011**
+
+> 🔴 **`Unlocks` 於 2026-09-03 相依稽核補上 005、008、011。** 三張皆呼叫本張產出的
+> `CursorState` 公開入口或私有寫入路徑。**本張因此是關鍵路徑上最壅塞的一張** ——
+> 四張下游全部等它。全文見 `docs/reviews/story-dependency-audit-2026-09-03.md`。

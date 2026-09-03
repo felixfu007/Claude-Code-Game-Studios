@@ -93,5 +93,14 @@
 
 ## Dependencies
 
-- **Depends on**:001
+- **Depends on**:001, **004**
 - **Unlocks**:無
+
+> 🔴 **本欄於 2026-09-03 相依稽核更正。** 這條相依只存在於 ADR-0005 的簽章裡,本工作單內文
+> 從未出現該型別名稱 —— `/story-readiness` 檢查的是「工作單本身完不完整」與「ADR 核准了沒」,
+> **結構上不會檢查「ADR 契約是否需要別張工作單的產出」**,故抓不到。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+>
+> **依據**:ADR-0005 L.617 —— 機制七 (c) 分類完整性驗證須比對機制四之二的三份清單;
+> Key Interfaces L.1346 `const NAVIGATION_ACTIONS / CONFIRM_ACTIONS / ACKNOWLEDGED_OTHER_ACTIONS`。
+> 三份清單雖與 001 的 `CursorTypes` 同檔案,但產出者是 Story 004。

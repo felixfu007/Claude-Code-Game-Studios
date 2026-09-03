@@ -97,5 +97,17 @@
 
 ## Dependencies
 
-- **Depends on**:002, 005
+- **Depends on**:002, 005, **007**
 - **Unlocks**:無
+
+> 🔴 **本欄於 2026-09-03 相依稽核更正。** 這條相依只存在於 ADR-0005 的簽章裡,本工作單內文
+> 從未出現該型別名稱 —— `/story-readiness` 檢查的是「工作單本身完不完整」與「ADR 核准了沒」,
+> **結構上不會檢查「ADR 契約是否需要別張工作單的產出」**,故抓不到。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+>
+> **依據**:ADR-0005 L.733 `_state.reseed_reclaim_on_focus_regained()` —— 該方法為
+> Key Interfaces 所列 `CursorState` 七個公開入口之一,由 Story 007 產出。
+>
+> ⚠️ **另有一項證據較弱、未併入本欄的開放問題**:同段 L.735 亦呼叫
+> `_state.reapply_native_cursor_visibility()`(標註「機制十三」)。ADR 未明文指派該方法的撰寫歸屬;
+> **若歸 Story 011,本張前置還要再加 011。派工前須先查證,不要當成已知。**

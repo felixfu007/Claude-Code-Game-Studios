@@ -119,5 +119,15 @@ ADR 已量化:`_input()` 每事件僅一次 `Array.append`(O(1));裁決與套用
 
 ## Dependencies
 
-- **Depends on**:002, 004
+- **Depends on**:002, 004, **007**
 - **Unlocks**:008, 013
+
+> 🔴 **本欄於 2026-09-03 相依稽核更正。** 這條相依只存在於 ADR-0005 的簽章裡,本工作單內文
+> 從未出現該型別名稱 —— `/story-readiness` 檢查的是「工作單本身完不完整」與「ADR 核准了沒」,
+> **結構上不會檢查「ADR 契約是否需要別張工作單的產出」**,故抓不到。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+>
+> **依據**:ADR-0005 L.577-581 —— `apply_buffered_navigation()` 的目標寫入一律走
+> `_write_target_internal()`,而該私有路徑由機制十(L.811-819)定義,EPIC.md 指派給 Story 007。
+>
+> 🔴 **後果**:原排程寫「002、004 完成即可動工」,照做會在開工後才發現要呼叫的方法不存在。

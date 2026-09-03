@@ -98,7 +98,11 @@
 ## Dependencies
 
 - **Depends on**:001
-- **Unlocks**:007, 011, 012
+- **Unlocks**:**002**, 007, 011, 012
+
+> 🔴 **`Unlocks` 於 2026-09-03 相依稽核補上 002。** Story 002 的 `CursorState` 建構子直接注入
+> 本張產出的 `CursorSurfaceRegistry`(ADR-0005 Key Interfaces L.1376-1377)。反向欄位一併更正,
+> 避免只改一邊製造新的不一致。全文見 `docs/reviews/story-dependency-audit-2026-09-03.md`。
 
 ---
 

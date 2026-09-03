@@ -106,5 +106,14 @@
 
 ## Dependencies
 
-- **Depends on**:003, 010
+- **Depends on**:003, **007**, 010
 - **Unlocks**:013
+
+> 🔴 **本欄於 2026-09-03 相依稽核更正。** 這條相依只存在於 ADR-0005 的簽章裡,本工作單內文
+> 從未出現該型別名稱 —— `/story-readiness` 檢查的是「工作單本身完不完整」與「ADR 核准了沒」,
+> **結構上不會檢查「ADR 契約是否需要別張工作單的產出」**,故抓不到。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+>
+> **依據**:ADR-0005 L.1129 `_state.get_device_authority()`、L.1070
+> `_state.reclaim_reset_triggered.connect(...)`、L.1077 `_state.reclaim_progress()` ——
+> 三者皆為 Story 007 產出的讀取查詢與訊號。

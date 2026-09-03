@@ -99,8 +99,18 @@
 
 ## Dependencies
 
-- **Depends on**:001
+- **Depends on**:001, **003**
 - **Unlocks**:005, 007, 008, 010, 014
+
+> 🔴 **本欄於 2026-09-03 相依稽核更正。** 這條相依只存在於 ADR-0005 的簽章裡,本工作單內文
+> 從未出現該型別名稱 —— `/story-readiness` 檢查的是「工作單本身完不完整」與「ADR 核准了沒」,
+> **結構上不會檢查「ADR 契約是否需要別張工作單的產出」**,故抓不到。全文見
+> `docs/reviews/story-dependency-audit-2026-09-03.md`。
+>
+> **依據**:Key Interfaces L.1376-1377 `func _init(reclaim: MouseReclaimPolicy,
+> registry: CursorSurfaceRegistry, mouse_position_provider: Callable) -> void` —— 建構子直接注入。
+>
+> ⚠️ **這一張的漏列已於 2026-09-02 實際造成專家開工卡死、105 分鐘零產出。** 本次為補正。
 
 ---
 
