@@ -366,3 +366,39 @@ func test_classify_action_is_stateless_across_many_repeated_calls() -> void:
 		assert_int(CursorTypes.classify_action(probe_event)) \
 			.append_failure_message("drifted at iteration %d" % i) \
 			.is_equal(CursorTypes.ActionClass.NAVIGATION)
+
+
+## Story 004 close-out gap, found 2026-09-03 during the next stage's
+## self-review: NAVIGATION_ACTIONS and CONFIRM_ACTIONS each got a
+## contains_exactly() pin when the zero-assertion-loop defect was fixed,
+## but ACKNOWLEDGED_OTHER_ACTIONS got none — because classify_action()
+## never reads it, so no loop in this suite iterates it. It is not dead
+## code: ADR-0005 mechanism 7 (c) (Story 006's load-time validator) checks
+## every ui_* action against all THREE lists. Until Story 006 lands, an
+## edit to this list would be caught by nothing at all. This pins it.
+func test_acknowledged_other_actions_contents_are_pinned() -> void:
+	assert_array(CursorTypes.ACKNOWLEDGED_OTHER_ACTIONS).contains_exactly(
+		&"ui_focus_next", &"ui_focus_prev", &"ui_page_up", &"ui_page_down",
+		&"ui_home", &"ui_end", &"ui_select", &"ui_menu"
+	)
+
+
+## The three lists must not overlap: mechanism 7 (c) treats "hit in any of
+## the three" as classified, and classify_action() checks NAVIGATION before
+## CONFIRM, so a duplicated entry would silently resolve by list order
+## rather than by intent. Nothing in the production code enforces this.
+func test_the_three_action_lists_are_mutually_disjoint() -> void:
+	var seen: Dictionary = {}
+	for list in [
+		CursorTypes.NAVIGATION_ACTIONS,
+		CursorTypes.CONFIRM_ACTIONS,
+		CursorTypes.ACKNOWLEDGED_OTHER_ACTIONS,
+	]:
+		for action in list:
+			assert_bool(seen.has(action)).append_failure_message(
+				"%s appears in more than one of the three ActionClass lists" % action
+			).is_false()
+			seen[action] = true
+	assert_int(seen.size()).append_failure_message(
+		"the three lists should cover 14 distinct actions in total"
+	).is_equal(14)
