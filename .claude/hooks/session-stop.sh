@@ -40,4 +40,18 @@ if [ -n "$RECENT_COMMITS" ] || [ -n "$MODIFIED_FILES" ]; then
     } >> "$SESSION_LOG_DIR/session-log.md" 2>/dev/null
 fi
 
+
+# --- Stale-handoff check at session end (added 2026-09-03) -------------------
+# C4/C7 in validate-doc-consistency.sh require a CLEAN git tree, so they can
+# never fire from the pre-commit gate (pre-commit the tree is dirty by
+# definition). Session end is the other moment the tree is usually clean AND the
+# handoff document is about to be relied on by the next session — which reads it
+# FIRST, before anything else. --handoff runs only those two invariants (~3.5s of
+# the full 8.4s) to stay well inside this hook's 10s timeout.
+# REPORT ONLY. A Stop hook must never block, and this one deliberately exits 0
+# regardless of what it finds.
+if [ -f ".claude/hooks/validate-doc-consistency.sh" ]; then
+    bash .claude/hooks/validate-doc-consistency.sh --handoff
+fi
+
 exit 0

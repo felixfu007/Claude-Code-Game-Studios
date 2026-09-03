@@ -30,6 +30,8 @@
 # USAGE
 #   bash .claude/hooks/validate-doc-consistency.sh            # report mode, exit 0
 #   bash .claude/hooks/validate-doc-consistency.sh --gate     # exit 2 on [ERROR]
+#   bash .claude/hooks/validate-doc-consistency.sh --handoff  # C4+C7 only, ~1s
+#   bash .claude/hooks/validate-doc-consistency.sh --line-refs # the C6 backlog
 #   SKIP_DOC_CONSISTENCY=1 ...                                # escape hatch
 #
 # Cross-platform: Windows Git Bash compatible (grep -E only, never grep -P).
@@ -74,6 +76,7 @@ set +e
 
 MODE="report"
 [ "$1" = "--gate" ] && MODE="gate"
+[ "$1" = "--handoff" ] && MODE="handoff"
 [ "$SKIP_DOC_CONSISTENCY" = "1" ] && exit 0
 
 cd "$(dirname "$0")/../.." 2>/dev/null || exit 0
@@ -142,6 +145,10 @@ for f in docs/architecture/adr-*.md; do
     [ -f "$f" ] && ADR_COUNT=$((ADR_COUNT + 1))
 done
 
+# --handoff runs ONLY the two handoff-document invariants (C4, C7). Everything
+# below this line is skipped in that mode: those greps cost ~6s of the 7.7s
+# total, and the Stop hook that calls --handoff has a 10s timeout.
+if [ "$MODE" != "handoff" ]; then
 # ── Batched greps (each one spawn, all outside any loop) ─────────────────────
 STATUS_LINES=$(grep -H -m1 '^> \*\*Status\*\*' $GDDS 2>/dev/null)
 IDX_ROWS=$(grep '^|' design/gdd/systems-index.md 2>/dev/null)
@@ -151,6 +158,7 @@ STATED_TOTALS=$(grep -HoE 'AC ?[0-9]+ ?條' $GDDS 2>/dev/null)
 PLACEHOLDER_FILES=$(grep -lE '\[No ADRs yet|尚無 ADR|No ADRs yet' \
     .claude/docs/technical-preferences.md docs/registry/architecture.yaml 2>/dev/null)
 ADR_PLACEHOLDERS=$(grep -rn '\[ADR:' --include='*.md' design docs/architecture 2>/dev/null)
+fi
 GIT_DIRTY=$(git status --porcelain 2>/dev/null)
 
 # active.md is an APPEND-ONLY handoff log: superseded batches stay in the file
@@ -173,6 +181,7 @@ TD_RULED=$(grep -cE '✅ \*\*[^*]*(已裁決|已關閉|全部關閉)' docs/tech-
 BLANKET_DENIALS=$(grep -nE '全部沒有裁決|全部尚未裁決|全部都沒有裁決|一項都沒有裁決|都還沒有裁決|^<!-- doc-consistency: (ignore|end-ignore) -->' \
     "$ACTIVE_MD" "$STATUS_MD" 2>/dev/null)
 
+if [ "$MODE" != "handoff" ]; then
 # ── C1: GDD header approval class vs systems-index Status column ─────────────
 # NO_STATUS is accumulated and emitted as ONE line (2026-09-03). Four separate
 # warnings for one class pushed the only [ERROR] down the screen, and it is one
@@ -288,6 +297,8 @@ if [ -n "$ADR_PLACEHOLDERS" ]; then
         add_err "unbackfilled ADR placeholder in ${line%%:*} — backfill the real ADR number/path."
     done <<< "$ADR_PLACEHOLDERS"
 fi
+fi
+
 
 # ── C4: active.md's commit claims vs the actual git tree ────────────────────
 # Three defects fixed 2026-09-03, all found by measuring this hook's own output
@@ -349,6 +360,7 @@ if [ -z "$GIT_DIRTY" ] && [ -n "$ACTIVE_CLAIM_HITS" ]; then
     fi
 fi
 
+if [ "$MODE" != "handoff" ]; then
 # ── C5: acceptance-criteria numbering integrity ─────────────────────────────
 # [warn] only, never [ERROR]: AC id formats differ across this project's GDDs
 # (**AC-1(Logic...)** vs - **AC-27a**: **GIVEN**) and a prose line citing an AC can
@@ -434,6 +446,8 @@ LINE_REF_COUNT=$(grep -rnoE '第 ?[0-9]+(/[0-9]+)* ?[列行]|see line [0-9]+|見
       END { print total+0 }')
 if [ "${LINE_REF_COUNT:-0}" -gt 0 ] 2>/dev/null; then
     add_warn "$LINE_REF_COUNT suspected line-number self-references in design/, docs/architecture/, docs/registry/ (banned by .claude/rules/design-docs.md — use a stable handle). Standing backlog, deliberately one line. List them: bash .claude/hooks/validate-doc-consistency.sh --line-refs"
+fi
+
 fi
 
 # ── C7: a recorded ruling vs a handoff doc still saying nothing was ruled ────
