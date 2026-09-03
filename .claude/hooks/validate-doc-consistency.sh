@@ -170,7 +170,7 @@ ACTIVE_CLAIM_HITS=$(grep -nE '尚未 ?commit|待提交|待 ?commit|uncommitted|n
 # C7 inputs. TD_RULED counts entries the register marks as ruled/closed;
 # BLANKET_DENIALS finds handoff text asserting that NOTHING has been ruled.
 TD_RULED=$(grep -cE '✅ \*\*[^*]*(已裁決|已關閉|全部關閉)' docs/tech-debt-register.md 2>/dev/null)
-BLANKET_DENIALS=$(grep -nE '全部沒有裁決|全部尚未裁決|全部都沒有裁決|一項都沒有裁決|都還沒有裁決' \
+BLANKET_DENIALS=$(grep -nE '全部沒有裁決|全部尚未裁決|全部都沒有裁決|一項都沒有裁決|都還沒有裁決|^<!-- doc-consistency: (ignore|end-ignore) -->' \
     "$ACTIVE_MD" "$STATUS_MD" 2>/dev/null)
 
 # ── C1: GDD header approval class vs systems-index Status column ─────────────
@@ -442,19 +442,34 @@ fi
 # documents still told the next session "none of the four has been ruled — do
 # not cite one". Handoff docs are read FIRST at session start, so the stale one
 # wins, and the next session re-asks a question the manager already answered.
-# Quoting lines are excluded for the same reason as C4.
+#
+# The same three exclusions as C4 (blockquote / quote markers / fence), because
+# C7 false-positived on its OWN write-up within minutes of shipping: the table
+# recording its sensitivity tests quotes the trigger phrases verbatim.
+# MECHANISM DIFFERS FROM C4 ON PURPOSE. C4's hits and its fences come from two
+# separate greps, so it has to convert fences into line ranges. C7's hits and
+# fences come from ONE grep in file order, so it can just track open/closed as
+# it walks — and that also gives PROJECT-STATUS.md fence support for free,
+# without a fourth grep.
 if [ "${TD_RULED:-0}" -gt 0 ] && [ -n "$BLANKET_DENIALS" ]; then
+    cur_f=""; ig=0
     while IFS= read -r hit; do
         [ -z "$hit" ] && continue
         f=${hit%%:*}
         rest=${hit#*:}
         ln=${rest%%:*}
         txt=${rest#*:}
+        if [ "$f" != "$cur_f" ]; then cur_f=$f; ig=0; fi
+        case "$txt" in
+            "<!-- doc-consistency: ignore -->"*)     ig=1; continue ;;
+            "<!-- doc-consistency: end-ignore -->"*) ig=0; continue ;;
+        esac
+        [ "$ig" -eq 1 ] && continue
         case "$txt" in
             \>*) continue ;;
             *原文寫*|*原登記為*|*原本寫*|*此前寫*|*原寫*) continue ;;
         esac
-        add_err "$f:$ln asserts no ruling exists, but docs/tech-debt-register.md records $TD_RULED ruled item(s). Handoff docs are read first — a stale blanket denial sends the next session to re-ask a decided question."
+        add_err "$f:$ln asserts no ruling exists, but docs/tech-debt-register.md records $TD_RULED ruled item(s). Handoff docs are read first — a stale blanket denial sends the next session to re-ask a decided question. If the line only QUOTES the wording, fence the block with <!-- doc-consistency: ignore --> / end-ignore."
     done <<< "$BLANKET_DENIALS"
 fi
 
