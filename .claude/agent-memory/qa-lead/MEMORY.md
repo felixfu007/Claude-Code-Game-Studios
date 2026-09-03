@@ -1,1 +1,2 @@
 - [affinity-data-pool.md cross-file drift pattern](project_affinity_data_pool_cross_file_drift.md) — recurring same-session drift; verify round-number attribution independently of substance when checking cross-file propagation edits.
+- [Incremental checkpointing on long reviews](feedback_incremental_checkpointing.md) — skeleton first, save per item, log a CP line; validated after seven identical mid-task interruptions.

@@ -1,7 +1,7 @@
 # Story 007:寫入與讀取介面(七個公開入口 + 重入閘門)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:Complete(2026-09-03,兩方覆核後修正完畢)
 > **Layer**:Core
 > **Type**:Logic
 > **Estimate**:L(約 8–10 小時)
@@ -54,6 +54,12 @@
 
 - Story 009:三分支交接的呼叫慣例(本 story 只出入口本體)
 - Story 014:`_reclaim` 的具體策略行為
+- 🔴 **Story 005:`arbitrate_device_authority()` 與 `apply_buffered_navigation()` 的裁決主體**
+  (2026-09-03 引擎覆核 N-7 補列 —— 原本漏列,而它正是本張最容易被誤讀的範圍界線)。
+  本張產出兩者的**閘門、診斷計數、provider 前置檢查、drain 義務**(機制十);
+  **「依權威決定套用什麼」屬機制六,是 Story 005 的範圍。**
+  ⚠️ 連帶:**AC-32 無法由本張滿足**,且該缺口**沒有可靠的自動防線**
+  (測試涵蓋覆核查過三種寫法皆不可靠),只能寫進 Story 005 自己的完成定義。
 
 ---
 
@@ -108,7 +114,52 @@
 **Story Type**:Logic
 **必要證據**:`tests/unit/cursor/write_read_interface_test.gd`
 
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立 —— `tests/unit/cursor/write_read_interface_test.gd`(38 條、0 失敗、0 orphans)
+外加 `tests/unit/cursor/state_host_test.gd` 的 AC-1 排除名單擴充與存在性斷言。
+**全套實測(主 session 獨立執行,非轉述):345 條 / 0 errors / 1 failures / 0 flaky / 0 skipped /
+0 orphans / 26 suites / exit 100。** 唯一失敗為既有已核准的 `affinity_phi_provider` 紅燈,與本張無關。
+
+### 🔴 完成度:7/7 結構層,但只有 5/7 行為主體
+
+**不得寫成「七個公開入口完成」** —— 字面為真、實質誤導(引擎覆核 B-1 阻擋項)。正確敘述:
+
+| | 狀態 |
+|---|---|
+| 七個公開入口的**結構層**(重入閘門、診斷計數、provider 前置檢查、drain 義務) | **7/7 完成** |
+| **行為主體** | **5/7** —— `arbitrate_device_authority()` 與 `apply_buffered_navigation()` 的裁決邏輯屬機制六,是 **Story 005 的接縫** |
+| 六條私有路徑、四個讀取查詢、三個 signal、三個 enum | 全部完成 |
+| `force_redraw_current_authority()` / `reapply_native_cursor_visibility()` | **刻意未實作**(分屬 Story 008 / 011,見相依稽核報告末節) |
+
+### 驗收標準涵蓋:完整 5 / 部分 4 / 未涵蓋 1
+
+**以測試涵蓋覆核者的獨立重算為準**(他與撰寫者在 AC-25 上有分歧,採他的,依據是工作單第 66 行原文):
+
+| AC | 判定 | 界線 |
+|---|---|---|
+| AC-24 / AC-33 / AC-37 / AC-39 / AC-50 | **完整** | AC-33、AC-50 的 AC 原文自帶分工條款 |
+| AC-3 | **部分** | 只驗公開方法清單;AC 原文自己寫「無法窮舉證明『不存在』」 |
+| AC-25 | **部分** | THEN 含「或任一掛載的 UI 表面渲染」,本張無任何掛載表面 → 零涵蓋。與 AC-29 同一句界線 |
+| AC-29 | **部分** | 只驗訊號側;表面渲染屬 Story 010/011 |
+| AC-54 | **部分(ADVISORY)** | 只驗「兩個獨立查詢可程式化區分兩種拒絕」;**感知上可區分無法自動化**,且回饋形式尚未設計 |
+| **AC-32** | 🔴 **未涵蓋** | 阻擋於 Story 005(導覽入口是接縫)。**已登記進 `story-005` 的驗收條件** |
+
+🔴 **AC-32 沒有可靠的自動防線。** `write_read_interface_test.gd` 裡那條 `test_ac32_blocked_...`
+**不是警報器** —— 測試涵蓋覆核第 4.5 節證明它在 Story 005 落地當天照樣是綠的(它斷言的
+「仍為無效」有第二個成因,由測試自己的輸入所保證),另查三種替代寫法皆不可靠,故不修。
+**唯一會被執行的防線是 `story-005-frame-buffer-ordering.md` 的那條登記。**
+
+### 兩方覆核結果
+
+- **引擎/ADR(`godot-specialist`)**:**CONCERNS**,報告 `docs/reviews/story-007-engine-review-2026-09-03.md`(1401 行)。
+  17 項全判,阻擋項 1 項(本節措辭,已處理),必修 N-1~N-7,建議 S-1~S-5。
+- **測試涵蓋(`qa-lead`)**:**INCOMPLETE**,報告 `docs/reviews/story-007-test-evidence-review-2026-09-03.md`(797 行)。
+  8 項全判,最小修正集 T-1/T-2/T-3/B-1/B-2 **已全數執行**。
+
+**已關閉的必修**:N-1(接縫縮排,會讓 Story 005 誤把鍵盤手把仲裁綁在滑鼠管道上)、
+N-4(兩句已為假的註解)、N-5(未定義邊界摘到公開 doc comment)、N-7(本檔 Out of Scope 補 Story 005)、
+T-1~T-3、B-1(null 組態七入口降級,**含證明閘門未卡死的最後一步**)、B-2(甲分支無條件重播種)。
+
+**未關閉、已登記**:N-2/N-3/N-6(須改已核准的 ADR,呈管理者)、S-1~S-5、G-3~G-7。
 
 ---
 
