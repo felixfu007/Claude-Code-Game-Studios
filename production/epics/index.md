@@ -1,12 +1,12 @@
 # Epics 索引
 
-**最後更新**:2026-09-04(Story 001 完成後)
+**最後更新**:2026-09-04(游標系統 Story 009 完成後)
 **引擎**:Godot 4.7.1
 **控制清單版本**:2026-09-02
 
 | Epic | 層 | 系統 | 權威文件 | Stories | 狀態 |
 |---|---|---|---|---|---|
-| [cursor-highlight-state](cursor-highlight-state/EPIC.md) | Core | 單一游標/高亮狀態系統 | `design/gdd/cursor-highlight-state.md` | **14 張**(完成 6) | 進行中 |
+| [cursor-highlight-state](cursor-highlight-state/EPIC.md) | Core | 單一游標/高亮狀態系統 | `design/gdd/cursor-highlight-state.md` | **14 張**(完成 7) | 進行中 |
 | [screen-scaling](screen-scaling/EPIC.md) | Presentation | 畫面縮放與定位(手動管理) | `design/art/screen-architecture.md`(**非 GDD**) | **2 張**(全部完成) | ✅ **Complete** |
 
 ⚠️ **第三欄原名「GDD」,2026-09-04 改為「權威文件」** —— `screen-scaling` 是呈現層基礎設施,

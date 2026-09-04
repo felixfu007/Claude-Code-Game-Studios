@@ -1028,6 +1028,32 @@ func handoff_after_mount(target: CursorTarget) -> SetTargetResult      # 第三�
 
 **修法(需新增介面面,非一行修改)**:新增乙分支專用公開入口 `handoff_after_mount(target) -> SetTargetResult`,與甲的 `handoff_before_unload()` 成對,兩者共同構成交接生命週期的兩半;內部走 `_write_target_internal(target, TargetResetPolicy.UNCONDITIONAL)`(機制十)。四個問題因此逐一關閉:讀法 (1) 不再需要(`_reclaim` 維持完全私有);讀法 (2) 不再需要(乙有自己的入口,不必在通用入口內分辨);讀法 (3) 不會發生(丙與一般改標維持 `CONDITIONAL_ON_CHANGE` → `TARGET_CHANGED`);第四個問題由 `UNCONDITIONAL` 的**無條件**語意關閉(目標即使未變仍重置)。
 
+🔴 **`新開局` 走哪一個入口 —— 2026-09-04 管理者裁決:與乙分支相同,一律 `handoff_after_mount()`。**
+
+**為什麼需要這條裁決**:R5-1 為乙分支新增專用入口之後,本節從未說明**全新開局**(不涉及任何讀檔)
+該走哪一個入口。而 GDD AC-62 要求「乙-直接讀檔」與「新開局」兩條路徑的**呼叫序列完全相同** ——
+若新開局走通用的 `set_target()`,該條款**結構上不可能成立**,這條已 Approved 的驗收標準會變成
+一條永遠無法通過的條文。**兩個讀法必須擇一,不能都不選。**
+
+**裁決理由(三項,皆為文件層依據,非引擎行為)**:
+
+1. GDD 對乙分支的設計意圖原文是「驗證乙分支確實**複用 Core Rules #6 既有流程**、未引入任何新的
+   狀態轉換」。**「複用」的對象就是新開局那條流程** —— 若兩者走不同入口,「複用」不成立。
+2. 本 ADR 自己的 Ordering Note 明訂「本 ADR 的機制變更**不得擴大或縮小 GDD 的義務**」。
+   R5-1 新增入口是為了修正乙分支的重置語意,**不是為了把乙與新開局拆成兩條路** ——
+   讓它產生後者的效果,即為本 ADR 單方面改動了 GDD 的義務。
+3. **對一局全新遊戲而言,兩個入口的可觀測結果沒有差別**:沒有舊狀態可重置,
+   `UNCONDITIONAL` 與 `CONDITIONAL_ON_CHANGE` 在此情境下同義。**選擇代價為零。**
+
+📌 **`handoff_after_mount()` 的名稱錨定的是「掛載」這個事件,不是「讀檔」這個成因。**
+「一個表面剛掛好、需要設定初始目標、且該設定必須無條件重置」是**掛載事件本身的性質**,
+與這次掛載前面有沒有讀檔無關。
+
+⚠️ **這條裁決今天沒有任何生產程式碼在遵守它,因為專案裡還不存在「新開局」或「讀檔」流程。**
+它現在的身分是**釘住的契約**,由 `tests/integration/cursor/screen_handoff_test.gd` 承載。
+🔴 **寫這兩條流程的人(戰棋移動與交戰系統)必須回來讀這一段** —— 該測試檔的
+`_mount_initial_target()` 註解已明文指向本節。
+
 **為何是專用方法,而不是給 `set_target()` 加第三個參數 `is_surface_handoff: bool`**:乙的重置是**無條件**、通用路徑是**條件式**,兩種語意藏在一個 bool 後面正是 boolean trap;而 GDScript **不支援呼叫端具名引數**,呼叫處只會是 `set_target(t, false, true)`,讀者完全看不出兩個布林各是什麼。加上甲早已有專用方法,`handoff_before_unload` / `handoff_after_mount` 成對讀起來就是交接生命週期的兩半。
 
 **代價的誠實記錄**:`CursorState` 的公開入口由 5 增為 7(另一個是 R5-3 的 `reseed_reclaim_on_focus_regained()`),其中**生命週期類寫入入口由 1 增為 2**。Requirements 第 10 項「2 個寫入方法、2 個讀取查詢」指的是 **GDD Core Rules #2 的雙寫入**(`set_target`/`mark_pending_reresolve`),該項**未被擴大**;被擴大的是本 ADR 自己為承載 Core Rules #7 交接義務而設的生命週期類別。這與機制八「契約寬度的誠實記錄」是同一種帳:**介面每寬一格就要記一筆,不能用「只是加個方法」帶過。**
