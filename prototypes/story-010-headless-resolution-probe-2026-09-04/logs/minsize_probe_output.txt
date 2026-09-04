@@ -1,0 +1,14 @@
+
+display/window/size/window_width_override            存在=true 值=0
+display/window/size/window_height_override           存在=true 值=0
+display/window/size/resizable                        存在=true 值=true
+display/window/size/borderless                       存在=true 值=false
+
+Window 物件有沒有 min_size 屬性:
+  min_size  現值=(64, 64)
+  max_size  現值=(0, 0)
+
+DisplayServer 有沒有 window_set_min_size:
+  true
+
+設 min_size=(480,270) 後,再指派 size=(320,180) → 實際 root.size = (480, 270)
