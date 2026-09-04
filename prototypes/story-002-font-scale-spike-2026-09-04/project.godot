@@ -1,0 +1,7 @@
+; 拋棄式探針專案 —— 只用來量測字型渲染尺寸,不涉及視窗縮放/世界層,
+; 因此刻意不複製主專案的 stretch 設定(那是 Story 001 的範圍,不是本次量測對象)。
+config_version=5
+
+[application]
+
+config/name="story002fontprobe"
