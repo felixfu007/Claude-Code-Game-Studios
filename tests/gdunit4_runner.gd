@@ -39,7 +39,7 @@ const RUNNER_CANDIDATES: Array[String] = [
 
 # 對應 tests/README.md 記載的驗證指令:
 #   <godot> --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd
-#           --ignoreHeadlessMode -a tests/unit
+#           --ignoreHeadlessMode -a tests/unit -a tests/integration
 #
 # 第一個元素 "GdUnitCmdTool.gd" 是必要的假 token,不能省略:
 # CmdArgumentParser.parse()(addons/gdUnit4/src/cmd/CmdArgumentParser.gd:18-21)
@@ -49,8 +49,29 @@ const RUNNER_CANDIDATES: Array[String] = [
 # 用 _debug_cmd_args 灌參數時必須自己補上這個標記,否則會靜默退化成
 # show_help() + exit code 0 的假綠燈(2026-08-26 實跑撞到過,已用探針腳本
 # 確認根因並驗證此修法)。
+# 🔴 2026-09-04:本陣列原本只有 "tests/unit"。`tests/integration/` 自專案成立就
+# 記載在 tests/README.md 與 coding-standards.md 的證據表裡(Integration 型別,
+# 閘門等級 **BLOCKING**),但**這支 runner 從來沒有掃過它** —— 該目錄一直是空的,
+# 所以沒有任何跡象顯示這件事。
+#
+# 發現方式:Story 009 是第一張把測試放進 `tests/integration/` 的工作單。
+# 五條測試寫好之後,本 runner 回報 386 條、1 個既有失敗、exit 100 ——
+# **與新增測試之前完全一樣**,而那五條的名字一次都沒出現在輸出裡。
+# 亦即:**測試存在、看起來全綠、實際一條都沒執行**,而且沒有任何錯誤訊息。
+#
+# ⚠️ **CI 沒有這個問題** —— .github/workflows/tests.yml 的 `paths:` 本來就同時
+# 列了 tests/unit 與 tests/integration。壞掉的只有本機這條單行指令,
+# 亦即**本機跑過的人會得到一個比 CI 寬鬆的綠燈**,而本機是大多數人唯一會跑的地方。
+#
+# `-a` 可重複給:GdUnitTestCIRunner.add_test_suites() 是 append_array(),不是覆寫
+# (addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd)。已實測 386 → 391。
+#
+# 📌 新增測試層級(例如 tests/smoke/)時**必須同時加進本陣列**,否則會重演同一件事。
 const FORCED_ARGS: PackedStringArray = [
-    "GdUnitCmdTool.gd", "-a", "tests/unit", "--ignoreHeadlessMode"
+    "GdUnitCmdTool.gd",
+    "-a", "tests/unit",
+    "-a", "tests/integration",
+    "--ignoreHeadlessMode",
 ]
 
 var _cli_runner: Node = null

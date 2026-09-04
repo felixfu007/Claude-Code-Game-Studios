@@ -163,7 +163,17 @@ frame, which is the narrow case it was written for.
       live the moment anyone adds a filter to the test line. If filtering is ever needed,
       **assert on the executed-test count, not on the exit code alone.**
     - Direct invocation, if the runner is ever bypassed:
-      `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit`
+      `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit -a tests/integration`
+      🔴 **`-a tests/unit` 單獨一項是不夠的,而且不夠的方式不會報錯。** 2026-09-04
+      (Story 009,本專案第一張把測試放進 `tests/integration/` 的工作單)實測:
+      runner 當時寫死只掃 `tests/unit`,新增 5 條整合測試後回報
+      **386 條、1 個既有失敗、exit 100 —— 與新增之前逐字相同**,那 5 條的名字
+      一次都沒出現在輸出裡。**測試存在、看起來全綠、實際一條都沒跑。**
+      ⚠️ **CI 從來沒有這個問題**(`tests.yml` 的 `paths:` 本就同時列了兩者),
+      所以壞掉的是**本機比 CI 寬鬆**這個方向 —— 而本機是大多數人唯一會跑的地方。
+      `-a` 可重複給:GdUnit4 的 `add_test_suites()` 是 `append_array()` 不是覆寫。
+      📌 **日後新增任何測試層級(例:`tests/smoke/`)必須同時加進 `tests/gdunit4_runner.gd`
+      的 `FORCED_ARGS`**,否則會重演同一件事。
       `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,
       exit 103) because the engine delivers no `InputEvent`s headless, so UI-interaction tests
       would silently do nothing.
