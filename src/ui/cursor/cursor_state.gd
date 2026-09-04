@@ -629,6 +629,26 @@ func handoff_before_unload() -> MarkResult:
 ## the shared [method _validate_target_writable]) and then writes with
 ## [constant TargetResetPolicy.UNCONDITIONAL].
 ##
+## 🔴 [b]ALSO the mandatory entry for a brand-new game's first mount — NOT
+## only for loads.[/b] Ruled 2026-09-04; the ruling and its evidence live in
+## ADR-0005 機制十一, section "🔴 `新開局` 走哪一個入口".
+##
+## [b]Why this sentence is here and not only in the ADR[/b]: the sentence
+## above says "after a load succeeds", and someone building the new-game flow
+## will read THIS doc comment long before they open the ADR. Reading only the
+## line above, "a new game involves no load, so this is not my entry" is the
+## natural conclusion — and it is exactly the misreading the ruling exists to
+## prevent. Taking it routes the new-game flow through [method set_target],
+## whose [constant TargetResetPolicy.CONDITIONAL_ON_CHANGE] silently skips the
+## reset when the computed initial cell equals the current one. Board terrain
+## is hand-authored (procedural generation is a project-level ban), so a
+## second new-game within one process run very plausibly computes the SAME
+## initial cell — the exact bug R5-1 created this entry to kill, arriving
+## through a different door.
+##
+## The name is anchored on THE MOUNT EVENT, not on the load that may or may
+## not have preceded it.
+##
 ## [b]Why a dedicated entry instead of a third [method set_target] parameter[/b]
 ## (R5-1): 乙's reset is unconditional while the general path's is conditional.
 ## Hiding two semantics behind one bool is a boolean trap, and GDScript has no
