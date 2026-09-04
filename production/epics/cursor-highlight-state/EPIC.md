@@ -156,20 +156,20 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 
 | # | Story | 型別 | 狀態 | 估時 | 對應機制 | 依賴 |
 |---|---|---|---|---|---|---|
-| 001 | [共用列舉、目標值型別與策略契約](story-001-shared-types.md) | Logic | Ready | S(約 3–4 小時) | 二、三、八(契約) | — |
-| 002 | [Autoload 薄殼 + DI 核心 + 三欄位狀態](story-002-state-host.md) | Logic | Ready | M(約 5–6 小時) | 一 | 001 |
-| 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | Ready | M(約 4–6 小時) | 三 | 001 |
-| 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | Ready | M(約 4–6 小時) | 四、四之二 | 001 |
+| 001 | [共用列舉、目標值型別與策略契約](story-001-shared-types.md) | Logic | ✅ Complete | S(約 3–4 小時) | 二、三、八(契約) | — |
+| 002 | [Autoload 薄殼 + DI 核心 + 三欄位狀態](story-002-state-host.md) | Logic | ✅ Complete | M(約 5–6 小時) | 一 | 001 |
+| 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | ✅ Complete | M(約 4–6 小時) | 三 | 001 |
+| 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | ✅ Complete | M(約 4–6 小時) | 四、四之二 | 001 |
 | 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | Ready | L(約 8–10 小時) | 五、六 | 002, 004 |
 | 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | Ready | S(約 2–3 小時) | 七 | 001 |
-| 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | Ready | L(約 8–10 小時) | 十 | 002, 003 |
+| 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | ✅ Complete | L(約 8–10 小時) | 十 | 002, 003 |
 | 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | Ready | M(約 5–6 小時) | 九 | 002, 005 |
 | 009 | [跨畫面交接生命週期(甲/乙/丙)](story-009-screen-handoff.md) | Integration | Ready | M(約 4–6 小時) | 十一 | 007 |
-| 010 | [專屬游標 `CanvasLayer` + 圖層變換恆等防護測試](story-010-idle-indicator-host.md) | UI | Ready | S(約 2–3 小時) | 十二 | 002 |
+| 010 | [專屬游標 `CanvasLayer` + 圖層變換恆等防護測試](story-010-idle-indicator-host.md) | UI | ✅ Complete | S(約 2–3 小時) | 十二 | 002 |
 | 011 | [原生游標隱藏 + 自繪載體 + 白名單例外](story-011-native-cursor-suppression.md) | Visual/Feel | Ready | L(約 8–10 小時) | 十三、十三之二 | 003, 010 |
-| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | Ready | S(約 2–3 小時) | 十四 | 003 |
+| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | 🔴 Blocked | S(約 2–3 小時) | 十四 | 003 |
 | 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | Ready | S(約 3–4 小時) | 十五 | 005, 011 |
-| 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | Ready | M(約 6–8 小時) | 八 | 001, 002 |
+| 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | ⏸ 凍結 | M(約 6–8 小時) | 八 | 001, 002 |
 
 **估時合計:約 65–86 小時**(2026-09-02 補;原為 `[待 sprint 規劃時填]` 佔位符,
 `/story-readiness` 判定「無估時的 story 無法排程」)。**這是粗估,不是承諾。**
@@ -185,7 +185,7 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 **ADR-0005 若改動這幾處,這 7 條必須同步。** 編號刻意加 `S` 前綴,不佔用 GDD 號碼,便於整批搜出。
 
 🔴 **兩張 story 綁著隨核准生效的硬性義務,不得跳過**:
-- **Story 010** —— 「游標圖層 transform 恆等」必須寫成會執行的自動化測試
+- **Story 010** —— 「游標圖層 transform 恆等」必須寫成會執行的自動化測試。<br>✅ **2026-09-04 已履行** —— `tests/unit/cursor/cursor_layer_transform_test.gd`,四種解析度對正式圖層斷言,且四條**逐條實測**在注入破壞時會紅。🔴 **連帶產生一條新義務落在 Story 011**(真的開視窗看畫面一次),見該張。
 - **Story 004** —— `InputEventKey.echo` 過濾
 
 ⚠️ **本批未經 qa-lead 產生測試規格**(精簡模式 + 本環境未授權動用 Agent)。
@@ -196,4 +196,12 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 
 ## Next Step
 
-執行 `/create-stories cursor-highlight-state` 把本 epic 拆成可實作的工作單。
+🔴 **本節於 2026-09-04 更正 —— 原寫「執行 `/create-stories` 把本 epic 拆成工作單」,而 14 張工作單早在 2026-09-02 就已存在。**
+這是一份完工後沒人回頭改的指路,照它做的人會重跑一次已經做完的事。
+
+**現況**:14 張完成 6 張(001/002/003/004/007/010)。
+**下一波可開**:006、009(前置皆已滿足);**011** 因 010 完成而解鎖。
+**012 Blocked**(驗收標準的定義域是空集合,需先裁決強制執行落點);**014 凍結**。
+
+⚠️ **上表「狀態」欄於 2026-09-04 由工作單檔案自動重建** —— 此前 14 列全部寫著 `Ready`,
+而當時實際已有 5 張 Complete、1 張 Blocked。**手抄的狀態欄必然漂移,要現值就讀工作單第 4 行。**

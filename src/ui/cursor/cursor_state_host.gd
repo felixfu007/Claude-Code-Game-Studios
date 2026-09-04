@@ -66,6 +66,50 @@ extends Node
 var _state: CursorState
 
 
+## [b]Story 010.[/b] Dedicated presentation [CanvasLayer] this host owns for
+## the process's lifetime (機制十二: "全域游標視覺宿主"). Built once in
+## [method _ready], never reassigned. This story deliberately draws nothing
+## on it — it hosts no children yet. Stories 011 (自繪替代游標,機制十三)
+## and the hover-detector (機制十三之二) attach their nodes directly to
+## THIS layer; nothing may construct a second one.
+##
+## 🔴 [b]Exclusivity is load-bearing, not stylistic[/b] (ADR-0005 隨核准生效
+## 的硬性義務 ①,`src/ui/CLAUDE.md` 同文重申): [member CanvasLayer.modulate]'s
+## alpha channel is a PER-NODE property. 機制十三's presentation smoother
+## writes [code]modulate.a = _presented_alpha[/code] on its own child node
+## every frame (R6-8) — sharing this layer with unrelated UI content would
+## drag that content's opacity along with the mouse-reclaim fade, and R6-8's
+## whole reason for splitting the self-drawn cursor and the hover detector
+## into two sibling nodes (rather than one) is this same per-node hazard.
+##
+## 🔴 [b]Also load-bearing[/b]: ADR-0005 Validation Criteria #20 requires
+## this layer's [method CanvasItem.get_final_transform] stay
+## [constant Transform2D.IDENTITY] across every resolution — this only holds
+## while nothing external attaches scale/offset to this exact node (a second,
+## differently-parented [CanvasLayer] would not violate it; a merged/shared
+## node would). See
+## [code]tests/unit/cursor/cursor_layer_transform_test.gd[/code], and the
+## headless probe that established this is measurable at all:
+## [code]prototypes/story-010-headless-resolution-probe-2026-09-04/[/code].
+var _cursor_layer: CanvasLayer
+
+
+## `CanvasLayer.layer` (draw order — [b]not[/b] [member Node.process_priority],
+## ADR-0005 明文兩者是獨立概念,不得混用同一組數值,見機制十二 Implementation
+## Notes #3) picked well above this project's only other [CanvasLayer] today
+## ([code]src/ui/GameRoot.tscn[/code]'s "UILayer", which does not override
+## [member CanvasLayer.layer] and therefore sits at the engine default of
+## [code]1[/code]), so the cursor/hover presentation always draws on top of
+## screen content — matching 機制十二's decision text ("高 layer 值,恆在
+## 所有畫面內容之上").
+##
+## ⚠️ [b]The ADR does not pin an exact number for this constant[/b] — this
+## value is this story's own engineering judgment call, not a cited
+## requirement. Flagged to the architecture owner in this story's report
+## rather than silently chosen and left undocumented.
+const CURSOR_LAYER_DRAW_ORDER: int = 100
+
+
 ## [b]process_priority set here, not in [method _ready][/b] (2026-09-02,
 ## three-way-review remediation) — ADR-0005's R6-12 explicitly mandates
 ## [code]process_priority[/code] be set BEFORE [method Node.add_child]
@@ -87,6 +131,17 @@ func _ready() -> void:
 		CursorSurfaceRegistry.new(),
 		Callable(self, "_get_mouse_position")
 	)
+
+	# Story 010: 機制十二's presentation host. No process_priority is set on
+	# this node — unlike the six 機制六 process-priority actors, a bare
+	# CanvasLayer with no children has no _process()/_input() of its own, so
+	# R6-12's "set process_priority before add_child()" rule does not apply
+	# to it (it will apply to the child nodes Story 011 adds, each of which
+	# must set its own process_priority = 50 before being added here).
+	_cursor_layer = CanvasLayer.new()
+	_cursor_layer.name = "CursorLayer"
+	_cursor_layer.layer = CURSOR_LAYER_DRAW_ORDER
+	add_child(_cursor_layer)
 
 
 ## Sole call site in the project for [method Viewport.get_mouse_position], used

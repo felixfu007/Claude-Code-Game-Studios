@@ -1,0 +1,12 @@
+# Story 010 progress checklist
+
+- [x] `src/ui/cursor/cursor_state_host.gd`: add `_cursor_layer: CanvasLayer` field + doc comments
+- [x] `src/ui/cursor/cursor_state_host.gd`: build the layer in `_ready()`, `add_child()`, pick+document `layer` draw-order value (chose 100, documented as an unpinned judgment call — see class doc comment)
+- [x] `tests/unit/cursor/cursor_layer_transform_test.gd`: skeleton (empty test functions) created and saved
+- [x] `cursor_layer_transform_test.gd`: AC-S010-a — 4 resolution identity tests (1080p/2K/4K/ultrawide) using `get_tree().root.size`, with before_test/after_test save-restore. Also added: an environment-sanity test (proves the resize technique isn't a no-op in GdUnit4's own runtime) and a host-vs-direct-root parenting comparison (coordinator's explicit ask — verify empirically, not by reasoning)
+- [x] `cursor_layer_transform_test.gd`: mandatory sensitivity/canary tests — TWO written (scaled-shared-layer shape AND offset-only shape), both proving the identity assertion goes red
+- [x] `cursor_layer_transform_test.gd`: AC-S010-b — exclusivity structural checks (distinct parent+name, zero children today, layer/process_priority independence) + documented deferral of full behavioral coverage to Story 011
+- [x] Run full test suite once, capture baseline delta vs the 345/0/1/0/0/0/26/exit100 baseline — result: 356/0/1/0/0/0/27/exit100 (11 new tests, 1 new suite, the 1 failure is the pre-existing known-red `affinity_phi_provider` test, unchanged). Log: `logs/full_suite_final_run.txt`
+- [x] Deliberately injected the real failure shape into `src/ui/cursor/cursor_state_host.gd` (temporary `_cursor_layer.scale = Vector2(2.6666667, 2.6666667)`), ran the suite, confirmed it went red (`test_layer_parented_under_host_matches_layer_parented_directly_under_root` FAILED, exactly as expected — the injected scale showed up in `get_final_transform()`), reverted the injection immediately, re-ran and confirmed all 11 green again. Logs: `logs/sensitivity_injection_red_output.txt`, `logs/sensitivity_injection_reverted_green_output.txt`. Found and fixed a real bug in the test file's own error-message string formatting (operator-precedence mistake, `+` binding looser than `%`) while doing this — see final report.
+- [x] `production/qa/evidence/cursor-canvas-layer-evidence.md` written
+- [x] Final report drafted with per-AC coverage, test numbers, sensitivity proof, open questions, out-of-scope findings — sent to coordinator

@@ -1,7 +1,7 @@
 # Story 010:專屬游標 `CanvasLayer` + 圖層變換恆等防護測試
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:Complete(2026-09-04,實作 `godot-specialist` / 覆核協調者,含補做的靈敏度量測)
 > **Layer**:Core
 > **Type**:UI
 > **Estimate**:S(約 2–3 小時)
@@ -101,7 +101,7 @@
 
 **Story Type**:UI
 **必要證據**:`production/qa/evidence/cursor-canvas-layer-evidence.md`
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立 —— `tests/unit/cursor/cursor_layer_transform_test.gd`(11 條、0 失敗、0 orphans);證據文件 `production/qa/evidence/cursor-canvas-layer-evidence.md`
 
 ---
 
@@ -109,3 +109,39 @@
 
 - **Depends on**:002
 - **Unlocks**:011
+
+---
+
+## 結案紀錄(2026-09-04)
+
+**交付**:`CursorStateHost` 持有的專屬 `CanvasLayer`(`_cursor_layer`,名稱 `CursorLayer`)+ 11 條自動化測試。
+**測試**:全專案 345 → **356** 條,0 errors / 0 orphans / 27 suites,唯一失敗為既有已核准的 `affinity_phi_provider` 紅燈。
+
+### 逐條驗收
+
+| AC | 判定 |
+|---|---|
+| **AC-S010-a**(圖層變換恆等) | ✅ **完整涵蓋** —— 四種解析度對**正式圖層**斷言,且四條逐條實測在注入破壞時會紅 |
+| **AC-S010-b**(獨佔性) | ⚠️ **部分涵蓋(刻意收窄)** —— 已驗:獨立節點、直掛宿主、目前零子節點、繪製順序值與更新順序值不相等。未驗:「永遠只承載游標系統內容」這個完整宣稱,**要等 Story 011 有真的子節點才驗得到** |
+
+### 🔴 覆核補做的一件事(不是實作者的疏漏,是工具行為造成的)
+
+實作者的靈敏度證明**只證明了 11 條裡的 1 條**。成因是 GdUnit4 **一條失敗就中止同 suite 其餘測試**
+(`coding-standards.md` 已記載),他那次注入跑只執行到第 2 條就停了,而扛 AC-S010-a 的是第 3~6 條。
+
+「注入之後測試紅了」**字面為真,但會讓讀者以為 AC 那四條驗過了**。協調者覆核時逐條重做,
+四條全部**觀測到**紅燈而非推論。逐項數字與方法在證據文件的 Sensitivity proof 節。
+
+📌 **通則(已寫進證據文件)**:一次注入紅燈,只能證明「跑到第一個失敗為止」那些測試的靈敏度。
+**要證明一支測試檔每條都有靈敏度,需要一條一次。**
+
+### 兩項判斷已由管理者裁決(2026-09-04)
+
+1. **headless 測試取代 ADR 敘述的「有視窗整合測試」** —— ✅ **接受**,但**「真的開視窗看畫面」的義務已落到 Story 011**(該張已寫入,見其 Test Evidence 前一節)。
+2. **`CURSOR_LAYER_DRAW_ORDER = 100`** —— ✅ **維持現狀,不寫進 ADR-0005**。程式碼內已明文標註為「實作時自行判斷、非架構規定」,後人分得出來即可。
+
+### 覆核時另外撞到的一個假綠燈陷阱(已寫入 `coding-standards.md`)
+
+GdUnit4 的 `-a 檔案:測試名` 篩選寫法**不支援**;字串打錯時它印 `No test cases found, abort test run!`
+然後回報 **exit code 0**。亦即**篩選打錯 = 零測試執行 = CI 判定通過**。
+目前 CI 未使用篩選功能,不受影響。

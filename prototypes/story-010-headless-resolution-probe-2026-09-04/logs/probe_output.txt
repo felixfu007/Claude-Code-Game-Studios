@@ -1,0 +1,36 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== 環境 ===
+DisplayServer name: headless
+headless?: true
+
+=== Q1 / Q2 / Q4:四種解析度 ===
+--- 目標 (1920, 1080) ---
+  Q1 DisplayServer.window_get_size() = (0, 0)  root.size = (1920, 1080)
+  Q4 root.get_visible_rect()         = [P: (0.0, 0.0), S: (480.0, 270.0)]
+  Q4 root.get_final_transform()      = x=(4.0, 0.0) y=(0.0, 4.0) o=(0.0, 0.0)   是否恆等=false
+  Q2 cursor_layer.get_final_transform() = x=(1.0, 0.0) y=(0.0, 1.0) o=(0.0, 0.0)   是否恆等=true
+--- 目標 (2560, 1440) ---
+  Q1 DisplayServer.window_get_size() = (0, 0)  root.size = (2560, 1440)
+  Q4 root.get_visible_rect()         = [P: (0.0, 0.0), S: (480.0, 270.0)]
+  Q4 root.get_final_transform()      = x=(5.0, 0.0) y=(0.0, 5.0) o=(80.0, 45.0)   是否恆等=false
+  Q2 cursor_layer.get_final_transform() = x=(1.0, 0.0) y=(0.0, 1.0) o=(0.0, 0.0)   是否恆等=true
+--- 目標 (3840, 2160) ---
+  Q1 DisplayServer.window_get_size() = (0, 0)  root.size = (3840, 2160)
+  Q4 root.get_visible_rect()         = [P: (0.0, 0.0), S: (480.0, 270.0)]
+  Q4 root.get_final_transform()      = x=(8.0, 0.0) y=(0.0, 8.0) o=(0.0, 0.0)   是否恆等=false
+  Q2 cursor_layer.get_final_transform() = x=(1.0, 0.0) y=(0.0, 1.0) o=(0.0, 0.0)   是否恆等=true
+--- 目標 (3440, 1440) ---
+  Q1 DisplayServer.window_get_size() = (0, 0)  root.size = (3440, 1440)
+  Q4 root.get_visible_rect()         = [P: (0.0, 0.0), S: (480.0, 270.0)]
+  Q4 root.get_final_transform()      = x=(5.0, 0.0) y=(0.0, 5.0) o=(520.0, 45.0)   是否恆等=false
+  Q2 cursor_layer.get_final_transform() = x=(1.0, 0.0) y=(0.0, 1.0) o=(0.0, 0.0)   是否恆等=true
+
+=== Q3 靈敏度:故意做出失效態,測試該紅嗎? ===
+  失效態圖層 final transform = x=(2.666667, 0.0) y=(0.0, 2.666667) o=(0.0, 0.0)   是否恆等=false
+  → 恆等斷言會紅嗎? true
+    (1920, 1080): 滑鼠在 (1920.0, 1080.0) → 游標畫在 (5120.0, 2880.0),偏差 3672 px
+    (2560, 1440): 滑鼠在 (2560.0, 1440.0) → 游標畫在 (6826.667, 3840.0),偏差 4895 px
+    (3840, 2160): 滑鼠在 (3840.0, 2160.0) → 游標畫在 (10240.0, 5760.0),偏差 7343 px
+    (3440, 1440): 滑鼠在 (3440.0, 1440.0) → 游標畫在 (9173.334, 3840.0),偏差 6215 px
+  Q3b offset 失效態 = x=(1.0, 0.0) y=(0.0, 1.0) o=(80.0, 45.0)   是否恆等=false

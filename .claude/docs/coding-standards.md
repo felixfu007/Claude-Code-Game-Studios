@@ -143,6 +143,25 @@ frame, which is the narrow case it was written for.
     - ⚠️ **A failing test aborts the remaining tests in its own suite.** Verified 2026-08-31:
       a suite of 5 reported `4 test cases` when the 4th failed — the 5th never ran.
       **"1 failure" never means "one thing is broken".** Re-run after fixing.
+      🔴 **Second consequence, found 2026-09-04 (Story 010): this caps what an injected
+      fault can prove.** Break the production code on purpose to check a test really goes
+      red, and the suite stops at the *first* test that catches it — every assertion after
+      that point is never executed and is therefore **unproven, not proven**. On Story 010
+      the implementer's injection run reported `2 test cases` in an 11-test file; the four
+      tests actually carrying the acceptance criterion were tests 3–6 and none of them ran.
+      "The injection made it go red" was literally true and materially misleading.
+      **Proving a test file is sensitive costs one run per assertion you want to prove** —
+      reach the later ones by temporarily renaming the earlier `test_` functions out of
+      collection, then revert. Budget for that before promising a sensitivity proof.
+    - 🔴 **`-a <file>:<test_name>` is NOT valid filter syntax, and getting it wrong exits 0.**
+      Verified 2026-09-04 while trying to run a single test case: GdUnit4 prints
+      `Given directory or file does not exists: ...` followed by
+      `No test cases found, abort test run!` and then reports **`Exit code: 0`**.
+      **A typo'd filter therefore means zero tests executed and CI reporting success** —
+      the same shape as the argument-ordering trap above, from a different direction.
+      CI does not currently use filtering, so this is latent rather than live; it becomes
+      live the moment anyone adds a filter to the test line. If filtering is ever needed,
+      **assert on the executed-test count, not on the exit code alone.**
     - Direct invocation, if the runner is ever bypassed:
       `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a tests/unit`
       `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,

@@ -1,0 +1,69 @@
+Story 010 — 覆核第二輪:逐條靈敏度量測
+執行者:主 session 協調者(非實作者)
+日期:2026-09-04
+引擎:C:/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe
+
+目的
+----
+第一輪(實作者)的注入跑只執行到 11 條中的第 2 條就中止,
+因此扛 AC-S010-a 的第 3~6 條「在注入下會紅」從未被觀測。
+本輪逐條觀測它們。
+
+方法
+----
+1. 備份 src/ui/cursor/cursor_state_host.gd 至 scratchpad。
+2. 於 _ready() 注入:_cursor_layer.scale = Vector2(2.6666667, 2.6666667)
+3. 每一輪把「排在前面、會先失敗」的測試函式的 test_ 前綴改掉,
+   使 GdUnit4 不收集它,執行得以走到下一條。
+4. 每輪跑:-s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode
+             -a tests/unit/cursor/cursor_layer_transform_test.gd
+5. 全部還原,以 grep + git diff 驗證無殘留,再跑一次全套。
+
+--- 觀測 1:注入後直接跑(未改任何測試名)---
+Overall Summary: 2 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+test_environment_sanity_root_transform_is_non_identity_when_resized PASSED 91ms
+test_layer_parented_under_host_matches_layer_parented_directly_under_root FAILED 93ms
+  → 11 條只跑了 2 條。這重現了實作者第一輪的結果,證明成因是 suite 中止行為,
+    不是他挑著跑。
+
+--- 觀測 2:停用 parenting 測試後 ---
+test_environment_sanity_root_transform_is_non_identity_when_resized PASSED 95ms
+test_ac_s010a_cursor_layer_transform_is_identity_at_1080p FAILED 94ms
+
+--- 觀測 3:再停用 1080p 後 ---
+test_ac_s010a_cursor_layer_transform_is_identity_at_2k FAILED 93ms
+
+--- 觀測 4:再停用 2K 後 ---
+test_ac_s010a_cursor_layer_transform_is_identity_at_4k FAILED 92ms
+
+--- 觀測 5:再停用 4K 後 ---
+test_ac_s010a_cursor_layer_transform_is_identity_at_ultrawide FAILED 94ms
+
+結論
+----
+AC-S010-a 的四條測試,在正式圖層被注入縮放時,逐條「觀測到」失敗。
+非推論、非「結構相同所以應該也會」。
+
+--- 還原驗證 ---
+grep -n "TEMPDISABLED|COORDINATOR TEMP|INJECTION" (測試檔 + 正式檔) → 無輸出
+grep -c "^func test_" tests/unit/cursor/cursor_layer_transform_test.gd → 11
+git diff --stat src/ui/cursor/cursor_state_host.gd → 1 file changed, 55 insertions(+)
+  (55 行全為 Story 010 應有的新增:欄位、常數、_ready() 建立)
+
+--- 還原後全套 ---
+Overall Summary: 356 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+Executed test suites: (27/27)
+Executed test cases : (356/356)
+Exit code: 100
+唯一失敗:test_phi_reflects_a_pairing_polarity_flip_made_after_construction
+  (既有已核准的 affinity_phi_provider 紅燈,與本張無關)
+
+--- 附帶發現:另一個假綠燈 ---
+嘗試 -a "檔案:測試名" 單條篩選:
+  Given directory or file does not exists: tests/unit/cursor/cursor_layer_transform_test.gd:test_ac_s010a_..._at_2k
+  No test cases found, abort test run!
+  Exit code: 0
+→ 篩選字串打錯 = 零測試執行 = 回報成功。已寫入 .claude/docs/coding-standards.md。
+
+本檔逐字內容為執行輸出之轉錄(已去除 ANSI 色碼、擷取關鍵行)。
+完整未擷取輸出未保留 —— 這是本檔的已知限制。

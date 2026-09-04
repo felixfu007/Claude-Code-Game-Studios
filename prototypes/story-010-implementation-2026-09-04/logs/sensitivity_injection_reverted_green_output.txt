@@ -1,0 +1,66 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: CursorState._init(): reclaim is null, so the mouse-reclaim submechanism is INERT for this instance — every reset() is skipped and reclaim_progress() returns 0.0. Cursor targeting, device-authority reads and the handoff entries all still work. Expected while Story 014 (concrete MouseReclaimPolicy) is unbuilt: CursorStateHost constructs this class with null today. If you are seeing this after Story 014 landed, the Autoload was never updated.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://src/ui/cursor/cursor_state.gd:285)
+       [1] _ready (res://src/ui/cursor/cursor_state_host.gd:129)
+[2J[H
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------
+
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+Installing GdUnit4 session system hooks.
+Session hook 'GdUnitHtmlTestReporter' installed.
+Session hook 'GdUnitXMLTestReporter' installed.
+Run Test Suite: res://tests/unit/cursor/cursor_layer_transform_test.gd
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_environment_sanity_root_transform_is_non_identity_when_resized STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_environment_sanity_root_transform_is_non_identity_when_resized PASSED 97ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_layer_parented_under_host_matches_layer_parented_directly_under_root STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_layer_parented_under_host_matches_layer_parented_directly_under_root PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_1080p STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_1080p PASSED 95ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_2k STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_2k PASSED 93ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_4k STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_4k PASSED 96ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_ultrawide STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_ultrawide PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_scaled_shared_layer_is_not_identity STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_scaled_shared_layer_is_not_identity PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_offset_only_layer_is_not_identity STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_offset_only_layer_is_not_identity PASSED 93ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_is_a_distinct_node_owned_solely_by_the_host STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_is_a_distinct_node_owned_solely_by_the_host PASSED 93ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_has_no_children_yet_narrowed STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_has_no_children_yet_narrowed PASSED 95ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_draw_order_is_independent_of_host_process_priority STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_draw_order_is_independent_of_host_process_priority PASSED 92ms
+
+Statistics: 11 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 493ms
+
+
+Overall Summary: 11 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |
+Executed test suites: (1/1)
+Executed test cases : (11/11)
+Total execution time: 2s 493ms
+ Open XML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_151/results.xml
+Open HTML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_151/index.html
+Exit code: 0
+Run dispose test resources

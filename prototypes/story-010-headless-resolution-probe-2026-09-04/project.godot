@@ -1,0 +1,13 @@
+; 拋棄式探針專案 —— 刻意複製主專案的畫面設定,否則量到的是「乾淨環境」而非真實條件。
+config_version=5
+
+[application]
+config/name="story010probe"
+
+[display]
+
+window/size/viewport_width=480
+window/size/viewport_height=270
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
