@@ -3,6 +3,36 @@
 # Event: SessionStart
 # Purpose: Detect missing documentation when code/prototypes exist
 # Cross-platform: Windows Git Bash compatible (uses grep -E, not -P)
+#
+# 🔴 2026-09-04 — THIS HOOK WAS SILENTLY DEAD, AND THE CAUSE APPLIES TO EVERY
+#    HOOK IN THIS DIRECTORY.
+#
+#    Measured: it took 20.5s against the 10s timeout declared for it in
+#    .claude/settings.json. It was therefore killed on every single session
+#    start and its output never reached anyone. Nothing reported this — a
+#    killed hook looks exactly like a hook with nothing to say.
+#
+#    The cause was NOT the work it does. Measured on this machine:
+#      - each `find` in this script:            ~0.28s
+#      - 30 trivial forked subshells:           11.3s  (~370ms per process)
+#    i.e. the cost is process creation, not computation. The old Check 2 loop
+#    ran `echo | sed` (two forks) once per prototype directory — 27 of them —
+#    which is ~20s by itself.
+#
+#    Fixed by replacing forked helpers with bash parameter expansion:
+#      $(echo "$x" | sed 's|\\|/|g')  ->  "${x//\\//}"
+#      $(basename "$x")               ->  "${x##*/}"
+#      $(echo "$x" | tr -d ' ')       ->  "${x// /}"
+#      echo "$x" | grep -q "y"        ->  [ "${x#*y}" = "$x" ]
+#    Result: 20.5s -> 6.47s, output byte-for-byte identical (diff verified).
+#    settings.json was NOT touched.
+#
+# ⚠️ BUDGET WARNING FOR WHOEVER EDITS THIS NEXT: at ~370ms per forked process,
+#    a 10s timeout buys roughly 27 external commands. This script now sits at
+#    6.47s — about 65% of its budget, i.e. ~10 spare forks. **Adding one
+#    innocuous `$(...)` inside a loop can kill this hook again, and it will
+#    fail the same silent way.** Prefer bash builtins over forks here, and
+#    re-time the hook after any change: `time bash .claude/hooks/detect-gaps.sh`
 
 # Exit on error for debugging (but don't fail the session)
 set +e
@@ -15,7 +45,7 @@ FRESH_PROJECT=true
 # Check if engine is configured
 if [ -f ".claude/docs/technical-preferences.md" ]; then
   ENGINE_LINE=$(grep -E "^\- \*\*Engine\*\*:" .claude/docs/technical-preferences.md 2>/dev/null)
-  if [ -n "$ENGINE_LINE" ] && ! echo "$ENGINE_LINE" | grep -q "TO BE CONFIGURED" 2>/dev/null; then
+  if [ -n "$ENGINE_LINE" ] && [ "${ENGINE_LINE#*TO BE CONFIGURED}" = "$ENGINE_LINE" ]; then
     FRESH_PROJECT=false
   fi
 fi
@@ -58,8 +88,8 @@ else
 fi
 
 # Normalize whitespace from wc output
-SRC_FILES=$(echo "$SRC_FILES" | tr -d ' ')
-DESIGN_FILES=$(echo "$DESIGN_FILES" | tr -d ' ')
+SRC_FILES="${SRC_FILES// /}"
+DESIGN_FILES="${DESIGN_FILES// /}"
 
 if [ "$SRC_FILES" -gt 50 ] && [ "$DESIGN_FILES" -lt 5 ]; then
   echo "⚠️  GAP: Substantial codebase ($SRC_FILES source files) but sparse design docs ($DESIGN_FILES files)"
@@ -74,12 +104,19 @@ if [ -d "prototypes" ]; then
 
   if [ -n "$PROTOTYPE_DIRS" ]; then
     while IFS= read -r proto_dir; do
-      # Normalize path separators for Windows
-      proto_dir=$(echo "$proto_dir" | sed 's|\\|/|g')
+      # Normalize path separators for Windows.
+      # 🔴 Parameter expansion, NOT `echo | sed` (2026-09-04). This loop runs
+      # once per prototype directory — 27 of them today — and on this machine
+      # every forked process costs ~370ms, measured: 30 trivial subshells took
+      # 11.3s. The old two-fork form cost ~20s here on its own and pushed the
+      # whole hook to 20.5s against its declared 10s timeout, so it was killed
+      # every single session and nobody ever saw its output. See this file's
+      # header note.
+      proto_dir="${proto_dir//\\//}"
 
       # Check for README.md or CONCEPT.md
       if [ ! -f "${proto_dir}/README.md" ] && [ ! -f "${proto_dir}/CONCEPT.md" ]; then
-        proto_name=$(basename "$proto_dir")
+        proto_name="${proto_dir##*/}"
         UNDOCUMENTED_PROTOS+=("$proto_name")
       fi
     done <<< "$PROTOTYPE_DIRS"
@@ -101,7 +138,7 @@ if [ -d "src/core" ] || [ -d "src/engine" ]; then
     echo "    Suggested action: Create docs/architecture/ and run /architecture-decision"
   else
     ADR_COUNT=$(find docs/architecture -type f -name "*.md" 2>/dev/null | wc -l)
-    ADR_COUNT=$(echo "$ADR_COUNT" | tr -d ' ')
+    ADR_COUNT="${ADR_COUNT// /}"
 
     if [ "$ADR_COUNT" -lt 3 ]; then
       echo "⚠️  GAP: Core systems exist but only $ADR_COUNT ADR(s) documented"
@@ -117,10 +154,10 @@ if [ -d "src/gameplay" ]; then
 
   if [ -n "$GAMEPLAY_SYSTEMS" ]; then
     while IFS= read -r system_dir; do
-      system_dir=$(echo "$system_dir" | sed 's|\\|/|g')
-      system_name=$(basename "$system_dir")
+      system_dir="${system_dir//\\//}"
+      system_name="${system_dir##*/}"
       file_count=$(find "$system_dir" -type f 2>/dev/null | wc -l)
-      file_count=$(echo "$file_count" | tr -d ' ')
+      file_count="${file_count// /}"
 
       # If system has 5+ files, check for corresponding design doc
       if [ "$file_count" -ge 5 ]; then
