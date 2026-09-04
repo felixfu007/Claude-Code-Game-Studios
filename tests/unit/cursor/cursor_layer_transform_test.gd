@@ -23,7 +23,7 @@
 ## numbers match the 2026-09-01 non-headless, real-GPU spike exactly
 ## (1080p 4x / 2K 5x+offset(80,45) / 4K 8x / ultrawide 5x+offset(520,45)).
 ## 🔴 [b]This file does not trust that finding by citation alone[/b] — see
-## [method test_environment_sanity_root_transform_is_non_identity_when_resized]
+## [method test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode]
 ## below, which re-proves it live, in THIS test runtime (GdUnit4's own
 ## process), not the bare [SceneTree] script the probe used.
 ##
@@ -40,6 +40,59 @@
 ## and [code].claude/rules/test-standards.md[/code] (see
 ## [code]display_pixel_settings_test.gd[/code]'s header), not something this
 ## story resolves.
+##
+## [b]🔴 2026-09-04 correction (Story 001, screen-scaling epic) — read this
+## before trusting anything this file's header says about "non-identity" as
+## a live fact.[/b] Everything above was written when
+## [code]window/stretch/mode = "canvas_items"[/code] engaged an automatic,
+## resolution-dependent engine transform on [code]get_tree().root[/code].
+## Story 001 changed that setting to [code]"disabled"[/code]: the engine now
+## performs [b]zero[/b] scaling of its own, at any resolution, and world-layer
+## scaling is handled entirely by this project's own
+## [code]WorldViewportContainer[/code]/[WorldLayout] — a mechanism that never
+## touches [code]get_tree().root[/code]'s own transform. The consequence:
+##
+## - The test formerly named
+##   [code]test_environment_sanity_root_transform_is_non_identity_when_resized[/code]
+##   has been RENAMED and REWRITTEN (not deleted — see its own doc comment) to
+##   [method test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode]
+##   below, asserting the opposite of what its old name described: root's
+##   transform is now IDENTITY at every resolution, always, by construction.
+## - [b]This removes the control-group role that test used to play for
+##   AC-S010-a.[/b] Its original point was: prove the surrounding environment
+##   is NOT trivially identity, so that "the cursor layer's transform IS
+##   identity" carries information (the layer specifically escaped a scaling
+##   mechanism that was demonstrably active). That control group is gone —
+##   under [code]"disabled"[/code], [b]any[/b] plain, untouched [CanvasLayer]
+##   parented under [code]/root[/code] reports identity trivially, cursor
+##   layer or not, with zero isolation effort required. Per this file's own
+##   pre-written rule ("If so, EVERY identity assertion in this file is
+##   vacuous and must be reported as UNCOVERED, not passing"), the four
+##   per-resolution AC-S010-a tests below (`test_ac_s010a_*`) are, as of
+##   today's settings, [b]no longer evidence that [CursorStateHost]'s
+##   isolation discipline is doing any work[/b] — a CanvasLayer that violated
+##   that discipline by accident (but was still untouched by anything else)
+##   would pass the exact same assertions.
+## - [b]They are NOT being deleted or downgraded[/b], for a reason already on
+##   record: ADR-0005 Validation Criteria #20 (see
+##   [code]docs/architecture/adr-0005-cursor-device-authority-input-architecture.md[/code],
+##   item 20) concluded this validation criterion remains necessary going
+##   forward — cite that reasoning, do not re-derive it — for two reasons: ①
+##   this screen setting can change again; ② Story 002 (adaptive font scale,
+##   [code]production/epics/screen-scaling/story-002-adaptive-font-scale.md[/code])
+##   is expected to introduce SOME per-resolution scaling for HUD text, and if
+##   that scaling is ever applied at a shared/UI [CanvasLayer] rather than a
+##   dedicated one, these exact assertions regain their discriminating power
+##   automatically, with zero test-code changes — [b]that is the entire
+##   reason to keep them running[/b], not their present-day pass/fail value.
+## - The two sensitivity canaries below
+##   ([method test_sensitivity_canary_scaled_shared_layer_is_not_identity],
+##   [method test_sensitivity_canary_offset_only_layer_is_not_identity])
+##   remain fully meaningful and unchanged: they build their OWN synthetic
+##   scaled/offset layer rather than relying on the real environment, so they
+##   independently prove the identity-comparison TECHNIQUE would still catch
+##   the real failure shape the day either of the two risks above
+##   materializes — they do not depend on today's settings at all.
 extends GdUnitTestSuite
 
 
@@ -98,38 +151,53 @@ func _assert_transform_identity(t: Transform2D, context: String) -> void:
 # ─── content scaling in THIS test runtime, not just the standalone probe ────
 
 
-func test_environment_sanity_root_transform_is_non_identity_when_resized() -> void:
-	# Arrange — if get_tree().root.size had no effect inside a GdUnit4 test
-	# runtime (as opposed to the bare SceneTree script the prototype probe
-	# used), every "identity" assertion below would be vacuously true: the
-	# environment would simply never have left IDENTITY in the first place.
+# 🔴 2026-09-04 (Story 001, screen-scaling epic) — this test,
+# test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode,
+# used to assert the OPPOSITE of what it asserts now, under its former name
+# (see the class doc comment's correction note above for that former name
+# and the full reasoning). Kept as a live "reality check"
+# rather than deleted: if window/stretch/mode is ever silently reverted away
+# from "disabled" (the exact class of regression the ORIGINAL version of this
+# test existed to catch, just pointed the other way), this test turns red and
+# says so explicitly, instead of the AC-S010-a tests below just quietly
+# starting to mean something different than their own comments claim.
+func test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode() -> void:
+	# Arrange
 	get_tree().root.size = _RESOLUTIONS["2K"]
 
 	# Act
 	var root_transform: Transform2D = get_tree().root.get_final_transform()
 
-	# Assert — non-identity, AND matching the probe's measured 5x/offset(80,45)
-	# for 2K exactly (prototypes/story-010-headless-resolution-probe-2026-09-04/
-	# logs/probe_output.txt), which itself matched the 2026-09-01 real-GPU spike.
+	# Assert — IDENTITY at every resolution is the expected, CORRECT behavior
+	# under window/stretch/mode = "disabled" (2026-09-01 spike,
+	# prototypes/ui-canvas-scale-spike-2026-09-01/README.md Scenario 2: "final_transform
+	# scale=(1.0, 1.0) offset=(0.0, 0.0)" at all four target resolutions once
+	# content_scale_mode is DISABLED). A non-identity result here would mean
+	# either project.godot's stretch mode reverted, or something is applying
+	# scaling to the root Window again outside WorldLayout's own mechanism —
+	# both worth knowing immediately.
 	assert_bool(root_transform.is_equal_approx(Transform2D.IDENTITY)).append_failure_message(
-		"root.get_final_transform() is IDENTITY after resizing to 2K inside "
-		+ "a GdUnit4 test — either get_tree().root.size has no effect in this "
-		+ "runtime, or content scaling is disabled. If so, EVERY identity "
-		+ "assertion in this file is vacuous and must be reported as "
-		+ "UNCOVERED, not passing."
-	).is_false()
-	assert_vector(root_transform.get_scale()).append_failure_message(
-		"root content-scale at 2K does not match this story's probe (5x) — "
-		+ "the GdUnit4 test runtime's content-scale behavior may differ from "
-		+ "what the standalone probe measured."
-	).is_equal_approx(Vector2(5.0, 5.0), Vector2(0.001, 0.001))
-	assert_vector(root_transform.origin).append_failure_message(
-		"root content-scale offset at 2K does not match this story's probe "
-		+ "((80, 45))."
-	).is_equal_approx(Vector2(80.0, 45.0), Vector2(0.001, 0.001))
+		(
+			"root.get_final_transform() is NOT identity at 2K — under "
+			+ "window/stretch/mode=\"disabled\" (the current setting) it must "
+			+ "always be identity, at every resolution. Either project.godot's "
+			+ "stretch mode was reverted away from \"disabled\", or something is "
+			+ "applying an engine-level content-scale transform again outside "
+			+ "WorldLayout's manual mechanism. Got x=%s y=%s origin=%s."
+		) % [root_transform.x, root_transform.y, root_transform.origin]
+	).is_true()
 
 
 # ─── Layer parented under the Autoload vs. directly under /root ─────────────
+#
+# ⚠️ 2026-09-04: under window/stretch/mode="disabled" both sides of this
+# comparison are IDENTITY (see class doc comment's correction note) — the
+# comparison is now between two identities rather than two non-trivial
+# transforms. Kept because the claim it checks (parenting under the Autoload
+# vs. directly under /root produces the SAME get_final_transform() behavior)
+# is still a real structural question independent of what that shared value
+# happens to be today, and a future scaling mechanism could reintroduce a
+# difference between the two paths.
 
 
 func test_layer_parented_under_host_matches_layer_parented_directly_under_root() -> void:
@@ -168,6 +236,17 @@ func test_layer_parented_under_host_matches_layer_parented_directly_under_root()
 
 
 # ─── AC-S010-a: transform identity across four resolutions ──────────────────
+#
+# 🔴 2026-09-04: as of today's window/stretch/mode="disabled" setting, the
+# four tests below no longer distinguish "CursorStateHost's isolation
+# discipline is working" from "nothing in this architecture scales /root
+# children at all" — both produce the same green result. See the class doc
+# comment's correction note for the full reasoning and why they are kept
+# running anyway (ADR-0005 Validation Criteria #20, forward-looking
+# protection for Story 002 / a future settings reversion) rather than deleted
+# or downgraded. Report this honestly as reduced present-day information
+# value, not as "fully covering AC-S010-a" — the sensitivity canaries further
+# below are what still proves the assertion TECHNIQUE works.
 
 
 func test_ac_s010a_cursor_layer_transform_is_identity_at_1080p() -> void:

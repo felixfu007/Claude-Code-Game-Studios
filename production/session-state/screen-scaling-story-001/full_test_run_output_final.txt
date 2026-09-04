@@ -1,0 +1,1377 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: CursorState._init(): reclaim is null, so the mouse-reclaim submechanism is INERT for this instance — every reset() is skipped and reclaim_progress() returns 0.0. Cursor targeting, device-authority reads and the handoff entries all still work. Expected while Story 014 (concrete MouseReclaimPolicy) is unbuilt: CursorStateHost constructs this class with null today. If you are seeing this after Story 014 landed, the Autoload was never updated.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://src/ui/cursor/cursor_state.gd:285)
+       [1] _ready (res://src/ui/cursor/cursor_state_host.gd:129)
+[2J[H
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------
+
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+Scanning for test suites in: tests/unit
+Installing GdUnit4 session system hooks.
+Session hook 'GdUnitHtmlTestReporter' installed.
+Session hook 'GdUnitXMLTestReporter' installed.
+Run Test Suite: res://tests/unit/ai/greedy_tactical_ai_test.gd
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_already_adjacent_attacks_without_moving STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_already_adjacent_attacks_without_moving PASSED 95ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_can_attack_false_never_returns_attack_target_even_when_adjacent STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_can_attack_false_never_returns_attack_target_even_when_adjacent PASSED 95ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_out_of_range_moves_closer_without_attacking STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_out_of_range_moves_closer_without_attacking PASSED 62ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_can_move_false_never_moves_even_when_moving_would_help STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_can_move_false_never_moves_even_when_moving_would_help PASSED 48ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_los_blocked_enemy_is_skipped_even_though_its_hp_is_lower STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_los_blocked_enemy_is_skipped_even_though_its_hp_is_lower PASSED 96ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_selects_lowest_hp_target_even_when_its_unit_id_is_higher STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_selects_lowest_hp_target_even_when_its_unit_id_is_higher PASSED 94ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_hp_tie_breaks_by_lowest_unit_id_and_is_deterministic STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_hp_tie_breaks_by_lowest_unit_id_and_is_deterministic PASSED 96ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_move_tile_tie_breaks_by_yx_order_and_is_deterministic STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_move_tile_tie_breaks_by_yx_order_and_is_deterministic PASSED 94ms
+
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_no_living_enemies_returns_null_move_and_no_attack STARTED
+  res://tests/unit/ai/greedy_tactical_ai_test.gd > test_no_living_enemies_returns_null_move_and_no_attack PASSED 93ms
+
+Statistics: 9 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 913ms
+
+
+Run Test Suite: res://tests/unit/core/display_pixel_settings_test.gd
+  res://tests/unit/core/display_pixel_settings_test.gd > test_viewport_resolution_is_480x270 STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_viewport_resolution_is_480x270 PASSED 97ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_stretch_mode_is_disabled_per_2026_09_01_screen_architecture_decision STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_stretch_mode_is_disabled_per_2026_09_01_screen_architecture_decision PASSED 93ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_stretch_aspect_and_scale_mode_keys_are_removed_and_fall_back_to_engine_defaults STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_stretch_aspect_and_scale_mode_keys_are_removed_and_fall_back_to_engine_defaults PASSED 95ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_default_texture_filter_is_nearest STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_default_texture_filter_is_nearest PASSED 94ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_fresh_subviewportcontainer_default_filter_is_inherit_not_nearest STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_fresh_subviewportcontainer_default_filter_is_inherit_not_nearest PASSED 94ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_game_root_scene_world_container_overrides_filter_to_nearest STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_game_root_scene_world_container_overrides_filter_to_nearest PASSED 98ms
+
+  res://tests/unit/core/display_pixel_settings_test.gd > test_game_root_scene_has_world_viewport_and_ui_layer STARTED
+  res://tests/unit/core/display_pixel_settings_test.gd > test_game_root_scene_has_world_viewport_and_ui_layer PASSED 97ms
+
+Statistics: 7 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 616ms
+
+
+Run Test Suite: res://tests/unit/cursor/cursor_layer_transform_test.gd
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode PASSED 95ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_layer_parented_under_host_matches_layer_parented_directly_under_root STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_layer_parented_under_host_matches_layer_parented_directly_under_root PASSED 95ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_1080p STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_1080p PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_2k STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_2k PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_4k STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_4k PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_ultrawide STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010a_cursor_layer_transform_is_identity_at_ultrawide PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_scaled_shared_layer_is_not_identity STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_scaled_shared_layer_is_not_identity PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_offset_only_layer_is_not_identity STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_sensitivity_canary_offset_only_layer_is_not_identity PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_is_a_distinct_node_owned_solely_by_the_host STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_is_a_distinct_node_owned_solely_by_the_host PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_has_no_children_yet_narrowed STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_has_no_children_yet_narrowed PASSED 94ms
+
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_draw_order_is_independent_of_host_process_priority STARTED
+  res://tests/unit/cursor/cursor_layer_transform_test.gd > test_ac_s010b_cursor_layer_draw_order_is_independent_of_host_process_priority PASSED 78ms
+
+Statistics: 11 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 483ms
+
+
+Run Test Suite: res://tests/unit/cursor/device_classification_test.gd
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_keyboard_event_returns_keyboard_gamepad STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_keyboard_event_returns_keyboard_gamepad PASSED 96ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_joypad_button_event_returns_keyboard_gamepad STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_joypad_button_event_returns_keyboard_gamepad PASSED 95ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_joypad_motion_event_returns_keyboard_gamepad STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_joypad_motion_event_returns_keyboard_gamepad PASSED 93ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_mouse_motion_event_returns_mouse STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_mouse_motion_event_returns_mouse PASSED 62ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_mouse_button_event_returns_mouse STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_mouse_button_event_returns_mouse PASSED 64ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_unrecognized_event_subclass_returns_uninitialized STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_unrecognized_event_subclass_returns_uninitialized PASSED 95ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_ignores_device_id_for_keyboard_gamepad_events STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_ignores_device_id_for_keyboard_gamepad_events PASSED 96ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_ignores_device_id_for_mouse_events STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_ignores_device_id_for_mouse_events PASSED 96ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_navigation_for_keyboard_and_gamepad_button_nav_actions STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_navigation_for_keyboard_and_gamepad_button_nav_actions PASSED 96ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_navigation_for_joypad_motion_nav_action STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_navigation_for_joypad_motion_nav_action PASSED 95ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_confirm_not_navigation_for_confirm_actions STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_confirm_not_navigation_for_confirm_actions PASSED 84ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_filters_out_echoed_key_events STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_filters_out_echoed_key_events PASSED 11ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_other_for_event_not_mapped_to_any_ui_action STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_other_for_event_not_mapped_to_any_ui_action PASSED 87ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_other_for_synthetic_mouse_event_not_bound_to_ui_action STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_returns_other_for_synthetic_mouse_event_not_bound_to_ui_action PASSED 94ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_is_stateless_across_many_repeated_calls STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_classify_action_is_stateless_across_many_repeated_calls PASSED 95ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_acknowledged_other_actions_contents_are_pinned STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_acknowledged_other_actions_contents_are_pinned PASSED 94ms
+
+  res://tests/unit/cursor/device_classification_test.gd > test_the_three_action_lists_are_mutually_disjoint STARTED
+  res://tests/unit/cursor/device_classification_test.gd > test_the_three_action_lists_are_mutually_disjoint PASSED 93ms
+
+Statistics: 17 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 3s 432ms
+
+
+Run Test Suite: res://tests/unit/cursor/shared_types_test.gd
+  res://tests/unit/cursor/shared_types_test.gd > test_surface_type_enum_has_exactly_the_four_adr_defined_members_in_order STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_surface_type_enum_has_exactly_the_four_adr_defined_members_in_order PASSED 95ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_same_surface_and_id_different_validity_returns_true STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_same_surface_and_id_different_validity_returns_true PASSED 95ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_different_surface_returns_false STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_different_surface_returns_false PASSED 94ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_different_id_returns_false STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_equals_different_id_returns_false PASSED 93ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_encode_decode_round_trip_returns_original_coordinate STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_encode_decode_round_trip_returns_original_coordinate PASSED 95ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_encode_distinct_cells_produce_distinct_ids STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_encode_distinct_cells_produce_distinct_ids PASSED 96ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_complete_subclass_implements_all_four_abstract_methods_and_signal STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_complete_subclass_implements_all_four_abstract_methods_and_signal PASSED 95ms
+
+  res://tests/unit/cursor/shared_types_test.gd > test_reset_triggered_signal_emits_with_the_trigger_passed_to_reset STARTED
+  res://tests/unit/cursor/shared_types_test.gd > test_reset_triggered_signal_emits_with_the_trigger_passed_to_reset PASSED 93ms
+
+Statistics: 8 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 792ms
+
+
+Run Test Suite: res://tests/unit/cursor/state_host_test.gd
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_cursor_state_declares_exactly_three_top_level_state_fields STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_cursor_state_declares_exactly_three_top_level_state_fields PASSED 78ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_known_collaborator_fields_are_excluded_from_the_state_field_count_by_design STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_known_collaborator_fields_are_excluded_from_the_state_field_count_by_design PASSED 93ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_known_mechanism_fields_are_excluded_from_the_state_field_count_by_design STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac1_known_mechanism_fields_are_excluded_from_the_state_field_count_by_design PASSED 93ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac2_partial_target_field_is_a_single_scalar_not_a_collection STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac2_partial_target_field_is_a_single_scalar_not_a_collection PASSED 96ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac15_partial_device_authority_defaults_to_uninitialized_on_construction STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac15_partial_device_authority_defaults_to_uninitialized_on_construction PASSED 94ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac15_partial_target_starts_invalid_pending_the_callers_write_interface STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac15_partial_target_starts_invalid_pending_the_callers_write_interface PASSED 91ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_ac16_partial_device_authority_field_is_mutable_away_from_uninitialized STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_ac16_partial_device_authority_field_is_mutable_away_from_uninitialized PASSED 94ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_mouse_position_provider_is_stored_as_a_valid_named_binding_not_a_lambda STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_mouse_position_provider_is_stored_as_a_valid_named_binding_not_a_lambda PASSED 92ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_construction_does_not_require_a_scene_tree STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_construction_does_not_require_a_scene_tree PASSED 93ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_is_registered_as_an_autoload_and_reachable_at_root STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_is_registered_as_an_autoload_and_reachable_at_root PASSED 93ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_sets_process_priority_to_negative_100 STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_sets_process_priority_to_negative_100 PASSED 96ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_builds_a_single_cursor_state_instance_on_ready STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_builds_a_single_cursor_state_instance_on_ready PASSED 95ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_state_reclaim_is_null_pending_story_014 STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_state_reclaim_is_null_pending_story_014 PASSED 93ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_state_registry_is_a_real_registry_instance STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_state_registry_is_a_real_registry_instance PASSED 90ms
+
+  res://tests/unit/cursor/state_host_test.gd > test_host_mouse_position_provider_is_bound_to_the_host_itself STARTED
+  res://tests/unit/cursor/state_host_test.gd > test_host_mouse_position_provider_is_bound_to_the_host_itself PASSED 92ms
+
+Statistics: 15 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 3s 299ms
+
+
+Run Test Suite: res://tests/unit/cursor/surface_registry_test.gd
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_new_tag_returns_registered STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_new_tag_returns_registered PASSED 94ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_null_node_returns_invalid_node STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_null_node_returns_invalid_node PASSED 91ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_null_node_does_not_occupy_the_tag STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_null_node_does_not_occupy_the_tag PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_get_surface_unregistered_tag_returns_null STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_get_surface_unregistered_tag_returns_null PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_never_registered_tag_returns_unregistered_not_found STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_never_registered_tag_returns_unregistered_not_found PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_twice_second_call_returns_unregistered_not_found STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_twice_second_call_returns_unregistered_not_found PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_after_unregister_same_tag_succeeds STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_after_unregister_same_tag_succeeds PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_registered_surfaces_sorted_orders_by_enum_value_not_insertion_order STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_registered_surfaces_sorted_orders_by_enum_value_not_insertion_order PASSED 90ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_registered_surfaces_sorted_empty_registry_returns_empty_array STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_registered_surfaces_sorted_empty_registry_returns_empty_array PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac47_duplicate_tag_registration_is_rejected_and_does_not_overwrite STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac47_duplicate_tag_registration_is_rejected_and_does_not_overwrite PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac4_two_distinct_surface_types_register_and_retrieve_independently STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac4_two_distinct_surface_types_register_and_retrieve_independently PASSED 91ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac4_unregistering_one_surface_does_not_affect_the_other STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac4_unregistering_one_surface_does_not_affect_the_other PASSED 80ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac5_new_surface_type_registers_through_the_same_generic_api_as_board_tile STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac5_new_surface_type_registers_through_the_same_generic_api_as_board_tile PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac5_new_surface_type_obeys_the_same_duplicate_rejection_contract STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac5_new_surface_type_obeys_the_same_duplicate_rejection_contract PASSED 95ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac51_after_unregister_get_surface_returns_null STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac51_after_unregister_get_surface_returns_null PASSED 90ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac51_after_unregister_tag_is_absent_from_sorted_iteration STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_ac51_after_unregister_tag_is_absent_from_sorted_iteration PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_new_node_returns_registered STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_new_node_returns_registered PASSED 91ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_same_node_twice_returns_already_excepted STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_same_node_twice_returns_already_excepted PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_null_node_returns_invalid_node STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_register_native_pointer_exception_null_node_returns_invalid_node PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_native_pointer_exception_not_registered_returns_not_registered STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_native_pointer_exception_not_registered_returns_not_registered PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_native_pointer_exception_registered_node_succeeds_and_clears_membership STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_unregister_native_pointer_exception_registered_node_succeeds_and_clears_membership PASSED 76ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_is_native_pointer_exception_unrelated_node_returns_false STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_is_native_pointer_exception_unrelated_node_returns_false PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_is_native_pointer_exception_checks_ancestor_chain_for_descendant_node STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_is_native_pointer_exception_checks_ancestor_chain_for_descendant_node PASSED 93ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_native_pointer_exception_auto_deregisters_on_tree_exited STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_native_pointer_exception_auto_deregisters_on_tree_exited PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_table_1_registration_does_not_make_node_a_native_pointer_exception STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_table_1_registration_does_not_make_node_a_native_pointer_exception PASSED 92ms
+
+  res://tests/unit/cursor/surface_registry_test.gd > test_table_2_registration_does_not_make_node_retrievable_from_table_1 STARTED
+  res://tests/unit/cursor/surface_registry_test.gd > test_table_2_registration_does_not_make_node_retrievable_from_table_1 PASSED 94ms
+
+Statistics: 26 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 5s 643ms
+
+
+Run Test Suite: res://tests/unit/cursor/write_read_interface_test.gd
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_get_current_target_returns_a_freshly_allocated_copy STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_get_current_target_returns_a_freshly_allocated_copy PASSED 92ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_mutating_the_returned_copy_leaves_internal_state_untouched STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_mutating_the_returned_copy_leaves_internal_state_untouched PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_reclaim_progress_is_a_pure_forward_to_the_injected_policy STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_reclaim_progress_is_a_pure_forward_to_the_injected_policy PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_reclaim_progress_returns_zero_without_aborting_when_no_policy_is_injected STARTED
+ERROR: CursorState._init(): reclaim is null, so the mouse-reclaim submechanism is INERT for this instance — every reset() is skipped and reclaim_progress() returns 0.0. Cursor targeting, device-authority reads and the handoff entries all still work. Expected while Story 014 (concrete MouseReclaimPolicy) is unbuilt: CursorStateHost constructs this class with null today. If you are seeing this after Story 014 landed, the Autoload was never updated.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://src/ui/cursor/cursor_state.gd:285)
+       [1] test_read_reclaim_progress_returns_zero_without_aborting_when_no_policy_is_injected (res://tests/unit/cursor/write_read_interface_test.gd:348)
+       [2] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [3] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [4] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [5] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [11] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [12] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [13] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [14] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [15] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [16] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [17] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [18] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://tests/unit/cursor/write_read_interface_test.gd > test_read_reclaim_progress_returns_zero_without_aborting_when_no_policy_is_injected PASSED 140ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_absent_policy_all_seven_write_entries_degrade_without_wedging_the_gate STARTED
+ERROR: CursorState._init(): reclaim is null, so the mouse-reclaim submechanism is INERT for this instance — every reset() is skipped and reclaim_progress() returns 0.0. Cursor targeting, device-authority reads and the handoff entries all still work. Expected while Story 014 (concrete MouseReclaimPolicy) is unbuilt: CursorStateHost constructs this class with null today. If you are seeing this after Story 014 landed, the Autoload was never updated.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://src/ui/cursor/cursor_state.gd:285)
+       [1] test_absent_policy_all_seven_write_entries_degrade_without_wedging_the_gate (res://tests/unit/cursor/write_read_interface_test.gd:394)
+       [2] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [3] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [4] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [5] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [11] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [12] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [13] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [14] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [15] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [16] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [17] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [18] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://tests/unit/cursor/write_read_interface_test.gd > test_absent_policy_all_seven_write_entries_degrade_without_wedging_the_gate PASSED 141ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac25_partial_set_target_writes_the_new_coordinates_and_flips_validity_back_to_true STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac25_partial_set_target_writes_the_new_coordinates_and_flips_validity_back_to_true PASSED 79ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac25_partial_no_stale_coordinate_or_invalid_flag_survives_a_later_query STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac25_partial_no_stale_coordinate_or_invalid_flag_survives_a_later_query PASSED 95ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac24_a_target_that_failed_in_the_game_world_is_never_auto_cleared_by_this_system STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac24_a_target_that_failed_in_the_game_world_is_never_auto_cleared_by_this_system PASSED 92ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac24_a_marked_target_keeps_its_original_coordinates_and_flag_across_repeated_queries STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac24_a_marked_target_keeps_its_original_coordinates_and_flag_across_repeated_queries PASSED 95ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_stale_expected_returns_stale_not_applied_and_changes_nothing STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_stale_expected_returns_stale_not_applied_and_changes_nothing PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_matching_expected_returns_applied_and_flips_the_validity_flag STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_matching_expected_returns_applied_and_flips_the_validity_flag PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_mark_pending_reresolve_with_no_valid_current_target_returns_no_current_target STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac37_mark_pending_reresolve_with_no_valid_current_target_returns_no_current_target PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac39_set_target_not_from_ui_action_leaves_device_authority_unchanged STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac39_set_target_not_from_ui_action_leaves_device_authority_unchanged PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac39_mark_pending_reresolve_leaves_device_authority_unchanged STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac39_mark_pending_reresolve_leaves_device_authority_unchanged PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_fires_on_a_validity_flip_to_false_with_identical_coordinates STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_fires_on_a_validity_flip_to_false_with_identical_coordinates PASSED 91ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_fires_on_a_validity_flip_back_to_true_with_identical_coordinates STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_fires_on_a_validity_flip_back_to_true_with_identical_coordinates PASSED 95ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_does_not_fire_when_an_identical_valid_target_is_rewritten STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_target_changed_does_not_fire_when_an_identical_valid_target_is_rewritten PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_set_target_rejects_an_unregistered_surface_with_surface_not_registered STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_set_target_rejects_an_unregistered_surface_with_surface_not_registered PASSED 91ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_rejects_an_unregistered_surface_with_the_same_result_as_set_target STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_rejects_an_unregistered_surface_with_the_same_result_as_set_target PASSED 92ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_marks_the_current_target_without_being_blocked_by_its_own_gate STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_marks_the_current_target_without_being_blocked_by_its_own_gate PASSED 91ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_reseeds_the_reclaim_accumulator_with_surface_handoff STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_reseeds_the_reclaim_accumulator_with_surface_handoff PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_reseeds_unconditionally_even_with_nothing_to_mark STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_before_unload_reseeds_unconditionally_even_with_nothing_to_mark PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_resets_unconditionally_even_when_the_target_did_not_change STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_resets_unconditionally_even_when_the_target_did_not_change PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_fires_exactly_one_reset_when_the_target_really_changed STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_handoff_after_mount_fires_exactly_one_reset_when_the_target_really_changed PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_set_target_is_rejected_with_rejected_reentrant STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_set_target_is_rejected_with_rejected_reentrant PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_mark_pending_reresolve_is_rejected_with_rejected_reentrant STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_mark_pending_reresolve_is_rejected_with_rejected_reentrant PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_handoff_before_unload_is_rejected_with_rejected_reentrant STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_handoff_before_unload_is_rejected_with_rejected_reentrant PASSED 90ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_handoff_after_mount_is_rejected_with_rejected_reentrant STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_handoff_after_mount_is_rejected_with_rejected_reentrant PASSED 92ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_arbitrate_device_authority_is_a_total_no_op_and_counts_the_rejection STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_arbitrate_device_authority_is_a_total_no_op_and_counts_the_rejection PASSED 95ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_apply_buffered_navigation_is_a_total_no_op_and_counts_the_rejection STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_apply_buffered_navigation_is_a_total_no_op_and_counts_the_rejection PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_reseed_request_is_deferred_not_discarded_and_drained_before_the_gate_clears STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_reentrant_reseed_request_is_deferred_not_discarded_and_drained_before_the_gate_clears PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_the_gate_is_released_after_every_normal_call_so_the_next_call_is_accepted STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_the_gate_is_released_after_every_normal_call_so_the_next_call_is_accepted PASSED 93ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac33_is_current_target_valid_returns_false_while_the_target_is_pending_reresolve STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac33_is_current_target_valid_returns_false_while_the_target_is_pending_reresolve PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac50_the_validity_flag_flips_back_to_true_once_the_owning_system_re_resolves STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac50_the_validity_flag_flips_back_to_true_once_the_owning_system_re_resolves PASSED 95ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac54_partial_the_two_rejection_causes_are_distinguishable_through_two_separate_queries STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac54_partial_the_two_rejection_causes_are_distinguishable_through_two_separate_queries PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac3_partial_cursor_state_exposes_exactly_the_seven_write_entries_and_four_read_queries STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac3_partial_cursor_state_exposes_exactly_the_seven_write_entries_and_four_read_queries PASSED 94ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac29_partial_marking_pending_reresolve_notifies_every_subscriber_exactly_once STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac29_partial_marking_pending_reresolve_notifies_every_subscriber_exactly_once PASSED 92ms
+
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac32_blocked_apply_buffered_navigation_is_still_a_story_005_seam_and_writes_no_target STARTED
+  res://tests/unit/cursor/write_read_interface_test.gd > test_ac32_blocked_apply_buffered_navigation_is_still_a_story_005_seam_and_writes_no_target PASSED 78ms
+
+Statistics: 38 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 8s 476ms
+
+
+Run Test Suite: res://tests/unit/gameplay/affinity/affinity_link_test.gd
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_every_field_correctly STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_every_field_correctly PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_negative_polarity STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_negative_polarity PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_amp_greater_than_one STARTED
+WARNING: AffinityLink.from_csv_line: amp 2 for pair 3-4 is outside the documented current value (amp == 1) -- likely a data-entry typo per design/gdd/affinity-position-chain.md Edge Cases, not a deliberate tuning value. The link is still used exactly as parsed; Formula 三's Phi clamp (AffinityRules.PHI_MIN/PHI_MAX) bounds the eventual total regardless.
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] from_csv_line (res://src/gameplay/affinity/affinity_link.gd:99)
+       [1] test_from_csv_line_parses_amp_greater_than_one (res://tests/unit/gameplay/affinity/affinity_link_test.gd:47)
+       [2] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [3] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [4] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [5] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [11] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [12] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [13] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [14] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [15] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [16] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [17] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [18] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_from_csv_line_parses_amp_greater_than_one PASSED 123ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_parses_three_links_in_file_order STARTED
+WARNING: AffinityLink.from_csv_line: amp 2 for pair 3-4 is outside the documented current value (amp == 1) -- likely a data-entry typo per design/gdd/affinity-position-chain.md Edge Cases, not a deliberate tuning value. The link is still used exactly as parsed; Formula 三's Phi clamp (AffinityRules.PHI_MIN/PHI_MAX) bounds the eventual total regardless.
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] from_csv_line (res://src/gameplay/affinity/affinity_link.gd:99)
+       [1] links_from_text (res://src/gameplay/affinity/affinity_link.gd:114)
+       [2] test_links_from_text_parses_three_links_in_file_order (res://tests/unit/gameplay/affinity/affinity_link_test.gd:60)
+       [3] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [4] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [5] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [6] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [7] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [8] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [9] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [11] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [15] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [17] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [18] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [19] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_parses_three_links_in_file_order PASSED 139ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_skips_comment_and_blank_lines STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_skips_comment_and_blank_lines PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_empty_text_returns_empty_array STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_empty_text_returns_empty_array PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_only_comments_returns_empty_array STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_only_comments_returns_empty_array PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_loads_vs01_file_returns_the_two_canon_links STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_loads_vs01_file_returns_the_two_canon_links PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_vs01_file_gives_unit_five_no_links STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_links_from_text_vs01_file_gives_unit_five_no_links PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_involves_true_for_both_endpoints_false_for_outsider STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_involves_true_for_both_endpoints_false_for_outsider PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_partner_of_returns_the_other_endpoint STARTED
+  res://tests/unit/gameplay/affinity/affinity_link_test.gd > test_partner_of_returns_the_other_endpoint PASSED 93ms
+
+Statistics: 11 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 495ms
+
+
+Run Test Suite: res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_returns_attackers_current_affinity_bonus STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_returns_attackers_current_affinity_bonus PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_returns_zero_for_unit_with_no_links_vs01_unit_five STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_returns_zero_for_unit_with_no_links_vs01_unit_five PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_omits_a_unit_that_has_died STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_omits_a_unit_that_has_died PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_reflects_a_move_made_after_construction STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_reflects_a_move_made_after_construction PASSED 91ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_with_relocates_only_the_named_unit STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_positions_with_relocates_only_the_named_unit PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_battle_controller_attack_damage_reflects_positive_link_phi_bonus_and_exceeds_no_provider_case STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_battle_controller_attack_damage_reflects_positive_link_phi_bonus_and_exceeds_no_provider_case PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_reflects_a_pairing_polarity_flip_made_after_construction STARTED
+  res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_reflects_a_pairing_polarity_flip_made_after_construction FAILED 94ms
+  Report:
+  Expecting:
+ -1
+ but was
+ 3	at 'test_phi_reflects_a_pairing_polarity_flip_made_after_construction' in res://tests/unit/gameplay/affinity/affinity_phi_provider_test.gd:224
+
+Statistics: 7 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 670ms
+
+
+Run Test Suite: res://tests/unit/gameplay/affinity/affinity_rules_test.gd
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_one_returns_plus_three STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_one_returns_plus_three PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_two_returns_zero STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_two_returns_zero PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_three_returns_minus_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_three_returns_minus_one PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_far_beyond_three_stays_minus_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_positive_distance_far_beyond_three_stays_minus_one PASSED 95ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_one_returns_minus_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_one_returns_minus_one PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_two_returns_zero STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_two_returns_zero PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_three_returns_plus_two STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_negative_distance_three_returns_plus_two PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_distance_zero_returns_zero_for_both_polarities STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_distance_zero_returns_zero_for_both_polarities PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_amp_multiplies_the_base_value STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_delta_amp_multiplies_the_base_value PASSED 90ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_pair_adjacent_grants_plus_three STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_pair_adjacent_grants_plus_three PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_pair_far_apart_costs_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_pair_far_apart_costs_one PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_negative_pair_adjacent_costs_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_negative_pair_adjacent_costs_one PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_negative_pair_far_apart_grants_plus_two STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_negative_pair_far_apart_grants_plus_two PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_and_negative_links_sum_together STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_positive_and_negative_links_sum_together PASSED 91ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_unit_with_no_links_is_zero STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_unit_with_no_links_is_zero PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_unit_absent_from_positions_is_zero STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_unit_absent_from_positions_is_zero PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_ignores_link_whose_partner_is_absent STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_ignores_link_whose_partner_is_absent PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_positive_links_at_different_distances_sums_both STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_positive_links_at_different_distances_sums_both PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_positive_links_plus_one_negative_adjacent_sums_to_one STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_positive_links_plus_one_negative_adjacent_sums_to_one PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_negative_links_at_different_distances_sums_both STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_two_negative_links_at_different_distances_sums_both PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_six_positive_adjacent_links_clamps_to_plus_twelve STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_six_positive_adjacent_links_clamps_to_plus_twelve PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_single_link_with_amp_ten_still_clamps_to_plus_twelve STARTED
+WARNING: AffinityLink.from_csv_line: amp 10 for pair 1-2 is outside the documented current value (amp == 1) -- likely a data-entry typo per design/gdd/affinity-position-chain.md Edge Cases, not a deliberate tuning value. The link is still used exactly as parsed; Formula 三's Phi clamp (AffinityRules.PHI_MIN/PHI_MAX) bounds the eventual total regardless.
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] from_csv_line (res://src/gameplay/affinity/affinity_link.gd:99)
+       [1] links_from_text (res://src/gameplay/affinity/affinity_link.gd:114)
+       [2] _links (res://tests/unit/gameplay/affinity/affinity_rules_test.gd:69)
+       [3] test_bonus_for_single_link_with_amp_ten_still_clamps_to_plus_twelve (res://tests/unit/gameplay/affinity/affinity_rules_test.gd:285)
+       [4] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [5] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [11] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [12] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [13] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [14] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [15] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [16] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [17] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [18] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [19] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [20] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_single_link_with_amp_ten_still_clamps_to_plus_twelve PASSED 141ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_four_positive_adjacent_plus_one_negative_far_clamps_to_plus_twelve STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_four_positive_adjacent_plus_one_negative_far_clamps_to_plus_twelve PASSED 96ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_five_positive_links_fourth_adjacent_fifth_in_dead_zone_is_plus_twelve STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_five_positive_links_fourth_adjacent_fifth_in_dead_zone_is_plus_twelve PASSED 91ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_five_negative_adjacent_links_clamps_to_minus_four STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_five_negative_adjacent_links_clamps_to_minus_four PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_line_status_is_identical_from_either_endpoint STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_line_status_is_identical_from_either_endpoint PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_partner_phi_drops_by_three_immediately_when_unit_removed_from_positions STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_partner_phi_drops_by_three_immediately_when_unit_removed_from_positions PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_at_same_inputs_twice_yields_equal_outputs_and_leaves_inputs_untouched STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_at_same_inputs_twice_yields_equal_outputs_and_leaves_inputs_untouched PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_lines_for_reports_endpoints_distance_and_state STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_lines_for_reports_endpoints_distance_and_state PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_lines_for_distance_two_reports_neutral_state STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_lines_for_distance_two_reports_neutral_state PASSED 93ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_board_lines_returns_one_entry_per_link_with_both_units_present STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_board_lines_returns_one_entry_per_link_with_both_units_present PASSED 92ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_at_previews_a_move_without_touching_positions STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_bonus_for_at_previews_a_move_without_touching_positions PASSED 94ms
+
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_manhattan_distance_agrees_with_combat_rules_across_boundary_distances STARTED
+  res://tests/unit/gameplay/affinity/affinity_rules_test.gd > test_manhattan_distance_agrees_with_combat_rules_across_boundary_distances PASSED 90ms
+
+Statistics: 33 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 7s 328ms
+
+
+Run Test Suite: res://tests/unit/gameplay/battle/battle_controller_test.gd
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_construction_with_vs01_data_lists_five_selectable_player_units STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_construction_with_vs01_data_lists_five_selectable_player_units PASSED 97ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_wrong_faction_and_state_unchanged STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_wrong_faction_and_state_unchanged PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_nonexistent_unit_and_state_unchanged STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_nonexistent_unit_and_state_unchanged PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_done_unit_and_state_unchanged STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_done_unit_and_state_unchanged PASSED 91ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_dead_unit_and_state_unchanged STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_rejects_dead_unit_and_state_unchanged PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_valid_unit_selects STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_valid_unit_selects PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_selects_own_faction_unit STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_selects_own_faction_unit PASSED 91ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_moves_selected_unit_into_move_target STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_moves_selected_unit_into_move_target PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attacks_enemy_in_range STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attacks_enemy_in_range PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_returns_none_when_nothing_relevant_clicked STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_returns_none_when_nothing_relevant_clicked PASSED 91ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_residual_click_deselects_active_selection STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_residual_click_deselects_active_selection PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_move_does_not_consume_attack_flag STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_move_does_not_consume_attack_flag PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_attack_does_not_consume_move_flag STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_attack_does_not_consume_move_flag PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_end_unit_turn_clears_selection_if_that_unit_was_selected STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_end_unit_turn_clears_selection_if_that_unit_was_selected PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_end_faction_phase_transitions_to_enemy_acting_and_clears_selection STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_end_faction_phase_transitions_to_enemy_acting_and_clears_selection PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_returns_to_player_phase_with_flags_reset STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_returns_to_player_phase_with_flags_reset PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_is_noop_outside_enemy_acting STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_is_noop_outside_enemy_acting PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_uses_phi_provider_when_valid STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_uses_phi_provider_when_valid PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_missing_phi_provider_defaults_to_zero STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_missing_phi_provider_defaults_to_zero PASSED 92ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_invalid_phi_provider_defaults_to_zero STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_click_tile_attack_invalid_phi_provider_defaults_to_zero PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_construction_with_already_resolved_state_finishes_immediately STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_construction_with_already_resolved_state_finishes_immediately PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_default_decide_falls_back_to_greedy_tactical_ai STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_default_decide_falls_back_to_greedy_tactical_ai PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_terminates_when_injected_decide_ignores_flags STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_run_enemy_phase_terminates_when_injected_decide_ignores_flags PASSED 91ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_emits_unit_selected_signal STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_select_unit_emits_unit_selected_signal PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_attack_that_ends_battle_emits_battle_ended_and_finishes_phase STARTED
+  res://tests/unit/gameplay/battle/battle_controller_test.gd > test_attack_that_ends_battle_emits_battle_ended_and_finishes_phase PASSED 93ms
+
+Statistics: 25 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 5s 542ms
+
+
+Run Test Suite: res://tests/unit/gameplay/battle/battle_controller_threat_test.gd
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_current_tile_already_in_range_without_moving STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_current_tile_already_in_range_without_moving PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_includes_cell_only_reachable_after_moving_and_absent_from_attack_targets STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_includes_cell_only_reachable_after_moving_and_absent_from_attack_targets PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_nothing_selected STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_nothing_selected PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_attack_flag_already_consumed STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_attack_flag_already_consumed PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_no_cell_on_board_falls_within_range_of_any_origin STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_empty_when_no_cell_on_board_falls_within_range_of_any_origin PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_excludes_cell_blocked_by_terrain_but_includes_unblocked_cell_at_same_distance STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_excludes_cell_blocked_by_terrain_but_includes_unblocked_cell_at_same_distance PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_sorted_ascending_by_y_then_x STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_sorted_ascending_by_y_then_x PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_excludes_selected_units_own_current_tile_even_from_a_move_origin STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_excludes_selected_units_own_current_tile_even_from_a_move_origin PASSED 92ms
+
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_per_move_target_matches_ground_truth_of_actually_moving_there STARTED
+  res://tests/unit/gameplay/battle/battle_controller_threat_test.gd > test_threat_targets_per_move_target_matches_ground_truth_of_actually_moving_there PASSED 100ms
+
+Statistics: 9 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 16ms
+
+
+Run Test Suite: res://tests/unit/gameplay/battle/battle_loop_test.gd
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_runs_to_victory_and_removes_dead_unit_from_turn_order STARTED
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_runs_to_victory_and_removes_dead_unit_from_turn_order PASSED 97ms
+
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_runs_to_defeat_when_player_dies STARTED
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_runs_to_defeat_when_player_dies PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_aborts_at_max_rounds_without_hanging STARTED
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_aborts_at_max_rounds_without_hanging PASSED 93ms
+
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_aborts_when_decide_ignores_can_move_flag STARTED
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_battle_aborts_when_decide_ignores_can_move_flag PASSED 94ms
+
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_run_reports_exact_round_count_elapsed STARTED
+  res://tests/unit/gameplay/battle/battle_loop_test.gd > test_run_reports_exact_round_count_elapsed PASSED 94ms
+
+Statistics: 5 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 149ms
+
+
+Run Test Suite: res://tests/unit/gameplay/battle/battle_state_test.gd
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_create_loads_vs01_data_and_places_units_at_start_pos STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_create_loads_vs01_data_and_places_units_at_start_pos PASSED 100ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_move_unit_beyond_reach_is_rejected_and_state_unchanged STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_move_unit_beyond_reach_is_rejected_and_state_unchanged PASSED 99ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_move_unit_within_reach_updates_position_and_occupancy STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_move_unit_within_reach_updates_position_and_occupancy PASSED 97ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_unit_death_clears_occupancy_and_tile_becomes_passable STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_unit_death_clears_occupancy_and_tile_becomes_passable PASSED 98ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_resolve_attack_enemy_attacker_forces_phi_zero_player_attacker_keeps_phi STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_resolve_attack_enemy_attacker_forces_phi_zero_player_attacker_keeps_phi PASSED 96ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_can_attack_blocked_by_central_fallen_log_despite_being_in_range STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_can_attack_blocked_by_central_fallen_log_despite_being_in_range PASSED 98ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_can_attack_ignores_a_living_unit_standing_between_attacker_and_target STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_can_attack_ignores_a_living_unit_standing_between_attacker_and_target PASSED 99ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_true_for_hypothetical_origin_attacker_never_stood_at STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_true_for_hypothetical_origin_attacker_never_stood_at PASSED 95ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_ignores_occupancy_of_both_endpoints STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_ignores_occupancy_of_both_endpoints PASSED 98ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_false_when_los_blocked_true_for_unblocked_cell_at_same_distance STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_is_attack_reachable_false_when_los_blocked_true_for_unblocked_cell_at_same_distance PASSED 98ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_fresh_battle_is_ongoing STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_fresh_battle_is_ongoing PASSED 98ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_all_enemies_dead_is_victory STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_all_enemies_dead_is_victory PASSED 99ms
+
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_any_player_dead_is_defeat_even_with_enemies_remaining STARTED
+  res://tests/unit/gameplay/battle/battle_state_test.gd > test_outcome_any_player_dead_is_defeat_even_with_enemies_remaining PASSED 98ms
+
+Statistics: 13 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 951ms
+
+
+Run Test Suite: res://tests/unit/gameplay/battle/turn_order_test.gd
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_construction_current_faction_is_player_and_round_is_1 STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_construction_current_faction_is_player_and_round_is_1 PASSED 97ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_advance_faction_player_to_enemy_keeps_round_number STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_advance_faction_player_to_enemy_keeps_round_number PASSED 96ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_advance_faction_full_round_increments_round_number STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_advance_faction_full_round_increments_round_number PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_attack_then_move_order_both_succeed STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_attack_then_move_order_both_succeed PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_using_both_flags_marks_unit_done_automatically STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_using_both_flags_marks_unit_done_automatically PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_deferring_one_flag_leaves_unit_not_done_within_same_phase STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_deferring_one_flag_leaves_unit_not_done_within_same_phase PASSED 95ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_non_current_faction_unit_use_move_and_use_attack_both_return_false STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_non_current_faction_unit_use_move_and_use_attack_both_return_false PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_failed_use_move_on_wrong_faction_unit_does_not_change_its_state STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_failed_use_move_on_wrong_faction_unit_does_not_change_its_state PASSED 91ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_end_unit_turn_finishes_unit_without_using_either_flag STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_end_unit_turn_finishes_unit_without_using_either_flag PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_end_unit_turn_on_wrong_faction_unit_returns_false STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_end_unit_turn_on_wrong_faction_unit_returns_false PASSED 92ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_that_used_only_one_flag_and_never_ended STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_that_used_only_one_flag_and_never_ended PASSED 93ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_auto_finished_by_using_both_flags STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_auto_finished_by_using_both_flags PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_explicitly_ended_with_flags_unused STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_restores_flags_for_unit_explicitly_ended_with_flags_unused PASSED 93ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_also_applies_to_unit_that_took_no_action_at_all STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_reset_also_applies_to_unit_that_took_no_action_at_all PASSED 92ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_lists_all_untouched_current_faction_units STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_lists_all_untouched_current_faction_units PASSED 91ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_excludes_finished_units STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_excludes_finished_units PASSED 79ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_only_reports_current_faction STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_units_with_flags_remaining_only_reports_current_faction PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_excludes_it_from_units_with_flags_remaining STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_excludes_it_from_units_with_flags_remaining PASSED 93ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_makes_is_done_report_true STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_makes_is_done_report_true PASSED 93ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_then_use_move_returns_false_without_error STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_then_use_move_returns_false_without_error PASSED 94ms
+
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_survives_faction_advance_without_reappearing STARTED
+  res://tests/unit/gameplay/battle/turn_order_test.gd > test_remove_unit_survives_faction_advance_without_reappearing PASSED 93ms
+
+Statistics: 21 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 4s 603ms
+
+
+Run Test Suite: res://tests/unit/gameplay/board/board_test.gd
+  res://tests/unit/gameplay/board/board_test.gd > test_from_ascii_parses_terrain_cost_and_sight_blocking STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_from_ascii_parses_terrain_cost_and_sight_blocking PASSED 94ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_from_ascii_loads_vs01_terrain_file_without_crashing STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_from_ascii_loads_vs01_terrain_file_without_crashing PASSED 96ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_is_in_bounds_accepts_grid_corners_rejects_outside STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_is_in_bounds_accepts_grid_corners_rejects_outside PASSED 92ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_occupant_set_clear_and_query_round_trip STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_occupant_set_clear_and_query_round_trip PASSED 93ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_open_terrain_interior_origin_mp2_returns_12_tiles STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_open_terrain_interior_origin_mp2_returns_12_tiles PASSED 93ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_brush_terrain_shrinks_reachable_set STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_brush_terrain_shrinks_reachable_set PASSED 95ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_occupied_tile_blocks_only_path STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_occupied_tile_blocks_only_path PASSED 94ms
+
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_out_of_bounds_origin_returns_empty_without_crashing STARTED
+  res://tests/unit/gameplay/board/board_test.gd > test_reachable_tiles_out_of_bounds_origin_returns_empty_without_crashing PASSED 93ms
+
+Statistics: 8 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 791ms
+
+
+Run Test Suite: res://tests/unit/gameplay/board/line_of_sight_test.gd
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_horizontal_ray_blocked_by_middle_cell STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_horizontal_ray_blocked_by_middle_cell PASSED 93ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_horizontal_ray_all_clear STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_horizontal_ray_all_clear PASSED 92ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_diagonal_corner_blocked_when_both_sides_occlude STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_diagonal_corner_blocked_when_both_sides_occlude PASSED 94ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_diagonal_corner_clear_when_only_one_side_occludes STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_diagonal_corner_clear_when_only_one_side_occludes PASSED 94ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_adjacent_cells_always_clear STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_adjacent_cells_always_clear PASSED 93ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_same_cell_is_clear STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_same_cell_is_clear PASSED 93ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_result_is_symmetric_for_forward_and_reverse_query STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_result_is_symmetric_for_forward_and_reverse_query PASSED 93ms
+
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_shallow_diagonal_checks_both_intermediate_cells_when_clear STARTED
+  res://tests/unit/gameplay/board/line_of_sight_test.gd > test_shallow_diagonal_checks_both_intermediate_cells_when_clear PASSED 93ms
+
+Statistics: 8 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 792ms
+
+
+Run Test Suite: res://tests/unit/gameplay/combat/combat_rules_test.gd
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_atk12_def8_phi3_returns_7 STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_atk12_def8_phi3_returns_7 PASSED 96ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_def_exceeds_atk_floors_at_zero STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_def_exceeds_atk_floors_at_zero PASSED 92ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_with_negative_phi_subtracts_further STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_with_negative_phi_subtracts_further PASSED 93ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_negative_phi_still_floors_at_zero STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_damage_negative_phi_still_floors_at_zero PASSED 91ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_enemy_stat_baseline12_advantage20pct_rounds_up STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_enemy_stat_baseline12_advantage20pct_rounds_up PASSED 95ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_enemy_stat_baseline10_advantage20pct_exact_value_not_bumped STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_enemy_stat_baseline10_advantage20pct_exact_value_not_bumped PASSED 91ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_at_min_boundary_is_true STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_at_min_boundary_is_true PASSED 93ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_at_max_boundary_is_true STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_at_max_boundary_is_true PASSED 94ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_beyond_max_is_false STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_beyond_max_is_false PASSED 76ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_below_min_is_false STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_below_min_is_false PASSED 94ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_distance_zero_is_always_false STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_in_range_distance_zero_is_always_false PASSED 92ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_melee_distance1_ignores_occlusion STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_melee_distance1_ignores_occlusion PASSED 95ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_distance2_occluded_is_false STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_distance2_occluded_is_false PASSED 93ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_distance2_clear_is_true STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_distance2_clear_is_true PASSED 94ms
+
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_out_of_range_is_false_regardless_of_occlusion STARTED
+  res://tests/unit/gameplay/combat/combat_rules_test.gd > test_is_attack_legal_out_of_range_is_false_regardless_of_occlusion PASSED 96ms
+
+Statistics: 15 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 3s 310ms
+
+
+Run Test Suite: res://tests/unit/gameplay/units/unit_test.gd
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_parses_jia_every_field_correctly STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_parses_jia_every_field_correctly PASSED 96ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_initializes_hp_equal_to_hp_max STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_initializes_hp_equal_to_hp_max PASSED 95ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_parses_enemy_faction STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_parses_enemy_faction PASSED 91ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_bing_start_pos_and_range STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_from_csv_line_bing_start_pos_and_range PASSED 94ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_parses_full_roster_returns_ten_units STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_parses_full_roster_returns_ten_units PASSED 93ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_skips_comment_and_blank_lines STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_skips_comment_and_blank_lines PASSED 93ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_loads_vs01_roster_file_without_crashing STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_loads_vs01_roster_file_without_crashing PASSED 95ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_enemy_hp_max_values_are_all_distinct STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_roster_from_text_enemy_hp_max_values_are_all_distinct PASSED 95ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_clamps_at_zero_never_negative STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_clamps_at_zero_never_negative PASSED 92ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_exact_amount_reaches_zero STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_exact_amount_reaches_zero PASSED 94ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_partial_amount_keeps_unit_alive STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_take_damage_partial_amount_keeps_unit_alive PASSED 95ms
+
+  res://tests/unit/gameplay/units/unit_test.gd > test_is_alive_true_immediately_after_construction STARTED
+  res://tests/unit/gameplay/units/unit_test.gd > test_is_alive_true_immediately_after_construction PASSED 92ms
+
+Statistics: 12 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 674ms
+
+
+Run Test Suite: res://tests/unit/harness/harness_selfcheck_test.gd
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_assertion_api_is_available STARTED
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_assertion_api_is_available PASSED 95ms
+
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_failing_assertion_is_actually_detected STARTED
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_failing_assertion_is_actually_detected PASSED 92ms
+
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_engine_version_matches_pinned_version STARTED
+  res://tests/unit/harness/harness_selfcheck_test.gd > test_engine_version_matches_pinned_version PASSED 95ms
+
+Statistics: 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 702ms
+
+
+Run Test Suite: res://tests/unit/ui/battle_screen_cursor_test.gd
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_within_bounds_applies_delta STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_within_bounds_applies_delta PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_left_past_west_edge_clamps_to_zero STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_left_past_west_edge_clamps_to_zero PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_right_past_east_edge_clamps_to_last_column STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_right_past_east_edge_clamps_to_last_column PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_up_past_north_edge_clamps_to_zero STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_up_past_north_edge_clamps_to_zero PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_down_past_south_edge_clamps_to_last_row STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_down_past_south_edge_clamps_to_last_row PASSED 95ms
+
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_from_corner_toward_center_applies_delta STARTED
+  res://tests/unit/ui/battle_screen_cursor_test.gd > test_move_from_corner_toward_center_applies_delta PASSED 95ms
+
+Statistics: 6 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 340ms
+
+
+Run Test Suite: res://tests/unit/ui/battle_screen_load_guard_test.gd
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_missing_path_returns_missing STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_missing_path_returns_missing PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_real_terrain_path_returns_none STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_real_terrain_path_returns_none PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_real_roster_path_returns_none STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_file_access_real_roster_path_returns_none PASSED 95ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_empty_string_returns_empty_content STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_empty_string_returns_empty_content PASSED 92ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_whitespace_only_returns_empty_content STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_whitespace_only_returns_empty_content PASSED 92ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_comments_only_with_zero_parsed_returns_parsed_empty STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_comments_only_with_zero_parsed_returns_parsed_empty PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_nonempty_with_positive_parsed_returns_none STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_classify_content_nonempty_with_positive_parsed_returns_none PASSED 92ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_missing_contains_reason_and_path STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_missing_contains_reason_and_path PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_empty_content_contains_matching_reason STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_empty_content_contains_matching_reason PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_parsed_empty_contains_matching_reason STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_parsed_empty_contains_matching_reason PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_unreadable_contains_matching_reason STARTED
+  res://tests/unit/ui/battle_screen_load_guard_test.gd > test_load_failure_message_unreadable_contains_matching_reason PASSED 92ms
+
+Statistics: 11 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 445ms
+
+
+Run Test Suite: res://tests/unit/ui/battle_screen_mouse_coords_test.gd
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_minimum_window_size_960x540_resolves_the_correct_cell STARTED
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_minimum_window_size_960x540_resolves_the_correct_cell PASSED 167ms
+
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_5x_2k_resolves_the_correct_cell STARTED
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_5x_2k_resolves_the_correct_cell PASSED 145ms
+
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_4k_resolves_the_correct_cell STARTED
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_at_4k_resolves_the_correct_cell PASSED 153ms
+
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_in_2k_margin_is_out_of_bounds STARTED
+  res://tests/unit/ui/battle_screen_mouse_coords_test.gd > test_window_pos_to_cell_in_2k_margin_is_out_of_bounds PASSED 143ms
+
+Statistics: 4 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 120ms
+
+
+Run Test Suite: res://tests/unit/ui/battle_screen_preview_test.gd
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_positive_state_maps_to_positive_tone STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_positive_state_maps_to_positive_tone PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_negative_state_maps_to_negative_tone STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_negative_state_maps_to_negative_tone PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_neutral_state_maps_to_muted_tone STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_neutral_state_maps_to_muted_tone PASSED 89ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_read_endpoints_from_given_positions STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_read_endpoints_from_given_positions PASSED 92ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_follow_a_hypothetical_position_table STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_follow_a_hypothetical_position_table PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_skip_status_with_missing_endpoint STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_line_dicts_skip_status_with_missing_endpoint PASSED 95ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_subtracts_damage STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_subtracts_damage PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_at_exactly_lethal_damage_is_zero STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_at_exactly_lethal_damage_is_zero PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_never_goes_below_zero STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_projected_hp_never_goes_below_zero PASSED 94ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_affinity_preview_shows_both_values_with_signs STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_affinity_preview_shows_both_values_with_signs PASSED 95ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_affinity_current_shows_signed_value STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_affinity_current_shows_signed_value PASSED 93ms
+
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_damage_preview_shows_damage_and_hp_transition STARTED
+  res://tests/unit/ui/battle_screen_preview_test.gd > test_damage_preview_shows_damage_and_hp_transition PASSED 91ms
+
+Statistics: 12 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 679ms
+
+
+Run Test Suite: res://tests/unit/ui/battle_screen_scene_test.gd
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_scene_instantiates_and_enters_tree_without_error STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_scene_instantiates_and_enters_tree_without_error PASSED 147ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_world_viewport_container_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_world_viewport_container_node_resolves_with_correct_type PASSED 145ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_board_view_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_board_view_node_resolves_with_correct_type PASSED 149ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_status_label_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_status_label_node_resolves_with_correct_type PASSED 143ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_result_label_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_result_label_node_resolves_with_correct_type PASSED 146ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_controls_hint_label_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_controls_hint_label_node_resolves_with_correct_type PASSED 149ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_load_error_label_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_load_error_label_node_resolves_with_correct_type PASSED 148ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_threat_highlight_layer_node_resolves_with_correct_type STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_threat_highlight_layer_node_resolves_with_correct_type PASSED 151ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_threat_and_attack_layers_draw_above_pieces_layer_but_move_layer_below STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_threat_and_attack_layers_draw_above_pieces_layer_but_move_layer_below PASSED 146ms
+
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_set_threat_highlights_renders_one_sprite_per_cell_and_clears_on_empty STARTED
+  res://tests/unit/ui/battle_screen_scene_test.gd > test_set_threat_highlights_renders_one_sprite_per_cell_and_clears_on_empty PASSED 155ms
+
+Statistics: 10 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 709ms
+
+
+Run Test Suite: res://tests/unit/ui/board_coords_test.gd
+  res://tests/unit/ui/board_coords_test.gd > test_grid_to_local_and_back_round_trips_for_corners_and_center STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_grid_to_local_and_back_round_trips_for_corners_and_center PASSED 79ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_grid_to_local_center_and_back_round_trips_for_corners_and_center STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_grid_to_local_center_and_back_round_trips_for_corners_and_center PASSED 94ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_is_in_bounds_accepts_grid_corners_rejects_outside STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_is_in_bounds_accepts_grid_corners_rejects_outside PASSED 92ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_local_pixel_outside_board_bounds_maps_to_out_of_bounds_cell STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_local_pixel_outside_board_bounds_maps_to_out_of_bounds_cell PASSED 93ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_and_back_round_trips_for_every_measured_window_size STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_and_back_round_trips_for_every_measured_window_size PASSED 95ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_letterbox_corner_is_out_of_bounds STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_letterbox_corner_is_out_of_bounds PASSED 92ms
+
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_960x540_center_of_window_maps_to_board_center_cell STARTED
+  res://tests/unit/ui/board_coords_test.gd > test_window_to_grid_960x540_center_of_window_maps_to_board_center_cell PASSED 93ms
+
+Statistics: 7 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 1s 564ms
+
+
+Run Test Suite: res://tests/unit/ui/device_authority_test.gd
+  res://tests/unit/ui/device_authority_test.gd > test_init_current_matches_constructor_argument STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_init_current_matches_constructor_argument PASSED 94ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_init_default_current_is_mouse STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_init_default_current_is_mouse PASSED 94ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_mouse_motion_only_grants_mouse STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_mouse_motion_only_grants_mouse PASSED 91ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_pad_input_only_grants_pad STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_pad_input_only_grants_pad PASSED 92ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_both_devices_same_frame_pad_wins STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_both_devices_same_frame_pad_wins PASSED 92ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_mouse_set_down_then_pad_picked_up_authority_transfers_to_pad STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_mouse_set_down_then_pad_picked_up_authority_transfers_to_pad PASSED 94ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_no_input_leaves_authority_unchanged_and_returns_false STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_no_input_leaves_authority_unchanged_and_returns_false PASSED 93ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_change_emits_authority_changed_exactly_once STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_change_emits_authority_changed_exactly_once PASSED 94ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_no_change_does_not_emit_authority_changed STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_no_change_does_not_emit_authority_changed PASSED 93ms
+
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_clears_flags_after_call STARTED
+  res://tests/unit/ui/device_authority_test.gd > test_resolve_frame_clears_flags_after_call PASSED 94ms
+
+Statistics: 10 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 211ms
+
+
+Run Test Suite: res://tests/unit/ui/world_layout_test.gd
+  res://tests/unit/ui/world_layout_test.gd > test_compute_scale_matches_decision_table_at_every_resolution STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_scale_matches_decision_table_at_every_resolution PASSED 94ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_world_size_matches_decision_table_at_every_resolution STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_world_size_matches_decision_table_at_every_resolution PASSED 94ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_left_and_right_margins_are_equal_at_every_resolution STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_left_and_right_margins_are_equal_at_every_resolution PASSED 93ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_top_and_bottom_margins_are_equal_at_every_resolution STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_top_and_bottom_margins_are_equal_at_every_resolution PASSED 93ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_margin_matches_decision_table_at_every_resolution STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_margin_matches_decision_table_at_every_resolution PASSED 93ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_zero_margin_resolutions_fill_the_window_exactly STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_rect_zero_margin_resolutions_fill_the_window_exactly PASSED 92ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_canvas_to_window_transform_maps_origin_to_rect_position STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_canvas_to_window_transform_maps_origin_to_rect_position PASSED 93ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_canvas_to_window_transform_scale_matches_compute_scale STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_canvas_to_window_transform_scale_matches_compute_scale PASSED 94ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_window_to_canvas_transform_is_inverse_of_canvas_to_window_transform STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_window_to_canvas_transform_is_inverse_of_canvas_to_window_transform PASSED 95ms
+
+  res://tests/unit/ui/world_layout_test.gd > test_compute_scale_floors_at_1_when_window_smaller_than_base_canvas STARTED
+  res://tests/unit/ui/world_layout_test.gd > test_compute_scale_floors_at_1_when_window_smaller_than_base_canvas PASSED 96ms
+
+Statistics: 10 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 2s 236ms
+
+
+Overall Summary: 371 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans |
+Executed test suites: (29/29)
+Executed test cases : (371/371)
+Total execution time: 1min 22s 981ms
+ Open XML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_162/results.xml
+Open HTML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_162/index.html
+Exit code: 100
+Run dispose test resources

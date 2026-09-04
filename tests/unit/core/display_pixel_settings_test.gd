@@ -29,19 +29,62 @@ func test_viewport_resolution_is_480x270() -> void:
 	assert_int(height).is_equal(270)
 
 
-func test_stretch_settings_match_pixel_art_decision() -> void:
+func test_stretch_mode_is_disabled_per_2026_09_01_screen_architecture_decision() -> void:
+	# 🔴 2026-09-04（Story 001，screen-scaling epic）更新：`design/art/screen-architecture.md`
+	# 2026-09-01 裁決把 `window/stretch/mode` 從 `"canvas_items"` 改為 `"disabled"` —— 世界層
+	# 縮放與定位改為手動管理（見 src/ui/battle/world_layout.gd + world_viewport_scaler.gd），
+	# 理由是 `canvas_items`+`keep`+`integer` 的縮放很少剛好填滿視窗，留白部分是引擎渲染目標
+	# 沒有涵蓋的範圍，物理上畫不進東西（2026-09-01 spike 實測，2K 視窗截圖曾量到 2400x1350
+	# 而非 2560x1440）。本測試取代原本斷言 `"canvas_items"` 的版本。
+
 	# Arrange
 	var mode: String = ProjectSettings.get_setting("display/window/stretch/mode")
-	var aspect: String = ProjectSettings.get_setting("display/window/stretch/aspect")
-	var scale_mode: String = ProjectSettings.get_setting("display/window/stretch/scale_mode")
 
 	# Act — 無（純讀取）
 
 	# Assert — mode 絕不可為 "viewport"（CanvasLayer 不繼承 Viewport，會讓
-	# 介面文字模糊，見 technical-preferences.md 反噬事實 1）
-	assert_str(mode).is_equal("canvas_items")
+	# 介面文字模糊，見 technical-preferences.md 反噬事實 1）——這條約束在
+	# "disabled" 下依然成立，一併保留斷言精神。
+	assert_str(mode).is_not_equal("viewport")
+	assert_str(mode).is_equal("disabled")
+
+
+func test_stretch_aspect_and_scale_mode_keys_are_removed_and_fall_back_to_engine_defaults() -> void:
+	# 🔴 2026-09-04（Story 001）：`window/stretch/aspect` 與 `window/stretch/scale_mode`
+	# 這兩個設定鍵在 `window/stretch/mode = "disabled"` 下不再產生任何作用（`disabled`
+	# 模式下引擎完全不做縮放，aspect/scale_mode 只在 canvas_items 等縮放模式下才有意義）。
+	# 本次變更決定把兩個鍵從 project.godot 整個移除，而不是留著舊值造成「設定還在但其實
+	# 沒作用」的誤導——本專案已有多次「文件寫著已取消但設定還留著」的教訓
+	# （見 .claude/docs/technical-preferences.md「流程劑量上限」節、`docs/consistency-failures.md`）。
+	#
+	# 移除鍵後 ProjectSettings.get_setting() 不會回傳空值，而是回退到該設定鍵自己的引擎內建
+	# 預設值——這是實機驗證過的行為，見
+	# prototypes/story-001-manual-scaling-verification-2026-09-04/run_output.txt：
+	# aspect 的引擎預設剛好也是 "keep"（與本專案原本手動設定的值一致，純屬巧合）；
+	# scale_mode 的引擎預設是 "fractional"，不是本專案原本手動設定的 "integer"。
+	# 兩者在 "disabled" 模式下都不影響任何畫面行為。
+
+	# Arrange
+	var aspect_has_setting: bool = ProjectSettings.has_setting("display/window/stretch/aspect")
+	var aspect: String = ProjectSettings.get_setting("display/window/stretch/aspect")
+	var scale_mode_has_setting: bool = ProjectSettings.has_setting("display/window/stretch/scale_mode")
+	var scale_mode: String = ProjectSettings.get_setting("display/window/stretch/scale_mode")
+
+	# Act — 無（純讀取）
+
+	# Assert — has_setting() 仍為 true（回退到引擎內建預設，不是「沒有這個設定」），
+	# 且值等於引擎的內建預設，證明 project.godot 真的沒有手動覆寫這兩個鍵。
+	assert_bool(aspect_has_setting).append_failure_message(
+		"display/window/stretch/aspect: has_setting() is false — this key does not exist "
+		+ "as a registered engine property at all, which contradicts the 2026-09-04 probe"
+	).is_true()
 	assert_str(aspect).is_equal("keep")
-	assert_str(scale_mode).is_equal("integer")
+
+	assert_bool(scale_mode_has_setting).append_failure_message(
+		"display/window/stretch/scale_mode: has_setting() is false — this key does not "
+		+ "exist as a registered engine property at all, which contradicts the 2026-09-04 probe"
+	).is_true()
+	assert_str(scale_mode).is_equal("fractional")
 
 
 func test_default_texture_filter_is_nearest() -> void:

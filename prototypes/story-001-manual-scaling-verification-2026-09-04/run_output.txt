@@ -1,0 +1,60 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+
+--- ProjectSettings removed-key probe ---
+aspect has_setting=true value=keep
+scale_mode has_setting=true value=fractional
+content_scale_mode (dynamic get on root Window) = 0
+
+=== 1080p window=(1920, 1080) ===
+  expected scale=4 rect=[P: (0, 0), S: (1920, 1080)]
+  actual   viewport.size=(480, 270) container.global_position=(0.0, 0.0) container.size=(1920.0, 1080.0) stretch_shrink=4
+  viewport.size matches BASE 480x270 exactly = true
+  captured image size=(1920, 1080) (window=(1920, 1080) match=true)
+  sample top-left marker at (2, 2) -> (1.0, 0.0, 0.0, 1.0) (expect ~red 1,0,0)
+  sample bottom-right marker at (1906, 1066) -> (0.0, 0.0, 1.0, 1.0) (expect ~blue 0,0,1)
+  sample background mid at (960, 540) -> (0.0, 1.0, 0.0, 1.0) (expect ~green 0,1,0)
+  (no margin at this resolution — zero-margin case, nothing to sample)
+  roundtrip canvas=(0.0, 0.0) -> window=(0.0, 0.0) -> canvas=(0.0, 0.0) (match=true)
+  roundtrip canvas=(479.0, 269.0) -> window=(1916.0, 1076.0) -> canvas=(479.0, 269.0) (match=true)
+  roundtrip canvas=(240.0, 135.0) -> window=(960.0, 540.0) -> canvas=(240.0, 135.0) (match=true)
+
+=== 2K window=(2560, 1440) ===
+  expected scale=5 rect=[P: (80, 45), S: (2400, 1350)]
+  actual   viewport.size=(480, 270) container.global_position=(80.0, 45.0) container.size=(2400.0, 1350.0) stretch_shrink=5
+  viewport.size matches BASE 480x270 exactly = true
+  captured image size=(2560, 1440) (window=(2560, 1440) match=true)
+  sample top-left marker at (82, 47) -> (1.0, 0.0, 0.0, 1.0) (expect ~red 1,0,0)
+  sample bottom-right marker at (2462, 1377) -> (0.0, 0.0, 1.0, 1.0) (expect ~blue 0,0,1)
+  sample background mid at (1280, 720) -> (0.0, 1.0, 0.0, 1.0) (expect ~green 0,1,0)
+  sample left margin at (75, 720) -> (0.298, 0.298, 0.298, 1.0) (expect NOT green/red/blue)
+  roundtrip canvas=(0.0, 0.0) -> window=(80.0, 45.0) -> canvas=(0.0, 0.0) (match=true)
+  roundtrip canvas=(479.0, 269.0) -> window=(2475.0, 1390.0) -> canvas=(479.0, 269.0) (match=true)
+  roundtrip canvas=(240.0, 135.0) -> window=(1280.0, 720.0) -> canvas=(240.0, 135.0) (match=true)
+
+=== 4K window=(3840, 2160) ===
+  expected scale=8 rect=[P: (0, 0), S: (3840, 2160)]
+  actual   viewport.size=(480, 270) container.global_position=(0.0, 0.0) container.size=(3840.0, 2160.0) stretch_shrink=8
+  viewport.size matches BASE 480x270 exactly = true
+  captured image size=(3840, 2160) (window=(3840, 2160) match=true)
+  sample top-left marker at (2, 2) -> (1.0, 0.0, 0.0, 1.0) (expect ~red 1,0,0)
+  sample bottom-right marker at (3810, 2130) -> (0.0, 0.0, 1.0, 1.0) (expect ~blue 0,0,1)
+  sample background mid at (1920, 1080) -> (0.0, 1.0, 0.0, 1.0) (expect ~green 0,1,0)
+  (no margin at this resolution — zero-margin case, nothing to sample)
+  roundtrip canvas=(0.0, 0.0) -> window=(0.0, 0.0) -> canvas=(0.0, 0.0) (match=true)
+  roundtrip canvas=(479.0, 269.0) -> window=(3832.0, 2152.0) -> canvas=(479.0, 269.0) (match=true)
+  roundtrip canvas=(240.0, 135.0) -> window=(1920.0, 1080.0) -> canvas=(240.0, 135.0) (match=true)
+
+=== ultrawide window=(3440, 1440) ===
+  expected scale=5 rect=[P: (520, 45), S: (2400, 1350)]
+  actual   viewport.size=(480, 270) container.global_position=(520.0, 45.0) container.size=(2400.0, 1350.0) stretch_shrink=5
+  viewport.size matches BASE 480x270 exactly = true
+  captured image size=(3440, 1440) (window=(3440, 1440) match=true)
+  sample top-left marker at (522, 47) -> (1.0, 0.0, 0.0, 1.0) (expect ~red 1,0,0)
+  sample bottom-right marker at (2902, 1377) -> (0.0, 0.0, 1.0, 1.0) (expect ~blue 0,0,1)
+  sample background mid at (1720, 720) -> (0.0, 1.0, 0.0, 1.0) (expect ~green 0,1,0)
+  sample left margin at (515, 720) -> (0.298, 0.298, 0.298, 1.0) (expect NOT green/red/blue)
+  roundtrip canvas=(0.0, 0.0) -> window=(520.0, 45.0) -> canvas=(0.0, 0.0) (match=true)
+  roundtrip canvas=(479.0, 269.0) -> window=(2915.0, 1390.0) -> canvas=(478.9999, 269.0) (match=true)
+  roundtrip canvas=(240.0, 135.0) -> window=(1720.0, 720.0) -> canvas=(240.0, 135.0) (match=true)

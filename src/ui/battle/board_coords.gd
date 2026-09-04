@@ -11,12 +11,35 @@
 ## This formalizes the findings of the throwaway spike
 ## [code]prototypes/board-render-input-spike-2026-08-27/[/code]: the world
 ## layer and UI layer resolve to a single affine transform plus one constant
-## offset, as long as [code]WorldViewportContainer[/code] stays anchored
-## full-rect at the base canvas origin. See that spike's README for the
-## 20/20 round-trip measurements this design is based on. The spike is
-## dead — this is the from-scratch production rewrite of its conclusions,
-## per [code].claude/rules/prototype-code.md[/code] ("the prototype code is
-## NOT migrated directly — it is rewritten to production standards").
+## offset. See that spike's README for the 20/20 round-trip measurements this
+## design is based on. The spike is dead — this is the from-scratch
+## production rewrite of its conclusions, per
+## [code].claude/rules/prototype-code.md[/code] ("the prototype code is NOT
+## migrated directly — it is rewritten to production standards").
+##
+## [b]2026-09-04 (Story 001, screen-scaling epic) — the transform's SOURCE
+## changed, this file's own math did not.[/b] The 2026-08-27 spike (and this
+## file's function docs, until this note) assumed [code]window/stretch/mode
+## = "canvas_items"[/code], where the engine itself computed the affine
+## transform via [code]Window.get_final_transform()[/code] and
+## [code]WorldViewportContainer[/code] stayed anchored full-rect at the base
+## canvas origin (so the "constant offset" term was always
+## [code]Vector2.ZERO[/code] in practice). Both premises are gone:
+## [code]window/stretch/mode[/code] is now [code]"disabled"[/code] (the
+## engine performs no scaling of its own — see
+## [code]project.godot[/code]), [code]WorldViewportContainer[/code] is now
+## manually centered rather than full-rect (see
+## [code]world_viewport_scaler.gd[/code]), and the sole source of the
+## transform is now [WorldLayout], not the engine. [b]This file's own pure
+## functions did not need to change at all[/b] — they were always
+## parameterized on a transform + an origin, never on how either was
+## produced, which is exactly what let the switch happen without touching
+## this file's logic. Only the function docs below, which named the specific
+## call [code]Window.get_final_transform()[/code], needed correcting to name
+## the new call, [code]WorldLayout.canvas_to_window_transform()[/code]/
+## [code]window_to_canvas_transform()[/code] instead — see those methods'
+## own doc comments for why call sites must go through [WorldLayout] and
+## never re-derive the scale/offset math themselves.
 class_name BoardCoords
 extends RefCounted
 
@@ -70,20 +93,33 @@ static func is_in_bounds(cell: Vector2i) -> bool:
 ## must check [method is_in_bounds] before trusting the result.
 ##
 ## [param window_to_canvas] MUST be
-## [code]Window.get_final_transform().affine_inverse()[/code], captured live
-## from the engine immediately before use — it maps window-physical pixels
-## to the 480x270 base-canvas space that [code]canvas_items[/code] stretch
-## mode normalizes everything to. [b]Never hand-roll the stretch/keep/
-## integer algorithm[/b] — always query the engine for this transform (see
-## [code].claude/docs/technical-preferences.md[/code], "換算務必向引擎查
-## Window.get_final_transform()，絕不可自己用視窗尺寸推算").
+## [code]WorldLayout.window_to_canvas_transform(window_size)[/code] —
+## [b]2026-09-04 correction, see class doc comment[/b]: this used to be
+## [code]Window.get_final_transform().affine_inverse()[/code] under the
+## retired [code]"canvas_items"[/code] stretch mode; under the current
+## [code]"disabled"[/code] mode the engine no longer computes any transform
+## of its own, so [WorldLayout] is the sole source of it now. [b]Never
+## hand-roll the scale/centering math[/b] — always call [WorldLayout] for
+## this transform, for the same reason the old discipline said never to
+## hand-roll [code]stretch[/code]/[code]keep[/code]/[code]integer[/code]: a
+## hand-rolled copy that drifts from [WorldLayout]'s copy will disagree
+## silently, not loudly, and only at boundary window sizes.
 ##
-## [param world_viewport_canvas_origin] MUST be
-## [code]WorldViewportContainer.global_position[/code] — where the world
-## [SubViewport]'s local [code](0,0)[/code] lands in that same base-canvas
-## space. It is a parameter rather than a hardcoded constant because it
-## depends on the container staying anchored full-rect at the canvas origin;
-## see the class doc comment above for what breaks if that stops being true.
+## [param world_viewport_canvas_origin] MUST be [code]Vector2.ZERO[/code]
+## when [param window_to_canvas] came from [WorldLayout] — [b]2026-09-04
+## correction[/b]: this used to be [code]WorldViewportContainer
+## .global_position[/code] (the offset between a separate, full-rect UI
+## base-canvas space and the world [SubViewport]'s local origin). That
+## intermediate UI-canvas space no longer exists as a distinct thing — the
+## UI layer's own basis is now 1:1 with real window pixels (`NATIVE`, per
+## `design/art/screen-architecture.md` §1), so
+## [method WorldLayout.canvas_to_window_transform]/[method
+## WorldLayout.window_to_canvas_transform] already fold the centering offset
+## directly into the returned transform. Leaving this parameter in the
+## signature (rather than dropping it) is deliberate: it is still a real
+## input this pure function needs in principle, and a caller feeding it a
+## transform from some other source (e.g. a future UI-layer conversion) is
+## free to pass a non-zero value.
 static func window_to_grid(
 	window_pos: Vector2,
 	window_to_canvas: Transform2D,
@@ -97,10 +133,14 @@ static func window_to_grid(
 ## Inverse of [method window_to_grid]: converts [param cell]'s center point
 ## to a raw OS window pixel position.
 ##
-## [param canvas_to_window] MUST be [code]Window.get_final_transform()[/code]
-## (not inverted), captured live from the engine. [param
+## [param canvas_to_window] MUST be
+## [code]WorldLayout.canvas_to_window_transform(window_size)[/code] (not
+## inverted) — [b]2026-09-04 correction, see class doc comment and
+## [method window_to_grid][/b]: this used to be
+## [code]Window.get_final_transform()[/code]. [param
 ## world_viewport_canvas_origin] is the same value described in
-## [method window_to_grid].
+## [method window_to_grid] (pass [code]Vector2.ZERO[/code] alongside a
+## [WorldLayout] transform).
 static func grid_to_window(
 	cell: Vector2i,
 	canvas_to_window: Transform2D,

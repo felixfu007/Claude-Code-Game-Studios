@@ -1,0 +1,27 @@
+
+--- 全部 display/window/size/* 設定鍵 ---
+  display/window/size/viewport_width = 480
+  display/window/size/viewport_height = 270
+  display/window/size/mode = 0
+  display/window/size/initial_position_type = 1
+  display/window/size/initial_position = (0, 0)
+  display/window/size/initial_screen = 0
+  display/window/size/resizable = true
+  display/window/size/borderless = false
+  display/window/size/always_on_top = false
+  display/window/size/transparent = false
+  display/window/size/extend_to_title = false
+  display/window/size/no_focus = false
+  display/window/size/sharp_corners = false
+  display/window/size/minimize_disabled = false
+  display/window/size/maximize_disabled = false
+  display/window/size/window_width_override = 0
+  display/window/size/window_height_override = 0
+
+--- 直接試探幾個可能的鍵名 ---
+  display/window/size/window_min_width has_setting=false
+  display/window/size/window_min_height has_setting=false
+  display/window/size/min_width has_setting=false
+  display/window/size/min_height has_setting=false
+  display/window/size/minimum_width has_setting=false
+  display/window/size/minimum_height has_setting=false

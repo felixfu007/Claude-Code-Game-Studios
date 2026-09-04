@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game_root.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world_viewport_scaler.gd" id="2"]
+
+[node name="GameRoot" type="Node"]
+script = ExtResource("1")
+
+[node name="WorldViewportContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+stretch = true
+script = ExtResource("2")
+
+[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer"]

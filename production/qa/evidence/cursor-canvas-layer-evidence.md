@@ -183,3 +183,29 @@ project's process-dosage rule caps revisions at two.
 - **The sensitivity proof cost one engine run per assertion proven.** If this
   file grows more AC-bearing tests, proving them sensitive is not free and is
   not covered by re-running the suite once. See the sensitivity section above.
+
+---
+
+## 🔴 後續變更通知(2026-09-04 同日稍晚,screen-scaling Story 001)
+
+**本文件上方的內容是 Story 010 結案當下的紀錄,未經竄改。以下是同日稍晚發生、會改變上方結論解讀方式的事。**
+
+`screen-scaling` Story 001 把 `project.godot` 的 `window/stretch/mode` 由 `"canvas_items"`
+切換為 `"disabled"`(2026-09-01 管理者裁決的執行)。連帶:
+
+1. **本文件引用的 `test_environment_sanity_root_transform_is_non_identity_when_resized`
+   已改名並改寫為** `test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode`。
+   它現在斷言相反的事:根視窗變換**恆等**,因為引擎不再做任何縮放。
+   **本文件上方保留舊名,因為那是當時的事實** —— 但查現行程式碼時要用新名。
+
+2. 🔴 **上方「AC-S010-a 完整涵蓋」這個判定仍然成立,但它證明的東西變弱了。**
+   當時的論證是「環境可證明為非恆等,所以圖層逃出它才有意義」。
+   `disabled` 下**任何一顆沒被動過的 `CanvasLayer` 都會回報恆等**,不需要任何隔離努力 ——
+   **那四條斷言目前不再構成「隔離紀律有在發揮作用」的證據。**
+
+   ✅ **四條測試保留而非刪除**,理由引用 ADR-0005 Validation Criteria #20 已寫下的推理
+   (①畫面設定還會再改 ②Story 002 的 HUD 縮放可能重新引入共用節點風險,屆時**不改一行**
+   就恢復鑑別力)。**兩條靈敏度測試不受影響** —— 它們自建合成的縮放/位移圖層,不依賴真實環境。
+
+📌 **本節刻意寫成「後續通知」而非就地修改上方文字** —— 上方是已結案工作的證據紀錄,
+改它等於竄改當時的事實。**要現行狀態請看 `production/epics/screen-scaling/story-001-manual-world-scaling.md` 的結案紀錄。**

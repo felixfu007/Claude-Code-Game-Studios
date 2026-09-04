@@ -23,24 +23,30 @@
 ## DeviceAuthority.resolve_frame] in [method _process] — never decided inline
 ## inside an event handler, per that class's own two-stage contract.
 ##
-## [b]Mouse coordinate handling — measured, not assumed (2026-08-27):[/b] a
-## real windowed probe confirmed that [InputEventMouseMotion] / [
-## InputEventMouseButton] positions arriving at [method _input] on a node
-## under the root [SceneTree] are [b]already[/b] in 480x270 base-canvas
-## space — Godot applies the [code]canvas_items[/code] stretch transform
-## before delivery. Injecting a synthetic event with
-## [code].position = Vector2(100, 50)[/code] into a 960x540 (scale=2) window
-## arrived at [method _input] as [code](50, 25)[/code]. This screen therefore
-## converts mouse positions with [method BoardCoords.local_to_grid] directly
-## ([code]event.position - world_viewport_canvas_origin[/code]) — [b]never[/b]
-## [method BoardCoords.window_to_grid] for events reaching [method _input],
-## since that would re-apply the same transform a second time. At 1x
-## (480x270 window) that bug is invisible; it only shows up once the window
-## is scaled. [method BoardCoords.window_to_grid] is still the correct call
-## for the opposite direction — computing a raw window-physical position to
-## feed into a synthetic [code]Input.parse_input_event()[/code] call (see the
-## evidence script), because whatever raw value is set there is what the
-## engine transforms before this screen ever sees it.
+## [b]Mouse coordinate handling — measured, not assumed (2026-08-27,
+## SUPERSEDED 2026-09-04, see below):[/b] a real windowed probe confirmed
+## that under the then-current [code]window/stretch/mode = "canvas_items"[/code],
+## [InputEventMouseMotion]/[InputEventMouseButton] positions arriving at
+## [method _input] were [b]already[/b] in 480x270 base-canvas space — Godot
+## applied the [code]canvas_items[/code] stretch transform before delivery.
+## This screen therefore used to convert mouse positions with
+## [method BoardCoords.local_to_grid] directly
+## ([code]event.position - world_viewport_canvas_origin[/code]), never
+## [method BoardCoords.window_to_grid], since the latter would have
+## re-applied the same transform a second time.
+##
+## [b]2026-09-04 (Story 001, screen-scaling epic) — this premise is now
+## false, and the code below was rewritten accordingly.[/b]
+## [code]window/stretch/mode[/code] is [code]"disabled"[/code]: the engine no
+## longer transforms [InputEvent] positions before delivery at all, so
+## [InputEventMouseMotion]/[InputEventMouseButton] positions arriving at
+## [method _input] are now raw OS window-physical pixels — exactly the case
+## [method BoardCoords.window_to_grid] exists for. Every mouse-position call
+## site in this file now goes through [method _window_pos_to_cell], the
+## single place this screen constructs the [WorldLayout] transform and calls
+## [method BoardCoords.window_to_grid] — per [WorldLayout]'s own doc comment,
+## no call site may re-derive the scale/offset math itself, so this file
+## does not either.
 class_name BattleScreen
 extends Node
 
@@ -179,7 +185,14 @@ const _DIRECTION_VECTORS: Dictionary = {
 	&"ui_right": Vector2i.RIGHT,
 }
 
-@onready var _world_viewport_container: SubViewportContainer = $WorldViewportContainer
+## 2026-09-04 (Story 001): [code]_world_viewport_container[/code] used to be
+## kept as a member here for [code].global_position[/code] in the mouse
+## coordinate math — removed because that math now goes entirely through
+## [method _window_pos_to_cell] / [WorldLayout], which need no node
+## reference at all (see class doc comment's correction note). Deliberately
+## not re-added: a live reference to this node that ISN'T used for anything
+## would be exactly the kind of stale, misleading state this project's own
+## registered failure patterns warn about.
 @onready var _board_view: BoardView = $WorldViewportContainer/WorldViewport/BoardView
 @onready var _status_label: Label = $UILayer/StatusLabel
 ## Right-aligned readout for the affinity/damage cursor preview — see
@@ -250,11 +263,18 @@ var _load_failed: bool = false
 ## has to guess a starting cell.
 var _cursor_cell: Vector2i = Vector2i.ZERO
 
-## Last mouse position seen in [method _input], in base-canvas (480x270)
-## space — see the class doc comment on why this is NOT raw window pixels.
-## Starts off-canvas so the cursor stays hidden under mouse authority until a
-## real mouse-motion event has actually arrived.
-var _last_mouse_canvas_pos: Vector2 = Vector2(-1000.0, -1000.0)
+## Last mouse position seen in [method _input], in raw OS window-physical
+## pixels — see the class doc comment (2026-09-04 correction) for why this is
+## no longer base-canvas space. Converted to a board cell on demand via
+## [method _window_pos_to_cell], never stored pre-converted, so there is
+## exactly one call site for the [WorldLayout] transform. Starts at a value
+## far outside any window's bounds so the cursor stays hidden under mouse
+## authority until a real mouse-motion event has actually arrived — this
+## stays true at every supported resolution because [method
+## _window_pos_to_cell] maps it to a deeply negative board-local coordinate
+## regardless of the current window's scale/offset (both bounded: scale >= 1,
+## centering offset is at most a few hundred pixels — see [WorldLayout]).
+var _last_mouse_window_pos: Vector2 = Vector2(-1000.0, -1000.0)
 
 ## Edge-detection state for [member _DIRECTION_VECTORS], keyed by action name.
 ## Needed because [method InputEvent.is_action_pressed] on a raw event does
@@ -370,7 +390,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion:
-		_last_mouse_canvas_pos = (event as InputEventMouseMotion).position
+		_last_mouse_window_pos = (event as InputEventMouseMotion).position
 		_device.note_mouse_motion()
 		return
 
@@ -637,21 +657,35 @@ func _fail_load(
 
 
 # Left-click handling: computes the clicked cell directly from the event's
-# own (already canvas-space, per the class doc comment) position rather than
-# waiting for the next _process() cursor refresh, so the click always resolves
-# against the exact tile the player saw the cursor on when they clicked.
+# own (raw window-pixel, per the class doc comment's 2026-09-04 correction)
+# position rather than waiting for the next _process() cursor refresh, so the
+# click always resolves against the exact tile the player saw the cursor on
+# when they clicked.
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
-	_last_mouse_canvas_pos = event.position
+	_last_mouse_window_pos = event.position
 	_device.note_mouse_motion()
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
-	var local_pos: Vector2 = event.position - _world_viewport_container.global_position
-	var cell: Vector2i = BoardCoords.local_to_grid(local_pos)
+	var cell: Vector2i = _window_pos_to_cell(event.position)
 	if not BoardCoords.is_in_bounds(cell):
 		return
 	_cursor_cell = cell
 	_board_view.set_cursor(cell)
 	_controller.click_tile(cell)
+
+
+# Sole call site in this file for converting a raw OS window-pixel mouse
+# position into a board cell (2026-09-04, Story 001 screen-scaling epic —
+# see the class doc comment's correction note). Both _handle_mouse_button()
+# and _update_cursor_visual() go through this one function rather than each
+# constructing the WorldLayout transform themselves, per WorldLayout's own
+# doc comment ("no call site may re-derive the scale/rect/transform math
+# itself"). world_viewport_canvas_origin is Vector2.ZERO because
+# WorldLayout's transform already folds the centering offset in — see
+# BoardCoords.window_to_grid's doc comment.
+func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
+	var window_to_canvas: Transform2D = WorldLayout.window_to_canvas_transform(get_window().size)
+	return BoardCoords.window_to_grid(window_pos, window_to_canvas, Vector2.ZERO)
 
 
 # Edge-triggered directional cursor movement — see _direction_was_pressed's
@@ -716,8 +750,7 @@ func _end_faction_phase_pressed() -> void:
 # pointing at.
 func _update_cursor_visual() -> void:
 	if _device.current() == DeviceAuthority.Device.MOUSE:
-		var local_pos: Vector2 = _last_mouse_canvas_pos - _world_viewport_container.global_position
-		var cell: Vector2i = BoardCoords.local_to_grid(local_pos)
+		var cell: Vector2i = _window_pos_to_cell(_last_mouse_window_pos)
 		if BoardCoords.is_in_bounds(cell):
 			_cursor_cell = cell
 			_cursor_active = true

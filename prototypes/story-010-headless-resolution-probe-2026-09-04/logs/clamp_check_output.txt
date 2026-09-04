@@ -1,0 +1,4 @@
+
+設定前 root.size = (480, 270)  min_size = (64, 64)
+設 min_size=(960,540) 之後,立刻讀 root.size = (960, 540)
+→ 專家宣稱成立嗎: true

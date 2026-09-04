@@ -1,11 +1,18 @@
 ; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
 
 config/name="盲目於微光"
-config/features=PackedStringArray("4.7")
 run/main_scene="res://src/ui/battle/BattleScreen.tscn"
+config/features=PackedStringArray("4.7")
 
 [autoload]
 
@@ -15,9 +22,6 @@ CursorStateHost="*res://src/ui/cursor/cursor_state_host.gd"
 
 window/size/viewport_width=480
 window/size/viewport_height=270
-window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-window/stretch/scale_mode="integer"
 window/size/window_width_override=960
 window/size/window_height_override=540
 

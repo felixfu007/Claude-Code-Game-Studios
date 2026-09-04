@@ -1,7 +1,7 @@
 # Story 001:切換縮放模式 + 世界層手動縮放定位
 
 > **Epic**:畫面縮放與定位(手動管理)
-> **Status**:Ready
+> **Status**:Complete(2026-09-04,實作 `godot-specialist` / 覆核協調者)
 > **Layer**:Presentation
 > **Type**:Integration
 > **Estimate**:M(約 4–6 小時)
@@ -19,7 +19,7 @@
 
 ---
 
-## 現況(2026-09-04 實測,非轉述)
+## ~~現況~~(✅ 已於 2026-09-04 完成切換 —— 以下為**開工前**的狀態,保留供追溯)
 
 `project.godot` 第 18–20 行:
 
@@ -63,7 +63,7 @@ window/stretch/scale_mode="integer"
 | 3440×1440 | 5× | 2400×1350 | 左右各 520 | **spike 實測** |
 
 **視窗尺寸會變(玩家縮放視窗、切換全螢幕),所以這是要持續維持的關係,不是啟動時算一次。**
-🔴 **邊界值未定義處請停下來問,不要自己選一個** —— 特別是:視窗小於 480×270 時要怎麼辦
+✅ ~~邊界值未定義處請停下來問~~ —— **該邊界已於 2026-09-04 裁決**(最小視窗 960×540),詳見下方「開工前已裁決的邊界」。原文:視窗小於 480×270 時要怎麼辦
 (倍率會變成 0)。**這一項本工作單刻意不預先裁定。**
 
 ### 2. 已實測的三個引擎陷阱(出自 `technical-preferences.md`,不要重新踩)
@@ -96,9 +96,10 @@ window/stretch/scale_mode="integer"
 
 ---
 
-## 🔴 已知會被本張弄紅的既有測試
+## ✅ 已知會被本張弄紅的既有測試 —— **已處理完畢,見文末結案紀錄**
 
 `tests/unit/cursor/cursor_layer_transform_test.gd::test_environment_sanity_root_transform_is_non_identity_when_resized`
+(🔴 **該函式已於本張改名為** `test_environment_reality_check_root_transform_is_identity_under_disabled_stretch_mode`)
 
 它斷言 2K 下根視窗變換為**非**恆等、倍率 `5×`、偏移 `(80, 45)` —— **三項皆是
 `canvas_items` 的性質**,切成 `disabled` 後全部不成立。
@@ -190,7 +191,7 @@ UNCOVERED, not passing」)——**它是刻意寫成這樣的,請照它說的辦
   🔴 **這一條是本次切換的核心理由**:舊模式下那圈留白是**引擎渲染目標沒有涵蓋的範圍**,
   物理上不存在,任何 transform 都畫不進去(2026-09-01 實測)。切換後那圈範圍必須變成可繪製。
 
-⚠️ **邊界值未定義處請停下來問,不要自己選一個。** 已知未定義:視窗小於 480×270 時的行為。
+✅ **原寫「已知未定義:視窗小於 480×270 時的行為」——該項已於 2026-09-04 由管理者裁決**(最小視窗 960×540,使該情況結構上不可能發生)。
 
 ---
 
@@ -198,7 +199,7 @@ UNCOVERED, not passing」)——**它是刻意寫成這樣的,請照它說的辦
 
 **Story Type**:Integration
 **必要證據**:整合測試 **或** 有紀錄的實機檢視 — `production/qa/evidence/screen-scaling-evidence.md`
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立 —— `production/qa/evidence/screen-scaling-evidence.md` + 擷圖 `screen-scaling-2k-window-capture-2026-09-04.png`(2560×1440,協調者已親眼確認內容)
 
 🔴 **AC-S001-c 需要真的開視窗擷取畫面**(headless 沒有渲染目標可擷取)。
 **擷取工具的四項機械檢查與「人要打開圖確認」那條規則,見 `.claude/docs/coding-standards.md`
@@ -211,3 +212,80 @@ UNCOVERED, not passing」)——**它是刻意寫成這樣的,請照它說的辦
 
 - **Depends on**:無
 - **Unlocks**:所有介面版面工作(在此之前「棋盤旁邊有沒有空位」這個問題沒有確定答案)
+
+---
+
+## 結案紀錄(2026-09-04)
+
+**實作**:`godot-specialist`(六次中斷,全部零重工接回)。**覆核**:協調者,獨立執行全部驗證。
+
+### 逐條驗收
+
+| AC | 判定 | 依據 |
+|---|---|---|
+| **AC-S001-a** 倍率正確 | ✅ **完整涵蓋** | `tests/unit/ui/world_layout_test.gd` 對四種解析度斷言 4/5/8/5 |
+| **AC-S001-b** 永遠置中 | ✅ **完整涵蓋** | 同檔,含兩個邊區為零的情況 |
+| **AC-S001-c** 不再有引擎畫不進去的黑邊 | ✅ **完整涵蓋** | 載入**真實** `BattleScreen.tscn`(非複本)、2K 視窗擷圖,PNG 檔頭實測 **2560×1440**(舊模式為 2400×1350)。**人眼確認兩次**:實作者與協調者各自打開圖確認是真實遊戲畫面 |
+
+### 測試(協調者獨立執行,非轉述)
+
+**371 條 / 0 errors / 1 failures / 0 flaky / 0 skipped / 0 orphans / 29 suites / exit 100。**
+356 → 371(**+15**),零退步。唯一失敗為既有已核准的 `affinity_phi_provider` 紅燈。
+`cursor_layer_transform_test.gd` 單獨執行:**11/11 執行、11/11 通過**。
+
+### 交付內容
+
+- **新增**:`src/ui/battle/world_layout.gd`(純函式,倍率與置中計算的**唯一出處**)、
+  `src/ui/battle/world_viewport_scaler.gd`(場景腳本,`_ready()` + 視窗尺寸變動監聽)
+- **修改**:`project.godot`(`stretch/mode="disabled"`,`aspect`/`scale_mode` 兩失效鍵移除)、
+  `BattleScreen.tscn`、`battle_screen.gd`(滑鼠座標換算)、`board_coords.gd`、`src/ui/CLAUDE.md`
+- **測試**:新增 `world_layout_test.gd`、`battle_screen_mouse_coords_test.gd`;
+  修改 `display_pixel_settings_test.gd`、`cursor_layer_transform_test.gd`
+
+### 🔴 三件必須傳下去的事
+
+**(1) Story 010 的 AC-S010-a 失去了對照組,已如實記錄、未粉飾。**
+那四條測試原本的論證是「環境可證明為非恆等,所以圖層逃出它才有意義」。
+切成 `disabled` 後根視窗恆等,**任何一顆沒被動過的 `CanvasLayer` 都會回報恆等,不需要任何隔離努力**。
+✅ **保留而不刪除**,理由引用 ADR-0005 VR #20 已寫下的推理(①設定還會再改
+②Story 002 的 HUD 縮放可能重新引入共用節點風險,屆時這四條**不改一行**就恢復鑑別力)。
+**兩條靈敏度測試不受影響** —— 它們自建合成的縮放/位移圖層,不依賴真實環境。
+
+**(2) 實作者抓到一條測試在驗一個「出貨後不可能發生的狀態」。**
+最小視窗設 960×540 後,1 倍縮放結構上永遠到不了,而 `battle_screen_mouse_coords_test.gd`
+還在驗 1 倍。**根因是引擎行為:把 `min_size` 設成大於當下視窗尺寸時,視窗會被立刻撐大**
+(協調者獨立複驗:480×270 設 `min_size=(960,540)` 後讀回 `(960,540)`)。已改為驗真實最小值。
+📌 該次同時活生生撞到「一條失敗會讓同 suite 其餘不執行」—— 同檔另外 3 條在修好前都沒跑。
+
+**(3) `min_size` 的範圍落差是已知的,不是疏漏。**
+`world_viewport_scaler.gd`(場景層)設定 `Window.min_size`(行程層)。
+今天 `BattleScreen.tscn` 就是主場景,實務上無落差。
+🔴 **但將來若加入標題畫面/選單先於戰鬥載入,最小尺寸在那些畫面會失效** ——
+屆時需要一個行程層級的宿主。**明文禁止塞進 `CursorStateHost`**(違反 `logic_in_cursor_autoload_shell`)。
+**已登記為新的待決項,見 `production/session-state/active.md` 2026-09-04 批次。**
+
+### 🔴 本張造成、但刻意不在本張修的:介面圖層退化
+
+擷圖直接證實。受影響 **6 個節點**(逐一掃過 `BattleScreen.tscn` 的 `UILayer`,非估計):
+
+| 節點 | 現行 offset(480×270 座標,現被當成原始視窗像素) | 原意圖 |
+|---|---|---|
+| `StatusLabel` | 8 / 8 / 180 / 32 | 左上角回合狀態 |
+| `InfoLabel` | 184 / 8 / 472 / 32 | 緊接其右,同一列 |
+| `ControlsHintBg` | 0 / 231 / 480 / 270 | **螢幕底部滿版操作提示橫條** |
+| `ControlsHintLabel` | 相對父節點滿版 | 填滿上述橫條 |
+| `LoadErrorLabel` | 8 / 8 / 472 / 262 | 近全螢幕錯誤訊息 |
+| `ResultLabel` | 錨點 0.5 中心,±80 / ±20 | 正中央勝敗橫幅 |
+
+**兩種不同的失效形狀**:前 5 個用絕對座標,全部縮到左上角(`ControlsHintBg` 的擷圖位置與
+`offset_top=231` 逐項吻合,是確認不是推測);**`ResultLabel` 位置其實正確**(用分數錨點,
+相對真實視窗計算),失效形狀是**尺寸 160×40 原始像素在大螢幕上小到不成比例**。
+
+🔴 **這是 2026-09-01 管理者裁決(介面基準畫布 = 螢幕實際解析度)的可預見後果,不是本張的缺陷。**
+那個裁決生效當下,所有既有介面座標就已失效;本張只是讓它從「理論上失效」變成「畫面上看得到」。
+
+⚠️ **現有 `battle_screen_scene_test.gd` 只斷言節點路徑與型別、不斷言座標** ——
+**亦即這個退化目前沒有任何自動化測試抓得到。** Story 002 起手時應一併考慮。
+
+✅ **管理者 2026-09-04 裁決:併入 Story 002,並把該張範圍由「只訂規則」擴為
+「訂規則 + 套用到現有 6 個元件」** —— 理由是不讓建置畫面在兩張之間一直是錯的。
