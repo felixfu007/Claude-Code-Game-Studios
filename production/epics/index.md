@@ -1,12 +1,23 @@
 # Epics 索引
 
-**最後更新**:2026-09-02
+**最後更新**:2026-09-04
 **引擎**:Godot 4.7.1
 **控制清單版本**:2026-09-02
 
-| Epic | 層 | 系統 | GDD | Stories | 狀態 |
+| Epic | 層 | 系統 | 權威文件 | Stories | 狀態 |
 |---|---|---|---|---|---|
-| [cursor-highlight-state](cursor-highlight-state/EPIC.md) | Core | 單一游標/高亮狀態系統 | `design/gdd/cursor-highlight-state.md` | **14 張** | Ready |
+| [cursor-highlight-state](cursor-highlight-state/EPIC.md) | Core | 單一游標/高亮狀態系統 | `design/gdd/cursor-highlight-state.md` | **14 張**(完成 6) | 進行中 |
+| [screen-scaling](screen-scaling/EPIC.md) | Presentation | 畫面縮放與定位(手動管理) | `design/art/screen-architecture.md`(**非 GDD**) | **2 張** | Ready |
+
+⚠️ **第三欄原名「GDD」,2026-09-04 改為「權威文件」** —— `screen-scaling` 是呈現層基礎設施,
+不是遊戲系統,沒有 GDD 也不會有。硬塞一個 GDD 欄位會讓下一個人去找一份不存在的文件。
+
+🔴 **`screen-scaling` 建立於 2026-09-04,起因值得記住**:它的內容是 **2026-09-01 的管理者裁決**,
+被記載在 8 個檔案裡,**但沒有任何工作單擁有它,因此三天內沒有進入任何排程**。
+發現方式是盤點下一步時察覺 `project.godot` 的實際值與 `.claude/docs/technical-preferences.md`
+(**每次對話開場載入**)寫的值不一致。
+📌 **通則:裁決被記錄 ≠ 裁決被排程。** 凡裁決帶有執行動作,當天就要有一張工作單擁有它,
+否則它只會活在紀錄裡。
 
 ---
 
