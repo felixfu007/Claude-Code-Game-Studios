@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/ui/battle/battle_screen.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://src/ui/battle/BoardView.tscn" id="2_board_view"]
 [ext_resource type="Script" path="res://src/ui/battle/world_viewport_scaler.gd" id="3_world_scaler"]
+[ext_resource type="Script" path="res://src/ui/battle/hud_layout_scaler.gd" id="4_hud_layout_scaler"]
 
 [node name="BattleScreen" type="Node"]
 script = ExtResource("1_script")
@@ -17,6 +18,7 @@ script = ExtResource("3_world_scaler")
 [node name="BoardView" parent="WorldViewportContainer/WorldViewport" instance=ExtResource("2_board_view")]
 
 [node name="UILayer" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud_layout_scaler")
 
 [node name="StatusLabel" type="Label" parent="UILayer"]
 offset_left = 8.0

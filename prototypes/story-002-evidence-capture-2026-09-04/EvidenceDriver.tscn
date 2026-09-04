@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://prototypes/story-002-evidence-capture-2026-09-04/evidence_driver.gd" id="1"]
+
+[node name="EvidenceDriver" type="Node"]
+script = ExtResource("1")

@@ -1,0 +1,26 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+ERROR: CursorState._init(): reclaim is null, so the mouse-reclaim submechanism is INERT for this instance — every reset() is skipped and reclaim_progress() returns 0.0. Cursor targeting, device-authority reads and the handoff entries all still work. Expected while Story 014 (concrete MouseReclaimPolicy) is unbuilt: CursorStateHost constructs this class with null today. If you are seeing this after Story 014 landed, the Autoload was never updated.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://src/ui/cursor/cursor_state.gd:285)
+       [1] _ready (res://src/ui/cursor/cursor_state_host.gd:129)
+=== AC-S002-d evidence capture: (1920, 1080) ===
+target window size = (1920, 1080)
+captured image size = (1920, 1080)
+dimensions match = true
+12-point sample distinct colors = 4 (rule requires >= 3)
+dominant color share (subsampled every 4px) = 0.4306 (rule requires <= 0.80)
+ensure output dir exists, err=0 (0 or ERR_ALREADY_EXISTS(38) both fine)
+save_png(res://production/qa/evidence/adaptive-font-scale-1080p-2026-09-04.png) err=0 (0 == OK)
+
+=== AC-S002-d evidence capture: (2560, 1440) ===
+target window size = (2560, 1440)
+captured image size = (2560, 1440)
+dimensions match = true
+12-point sample distinct colors = 4 (rule requires >= 3)
+dominant color share (subsampled every 4px) = 0.3867 (rule requires <= 0.80)
+ensure output dir exists, err=0 (0 or ERR_ALREADY_EXISTS(38) both fine)
+save_png(res://production/qa/evidence/adaptive-font-scale-2k-2026-09-04.png) err=0 (0 == OK)
+

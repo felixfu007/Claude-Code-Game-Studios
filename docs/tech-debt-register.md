@@ -221,3 +221,37 @@
 ## Resolved
 
 *(尚無)*
+
+- **2026-09-04**(screen-scaling Story 002 HUD 版面):
+  **場景檔的靜態座標與執行期實際版面不一致,而且這已經是第三個實例** ——
+  `BattleScreen.tscn` 的 `UILayer` 底下 5 個節點仍保留 Story 001 時代的 480×270 `offset_*`,
+  由 `hud_layout_scaler.gd` 在執行期無條件覆寫。**畫面是對的,但在編輯器裡打開場景會看到壞掉的版面。**
+  已知的同型實例另有兩個:`StatusLabel` 的英文佔位字串(`"Round 1 | PLAYER phase"`)由
+  `battle_screen.gd` 覆寫成中文;`WorldViewportContainer` 的 `anchors_preset` 由
+  `world_viewport_scaler.gd` 覆寫。
+  ⚠️ **實作者刻意不自創第四種慣例**,而是在 `hud_layout_scaler.gd` 註解裡指名前兩個先例,
+  並明文標為「政策問題,未單方面解決」。**這個處理是對的** —— 但政策本身仍未定。
+  🔴 **待決的是:執行期驅動版面時,場景檔裡那些會被覆寫的數字該怎麼辦?**
+  歸零會讓場景在 `_ready()` 之前看起來以另一種方式壞掉;保留現值會讓它們**看起來像有意義的設定值**。
+  Godot 的 `.tscn` 格式沒有可靠的行內註解機制。
+  📌 **這是技術慣例問題,不是管理者裁決** —— 需要一次技術總監層級的決定,或明文接受現況。
+  追蹤來源:`production/epics/screen-scaling/story-002-adaptive-font-scale.md` 結案紀錄第 (3) 項
+
+- **2026-09-04**(screen-scaling Story 001 最小視窗):
+  **`Window.min_size` 由場景層腳本設定,但它是行程層級屬性。**
+  `world_viewport_scaler.gd` 在 `_ready()` 設定 `min_size = (960, 540)`。
+  今天 `BattleScreen.tscn` 就是 `run/main_scene`,實務上無落差。
+  🔴 **但將來若加入標題畫面/選單先於戰鬥載入,最小視窗尺寸在那些畫面會失效**,
+  玩家可把視窗縮到比棋盤還小(倍率算出 0)。
+  ⚠️ **明文禁止塞進 `CursorStateHost`** —— 違反 `logic_in_cursor_autoload_shell`。
+  屆時需要一個行程層級宿主,**那是新決策,不要自行類推**。
+  追蹤來源:`production/epics/screen-scaling/story-001-manual-world-scaling.md` 結案紀錄第 (3) 項
+
+- **2026-09-04**(screen-scaling Story 002 開工前查核):
+  **對話正文字型仍未選定。** `design/art/art-direction.md` 只寫「一般繁體中文字型(非像素字型)」,
+  **那是類別,不是決定** —— 沒有指名哪一套,也沒有檔案。
+  管理者 2026-09-04 裁決本階段不選(目前沒有對話畫面可驗證,選了也無處驗)。
+  🔴 **排對話畫面之前必須先選定,並為向量字型另訂字級規則** ——
+  現行的 `11 × N` 是**點陣字專用**,整數倍限制對向量字型不適用。
+  ⚠️ 美術文件自己警告過:**必須用一整段真實對話文字實際排版檢視**,不是短測試句。
+  追蹤來源:`design/art/screen-architecture.md` 一之二節末、`assets/fonts/README.md`
