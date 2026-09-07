@@ -1,0 +1,5 @@
+    if cmp -s "$FILE" "$TMP"; then
+        echo "safe_doc_edit: POST-EDIT CHECK FAILED -- result is byte-identical to the original." >&2
+    else
+        echo "safe_doc_edit: POST-EDIT CHECK FAILED -- anchor count is $STILL, expected $EXPECT." >&2
+    fi

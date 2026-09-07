@@ -98,6 +98,67 @@ if [ -n "$WARNINGS" ]; then
     echo -e "=== Commit Validation Warnings ===$WARNINGS\n================================" >&2
 fi
 
+# ---------------------------------------------------------------------------
+# Unproven-completion gate (added 2026-09-07).
+#
+# WHY: on 2026-09-07 the coordinator wrote "✅ ... AC-31 / AC-31b 兩條已解除"
+# into story-011 while the wiring that would actually resolve them had not been
+# done yet -- "the code exists" was silently equated with "the effect is live".
+# It was self-caught a minute later, but it had already been written to a
+# load-bearing work order. This project's whole recurring failure mode is
+# "the thing exists" != "the thing works" (see docs/consistency-failures.md).
+#
+# WHAT: for staged .md files under production/ or design/, any ADDED line that
+# claims completion must carry something checkable on the SAME line -- a file
+# path, a test count, an exit code, or the words 測試/證據/spike. A bare claim
+# gets named with its file:line.
+#
+# DELIBERATELY NON-BLOCKING. A gate that fires on harmless prose gets switched
+# off, and a switched-off gate is worse than none because everyone assumes
+# something is watching. This one names the line and lets the author answer.
+CLAIM_DOCS=$(echo "$STAGED" | grep -E '^(production|design)/.*\.md$')
+if [ -n "$CLAIM_DOCS" ]; then
+    UNPROVEN=$(git diff --cached -U0 -- $CLAIM_DOCS 2>/dev/null | awk '
+        /^\+\+\+ b\// { file = substr($0, 7); next }
+        /^@@ / {
+            # @@ -old,cnt +new,cnt @@  -> take the +new start line
+            match($0, /\+[0-9]+/); ln = substr($0, RSTART+1, RLENGTH-1) + 0; next
+        }
+        /^\+/ {
+            line = substr($0, 2)
+            # NARROW ON PURPOSE. A first, broader version of this check
+            # (any ✅/已完成 without evidence) flagged 18 of 29 claim-bearing
+            # lines on the very commit that introduced it -- all but one a false
+            # positive from coverage tables, Status headers and check tables that
+            # legitimately carry ✅. A gate that noisy gets switched off, and a
+            # switched-off gate is worse than none because everyone assumes
+            # something is watching. So this matches ONE shape: a claim that a
+            # SPECIFICALLY NUMBERED item changed state, with nothing checkable
+            # beside it. Measured on 2026-09-07: 0 hits on that days good commit,
+            # 1 hit on the actual mistake, 0 hits once the proof was cited.
+            if (line ~ /已解除|已生效|不再是空|定義域.*不再/ &&
+                line ~ /AC-[0-9]+|Story [0-9]+|TR-[a-z]+-[0-9]+|ADR-[0-9]+/ &&
+                line !~ /^\|/ &&
+                line !~ /\.(gd|md|png|txt|tscn|tres|yaml|sh)|[0-9]+ ?條|exit|測試|證據|spike|prototypes|待|尚未|未/) {
+                printf "  %s:%d  %s\n", file, ln, substr(line, 1, 95)
+                hits++
+            }
+            ln++; next
+        }
+        END { if (hits) printf "  --- %d unproven completion claim(s) ---\n", hits }
+    ')
+    if [ -n "$UNPROVEN" ]; then
+        {
+            echo "=== Unproven completion claims in staged docs ==="
+            echo "$UNPROVEN"
+            echo "Each line above says something is done without naming a checkable artifact"
+            echo "on the same line (a path, a test count, an exit code, or 測試/證據/spike)."
+            echo "If it IS done, cite the proof. If it is not, say what it is waiting on."
+            echo "================================================"
+        } >&2
+    fi
+fi
+
 # Cross-file documentation drift gate.
 # Runs in --gate mode: BLOCKS the commit on high-confidence contradictions
 # (e.g. a GDD header and systems-index.md disagreeing about approval status,
