@@ -81,6 +81,10 @@ awk -v s="$((A_LINE>3?A_LINE-3:1))" -v e="$((A_LINE+4))" 'NR>=s&&NR<=e{printf "%
 
 # --- Step 2: edit ------------------------------------------------------------
 TMP="${FILE}.safe_doc_edit.$$"
+# Clean up on ANY exit path. Without this, the 2026-09-07 self-edit that died
+# under `set -u` left two temp files behind -- and they were then committed,
+# because they appeared in a `git status` that was printed and not read.
+trap 'rm -f "${TMP:-}" "${REPL_TMP:-}"' EXIT INT TERM
 REPL_TMP=""
 if [ "$DELETE" -eq 0 ]; then
     REPL_TMP="${FILE}.safe_doc_repl.$$"
