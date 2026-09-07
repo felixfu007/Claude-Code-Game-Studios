@@ -12,28 +12,44 @@
 ## - the seven gated public write entries or the read queries (Story 007),
 ## - the presentation [CanvasLayer] (Story 010).
 ##
-## [b]Interim collaborator gap, discovered while implementing this story[/b]:
-## [MouseReclaimPolicy] is [code]@abstract[/code] (機制八), and its only
-## concrete subclass is Story 014's — which, per that story's own
-## [code]Depends on: 001, 002[/code], has not been built yet and structurally
-## cannot exist before this one. This host therefore constructs [CursorState]
-## with [param reclaim] [code]null[/code].
+## [b]Interim collaborator gap — CLOSED 2026-09-07 (Story 011).[/b] Story 014
+## landed [ThresholdMouseReclaimPolicy] the same day as this story; this host
+## now constructs [CursorState] with a real, live [param reclaim] (see
+## [method _ready] below). The paragraphs immediately below are kept for
+## history — every test in [code]tests/unit/cursor/state_host_test.gd[/code]
+## that referenced the interim [code]null[/code] value has been updated in
+## this same change, per the obligation the old text below itself stated.
 ##
 ## 🔴 [b]Corrected 2026-09-03 (Story 007).[/b] This paragraph previously read
 ## "This is safe for THIS story only because nothing built so far ever calls a
 ## method on [member CursorState._reclaim]". [b]Story 007 falsified that[/b] —
-## it added six call sites. A null [param reclaim] is now handled explicitly
-## by [CursorState] itself: one [method @GlobalScope.push_error] at
-## construction ([constant CursorState.ERR_RECLAIM_POLICY_ABSENT]) plus a
-## guard at every call site, with [method CursorState.reclaim_progress]
-## returning [code]0.0[/code]. ADR-0005 has no position on a null
-## [param reclaim]; see that method's doc comment for why [code]0.0[/code] is
-## ambiguous downstream. It is NOT a decision about the reclaim
-## submechanism itself, which remains user-frozen (see Story 014's own
-## "凍結區" notice). [b]Replace the [code]null[/code] below with a real
-## concrete [MouseReclaimPolicy] instance once Story 014 lands[/b] —
-## [code]tests/unit/cursor/state_host_test.gd[/code] has one test documenting
-## and guarding this interim value, which must be updated in the same change.
+## it added six call sites. A null [param reclaim] was handled explicitly by
+## [CursorState] itself: one [method @GlobalScope.push_error] at construction
+## ([constant CursorState.ERR_RECLAIM_POLICY_ABSENT]) plus a guard at every
+## call site, with [method CursorState.reclaim_progress] returning
+## [code]0.0[/code]. ADR-0005 has no position on a null [param reclaim]; see
+## that method's doc comment for why [code]0.0[/code] was ambiguous
+## downstream. It was NOT a decision about the reclaim submechanism itself,
+## which remains user-frozen (see Story 014's own "凍結區" notice) — Story 014
+## implements the frozen design's threshold math, it does not reopen it.
+##
+## [b]This story's own choice: construct [ThresholdMouseReclaimPolicy] +
+## [MouseReclaimThresholdConfig] directly via [method RefCounted.new], NOT
+## from a saved `.tres` asset.[/b] No `.tres` file exists for
+## [MouseReclaimThresholdConfig] as of this writing. Considered and rejected:
+## hand-authoring one now. [MouseReclaimThresholdConfig]'s own class doc
+## comment already documents that its `@export` defaults are an acknowledged,
+## GDD-flagged provisional gap ("待垂直切片階段實測") — wrapping today's
+## placeholder numbers in a `.tres` file would not make them any less
+## placeholder, would add a hand-typed resource file this story cannot verify
+## parses correctly through the editor, and risks the exact silent-wrong-value
+## failure mode ([method ResourceLoader.load] returning [code]null[/code] on a
+## malformed `.tres`, which nothing here currently guards against) that a
+## plain [method RefCounted.new] call cannot produce. This is a story-level
+## engineering judgment call, not a written rule — flagged in this story's
+## report. The real per-surface-type `.tres` asset belongs to whichever future
+## story actually performs the vertical-slice calibration GDD Tuning Knobs
+## calls for; wiring it in today would not change what number is inside it.
 ##
 ## [b]Engine finding (2026-09-02, this story's own test run) — deliberately
 ## NO [code]class_name[/code] on this file[/b]: ADR-0005's own illustrative
@@ -64,6 +80,17 @@ extends Node
 ## in [method _ready], never reassigned. No getter exposes it by reference
 ## yet — Story 007 adds the read interface.
 var _state: CursorState
+
+## Same [CursorSurfaceRegistry] instance handed to [CursorState]'s constructor
+## — stored as its own field (Story 011) so [NativePointerVisibilityArbiter]
+## can be constructed against the IDENTICAL instance [CursorState] reads from,
+## without adding a new getter to [CursorState] itself (which owns the "two-
+## query read interface" contract, ADR-0005 機制十 — this registry access is
+## not part of it). ADR-0005's own illustrative 機制十三之二 pseudocode calls
+## [code]_registry[/code] directly as if it were already in scope; this field
+## is how that reference actually reaches the sibling presentation node in
+## this story's split-into-two-classes implementation (機制十二/十三/十三之二).
+var _registry: CursorSurfaceRegistry
 
 
 ## [b]Story 010.[/b] Dedicated presentation [CanvasLayer] this host owns for
@@ -126,22 +153,48 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	# Story 011 step 1 (2026-09-07): real ThresholdMouseReclaimPolicy, no
+	# longer null — see class doc comment's "Interim collaborator gap — CLOSED"
+	# section for why MouseReclaimThresholdConfig.new()'s bare provisional
+	# defaults are used directly rather than a hand-authored `.tres` asset.
+	var reclaim_config: MouseReclaimThresholdConfig = MouseReclaimThresholdConfig.new()
+	var reclaim_policy: MouseReclaimPolicy = ThresholdMouseReclaimPolicy.new(reclaim_config)
+
+	_registry = CursorSurfaceRegistry.new()
 	_state = CursorState.new(
-		null,  # MouseReclaimPolicy — Story 014, see class doc comment above
-		CursorSurfaceRegistry.new(),
+		reclaim_policy,
+		_registry,
 		Callable(self, "_get_mouse_position")
 	)
 
 	# Story 010: 機制十二's presentation host. No process_priority is set on
-	# this node — unlike the six 機制六 process-priority actors, a bare
-	# CanvasLayer with no children has no _process()/_input() of its own, so
-	# R6-12's "set process_priority before add_child()" rule does not apply
-	# to it (it will apply to the child nodes Story 011 adds, each of which
-	# must set its own process_priority = 50 before being added here).
+	# this node itself — unlike the six 機制六 process-priority actors, a bare
+	# CanvasLayer with no children has no _process()/_input() of its own. Its
+	# two children below (Story 011) DO set process_priority, each in its own
+	# _init(), before being add_child()-ed here (R6-12).
 	_cursor_layer = CanvasLayer.new()
 	_cursor_layer.name = "CursorLayer"
 	_cursor_layer.layer = CURSOR_LAYER_DRAW_ORDER
 	add_child(_cursor_layer)
+
+	# Story 011 step 2 (2026-09-07): 機制十三's self-drawn substitute cursor —
+	# see that class's own doc comment for why
+	# reclaim_visual_convergence_max_frames has no `.tres` asset either, same
+	# reasoning as MouseReclaimThresholdConfig above.
+	var visual_config: CursorReclaimVisualConfig = CursorReclaimVisualConfig.new()
+	var self_drawn_cursor: SelfDrawnReclaimCursor = SelfDrawnReclaimCursor.new(_state, visual_config)
+	self_drawn_cursor.name = "SelfDrawnReclaimCursor"
+	_cursor_layer.add_child(self_drawn_cursor)
+
+	# Story 011 step 2: 機制十三之二's hover-based native-pointer visibility
+	# arbiter — separate sibling node (R6-8), never the same node as the
+	# self-drawn cursor above. hovered_control_provider bound by NAME (S-1
+	# convention), never a lambda literal.
+	var hover_arbiter: NativePointerVisibilityArbiter = NativePointerVisibilityArbiter.new(
+		_state, _registry, Callable(self, "_get_hovered_control")
+	)
+	hover_arbiter.name = "NativePointerVisibilityArbiter"
+	_cursor_layer.add_child(hover_arbiter)
 
 
 ## Sole call site in the project for [method Viewport.get_mouse_position], used
@@ -155,3 +208,15 @@ func _ready() -> void:
 ## not because it is functionally required.
 func _get_mouse_position() -> Vector2:
 	return get_viewport().get_mouse_position()
+
+
+## Bound-by-name [Callable] target for [NativePointerVisibilityArbiter]'s
+## injected [code]hovered_control_provider[/code] (Story 011, S-1 convention —
+## never a lambda literal). Unlike [method _get_mouse_position], this call is
+## NOT restricted to a single call site anywhere in ADR-0005 — Validation
+## Criteria #16(ii) names only [method Viewport.get_mouse_position]. See
+## [code]native_pointer_visibility_arbiter.gd[/code]'s own class doc comment
+## for why this indirection exists at all (headless testability, this story's
+## own engineering judgment call).
+func _get_hovered_control() -> Control:
+	return get_viewport().gui_get_hovered_control()

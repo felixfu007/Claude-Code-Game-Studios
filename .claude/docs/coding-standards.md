@@ -113,6 +113,16 @@ frame, which is the narrow case it was written for.
 - Visual fidelity (shader output, VFX appearance, animation curves)
 - "Feel" qualities (input responsiveness, perceived weight, timing)
 - Platform-specific rendering (test on target hardware, not headlessly)
+- 🔴 **Anything whose engine-side write is a no-op headless.** Verified 2026-09-07 (Story 011):
+  `Input.mouse_mode = MOUSE_MODE_HIDDEN` **does nothing** under `--headless` — the value reads
+  back `0` (VISIBLE) forever, whatever the code did. **The failure directions are asymmetric and
+  the dangerous one is silent**: a test asserting HIDDEN (`1`) always fails (loud), while a test
+  asserting VISIBLE (`0`) **always passes regardless of the production code**. ADR-0005's own
+  Validation Criteria #17 asks for `Input.mouse_mode` assertions, and AC-60's exception case
+  asserts VISIBLE — taken literally headless, that pair yields one permanently-red and one
+  permanently-green test, **neither touching the code**.
+  **Split the target**: assert the component's *decision* headless (a `diagnostic_*` read-only
+  getter), and assert the engine *applied* it in a windowed run. Both, not either.
 - Full gameplay sessions (covered by playtesting, not automation)
 
 ## CI/CD Rules
@@ -177,6 +187,15 @@ frame, which is the narrow case it was written for.
       `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,
       exit 103) because the engine delivers no `InputEvent`s headless, so UI-interaction tests
       would silently do nothing.
+    - 🔴 **`Overall Summary`'s `failures` counts FAILED ASSERTIONS, not failed test cases.**
+      Verified 2026-09-07 (Story 011): a single test looping 10 frames with one assertion per
+      iteration reported **`11 failures`** in the summary while naming only **2** tests as
+      `FAILED` (the looping one plus the pre-existing red). Fixing that one test dropped the
+      count from 11 to 1. **"11 failures" did not mean eleven things were broken, and the
+      arithmetic gap is the only hint** — so never size the damage from the summary number.
+      **Grep the log for ` FAILED` and count the named tests instead.** This is the fifth
+      distinct way this test line misleads (argument ordering, silent PATH miss, filter-typo
+      exit 0, exit 101, and this).
     - ⚠️ **Exit code 101 means PASSED WITH WARNINGS, not failure.** Read from GdUnit4 source:
       `errors + failures > 0` → 100; `orphan_count > 0` → **101**; otherwise → 0. A run that
       reports `0 failures` can still exit 101 purely because a test leaked nodes.

@@ -388,21 +388,61 @@ func test_host_builds_a_single_cursor_state_instance_on_ready() -> void:
 	assert_bool(state is CursorState).is_true()
 
 
-func test_host_state_reclaim_is_null_pending_story_014() -> void:
-	# Arrange / Act — documented interim decision (see cursor_state_host.gd's
-	# class doc comment): MouseReclaimPolicy's only concrete subclass is
-	# Story 014's, which depends on this story and therefore cannot exist
-	# before it. Nothing built so far calls a method on _reclaim, so this is
-	# safe for THIS story only.
-	# 🔴 This test MUST be updated in the same change that gives
-	# CursorStateHost a real concrete MouseReclaimPolicy (Story 014) — it is
-	# a regression guard for the interim value, not an assertion that null is
-	# permanently correct.
+func test_host_state_reclaim_forwards_reset_signal_proving_a_live_policy_is_wired() -> void:
+	# Arrange — 🔴 UPDATED 2026-09-07 (Story 011 step 1), in the same change
+	# that wires a real MouseReclaimPolicy into CursorStateHost, per this
+	# test's own prior obligation (see cursor_state_host.gd's class doc
+	# comment, "Interim collaborator gap — CLOSED"). This test used to assert
+	# _reclaim was null pending Story 014.
+	#
+	# 🔴 2026-09-07 coordinator correction: the FIRST version of this
+	# replacement read `state.get(&"_reclaim") is ThresholdMouseReclaimPolicy`
+	# — a direct external read of CursorState's private MouseReclaimPolicy
+	# instance, which is EXACTLY the forbidden pattern
+	# `external_access_to_cursor_reclaim_instance`
+	# (`docs/registry/architecture.yaml`, ADR-0005 R5-3): "Any code outside
+	# CursorState holding, reading, or calling the MouseReclaimPolicy instance
+	# directly... The only legal channels are CursorState's own forwards:
+	# reseed_reclaim_on_focus_regained(), reclaim_progress(), and the
+	# forwarded signal reclaim_reset_triggered." The registry names no test
+	# exception. Rewritten below to use ONLY those legal forwards.
+	#
+	# This test proves something STRONGER than a type check would have: not
+	# merely "the field holds an object of the right class", but "the
+	# forwarding chain is actually connected end-to-end" — calling the public,
+	# gated reseed entry really invokes MouseReclaimPolicy.reset() on a LIVE
+	# policy, which really emits reset_triggered, which CursorState really
+	# forwards verbatim as reclaim_reset_triggered (R5-3). A null _reclaim
+	# (the old interim value) makes reseed_reclaim_on_focus_regained() a
+	# silent no-op that never touches _reclaim at all (see
+	# CursorState.ERR_RECLAIM_POLICY_ABSENT's own doc comment) — so this
+	# signal firing (or not) is exactly the legally-observable difference
+	# between "null" and "a real, connected policy".
+	#
+	# 🔴 Observed directly, not assumed (2026-09-07): with
+	# cursor_state_host.gd temporarily reverted to `reclaim = null`, this
+	# exact test FAILED — `captured` stayed `[]`, `reclaim_reset_triggered`
+	# never fired. Restored to the real ThresholdMouseReclaimPolicy wiring,
+	# it PASSED. See this story's report for the exact before/after test
+	# output.
 	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
 	var state: CursorState = host.get(&"_state")
 
+	var captured: Array[CursorTypes.ResetTrigger] = []
+	state.reclaim_reset_triggered.connect(
+		func(trigger: CursorTypes.ResetTrigger) -> void: captured.append(trigger)
+	)
+
+	# Act — the one legal way to make a live policy observably do something:
+	# the public, gated reseed entry (機制九's focus-regain path).
+	state.reseed_reclaim_on_focus_regained()
+
 	# Assert
-	assert_object(state.get(&"_reclaim")).is_null()
+	assert_array(captured).append_failure_message(
+		"reclaim_reset_triggered did not fire after "
+		+ "reseed_reclaim_on_focus_regained() — CursorStateHost is not wired "
+		+ "to a live MouseReclaimPolicy (or the forwarding chain is broken)."
+	).is_equal([CursorTypes.ResetTrigger.FOCUS_LOST_REGAINED])
 
 
 func test_host_state_registry_is_a_real_registry_instance() -> void:

@@ -1,7 +1,7 @@
 # Story 011:原生游標隱藏 + 自繪載體 + 白名單例外
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:✅ **Complete**(2026-09-07,含管理者畫面簽核)
 > **Layer**:Core
 > **Type**:Visual/Feel
 > **Estimate**:L(約 8–10 小時)
@@ -71,7 +71,16 @@ ADR-0005 機制十三的自繪替代游標,行為就是每幀 `modulate.a = _pre
 ⚠️ **這直接衝擊本檔下方那條硬性義務(必須真的開視窗用眼睛看畫面)** ——
 開了視窗,要看的主角結構上不會出現。**接受這個代價是一個裁決,不是實作細節。**
 
-### 二、8 條驗收標準,4 條的驗收對象現在不存在
+### 二、~~8 條驗收標準,4 條~~ **9 條驗收標準,5 條**的驗收對象現在不存在
+
+> 🔴 **2026-09-07 更正計數。** 實測 `grep -c '^- \*\*AC-'` 為 **9**,逐一列出為
+> AC-11 / 19 / 31 / 31b / 36 / 38 / 48 / 49 / 60;驗不到的是 **5 條**(下表 4+5 列合計)。
+> 原文寫 8 條 / 4 條,兩個數字都少一。**本專案的手抄計數漂移,又發生在一份用來擋工作單的查核表上。**
+>
+> ⏳ **同日 Story 014 已實作具體策略與門檻表,但 AC-31 / AC-31b 尚未解除** ——
+> `CursorStateHost` 目前仍以 `null` 建構 `CursorState`,故 `reclaim_progress()` **此刻仍恆回傳 `0.0`**。
+> 兩條的定義域要等「把真實策略接進 Autoload」那一步完成後才不再是空的。**接線是本批的必要步驟,尚未執行。**
+> 剩餘與 014 無關的是 **AC-36 / 48 / 49 三條**(美術規範缺口,見下表)。
 
 | AC | 狀況 |
 |---|---|
@@ -174,7 +183,15 @@ ADR-0005 機制十三的自繪替代游標,行為就是每幀 `modulate.a = _pre
 **Story Type**:Visual/Feel
 **必要證據**:`production/qa/evidence/native-cursor-suppression-evidence.md`
 
-**Status**:[ ] 尚未建立
+**Status**:[x] 已建立(2026-09-07)
+
+- 自動化測試:`tests/unit/cursor/self_drawn_reclaim_cursor_test.gd`(8 條)、
+  `tests/unit/cursor/native_pointer_visibility_arbiter_test.gd`(8 條)。
+- 開視窗擷圖(AC-28c / AC-41 / AC-41b + 硬性義務「必須真的開視窗用眼睛看」):
+  `prototypes/story-011-evidence-capture-2026-09-07/`,結果見上方證據檔。
+- **AC-36 / AC-48 / AC-49 登記為未涵蓋、待美術規範**(ADVISORY 等級,不阻擋)——
+  三條要比較的視覺(一般高亮、待重新解析)沒有任何圖形規格,`/art-bible` 從未執行。
+  詳見證據檔「AC-36 / AC-48 / AC-49」節。
 
 ---
 
@@ -191,3 +208,93 @@ ADR-0005 機制十三的自繪替代游標,行為就是每幀 `modulate.a = _pre
 > **依據**:ADR-0005 L.1129 `_state.get_device_authority()`、L.1070
 > `_state.reclaim_reset_triggered.connect(...)`、L.1077 `_state.reclaim_progress()` ——
 > 三者皆為 Story 007 產出的讀取查詢與訊號。
+
+---
+
+## 結案紀錄(2026-09-07)
+
+同批先做 **Story 014**,因此本張三項開工前疑慮的答案是:
+
+| 開工前的問題 | 答案 |
+|---|---|
+| 是否接受「自繪載體寫好但永遠不可見」? | **不必接受** —— 014 已落地並接進 Autoload,`reclaim_progress()` 不再恆為 0 |
+| AC-36/48/49 是否登記為未涵蓋? | **是,且不需裁決** —— 三條原文的驗證方式即為 `screenshot + lead sign-off、ADVISORY 等級`,而 ADVISORY **不是阻擋級** |
+| 「開視窗用眼睛看」實際要看什麼? | 三件事:原生游標消失、自繪游標出現、濃淡隨滑鼠變化。**三件都已擷取並經管理者簽核** |
+
+### 一、逐條 AC 涵蓋(9 條 + 自 014 移交 3 條)
+
+| AC | 涵蓋 | 未涵蓋的部分(明說) |
+|---|---|---|
+| **AC-11** | ✅ 多影格測試(斷言仲裁器決策,非引擎全域值) | 無 |
+| **AC-19** | ⚠️ **部分**(structural partial) | 完整行為依賴 Story 005 的仲裁 SEAM |
+| **AC-31** | ✅ 3 條,**含哨兵**:先塞非零再斷言讀到 0,使之成為「重置確實發生」的證據 | 無 |
+| **AC-31b** | ✅ 比例關係 + 與 AC-31 的邊界互斥無缺口 | 無 |
+| **AC-38** | ⚠️ **部分**(structural partial) | 依賴尚未建置的點擊處理呼叫方 |
+| **AC-60** | ✅ 白名單例外路徑 | 無 |
+| **AC-28c**(移交) | ✅ 逐影格遞增位移,斷言相鄰影格 alpha 變化皆可對應輸入,**無無來源跳變** + 視覺證據 | 無 |
+| **AC-41**(移交) | ✅ 觸發點 (a) 依配置影格數漸退收斂,不 snap | 無 |
+| **AC-41b**(移交) | ✅ 觸發點 (d) 同影格瞬間歸零 | 無 |
+| **AC-36 / 48 / 49** | 🔴 **未涵蓋,登記為待美術規範** | 三條要比對的「一般高亮」「待重新解析」**沒有任何圖形規格**(`/art-bible` 從未執行,`design/art/` 零命中)。本張自繪游標的白色圓點是**工程佔位,不是設計裁決** |
+
+### 二🔴 本張最重要的發現:有幾條 AC 在無視窗環境下物理上驗不到
+
+實測(拋棄式探針,Godot 4.7.1,`--headless -s`):
+```
+before=0
+after_assign_HIDDEN=0   (HIDDEN const=1)
+```
+**headless 下 `Input.mouse_mode` 的賦值完全無效,讀回永遠是 `0`。**
+
+🔴 **後果不對稱,而危險的那一半是靜默的**:
+- 斷言「應為 HIDDEN(1)」→ **永遠失敗**(大聲)
+- 斷言「應為 VISIBLE(0)」→ **永遠通過,與程式碼寫什麼無關**(假綠)
+
+而 **AC-60 的例外情境要斷言的正是 VISIBLE**。照 ADR Validation Criteria #17 的字面在 headless 寫下去,
+會產出一條永遠紅、一條永遠綠的測試,**兩條都沒碰到程式**。
+
+**處置(不需修訂 ADR —— 它要求用該值驗,但從未說要在 headless 驗)**:
+1. headless 測試改斷言 `NativePointerVisibilityArbiter.diagnostic_last_desired_mouse_mode`(**決策**),
+   兩個方向都有鑑別力,假綠風險消除。沿用 `diagnostic_*` 慣例並註明下游不得依賴。
+2. `Input.mouse_mode` 的斷言移到**有視窗**那次執行(引擎真的套用了)。實測三階段皆讀回 **1**。
+3. **兩者都要,不是二選一。**
+
+📌 **這讓 2026-09-04 那條「必須開視窗」的義務從保險變成必要條件。**
+
+### 三、視覺證據的範圍限制(誠實登記)
+
+**驅動場景載入的是正式場景本體**(`load("res://src/ui/battle/BattleScreen.tscn")`),非複本。
+但它**自建一份 `CursorState` + `ThresholdMouseReclaimPolicy`** 來推動這三個元件,理由:
+**專案裡還沒有任何程式碼會在滑鼠真的移動時呼叫 `evaluate()`**(仲裁是 Story 005 的空 SEAM)。
+
+🔴 **因此證據證明的是「這三個元件能正常工作」,不是「在遊戲裡動滑鼠它就會這樣反應」。**
+遊戲本體那份自繪游標今天在遊戲裡仍不會動。
+
+⚠️ 實作者可以伸手進 Autoload 私有的 `_state` 去硬推,畫面會一樣漂亮 —— **他沒有**,理由是那會命中
+已登記禁令 `external_access_to_cursor_reclaim_instance`,且繞過它不能證明本張真正交付的東西。**判斷正確。**
+
+**另外兩項誠實登記為未做**:像素整數縮放格線檢查未對本次三張圖執行(本次驗的是游標行為,
+縮放正確性另有獨立驗證);**手把/類比搖桿路徑完全未測**(無硬體)。
+
+---
+
+## Test Evidence
+
+**Story Type**:UI / Visual-Feel
+**必要證據**:自動測試 + `production/qa/evidence/native-cursor-suppression-evidence.md`
+
+**Status**:✅ **已建立並通過**(2026-09-07)
+
+| | 數字 |
+|---|---|
+| 本張新增 | **16 條**(`self_drawn_reclaim_cursor_test.gd` 8 條、`native_pointer_visibility_arbiter_test.gd` 8 條) |
+| 全套(本張完成時) | **420 條 / 0 errors / 1 失敗 / 0 orphans / 34 suites / exit 100** |
+| 那 1 個失敗 | `affinity_phi_provider_test.gd` 的既有已核准紅燈,與本張無關 |
+| 視覺證據 | 三張 1920×1080 擷圖 + 逐字 log(`prototypes/story-011-evidence-capture-2026-09-07/run_output.txt`) |
+| 機械檢查 | 尺寸 3/3 ✅、12 點取樣相異色 4(門檻 ≥3)✅、主色占比 43.06%(門檻 ≤80%)✅、格線項未做(見上) |
+| **人眼確認** | ✅ **協調者開圖覆核** + ✅ **管理者 2026-09-07 簽核通過** |
+
+**新增正式程式碼**:`src/ui/cursor/self_drawn_reclaim_cursor.gd`、`native_pointer_visibility_arbiter.gd`、
+`cursor_reclaim_visual_config.gd`;**修改**:`cursor_state_host.gd`(接線,Autoload 變更已實跑全套確認零退步)
+
+⚠️ **`reclaim_visual_convergence_max_frames` 為暫行值** —— GDD 第 195 行明文「待垂直切片階段校準」,
+連一個數字都沒有。實際下限為 2(配置 1 等於單影格瞬間歸零,自我矛盾)。**不是裁決。**

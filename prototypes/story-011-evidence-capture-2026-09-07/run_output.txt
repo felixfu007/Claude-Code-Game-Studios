@@ -1,0 +1,31 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+--- capture: story011-native-cursor-suppression-start-2026-09-07 ---
+  reclaim_progress = 0.0
+  arbiter.diagnostic_last_desired_mouse_mode = 1 (0=VISIBLE, 1=HIDDEN)
+  Input.mouse_mode (real engine value, this process) = 1
+  captured size = (1920, 1080) (target (1920, 1080)) size_ok=true
+  12-point distinct colors = 4 (rule requires >= 3)
+  dominant color share (subsampled every 4px) = 0.4306 (rule requires <= 0.80)
+  CHECKS PASS = true
+  saved: res://production/qa/evidence/story011-native-cursor-suppression-start-2026-09-07.png save_err=0 (0 == OK)
+--- capture: story011-native-cursor-suppression-partial-2026-09-07 ---
+  reclaim_progress = 0.4
+  arbiter.diagnostic_last_desired_mouse_mode = 1 (0=VISIBLE, 1=HIDDEN)
+  Input.mouse_mode (real engine value, this process) = 1
+  captured size = (1920, 1080) (target (1920, 1080)) size_ok=true
+  12-point distinct colors = 4 (rule requires >= 3)
+  dominant color share (subsampled every 4px) = 0.4306 (rule requires <= 0.80)
+  CHECKS PASS = true
+  saved: res://production/qa/evidence/story011-native-cursor-suppression-partial-2026-09-07.png save_err=0 (0 == OK)
+--- capture: story011-native-cursor-suppression-full-2026-09-07 ---
+  reclaim_progress = 1.0
+  arbiter.diagnostic_last_desired_mouse_mode = 1 (0=VISIBLE, 1=HIDDEN)
+  Input.mouse_mode (real engine value, this process) = 1
+  captured size = (1920, 1080) (target (1920, 1080)) size_ok=true
+  12-point distinct colors = 4 (rule requires >= 3)
+  dominant color share (subsampled every 4px) = 0.4306 (rule requires <= 0.80)
+  CHECKS PASS = true
+  saved: res://production/qa/evidence/story011-native-cursor-suppression-full-2026-09-07.png save_err=0 (0 == OK)
+=== Story 011 evidence capture complete ===

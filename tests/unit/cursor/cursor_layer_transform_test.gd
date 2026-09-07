@@ -365,21 +365,29 @@ func test_ac_s010b_cursor_layer_is_a_distinct_node_owned_solely_by_the_host() ->
 	assert_str(layer.name).is_equal("CursorLayer")
 
 
-func test_ac_s010b_cursor_layer_has_no_children_yet_narrowed() -> void:
-	# Arrange / Act — 🔴 NARROWED, see class doc comment at top of this file.
-	# Story 010 draws nothing; this only proves the baseline that nothing has
-	# attached to this node YET. It is NOT evidence that Story 011's content
-	# will be the ONLY content ever attached to it — that behavioral claim
-	# can only be exercised once real children exist (Story 011+).
+func test_ac_s010b_cursor_layer_has_exactly_the_two_story_011_presentation_nodes() -> void:
+	# Arrange / Act — 🔴 UPDATED 2026-09-07 (Story 011). This test used to
+	# assert 0 children ("NARROWED... nothing has attached to this node YET"),
+	# exactly predicting that Story 011 would add real children here — see
+	# this test's own prior doc comment and cursor_state_host.gd's class doc
+	# comment on _cursor_layer's exclusivity. Story 011 has now landed the two
+	# presentation nodes (SelfDrawnReclaimCursor, NativePointerVisibilityArbiter)
+	# it always said would attach here, and nothing else.
 	var layer: CanvasLayer = _get_cursor_layer()
 
-	# Assert
+	# Assert — exactly 2 children, both Story 011's, never a third (機制十二's
+	# exclusivity requirement — see cursor_state_host.gd's class doc comment).
 	assert_int(layer.get_child_count()).append_failure_message(
-		"CursorStateHost._cursor_layer already has children in Story 010, "
-		+ "before Story 011 adds the self-drawn cursor / hover-detector "
-		+ "nodes. Investigate what attached to it and whether this violates "
-		+ "the exclusivity requirement."
-	).is_equal(0)
+		"CursorStateHost._cursor_layer does not have exactly 2 children — "
+		+ "expected exactly SelfDrawnReclaimCursor and "
+		+ "NativePointerVisibilityArbiter, nothing more, nothing less."
+	).is_equal(2)
+	assert_object(layer.get_node_or_null("SelfDrawnReclaimCursor")).append_failure_message(
+		"SelfDrawnReclaimCursor is not a direct child of CursorStateHost._cursor_layer."
+	).is_not_null()
+	assert_object(layer.get_node_or_null("NativePointerVisibilityArbiter")).append_failure_message(
+		"NativePointerVisibilityArbiter is not a direct child of CursorStateHost._cursor_layer."
+	).is_not_null()
 
 
 func test_ac_s010b_cursor_layer_draw_order_is_independent_of_host_process_priority() -> void:
