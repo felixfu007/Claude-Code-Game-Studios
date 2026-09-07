@@ -161,14 +161,14 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 | 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | ✅ Complete | M(約 4–6 小時) | 三 | 001 |
 | 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | ✅ Complete | M(約 4–6 小時) | 四、四之二 | 001 |
 | 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | Ready | L(約 8–10 小時) | 五、六 | 002, 004, 007 |
-| 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | Ready | S(約 2–3 小時) | 七 | 001 |
+| 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | ⏸ 擱置(2026-09-07) | S(約 2–3 小時) | 七 | 001 |
 | 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | ✅ Complete | L(約 8–10 小時) | 十 | 002, 003 |
-| 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | Ready | M(約 5–6 小時) | 九 | 002, 005 |
+| 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | ⏸ 擱置(2026-09-07) | M(約 5–6 小時) | 九 | 002, 005 |
 | 009 | [跨畫面交接生命週期(甲/乙/丙)](story-009-screen-handoff.md) | Integration | ✅ Complete | M(約 4–6 小時) | 十一 | 007 |
 | 010 | [專屬游標 `CanvasLayer` + 圖層變換恆等防護測試](story-010-idle-indicator-host.md) | UI | ✅ Complete | S(約 2–3 小時) | 十二 | 002 |
 | 011 | [原生游標隱藏 + 自繪載體 + 白名單例外](story-011-native-cursor-suppression.md) | Visual/Feel | ✅ Complete | L(約 8–10 小時) | 十三、十三之二 | 003, 010 |
-| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | 🔴 Blocked | S(約 2–3 小時) | 十四 | 003 |
-| 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | Ready | S(約 3–4 小時) | 十五 | 005, 011 |
+| 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | ⏸ 擱置(2026-09-07,原 Blocked) | S(約 2–3 小時) | 十四 | 003 |
+| 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | ⏸ 擱置(2026-09-07) | S(約 3–4 小時) | 十五 | 005, 011 |
 | 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | ✅ Complete | M(約 6–8 小時) | 八 | 001, 002 |
 
 **估時合計:約 65–86 小時**(2026-09-02 補;原為 `[待 sprint 規劃時填]` 佔位符,
@@ -198,6 +198,26 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 
 🔴 **本節於 2026-09-04 更正 —— 原寫「執行 `/create-stories` 把本 epic 拆成工作單」,而 14 張工作單早在 2026-09-02 就已存在。**
 這是一份完工後沒人回頭改的指路,照它做的人會重跑一次已經做完的事。
+
+## 🔴 2026-09-07 管理者裁決:本 epic 做完 005 就停,4 張擱置
+
+**擱置的是 006 / 008 / 012 / 013**(上表狀態欄已標)。**005 做完為止,不擱置。**
+**權威全文與三項明文接受的代價寫在 `production/milestones/one-year-plan.md` 第四之二節②** ——
+本節不複述理由,只記結論與那三項代價的名字,避免手抄漂移。
+
+**裁決依據**(管理者當日實際讀到的):4 張裡只有 2 張玩家看得出差別(008 切出去再切回來
+游標不亂跑、012 不會兩個高亮同時亮),且兩者皆為「防止畫面出錯」而非新功能;006/013
+玩家完全看不到。而 `src/ui/battle/device_authority.gd`(116 行)已在可玩建置裡運作,
+**其核心規則與本 epic 相同**(誰最近動過就給誰;同幀平手手把優先),**且該規則本身
+就是管理者裁決的**(第十七批,2026-09-02 修訂平手方向)。
+
+🔴 **三項代價的名字**(細節見計畫檔):①兩套輸入處理並存、無自動化檢查會察覺它們漂移;
+②擱置的 006 防的正是「設錯後永久失效但完全不報錯」;③沒有人把棋盤接進本系統。
+
+⚠️ **接手的人請注意:上表狀態欄的 `⏸ 擱置` 不等於「可以開」。**
+要重啟任一張,先讀計畫檔第四之二節,確認裁決是否仍然成立 —— 這是範圍裁決,不是排程延後。
+
+---
 
 **下一波可開**:**005**(前置 002/004 皆完成)與 **006**(前置 001 完成)。
 **008 與 013 都在等 005** —— 008 的前置是 002+005、013 的前置是 005+011(011 已於 2026-09-07 完成),

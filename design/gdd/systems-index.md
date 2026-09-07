@@ -25,6 +25,24 @@
 
 ## Systems Enumeration
 
+> 🔴 **2026-09-07 管理者裁決:三個未設計系統走兩條不同的路(寫規格前必讀)**
+>
+> | 系統 | 走哪條 | 為什麼 |
+> |---|---|---|
+> | **#6 技能卡牌(僅好感度對話卡牌)** | **完整 GDD**(8 節格式、≤400 行、≤2 輪 `/design-review`) | 賣點的一半,且含本作**唯一允許隨機**的地方(牌面隨機、發牌節奏固定)。弄錯不容易修 |
+> | **#9 好感度視覺呈現 UI** | **`design/quick-specs/` 輕量規格** | 是「把已經存在的數字畫出來」,弄錯了重畫就好 |
+> | **#10 戰鬥 HUD(僅預判標記)** | **`design/quick-specs/` 輕量規格** | 同上 |
+>
+> **權威全文在 `production/milestones/one-year-plan.md` 第四之二節③**,含先例依據
+> (`design/quick-specs/` 已用過兩次,其中 `unit-stats-provisional.md` 是可玩建置的數值來源,
+> 並已由管理者正式指派為 `player_baseline_stat` 的擁有者)。
+>
+> ⚠️ **輕量規格不豁免驗收標準** —— #9/#10 仍須有可測的驗收條件,只是不跑完整 8 節格式與兩輪審查。
+>
+> 🔴 **另註:#3 游標/高亮系統的 4 張工作單已於同日裁決擱置**(006/008/012/013),
+> 見 `production/epics/cursor-highlight-state/EPIC.md`。**下表 #3 的 Status 是設計文件的狀態
+> (Approved),不是實作進度** —— 實作進度只在該 epic 的表裡,兩者不要混讀。
+
 | # | System Name | Category | Priority | Status | Design Doc | Depends On |
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 好感度數值池(Delta Log) | Core | MVP | Approved(2026-08-10 第十二輪核准,見下方註記) | design/gdd/affinity-data-pool.md | 戰棋移動與交戰系統(2026-08-10 第九輪新增,窄介面依賴——僅需「陣亡通知」單一方法的呼叫契約,不需等待該系統其餘設計定案;不透過好感度—位置連鎖系統轉接以避免循環依賴,見 `affinity-data-pool.md` Dependencies) |
