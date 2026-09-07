@@ -150,10 +150,20 @@ const EXCLUDED_COLLABORATOR_FIELDS: Array[StringName] = [
 ##   explicitly marked "downstream logic must not depend on these" (機制十五
 ##   convention, as ADR-0002's [code]diagnostic_visited_count[/code]). Monotonic
 ##   tallies of events, not state anything reads back.
+## · [code]_surface_navigation_error_reported[/code] — Story 005 (機制六③,
+##   Option E). Same shape and same reason as [code]_provider_error_reported[/code]
+##   above: a one-shot latch guarding a single [method @GlobalScope.push_error]
+##   call, not a fourth GDD state field.
+## · [code]diagnostic_surface_navigation_unsupported_count[/code] — Story 005.
+##   Same shape and same reason as [code]diagnostic_invalid_mouse_provider_count[/code]
+##   above: a QA-only monotonic counter, explicitly not something downstream
+##   gameplay logic may depend on.
 const EXCLUDED_MECHANISM_FIELDS: Array[StringName] = [
 	&"_mutation_in_progress", &"_pending_reseed", &"_provider_error_reported",
 	&"_last_mouse_position", &"diagnostic_reentrant_rejection_count",
 	&"diagnostic_invalid_mouse_provider_count",
+	&"_surface_navigation_error_reported",
+	&"diagnostic_surface_navigation_unsupported_count",
 ]
 
 ## Minimal concrete subclass implementing all four @abstract methods, used as
@@ -263,7 +273,7 @@ func test_ac1_known_mechanism_fields_are_excluded_from_the_state_field_count_by_
 		+ "assertion in this file can tell whether the new name DESERVES to be "
 		+ "excluded. Justify it in the constant's doc comment, then update this "
 		+ "number deliberately."
-	).is_equal(6)
+	).is_equal(8)
 	assert_array(all_field_names).contains(EXCLUDED_MECHANISM_FIELDS)
 
 
@@ -466,3 +476,162 @@ func test_host_mouse_position_provider_is_bound_to_the_host_itself() -> void:
 	assert_bool(provider.is_valid()).is_true()
 	assert_str(provider.get_method()).is_equal("_get_mouse_position")
 	assert_object(provider.get_object()).is_equal(host)
+
+
+# ─── Story 005: frame-buffered arbitration timing (機制五/機制六①③) ────────
+#
+# 🔴 [b]Scope of this section — read before extending[/b]: every test below
+# verifies STRUCTURE and TIMING only — that the six-actor process_priority
+# ladder's ①/③ tier split exists and that the buffer is appended in
+# [method Node._input], survives ①'s [method Node._process]
+# (process_priority -100), and is cleared only by ③'s
+# [method CursorStateHost.flush_buffered_navigation] (process_priority -25).
+# [b]None of these tests exercise the STORY 005 SEAM[/b] (the "decide what to
+# apply from the buffered events" body inside
+# [method CursorState.arbitrate_device_authority] /
+# [method CursorState.apply_buffered_navigation] — both still empty, per this
+# story's phase-1/phase-2 split). The [InputEvent] instances below are
+# deliberately NOT bound to any [code]ui_*[/code] action; content-agnostic
+# buffering is exactly what 機制五 promises regardless of what the SEAM
+# eventually does with the contents.
+#
+# ⚠️ [b]Shared-Autoload write hazard[/b] (this file's own class doc comment,
+# "Story 005/007 一旦出現會改寫全域狀態的測試...需要顯式 setup/teardown 紀律"):
+# [code]CursorStateHost[/code] is the ONE Autoload instance shared by every
+# test in this suite. [member CursorStateHost._frame_events] is mutated
+# in-place ([Array] is a reference type) by every test below — each one
+# clears it in [b]both[/b] Arrange (defensive, in case a prior test left
+# residue) [b]and[/b] a final cleanup step, so no test's leftover buffer
+# state can leak into another test in this file OR into a future story's
+# tests reusing the same Autoload.
+
+
+## Returns the [b]live reference[/b] to [member CursorStateHost._frame_events],
+## not a copy — [code]host.get()[/code] on a typed [Array] field hands back
+## the same underlying array, so [code].clear()[/code]/[code].append()[/code]
+## on the returned value mutates the host's real buffer. Used by every test
+## in this section for both the defensive pre-clear and the assertions
+## themselves.
+func _host_frame_events(host: Node) -> Array:
+	return host.get(&"_frame_events")
+
+
+func test_cursor_navigation_applier_exists_as_a_child_of_the_host() -> void:
+	# Arrange / Act — R4-1: 機制六③ cannot live on the same node as ① (this
+	# host, process_priority -100), so it must exist as a distinct child.
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var applier: Node = host.get_node_or_null("CursorNavigationApplier")
+
+	# Assert — [CursorNavigationApplier] DOES declare class_name (unlike
+	# CursorStateHost, which cannot — see that file's own class doc comment),
+	# so identity is checked the same way [CursorSurfaceRegistry] etc. are
+	# checked elsewhere in this project: a plain `is` check.
+	assert_object(applier).append_failure_message(
+		"CursorStateHost has no child named \"CursorNavigationApplier\" — "
+		+ "Story 005's 機制六③ node was never added in _ready()."
+	).is_not_null()
+	assert_bool(applier is CursorNavigationApplier).append_failure_message(
+		"a node named \"CursorNavigationApplier\" exists but does not run "
+		+ "the CursorNavigationApplier script."
+	).is_true()
+
+
+func test_cursor_navigation_applier_sets_process_priority_to_negative_25() -> void:
+	# Arrange / Act — ADR-0005 機制六③'s architecture-mandated value, strictly
+	# between the caller's own 機制六② interval ceiling (-25, exclusive) and
+	# 機制六①'s -100 (this host).
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var applier: Node = host.get_node_or_null("CursorNavigationApplier")
+
+	# Assert
+	assert_object(applier).append_failure_message(
+		"PRECONDITION: CursorNavigationApplier does not exist — see the "
+		+ "existence test above."
+	).is_not_null()
+	assert_int(applier.process_priority).is_equal(-25)
+
+
+func test_input_appends_events_to_the_frame_buffer() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	_host_frame_events(host).clear()
+	var event := InputEventKey.new()
+
+	# Act — calling the override directly, same convention this project
+	# already uses for _process() in native_pointer_visibility_arbiter_test.gd
+	# / self_drawn_reclaim_cursor_test.gd: headless test runs receive no real
+	# InputEvent dispatch (coding-standards.md), so the override is invoked
+	# directly rather than relying on the engine to deliver one.
+	host._input(event)
+
+	# Assert
+	var buffered: Array = _host_frame_events(host)
+	assert_int(buffered.size()).append_failure_message(
+		"_input() did not append the event to _frame_events."
+	).is_equal(1)
+	assert_object(buffered[0]).is_same(event)
+
+	# Cleanup — shared-Autoload write hazard, see section header comment.
+	_host_frame_events(host).clear()
+
+
+func test_process_at_priority_negative_100_does_not_clear_the_frame_buffer() -> void:
+	# Arrange — this is 機制五 R4-1's own stated contract: the buffer's clear
+	# point moved to -25 specifically so ①'s _process() (this host, -100)
+	# must NOT be the one to clear it, because ③ still needs to read it.
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	_host_frame_events(host).clear()
+	host._input(InputEventKey.new())
+	var count_before: int = _host_frame_events(host).size()
+
+	# Act
+	host._process(0.0)
+
+	# Assert
+	assert_int(count_before).append_failure_message(
+		"PRECONDITION: the buffer was empty before calling _process() — the "
+		+ "test proves nothing."
+	).is_equal(1)
+	assert_int(_host_frame_events(host).size()).append_failure_message(
+		"CursorStateHost._process() (機制六①, priority -100) cleared "
+		+ "_frame_events — R4-1 requires the LAST consumer (機制六③, "
+		+ "flush_buffered_navigation()) to do this, not the arbitration step."
+	).is_equal(1)
+
+	# Cleanup — shared-Autoload write hazard, see section header comment.
+	_host_frame_events(host).clear()
+
+
+func test_flush_buffered_navigation_clears_the_frame_buffer() -> void:
+	# Arrange — 機制五 R4-1: the buffer's LAST consumer for the frame is
+	# flush_buffered_navigation() (機制六③, called by CursorNavigationApplier
+	# at process_priority -25), not the host's own -100 _process().
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	_host_frame_events(host).clear()
+	host._input(InputEventKey.new())
+
+	# Act
+	host.flush_buffered_navigation()
+
+	# Assert
+	assert_int(_host_frame_events(host).size()).append_failure_message(
+		"flush_buffered_navigation() did not clear _frame_events after "
+		+ "consuming it — the next frame would start with stale events from "
+		+ "this frame still buffered."
+	).is_equal(0)
+
+
+func test_process_and_flush_are_both_no_ops_on_an_empty_buffer() -> void:
+	# Arrange — the empty-buffer early-return guard on both entry points
+	# (mirrors the ADR pseudocode's `_frame_events.is_empty(): return`).
+	# Calling into CursorState.arbitrate_device_authority() /
+	# apply_buffered_navigation() with an empty array is exercised by this
+	# test only insofar as "does it throw" — the SEAM itself is still empty,
+	# so there is nothing further to assert about their effects yet.
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	_host_frame_events(host).clear()
+
+	# Act / Assert — must not raise a script error either way.
+	host._process(0.0)
+	host.flush_buffered_navigation()
+	assert_int(_host_frame_events(host).size()).is_equal(0)

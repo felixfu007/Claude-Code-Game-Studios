@@ -130,6 +130,43 @@ const ERR_RECLAIM_POLICY_ABSENT: String = (
 	"landed, the Autoload was never updated."
 )
 
+## Story 005 (機制六③, "Option E"). [b]Attribution, precisely[/b]: the
+## manager's 2026-09-07 ruling settled only the interface SHAPE (Option E —
+## ask the registered surface, via [method CursorSurfaceRegistry.get_surface]).
+## The specific failure-reporting DESIGN below (loud, not silent; a
+## diagnostic counter plus a one-shot [method @GlobalScope.push_error]) is
+## this story's coordinator's dispatch requirement for Story 005, not
+## something the manager read or ruled on. Exact
+## [method @GlobalScope.push_error] message [method apply_buffered_navigation]
+## emits — [b]exactly once per [CursorState] instance[/b], guarded by
+## [member _surface_navigation_error_reported] — the first time a
+## KEYBOARD_GAMEPAD-authority NAVIGATION event needs a target computed and the
+## surface registered under [member CursorTarget.surface] either has no
+## registration at all, or is registered but does not implement
+## [constant NAVIGATE_METHOD_NAME]. Named constant, not an inline literal, so
+## tests can assert on it without hand-duplicating the string.
+## [br]
+## 🔴 [b]This is the ONLY place this project currently has a way to observe
+## "nobody has registered a CursorSurface under this tag" at all[/b] — as of
+## this story, NOTHING in [code]src/[/code] calls
+## [method CursorSurfaceRegistry.register] for
+## [constant CursorTypes.SurfaceType.BOARD_TILE] or any other tag — verified
+## by searching the source tree for calls to that registration method,
+## excluding the registry's own method definition; zero matches. Explicitly
+## registered gap, not a silent one — see this story's final report and
+## [code]tests/integration/cursor/frame_buffer_ordering_test.gd[/code]'s
+## [code]test_gap_no_surface_is_registered_anywhere_in_src_yet[/code].
+const ERR_SURFACE_NAVIGATION_UNSUPPORTED: String = (
+	"CursorState.apply_buffered_navigation(): a NAVIGATION-class ui_* event " +
+	"arrived while KEYBOARD_GAMEPAD holds device authority, but the surface " +
+	"registered under this target's CursorTypes.SurfaceType tag either has " +
+	"no registration at all, or does not implement cursor_navigate(from_id: " +
+	"int, direction: Vector2i) -> Variant. Cursor navigation is DISABLED for " +
+	"this surface tag until a registered surface implements the contract. " +
+	"This is reported once, not per frame; " +
+	"diagnostic_surface_navigation_unsupported_count keeps counting."
+)
+
 
 ## Result of [method set_target] / [method handoff_after_mount] and of the
 ## shared private validation they both run ([method _validate_target_writable]).
@@ -209,6 +246,7 @@ var _mutation_in_progress: bool = false        ## N4/R4-4 reentrancy gate — th
 var _pending_reseed: bool = false              ## R6-10: a reseed request that arrived while the gate was up. bool, not a count — repeated reseed requests are idempotent
 var _provider_error_reported: bool = false     ## R6-11: guards ERR_MOUSE_PROVIDER_INVALID_RECLAIM_DISABLED to exactly one push_error, not one per frame
 var _last_mouse_position: Vector2 = Vector2.ZERO   ## S-1: last coordinate successfully obtained from the provider; what _safe_mouse_position() returns when the provider has gone invalid
+var _surface_navigation_error_reported: bool = false   ## Story 005 Option E: guards ERR_SURFACE_NAVIGATION_UNSUPPORTED to exactly one push_error, not one per frame
 
 ## QA/test-only (機制十五 convention, same as ADR-0002's
 ## [code]diagnostic_visited_count[/code]). [b]Downstream gameplay logic must
@@ -225,6 +263,36 @@ var diagnostic_reentrant_rejection_count: int = 0
 ## [method arbitrate_device_authority]'s up-front check. Unlike the
 ## [code]push_error[/code], this keeps counting (S-1 test vector (c)).
 var diagnostic_invalid_mouse_provider_count: int = 0
+## Story 005 (機制六③, Option E). Incremented every time
+## [method apply_buffered_navigation] needed to compute a navigated target but
+## the registered surface (or the absence of one) could not answer — see
+## [constant ERR_SURFACE_NAVIGATION_UNSUPPORTED]. Unlike the [code]push_error[/code],
+## this keeps counting.
+var diagnostic_surface_navigation_unsupported_count: int = 0
+
+## Story 005 (機制六③, Option E). The manager's 2026-09-07 ruling settled
+## only the interface SHAPE — "ask the registered surface". The exact method
+## name, signature and null-means-illegal-move convention below are this
+## story's own engineering judgment call implementing that shape, not
+## something the manager separately read or approved. Duck-typed method name
+## a registered [CursorSurface] [Node] MAY implement to answer
+## keyboard/gamepad navigation queries. GDScript has no formal interface type
+## for [method CursorSurfaceRegistry.get_surface]'s generic [Node] return, so
+## THIS constant is the single source of truth for the exact name every
+## caller ([method apply_buffered_navigation]) and every future implementer
+## must match — checked via [method Object.has_method], invoked via
+## [method Object.call].
+## [br]
+## Contract: [code]func cursor_navigate(from_id: int, direction: Vector2i) -> Variant[/code].
+## [param from_id] is the current [member CursorTarget.id] (meaningful even
+## while [member CursorTarget.is_valid] is false — see [method CursorTarget.invalidated],
+## which preserves [code]id[/code]). [param direction] is one of the four unit
+## vectors [method CursorTypes.navigation_direction] returns. Return either
+## the new target's [int] id, or [code]null[/code] if there is no legal
+## target in that direction (e.g. the grid edge) — [code]null[/code] is NOT
+## an error, it means "the move is illegal here", and this entry leaves the
+## current target untouched in that case.
+const NAVIGATE_METHOD_NAME: StringName = &"cursor_navigate"
 
 
 ## [param reclaim], [param registry] and [param mouse_position_provider] are
@@ -398,7 +466,50 @@ func arbitrate_device_authority(events: Array[InputEvent]) -> void:
 	# this entry must NOT touch _target and must NOT clear the frame buffer,
 	# and it must take coordinates from _safe_mouse_position() rather than
 	# digging them out of `events`.
+	#
+	# 🔴 SEAM FILLED 2026-09-07 (Story 005). Implementation below, split into
+	# the (i) and (ii) halves exactly as described above.
 	# ─────────────────────────────────────────────────────────────────────
+	var keyboard_gamepad_navigation_claimed: bool = false
+	for event: InputEvent in events:
+		if CursorTypes.classify(event) == CursorTypes.Authority.KEYBOARD_GAMEPAD \
+				and CursorTypes.classify_action(event) == CursorTypes.ActionClass.NAVIGATION:
+			keyboard_gamepad_navigation_claimed = true
+			break
+
+	# ─────────────────────────────────────────────────────────────────────
+	# (ii) Provider-dependent — ONLY this — gated on mouse_channel_available.
+	# When false there is simply NO mouse candidate; (i) above still ran with
+	# the keyboard/gamepad candidate alone, unaffected.
+	# ─────────────────────────────────────────────────────────────────────
+	var mouse_claimed: bool = false
+	if mouse_channel_available and _reclaim != null:
+		mouse_claimed = _reclaim.evaluate(_safe_mouse_position(), _target.surface)
+
+	# 固定優先序:KEYBOARD_GAMEPAD 恆勝於 MOUSE(ADR-0005 機制六原文,
+	# cursor_state.gd 之外的 pseudocode 版本,line ~562)。
+	var old_authority: CursorTypes.Authority = _device_authority
+	var new_authority: CursorTypes.Authority = old_authority
+	if keyboard_gamepad_navigation_claimed:
+		new_authority = CursorTypes.Authority.KEYBOARD_GAMEPAD
+	elif mouse_claimed:
+		new_authority = CursorTypes.Authority.MOUSE
+
+	if new_authority != old_authority:
+		# 觸發點 (a): AUTHORITY_TRANSFER. This entry must NOT touch _target —
+		# only _device_authority and the reclaim reset call below.
+		_device_authority = new_authority
+		device_authority_changed.emit()
+		if _reclaim != null:
+			_reclaim.reset(_safe_mouse_position(), CursorTypes.ResetTrigger.AUTHORITY_TRANSFER)
+	elif keyboard_gamepad_navigation_claimed and mouse_claimed:
+		# 觸發點 (d): VETOED_SAME_FRAME. Precondition is authority did NOT
+		# transfer (mutually exclusive with (a) above, ADR-0005 line ~576) —
+		# reachable here only because both candidates existed AND authority
+		# was ALREADY keyboard/gamepad, so the mouse candidate was vetoed by
+		# fixed priority without anything changing.
+		if _reclaim != null:
+			_reclaim.reset(_safe_mouse_position(), CursorTypes.ResetTrigger.VETOED_SAME_FRAME)
 
 	_drain_pending_reseed()
 	_mutation_in_progress = false
@@ -439,8 +550,68 @@ func apply_buffered_navigation(events: Array[InputEvent]) -> void:
 	# Criteria #13 exists specifically to fail if anyone writes it that way.
 	# The frame buffer is cleared by CursorStateHost.flush_buffered_navigation()
 	# after this returns — not here.
+	#
+	# 🔴 SEAM FILLED 2026-09-07 (Story 005), "Option E" manager ruling:
+	# registered-surface PULL query via _registry.get_surface() — neither this
+	# method's signature nor _init()'s changed. See [constant NAVIGATE_METHOD_NAME]'s
+	# doc comment for the full contract this relies on.
+	#
+	# 🔴 [b]One sub-question left provisional[/b] — flagged in this story's
+	# report, not silently assumed: when authority TRANSFERS to
+	# KEYBOARD_GAMEPAD on the SAME frame as the triggering NAVIGATION event
+	# (機制六① runs first, -100, same _frame_events buffer this method also
+	# reads at -25), this implementation does NOT suppress the write below —
+	# the navigated target is applied in that same frame, matching AC-10b's
+	# explicit precedent for the mouse case ("不殘留 A 的舊值超過該觸發影格本身").
+	# If the correct reading of AC-10 (keyboard/gamepad case) instead requires
+	# freezing the OLD value for the entire transfer-triggering frame, this
+	# needs a "was authority JUST transferred this frame" suppression this
+	# file does not currently carry — a real code change, not a test-only one.
+	# Every OTHER acceptance criterion this story covers is unaffected by this
+	# specific question (see this story's report).
 	# ─────────────────────────────────────────────────────────────────────
+	if _device_authority == CursorTypes.Authority.KEYBOARD_GAMEPAD:
+		var direction: Vector2i = Vector2i.ZERO
+		for event: InputEvent in events:
+			if CursorTypes.classify(event) == CursorTypes.Authority.KEYBOARD_GAMEPAD \
+					and CursorTypes.classify_action(event) == CursorTypes.ActionClass.NAVIGATION:
+				var candidate: Vector2i = CursorTypes.navigation_direction(event)
+				if candidate != Vector2i.ZERO:
+					direction = candidate
+					break
 
+		if direction != Vector2i.ZERO:
+			var surface_node: Node = _registry.get_surface(_target.surface)
+			if surface_node != null and surface_node.has_method(NAVIGATE_METHOD_NAME):
+				var result: Variant = surface_node.call(NAVIGATE_METHOD_NAME, _target.id, direction)
+				# null is NOT an error — it means "no legal target that
+				# direction" (e.g. the grid edge). Leave _target untouched.
+				if result != null:
+					var new_target: CursorTarget = CursorTarget.make(_target.surface, int(result))
+					# NEVER set_target() — R4-4: the latch is already up by
+					# this line, so that call would be rejected as reentrant
+					# and buffered navigation would silently stop working on
+					# the normal path. Validation Criteria #13 exists
+					# specifically to fail if anyone writes it that way.
+					_write_target_internal(new_target, TargetResetPolicy.CONDITIONAL_ON_CHANGE)
+			else:
+				# Loud, not silent — coordinator's dispatch requirement for
+				# Story 005, not a manager ruling. The manager's 2026-09-07
+				# ruling settled only the interface SHAPE (Option E: ask the
+				# registered surface); the failure direction was specified by
+				# the coordinator on the general project principle that a
+				# silent no-op is this project's signature failure mode.
+				# Covers BOTH "nothing registered under this tag" and
+				# "something is registered but doesn't implement the
+				# contract". diagnostic_surface_navigation_unsupported_count
+				# keeps counting; push_error() fires exactly once per instance.
+				diagnostic_surface_navigation_unsupported_count += 1
+				if not _surface_navigation_error_reported:
+					_surface_navigation_error_reported = true
+					push_error(ERR_SURFACE_NAVIGATION_UNSUPPORTED)
+
+	# The frame buffer is cleared by CursorStateHost.flush_buffered_navigation()
+	# after this returns — not here.
 	_drain_pending_reseed()
 	_mutation_in_progress = false
 
@@ -457,24 +628,39 @@ func apply_buffered_navigation(events: Array[InputEvent]) -> void:
 ## [code]ui_*[/code] action. [b]AC-39 is the half this story implements[/b]:
 ## when it is [code]false[/code], [member _device_authority] is unchanged —
 ## target and authority are orthogonal fields and writing one never implies
-## the other. All three handoff branches (甲/乙/丙) pass [code]false[/code].
-## ⚠️ [b]The [code]true[/code] half is deliberately NOT implemented here.[/b]
-## ADR-0005 promises that [code]true[/code] transfers device authority but
-## never says TO WHICH device, and this signature carries no device
-## information to derive it from. So today [code]true[/code] and
-## [code]false[/code] behave identically. 🔴 [b]Ruled 2026-09-03: explicitly
-## deferred, NOT implemented.[/b] The ruling and its full reasoning are
-## recorded in ADR-0005 機制十一, in the paragraph beginning
-## [code]**裝置權威不隨目標交接重置**[/code] — go read it there rather than
-## trusting this summary. Three facts made it unimplementable today: the ADR
-## never says which device to transfer to; this signature carries no device
-## information; and no caller passes [code]true[/code] at all. The parameter
-## is kept rather than deleted (unlike R6-6's dangling
-## [code]surface[/code]) because Story 005 is the work that will discover
-## whether it is needed — deleting now and re-adding later would change a
-## frozen signature twice. 🔴 [b]The ruling set a deadline: Story 005 must
-## settle this on completion — implement, or delete permanently.[/b]
-## Until then this is NOT a contract and nothing may be built on it.
+## the other.
+##
+## 🔴 [b]DELETED 2026-09-07 (Story 005) — [code]from_ui_action[/code] used to
+## be a second parameter here.[/b] History, kept rather than erased (this
+## project's own convention — annotate in place, do not silently remove the
+## reasoning trail):
+## [br]
+## The parameter existed because 機制十一 said [code]true[/code] "transfers
+## device authority when [code]from_ui_action[/code] is true" but never said
+## TO WHICH device, and the signature carried no device information to
+## derive it from — so [code]true[/code] and [code]false[/code] always
+## behaved identically, and the 2026-09-03 ruling deferred a decision to
+## Story 005 rather than guess: "implement, or delete permanently."
+## [br]
+## Story 005 proved the premise for deletion before deleting: with 機制六①
+## ([method arbitrate_device_authority], priority −100) now implemented, it
+## settles [member _device_authority] for the frame BEFORE any 機制六②
+## caller ([code]set_target()[/code] itself, priority −60) can run — so by
+## the time this method's body executes, there is structurally nothing left
+## for a [code]from_ui_action=true[/code] branch to transfer. Verified, not
+## assumed: [code]tests/integration/cursor/frame_buffer_ordering_test.gd[/code]'s
+## [code]test_from_ui_action_has_nothing_left_to_transfer_once_step_one_has_run[/code]
+## called this entry with [code]true[/code] and [code]false[/code] on two
+## independent [CursorState] instances (both preceded by a real
+## [method arbitrate_device_authority] call) and asserted identical resulting
+## authority — PASSED. Per the manager's 2026-09-07 ruling ("先用測試證明它
+## 真的沒用，再刪掉"): proof landed, parameter deleted, that test itself
+## deleted with it (it tested a distinction that no longer exists to test).
+## [br]
+## ⚠️ [b]Flagged, not fixed by this story[/b]: ADR-0005's frozen Key
+## Interfaces section and 機制十一's prose still show the two-parameter
+## signature — [code]docs/architecture/[/code] is outside this story's write
+## scope. See this story's final report.
 ##
 ## 🔴 [b]One return code means more than ADR-0005 says it does — this is an
 ## implementation choice, not contract.[/b]
@@ -491,7 +677,7 @@ func apply_buffered_navigation(events: Array[InputEvent]) -> void:
 ## [method _validate_target_writable]; it is restated here on purpose, because
 ## callers of a public method do not read private ones. Change one, check the
 ## other.[/i]
-func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult:
+func set_target(target: CursorTarget) -> SetTargetResult:
 	if _mutation_in_progress:
 		return SetTargetResult.REJECTED_REENTRANT
 	_mutation_in_progress = true
@@ -502,29 +688,13 @@ func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult:
 	if result == SetTargetResult.APPLIED:
 		_write_target_internal(target, TargetResetPolicy.CONDITIONAL_ON_CHANGE)
 
-	# ⚠️ from_ui_action IS READ — here, as a deliberate no-op branch, and this
-	# comment is the reason it looks like a dangling parameter.
-	# AC-39 (the only testable acceptance criterion on this parameter) governs
-	# the FALSE case: device authority must be untouched. That holds by
-	# construction — nothing above writes _device_authority.
-	# 🔴 The TRUE case is NOT implemented, because ADR-0005 does not define it.
-	# 機制十一 says only "set_target() transfers device authority when
-	# from_ui_action is true" and never says TO WHICH device — and this
-	# signature carries no device information to derive it from. The one
-	# structurally consistent reading is that 步驟一
-	# (arbitrate_device_authority, priority −100) has already settled authority
-	# earlier in the same frame, before any 步驟二 caller re-target at −60, so
-	# there is nothing left for this entry to transfer. Inventing a rule here
-	# would be exactly the "assumption that runs clean and prints pretty
-	# numbers" this project has been burned by.
-	# ✅ RULED 2026-09-03: explicitly deferred, not implemented, and the
-	# parameter is kept rather than deleted. Recorded in ADR-0005 機制十一,
-	# paragraph "裝置權威不隨目標交接重置" — read the ruling there, not here.
-	# The ruling set a deadline: Story 005 must settle it on completion
-	# (implement, or delete the parameter permanently).
-	# 🔴 Until then this is NOT a contract. Do not build on it.
-	if from_ui_action:
-		pass
+	# AC-39: device authority is never touched on this path — the two fields
+	# are orthogonal, writing the target never implies a transfer. Holds by
+	# construction — nothing above writes _device_authority. (Formerly
+	# governed the FALSE branch of a now-deleted from_ui_action parameter;
+	# see this method's class doc comment, "DELETED 2026-09-07", for why the
+	# TRUE branch was never implemented and the parameter was removed rather
+	# than kept.)
 
 	_drain_pending_reseed()
 	_mutation_in_progress = false
@@ -653,7 +823,12 @@ func handoff_before_unload() -> MarkResult:
 ## (R5-1): 乙's reset is unconditional while the general path's is conditional.
 ## Hiding two semantics behind one bool is a boolean trap, and GDScript has no
 ## call-site named arguments — [code]set_target(t, false, true)[/code] tells a
-## reader nothing. Paired with [method handoff_before_unload], the two names
+## reader nothing. [i](Illustrative literal, kept for the historical argument
+## it makes about boolean traps — [method set_target]'s actual signature has
+## since dropped its own [code]from_ui_action[/code] bool entirely, 2026-09-07,
+## Story 005, so this exact call no longer parses. The reasoning against
+## STACKING a second one still applies to any future parameter proposal.)[/i]
+## Paired with [method handoff_before_unload], the two names
 ## read as the two halves of a handoff lifecycle.
 ##
 ## [b]Unconditional matters[/b]: if the newly computed target happens to equal

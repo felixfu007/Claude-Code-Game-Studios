@@ -5,12 +5,23 @@
 ## lifecycle requirement).
 ##
 ## [b]Deliberately empty of logic[/b] — forbidden pattern
-## [code]logic_in_cursor_autoload_shell[/code] (ADR-0005). This story does not
-## implement:
-## - frame-buffered input arbitration ([code]_input()[/code] /
-##   [code]_process()[/code] collection and decision — Story 005/007),
-## - the seven gated public write entries or the read queries (Story 007),
-## - the presentation [CanvasLayer] (Story 010).
+## [code]logic_in_cursor_autoload_shell[/code] (ADR-0005). At Story 002 (this
+## file's original story) this did not yet implement frame-buffered input
+## arbitration, the seven gated public write entries / read queries, or the
+## presentation [CanvasLayer]. 🔴 [b]Corrected 2026-09-07 (Story 005) — that
+## list is now stale and would mislead a reader checking current scope[/b]:
+## Story 007 landed the seven public write entries and read queries; Story
+## 011 landed the presentation [CanvasLayer]; this story lands the
+## frame-buffered [code]_input()[/code]/[code]_process()[/code] collection
+## points below (機制五) and the [CursorNavigationApplier] child (機制六③).
+## [b]Still NOT implemented by this story[/b]: 機制九's pause/focus gate
+## ([code]_arbitration_suspended[/code], [code]suspend_arbitration()[/code],
+## [code]resume_arbitration()[/code], the
+## [code]NOTIFICATION_APPLICATION_FOCUS_*[/code] branches) — that is Story
+## 008's explicit scope (this story's own dispatch, "Out of Scope"). Until
+## Story 008 lands, [member _frame_events] is collected and drained
+## unconditionally, every frame, with no pause/focus check anywhere in this
+## file.
 ##
 ## [b]Interim collaborator gap — CLOSED 2026-09-07 (Story 011).[/b] Story 014
 ## landed [ThresholdMouseReclaimPolicy] the same day as this story; this host
@@ -137,6 +148,27 @@ var _cursor_layer: CanvasLayer
 const CURSOR_LAYER_DRAW_ORDER: int = 100
 
 
+## Per-frame input event buffer (ADR-0005 機制五). Collected in [method _input]
+## below, decided (機制六①,[method _process] below) then applied (機制六③,
+## [method flush_buffered_navigation] below) across two [member Node.process_priority]
+## tiers, then cleared by the LAST consumer — never by [method _process].
+##
+## 🔴 [b]This story does NOT gate on 機制九's pause/focus flag.[/b] See this
+## file's class doc comment's "Still NOT implemented by this story" paragraph
+## — [code]_arbitration_suspended[/code] does not exist yet (Story 008). Until
+## then this buffer fills and drains unconditionally every frame.
+var _frame_events: Array[InputEvent] = []
+
+## [b]Story 005.[/b] Dedicated child node for 機制六③ (see
+## [code]cursor_navigation_applier.gd[/code]'s own class doc comment for why
+## it cannot be a second role folded onto THIS node). Built once in
+## [method _ready], never reassigned. Its OWN
+## [member Node.process_priority] (-25) is set in ITS OWN [method Node._init],
+## before [method Node.add_child] — same convention as [member _cursor_layer]'s
+## two children below.
+var _navigation_applier: CursorNavigationApplier
+
+
 ## [b]process_priority set here, not in [method _ready][/b] (2026-09-02,
 ## three-way-review remediation) — ADR-0005's R6-12 explicitly mandates
 ## [code]process_priority[/code] be set BEFORE [method Node.add_child]
@@ -167,6 +199,15 @@ func _ready() -> void:
 		Callable(self, "_get_mouse_position")
 	)
 
+	# Story 005: 機制六③'s dedicated child node. process_priority = -25 is set
+	# in ITS OWN _init() (R6-12: before add_child()), not here — same
+	# convention as the CanvasLayer children below. `self` is passed as the
+	# host: there is exactly one CursorStateHost instance (the Autoload) and
+	# this node is always its own direct child, never shared.
+	_navigation_applier = CursorNavigationApplier.new(self)
+	_navigation_applier.name = "CursorNavigationApplier"
+	add_child(_navigation_applier)
+
 	# Story 010: 機制十二's presentation host. No process_priority is set on
 	# this node itself — unlike the six 機制六 process-priority actors, a bare
 	# CanvasLayer with no children has no _process()/_input() of its own. Its
@@ -195,6 +236,46 @@ func _ready() -> void:
 	)
 	hover_arbiter.name = "NativePointerVisibilityArbiter"
 	_cursor_layer.add_child(hover_arbiter)
+
+
+## GDD 步驟一/二/三 的緩衝掛載點(ADR-0005 機制五)。[b]只收集，絕不裁定[/b] —
+## mounted here rather than [method Node._unhandled_input] per ADR-0005's
+## explicit rejection of that hook: an event consumed via
+## [method InputEvent.accept_event] by a focused [Control]'s own GUI handling
+## (e.g. its built-in focus navigation on [code]ui_up[/code]/[code]ui_down[/code])
+## never reaches [method Node._unhandled_input] at all — a silent omission,
+## not a reordering, that no buffering scheme downstream could repair.
+##
+## 🔴 Does NOT check [code]_arbitration_suspended[/code] — that field does not
+## exist yet (Story 008, see class doc comment). Every event collected here
+## is drained unconditionally.
+func _input(event: InputEvent) -> void:
+	_frame_events.append(event)
+
+
+## GDD 步驟一(機制六①): device-authority arbitration only, at THIS node's
+## own [member Node.process_priority] ([code]-100[/code]) — earliest of the
+## six 機制六 actors. Does [b]NOT[/b] clear [member _frame_events]: 機制六③
+## ([method flush_buffered_navigation] below) still needs to read it. The
+## buffer's clear point is that method, the frame's LAST consumer (機制五
+## R4-1).
+func _process(_delta: float) -> void:
+	if _frame_events.is_empty():
+		return
+	_state.arbitrate_device_authority(_frame_events)
+
+
+## GDD 步驟三(機制六③), called by [member _navigation_applier] from ITS OWN
+## [method Node._process] at [code]process_priority = -25[/code] — after any
+## caller's own 機制六②主動改標 at the architecture-mandated open interval
+## (-100, -25), both exclusive. Buffer stays private (no getter hands out the
+## internal [Array] — forbidden pattern
+## [code]returning_internal_container_references[/code], ADR-0001).
+func flush_buffered_navigation() -> void:
+	if _frame_events.is_empty():
+		return
+	_state.apply_buffered_navigation(_frame_events)
+	_frame_events.clear()
 
 
 ## Sole call site in the project for [method Viewport.get_mouse_position], used

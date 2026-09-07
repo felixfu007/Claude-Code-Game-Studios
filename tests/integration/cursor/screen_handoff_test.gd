@@ -165,7 +165,7 @@ func test_ac61_handoff_before_unload_leaves_no_valid_target_on_the_torn_down_sur
 	var registry: CursorSurfaceRegistry = fixture["registry"]
 
 	var original: CursorTarget = _target(23)
-	assert_int(state.set_target(original, false)).append_failure_message(
+	assert_int(state.set_target(original)).append_failure_message(
 		"PRECONDITION: could not seed the valid target AC-61 starts from."
 	).is_equal(CursorState.SetTargetResult.APPLIED)
 	assert_bool(state.is_current_target_valid()).is_true()
@@ -369,7 +369,7 @@ func test_ac62_authority_survives_a_甲_to_乙_transition_unchanged() -> void:
 	var fixture: Dictionary = _build_fixture()
 	var state: CursorState = fixture["state"]
 	state.set(&"_device_authority", CursorTypes.Authority.MOUSE)
-	assert_int(state.set_target(_target(3), false)).is_equal(
+	assert_int(state.set_target(_target(3))).is_equal(
 		CursorState.SetTargetResult.APPLIED
 	)
 	var authority_before: int = state.get_device_authority()
@@ -428,7 +428,7 @@ func test_ac63a_original_target_still_valid_is_reused_without_recomputation() ->
 	var fixture: Dictionary = _build_fixture()
 	var state: CursorState = fixture["state"]
 	var x: CursorTarget = _target(5)
-	assert_int(state.set_target(x, false)).is_equal(CursorState.SetTargetResult.APPLIED)
+	assert_int(state.set_target(x)).is_equal(CursorState.SetTargetResult.APPLIED)
 	assert_int(state.handoff_before_unload()).is_equal(CursorState.MarkResult.APPLIED)
 	assert_bool(state.is_current_target_valid()).append_failure_message(
 		"PRECONDITION: AC-63a starts from the pending-re-resolve state 甲 leaves."
@@ -439,7 +439,7 @@ func test_ac63a_original_target_still_valid_is_reused_without_recomputation() ->
 	# anywhere in this test, which is this test's own proof that no Core Rules
 	# #6 recomputation happened (there is no compute logic to have run: the
 	# caller — this test — only ever holds the value X it already had).
-	var result: int = state.set_target(x, false)
+	var result: int = state.set_target(x)
 
 	# THEN — 傳入的目標識別恰為 X(原值,不重新計算),有效性旗標轉回有效.
 	assert_int(result).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -471,7 +471,7 @@ func test_ac63b_original_target_invalidated_is_replaced_by_a_freshly_computed_ta
 	var fixture: Dictionary = _build_fixture()
 	var state: CursorState = fixture["state"]
 	var x: CursorTarget = _target(5)
-	assert_int(state.set_target(x, false)).is_equal(CursorState.SetTargetResult.APPLIED)
+	assert_int(state.set_target(x)).is_equal(CursorState.SetTargetResult.APPLIED)
 	assert_int(state.handoff_before_unload()).is_equal(CursorState.MarkResult.APPLIED)
 	assert_bool(state.is_current_target_valid()).is_false()
 
@@ -480,7 +480,7 @@ func test_ac63b_original_target_invalidated_is_replaced_by_a_freshly_computed_ta
 	# for a real tactical-movement-system computation that does not exist in
 	# this codebase yet (see this file's header note).
 	var recomputed: CursorTarget = _target(9)  # deliberately != X's id (5)
-	var result: int = state.set_target(recomputed, false)
+	var result: int = state.set_target(recomputed)
 
 	# THEN — the replacement is the freshly computed target, NOT the stale X.
 	assert_int(result).is_equal(CursorState.SetTargetResult.APPLIED)

@@ -131,7 +131,7 @@ class _ReentrantWriter extends RefCounted:
 			return
 		match entry:
 			Entry.SET_TARGET:
-				result = state.set_target(payload, false)
+				result = state.set_target(payload)
 			Entry.MARK_PENDING_RERESOLVE:
 				result = state.mark_pending_reresolve(payload)
 			Entry.HANDOFF_BEFORE_UNLOAD:
@@ -223,7 +223,7 @@ func _unregistered_target(id: int) -> CursorTarget:
 ## test's assertions only see what the test itself provoked.
 func _seed_valid_target(id: int) -> CursorTarget:
 	var target: CursorTarget = _registered_target(id)
-	var result: int = _state.set_target(target, false)
+	var result: int = _state.set_target(target)
 	assert_int(result).append_failure_message(
 		"PRECONDITION: set_target() must apply a freshly registered target before "
 		+ "this test's real assertions can mean anything. Got result %d." % result
@@ -398,7 +398,7 @@ func test_absent_policy_all_seven_write_entries_degrade_without_wedging_the_gate
 	# Act — all seven entries, ordered so each one has REAL work to do. An entry
 	# that returns early (nothing to mark, nothing to write) would never reach
 	# its _reclaim call site, and this test would then prove nothing about it.
-	var set_result: int = stateless.set_target(_registered_target(41), false)
+	var set_result: int = stateless.set_target(_registered_target(41))
 	var mark_result: int = stateless.mark_pending_reresolve(_registered_target(41))
 	var mount_result: int = stateless.handoff_after_mount(_registered_target(42))
 	var unload_result: int = stateless.handoff_before_unload()
@@ -424,7 +424,7 @@ func test_absent_policy_all_seven_write_entries_degrade_without_wedging_the_gate
 
 	# Assert (b) — 🔴 THE POINT. If any of the seven aborted mid-body, the latch
 	# it raised was never lowered and this call comes back REJECTED_REENTRANT.
-	var after_all_seven: int = stateless.set_target(_registered_target(43), false)
+	var after_all_seven: int = stateless.set_target(_registered_target(43))
 	assert_int(after_all_seven).append_failure_message(
 		"the write interface is WEDGED after walking all seven entries with an "
 		+ "absent MouseReclaimPolicy: a call on a null collaborator aborted its "
@@ -481,7 +481,7 @@ func test_ac25_partial_set_target_writes_the_new_coordinates_and_flips_validity_
 	# Act — the caller system (e.g. tactical move/engage) takes the delegated
 	# resolution path AC-25 exists to prove actually works.
 	var replacement: CursorTarget = _registered_target(9)
-	var result: int = _state.set_target(replacement, false)
+	var result: int = _state.set_target(replacement)
 
 	# Assert — coordinates equal the caller's value, flag immediately back to
 	# valid, with no intermediate state a reader could observe.
@@ -508,7 +508,7 @@ func test_ac25_partial_no_stale_coordinate_or_invalid_flag_survives_a_later_quer
 	# Arrange — invalidate, then resolve via the caller-delegated path
 	var original: CursorTarget = _seed_valid_target(3)
 	assert_int(_state.mark_pending_reresolve(original)).is_equal(CursorState.MarkResult.APPLIED)
-	assert_int(_state.set_target(_registered_target(21), false)).is_equal(
+	assert_int(_state.set_target(_registered_target(21))).is_equal(
 		CursorState.SetTargetResult.APPLIED
 	)
 
@@ -522,7 +522,7 @@ func test_ac25_partial_no_stale_coordinate_or_invalid_flag_survives_a_later_quer
 		var seen: CursorTarget = _state.get_current_target()
 		observed_ids.append(seen.id)
 		observed_validity.append(_state.is_current_target_valid())
-	var rejected: int = _state.set_target(_unregistered_target(3), false)
+	var rejected: int = _state.set_target(_unregistered_target(3))
 	var after_rejection: CursorTarget = _state.get_current_target()
 	observed_ids.append(after_rejection.id)
 	observed_validity.append(_state.is_current_target_valid())
@@ -637,7 +637,7 @@ func test_ac37_stale_expected_returns_stale_not_applied_and_changes_nothing() ->
 	# while the cursor was on target 2, but the PLAYER navigated to target 30
 	# before the caller got round to making the call.
 	var stale_belief: CursorTarget = _seed_valid_target(2)
-	assert_int(_state.set_target(_registered_target(30), false)).append_failure_message(
+	assert_int(_state.set_target(_registered_target(30))).append_failure_message(
 		"PRECONDITION: the player's navigation away from the stale target failed"
 	).is_equal(CursorState.SetTargetResult.APPLIED)
 	var before: CursorTarget = _state.get_current_target()
@@ -763,7 +763,16 @@ func test_ac37_mark_pending_reresolve_with_no_valid_current_target_returns_no_cu
 
 # ─── AC-39: target and device authority are orthogonal fields ──────────────
 
-## AC-39: set_target(..., from_ui_action = false) must not touch authority.
+## AC-39: set_target() must not touch device authority.
+##
+## 🔴 [b]Updated 2026-09-07 (Story 005)[/b]: this test used to exercise only
+## the [code]from_ui_action == false[/code] half of a now-deleted parameter
+## (the [code]true[/code] half was device-authority arbitration, 機制六,
+## which Story 005 proved has nothing left to transfer once
+## [method CursorState.arbitrate_device_authority] has run — see
+## [method CursorState.set_target]'s class doc comment, "DELETED
+## 2026-09-07", for the full history). The parameter is gone; this test now
+## covers the only shape that exists.
 func test_ac39_set_target_not_from_ui_action_leaves_device_authority_unchanged() -> void:
 	# Arrange — authority must hold a NON-default value first, or "unchanged"
 	# would be indistinguishable from "was never set". No public setter exists
@@ -774,11 +783,8 @@ func test_ac39_set_target_not_from_ui_action_leaves_device_authority_unchanged()
 	_authority_changed_count = 0
 
 	# Act — a system-initiated re-target (all three handoff branches and every
-	# caller-driven re-target pass false here).
-	# 🔴 Only the from_ui_action == false half is exercised. The true half is
-	# device-authority arbitration (機制六 / Story 005) and AC-39's own text
-	# covers only the false case — this test does not fake the other one.
-	var result: int = _state.set_target(_registered_target(42), false)
+	# caller-driven re-target call this same, now-only shape).
+	var result: int = _state.set_target(_registered_target(42))
 
 	# Assert — the write landed...
 	assert_int(result).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -862,7 +868,7 @@ func test_target_changed_fires_on_a_validity_flip_back_to_true_with_identical_co
 	_reclaim.reset_calls = []
 
 	# Act — the owning system re-resolves to the very same surface and id
-	var result: int = _state.set_target(_registered_target(19), false)
+	var result: int = _state.set_target(_registered_target(19))
 	var after: CursorTarget = _state.get_current_target()
 
 	# Assert — same premise check as the false-direction test
@@ -889,7 +895,7 @@ func test_target_changed_does_not_fire_when_an_identical_valid_target_is_rewritt
 	var _ignored: CursorTarget = _seed_valid_target(77)
 
 	# Act
-	var result: int = _state.set_target(_registered_target(77), false)
+	var result: int = _state.set_target(_registered_target(77))
 
 	# Assert — the write is accepted, but nothing actually changed, so nothing
 	# is announced. This is the counterpart that stops the two tests above from
@@ -915,7 +921,7 @@ func test_set_target_rejects_an_unregistered_surface_with_surface_not_registered
 	var before: CursorTarget = _state.get_current_target()
 
 	# Act
-	var result: int = _state.set_target(_unregistered_target(5), false)
+	var result: int = _state.set_target(_unregistered_target(5))
 
 	# Assert — a specific rejection code, never a silent no-op
 	assert_int(result).append_failure_message(
@@ -941,7 +947,7 @@ func test_handoff_after_mount_rejects_an_unregistered_surface_with_the_same_resu
 	var offending: CursorTarget = _unregistered_target(5)
 
 	# Act
-	var via_set_target: int = _state.set_target(offending, false)
+	var via_set_target: int = _state.set_target(offending)
 	var via_handoff: int = _state.handoff_after_mount(offending)
 
 	# Assert — 乙 must run the SAME validation, through the shared ungated
@@ -1207,7 +1213,7 @@ func test_reentrant_set_target_is_rejected_with_rejected_reentrant() -> void:
 	_state.target_changed.connect(writer.on_target_changed)
 
 	# Act — an outer write that really changes the target, so the signal fires
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1240,7 +1246,7 @@ func test_reentrant_mark_pending_reresolve_is_rejected_with_rejected_reentrant()
 	_state.target_changed.connect(writer.on_target_changed)
 
 	# Act
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1270,7 +1276,7 @@ func test_reentrant_handoff_before_unload_is_rejected_with_rejected_reentrant() 
 	_state.target_changed.connect(writer.on_target_changed)
 
 	# Act
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1302,7 +1308,7 @@ func test_reentrant_handoff_after_mount_is_rejected_with_rejected_reentrant() ->
 	_state.target_changed.connect(writer.on_target_changed)
 
 	# Act
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1339,7 +1345,7 @@ func test_reentrant_arbitrate_device_authority_is_a_total_no_op_and_counts_the_r
 	var authority_before: int = _state.get_device_authority()
 
 	# Act
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1374,7 +1380,7 @@ func test_reentrant_apply_buffered_navigation_is_a_total_no_op_and_counts_the_re
 	var rejections_before: int = _state.diagnostic_reentrant_rejection_count
 
 	# Act
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1425,7 +1431,7 @@ func test_reentrant_reseed_request_is_deferred_not_discarded_and_drained_before_
 
 	# Act — the outer write emits target_changed; the handler asks for a reseed
 	# (a REASONABLE downstream design per 專家發現 D, not misuse)
-	var outer: int = _state.set_target(_registered_target(60), false)
+	var outer: int = _state.set_target(_registered_target(60))
 
 	# Assert
 	assert_int(outer).is_equal(CursorState.SetTargetResult.APPLIED)
@@ -1478,15 +1484,15 @@ func test_the_gate_is_released_after_every_normal_call_so_the_next_call_is_accep
 	# forever. No single-entry test above can see that: each of those makes
 	# exactly one outer call and would pass against a permanently stuck latch.
 	var results: Array[int] = []
-	results.append(_state.set_target(_registered_target(1), false))
+	results.append(_state.set_target(_registered_target(1)))
 	results.append(_state.handoff_after_mount(_registered_target(2)))
 	results.append(_state.mark_pending_reresolve(_registered_target(2)))
-	results.append(_state.set_target(_registered_target(3), false))
+	results.append(_state.set_target(_registered_target(3)))
 	results.append(_state.handoff_before_unload())
 	_state.arbitrate_device_authority(_no_events())
 	_state.apply_buffered_navigation(_no_events())
 	_state.reseed_reclaim_on_focus_regained()
-	results.append(_state.set_target(_registered_target(4), false))
+	results.append(_state.set_target(_registered_target(4)))
 
 	# Assert — exact membership pins the values AND the count, so a short list
 	# (an early abort) fails just as loudly as a wrong value would.
@@ -1562,7 +1568,7 @@ func test_ac50_the_validity_flag_flips_back_to_true_once_the_owning_system_re_re
 	observed.append(_state.is_current_target_valid())        # confident preview allowed
 	assert_int(_state.mark_pending_reresolve(target)).is_equal(CursorState.MarkResult.APPLIED)
 	observed.append(_state.is_current_target_valid())        # preview must suppress
-	assert_int(_state.set_target(_registered_target(9), false)).is_equal(
+	assert_int(_state.set_target(_registered_target(9))).is_equal(
 		CursorState.SetTargetResult.APPLIED
 	)
 	observed.append(_state.is_current_target_valid())        # preview may un-suppress
@@ -1738,94 +1744,18 @@ func test_ac29_partial_marking_pending_reresolve_notifies_every_subscriber_exact
 	).is_equal(1)
 
 
-## AC-32 — 🔴 [b]NOT COVERED. BLOCKED ON STORY 005.[/b]
+## AC-32 — ✅ [b]MOVED, 2026-09-07 (Story 005).[/b] The tripwire that used to
+## live here (see git history for the full "why this is deliberately weak"
+## reasoning, kept for the record) has been deleted per its own explicit
+## instruction ("delete it and write the real AC-32 test") now that Story
+## 005 filled [method CursorState.apply_buffered_navigation]'s body.
 ##
-## This test does [b]not[/b] verify AC-32 — and it is [b]not[/b] a tripwire
-## for it either (that claim used to live at the bottom of this comment; it
-## was wrong, see there). It is a gap declaration written down in code, so
-## the gap stays visible instead of quietly becoming someone's assumption.
-##
-## AC-32's WHEN clause is player navigation, which reaches this system only
-## through [method CursorState.apply_buffered_navigation] — and that method's
-## body is an explicit "STORY 005 SEAM": its gate, diagnostic counter and
-## drain are implemented, but the "decide what to apply from the buffered
-## events" half is not. There is therefore no honest way to observe AC-32's
-## THEN clause from this story.
-##
-## 🔴 [b]Deliberately NOT substituted with a [method CursorState.set_target]
-## call.[/b] That would exercise the caller-delegated path — the exact
-## opposite of what AC-32 asks (that the player unsticks themselves with NO
-## caller system involved) — while wearing AC-32's name. A false green is
-## worse here than an admitted gap.
-##
-## 🔴 [b]This test does NOT go red when Story 005 lands.[/b] Two independent
-## properties of its own inputs guarantee "nothing was written", regardless
-## of whether the seam above is still empty or fully implemented:
-##   1. the event array passed in is EMPTY ([method _no_events]) — no correct
-##      機制六 body can derive a new target from zero events;
-##   2. [code]_device_authority[/code] is never set in this test, so it is
-##      UNINITIALIZED — which the seam comment itself calls a no-op.
-## The assertion below therefore measures a RESULT ("still invalid") that has
-## a second cause the test itself supplies. It is insensitive to the very
-## change it names.
-##
-## 🔴 [b]Do not try to "fix" the tripwire.[/b] Three stronger-looking
-## rewrites were examined and rejected in
-## [code]docs/reviews/story-007-test-evidence-review-2026-09-03.md[/code] §4.5
-## (feed real [code]ui_*[/code] events + set authority: guesses at an event
-## shape Story 005 has not decided yet, and guessing wrong yields a MORE
-## convincing false green; assert on the production file's source text:
-## tests a comment, not behaviour, and there are two "STORY 005 SEAM" markers
-## so deleting one still matches; assert on private state: equivalent to the
-## current assertion). A weak tripwire that looks strong is a negative change.
-##
-## What this comment must therefore not say is that anything here will remind
-## anyone. The failure message below still spells out what to write instead,
-## and THAT part is worth keeping — but the only defence that will actually be
-## executed is AC-32 being verified as part of Story 005's own acceptance.
-## ⚠️ As of 2026-09-03 it is NOT registered there: searching the whole epic for
-## "AC-32" matches only this story's work order
-## ([code]story-007-write-read-interface.md[/code] line 69), not
-## [code]story-005-frame-buffer-ordering.md[/code]. Registering it is
-## recommendation 2 of §4.5 of the review above and has [b]not[/b] been done —
-## do not read this comment as evidence that it has.
-func test_ac32_blocked_apply_buffered_navigation_is_still_a_story_005_seam_and_writes_no_target() -> void:
-	# Arrange — AC-32's GIVEN: a target whose validity flag is invalid
-	# (pending re-resolve), and no caller system about to intervene.
-	var _ignored: CursorTarget = _seed_valid_target(17)
-	assert_int(_state.mark_pending_reresolve(_registered_target(17))).is_equal(
-		CursorState.MarkResult.APPLIED
-	)
-	assert_bool(_state.is_current_target_valid()).is_false()
-	_target_changed_count = 0
-	_reclaim.reset_calls = []
-
-	# Act — AC-32's WHEN: the player navigates. apply_buffered_navigation() is
-	# the only entry that carries player navigation into this system.
-	_state.apply_buffered_navigation(_no_events())
-
-	# Assert — 🔴 THIS TEST ASSERTS THE GAP, NOT THE BEHAVIOUR.
-	# AC-32's THEN (coordinate becomes the newly navigated one, validity flips
-	# back to true, the stall lifts with no caller system involved) cannot
-	# happen yet: this entry's body is an explicit "STORY 005 SEAM" — the gate,
-	# the diagnostic counter and the drain are implemented, the "decide what to
-	# apply from the buffered events" half is not. Confirmed by reading the
-	# production method, not assumed.
-	assert_bool(_state.is_current_target_valid()).append_failure_message(
-		"apply_buffered_navigation() now writes a target — the Story 005 seam "
-		+ "has been filled. THAT IS GOOD NEWS AND THIS TEST IS NOW WRONG: "
-		+ "delete it and write the real AC-32 test (KEYBOARD_GAMEPAD "
-		+ "authority, real NAVIGATION-class ui_* events, assert the coordinate "
-		+ "becomes the navigated one and validity flips back to true with no "
-		+ "caller system involved). Until that happens AC-32 is UNCOVERED — "
-		+ "do not let this test's green stand in for it."
-	).is_false()
-	assert_int(_state.get_current_target().id).is_equal(17)
-	assert_int(_target_changed_count).is_equal(0)
-	assert_array(_reclaim.reset_calls).is_empty()
-
-	# The half this story DOES own still behaves: a normal, non-reentrant call
-	# is accepted and counts no rejection.
-	assert_int(_state.diagnostic_reentrant_rejection_count).append_failure_message(
-		"a normal call to a void entry counted a reentrancy rejection"
-	).is_equal(0)
+## The real AC-32 test — KEYBOARD_GAMEPAD authority, real NAVIGATION-class
+## [code]ui_*[/code] events, asserting the coordinate becomes the navigated
+## one and validity flips back to true with no caller system involved — is
+## [code]tests/integration/cursor/frame_buffer_ordering_test.gd[/code]'s
+## [code]test_ac32_players_own_navigation_unsticks_a_pending_reresolve_target[/code].
+## It lives there rather than here because it needs a real navigable-surface
+## test double (機制六③'s "Option E" contract) that this file's fixtures
+## do not build, and this project's Test Evidence for Story 005 names that
+## integration file as the BLOCKING evidence.

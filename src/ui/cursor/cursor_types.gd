@@ -163,6 +163,40 @@ static func classify_action(event: InputEvent) -> ActionClass:
 	return ActionClass.OTHER
 
 
+## Story 005 (機制六③, "Option E" — the manager's 2026-09-07 ruling settled
+## only the interface SHAPE; the specific up/down/left/right -> [Vector2i]
+## mapping below is this story's own engineering judgment call, not
+## something separately read or approved by the manager): maps a
+## NAVIGATION-class [code]ui_*[/code] event to a unit direction vector, for
+## callers deriving a new [CursorTarget] from the buffered navigation events
+## (see [method CursorState.apply_buffered_navigation]).
+## [br]
+## [b]Precondition, not re-validated here[/b]: callers MUST already have
+## confirmed [method classify_action] returns [constant ActionClass.NAVIGATION]
+## for [param event] (this function does not repeat the echo filter or the
+## [method InputMap.event_is_action] classification — doing both would be the
+## exact kind of duplicated-rule drift this project's own registry warns
+## against, see [code]cursor_state.gd[/code]'s echo-filtering doc comment).
+## [br]
+## Y convention matches [method CursorTypes.decode_tile] / [Board]'s own grid
+## (row increases downward, matching screen space): UP decreases the row,
+## DOWN increases it.
+## [br]
+## Returns [constant Vector2i.ZERO] for any event that does not match one of
+## the four bound directional actions — this should be unreachable given the
+## precondition above, but is a safe default rather than an undefined one.
+static func navigation_direction(event: InputEvent) -> Vector2i:
+	if InputMap.event_is_action(event, &"ui_up"):
+		return Vector2i(0, -1)
+	if InputMap.event_is_action(event, &"ui_down"):
+		return Vector2i(0, 1)
+	if InputMap.event_is_action(event, &"ui_left"):
+		return Vector2i(-1, 0)
+	if InputMap.event_is_action(event, &"ui_right"):
+		return Vector2i(1, 0)
+	return Vector2i.ZERO
+
+
 ## Encodes a board grid coordinate to an [int] for use as [member
 ## CursorTarget.id]. Bijective with [method decode_tile] for any [param cell]
 ## with [code]0 <= cell.x < board_width[/code] and [code]cell.y >= 0[/code],
