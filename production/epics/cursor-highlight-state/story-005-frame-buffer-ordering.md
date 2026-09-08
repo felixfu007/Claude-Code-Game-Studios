@@ -1,12 +1,12 @@
 # Story 005:整幀緩衝 + `_process` 裁決 + 六行為者定序
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:🟡 In Progress(約八成 —— 2026-09-07 實作,2026-09-08 補文件同步。**未完成項見本檔末「未完成項與已登記債」節**)
 > **Layer**:Core
 > **Type**:Integration
 > **Estimate**:L(約 8–10 小時)
 > **Manifest Version**:2026-09-02
-> **Last Updated**:[由 /dev-story 於實作開始時設定]
+> **Last Updated**:2026-09-08
 
 ## Context
 
@@ -119,7 +119,19 @@ ADR 已量化:`_input()` 每事件僅一次 `Array.append`(O(1));裁決與套用
 **Story Type**:Integration
 **必要證據**:`tests/integration/cursor/frame_buffer_ordering_test.gd`
 
-**Status**:[ ] 尚未建立
+**Status**:✅ 已建立並通過 —— `tests/integration/cursor/frame_buffer_ordering_test.gd`(14 條測試)。
+全套實測 **439 條 / 35 suites(439/439 執行、35/35 suite)、0 errors、0 orphans、
+具名失敗 1 條**,即既有且已核准刻意紅的
+`affinity_phi_provider_test.gd > test_phi_reflects_a_pairing_polarity_flip_made_after_construction`。
+
+📌 **上列數字為 2026-09-08 由協調者本人重跑取得,不是轉述交接檔。**
+執行方式:`tests/gdunit4_runner.gd`(其 `FORCED_ARGS` 已含 `tests/unit` 與 `tests/integration`
+兩者,經當場確認)、**引擎自身 exit code = 100**、耗時 6.8 秒。
+⚠️ **失敗數是依規範 grep 具名 ` FAILED` 數出來的,不是讀 `Overall Summary` 的 `failures` 欄** ——
+該欄計的是**失敗斷言**而非失敗測試(見 `coding-standards.md`,本專案已被此欄誤導過)。
+本次兩者恰好都是 1,**屬巧合而非等價**。
+
+🔴 **但「通過」不等於「證明抓得到錯」** —— 敏感度證明未做,見本檔末「未完成項與已登記債」節第 1 項。
 
 ---
 
@@ -157,3 +169,56 @@ provider 前置檢查、drain 義務**,但「依權威決定套用什麼」屬�
 > `_write_target_internal()`,而該私有路徑由機制十(L.811-819)定義,EPIC.md 指派給 Story 007。
 >
 > 🔴 **後果**:原排程寫「002、004 完成即可動工」,照做會在開工後才發現要呼叫的方法不存在。
+
+---
+
+## 未完成項與已登記債(2026-09-08 寫入,管理者裁決 B:補文件、債登記清楚)
+
+**本節存在的理由**:這張工作單約八成完成,而**「八成」如果不寫清楚是哪八成,讀者會自行補成十成**。
+以下三項是刻意未做,不是遺漏。
+
+### 1. 🔴 敏感度證明未做 —— AC-32 與 AC-20 的測試「沒有被證明會紅」
+
+**白話**:那幾條測試現在是綠的,但**沒有人故意把程式改壞、確認它們會轉紅**。
+因此無法排除「它們永遠綠、其實什麼都沒驗到」這個可能。
+
+**這是刻意的判斷,不是忘記**:2026-09-07 協調者判定「潦草的敏感度證明比沒有更糟 ——
+它會讓人以為那幾條測試已經證明過會紅」。2026-09-08 管理者裁決 B 確認此項登記為債、不在本輪做。
+
+⚠️ **成本要先知道(本專案實測特性)**:一條測試失敗會**中止同 suite 剩餘測試**,
+所以**一次注入只能證明第一條抓到它的那條測試**。要證明後面幾條,必須把前面的 `test_` 函式
+暫時改名移出收集範圍、逐條跑、再改回 —— **每證明一條約等於一次完整測試執行。**
+(此特性連同其他五種「測試指令會誤導人」的形狀記於 `.claude/docs/coding-standards.md`。)
+
+**已登記於** `docs/tech-debt-register.md`。要動它需要另開工作單。
+
+### 2. AC-10 的 GDD 條文 —— ✅ 已於 2026-09-08 完成同步
+
+原本條文寫著與程式碼**相反**的行為(交接影格維持舊值 vs. 實作同影格套用)。
+已依 2026-09-07 管理者裁決改寫為兩分支,並附裁決註記與兩條測試名稱。
+見 `design/gdd/cursor-highlight-state.md` 的 AC-10 及其下方「AC-10 裁決註記」。
+
+### 3. 架構文件 —— ✅ 已於 2026-09-08 完成三項,🔴 但衍生一項新的待裁決
+
+已完成(全在 `docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`):
+
+- **編譯不過的範例碼已更正** —— 原 `var _host: CursorStateHost` 型別註記編譯不過
+  (`cursor_state_host.gd` 刻意不宣告 `class_name`),已改為專案實際落地的 preload 腳本常數寫法。
+- **Option E 契約已入檔** —— 新增「機制六③『新目標由誰算出來』」一節,含 `cursor_navigate()`
+  完整契約、`null` 語意、查不到表面時的單次 `push_error` 行為,以及「棋盤尚未接線」的缺口登記。
+- **`from_ui_action` 參數刪除已結案** —— 2026-09-03 管理者裁決訂下的「Story 005 完成時必須定案」
+  期限已兌現並記錄;三處現行簽章已更新,兩處歷史推導刻意保留。
+
+🔴 **衍生的新待裁決項(2026-09-08 發現,尚無裁決)**:刪除 `from_ui_action` 使實作與
+**GDD Core Rules #2「寫入介面的資料需求」**(明文要求兩項資料)及 **`TR-cursor-012`**
+(狀態 `active`,記為「雙輸入簽章」)**同時不符**。
+**刪除本身已獲 2026-09-03 授權,缺的是沒有人同步上游文件。**
+需要的不只是改文字,而是一個新裁決:那條「兩項資料」的要求應改寫為一項,還是該重新檢視
+當初要求它的理由。全文見該 ADR 的「TR-cursor-012 待決」註記與追溯表該列。
+
+🔴 **影響範圍比上段初次登記時更廣(2026-09-08 反向搜尋實測)** —— **至少 6 個檔案**仍載有
+已刪除的雙參數簽章,含兩個權威來源:`docs/registry/architecture.yaml`(架構立場權威來源,
+**5 處**,含凍結簽章登記表)、`docs/architecture/traceability-index.md`(涵蓋數字唯一來源,
+**寫著「✅ 已涵蓋」**)、本史詩 `EPIC.md` 第 81 行、以及 **`story-007-write-read-interface.md`
+(狀態 Complete)** 第 43 行。**這 4 處刻意未改,因為怎麼改取決於裁決結果 ——
+先改會把裁決預設掉。**

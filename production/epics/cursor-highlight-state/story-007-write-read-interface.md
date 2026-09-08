@@ -40,7 +40,12 @@
 
 1. **七個公開入口掛重入閘門**:`arbitrate_device_authority()`、`apply_buffered_navigation()`、`set_target()`、`mark_pending_reresolve()`、`handoff_before_unload()`、`handoff_after_mount()`、`reseed_reclaim_on_focus_regained()`。
 2. **六條私有路徑不掛閘門** —— 公開入口不得互相呼叫,共用邏輯一律下放私有方法由兩邊各自呼叫。
-3. **`set_target(target, from_ui_action) -> SetTargetResult`** —— 雙輸入簽章,**不含碰撞箱幾何**。
+3. **`set_target(target) -> SetTargetResult`** —— 單輸入簽章,**不含碰撞箱幾何**。
+   🔴 **2026-09-08 更正引用文字(不改本工作單的 Complete 狀態)**:本項原寫
+   `set_target(target, from_ui_action)` / 「雙輸入簽章」。**那在本工作單完成當時是正確的** ——
+   第二參數是後續 Story 005 於 2026-09-07 才刪除的(先以測試證明傳 true/false 行為相同),
+   管理者 2026-09-08 裁決把 GDD 與需求原文一併重新措辭為單輸入。
+   **本工作單的完成判定不受影響**,只更新引用文字以免後來的人照它寫出編不過的呼叫。
 4. **`mark_pending_reresolve(expected) -> MarkResult`** —— `STALE_NOT_APPLIED` 是明確回傳值;競態判定依賴 `CursorTarget.equals()` 的值語意。
    ⚠️ **呼叫端的順序義務(有陷阱)**:必須「**先存舊值 → 再寫新值 → 才呼叫本方法**」。
 5. 🔴 **讀取介面刻意分成兩個獨立查詢,不是一個合併的「可否確認」布林** —— 合併會讓呼叫方**結構上無法**產生可區分的回饋,而兩種拒絕的正確補救動作相反(等待重新解析 vs 移動滑鼠取回權威)。

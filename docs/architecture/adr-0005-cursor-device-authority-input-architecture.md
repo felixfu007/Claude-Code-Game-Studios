@@ -495,7 +495,26 @@ func flush_buffered_navigation() -> void:
 # 本節點沿用機制一薄殼的同一紀律 —— 只有一行轉發,不含任何裁定邏輯。
 class_name CursorNavigationApplier extends Node
 
-var _host: CursorStateHost
+# 🔴 2026-09-07 更正(Story 005 實作回報,事實層修訂、零決策變更):
+# 本行原寫 `var _host: CursorStateHost`,該型別註記**編譯不過** ——
+# src/ui/cursor/cursor_state_host.gd 刻意不宣告 class_name(與同名 Autoload
+# 會產生 parse-time 衝突,該檔案內註解留有實測到的錯誤訊息)。
+# 下方是已落地、已編譯、已測試的寫法(src/ui/cursor/cursor_navigation_applier.gd):
+# 用 preload 的腳本常數當型別註記,靜態型別不放棄、不退回 Variant。
+# ⚠️ **本檔型別註記的完整掃描結果(2026-09-08 實測,非轉述)**:以
+#    `grep -oE '(: |-> )[A-Z][A-Za-z0-9_]*'` 取出本檔全部型別註記後逐一比對 src/,
+#    參照專案自訂類別者共 5 個 —— CursorTarget / CursorTypes / MouseReclaimPolicy /
+#    CursorSurfaceRegistry 四者在 src/ 皆有 class_name(編得過);巢狀結果型別
+#    (SetTargetResult / MarkResult / TargetResetPolicy 等)為 CursorState 內部
+#    enum,隨宿主類別解析,亦無問題。**只有 CursorStateHost 這一處真的編不過。**
+#    另 CursorStartupValidator 在本檔是 class_name 宣告而非型別註記,其檔案
+#    (src/ui/cursor/cursor_startup_validator.gd)尚未建立 —— 屬 Story 006(已擱置)
+#    的正常前瞻引用,不是缺陷。
+# 🔴 **本註記原先寫的是「已掃過⋯只有這一處」,但當時並未實際掃描,是轉述交接檔的宣稱。**
+#    那是本專案模式 D(全稱宣稱的定義域小於其措辭)。上列數字為補做掃描後的實測結果。
+const _CursorStateHostScript: GDScript = preload("res://src/ui/cursor/cursor_state_host.gd")
+
+var _host: _CursorStateHostScript
 
 func _process(_delta: float) -> void:
     _host.flush_buffered_navigation()
@@ -586,6 +605,54 @@ func apply_buffered_navigation(events: Array[InputEvent]) -> void:
     #   _reclaim.reset(pos, ResetTrigger.TARGET_CHANGED)                   # 觸發點 (b)
     # 並發出 target_changed()。
 ```
+
+#### 機制六③「新目標由誰算出來」—— Option E 契約(2026-09-07 管理者裁決,Story 005 落地)
+
+🔴 **本 ADR 原文從未定義這件事,而它是③能不能實作的前提。** 上方③只寫「套用緩衝內的導覽類 `ui_*`
+目標變更」,但**「一個方向鍵 + 一個當前目標,如何得出新目標」全文沒有任何一處回答** ——
+Story 005 實作時才第一次有人問。它不是被漏掉的細節,是一個從未被提出的問題。
+
+**裁決:由已註冊的表面自己回答,本系統不理解棋盤幾何。** 此裁決與本 ADR 既有立場一致 ——
+機制十一丙分支已明訂「有效性判定歸呼叫方,**本系統不理解遊戲實體語意**」,本節是同一條原則
+延伸到導覽解算。
+
+**契約**(落地位置:`src/ui/cursor/cursor_state.gd` 的 `NAVIGATE_METHOD_NAME`,
+值為 `&"cursor_navigate"` —— 具名常數而非行內字面值,故測試可直接斷言而不必手抄字串):
+
+```gdscript
+func cursor_navigate(from_id: int, direction: Vector2i) -> Variant
+```
+
+| 項 | 契約 |
+|---|---|
+| `from_id` | 當前 `CursorTarget.id`。⚠️ **即使 `is_valid` 為 `false` 仍然有意義** —— `CursorTarget.invalidated()` 明文保留 `id`,故失效期間導覽仍有起點可用 |
+| `direction` | `CursorTypes.navigation_direction()` 回傳的四個單位向量之一 |
+| 回傳 `int` | 新目標的 id |
+| 回傳 `null` | 🔴 **該方向沒有合法目標(例如已在棋盤邊緣)。`null` 不是錯誤**,語意是「這裡不能往那邊走」,此時當前目標**維持不動** —— 這正是 GDD **AC-10 (b) 分支**的來源 |
+
+**查不到表面時的行為**(落地位置:同檔 `ERR_SURFACE_NAVIGATION_UNSUPPORTED`)。目標標籤在註冊表裡
+**完全沒有登記**,或**登記了但未實作** `cursor_navigate` —— 這兩種情況**合併為同一個** `push_error`,
+且**每個 `CursorState` 實例只報一次**(不是每影格一次,由 `_surface_navigation_error_reported`
+把關),另由 `diagnostic_surface_navigation_unsupported_count` 持續計數供測試斷言。
+該表面標籤的游標導覽在有人實作契約之前**停用** —— **不當機、不猜測、不靜默**,符合本 ADR
+全文反覆兌現的「絕不靜默降級」紀律。
+
+⚠️ **兩種失敗合併為一個錯誤,是刻意的取捨,代價登記在此**:「沒人登記」與「登記了但沒實作」
+對呼叫方而言補救動作不同(前者要去登記,後者要去實作方法),而合併後的訊息無法區分。
+**選擇合併的理由**:此錯誤的讀者是開發者而非玩家,訊息本身已逐字列出兩種可能與所需簽章;
+為此拆成兩個常數會讓機制六③多一個分支,而該分支在**每一個**導覽影格都要走。
+**若未來這個訊息真的害人查錯方向,拆開它是安全的改動**(純診斷路徑,不影響裁定)。
+
+🔴 **實作現況(2026-09-07,不知道這件事會誤判整個系統的完成度)**:`src/` 裡**沒有任何程式碼**
+呼叫 `CursorSurfaceRegistry.register()` —— 亦即**棋盤還沒有被接進本系統**,
+**玩家在戰鬥畫面按方向鍵,本系統不會移動任何高亮。** 方向鍵的整套機制已經接好、算得對、
+測得到,缺的只是「有東西登記成那個棋盤」。
+
+✅ **這是已登記的缺口,不是遺漏,而且它會自己提醒後來的人**:
+`tests/integration/cursor/frame_buffer_ordering_test.gd` 的
+`test_gap_no_surface_is_registered_anywhere_in_src_yet` 遞迴掃 `res://src` 找 `.register(`,
+**零命中才通過** —— 未來有人真的接線,那條測試會**轉紅**,逼著回來更新本節。
+(管理者是在知道此缺口的前提下裁決 Option E 的,不是被漏掉。)
 
 **為何鍵盤/手把恆勝**(GDD 明文理由,本 ADR 忠實承載):滑鼠是絕對定位裝置,同幀落敗只需下一次達門檻的移動即可重新取得權威,誤判代價趨近於零;鍵盤/手把是相對定位裝置,同幀意外落敗會讓玩家感受到剛按下的方向鍵「沒有反應」,心智模型斷裂的代價高得多。
 
@@ -875,7 +942,11 @@ func _safe_mouse_position() -> Vector2
 
 # TR-cursor-012:雙輸入簽章(目標識別 + 是否由裝置 ui_* action 觸發),不含碰撞箱幾何。
 # 有效性旗標自動翻回有效。訊號於狀態完全寫定後才發出(見下方)。
-func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult
+func set_target(target: CursorTarget) -> SetTargetResult
+# 🔴 2026-09-07:第二參數 from_ui_action 已永久刪除(Story 005 結案,見機制十下方
+#    「裝置權威不隨目標交接重置」)。⚠️ 本文件後段的 R5-1 修法段落及其表格仍引用
+#    兩參數形式 `set_target(target, from_ui_action)` —— 那是 2026-08-19 當時的推導
+#    記錄,刻意保留供追溯,**不是現行簽章**。
 
 # TR-cursor-013:競態防呆 —— 傳入的 expected 與當下實際持有的目標不符即回傳
 # STALE_NOT_APPLIED,絕不靜默忽略、絕不回傳 void。
@@ -1002,7 +1073,8 @@ func reclaim_progress() -> float
 #            (該私有方法在 UNCONDITIONAL 下固定帶 SURFACE_HANDOFF,且**無條件**執行)
 #
 #   丙:讀檔取消、返回原畫面前
-#       公開入口 set_target(target, false)                     # 通用入口,不變
+#       公開入口 set_target(target)                            # 通用入口,不變
+#         └ 2026-09-07:原寫 set_target(target, false),第二引數已隨 from_ui_action 刪除
 #         → _write_target_internal(target, TargetResetPolicy.CONDITIONAL_ON_CHANGE)
 #            (目標確實改變才 TARGET_CHANGED;丙分支**沒有**重置義務,見下方)
 #       原目標仍有效則直接沿用,僅失效時才依 Core Rules #6 重新計算(AC-63b)
@@ -1106,11 +1178,74 @@ func handoff_after_mount(target: CursorTarget) -> SetTargetResult      # 第三�
 
 **丙分支不是無條件「重新計算」——`TR-cursor-015` 落差 (b) 修法(2026-08-19 第四輪修訂)**:上一版寫成無條件「依 Core Rules #6 重新計算的新目標」,這是對 GDD 義務的**收窄**,牴觸本 ADR 自己 Ordering Note 的單向修訂約束(本 ADR 的機制變更不得擴大或縮小 GDD 的義務)。GDD AC-63b 的原文是有條件的:「**若原目標在取消後仍然有效(原表面未拆除、該目標所指實體仍存在),得直接以原目標值重新設定,不需要重新計算;僅當原目標已失效時才依 Core Rules #6 計算初始目標。**」
 
-修法:丙分支的介面契約明文承載**兩條路徑**——呼叫方先判定原目標是否仍然有效(此判定屬呼叫方職責:本系統不理解遊戲實體語意,無法知道「該目標所指實體是否仍存在」),有效則以原目標值呼叫 `set_target(原目標, false)`,失效才依 Core Rules #6 重算後呼叫。**本系統的介面對兩條路徑一視同仁**(都是一次 `set_target()`),真正被修正的是本 ADR 先前把呼叫方的選擇權寫死成單一路徑這件事。
+修法:丙分支的介面契約明文承載**兩條路徑**——呼叫方先判定原目標是否仍然有效(此判定屬呼叫方職責:本系統不理解遊戲實體語意,無法知道「該目標所指實體是否仍存在」),有效則以原目標值呼叫 `set_target(原目標)`(**2026-09-07 更正:原寫 `set_target(原目標, false)`,第二引數已隨 `from_ui_action` 刪除**),失效才依 Core Rules #6 重算後呼叫。**本系統的介面對兩條路徑一視同仁**(都是一次 `set_target()`),真正被修正的是本 ADR 先前把呼叫方的選擇權寫死成單一路徑這件事。
 
 **丙分支不是「還原暫停前的目標」**(GDD AC-63b):不論走上述哪一條路徑,呼叫方都必須**主動**重新設定,不得讓游標停留在「待重新解析」狀態返回一個可互動的畫面。這與 AC-59 的「恢復當下裝置權威與游標目標與暫停前完全相同」看似矛盾,實則不然——AC-59 明文排除暫停期間發生的主動 API 呼叫,兩者管轄不同路徑(見機制九的正交性說明)。**本 ADR 的介面必須同時支援兩種行為,不得把任一種寫成唯一路徑。**
 
-**裝置權威不隨目標交接重置**:`set_target()` 只在 `from_ui_action == true` 時連動裝置權威轉移。🔴 **2026-09-03 管理者裁決:此承諾明文「暫不實作」。** 三項事實使它今天無法兌現:①**本 ADR 從未說要轉移給哪一個裝置**;②`set_target(target, from_ui_action)` 的簽章**不帶任何裝置資訊**,結構上無從得知;③**今天沒有任何呼叫端會傳 `true`** —— 甲/乙/丙三分支明文一律傳 `false`,玩家導覽走 `apply_buffered_navigation()`。**現況因此是:`true` 與 `false` 的行為完全相同。** 這是待決事項,**不是可以依賴的契約** —— 下游不得寫出任何依賴「傳 `true` 會轉移權威」的程式碼。⚠️ **刻意保留參數而非刪除**(第四次修訂曾以 R6-6 刪掉 `handoff_before_unload()` 的懸空 `surface` 參數,本項刻意不比照):理由是**機制六(Story 005)正是會發現「到底需不需要」的那一份工作**,現在刪掉、屆時需要就要再加回來,等於改兩次已凍結的簽章。**代價已知且登記在案**:這留下一個目前沒有作用的參數,正是本專案上次親手刪掉的那種形狀。🔴 **回答期限:Story 005 完成時必須定案**(實作、或永久刪除),不得再次延後而不留紀錄。甲/乙/丙三分支的呼叫皆為系統主動改標,`from_ui_action` 一律傳 `false`——裝置權威維持不變(GDD Core Rules #4:裝置權威與游標目標是正交欄位)。
+**裝置權威不隨目標交接重置** —— ✅ **2026-09-07 結案:`from_ui_action` 參數已永久刪除。**
+
+**這一項的回答期限已到並已兌現。** 2026-09-03 管理者裁決把「`set_target()` 只在 `from_ui_action == true` 時連動裝置權威轉移」這個承諾明文列為「暫不實作」,並訂下 🔴 **「回答期限:Story 005 完成時必須定案(實作、或永久刪除),不得再次延後而不留紀錄」**。**Story 005 的答案是刪除。**
+
+**而且是先證明再刪,不是嫌它礙眼就刪**:實作以一條專門的測試證明該參數傳 `true` 與傳 `false` 行為**完全相同、沒有任何可轉移的東西**,證完才動手。該測試已隨參數一併移除(它的前提消失了),但**其推導完整保留在 `src/ui/cursor/cursor_state.gd` 對 `set_target()` 的類別註解內**,可查證。現行簽章:
+
+```gdscript
+func set_target(target: CursorTarget) -> SetTargetResult
+```
+
+✅ **當初「刻意保留而非刪除」的理由已經兌現,值得記錄**:2026-09-03 選擇保留,理由是「**機制六(Story 005)正是會發現『到底需不需要』的那一份工作**,現在刪掉、屆時需要就要再加回來,等於改兩次已凍結的簽章」。實際結果:Story 005 發現的答案是不需要,**因此簽章只改了一次,沒有改兩次。** 這是一次押對的延後 —— 相對於第四次修訂 R6-6 直接刪掉 `handoff_before_unload()` 懸空 `surface` 參數的做法,本項刻意不比照,而事後看兩種處理各自都對:那個參數沒有任何一份工作會去驗證它的必要性,這個有。
+
+🔴 **刪除參數並沒有填掉它背後的缺口 —— 這點不要誤讀。** 原本使它無法兌現的三項事實中,**第一項今天依然成立**:**本 ADR 從未說過要把權威轉移給哪一個裝置。** 另兩項(簽章不帶裝置資訊、沒有呼叫端會傳 `true`)隨參數消失而不再適用。**因此:下游若未來真的需要「主動改標連動裝置權威」,那是一個全新決策,不是恢復一個舊承諾** —— 不得以「ADR 本來就承諾過」為依據直接實作。
+
+甲/乙/丙三分支的呼叫皆為系統主動改標,**裝置權威一律維持不變**(GDD Core Rules #4:裝置權威與游標目標是正交欄位)。原文此處寫「三分支 `from_ui_action` 一律傳 `false`」,參數刪除後該敘述失去對象,但**結論不變且更乾淨**:現在三分支結構上不可能連動裝置權威,不再依賴呼叫慣例。
+
+> ✅ **TR-cursor-012 —— 已於 2026-09-08 由管理者裁決結案。本註記保留為追溯紀錄。**
+>
+> **裁決:GDD Core Rules #4 由「條件式」改寫為「不變式」—— 系統主動改標永不變更操作權,無條件。**
+> Core Rules #2 由「兩項資料」改為一項;`TR-cursor-012` 需求原文由「雙輸入簽章」**重新措辭**為
+> 「單輸入簽章」(**是重新措辭,不是取消需求** —— 對照先例:`TR-cursor-016` 是取消需求本身)。
+> **裁決依據三點**:①該條自述動機是「幾何來源缺口」而非裝置權威需求,且該動機已由 GDD 同條
+> 第九輪註記宣告前提不成立;②它指向的 Core Rules #4 只定義了一半,「若為 `ui_*` 觸發則權威
+> 轉移給誰」全文從未定義,是一個沒有去處的鉤子;③實作已以測試證明兩種傳值行為完全相同。
+> ⚠️ **2026-08-04 第五輪的原始審查記錄不存在** —— 審查記錄檔第六輪才建立(其開頭明文承認
+> 第 1–5 輪細節「從未被持久化」),且該 GDD 於第五輪之後才進版控,故 git 亦無 diff。
+> **裁決是在明知此空白的前提下做的,不是認定當初沒想過。**
+> 🔴 **下游若未來需要「主動改標連動裝置權威」,那是全新設計(須先定義轉移給誰),
+> 不得以本 ADR 或 GDD 原文為依據直接實作。**
+>
+> **以下為發現當時的紀錄,保留不刪(它記載了問題的形狀與傳播範圍):**
+>
+> **刪除這個參數,連帶讓實作與一條 Approved GDD 規則不符,而這件事在刪除當時沒有人發現。**
+> GDD `design/gdd/cursor-highlight-state.md` Core Rules #2「寫入介面的資料需求」明文寫著:
+> 「『設定新目標』方法需要呼叫方提供**兩項資料** —— 目標識別、**此次寫入是否由裝置 `ui_*`
+> action 觸發**」。第二項就是 `from_ui_action`。`docs/architecture/tr-registry.yaml` 的
+> `TR-cursor-012`(狀態 `active`)把它記為「**雙輸入簽章**」,忠實反映 GDD,**不是本 ADR 的自創措辭**。
+>
+> **不是「刪錯了」**:2026-09-03 管理者裁決明文授權「實作、**或永久刪除**」二選一,Story 005
+> 選了刪除並先以測試證明其無作用。**授權是完整的,缺的是沒有人同步上游文件** ——
+> 一個獲授權的刪除,留下了一條要求它存在的 Approved 規則和一條 `active` 需求。
+>
+> ⚠️ **這正是本專案模式 D 的形狀,而它與 AC-10 那一處是同一天、同一份文件內被發現的第二例** ——
+> 兩者都是「決定改了、程式改了、規則沒改」。**差別在於 AC-10 只需要同步文字**(行為已裁決),
+> **本項需要一個新裁決**:GDD 的「兩項資料」要求應改寫為一項,還是該重新檢視當初要求它的理由。
+>
+> 🔴 **在取得裁決前,`TR-cursor-012` 不得被任何審查、追溯索引或 `/architecture-review`
+> 計為「已涵蓋」。** 本註記與上方追溯表該列即為此事的登記處。
+>
+> 🔴 **影響範圍經反向搜尋實測(2026-09-08),不只本 ADR 與 GDD —— 至少 6 個檔案仍載有已刪除的
+> 雙參數簽章,其中兩個是本專案指定的權威來源:**
+> - `docs/registry/architecture.yaml`(**架構立場權威來源**):**5 處命中**,含第 406 行的
+>   `signal_signature` **凍結簽章登記表**,逐字記著 `set_target(target: CursorTarget, from_ui_action: bool)`。
+> - `docs/architecture/traceability-index.md` 第 216 行:寫著 **「✅ 已涵蓋」**。該檔是 `CLAUDE.md`
+>   指定的涵蓋數字**唯一來源** —— **一個已知不成立的需求,正在唯一權威涵蓋表上顯示為已涵蓋。**
+> - `production/epics/cursor-highlight-state/EPIC.md` 第 81 行(`✅ 機制十`)、
+>   `story-007-write-read-interface.md` 第 43 行(該工作單狀態為 **Complete**)。
+>
+> ⚠️ **上述 4 處刻意尚未修改,這是判斷不是疏漏**:它們要怎麼改取決於裁決結果 —— 若裁決為
+> 「GDD 改為一項資料」則全部照改;若裁決為「重新檢視當初要求第二項資料的理由」,
+> 則可能反而要改實作。**先改文件等於把裁決預設掉。**
+> 📌 另兩處命中**不應修改**:`architecture-review-2026-08-20-round7.md` 屬歷史審查報告;
+> `tests/smoke/critical-paths.md` 的「雙輸入」指雙輸入**裝置**,與本項無關 ——
+> **反向搜尋的結果必須逐項判讀,不可一律替換。**
 
 ### 機制十二:全域游標視覺宿主 —— Autoload 持有的 CanvasLayer
 
@@ -1511,7 +1646,7 @@ enum TargetResetPolicy { CONDITIONAL_ON_CHANGE, UNCONDITIONAL }     # 第三次�
 # ─── 七個公開入口,全數掛 _mutation_in_progress 閘門(N4 + R4-4 + 第三次修訂 R5-1/R5-3)──
 func arbitrate_device_authority(events: Array[InputEvent]) -> void   # ① -100,GDD 步驟一(第四輪:原 arbitrate_frame 前半)
 func apply_buffered_navigation(events: Array[InputEvent]) -> void    # ③ -25,GDD 步驟三(第四輪新增:原 arbitrate_frame 後半)
-func set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult   # 新增 REJECTED_REENTRANT(N4)
+func set_target(target: CursorTarget) -> SetTargetResult   # 新增 REJECTED_REENTRANT(N4);from_ui_action 已於 2026-09-07 刪除
 func mark_pending_reresolve(expected: CursorTarget) -> MarkResult               # 新增 REJECTED_REENTRANT(N4)
 func handoff_before_unload() -> MarkResult      # 甲分支
 func handoff_after_mount(target: CursorTarget) -> SetTargetResult               # 乙分支(第三次修訂新增,R5-1,BLOCKING)
@@ -1704,7 +1839,7 @@ class_name CursorNavigationApplier extends Node
 | TR-cursor-009 | 滑鼠奪權門檻數學:逐表面類型像素常數、淨位移非路徑總和、根視窗座標空間 | **⚠️ 部分,子機制重新設計仍由使用者裁決暫停**——**2026-08-19 修訂(F2)**:`evaluate()` 簽章改收目前滑鼠座標而非位移量,策略內部持有 `_seed` 自行計算淨位移,結構性杜絕 GDD 明文禁止的路徑總和實作(原簽章的參數命名邀請此錯誤);根視窗座標空間假設已明文寫入 Constraints,並列為 Verification Required 第 11 項(`CanvasLayer` 恆等變換) |
 | TR-cursor-010 | 累積器須依裝置權威 + OS 焦點閘控;須掛 `NOTIFICATION_APPLICATION_FOCUS_*`;暫停/彈窗讓出機制留待架構階段 | **2026-08-19 修訂(F5,BLOCKING)**:機制九補上 `_process()` 對 `_arbitration_suspended` 的檢查,且 suspend/resume/FOCUS_OUT/FOCUS_IN 四個進出點全數呼叫 `_frame_events.clear()`——原版本兩個確定性漏洞(競窗 100% 存在、緩衝殘留)已修正。累積器本身的閘控 ⚠️ 仍隨機制八部分(子機制凍結) |
 | TR-cursor-011 | **已知確認、尚未修復的永久鎖死缺陷(持續按住方向輸入)**;已降級為建議項但架構層面仍未解決 | **⚠️ 部分,且刻意如此** —— 機制八把缺陷隔離在單一檔案,**明文不宣稱已緩解**。使用者第十二輪裁決:重新設計暫停、候選修法停止投入、待手把硬體 |
-| TR-cursor-012 | 寫入介面「設定新目標」:雙輸入簽章,不含碰撞箱幾何,自動清除有效性旗標 | 機制十:`set_target(target, from_ui_action) -> SetTargetResult`;幾何查詢自 GDD 第九輪門檻改錨定表面類型常數後已完全不存在 |
+| TR-cursor-012 | 寫入介面「設定新目標」:**單輸入簽章(僅目標識別)**,不含碰撞箱幾何,自動清除有效性旗標 | ✅ **已涵蓋** —— 機制十 `set_target(target) -> SetTargetResult`;幾何查詢自 GDD 第九輪門檻改錨定表面類型常數後已完全不存在。🔴 **2026-09-08 經一次管理者裁決才成立,過程值得記**:第二輸入 `from_ui_action` 已依 2026-09-03 授權於 2026-09-07 刪除,使實作一度與 **Approved GDD 規則**及本 TR 當時的 `active` 原文(「雙輸入簽章」)**同時不符** —— 刪除本身已獲授權,缺的是沒有人同步上游。管理者 2026-09-08 裁決把需求**重新措辭**為單輸入(非取消需求),並把 GDD Core Rules #4 由條件式改為**不變式**(系統主動改標永不變更操作權)。全文見機制十「裝置權威不隨目標交接重置」段落下方的結案註記 |
 | TR-cursor-013 | 寫入介面「標記待重新解析」:須回傳結構化的已套用/已過期結果,絕不靜默 | 機制十:`mark_pending_reresolve(expected) -> MarkResult`,`STALE_NOT_APPLIED` 為明確回傳值;競態判定依賴機制三的 `CursorTarget.equals()` 值語意 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢 + 裝置權威查詢,兩者拒絕回饋須可區分 | 機制十:刻意分為**兩個獨立查詢**而非一個合併布林 —— 兩種拒絕的正確補救動作相反(等待重新解析 vs 移動滑鼠取回權威),合併會讓呼叫方結構上無法產生可區分回饋 |
 | TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙分支 | 機制十一:`handoff_before_unload()` + 三分支呼叫慣例;三分支 `from_ui_action` 一律 `false`,裝置權威不隨交接重置。**2026-08-19 第四輪修訂關閉第三輪的兩項未編號落差**(第一次修訂依 9 項清單作業因而漏掉):**(a)** 甲/乙兩分支皆須把滑鼠奪權累積位移量**重置為 0**、起點更新為當下滑鼠座標(GDD Core Rules #7 F2-2 明訂,上一版全文零字)——新增第五個 `ResetTrigger` 值 `SURFACE_HANDOFF`(來源為 Core Rules #7 而非 #3 的四點,呈現層待遇同 (a)(b)(c) 收斂、非瞬間歸零);**(b)** 丙分支上一版寫成無條件「依 Core Rules #6 重新計算」,**收窄了 GDD 義務**(AC-63b 原文為「若原目標在取消後仍然有效,得直接以原目標值重新設定,不需要重新計算;僅當原目標已失效時才依 Core Rules #6 計算」),牴觸本 ADR 自己 Ordering Note 的單向修訂約束——已改為兩條路徑並存,有效性判定歸呼叫方(本系統不理解遊戲實體語意)。**2026-08-19 第三次修訂(R5-1,BLOCKING)**:第五輪判定落差 (a) 的修法**只對甲分支成立**——乙分支重用通用 `set_target()`,而該入口走的是「目標確實改變才 `TARGET_CHANGED`」,三種可能讀法(呼叫方自己碰 `_reclaim` 私有欄位 / `set_target()` 內部分辨分支 / 無條件改發 `SURFACE_HANDOFF`)全部不成立,且乙分支目標恰等於當下目標時會靜默不重置。**已新增乙分支專用公開入口 `handoff_after_mount(target)`**,與甲的 `handoff_before_unload()` 成對,內部走 `_write_target_internal(target, UNCONDITIONAL)`;另補完私有路徑地圖(`_mark_pending_reresolve_internal()`/`_validate_target_writable()`),一併關閉「甲分支呼叫公開 `mark_pending_reresolve()` 會被自己的重入閘門鎖死」這項同源缺陷 |

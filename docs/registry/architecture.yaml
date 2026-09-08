@@ -181,6 +181,19 @@ state_ownership:
       Story 005 must settle that promise on completion (implement, or delete the
       parameter permanently); if it is implemented, this field must be updated in the
       same change.
+      ✅ 2026-09-08 SETTLED — the outcome was DELETE, not implement. Story 005 deleted
+      the from_ui_action parameter on 2026-09-07 after proving by test that true and
+      false behaved identically. The manager then ruled on 2026-09-08 that GDD
+      Core Rules #4 becomes an INVARIANT rather than a conditional: a system-initiated
+      retarget NEVER changes device authority, unconditionally. GDD Core Rules #2 was
+      cut from "two data items" to one, and TR-cursor-012 was re-worded from
+      "雙輸入簽章" to "單輸入簽章" (re-wording, NOT cancelling the requirement).
+      🔴 NOTE the asymmetry in the sentence above: it instructed an update only for the
+      IMPLEMENT outcome and said nothing about the DELETE outcome — yet delete is what
+      happened, and this field's own signal_signature carried the stale two-parameter
+      form for a full day before anyone noticed. The signature above is now single-param.
+      Ruling basis and the full list of documents that had to be aligned:
+      docs/consistency-failures.md, entry dated 2026-09-08.
     notes: >
       GLOBAL and orthogonal to cursor_target (cursor-highlight-state.md Core Rules #4) —
       a surface-registration boundary constrains cursor_target only, never this field.
@@ -403,7 +416,7 @@ interfaces:
       - tactical-combat-system    # sets initial target (Core Rules #6); marks stale on unit death/move
       - save-system               # handoff branches 甲/乙/丙 across screen teardown (ADR-0004 read path)
     adr: docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
-    signal_signature: "PUBLIC GATED ENTRIES (7): arbitrate_device_authority(events: Array[InputEvent]) -> void  |  apply_buffered_navigation(events: Array[InputEvent]) -> void  |  set_target(target: CursorTarget, from_ui_action: bool) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload() -> MarkResult  |  handoff_after_mount(target: CursorTarget) -> SetTargetResult  |  reseed_reclaim_on_focus_regained() -> void  ||  PRIVATE UNGATED (6): _write_target_internal(target, reset_policy) -> void  |  _mark_pending_reresolve_internal(expected) -> MarkResult  |  _validate_target_writable(target) -> SetTargetResult  |  _safe_mouse_position() -> Vector2  |  _target_changed_from(old, new) -> bool  |  _drain_pending_reseed() -> void  ||  CTOR: _init(reclaim, registry, mouse_position_provider: Callable)"
+    signal_signature: "PUBLIC GATED ENTRIES (7): arbitrate_device_authority(events: Array[InputEvent]) -> void  |  apply_buffered_navigation(events: Array[InputEvent]) -> void  |  set_target(target: CursorTarget) -> SetTargetResult  |  mark_pending_reresolve(expected: CursorTarget) -> MarkResult  |  handoff_before_unload() -> MarkResult  |  handoff_after_mount(target: CursorTarget) -> SetTargetResult  |  reseed_reclaim_on_focus_regained() -> void  ||  PRIVATE UNGATED (6): _write_target_internal(target, reset_policy) -> void  |  _mark_pending_reresolve_internal(expected) -> MarkResult  |  _validate_target_writable(target) -> SetTargetResult  |  _safe_mouse_position() -> Vector2  |  _target_changed_from(old, new) -> bool  |  _drain_pending_reseed() -> void  ||  CTOR: _init(reclaim, registry, mouse_position_provider: Callable)"
     notes: >
       mark_pending_reresolve MUST NEVER be silent: if `expected` does not equal the
       currently-held target (the player navigated away in the meantime), it returns

@@ -78,7 +78,7 @@ ADR-0005 實質承擔該角色:它有完整的模組圖(Architecture Diagram)與
 | TR-cursor-009 | 滑鼠奪權門檻數學:逐表面類型像素常數、淨位移非路徑總和 | ⚠️ **部分 —— 凍結** |
 | TR-cursor-010 | 累積器須依裝置權威加 OS 焦點閘控;須掛 `NOTIFICATION_APPLICATION_FOCUS_*` | ⚠️ **部分 —— 累積器那半凍結** |
 | TR-cursor-011 | 已確認、尚未修復的永久鎖死缺陷(持續按住方向輸入) | ⚠️ **部分 —— 刻意如此** |
-| TR-cursor-012 | 寫入介面設定新目標:雙輸入簽章,不含碰撞箱幾何,自動清除有效性旗標 | ✅ 機制十 |
+| TR-cursor-012 | 寫入介面設定新目標:**單輸入簽章(僅目標識別)**,不含碰撞箱幾何,自動清除有效性旗標 | ✅ 機制十(🔴 2026-09-08 管理者裁決由「雙輸入」重新措辭為「單輸入」;`from_ui_action` 已於 2026-09-07 刪除) |
 | TR-cursor-013 | 寫入介面標記待重新解析:須回傳結構化結果,**絕不靜默** | ✅ 機制十 |
 | TR-cursor-014 | 讀取介面:有效性旗標查詢 + 裝置權威查詢,兩者拒絕回饋須可區分 | ✅ 機制十(**刻意兩個獨立查詢**) |
 | TR-cursor-015 | 卸載前目標交接義務,涵蓋存檔讀取整批替換的甲/乙/丙三分支 | ✅ 機制十一 |
@@ -160,7 +160,7 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 | 002 | [Autoload 薄殼 + DI 核心 + 三欄位狀態](story-002-state-host.md) | Logic | ✅ Complete | M(約 5–6 小時) | 一 | 001 |
 | 003 | [表面註冊表(兩份獨立登記表)](story-003-surface-registry.md) | Logic | ✅ Complete | M(約 4–6 小時) | 三 | 001 |
 | 004 | [裝置分類 + 動作語意分類(含 echo 過濾)](story-004-device-classification.md) | Logic | ✅ Complete | M(約 4–6 小時) | 四、四之二 | 001 |
-| 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | Ready | L(約 8–10 小時) | 五、六 | 002, 004, 007 |
+| 005 | [整幀緩衝 + `_process` 裁決 + 六行為者定序](story-005-frame-buffer-ordering.md) | Integration | 🟡 In Progress(約八成) | L(約 8–10 小時) | 五、六 | 002, 004, 007 |
 | 006 | [載入期設定驗證](story-006-startup-validation.md) | Logic | ⏸ 擱置(2026-09-07) | S(約 2–3 小時) | 七 | 001 |
 | 007 | [寫入與讀取介面(七個公開入口 + 重入閘門)](story-007-write-read-interface.md) | Logic | ✅ Complete | L(約 8–10 小時) | 十 | 002, 003 |
 | 008 | [焦點/暫停閘控](story-008-focus-pause-gating.md) | Integration | ⏸ 擱置(2026-09-07) | M(約 5–6 小時) | 九 | 002, 005 |
