@@ -197,3 +197,29 @@ func test_is_alive_true_immediately_after_construction() -> void:
 
 	# Assert
 	assert_bool(unit.is_alive()).is_true()
+
+
+# ---- effective_atk() / effective_def() (base/effective value seam) --------
+#
+# No modifier source exists yet (that's #6 skill-card-system's job) — these
+# tests lock in the current, deliberately trivial behavior (effective ==
+# base) so that whenever a modifier source is added, a reviewer sees this
+# test start asserting something meaningful rather than assuming it always
+# passed by construction.
+
+func test_effective_atk_equals_base_atk_with_no_modifier_source() -> void:
+	# Arrange
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+
+	# Act / Assert
+	assert_int(unit.effective_atk()).is_equal(unit.atk)
+	assert_int(unit.effective_atk()).is_equal(16)
+
+
+func test_effective_def_equals_base_def_with_no_modifier_source() -> void:
+	# Arrange
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+
+	# Act / Assert
+	assert_int(unit.effective_def()).is_equal(unit.def)
+	assert_int(unit.effective_def()).is_equal(8)

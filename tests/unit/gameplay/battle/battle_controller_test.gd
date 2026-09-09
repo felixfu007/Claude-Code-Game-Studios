@@ -642,3 +642,28 @@ func test_attack_that_ends_battle_emits_battle_ended_and_finishes_phase() -> voi
 	assert_int(controller.phase()).is_equal(BattleController.Phase.FINISHED)
 	assert_int(controller.outcome()).is_equal(BattleState.Outcome.VICTORY)
 	await assert_signal(controller).is_emitted("battle_ended", BattleState.Outcome.VICTORY)
+
+
+# ---- BattleState.turn_order() wiring (ADR-0001 2026-09-09 revision) --------
+#
+# BattleState never builds its own TurnOrder (see battle_state.gd's _turn_order
+# field comment) — construction still passes an already-built TurnOrder into
+# BattleController's constructor, exactly as before. What's new is that the
+# constructor now also attaches that same instance onto state, so
+# state.turn_order() works for any caller holding only the state. This test
+# is the only thing that would catch a regression where BattleController
+# stops calling state.attach_turn_order() — nothing else in this file reads
+# state.turn_order() at all.
+
+func test_constructing_controller_attaches_its_turn_order_into_state() -> void:
+	# Arrange
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,0,3,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,3,1,1,10,0",
+	]
+	var bundle: Dictionary = _build(roster, [1], [2])
+	var state: BattleState = bundle["state"]
+	var order: TurnOrder = bundle["order"]
+
+	# Assert — same instance the controller itself was constructed with
+	assert_object(state.turn_order()).is_same(order)

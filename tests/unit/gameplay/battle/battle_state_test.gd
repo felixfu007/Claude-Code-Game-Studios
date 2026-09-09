@@ -150,6 +150,62 @@ func test_resolve_attack_enemy_attacker_forces_phi_zero_player_attacker_keeps_ph
 	assert_int(state.unit_by_id(6).hp).is_equal(36 - 11)
 
 
+# ---- preview_damage() — must never drift from resolve_attack() -------------
+#
+# 迴歸背景:2026-09-09 之前，src/ui/battle/battle_screen.gd 的傷害預覽直接呼叫
+# CombatRules.damage(attacker.atk, target.def, phi) 自己重算一次公式，而結算
+# 路徑（resolve_attack()）當時已經改讀 effective_atk()/effective_def() ——
+# 兩條路徑對 phi 共用同一個來源，但對 ATK/DEF 各自為政，預覽會跟結算對不上而
+# 不會有任何錯誤訊息。preview_damage() 與 resolve_attack() 現在共用同一個私有
+# 輔助函式 _compute_attack_damage()，以下測試只呼叫這兩個真正的公開方法本身，
+# 不在測試裡重新推導 atk-def+phi 這條公式 —— 黑箱比對兩個「碰巧一致」的數字
+# 無法防住這類迴歸，只有「呼叫同一份實作」的結構性保證才行得通。
+
+func test_preview_damage_matches_resolve_attack_for_same_inputs() -> void:
+	# Arrange — 兩份完全獨立的 state（不共用可變狀態），同一組角色與 phi：
+	# 玩家 1（甲，atk=16）打敵方 6（E1，def=10），phi=5
+	var state_for_preview: BattleState = _load_state()
+	var state_for_resolve: BattleState = _load_state()
+
+	# Act — 兩邊都呼叫真正的生產程式碼，不在此處重算公式
+	var previewed: int = state_for_preview.preview_damage(1, 6, 5)
+	var resolved: int = state_for_resolve.resolve_attack(1, 6, 5)
+
+	# Assert
+	assert_int(previewed).is_equal(resolved)
+
+
+func test_preview_damage_matches_resolve_attack_for_enemy_attacker_phi_zeroing() -> void:
+	# Arrange — 攻擊方是敵方單位（6，E1）打玩家 1（甲），phi 應被兩條路徑
+	# 一致地強制歸零；兩份完全獨立的 state，不共用可變狀態
+	var state_for_preview: BattleState = _load_state()
+	var state_for_resolve: BattleState = _load_state()
+
+	# Act — 傳入非零 phi（999），攻擊方是 ENEMY，理應被兩邊一致忽略
+	var previewed: int = state_for_preview.preview_damage(6, 1, 999)
+	var resolved: int = state_for_resolve.resolve_attack(6, 1, 999)
+
+	# Assert
+	assert_int(previewed).is_equal(resolved)
+
+
+func test_preview_damage_does_not_mutate_state() -> void:
+	# Arrange
+	var state: BattleState = _load_state()
+	var target: Unit = state.unit_by_id(6)
+	var hp_before: int = target.hp
+	var occupant_before: int = state.board.get_occupant(state.position_of(6))
+
+	# Act — 呼叫多次，任何一次都不應改動 HP 或佔位（純查詢，不是結算）
+	state.preview_damage(1, 6, 0)
+	state.preview_damage(1, 6, 0)
+
+	# Assert
+	assert_int(target.hp).is_equal(hp_before)
+	assert_bool(target.is_alive()).is_true()
+	assert_int(state.board.get_occupant(state.position_of(6))).is_equal(occupant_before)
+
+
 # ---- can_attack() — (d) 中央倒木堆擋下原本射程內的遠程攻擊 ----------------------
 
 func test_can_attack_blocked_by_central_fallen_log_despite_being_in_range() -> void:
@@ -280,3 +336,32 @@ func test_outcome_any_player_dead_is_defeat_even_with_enemies_remaining() -> voi
 	assert_int(result).is_equal(BattleState.Outcome.DEFEAT)
 	assert_bool(state.unit_by_id(6).is_alive()).is_true()
 	assert_bool(state.unit_by_id(2).is_alive()).is_true()
+
+
+# ---- turn_order() / attach_turn_order() (ADR-0001 2026-09-09 revision) ------
+#
+# BattleState.create() never builds a TurnOrder itself (see the field comment
+# on _turn_order for why) — these tests cover the attach() seam directly,
+# independent of any driver (BattleController/BattleLoop), which have their
+# own wiring tests proving they call attach_turn_order() during _init().
+
+func test_turn_order_is_null_before_any_driver_attaches_one() -> void:
+	# Arrange / Act — create() alone, no BattleController/BattleLoop involved
+	var state: BattleState = _load_state()
+
+	# Assert
+	assert_object(state.turn_order()).is_null()
+
+
+func test_attach_turn_order_stores_the_exact_same_instance_passed_in() -> void:
+	# Arrange — a TurnOrder matching vs01's real id split, though the exact
+	# ids don't matter here; this test is about identity, not battle rules
+	var state: BattleState = _load_state()
+	var order: TurnOrder = TurnOrder.new([1, 2, 3, 4, 5], [6, 7, 8, 9, 10])
+
+	# Act
+	state.attach_turn_order(order)
+
+	# Assert — the same instance comes back, not a copy or a new TurnOrder
+	# built from the same ids (is_same() is reference identity, not ==)
+	assert_object(state.turn_order()).is_same(order)

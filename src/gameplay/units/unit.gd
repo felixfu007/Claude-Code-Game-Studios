@@ -71,6 +71,24 @@ func is_alive() -> bool:
 	return hp > 0
 
 
+## Returns this unit's currently effective ATK — the value combat math must
+## read, as opposed to [member atk] (the roster-parsed base value). Returns
+## [member atk] unmodified: there is no modifier source yet. This method is
+## the seam the skill-card system (design/gdd/skill-card-system.md, #6) will
+## use to layer temporary card-driven bonuses on top of the base value
+## without any caller of this method needing to change. Card-applied
+## modifiers, their duration bookkeeping, stacking, and clamping are #6's
+## responsibility and are not implemented here.
+func effective_atk() -> int:
+	return atk
+
+
+## Returns this unit's currently effective DEF — see [method effective_atk]
+## for the full rationale; the same seam applies symmetrically to DEF.
+func effective_def() -> int:
+	return def
+
+
 ## Reduces [member hp] by [param amount], clamped at 0 — [member hp] never
 ## goes negative.
 func take_damage(amount: int) -> void:

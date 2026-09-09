@@ -221,6 +221,33 @@ func test_run_reports_exact_round_count_elapsed() -> void:
 	assert_int(rounds).is_equal(3)
 
 
+# ---- BattleState.turn_order() wiring (ADR-0001 2026-09-09 revision) --------
+#
+# Mirrors battle_controller_test.gd's equivalent test. BattleLoop is a second,
+# parallel driver that never calls BattleController — it must independently
+# call state.attach_turn_order() in its own _init(), and only a test that
+# constructs a BattleLoop (not a BattleController) can prove that path is
+# actually wired, since the two drivers do not share any code path here.
+
+func test_constructing_loop_attaches_its_turn_order_into_state() -> void:
+	# Arrange — reuses the max_rounds-abort fixture's harmless standoff roster;
+	# the battle outcome is irrelevant to this test, only construction matters
+	var roster_text: String = "\n".join([
+		"1,P1,PLAYER,100,1,100,0,1,1,0,0",
+		"2,E1,ENEMY,100,1,100,0,1,1,5,5",
+	])
+	var state: BattleState = BattleState.create(PackedStringArray(), roster_text)
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var never_act: Callable = func(
+		_state: BattleState, _unit_id: int, _can_move: bool, _can_attack: bool
+	) -> Dictionary:
+		return {"move_to": null, "attack": -1}
+	var loop: BattleLoop = BattleLoop.new(state, order, never_act)
+
+	# Assert — same instance the loop itself was constructed with
+	assert_object(state.turn_order()).is_same(order)
+
+
 # ---- fixtures ------------------------------------------------------------
 
 # Builds a decide Callable that counts every call into call_counts (keyed by

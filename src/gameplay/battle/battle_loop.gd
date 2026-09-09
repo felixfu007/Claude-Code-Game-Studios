@@ -33,6 +33,7 @@ var _decide: Callable
 func _init(state: BattleState, order: TurnOrder, decide: Callable) -> void:
 	_state = state
 	_order = order
+	_state.attach_turn_order(order)
 	_decide = decide
 
 

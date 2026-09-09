@@ -805,13 +805,15 @@ func _refresh_view() -> void:
 			AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
 		)
 	elif attack_target_id != -1:
-		# Φ 一律經由 _phi.phi() 取得 —— 那正是結算路徑呼叫的同一個函式,不是
-		# 另外推導一次。呼叫點相同,是「畫面上的預覽數字不可能跟實際傷害對不上」
-		# 唯一的結構性保證。
-		var attacker: Unit = _state.unit_by_id(selected)
+		# Φ 一律經由 _phi.phi() 取得,傷害本身一律經由 _state.preview_damage()
+		# 取得 —— 兩者都是結算路徑(resolve_attack())內部呼叫的同一批函式,
+		# 不是另外推導一次。呼叫點相同,是「畫面上的預覽數字不可能跟實際傷害
+		# 對不上」的結構性保證 —— 這句話現在對 Φ、ATK、DEF 三個輸入都成立,
+		# 不再只對 Φ 成立(2026-09-09 之前這裡曾直接呼叫 CombatRules.damage()
+		# 重算一次,只有 Φ 走共用路徑,ATK/DEF 沒有)。
 		var target: Unit = _state.unit_by_id(attack_target_id)
 		var phi: int = _phi.phi(selected, attack_target_id)
-		var damage: int = CombatRules.damage(attacker.atk, target.def, phi)
+		var damage: int = _state.preview_damage(selected, attack_target_id, phi)
 		preview_target_id = attack_target_id
 		preview_target_hp = projected_hp(target.hp, damage)
 		info_text = format_damage_preview(damage, target.hp, preview_target_hp)

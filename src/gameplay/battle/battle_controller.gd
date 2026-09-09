@@ -133,6 +133,7 @@ func _init(
 ) -> void:
 	_state = state
 	_order = order
+	_state.attach_turn_order(order)
 	_phi_provider = phi_provider
 	_decide = decide
 	_check_outcome_and_finish()
