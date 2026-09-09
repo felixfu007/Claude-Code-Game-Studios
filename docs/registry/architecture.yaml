@@ -64,41 +64,43 @@ last_updated: "2026-09-01"  # 全庫文件矛盾稽核(非 skill、非審查輪;
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
 state_ownership:
-  - state: board_version
+  - state: combat_state_version          # renamed 2026-09-09; was board_version
     status: active
     owner_system: tactical-combat-system
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
-    interface: "Board.board_version (read-only int, monotonic). Query results carry the version they were computed against; a result is valid iff result.version == board.board_version. ENFORCEMENT (added 2026-09-01, TD-ADR gate): implemented as a GDScript property with a setter that push_error()s and rejects external writes — NOT a bare var. A bare var would leave this read-only claim unenforced in code; verified on-engine, see prototypes/adr0001-board-property-spike-2026-09-01/."
-    write_access: board-only
-    notes: "Increments ONLY at committed settlement boundaries. Must NOT increment on read-only operations (cursor movement, overlay toggle, prediction marker) — those are zero-write per tactical-combat-system.md Core Rules #8/#10."
+    interface: "BattleState.combat_state_version (read-only int, monotonic). RENAMED + REHOMED 2026-09-09 (ADR-0001 revision 1) — was Board.board_version. Query results carry the version they were computed against; a result is valid iff result.version == the current value. Result validity is checked via QueryResult.is_stale() which takes NO parameter (it holds its own read-only reference to the version source) — the old is_stale(board: Board) welded the holder type into the contract, so every ownership change forced a signature renegotiation. ENFORCEMENT (added 2026-09-01, TD-ADR gate): implemented as a GDScript property with a setter that push_error()s and rejects external writes — NOT a bare var. A bare var would leave this read-only claim unenforced in code; verified on-engine, see prototypes/adr0001-board-property-spike-2026-09-01/ (that probe tested the technique on Board; the rehome is structurally identical but was NOT separately re-measured)."
+    write_access: "battle-state-only (via the single commit_authoritative_change() method; callers are tactical-combat-system's settlement boundary, its movement commit, its enemy-phase resolution, the player's end-unit-turn and end-faction-turn commands, and skill-card-system's card confirm). BattleController and BattleLoop are TWO PARALLEL drivers that do not call each other — both must route through the same single method, never a copy each."
+    notes: "🔴 2026-09-09 SCOPE WIDENED (ADR-0001 revision 1). It now stamps the authoritative combat state that ANY versioned query reads — NOT just board tiles. Three components are covered: Board (terrain/occupancy), Unit (ATK_eff/DEF_eff/hp), and TurnOrder (action flags/faction/round). TurnOrder was folded into BattleState in the same revision; before that NO object owned all three, while ADR-0001's own diagram had hung the 'remaining-flags overview' query off Board since day one — and Board never held flags. That was a pre-existing defect; skill-card-system.md merely made it visible. Increment is UNCONDITIONAL — never skipped by card class or path type. Must NOT increment on read-only operations (cursor movement, overlay toggle, prediction marker, unit select/deselect — the last one is an explicit ruling, not an omission). Enumerate write paths BY MUTATOR, not by event: an event list cannot be checked for exhaustiveness, a mutator list can — the event-shaped list used mid-revision missed three real paths."
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+      - design/gdd/skill-card-system.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-09-09: renamed board_version -> combat_state_version, rehomed Board -> BattleState, scope widened to three components, is_stale() signature changed to no-parameter. See ADR-0001 Status for the full revision record and TR-card-001 for the requirement that triggered it."
 
   - state: occupied
     status: active
     owner_system: tactical-combat-system
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
     interface: "Board.is_occupied(tile: Vector2i) -> bool / Board.occupant_of(tile: Vector2i) -> int. Backed by a sparse Dictionary[Vector2i, int] (value = unit_id)."
-    write_access: board-only
-    notes: "Synced on ANY event changing a unit's logical position or alive state (death at settlement step 4, movement logical completion — non-exhaustive), atomically with the board_version increment. Never derived from scene-tree existence or visual/animation state."
+    write_access: "battle-state-only (via commit_authoritative_change()). 🔴 CORRECTED 2026-09-09: this field previously read 'board-only', which was INACCURATE against the code — board.gd's set_occupant()/clear_occupant() are public methods and battle_state.gd calls them directly in four places. ADR-0001 defined only READ methods and never a named write method, so its promise that occupancy sync and the version bump happen in one atomic region had no function carrying it. Those setters must be folded inside the commit method (ADR-0001 hard obligation 4)."
+    notes: "Synced on ANY event changing a unit's logical position or alive state (death at settlement step 4, movement logical completion — non-exhaustive), atomically with the combat_state_version increment. Never derived from scene-tree existence or visual/animation state. Guarded: every mutator checks the write window first and push_error()s if it is closed (ADR-0001 hard obligation 3) — collapsing the entry points is necessary but is NOT itself enforcement, because GDScript has no access modifiers."
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-09-09: write_access corrected (was inaccurate against the code); guard requirement added."
 
-  - state: settlement_in_progress
+  - state: authoritative_write_in_progress   # renamed 2026-09-09; was settlement_in_progress
     status: active
     owner_system: tactical-combat-system
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
-    interface: "Board.settlement_in_progress (read-only bool). True from settlement step 1 start until step 4 completion. ENFORCEMENT (added 2026-09-01, TD-ADR gate): same property-setter mechanism as board_version — see prototypes/adr0001-board-property-spike-2026-09-01/."
-    write_access: board-only
-    notes: "While true, ALL player input is rejected with explicit feedback (not queued). Must not remain true across two consecutive _process frames — if it does, push_error(); that state means a never-resuming await has permanently deadlocked input."
+    interface: "BattleState.authoritative_write_in_progress (read-only bool). RENAMED + REHOMED + PROMOTED 2026-09-09 (ADR-0001 revision 1) — was Board.settlement_in_progress. True for the duration of ANY committed authoritative write, not only the settlement step. ENFORCEMENT: same property-setter mechanism as combat_state_version — see prototypes/adr0001-board-property-spike-2026-09-01/."
+    write_access: "battle-state-only (set and cleared only inside commit_authoritative_change())."
+    notes: "🔴 TWO ROLES since 2026-09-09. (1) INPUT GATE, unchanged: while true, ALL player input is rejected with explicit feedback (not queued). (2) NEW — WRITE GUARD: every mutator on all three state components checks it first and push_error()s + refuses if the window is closed. The name was changed because of role 2: a flag called 'settlement_in_progress' sitting on line 1 of TurnOrder.advance_faction() (a round-boundary reset, not a settlement) reads like a copy-paste error. The recursion 'who stops someone from opening the window illegitimately?' terminates on the PRE-EXISTING deadlock check: it must not remain true across two consecutive _process frames — if it does, push_error(). So an illegitimately-opened write window always screams within two frames. Widening this flag does NOT widen tactical-combat-system.md's obligations: AC-24's GIVEN is scoped to 'a unit's settlement step has begun', and locking input for one extra frame during a card commit is strictly stricter, never laxer — verified clause by clause 2026-09-09."
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+      - design/gdd/skill-card-system.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-09-09: renamed settlement_in_progress -> authoritative_write_in_progress, rehomed Board -> BattleState, promoted from input gate to input gate + write guard."
 
   - state: affinity_delta_log
     status: active
@@ -287,10 +289,10 @@ interfaces:
       - battle-hud                # renders overlays; must check is_stale() before accepting input
       - affinity-position-linkage # reads adjacency/placement queries (system #5, Not Started)
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
-    signal_signature: "QueryResult.version: int + QueryResult.is_stale(board: Board) -> bool"
+    signal_signature: "QueryResult.version: int + QueryResult.is_stale() -> bool  [CHANGED 2026-09-09: was is_stale(board: Board); the parameter welded the holder type into the contract and allowed passing the wrong Board with no error]"
     notes: >
       EVERY outbound query of tactical-combat-system returns a result carrying the
-      board_version it was computed against. Consumers must not accept player input
+      combat_state_version it was computed against. Consumers must not accept player input
       based on a result whose is_stale() is true. Result containers are always newly
       allocated — never references into Board's internal storage.
     referenced_by:
@@ -310,7 +312,7 @@ interfaces:
       Any set of query outputs merged into ONE picture for the player — the co-visible
       movement-range and threat-range overlays required by tactical-combat-system.md
       UI §1a, and threat_range_all(E)'s N-enemy union — counts as a single query and
-      must share one board_version. Stitching results from different versions produces
+      must share one combat_state_version. Stitching results from different versions produces
       a picture corresponding to no real board state.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
@@ -354,7 +356,7 @@ interfaces:
       affinity-data-pool data is not fully written/restored, and end_non_atomic_window()
       with the SAME token when that window closes on every exit path (success, failure,
       and abort) — see affinity-data-pool.md Core Rules #6 for the three termination
-      paths. Distinct in mechanism from tactical-combat-system's settlement_in_progress
+      paths. Distinct in mechanism from tactical-combat-system's authoritative_write_in_progress (renamed from settlement_in_progress 2026-09-09)
       (single boolean reject-gate) despite similar reject-style intent — do not conflate
       the two patterns when designing future lifecycle-gated state.
     referenced_by:
@@ -807,21 +809,36 @@ api_decisions:
 
   - purpose: query_snapshot_identity
     status: active
-    api: "monotonic board_version int stamp, incremented at committed settlement boundaries"
+    api: "monotonic combat_state_version int stamp on BattleState, incremented by the single commit_authoritative_change() method on every committed authoritative write (renamed + rehomed + scope-widened 2026-09-09)"
     not: "deep-copied BoardSnapshot object; per-frame batch recomputation"
     adr: docs/architecture/adr-0001-tactical-query-atomicity-contract.md
     reason: >
-      Core Rules #11 confines all board mutation to settlement boundaries and makes
-      settlement non-re-entrant, so the board is effectively immutable BETWEEN boundaries.
-      A snapshot therefore needs only an identity stamp, not a copy — cost is one int
-      compare instead of a per-query deep copy on the high-frequency cursor-as-view path.
-      CAVEAT: this rests on Core Rules #11 holding. If system #6 (skill cards) later
+      The authoritative combat state is immutable BETWEEN committed writes, so a
+      snapshot needs only an identity stamp, not a copy — cost is one int compare
+      instead of a per-query deep copy on the high-frequency cursor-as-view path.
+      🔴 CAVEAT REWRITTEN 2026-09-09 — THE OLD ONE WATCHED THE WRONG TRIGGER.
+      It read: "this rests on Core Rules #11 holding; if system #6 (skill cards) later
       proves it cannot satisfy the synchronous-effect contract, re-evaluate the
-      explicit-snapshot alternative documented in the ADR.
+      explicit-snapshot alternative." That trigger never fired — #6 shipped its design
+      and its card-confirm step IS synchronous. What fired was the trigger nobody had
+      registered: A SECOND AUTHORITATIVE WRITE PATH APPEARING OUTSIDE SETTLEMENT.
+      The old wording also mis-stated its own premise: Core Rules #11 only says the
+      settlement step is non-re-entrant — it never said settlement is the ONLY write
+      path. "Settlement is the only writer" was ADR-0001's own addition, true by
+      coincidence at the time and guaranteed by nothing. It was in fact already false:
+      run_enemy_phase() has been a second path since the day it was written.
+      CORRECT CAVEAT (general form): the immutability premise is an INVARIANT THAT MUST
+      BE ENFORCED, not a fact derived from upstream rules. It holds only while every
+      authoritative write routes through commit_authoritative_change() and every
+      component mutator is guarded by the write window. If either erodes, the cost
+      saving is void — and it goes void SILENTLY. Note the explicit-snapshot alternative
+      does NOT help against this failure: deep-copying wrong state still yields wrong
+      state. The remedy is one write entry point, not a copy.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+      - design/gdd/skill-card-system.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-09-09: api renamed/rehomed/widened; CAVEAT rewritten to general form (the original watched a trigger that never fired while the real one did)."
 
   - purpose: affinity_data_pool_ownership
     status: active
@@ -1633,7 +1650,7 @@ forbidden_patterns:
   - pattern: deferred_calls_in_settlement_path
     status: active
     description: >
-      Within the settlement step, any call that mutates occupied or board_version must
+      Within the settlement step, any call that mutates occupied, unit combat stats, turn flags or combat_state_version must
       not go through call_deferred() or a CONNECT_DEFERRED signal connection.
     why: >
       Godot's deferred mechanism reschedules the call to a later safe point in the frame
@@ -1974,7 +1991,7 @@ forbidden_patterns:
       on, so it is not a valid workaround) — a handler that calls back into a write method
       mid-mutation would reenter arbitrate_frame()/set_target() before the triggering call
       has finished committing its own field writes. This mirrors ADR-0001's
-      settlement_in_progress reject-on-input gate for the same class of problem. This is a
+      authoritative_write_in_progress reject-on-input gate (renamed from settlement_in_progress 2026-09-09) for the same class of problem. This is a
       single-threaded same-stack reentrancy problem, NOT a cross-thread contention problem —
       do not reach for Mutex (ADR-0002's tool for a different problem); a plain boolean guard
       is the correct, idiomatic GDScript pattern here (godot-specialist, ADR-0005 revision

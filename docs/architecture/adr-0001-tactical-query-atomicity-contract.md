@@ -2,7 +2,64 @@
 
 ## Status
 
-**Accepted**(2026-09-01 管理者裁決)
+**Accepted**(2026-09-01 管理者裁決)· **第一次修訂 2026-09-09(擴大契約管轄範圍)**
+
+> 🔴 **2026-09-09 第一次修訂 —— 讀本文件前必看,因為它改的是這套機制在替什麼背書。**
+>
+> **觸發**:`design/gdd/skill-card-system.md`(#6)第一輪 `/design-review` 發現,打牌會改變傷害預覽的
+> 正確答案,而本 ADR 的機制**伸不到那裡**。管理者 2026-09-08 裁決:打牌算改變盤面,已算好的查詢結果
+> 一律作廢重算(原文在該 GDD 的 Core Rules 六)。
+>
+> ⚠️ **本次修訂的性質判定 —— 這一句決定了改動範圍,請不要當成措辭統一**:
+> 觸發本次修訂的報告最初把問題描述為「本文寬讀、四處窄讀,兩種讀法打架」。**`TD-ADR` 覆核推翻了那個框架,
+> 而它是對的**:寬讀法那句寫的是「任一其他改變**盤面**權威狀態的已提交指令」,而本 ADR 自己定義的「盤面」
+> (見 Architecture Diagram)只裝版本號、佔位表、地形、結算旗標四樣東西 —— **單位攻防值不在其中**。
+> **兩種讀法都沒有涵蓋打牌。** 這不是兩句話不一致,是**這套機制的管轄範圍不夠大**。
+>
+> **本次五項實質變更**(管理者 2026-09-09 逐項裁決;第 4、5 項是 `TD-ADR` 窄範圍複驗後追加的):
+>
+> | # | 變更 | 為什麼 |
+> |---|---|---|
+> | 1 | `board_version` → **`combat_state_version`**,並自 `Board` **移交 `BattleState`**;同批把 `TurnOrder` 收進 `BattleState` | 計數器必須與唯一寫入口同物件。GDScript 沒有存取修飾詞,若提交方法在別處而計數器留在 `Board`,`Board` 就得開公開 mutator,已實測的 setter 攔截就只擋得住 `board.x = 5`、擋不住 `board.bump()`。**收 `TurnOrder` 的理由見下方「三個零件」** |
+> | 2 | 寫入路徑由「一條」改為**逐條清單**,且改以 **mutator** 而非「事件」列舉 | 實測發現原圖漏了三條(敵方回合整批結算、玩家主動結束單位行動、玩家結束陣營回合)。**事件清單無法查證是否窮盡,mutator 清單可以** |
+> | 3 | 機制二的 `_process` 硬性要求 → **條件式等價 + 三條件** | 見機制二。條件三是本次探針揭露的新事實,**它會直接害到卡牌介面** |
+> | 4 | 🔴 `settlement_in_progress` → **`authoritative_write_in_progress`**,且升格為**寫入守衛** | 見下方「為什麼最後決定改名」 |
+> | 5 | `is_stale(board: Board)` → **`is_stale()`(不帶參數)** | 讓所有權與簽章脫鉤。舊簽章把持有者型別焊進契約,**所以每次所有權變動就要重談一次簽章 —— 本輪已經是第二次**。且舊簽章允許傳錯一個 `Board`(例如另一場戰鬥的),比對出一個沒有意義的答案而不報錯 |
+>
+> 🔴 **三個零件,不是兩個 —— 這是本次修訂差點做錯的地方。**
+> 覆核與協調者最初都只認定「棋盤 + 單位」兩個被背書的零件。實際有**三個**:`Board`(地形/佔位)、`Unit`(HP/攻防)、**`TurnOrder`(行動旗標/陣營/回合數)**。
+> **`TurnOrder` 不是新東西 —— 本 ADR 的架構圖從第一天就畫了「旗標總覽」這個查詢方塊並把它掛在 `Board` 底下,而 `Board` 從來沒有持有過旗標。** 亦即這不是 #6 造成的缺陷,是 #6 讓一個既有缺陷第一次浮出來。
+> **它豁免不了**:`tactical-combat-system.md` 的 AC-22(BLOCKING 型)GIVEN 逐字列了它,且它有專屬向量寫明「不得沿用面板開啟時的快照」;而且**它是三個零件裡變動最頻繁的**(每次 `use_move`/`use_attack`/`end_unit_turn`/`advance_faction` 都變)。
+> ⚠️ **今天沒有任何物件同時持有三個零件** —— `BattleState` 只有前兩個,`TurnOrder` 由 `BattleController` 與 `BattleLoop` **各自**持有。**變更 1 的後半就是把這個角色創造出來。**
+>
+> 🔴 **為什麼不是掛在 `BattleController` 上(這一條可以用一條指令驗證)**
+> `src/gameplay/battle/battle_loop.gd` 是**第二個獨立的寫入協調者**:它同樣持有 `_state` + `_order`(第 19–20 行)並自行執行完整的權威寫入,而 `battle_controller.gd` 對它**零呼叫**(僅 5 處註解;指令 `grep -rn "BattleLoop" src`)。**計數器放 controller,`BattleLoop` 的每一次寫入都繞過它,而且不會有任何錯誤** —— 要補救就得在兩個類別各放一份提交包裝,而「同一條規則兩份複本」是本專案登記 9 次的失效模式 B。
+>
+> 🔴 **為什麼最後決定改名(立場改變,理由是新的)**
+> 覆核原本建議沿用 `authoritative_write_in_progress`,理由是「只要提交包裝收斂成單一方法,這個名字就只會出現在兩個地方」。**採納寫入守衛之後那個理由不成立了** —— 這個旗標現在要出現在**三個類別、八個以上 mutator 的守衛條件**裡。一個叫「結算進行中」的旗標寫在 `TurnOrder.advance_faction()` 的第一行(回合邊界重置根本不是結算),**讀到的人會合理地以為那是複製貼上貼錯了。**
+> **與計數器改名同一批傳播** —— 分兩次各傳播一次正是失效模式 A 的成因之一。
+>
+> 🔴 **「本次修訂零程式碼遷移」—— 這句話本次修訂中途寫過,而它不成立,更正如下。**
+>
+> **成立的一半**:本 ADR 定義的三個契約欄位在 `src/` 與 `tests/` **皆為零命中**(指令:
+> `grep -rn "board_version\|combat_state_version\|settlement_in_progress\|authoritative_write_in_progress" src tests` —— 新舊四個名字全列,因為「舊名沒有、新名當然也沒有」不是同一件事),
+> 故**改名與所有權移交本身不動任何一行既有程式碼**。
+>
+> **不成立的一半**:變更 1 的後半(把 `TurnOrder` 收進 `BattleState`)**是一次真實的重構**。
+> 實測規模(讀碼估算,非實跑):`battle_state.gd` 增持約 5 行;`battle_controller.gd` / `battle_loop.gd`
+> 各改約 3 行建構子接線;測試建構點 4 個檔案。
+> ✅ **`_order.` 在 controller 有 27 個呼叫點,但一行都不用改** —— 它是欄位,只需換建構子裡的來源。
+> ✅ `turn_order_test.gd` 的 21 處**不受影響**(`TurnOrder` 仍是獨立可 `new()` 的 `RefCounted`)。
+>
+> ⚠️ **這張重構工作單落在 #6 的關鍵路徑上,是它的第三件待辦**(另兩件:我方基準數值表、基準值/有效值存取層)。
+> **「小而機械」不等於零風險** —— 本專案「修法本身引入新缺陷」已登記 9 場。既有測試套件是安全網,
+> 但**該套件的條數請當場數,本行刻意不寫死**。
+
+> ⚠️ **本節的估算全部是讀碼所得 (B) 級,沒有任何一項實跑過。** 落地時以實際結果為準。
+>
+> **兩項刻意不併進本次修訂的事**(依流程劑量規則,見 `.claude/docs/technical-preferences.md`):
+> ① `class_name Board` 命名衝突 —— 變更 1 會縮小 `board.gd` 的契約範圍,**那個衝突可能自己消失**,
+> 現在裁決名字等於為一個可能不必存在的類別命名;② 既有結算程式碼是否搬鏈 —— **依本次探針結論不需要搬**。
 
 > **核准 = 可以安全地開始照這份文件寫正式程式碼。核准 ≠ 這份文件完美無缺。**
 > (定義見 `docs/architecture/adr-acceptance-criteria.md` 第二節)
@@ -37,7 +94,7 @@
 | **Knowledge Risk** | **HIGH**(4.7 為 LLM 訓練截止後發布);**但本 ADR 所依賴的具體事實已於 2026-08-18 由 `godot-specialist` 對照 engine-reference 逐項查核通過** |
 | **References Consulted** | `docs/engine-reference/godot/VERSION.md`、`breaking-changes.md`、`deprecated-apis.md`、`current-best-practices.md` |
 | **Post-Cutoff APIs Used** | **無**。本 ADR 只使用 Godot 4.0 以來語意穩定的機制(`Dictionary`、`Vector2i`、`await`、`queue_free()` 的延後移除語意)。⚠️ **2026-09-01 `TD-ADR` 覆核補上一項本清單原先漏列的**:機制一實際使用的是**型別化** `Dictionary[Vector2i, int]`,而型別化容器是 4.4 引入(**此版本歸屬為 (C) 級推測,專案參考庫未記載引入版本**)。本欄結論「無 Post-Cutoff API」仍成立(4.4 在訓練截止之前),但支撐它的清單原先不完整 —— 而本 ADR 自列的待驗證第 (3) 項要驗的正是這個型別。4.6/4.7 的變更(Jolt 預設、D3D12 預設、輸入裝置 ID 重新編號、Control offset transforms)皆與本 ADR 無交集——本系統的可達格/視線計算為純格狀幾何,不觸及物理伺服器或渲染管線 |
-| **Verification Required** | ✅ **2026-09-01:需要跑引擎的四項全部已驗證,四項全部成立,無一項推翻本 ADR。**<br>證據:`prototypes/adr0001-engine-probes-2026-09-01/`(逐支腳本 + 逐字 log + README)。<br>**(5) 已解除未查證**:GdUnit4 斷言 `push_error()` 的做法為 `assert_error(<Callable>).is_push_error(<message>)`,已實跑通過(見該目錄 `gdunit4_push_error/`)。🔴 **(6) 已可執行,且現況通過** —— 2026-09-01 窄範圍複驗更正:**本欄原寫「仍無從做(該系統尚無程式碼)」是錯的。** 實測 `src/` 有 **17 個 `.gd` / 3,791 行**,其中 `src/gameplay/battle/`(`battle_controller.gd` 591 行、`battle_loop.gd`、`battle_state.gd`、`turn_order.gd`)**就是結算路徑**。全庫 grep `call_deferred` / `CONNECT_DEFERRED` / `set_deferred`:**零命中**,唯一字面命中是 `src/ui/battle/battle_screen.gd:692` 一行**引用本禁令的註解**(亦即已有人在做這項人工檢查)。**本項為持續性檢查,非一次性驗證。**<br>⚠️ **這個錯的方向值得記住**:它把一個好消息(檢查做得到、而且是過的)寫成了做不到的藉口,而條件一「4 項需跑引擎、2 項不算缺口」的整套拆分就建立在這個 6 項判讀上。<br>⚠️ **執行過程本身有一個值得記住的插曲**:第 (4) 項的**第一版探針時序假設寫錯**,5 次 trial 中 4 次的查詢在結算真正發生前就恢復,回報「無結論」。**那是探針錯,不是引擎或 ADR 錯**;已改寫為「單一查詢迴圈 8 次恢復、結算刻意排在第 4 次」的形狀重跑,新版才是有效證據。舊版與捨棄理由記在該 README。**這正是本專案已登記的失效模式:假設錯誤的腳本會順利跑完、輸出漂亮數字、看起來完全正常。**<br>**額外查證所得(非原問題)**:`process_frame` 訊號在同一幀內**晚於** `_process()` 鏈觸發 —— 這是機制一的中止判定與機制二的結算走 `_process` 能協同成立的底層原因,本 ADR 原先未明講。<br>**原文如下(保留供追溯)**:(1) 確認 `queue_free()` 在 4.7.1 實際仍延後至幀尾生效(本 ADR 的 §機制三 以此為前提,雖已對照文件查核,仍建議實機以最小測試場景確認);(2) 跨幀展開若採 `await get_tree().process_frame`,須實測確認該 await 前後 `board_version` 的讀取行為符合本 ADR 的中止語意;**(3) 確認型別化 `Dictionary[Vector2i, int]`(struct-like key + 型別化容器)在 4.7.1 編譯無警告**;**(4) 實測「同幀可見性」順序保證——若結算發生在某跨幀查詢的 await 恢復點之前,該查詢恢復時必須讀到遞增後的 `board_version`(本 ADR 的中止語意隱含此假設,但未經實測)**;**(5) `settlement_in_progress` 卡死斷言的自動化測試(見 Validation Criteria 第 7 項)**;**(6) 程式碼審查明文檢查項:結算呼叫鏈中不存在任何 `call_deferred()` 或 `CONNECT_DEFERRED` 連線——此項無法靠搜尋 `await` 字樣抓到**(項次 3–6 為 2026-08-18 `godot-specialist` 驗證後新增) |
+| **Verification Required** | ✅ **2026-09-01:需要跑引擎的四項全部已驗證,四項全部成立,無一項推翻本 ADR。**<br>證據:`prototypes/adr0001-engine-probes-2026-09-01/`(逐支腳本 + 逐字 log + README)。<br>**(5) 已解除未查證**:GdUnit4 斷言 `push_error()` 的做法為 `assert_error(<Callable>).is_push_error(<message>)`,已實跑通過(見該目錄 `gdunit4_push_error/`)。🔴 **(6) 已可執行,且現況通過** —— 2026-09-01 窄範圍複驗更正:**本欄原寫「仍無從做(該系統尚無程式碼)」是錯的。** 實測 `src/` 有 **17 個 `.gd` / 3,791 行**,其中 `src/gameplay/battle/`(`battle_controller.gd` 591 行、`battle_loop.gd`、`battle_state.gd`、`turn_order.gd`)**就是結算路徑**。全庫 grep `call_deferred` / `CONNECT_DEFERRED` / `set_deferred`:**零命中**,唯一字面命中是 `src/ui/battle/battle_screen.gd:692` 一行**引用本禁令的註解**(亦即已有人在做這項人工檢查)。**本項為持續性檢查,非一次性驗證。**<br>⚠️ **這個錯的方向值得記住**:它把一個好消息(檢查做得到、而且是過的)寫成了做不到的藉口,而條件一「4 項需跑引擎、2 項不算缺口」的整套拆分就建立在這個 6 項判讀上。<br>⚠️ **執行過程本身有一個值得記住的插曲**:第 (4) 項的**第一版探針時序假設寫錯**,5 次 trial 中 4 次的查詢在結算真正發生前就恢復,回報「無結論」。**那是探針錯,不是引擎或 ADR 錯**;已改寫為「單一查詢迴圈 8 次恢復、結算刻意排在第 4 次」的形狀重跑,新版才是有效證據。舊版與捨棄理由記在該 README。**這正是本專案已登記的失效模式:假設錯誤的腳本會順利跑完、輸出漂亮數字、看起來完全正常。**<br>**額外查證所得(非原問題)**:`process_frame` 訊號在同一幀內**晚於** `_process()` 鏈觸發 —— 這是機制一的中止判定與機制二的結算走 `_process` 能協同成立的底層原因,本 ADR 原先未明講。<br>**原文如下(保留供追溯)**:(1) 確認 `queue_free()` 在 4.7.1 實際仍延後至幀尾生效(本 ADR 的 §機制三 以此為前提,雖已對照文件查核,仍建議實機以最小測試場景確認);(2) 跨幀展開若採 `await get_tree().process_frame`,須實測確認該 await 前後 `board_version` 的讀取行為符合本 ADR 的中止語意;**(3) 確認型別化 `Dictionary[Vector2i, int]`(struct-like key + 型別化容器)在 4.7.1 編譯無警告**;**(4) 實測「同幀可見性」順序保證——若結算發生在某跨幀查詢的 await 恢復點之前,該查詢恢復時必須讀到遞增後的 `board_version`(本 ADR 的中止語意隱含此假設,但未經實測)**;**(5) `authoritative_write_in_progress` 卡死斷言的自動化測試(見 Validation Criteria 第 7 項)**;**(6) 程式碼審查明文檢查項:結算呼叫鏈中不存在任何 `call_deferred()` 或 `CONNECT_DEFERRED` 連線——此項無法靠搜尋 `await` 字樣抓到**(項次 3–6 為 2026-08-18 `godot-specialist` 驗證後新增) |
 
 **引擎知識落差聲明**:`godot-specialist` 於 `/design-review tactical-combat-system.md` 第四輪針對本 ADR 涵蓋的四個面向逐項查核,結論為零 BLOCKING:(a) `queue_free()` 的幀尾延後移除語意在 4.6/4.7 未變,亦無新增的立即移除 API 使本 ADR 的邏輯佔位方案過時;(b) 巢狀 Resource 的 `duplicate()` 自 4.5 起不建議使用、應改用 `duplicate_deep()`(本 ADR 的版本戳記方案不複製盤面,故此項僅在未來若改採深拷貝快照時才相關);(c) 本 ADR 明確排除以 `PhysicsServer`/`RayCast` 實作視線,故 Jolt 預設化與本 ADR 無關;(d) 跨幀 Dijkstra 在 GDScript 中可正確實作,但需要本 ADR 提供的架構約束才能保證原子性——這正是本 ADR 存在的理由之一。
 
@@ -48,7 +105,7 @@
 | **Depends On** | None(本專案第一份 ADR) |
 | **Enables** | 未來的「戰棋移動與交戰系統」實作 ADR/epic;戰鬥 HUD(#10)的渲染架構決策;技能卡牌系統(#6)的效果掛鉤介面設計 |
 | **Blocks** | 戰棋移動與交戰系統的任何實作 epic——本 ADR 未 Accepted 前,`reachable_set`/`threat_range`/佔位資料的實作缺少定案的正確性機制 |
-| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed。<br>🔴 **2026-09-01 事實更正**:本欄原寫「`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進」。**該句已不成立** —— 該 GDD 已於 **2026-08-31 由管理者裁決 Approved**(依據:劑量裁決位階高於收斂規則;四輪發現全數同輪修畢、無待清償 BLOCKING;第五輪 `/design-review` 已取消。見 `design/gdd/systems-index.md` 第 4 列)。**因此「兩者應一併推進」不再適用:上游 GDD 已 Approved。**<br>⚠️ **但本 ADR 不是該 GDD 唯一的鎖**(2026-09-01 `TD-ADR` 覆核指出本句初稿寫成「單向卡在本 ADR」不準確,已更正):該 GDD 的實作**另受其自身的 OQ-2 阻擋**(我方基準數值表;公式二無它無法實作)—— ✅ **2026-09-02 已指派 `systems-designer`**(管理者裁決),**但表尚未產出,仍然阻擋**。查法:在該檔搜尋 `OQ-2`(權威敘述在 Open Questions 節的同名列)。<br>⚠️ 本處原寫「見該檔檔頭第 13 行」,已改為搜尋字串 —— 行號指路是 `.claude/rules/design-docs.md` 明文禁止的寫法,而該行今日確實動過。**即使本 ADR 今日核准,該 GDD 仍不得移交 `/create-architecture`。** |
+| **Ordering Note** | 本 ADR 定案的是**機制**;它所服務的**義務**由 `design/gdd/tactical-combat-system.md` Core Rules #10/#11 擁有。兩者的修訂方向是單向的:GDD 的義務變更須回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 GDD 的義務。本 ADR 目前為 Proposed。<br>🔴 **2026-09-01 事實更正**:本欄原寫「`tactical-combat-system.md` 本身尚未經 `/design-review` 判定 Approved(第四輪後仍為 Designed),兩者應一併推進」。**該句已不成立** —— 該 GDD 已於 **2026-08-31 由管理者裁決 Approved**(依據:劑量裁決位階高於收斂規則;四輪發現全數同輪修畢、無待清償 BLOCKING;第五輪 `/design-review` 已取消。見 `design/gdd/systems-index.md` 第 4 列)。**因此「兩者應一併推進」不再適用:上游 GDD 已 Approved。**<br>⚠️ **但本 ADR 不是該 GDD 唯一的鎖**(2026-09-01 `TD-ADR` 覆核指出本句初稿寫成「單向卡在本 ADR」不準確,已更正):該 GDD 的實作**另受其自身的 OQ-2 阻擋**(我方基準數值表;公式二無它無法實作)—— ✅ **2026-09-02 已指派 `systems-designer`**(管理者裁決),**但表尚未產出,仍然阻擋**。查法:在該檔搜尋 `OQ-2`(權威敘述在 Open Questions 節的同名列)。<br>⚠️ 本處原寫「見該檔檔頭第 13 行」,已改為搜尋字串 —— 行號指路是 `.claude/rules/design-docs.md` 明文禁止的寫法,而該行今日確實動過。**即使本 ADR 今日核准,該 GDD 仍不得移交 `/create-architecture`。**<br><br>🔴 **2026-09-09 新增第二份下游 GDD:`design/gdd/skill-card-system.md`(#6)。** 本欄原本只寫了與 `tactical-combat-system.md` 的單向關係,而本 ADR 自本次修訂起同時服務兩份 GDD。**對 #6 的方向同樣是單向**:#6 的義務變更 → 回頭檢查本 ADR 是否仍能滿足;本 ADR 的機制變更**不得**擴大或縮小 #6 的義務。<br>⚠️ **不補這一列的後果很具體**:下一次 #6 修訂時,**沒有任何指標會把人帶回這份 ADR**。<br>✅ **本次修訂已逐條查證未踩到任一側的單向性**:對 #4,`authoritative_write_in_progress` 語意擴大不改變 AC-24 的任何向量(該 AC 的 GIVEN 寫死是「結算步已開始」,打牌時多鎖一幀只是比要求更嚴);對 #6,本 ADR 只提供機制,那句玩家可觀測義務仍歸 #6 的 Core Rules 六所有。 |
 
 ## Context
 
@@ -84,19 +141,94 @@
 
 ### 核心洞見:為什麼不需要真的複製盤面
 
-Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結算邊界**改變;(b) 結算步本身不可重入,進行中不接受任何操作。這兩件事合起來的推論是:**兩個結算邊界之間,盤面實質上是不可變的**——沒有任何路徑能在查詢進行中改動它。
+**兩次已提交寫入之間,權威戰鬥狀態是不可變的。** 因此「快照」不需要是一份資料的拷貝,只需要一個能回答「我算的是哪一版狀態、那一版還是不是當前版」的識別符。這使本方案的成本趨近於零:一個整數比較,而不是每次查詢複製一份佔位表。
 
-因此「快照」不需要是一份資料的拷貝,只需要一個能回答「我算的是哪一版盤面、那一版還是不是當前版」的識別符。這使本方案的成本趨近於零:一個整數比較,而不是每次查詢複製一份佔位表。
+🔴 **2026-09-09 修訂:上面那句話的地位變了,而地位比內容更重要。**
 
-### 機制一:`board_version` 版本戳記
+**本節原文**逐字為:「Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結算邊界**改變;(b) 結算步本身不可重入。這兩件事合起來的推論是:**兩個結算邊界之間,盤面實質上是不可變的**——沒有任何路徑能在查詢進行中改動它。」
 
-盤面持有一個單調遞增的整數 `board_version`,初始值 0。
+**那個推論不成立,而且從來沒成立過。** 逐條核對 `tactical-combat-system.md` Core Rules #11 全文:它管的是「結算步一旦開始到結束之間不接受其他輸入」,**它從來沒有說結算是唯一的寫入路徑**。「結算是唯一寫入路徑」是本 ADR 自己加上去、當時剛好為真、但**未被任何上游規則保證**的一句話。
 
-- **唯一遞增時機**:每個**已提交的結算邊界**完成時 `+1`。「已提交的結算邊界」定義為 Core Rules #5 結算步④執行完畢、或一次已確認的移動邏輯完成、或任一其他改變盤面權威狀態的已提交指令完成。**不得**因為玩家移動游標、開關疊加圖、觸發預判等唯讀操作而遞增(這些依 Core Rules #8/#10 皆為零寫入)。
-- **每個查詢結果攜帶它所計算的版本號**。結果的有效性判準:`result.version == board.board_version`。
+**#6 沒有推翻它 —— #6 只是第一次讓它變成假的。** 而在 #6 之前它就已經是假的了:實測 `src/gameplay/battle/battle_controller.gd` 的 `run_enemy_phase()` 是第二條路徑,它今天就在跑,**而本 ADR 的寫入路徑圖上它不存在**。
+
+**結論(不需要深拷貝)仍然成立,但它的地位從「推導出來的事實」降為「必須被執行手段保證的不變式」。** 這個差別有具體後果:
+
+- **當它是推導出來的事實時**,誰都不必做什麼,它自動為真。
+- **當它是不變式時**,它只在「每一條權威寫入路徑都確實走過提交包裝」時為真 —— 而**沒有任何自動化檢查得到這件事**(實測:`.claude/skills/` 與 `.claude/hooks/` 對本 ADR 的兩個契約欄位皆零命中)。
+
+**因此本次修訂不只改條文,它加了一個會擋下來的執行手段。** 🔴 **而這裡有一句本次修訂中途寫過、然後被自己推翻的話,值得留下:**
+
+> 「把寫入口收攏成單一方法,就讓這個不變式變成結構性保證。」——**不成立。**
+> **GDScript 沒有存取修飾詞,收攏入口不能阻止任何人繞過去。** 收攏是必要的,但它本身不是執行手段。
+
+**真正會擋下來的是寫入守衛**:三個零件的每個 mutator 第一行檢查寫入窗口是否開啟,未開就 `push_error()` 並拒絕。而「誰阻止別人亂開窗口」這個遞迴,**終止在機制二既有的卡死偵測上** —— 窗口不得跨越兩個連續 `_process` 幀仍為真,否則報錯。**一個非法開啟的寫入窗口,兩幀之內一定會叫。**
+
+**五條硬性義務見機制一末段**(同物件、`Unit` 先長出 setter、寫入守衛、佔位寫入收攏、逐路徑斷言)。 散文寫的禁令,自動檢查看不到;本專案已為此付過代價(`TD-ADR` 關卡「規則存在、無人執行、且不執行不留痕」,九次 ADR 修訂全部跳過)。
+
+⚠️ **一項連帶更正:Risks 表與登記表 `query_snapshot_identity` 的 `CAVEAT` 看守了錯的扳機。** 兩處都寫「若 #6 證明無法滿足同步契約,回頭重新評估顯式快照」。**那個扳機沒有扣下** —— #6 的第 4 步確認是同步的。扣下的是隔壁那個沒人登記的扳機:**「結算以外冒出第二條權威寫入路徑」**。兩處已於本次改寫為一般形。
+
+### 機制一:`combat_state_version` 版本戳記
+
+> 🔴 **2026-09-09 改名並移交持有者。原名 `board_version`,原持有者 `Board`。**
+> **改名的理由不是美觀**:它背書的範圍已不只棋盤格資料,**含單位的攻防有效值**;一個叫「棋盤版本號」
+> 的東西背書單位數值,會讓下一個人以為改單位數值不必遞增它 —— 而那正是本次修訂要修的缺陷。
+> **移交的理由是結構**:見下方「為什麼計數器不能留在 `Board`」。
+
+**`BattleState`(同時持有 `board` 與單位集合的那一層)持有一個單調遞增的整數 `combat_state_version`,初始值 0。**
+
+- **它背書的範圍**:**任一帶版本戳記的查詢會讀到的權威戰鬥狀態**,不限於棋盤格資料。現況包含 `Board` 的佔位表與地形、以及單位的攻防有效值(`ATK_eff` / `DEF_eff`)。
+  > ⚠️ **這是一句全稱句,依核准門檻條件三必須配逐條清單或自動檢查。** 逐條清單即下一項;自動檢查目前**不存在**,已誠實登記在 Validation Criteria 與核心洞見節。
+
+- 🔴 **遞增時機 —— 逐條清單,不是一句通則(2026-09-09 改寫)**。凡下列任一路徑的**已提交寫入**完成時 `+1`:
+
+  🔴 **列舉方式:以 mutator 列,不以「事件」列。** 這一點是方法論而非格式偏好 —— **事件清單無法查證是否窮盡,mutator 清單可以**。本 ADR 修訂過程中,以「事件」列出的四條清單漏掉了兩條真實路徑;改以 mutator 反查呼叫點後當場補齊,而**下一個人可以原封不動重跑同一條指令**。
+
+  **權威狀態的三個零件與其全部公開 mutator**(讀碼所得 (B) 級,2026-09-09):
+
+  | 零件 | 公開 mutator | 位置 |
+  |---|---|---|
+  | `Board`(地形/佔位) | `set_occupant` / `clear_occupant` | `board.gd` |
+  | `Unit`(HP/攻防/移動力) | `take_damage`,**外加全部裸公開欄位**(`hp`/`atk`/`def`/`mp`/`min_range`/`max_range` 等一律 `var`,無 setter) | `unit.gd` |
+  | `TurnOrder`(行動旗標/陣營/回合數) | `use_move` / `use_attack` / `end_unit_turn` / `advance_faction` / `remove_unit` | `turn_order.gd` |
+  | `BattleState`(複合) | `move_unit` / `resolve_attack` | `battle_state.gd` |
+
+  **查證指令(當場跑,不要抄數字 —— 結果會隨程式碼演進而變)**:
+  ```bash
+  grep -rn "use_move(\|use_attack(\|end_unit_turn(\|advance_faction(\|remove_unit(\|set_occupant(\|clear_occupant(\|take_damage(" src --include="*.gd" \
+    | grep -v "^src/gameplay/battle/turn_order.gd\|^src/gameplay/board/board.gd\|^src/gameplay/units/unit.gd"
+  ```
+  🔴 **這條指令有兩個已知盲點,必須連同指令一起傳下去**:①它**抓不到 `Unit` 裸欄位的直接賦值**(`unit.atk = x` 沒有函式名可搜),故真實寫入點數**多於**它回報的數目 —— 這正是硬性義務第 2 條要先幫 `Unit` 長出 setter 的原因;②定義域不含 `tests/`。
+
+  **由上表反查出的已提交寫入路徑(2026-09-09 現況,至少六條)**:
+
+  | # | 路徑 | 現況 |
+  |---|---|---|
+  | 1 | 玩家已確認指令的結算步(`tactical-combat-system.md` Core Rules #5 ①→②→③→④)完成 | 已存在 |
+  | 2 | 一次已確認的**移動邏輯**完成 | 已存在 |
+  | 3 | 🔴 **敵方回合整批結算完成**(`run_enemy_phase()`) | **已存在,本 ADR 原本從未登記** |
+  | 4 | 🔴 **玩家主動結束某單位行動**(`end_unit_turn`,Core Rules #9 明文的玩家指令) | **已存在,本 ADR 原本從未登記** |
+  | 5 | 🔴 **玩家結束陣營回合**(`advance_faction()` 的玩家指令呼叫點 —— 與第 3 條是**不同的呼叫點**) | **已存在,本 ADR 原本從未登記** |
+  | 6 | 🔴 **卡牌打出的第 4 步「確認」完成**(`skill-card-system.md` Core Rules 四) | 新增,#6 觸發 |
+
+  ⚠️ **`BattleLoop` 是第二條驅動路徑**,上述多條在它裡面另有一組呼叫點。它與 `BattleController` 平行、互不呼叫 —— **提交包裝必須是兩者共用的那一個,不得各寫一份。**
+
+  ✅ **明文裁定「不算」的一項(寫下來比不提安全)**:**單位的選取 / 取消選取不是權威寫入**,不遞增版本號。理由:它改變「顯示哪一張疊加圖」,不改變任何查詢對同一輸入的答案。**不提的話,下一個人得重新推一次。**
+
+  **通則(供新增路徑時判斷)**:凡在戰鬥中改變「任一帶版本戳記的查詢會讀到的權威資料」的已提交寫入,完成時必須遞增,且該寫入必須包在同一套提交包裝內。**新增任何 mutator 或任何一條路徑時,必須同時更新上面兩張表** —— 它們是本條全稱句的定義域,不是舉例。
+
+  - 🔴 **遞增必須無條件,不得依卡牌類別(或任何其他來源類別)判斷。** #6 的 Core Rules 一明文保留「個別卡牌可以推翻預設規則」。任何「這一類不會改數值、所以跳過遞增」的最佳化,都是一個**等著被一張新卡靜默觸發**的缺陷。
+  - **不得**因為玩家移動游標、開關疊加圖、觸發預判等唯讀操作而遞增(這些依 Core Rules #8/#10 皆為零寫入)。
+  - **不得**因為第 1~3 步的打牌介面操作而遞增 —— #6 的四步流程前三步是零寫入的,取消不留痕跡。
+
+- **每個查詢結果攜帶它所計算的版本號**。結果的有效性判準:`result.version == state.combat_state_version`。
 - **過期(stale)的定義即為版本不符**。這直接實現 Core Rules #10a 新增的最低限度過期標記義務——不需要另一套失效通知機制,版本比對本身就是過期偵測。
 - **合成查詢的一致性由版本相等斷言保證**:並存疊加圖、`threat_range_all(E)` 的 N 個子計算,全部必須攜帶**同一個**版本號;任一子結果版本不符,整組作廢重算。這實現 Core Rules #10b 的合成原子性,且**不需要**協調多份快照的生命週期。
-- **跨幀展開的原子性**:一趟跨幀計算在開始時記下 `start_version`;每次跨幀恢復時比對 `board.board_version != start_version` 即**中止並重算**(不是套用部分結果,也不是繼續用舊資料算完)。因為 Core Rules #11 保證盤面只在結算邊界改變,而結算邊界期間不接受玩家操作,這種中止在實務上罕見(只會發生在跨幀計算橫跨一次已提交結算的情形)。
+- **跨幀展開的原子性**:一趟跨幀計算在開始時記下 `start_version`;每次跨幀恢復時比對 `state.combat_state_version != start_version` 即**中止並重算**(不是套用部分結果,也不是繼續用舊資料算完)。
+  > ⚠️ **2026-09-09 更正:本句原本附有「這種中止在實務上罕見」。已刪除。**
+  > 原文的理由是「盤面只在結算邊界改變,而結算邊界期間不接受玩家操作」—— 那個理由建立在
+  > 「結算是唯一寫入路徑」上,而該前提已於本次修訂撤銷(見核心洞見節)。
+  > **打牌是玩家在自己回合內的自由動作、每回合次數不限**(#6 Core Rules 二),
+  > 故中止的頻率**不再有「罕見」這個保證**。這不改變機制,但改變效能推理 —— 見 Performance Implications。
 
   🔴 **關於「盤面變動要不要排隊」—— 本 ADR 行使 GDD 的明文授權,裁定不排隊**
   (2026-09-01 `TD-ADR` 覆核發現本節與 GDD 的字面落差,補寫此段;**決定未變**)
@@ -125,20 +257,88 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
   #11 那句的主詞是「結算進行中,**玩家的任何操作嘗試**」,管的是結算期間的玩家輸入,
   不是查詢期間的盤面變動排隊;且「數幀」是有界的,不是無限期。**#11 並沒有禁止佇列。**
   真正的理由來自本 ADR 自己的機制二:佇列意味著玩家確認後,結算要延後數幀才啟動,
-  而那幾幀裡 `settlement_in_progress` 仍為 `false`(結算根本還沒開始),
+  而那幾幀裡 `authoritative_write_in_progress` 仍為 `false`(結算根本還沒開始),
   **機制二的閘門擋不住第二次輸入** —— 要佇列就得再加一個「結算待處理」鎖。
 - **跨幀計算主體的生命週期約束(2026-08-18 `godot-specialist` 驗證發現)**:跨幀展開若以 `await get_tree().process_frame` 實作(該訊號在 4.4–4.7 語意未變,是正確的原語選擇),**持有該協程的物件必須是生命週期涵蓋整場戰鬥的物件**(例如 Board 自身或戰鬥層級的 manager),**不得**掛在可能隨場景切換、UI 面板關閉而被釋放的暫時性節點上。理由:GDScript 協程若在 `await` 期間其宿主實例被 `queue_free()` 或回收,恢復時會嘗試回呼一個已不存在的實例,結果是靜默丟失或執行期錯誤,而非本 ADR 定義的「中止並重算」——這會直接違反 AC-9 的確定性承諾。**每次 `await` 恢復後須先以 `is_instance_valid()`(或等效防衛)確認宿主仍存活,否則一律視為中止。**
 
+#### 🔴 為什麼計數器不能留在 `Board`(2026-09-09 新增,`TD-ADR` 覆核導出)
+
+**判準只有一條:版本戳記必須掛在「所有被戳記資料的共同擁有者」身上。** 當查詢只讀盤面時,`Board` 就是那個擁有者。一旦查詢的答案取決於單位攻防值,共同擁有者就變成 `BattleState` —— **`Board` 從「權威狀態本身」降格為「權威狀態的一個零件」,而零件不能替整體背書。**
+
+**若硬要把計數器留在 `Board`、提交方法放在 `BattleState`,會發生什麼**(推導鏈,每一步都可查證):
+
+1. 提交方法必須有辦法讓 `Board` 的私有計數器加一。
+2. **GDScript 沒有存取修飾詞**,底線開頭只是命名約定 —— 這是本專案自己記載的事實(`docs/registry/architecture.yaml` 的 `state_ownership` 節:「A bare var would leave this read-only claim unenforced in code」,那也是本 ADR 當初改用 property setter 的原因)。所以 `Board` 得開一個**公開的** mutator。
+3. 公開 mutator 一開,**任何人都能呼叫它** —— 那個已實機驗證的 setter 攔截(`prototypes/adr0001-board-property-spike-2026-09-01/`)就只擋得住 `board.combat_state_version = 5`,擋不住 `board.commit_version_bump()`。**防線變裝飾品。**
+
+**已否決的替代做法**:讓 `Board` 反過來持有單位集合的參照。否決理由是它會打掉目前乾淨的分層 —— `src/gameplay/board/board.gd` 現在是純幾何(地形、移動成本、視線、佔位),**它好測試正是因為這樣**。
+
+⚠️ **一項連帶更正,它讓上面的結論更強而不是更弱**:引擎覆核原本主張「佔位表有結構性保證(寫入都在 `Board` 私有邊界內),`Unit` 沒有」。**實測推翻了這個對比 —— 兩邊都沒有防線**:`board.gd` 的 `set_occupant()` / `clear_occupant()` 是**公開方法**,而 `battle_state.gd` 有四處直接呼叫它們;且本 ADR 的 Key Interfaces 從頭到尾**只定義了讀取方法,從未定義任何改動佔位的方法** —— 那句「與版本號遞增在同一原子區段內完成」的承諾,**沒有任何一支具名函式承載過**。
+> 亦即:把單位數值納入背書範圍,**不是新開一個洞,是讓一個已經存在、只因為兩個欄位剛好住在同一個類別裡而潛伏的洞浮上來。** 同一個修法一次補兩個。
+> 📌 **連帶**:`docs/registry/architecture.yaml` 中 `occupied` 條目的 `write_access: board-only` 對照今日程式碼**已經不準確**,本次一併更正。
+
+#### 🔴 五條隨本次修訂生效的硬性義務
+
+**前四條是實作義務,第五條是文件義務。** 它們存在的理由寫在核心洞見節:這套機制的正確性從「自動為真」變成「靠執行手段保證」,**而沒有任何自動化檢查得到它**。
+
+1. **`combat_state_version`、`authoritative_write_in_progress` 與唯一提交方法必須是同一個物件的成員**(`BattleState`,含收進來的 `TurnOrder`)。不得以任何形式提供繞過提交方法的遞增入口。
+2. **`Unit` 的戰鬥數值欄位必須先長出 setter,再以 setter + `push_error()` 擋住非法賦值。** 現況 `unit.gd` 的 `hp`/`atk`/`def`/`mp`/`min_range`/`max_range` **一律是裸公開 `var`,連一個可以加守衛的方法都沒有** —— 這一層要先存在,第 3 條才談得上。
+   > ⚠️ 攔截手法本身有實測(`prototypes/adr0001-board-property-spike-2026-09-01/`),**但那是在一個整數計數器上測的,套用到 `Unit` 未單獨驗證** —— 結構同構、風險低,**這是沿用,不是實測結論**。
+3. 🔴 **寫入守衛(2026-09-09 管理者裁決新增):三個零件的每一個 mutator,第一行檢查 `authoritative_write_in_progress`;為 `false` 即 `push_error()` 並拒絕該次寫入。**
+
+   **這一條取代了一句講得太滿的話。** 本次修訂中途曾寫「把寫入口收攏成單一方法,就讓不變式變成結構性保證」——**那句話不成立**:GDScript 沒有存取修飾詞,收攏入口**不能阻止任何人繞過去**。收攏是必要的,但它本身不是執行手段;**會擋下來的是這條守衛。**
+
+   > **「那誰阻止別人亂開旗標?」—— 這個遞迴在既有機制上終止,不需要新增東西。**
+   > 旗標為真時所有玩家輸入被拒,且**不得跨越兩個連續 `_process` 幀仍為真,否則 `push_error()`**(機制二的卡死偵測)。亦即**一個非法開啟的寫入窗口,兩幀之內一定會叫。** 該機制是 2026-08-18 為了另一個目的寫的,本次發現它可以兼任這個角色。
+
+4. **`Board.set_occupant()` / `clear_occupant()` 收進提交方法內部,不再對外公開。** 現況它們是公開方法且 `battle_state.gd` 有四處直接呼叫。
+5. **Validation Criteria 必須對機制一表格的每一條寫入路徑各有一條「執行後版本號恰好 +1」的斷言,並對守衛各有一條「窗口未開時寫入被拒且值不變」的斷言。** 新增 mutator 或路徑時同步新增。
+
 ### 機制二:結算步的不可重入閘門
 
-以一個布林旗標 `settlement_in_progress` 表達結算步的進行狀態。
+以一個布林旗標 `authoritative_write_in_progress` 表達**權威寫入的進行狀態**。**持有者隨機制一同為 `BattleState`** —— 它必須與計數器在同一個原子區段內被設定,故必須同物件。
 
-- 結算步①開始時設為 `true`,④完成(含所有跨系統呼叫回傳)後設為 `false`,並於此時遞增 `board_version`。
-- **`settlement_in_progress == true` 期間,所有玩家輸入一律拒絕並觸發拒絕回饋**(使用者裁決;比照 UI Requirements §6 的既有合法性閘門機制)。**不採佇列**——理由見下方 Alternatives。
-- **結算步執行於 `_process` 鏈**(2026-09-01 `TD-ADR` 覆核補上,原先只在卡死偵測處隱含以 `_process` 幀計數,從未明講)。⚠️ **這一句有後果**:ADR-0005 記載 `process_priority` 只排序 `_process`/`_physics_process` 各自的鏈、**兩鏈之間無排序保證**,故若實作者把結算放進 `_physics_process`,該 ADR 的全部定序保證會**靜默失效且不報錯**。
-- 結算步**不得**跨幀讓出。②c 的卡牌效果契約為同步執行、不得要求玩家輸入(見 `tactical-combat-system.md` Core Rules #11 對 #6 的契約)。這使結算步天然是單幀原子的,`settlement_in_progress` 實務上只在單一幀內為 `true`。
-- **禁止 deferred 路徑介入結算(2026-08-18 `godot-specialist` 驗證發現)**:結算步內任何改動 `occupied` 或 `board_version` 的呼叫,**禁止**經由 `call_deferred()` 或以 `CONNECT_DEFERRED` 旗標連線的訊號執行。理由:Godot 的 deferred 機制會把該呼叫排到本幀稍後的安全點才執行,而非立即同步生效——效果等同於在結算步中間插入一個讓出點,**但呼叫端不會出現任何 `await` 字樣**,程式碼審查時看不出來。這是與「意外引入 `await`」同源、但更隱蔽的一條失效路徑(`queue_free()` 本身正是靠此機制實作延後移除,見機制三)。
-- **卡死偵測(2026-08-18 `godot-specialist` 驗證發現的一個比重入更嚴重的失效模式)**:`settlement_in_progress` **不得跨越兩個連續的 `_process` 幀仍為 `true`**;若偵測到,須以 `push_error()` 明確曝光。理由:旗標的防禦性推理隱含假設「意外引入的 `await` 終將恢復」。但若該 `await` 永遠不恢復(等待一個不再發出的訊號、或等待的節點被釋放導致協程掛死),旗標會永遠停在 `true`,後果不是「一次可觀測的拒絕」而是**整場戰鬥輸入永久鎖死且無任何錯誤訊息**——比本旗標原本要防的情境更糟。此斷言可直接寫成自動化測試(見 Validation Criteria)。
+> 🔴 **2026-09-09 改名 `settlement_in_progress` → `authoritative_write_in_progress`,並升格為寫入守衛。**
+>
+> **語意**:它涵蓋機制一表格的**全部六條寫入路徑**,不只結算步;且它現在**有執行力** —— 三個零件的每個 mutator 第一行檢查它(硬性義務第 3 條)。
+>
+> **改名的理由是守衛,不是美觀**:一個叫「結算進行中」的旗標,要寫在 `TurnOrder.advance_faction()`(回合邊界重置,根本不是結算)的第一行,**讀到的人會合理地以為那是複製貼上貼錯了。**
+> ⚠️ **本次修訂中途一度決定沿用舊名**,理由是「提交包裝收斂成單一方法後這個名字只會出現在兩個地方」。**採納守衛後那個理由就地失效** —— 它現在出現在三個類別、八個以上 mutator 裡。
+> 📌 **傳播範圍**:舊識別字另外出現在 ADR-0002(4 處)與 ADR-0005(1 處),**經查證那 5 處全部是散文層的先例引用、非簽章相依**(ADR-0002 逐字寫「借鑑其精神…**非直接複用**」),故改名不會讓任何機制失效,只需同批更新措辭。**與計數器改名同一批傳播** —— 分兩次各傳播一次正是失效模式 A 的成因。
+>
+> ✅ **這不會改變 `tactical-combat-system.md` 的義務,已逐條查證**:該文件 AC-24 的 GIVEN 寫死是「某單位的**結算步**已開始、尚未完成」,要求的行為是拒絕玩家操作。**打牌提交時多鎖一幀,不會讓 AC-24 的任何一個向量失敗 —— 它只是比要求更嚴,而更嚴不算擴大別人的義務。** 故本次修訂**不需要**修改該已核准 GDD(本 ADR `Ordering Note` 明文禁止擴大或縮小它的義務,此處未踩到)。
+> 🔴 **但反方向要注意**:任何寫成 `if authoritative_write_in_progress: # 我們正在結算中` 的程式碼**從此是錯的** —— 它可能是打牌。目前全庫零命中,這是前瞻性警告。
+
+- 任一寫入路徑開始時設為 `true`,完成(含所有跨系統呼叫回傳)後設為 `false`,並於此時遞增 `combat_state_version`。結算步的具體對應為①開始、④完成。
+- **`authoritative_write_in_progress == true` 期間,所有玩家輸入一律拒絕並觸發拒絕回饋**(使用者裁決;比照 UI Requirements §6 的既有合法性閘門機制)。**不採佇列**——理由見下方 Alternatives。
+- 🔴 **提交包裝執行在哪一條鏈上 —— 2026-09-09 由絕對要求改為條件式等價(有實測支撐)**
+
+  **本項原文**逐字為:「**結算步執行於 `_process` 鏈**」。**實測發現現行程式碼並不符合它**:`src/ui/battle/battle_screen.gd` 的 `_input()` 直接同步呼叫 `battle_controller.gd` 的結算(攻擊確認與整個敵方回合皆是)。
+
+  **但那不是正確性錯誤,該修的是本文件的措辭。** 實機量測(Godot 4.7.1,探針見下)結論:
+
+  > **在全程同步、無 `await`、無 deferred 的前提下,提交包裝跑在 `_input()` 與跑在 `_process()`,對本 ADR 與 ADR-0005 的既有保證而言是「條件式等價」。**
+
+  **實測到的同幀分派順序**:`_input()` → `_unhandled_input()` → `_physics_process()` → `_process()`(依 `process_priority` 由小到大)。關鍵推論:**在 `_input()` 內同步改的狀態,本幀所有 `_process()` 都保證讀得到** —— 以 `process_priority` ±1000 兩個極端節點對照,每一次注入兩者讀值皆一致。
+
+  🔴 **三個條件,缺一即不等價**:
+
+  | # | 條件 | 違反的後果 |
+  |---|---|---|
+  | 1 | **該幀內至多只有一個會觸發該路徑的合法輸入事件** | `_process()` 每幀恰好一次,天然免疫;**`_input()` 是逐事件呼叫** —— 鍵盤與手把同幀各送一次確認,結算會跑兩次。ADR-0005 機制五多蓋一層「`_input()` 只緩衝、`_process()` 才裁決」正是為了防這件事 |
+  | 2 | **提交邏輯不依賴 `process_priority` 排序,也不依賴跨節點 `_input()` 之間的相對順序** | 後者是**樹序**,ADR-0005 自己標記為「印象級,未查證」。若正確性偷偷依賴它,等價性不成立 |
+  | 3 | 🔴 **提交路徑不查詢任何要到 `_process` 鏈才算出的狀態** —— 尤其是 `CursorStateHost` 的裝置權威與當前目標 | **這一條不是打折,是會產生一個 `_process()` 版本不會有的具體 bug**:`_input()` 全部先於本幀 `_process()`,故在 `_input()` 裡讀這類值,**讀到的是上一幀的結果** |
+
+  ⚠️ **條件 3 對 #6 是活的,對現有程式碼不是。** 現行 `_confirm_at_cursor()` 讀的是自己本地追蹤的游標格,不經過 `CursorStateHost`,**故現況不觸發**。但 #6 的 UI Requirements 明文要求卡牌選取視覺必須走單一游標狀態源 —— **打牌確認一旦接上去就會踩到,而它不會報錯。** 已列為 #6 的實作義務。
+  📌 **這條規則的適用範圍比 ADR-0005 機制六寫的更寬**:機制六的措辭只限定「確認類 `ui_*` action」,而實測顯示**任何要讀取 `CursorStateHost` 裁定後狀態的呼叫,無論觸發它的 action 叫什麼名字**,都不能放在 `_input()` / `_unhandled_input()`。
+
+  ⚠️ **`_physics_process` 的禁令不受本項放寬影響,仍然絕對**:ADR-0005 記載 `process_priority` 只排序 `_process`/`_physics_process` 各自的鏈、**兩鏈之間無排序保證**,故把提交放進 `_physics_process`,該 ADR 的全部定序保證會**靜默失效且不報錯**。
+
+  **證據**:`godot-specialist` 2026-09-09 實機探針,腳本與 42 行逐字 log 見該次覆核報告;探針**零重新實作**(只呼叫 `Node._process`/`_input`、`process_priority`、`Input.parse_input_event`、`Engine.get_process_frames` 等裸引擎原語),並附四項對照組證明它確實量到了東西。
+  🔴 **明確未涵蓋**:真實視窗環境下「兩個裝置在同一 OS 幀內於輪詢點之後各自抵達」的情形 —— headless 結構上做不到,該部分為推論而非量測。**條件 1 的去重保護不得因為「探針沒測到這種情形」而省略。**
+- 結算步**不得**跨幀讓出。②c 的卡牌效果契約為同步執行、不得要求玩家輸入(見 `tactical-combat-system.md` Core Rules #11 對 #6 的契約)。這使結算步天然是單幀原子的,`authoritative_write_in_progress` 實務上只在單一幀內為 `true`。
+- **禁止 deferred 路徑介入結算(2026-08-18 `godot-specialist` 驗證發現)**:結算步內任何改動 `occupied`、單位攻防有效值或 `combat_state_version` 的呼叫,**禁止**經由 `call_deferred()` 或以 `CONNECT_DEFERRED` 旗標連線的訊號執行。理由:Godot 的 deferred 機制會把該呼叫排到本幀稍後的安全點才執行,而非立即同步生效——效果等同於在結算步中間插入一個讓出點,**但呼叫端不會出現任何 `await` 字樣**,程式碼審查時看不出來。這是與「意外引入 `await`」同源、但更隱蔽的一條失效路徑(`queue_free()` 本身正是靠此機制實作延後移除,見機制三)。
+- **卡死偵測(2026-08-18 `godot-specialist` 驗證發現的一個比重入更嚴重的失效模式)**:`authoritative_write_in_progress` **不得跨越兩個連續的 `_process` 幀仍為 `true`**;若偵測到,須以 `push_error()` 明確曝光。理由:旗標的防禦性推理隱含假設「意外引入的 `await` 終將恢復」。但若該 `await` 永遠不恢復(等待一個不再發出的訊號、或等待的節點被釋放導致協程掛死),旗標會永遠停在 `true`,後果不是「一次可觀測的拒絕」而是**整場戰鬥輸入永久鎖死且無任何錯誤訊息**——比本旗標原本要防的情境更糟。此斷言可直接寫成自動化測試(見 Validation Criteria)。
 
 > **為何仍需要這個旗標,即使結算是單幀的**:防禦性。GDScript 的呼叫鏈中若有任何一處意外引入讓出點(顯性的 `await`,或上述隱性的 deferred 路徑),旗標會讓該情形**變成一個可觀測的拒絕或一個明確的錯誤**,而不是一個靜默的重入 bug。這是本專案「錯誤不得靜默」既有慣例的延伸。
 
@@ -148,12 +348,14 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 
 - **稀疏儲存**:只記錄有單位的格。棋盤上的單位數遠少於格數,稀疏結構更貼合實際分布,且不需要預先定案棋盤尺寸上限(該上限目前未定案,見 OQ-16)。
 - `Vector2i` 在 Godot 中是合法的 `Dictionary` 鍵。查詢為 O(1)。
-- **同步時機**:任一改變單位邏輯位置或存活狀態的事件發生時立即更新,與 `board_version` 的遞增在同一個原子區段內完成。已知實例:結算步④的陣亡佔位釋放、移動的**邏輯**完成。
+- **同步時機**:任一改變單位邏輯位置或存活狀態的事件發生時立即更新,與 `combat_state_version` 的遞增在同一個原子區段內完成(2026-09-09:該原子區段現由 `commit_authoritative_change()` 承載)。已知實例:結算步④的陣亡佔位釋放、移動的**邏輯**完成。
 - **嚴禁**:以 `get_node()`/場景樹查詢導出佔位;以動畫/Tween 的完成狀態驅動佔位更新;以視覺位置作為佔位判定依據。
 
 **兩條由 GDScript 參照語意衍生的額外約束(2026-08-18 `godot-specialist` 驗證發現)**:
 
 - **查詢結果攜帶的容器必須是新配置的物件**。`Dictionary`/`Array` 在 GDScript 是**參照型別**;若某個查詢結果直接回傳 `board.occupied` 本身的參照(而非計算過程中新配置的容器),則即使 `version` 戳記正確地把它標記為過期,呼叫端若繞過 `is_stale()` 直接讀取該容器,仍會看到被回溯修改的內容。**版本戳記機制無法防禦這條旁路**——它管的是「該用哪一份資料」,不是「這份資料是不是共享的可變物件」。故:**禁止任何查詢回傳 board 內部儲存結構的參照。**
+  > ✅ **一項明文例外(2026-09-09 新增,不寫會被下一輪覆核當成違規抓出來)**:`QueryResult` 持有一個對**版本來源**(`BattleState`)的參照,**不違反本條**。理由:那不是內部儲存結構,且用途唯讀 —— 它只被 `is_stale()` 讀一個整數。本條要防的是「呼叫端繞過 `is_stale()` 直接讀到一份被回溯修改的容器」,而版本來源參照無法被這樣使用。
+  > 📌 **明寫的理由**:字面上它很像違規,而「散文改了、規則沒跟上」是本專案登記 9 次的失效模式 B。
 - **禁止依賴 `Dictionary`/`Array` 的原生迭代順序作為輸出順序**。Godot 的 `Dictionary` 保留插入順序但不按 key 排序,而語意相同的兩個集合經不同程式路徑算出時插入順序可能不同。本 ADR 的 AC-9 驗收明訂以**集合相等**(而非序列相等)斷言,正是為迴避此陷阱。若某消費端確實需要穩定序列(記錄檔比對、replay log 等),**須自行以固定排序鍵顯式排序**(例如先 `y` 後 `x`),不得信任容器的原生順序。
 
 > **這條約束的具體攻擊面**:Godot 的 `queue_free()` 延後至幀尾才真正移除節點。若 `occupied()` 以節點樹存在性導出,一個在結算步④陣亡的單位,其節點在**同一結算步內**仍掛在場景樹上,該格會被讀為已佔據——直接違反 `tactical-combat-system.md` AC-7(c) 要求的同結算步釋放。同理,移動若把邏輯位置更新綁在 Tween 的 `finished` 訊號上,動畫播放期間(可能長達數百毫秒)的任何查詢都會讀到過期佔位。
@@ -161,14 +363,24 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 ### Architecture Diagram
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │          Board (權威狀態)                │
-                    │                                         │
-                    │  board_version: int  ← 只在結算邊界 +1   │
-                    │  occupied: Dictionary[Vector2i, unit_id]│
-                    │  terrain: (地形成本 / 遮蔽標記)          │
-                    │  settlement_in_progress: bool           │
-                    └───────────┬─────────────────────────────┘
+        ┌─────────────────────────────────────────────────────────┐
+        │        BattleState (權威戰鬥狀態 —— 版本戳記的擁有者)      │
+        │                                                         │
+        │  combat_state_version: int              ← 只由提交方法 +1 │
+        │  authoritative_write_in_progress: bool  ← 寫入窗口 + 守衛 │
+        │  commit_authoritative_change()          ← 唯一寫入口      │
+        │                                                         │
+        │  ┌─────────────┐ ┌─────────────┐ ┌───────────────────┐  │
+        │  │ Board       │ │ units       │ │ TurnOrder         │  │
+        │  │ occupied    │ │ ATK/DEF_eff │ │ 行動旗標 / 陣營    │  │
+        │  │ terrain     │ │ hp / mp     │ │ 回合數            │  │
+        │  └─────────────┘ └─────────────┘ └───────────────────┘  │
+        │   🔴 三個零件都被背書,都不持有版本號                       │
+        │   🔴 TurnOrder 於 2026-09-09 收進來 —— 在此之前它由        │
+        │      BattleController 與 BattleLoop 各自持有,而本圖       │
+        │      從第一天就把「旗標總覽」查詢掛在 Board 底下,          │
+        │      **而 Board 從來沒有持有過旗標。**                     │
+        └───────────┬─────────────────────────────────────────────┘
                                 │ 唯讀
           ┌─────────────────────┼─────────────────────┐
           │                     │                     │
@@ -188,18 +400,33 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
                     │  呈現層 (戰鬥 HUD #10)  │
                     │                        │
                     │  有效 ⇔ version ==     │
-                    │        board_version   │
+                    │   combat_state_version │
                     │  合成畫面 ⇒ 各子結果    │
                     │        version 須相等   │
                     └────────────────────────┘
 
-  寫入路徑(唯一能改變盤面的路徑):
-    玩家已確認的指令
-      → settlement_in_progress = true   ← 此後所有輸入被拒絕
-      → 結算步 ① → ② → ③ → ④           ← 單幀、同步、不可重入
-      → occupied 同步更新
-      → board_version += 1              ← 所有既有查詢結果就此變為過期
-      → settlement_in_progress = false
+  寫入路徑 —— 🔴 至少六條,全部走同一個提交方法(2026-09-09 改寫,原圖只畫了第一條):
+
+    ① 玩家已確認的指令   ┐
+    ② 已確認的移動邏輯   │
+    ③ 敵方回合整批結算   ├─→ commit_authoritative_change()
+    ④ 玩家結束單位行動   │        │
+    ⑤ 玩家結束陣營回合   │        │
+    ⑥ 卡牌打出第 4 步    ┘        │
+                                  ├→ authoritative_write_in_progress = true
+                                  │      ← 此後玩家輸入被拒絕,且守衛放行 mutator
+                                  ├→ 套用該路徑的狀態變更   ← 同步、不可重入
+                                  │    (occupied / 單位攻防 / 行動旗標)
+                                  ├→ combat_state_version += 1
+                                  │      ← 既有查詢結果就此全部過期
+                                  └→ authoritative_write_in_progress = false
+
+  🔴 ③④⑤ 今天就在跑,而本圖原本一條都沒有。
+  🔴 遞增無條件 —— 不得依路徑種類或卡牌類別跳過。
+  🔴 BattleLoop 是與 BattleController 平行的第二條驅動路徑(互不呼叫),
+     上述多條在它裡面另有一組呼叫點。提交方法必須是兩者共用的那一個。
+  ✅ 單位選取 / 取消選取不是權威寫入,不遞增(明文裁定,見機制一)。
+  ⚠️ 「唯一寫入口」是必須靠守衛保證的不變式,不是自動成立的事實(見核心洞見節)。
 ```
 
 ### Key Interfaces
@@ -213,39 +440,71 @@ Core Rules #11 已定案兩件事:(a) 盤面權威狀態只在**已提交的結�
 > **本專案已為「照 ADR 的示意程式碼直接寫」付過 18 處編譯錯誤的代價**,故此處明寫而非只靠上一句提醒。
 
 ```gdscript
+# ─── battle_state.gd ─────────────────────────────────────────
+# 🔴 2026-09-09:版本戳記與唯一寫入口自 Board 移交至此。
+#    理由見機制一的「為什麼計數器不能留在 Board」。
+# 權威戰鬥狀態的擁有者。它同時持有三個零件 —— board(幾何)、units(數值)、
+# turn_order(行動旗標)—— 因此它是唯一能替「三者合起來的那一版狀態」背書的物件。
+# 🔴 turn_order 於 2026-09-09 收進來。在此之前它由 BattleController 與 BattleLoop
+#    各自持有,亦即當時沒有任何物件是三個零件的共同擁有者。
+
+class_name BattleState
+
+# 🔴 2026-09-09 新增持有。TurnOrder 仍是獨立可 new() 的 RefCounted,
+#    turn_order_test.gd 不受影響;改的只是「誰持有它」。
+var _turn_order: TurnOrder
+func turn_order() -> TurnOrder      # 唯讀存取器;mutator 一律經提交方法
+
+# combat_state_version / authoritative_write_in_progress 皆為對外唯讀屬性。
+# 外部 `state.combat_state_version = x` 會觸發 setter 的 push_error() 並拒絕寫入。
+# 內部合法寫入一律走底線私有欄位,不經過本屬性自己的 setter。
+#
+# 驗證範圍(2026-09-01 窄範圍複驗校正,原註解把一項驗證的結論套到了兩項上;
+#           2026-09-09 更新:攔截手法本身的實測不因改名/移交而失效,
+#           但它是在 Board 上測的,移交後未重測 —— 結構同構、風險低,不是新的實測結論):
+#   - 整數計數器的 setter 攔截 —— 已實機驗證,prototypes/adr0001-board-property-spike-2026-09-01/
+#                                  (外部賦 999 被拒、值不變、錯誤訊息指名檔案行號)
+#   - authoritative_write_in_progress(bool) —— 未單獨驗證,沿用同一形狀。
+#   - 全部結論限定 debug / headless。release 建置未查證(本機無 export template)。
+
+var _combat_state_version: int = 0     # 單調遞增,只由 commit_authoritative_change() +1
+var combat_state_version: int:
+	get:
+		return _combat_state_version
+	set(value):
+		push_error("combat_state_version is read-only outside BattleState; rejected external write of %d" % value)
+
+var _authoritative_write_in_progress: bool = false
+var authoritative_write_in_progress: bool:
+	get:
+		return _authoritative_write_in_progress
+	set(value):
+		push_error("authoritative_write_in_progress is read-only outside BattleState; rejected external write of %s" % value)
+
+# 🔴 唯一寫入口(2026-09-09 新增)。機制一表格的六條路徑全部走它。
+#    它負責:設旗標 → 執行 mutator → 遞增版本號 → 清旗標,四步為一個原子區段。
+#    ⚠️ 本 ADR 原本從未定義任何改動權威狀態的方法 —— 那句「與版本號遞增在同一
+#       原子區段內完成」的承諾,先前沒有任何一支具名函式承載過。這就是那支函式。
+#    ⚠️ BattleController 與 BattleLoop 是兩條平行驅動路徑,必須共用這一個方法,
+#       不得各自複製一份包裝。
+func commit_authoritative_change(mutator: Callable) -> void
+
+# 🔴 寫入守衛的判定入口(硬性義務第 3 條)。三個零件的每個 mutator 第一行呼叫它;
+#    回傳 false 時該 mutator 必須 push_error() 並拒絕寫入,不得靜默略過。
+#    「那誰阻止別人亂開旗標?」—— 遞迴在機制二的卡死偵測終止:
+#    旗標不得跨越兩個連續 _process 幀仍為真,否則 push_error()。
+#    亦即一個非法開啟的寫入窗口,兩幀之內一定會叫。
+func write_window_is_open() -> bool
+
 # ─── board.gd ────────────────────────────────────────────────
-# 盤面權威狀態。唯一能改變 board_version 與 occupied 的路徑
-# 是已提交的結算邊界。
+# 幾何零件。不持有版本號,不持有旗標。
 
 class_name Board
 # ⚠️ 2026-09-01:`class_name Board` 已被 `src/gameplay/board/board.gd` 佔用(2026-08-26 進 repo,
-#    166 行,地形/移動成本/視線/佔位的幾何雛形,與本契約職責不重疊)。Godot 專案內
-#    `class_name` 全域唯一 —— 落地時須二選一:把本契約併進該檔(順帶把它的 `_occupants`
-#    改名對齊 `_occupied`),或改掉其中一個名字。**已登記,未處置。**
-
-# board_version / settlement_in_progress 皆為對外唯讀屬性。
-# 外部 `board.board_version = x` 會觸發 setter 的 push_error() 並拒絕寫入。
-# 內部合法寫入一律走底線私有欄位,不經過本屬性自己的 setter。
-#
-# 驗證範圍(2026-09-01 窄範圍複驗校正,原註解把一項驗證的結論套到了兩項上):
-#   - board_version(int)          —— 已實機驗證,prototypes/adr0001-board-property-spike-2026-09-01/
-#                                     (外部賦 999 被拒、值不變、錯誤訊息指名檔案行號)
-#   - settlement_in_progress(bool) —— 未單獨驗證,沿用同一形狀。結構同構、風險低,但不是實測結論。
-#   - 全部結論限定 debug / headless。release 建置未查證(本機無 export template)。
-
-var _board_version: int = 0            # 單調遞增,只在結算邊界 +1
-var board_version: int:
-	get:
-		return _board_version
-	set(value):
-		push_error("board_version is read-only outside Board; rejected external write of %d" % value)
-
-var _settlement_in_progress: bool = false
-var settlement_in_progress: bool:
-	get:
-		return _settlement_in_progress
-	set(value):
-		push_error("settlement_in_progress is read-only outside Board; rejected external write of %s" % value)
+#    166 行,地形/移動成本/視線/佔位的幾何雛形)。**已登記,未處置。**
+#    🔴 2026-09-09 重新評估:本次修訂把版本號與旗標移出 Board 後,本契約對 board.gd 的
+#       新增需求已大幅縮小,**該衝突可能自行消失或退化成小很多的問題**。故本次刻意
+#       不裁決名字 —— 處置條件改為「所有權落地後、或第一張實作 story 之前,孰早」。
 
 # 邏輯佔位表:key = 座標,value = unit_id(int)
 # 注意 value 型別是 int —— `unit_id` 是該 int 值的語意名稱,不是型別名
@@ -255,6 +514,10 @@ var _occupied: Dictionary[Vector2i, int]
 func is_occupied(tile: Vector2i) -> bool
 func occupant_of(tile: Vector2i) -> int   # 無單位時回傳 INVALID_UNIT_ID
 
+# 🔴 2026-09-09 硬性義務三:佔位的寫入方法不再對外公開。
+#    現況 src/gameplay/board/board.gd 的 set_occupant()/clear_occupant() 是公開的,
+#    且 battle_state.gd 有四處直接呼叫 —— 落地時須收進 commit_authoritative_change() 內部。
+
 # ─── query_result.gd ─────────────────────────────────────────
 # 每個對外查詢的回傳值都攜帶它所計算的版本號。
 # 容器型別欄位一律為計算過程中新配置的物件,
@@ -262,10 +525,18 @@ func occupant_of(tile: Vector2i) -> int   # 無單位時回傳 INVALID_UNIT_ID
 
 class_name QueryResult
 
-var version: int                # 計算時的 board_version
+var version: int                # 計算時的 combat_state_version
 
-func is_stale(board: Board) -> bool:
-    return version != board.board_version
+# 🔴 2026-09-09 簽章變更:由 is_stale(board: Board) 改為【不帶參數】。
+#    改兩次的原因值得記住:先改成 is_stale(state: BattleState),然後發現
+#    TurnOrder 是第三個零件、所有權還要再動一次 —— 亦即舊形狀把持有者型別
+#    焊進契約,所以每次所有權變動就要重談一次簽章。不帶參數讓兩者脫鉤。
+#    另一個好處:舊簽章允許呼叫端傳錯一個 Board(例如另一場戰鬥的),
+#    比對出一個沒有意義的答案而完全不報錯。結果自帶來源就不可能傳錯。
+var _version_source: BattleState   # 唯讀用途;四個類別皆 RefCounted,不會懸空
+
+func is_stale() -> bool:
+    return version != _version_source.combat_state_version
 
 # 合成查詢的一致性斷言:
 # 被合併判讀為單一畫面的一組結果,必須全部同版本。
@@ -317,21 +588,25 @@ static func assert_same_version(results: Array[QueryResult]) -> bool
 
 | 風險 | 緩解 |
 |---|---|
-| **技能卡牌系統(#6)設計時發現某類效果無法滿足同步契約**(例如「請玩家選擇加成對象」是該系統的核心玩法之一),導致 Core Rules #11 的前提被推翻 | 已於 `tactical-combat-system.md` OQ-4 與 systems-index 跨系統義務登記表登記為 #6 的確認義務,且明訂「須回頭修訂 Core Rules #11 與 AC-24,不得單方面繞過」。**若該契約真被推翻,本 ADR 須回頭重新評估 Alternative 1(顯式快照物件)**——該方案不依賴不可重入前提 |
+| **技能卡牌系統(#6)設計時發現某類效果無法滿足同步契約**(例如「請玩家選擇加成對象」是該系統的核心玩法之一),導致 Core Rules #11 的前提被推翻 | 已於 `tactical-combat-system.md` OQ-4 與 systems-index 跨系統義務登記表登記為 #6 的確認義務,且明訂「須回頭修訂 Core Rules #11 與 AC-24,不得單方面繞過」。**若該契約真被推翻,本 ADR 須回頭重新評估 Alternative 1(顯式快照物件)**——該方案不依賴不可重入前提。<br>🔴 **2026-09-09 結案:這個扳機沒有扣下,而隔壁那個沒人登記的扳機扣下了。** #6 已完成設計,其 Core Rules 四確認第 4 步「確認」為同步、且打牌與結算結構性互斥 —— **同步契約成立,故不重新評估 Alternative 1。** 真正發生的是另一件事:**結算以外冒出了額外的權威寫入路徑**(打牌;以及一條本 ADR 從未登記、今天就在跑的敵方回合)。**本列看守的是錯的那一半** —— 已於下一列補上一般形。 |
+| 🔴 **結算以外冒出新的權威寫入路徑,而本 ADR 沒有登記它**(2026-09-09 新增,取代上一列的過窄看守) | **這是已經發生過兩次的事,不是假想**:①`run_enemy_phase()` 自程式碼寫成之日起就是第二條路徑,而本 ADR 的寫入路徑圖上它不存在;②#6 打牌是第三條。對策是機制一的逐條清單與「新增路徑必須同步登記」的明文要求。**Alternative 1 對這個風險沒有幫助** —— 深拷貝一份錯的狀態,拷貝出來的還是錯的;真正的解法是把寫入口收斂成一個 |
 | **跨檔傳播失敗**:GDD 義務修訂後未同步本 ADR,或反之 | 本 ADR 的 ADR Dependencies 段已明訂修訂方向為單向(GDD 義務變更 → 檢查本 ADR;本 ADR 機制變更**不得**改變 GDD 義務範圍)。`/architecture-review` 的 traceability matrix 應涵蓋此對應 |
 | **`queue_free()` 的幀尾語意在未來 Godot 版本改變**,使本 ADR 的理由陳述過時(雖然機制本身仍正確) | 本 ADR 的決定(邏輯資料結構承載佔位)**不因該語意改變而失效**——它在任何情況下都是正確的做法,引擎語意只是它最迫切的理由之一。已列入 Verification Required |
-| **實作者誤把 `board_version` 的遞增掛在錯誤的事件上**(例如每幀 +1,或游標移動時 +1),使所有查詢結果恆為過期、退化成每次重算 | 本 ADR 明文列出唯一遞增時機並明文排除唯讀操作。建議實作時對「連續 N 次唯讀操作後 `board_version` 不變」寫一條斷言測試 |
+| **實作者誤把 `combat_state_version` 的遞增掛在錯誤的事件上**(例如每幀 +1,或游標移動時 +1),使所有查詢結果恆為過期、退化成每次重算 | 機制一明文列出遞增時機的**逐條清單**並明文排除唯讀操作。建議實作時對「連續 N 次唯讀操作後版本號不變」寫一條斷言測試 |
+| 🔴 **反方向的同一個風險(2026-09-09 新增,本次修訂的直接動因)**:實作者**漏掉**某一條會改變查詢答案的寫入路徑,使該路徑寫入後查詢結果仍通過有效性檢查 | **這正是 #6 打牌的情形,而它不需要任何人做錯事就會發生** —— 舊版本文把遞增綁在「結算邊界」上,照著寫的人絕不會在打牌時遞增。對策是機制一的逐條清單 + 每條路徑各一條斷言(Validation Criteria 第 4 項)。⚠️ **對策是紀律不是結構** —— 新增第五條路徑而忘記登記,仍然不會有任何東西攔下來 |
+| 🔴 **本 ADR 的核心論證被誤讀為「自動成立」**(2026-09-09 新增) | 「兩次寫入之間狀態不可變」現在是**必須被執行手段保證的不變式**,不是從上游規則推導出的事實(見核心洞見節)。五條硬性義務(機制一末段)是它唯一的支撐;若那四條在實作時被省略,本 ADR 省下深拷貝成本的理由**就地失效**,而失效方式是靜默的 |
 | **N 敵 Dijkstra 的絕對成本仍未量化**——本 ADR 讓跨幀展開合法,但沒有解決「總量是否壓得進預算」 | 明確不在本 ADR 範圍。已由 `tactical-combat-system.md` OQ-16 登記(含「敵方單位數上限全專案無擁有者」與「效能測試須以格數×敵數兩軸參數化」兩項待補) |
 
 ## GDD Requirements Addressed
 
 | GDD System | Requirement | How This ADR Addresses It |
 |------------|-------------|--------------------------|
-| `tactical-combat-system.md` | Core Rules #10a — 即時性;輸出恆等於以當下狀態重算一次;改變答案的結算邊界事件發生時須至少標記為過期,不得以過期輸出接受下一個玩家輸入 | `board_version` 版本戳記:結果有效 ⇔ 版本相等;版本不符即為過期。呈現層義務明訂為「`is_stale()` 為真時不得以該結果接受玩家輸入」 |
+| `tactical-combat-system.md` | Core Rules #10a — 即時性;輸出恆等於以當下狀態重算一次;改變答案的結算邊界事件發生時須至少標記為過期,不得以過期輸出接受下一個玩家輸入 | `combat_state_version` 版本戳記:結果有效 ⇔ 版本相等;版本不符即為過期。呈現層義務明訂為「`is_stale()` 為真時不得以該結果接受玩家輸入」 |
 | `tactical-combat-system.md` | Core Rules #10b — 單一快照原子性;**且被合併判讀為單一畫面的一組輸出視為同一次查詢、共用同一份快照** | 合成查詢的所有子結果須攜帶同一版本號(`assert_same_version`);跨幀展開於恢復點比對 `start_version`,不符即中止重算 |
-| `tactical-combat-system.md` | Core Rules #10c — 佔位資料所有權;不得由節點樹或視覺狀態導出;須隨任一改變邏輯位置或存活狀態的事件同步更新 | `Dictionary[Vector2i, unit_id]` 稀疏邏輯佔位表;同步時機與 `board_version` 遞增在同一原子區段;明文禁止節點樹導出與動畫驅動更新,並記載 `queue_free()` 延後移除的具體攻擊面 |
-| `tactical-combat-system.md` | Core Rules #11 — 結算步不可重入;②c 卡牌效果須同步不得要求玩家輸入;邏輯狀態為唯一權威 | `settlement_in_progress` 閘門 + 拒絕式輸入策略;結算步單幀同步不跨幀讓出;佔位/HP/旗標一律以邏輯狀態為準 |
+| `tactical-combat-system.md` | Core Rules #10c — 佔位資料所有權;不得由節點樹或視覺狀態導出;須隨任一改變邏輯位置或存活狀態的事件同步更新 | `Dictionary[Vector2i, unit_id]` 稀疏邏輯佔位表;同步時機與 `combat_state_version` 遞增在同一原子區段;明文禁止節點樹導出與動畫驅動更新,並記載 `queue_free()` 延後移除的具體攻擊面 |
+| `tactical-combat-system.md` | Core Rules #11 — 結算步不可重入;②c 卡牌效果須同步不得要求玩家輸入;邏輯狀態為唯一權威 | `authoritative_write_in_progress` 閘門 + 拒絕式輸入策略;結算步單幀同步不跨幀讓出;佔位/HP/旗標一律以邏輯狀態為準 |
 | `tactical-combat-system.md` | AC-9 — 零隨機/確定性;相同輸入逐次呼叫結果完全相同(含公式三/四的集合型輸出) | 版本戳記機制不引入任何非決定性(無亂數、無時間、無幀計數器);跨幀中止採「作廢重算」而非「部分結果沿用」,確保同版本下的輸出唯一 |
+| 🔴 **`skill-card-system.md`(2026-09-09 新增 —— 本 ADR 自此同時服務兩份 GDD)** | **Core Rules 六**:打出任何卡牌後,畫面上的傷害預覽必須是新值,不得殘留舊值(2026-09-08 管理者裁決)。追溯 ID:`TR-card-001` | 打牌的第 4 步「確認」列為機制一遞增清單的第 4 條路徑,走 `commit_authoritative_change()`;完成時遞增版本號,所有既有查詢結果就此過期。**單位攻防有效值明文納入版本號的背書範圍** —— 這是本次修訂的核心變更,舊版機制伸不到那裡 |
 | `tactical-combat-system.md` | AC-22 / AC-24 — 上述義務的驗收條件 | 本 ADR 的機制為這些 AC 提供可實作的具體形狀;AC 本身的斷言內容不變 |
 | `affinity-data-pool.md` | Core Rules #1 — 陣亡通知介面於結算步內呼叫;同結算步呼叫順序影響寫入合法性 | 結算步不可重入 + 單幀同步,保證 `tactical-combat-system.md` Core Rules #5 定案的 ①②③④ 順序在執行期不被打斷,跨系統呼叫順序因此是確定性的 |
 
@@ -341,6 +616,14 @@ static func assert_same_version(results: Array[QueryResult]) -> bool
 - **Memory**:稀疏 `Dictionary` 佔位表的記憶體與單位數成正比,與棋盤格數無關。相較密集二維陣列,在單位稀疏的戰棋盤面上顯著較省,且不需要預先定案棋盤尺寸上限。
 - **Load Time**:無影響。
 - **Network**:不適用(單人遊戲)。
+
+🔴 **作廢頻率的上界由 #6 決定,而該數目前無上限(2026-09-09 新增,誠實登記)**
+
+Alternative 2(每幀重算)被駁回的理由逐字是「回合制戰棋的盤面在玩家思考期間可能數十秒不變」。**#6 的 Core Rules 二定案「每回合出牌數不限」,且打牌不消耗行動旗標** —— 亦即玩家可以在自己回合內連續打出任意張數的牌,**每一張都讓全部既有查詢結果作廢**。
+
+**這不推翻任何決定**:單一計數器下,連打 5 張牌 = 5 次全量作廢,而**每次游標移動本來就在重算**,量級相同。**但它是一個沒人登記過的新觸發源**,而 OQ-16(N 敵 Dijkstra 的絕對成本)至今未量化。
+
+📌 **寫下來的用意**:將來效能真的出事時,**沒有人會想到往這裡查** —— 因為駁回 Alternative 2 的那句話讀起來像是「盤面很少變」,而那句話對 #6 落地後的實際情形不成立。
 
 **明確未定案**:單幀 16.6ms 預算內能容納多少格 × 多少敵人,本 ADR 不作任何宣稱。`.claude/docs/technical-preferences.md` 的 Memory Ceiling 亦仍為 `[TO BE CONFIGURED]`。
 
@@ -360,7 +643,7 @@ find src -name '*.gd' | xargs wc -l | tail -1
 
 **本 ADR 對既有程式碼的關係,精確陳述如下**(不再用「無關」這種全稱說法):
 
-- **三個契約欄位零命中**:全庫 grep `board_version` / `settlement_in_progress` / `_occupied` 皆無。
+- **三個契約欄位零命中**:全庫 grep `board_version` / `settlement_in_progress` / `_occupied` 皆無(此為 2026-09-01 當時的欄位名)。<br>✅ **2026-09-09 複查仍然成立**,且改名後的 `combat_state_version` 同樣零命中(指令:`grep -rn "board_version|combat_state_version|settlement_in_progress|authoritative_write_in_progress" src tests`)。**這是本次修訂為零程式碼遷移的依據。**
   ⚠️ 但 `_occupied` 零命中**只是因為現有程式碼叫 `_occupants`**(`board.gd`),
   而本 ADR 的 Key Interfaces 已寫明落地時要改名對齊 —— **同一份文件一處說零命中、一處說要改名,
   講的是同一個概念。**
@@ -379,18 +662,45 @@ find src -name '*.gd' | xargs wc -l | tail -1
 1. **`tactical-combat-system.md` 的 AC-22 全部向量通過**(含第四輪新增的並存疊加圖共用快照、`threat_range_all` 多敵共用快照兩條)——這是本 ADR 機制是否真的滿足 Core Rules #10 的直接證據。
 2. **AC-24 全部向量通過**(結算中切換單位被拒、重複發起同一攻擊不產生第二次結算、結算後恢復正常、卡牌效果不於結算中要求輸入)。
 3. **AC-9 的集合型輸出向量通過**:盤面不變時 `reachable_set(u)` ×100 與 `threat_range_all(E)` ×100 皆集合相等。
-4. **`board_version` 遞增時機的斷言測試**:連續 N 次唯讀操作(游標移動、開關疊加圖、預判標記)後 `board_version` 不變;一次已提交結算後恰好 +1。
+4. 🔴 **`combat_state_version` 遞增時機的斷言測試 —— 2026-09-09 全面改寫,因為原條文會背書錯誤實作。**
+
+   **本項原文**逐字為:「連續 N 次唯讀操作後 `board_version` 不變;**一次已提交結算後恰好 +1**」。
+   ⚠️ **一個照它寫出來的測試,在「打牌不遞增」的錯誤實作上會通過** —— 亦即這條驗證條件會**主動背書**本次修訂要修的那個缺陷。**這比漏掉一條向量更糟:漏掉是沉默,背書是誤導。**
+
+   **改寫後的要求 —— 機制一表格的每一條寫入路徑各要一條斷言,不是一條通則**:
+
+   | # | 向量 | 斷言 |
+   |---|---|---|
+   | 4a | 連續 N 次唯讀操作(游標移動、開關疊加圖、預判標記) | 版本號**不變** |
+   | 4b | 一次玩家已確認指令的結算步完成 | **恰好 +1** |
+   | 4c | 一次已確認的移動邏輯完成 | **恰好 +1** |
+   | 4d | 🔴 一次敵方回合整批結算完成 | **恰好 +1**(原本從未登記這條路徑) |
+   | 4e | 🔴 一次玩家主動結束單位行動(`end_unit_turn`) | **恰好 +1**(原本從未登記) |
+   | 4f | 🔴 一次玩家結束陣營回合(`advance_faction` 的玩家呼叫點) | **恰好 +1**(原本從未登記;與 4d 是**不同的呼叫點**) |
+   | 4g | 🔴 一次打牌第 4 步確認完成 | **恰好 +1**,且該次呼叫前後 `ATK_eff`/`DEF_eff` 已反映修正 |
+   | 4h | 打牌流程第 1~3 步(開手牌、選牌、選對象)後取消 | 版本號**不變**(#6 的前三步是零寫入) |
+   | 4i | 單位選取 / 取消選取 | 版本號**不變**(明文裁定不是權威寫入) |
+   | 4j | 🔴 **經 `BattleLoop` 而非 `BattleController` 驅動的同類寫入** | **恰好 +1** —— 兩條驅動路徑平行且互不呼叫,只測其中一條會讓另一條的繞過**完全不可觀測** |
+   | 4k | 🔴 **守衛**:寫入窗口未開時,直接呼叫三個零件的任一 mutator | 觸發 `push_error()` 且**目標值不變**。**每個 mutator 各一條** |
+
+   **新增任何一條寫入路徑或任何一個 mutator 時,必須同步新增對應向量。** 這是機制一末段硬性義務第 5 條的落地形式。
+
+   🔴 **這批測試怎麼寫才不會是假綠燈**(本專案已登記的三個陷阱,逐條適用):
+   - **直接呼叫 `RefCounted` 層的提交方法,不要試圖模擬按鍵事件** —— headless 下引擎不派送 `InputEvent`,走輸入路徑的測試會靜默什麼都沒做。既有先例見 `tests/unit/ui/battle_screen_cursor_test.gd` 檔頭自述。
+   - **本批向量請分散在多個測試檔或確認排序** —— 同一套件內任一測試失敗會中止其後全部測試,`4e` 若排在一條會紅的測試之後,它**根本不會執行,而報告不會說它沒跑**。
+   - **驗證這批測試真的敏感,要一條一條證** —— 故意弄壞產品程式碼時,套件停在第一條抓到的測試,其後每一條都是**未證明**而非已證明。想證明幾條就要跑幾次(把前面的 `test_` 函式暫時改名移出收集)。
 5. **佔位同步的時效測試**:單位陣亡後於**同一結算步內**(引擎尚未實際移除節點時)查詢該格為可通行;單位移動後於動畫播放中查詢佔位已反映邏輯目的格。
 6. **後續 `/architecture-review`** 判定本 ADR 與其他 ADR 無衝突、且對 GDD 需求的涵蓋無缺口。
-7. **`settlement_in_progress` 卡死防衛斷言**(2026-08-18 `godot-specialist` 驗證後新增):自動化測試斷言該旗標不得跨越兩個連續 `_process` 幀仍為 `true`。此測試是「意外引入永不恢復的 await」這個最壞情況的安全網——該情況的後果是整場戰鬥輸入永久鎖死且無錯誤訊息,比本旗標原本要防的重入更嚴重。
+7. **`authoritative_write_in_progress` 卡死防衛斷言**(2026-08-18 `godot-specialist` 驗證後新增):自動化測試斷言該旗標不得跨越兩個連續 `_process` 幀仍為 `true`。此測試是「意外引入永不恢復的 await」這個最壞情況的安全網——該情況的後果是整場戰鬥輸入永久鎖死且無錯誤訊息,比本旗標原本要防的重入更嚴重。
 8. **查詢結果容器獨立性測試**(同上):取得一份查詢結果後,對 board 執行一次已提交結算,斷言該結果攜帶的容器內容**未被回溯改變**(只有 `is_stale()` 轉為 true)——此測試攔截「查詢回傳 board 內部結構參照」的錯誤實作。
-9. 🔴 **對外寫入攔截測試**(2026-09-01 `TD-ADR` 覆核導出,已實機驗證):自 `Board` 外部對 `board.board_version` 或 `board.settlement_in_progress` 賦值,斷言觸發 `push_error()` 且**欄位值不變**。證據與三種做法的比較見 `prototypes/adr0001-board-property-spike-2026-09-01/`。✅ **斷言做法已查證**(2026-09-01 同日稍晚):`assert_error(<Callable>).is_push_error(<message>)`,已實跑通過(`2 test cases | 0 failures | 0 orphans`,exit 0,含證明該斷言非恆為 pass 的對照組),見 `prototypes/adr0001-engine-probes-2026-09-01/gdunit4_push_error/`。<br>⚠️ **本句原寫「本專案尚未確認」,而同一天稍晚的探針就解決了它,檔頭第 20 行也已寫成已解除** —— 一份文件在自己剛驗出答案的同一天,還留著說那件事沒答案的句子。窄範圍複驗抓到並更正。**這是 `docs/consistency-failures.md` 登記的「修東西反而修出新問題」的又一例。**
+9. 🔴 **對外寫入攔截測試**(2026-09-01 `TD-ADR` 覆核導出,已實機驗證):自持有者外部對 `combat_state_version` 或 `authoritative_write_in_progress` 賦值(2026-09-09:持有者已改,攔截手法不變),斷言觸發 `push_error()` 且**欄位值不變**。證據與三種做法的比較見 `prototypes/adr0001-board-property-spike-2026-09-01/`。✅ **斷言做法已查證**(2026-09-01 同日稍晚):`assert_error(<Callable>).is_push_error(<message>)`,已實跑通過(`2 test cases | 0 failures | 0 orphans`,exit 0,含證明該斷言非恆為 pass 的對照組),見 `prototypes/adr0001-engine-probes-2026-09-01/gdunit4_push_error/`。<br>⚠️ **本句原寫「本專案尚未確認」,而同一天稍晚的探針就解決了它,檔頭第 20 行也已寫成已解除** —— 一份文件在自己剛驗出答案的同一天,還留著說那件事沒答案的句子。窄範圍複驗抓到並更正。**這是 `docs/consistency-failures.md` 登記的「修東西反而修出新問題」的又一例。**
 
 **反向驗證(本 ADR 若錯了會如何顯現)**:若版本戳記的粒度過粗(某些改變答案的事件未遞增版本),會表現為玩家看到過期疊加圖而系統未察覺——即 Player Fantasy 具名的「顯示與實際結算不一致」失敗模式。若粒度過細(唯讀操作也遞增),會表現為所有查詢恆為過期、每次操作都全量重算,在 N 敵盤面上直接撞上效能預算。
 
 ## Related Decisions
 
 - `design/gdd/tactical-combat-system.md` — Core Rules #10(對外查詢介面的共用義務)、Core Rules #11(結算步的不可重入邊界)、AC-9/AC-22/AC-24、Open Questions OQ-4/OQ-16。**義務的權威定義在該文件,本 ADR 只定案機制。**
+- 🔴 **`design/gdd/skill-card-system.md`(2026-09-09 新增 —— 本 ADR 自此同時服務兩份 GDD)** — Core Rules 六(打牌後傷害預覽必須是新值)、Core Rules 四(打牌四步流程與結算互斥)、Open Questions OQ-2。**義務歸該 GDD,機制歸本 ADR;修訂方向單向,見 `ADR Dependencies` 的 `Ordering Note`。** 兩側各自記錄,本 ADR 不代該 GDD 記帳(`docs/consistency-failures.md` 模式 G)。
 - `design/gdd/reviews/tactical-combat-system-review-log.md` — 第四輪條目記載本 ADR 的成因(結構性診斷與選項 B 裁決)。
 - `design/gdd/systems-index.md` — Cross-System Obligations Registry 的兩列(Core Rules #10 查詢介面義務、Core Rules #11 對 #6 的同步契約)。
 - `design/gdd/affinity-data-pool.md` — Core Rules #1(陣亡通知介面與同結算步呼叫順序義務)。

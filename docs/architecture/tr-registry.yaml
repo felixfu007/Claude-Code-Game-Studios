@@ -72,7 +72,7 @@ requirements:
   - {id: TR-tactical-037, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "enemy_stat_scaling 須用 ceil() 絕不四捨五入;驗證須拒絕 enemy_advantage_pct>=1.0", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-038, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "max_occlusion_ratio<=0.25 需要一個關卡資料驗證閘門(工具鏈決策)", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-039, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "缺乏戰鬥中地形變更的重算觸發規則(OQ-3);無不可通行地形層級(OQ-10)", created: 2026-08-18, revised: "", status: active}
-  - {id: TR-tactical-040, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "戰鬥內狀態的存讀檔持久化(board_version、佔位表、行動旗標、結算進度)完全未定義", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-040, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "戰鬥內狀態的存讀檔持久化(combat_state_version〔2026-09-09 前名為 board_version〕、佔位表、行動旗標、結算進度)完全未定義", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-041, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "專案中不存在任何AI/遭遇系統,儘管Core Rules#9要求敵方回合須有決策邏輯", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-042, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "供給系統#5的站位/鄰接介面無資料形狀定案;Φ_max交叉校準義務未定義", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-043, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "系統#6(技能卡牌)效果掛鉤須滿足同步契約;可行性尚未確認(OQ-4)", created: 2026-08-18, revised: "", status: active}
@@ -171,6 +171,12 @@ requirements:
   - {id: TR-concept-012, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "專案級forbidden pattern:禁止連線功能、禁止程序化地形生成", created: 2026-08-18, revised: "", status: active}
   - {id: TR-concept-013, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "戰鬥結算需要可查詢的淨聯動總分聚合值,要求決定性、可重現的結算以支援A/B對照", created: 2026-08-18, revised: "", status: active}
   - {id: TR-concept-014, system: game-concept, gdd: design/gdd/game-concept.md, requirement: "專案級forbidden pattern:戰鬥結算路徑絕不可使用RNG", created: 2026-08-18, revised: "", status: active}
+
+  # ─── 技能卡牌系統 (skill-card-system.md) ─────────────────────────────────────
+  # 本區段於 2026-09-09 建立。在此之前,整份登記表對 skill-card 零命中 —— 亦即該系統的
+  # 需求從未進入任何一次 /architecture-review 的涵蓋率分母,它會安靜地不被統計。
+  # 缺口由 ADR-0001 第一次修訂的 TD-ADR 覆核發現。
+  - {id: TR-card-001, system: skill-card, gdd: design/gdd/skill-card-system.md, requirement: "打出任何卡牌後畫面上的傷害預覽必須是新值,不得殘留舊值——打牌算改變權威戰鬥狀態,已算好的查詢結果一律作廢重算", created: 2026-09-09, revised: "", status: active}
 
 # --- EXAMPLE ENTRIES (remove when first real entries are added) ---
 #

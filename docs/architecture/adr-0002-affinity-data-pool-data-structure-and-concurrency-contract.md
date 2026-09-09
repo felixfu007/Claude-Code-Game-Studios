@@ -607,7 +607,7 @@ signal entry_appended(pair: AffinityTypes.Pair, record: AffinityRecord)
 - **權杖型別為單調遞增 `int`**(`_next_token_id` 只增不減,絕不重新發放),取代 GDD 原文允許的「不透明權杖」之抽象描述的一個具體實作選擇。**理由**:`RefCounted` 物件身分作為權杖雖然能讓 GC 自動回收未持有的權杖,但本專案已在 `TR-affinity-003` 明文警告過 GDScript 的參照相等陷阱——用物件身分做權杖等值比對,容易在除錯/日誌輸出時無法印出穩定 ID(只能印記憶體位址或依賴 `get_instance_id()`,間接繞回同一類問題),且與本 ADR 已選擇的「值型別鍵」慣例(`Pair`/`Character` enum)不一致。單調遞增 int 沒有這個問題,序列化/記錄檔輸出也天然可讀。
 - **`begin_non_atomic_window()`**:取得 `_token_mutex` 鎖,`_next_token_id += 1`,記錄 `_serialization_tokens[new_id] = Time.get_ticks_msec()`,釋放鎖,回傳 `new_id`。
 - **`end_non_atomic_window(token)`**:取得鎖後檢查—— 若 `token` 存在於 `_serialization_tokens`:移除該項,釋放鎖,回傳 `RELEASED`。若 `token` 存在於下方「短期保留的已逾時權杖集合」`_reclaimed_tokens: Dictionary[int, bool]`:回傳 `TIMED_OUT_RECLAIMED`(非故障結果,不移除——已在逾時回收時處理過)。皆不存在:回傳 `INVALID_TOKEN`(涵蓋未知權杖、重複釋放、空集合時呼叫三種情境,統一為單一驗證錯誤分類,對應 GDD Core Rules #6「非法呼叫一律拒絕」)。
-- **「操作進行中」判準**:`_serialization_tokens` 非空 ⇔ 寫入方法(`append_record`/`advance_campaign_tick`/`notify_death`)一律拒絕(`SERIALIZATION_WINDOW_ACTIVE`)——與 ADR-0001 的 `settlement_in_progress` 拒絕式輸入閘門精神一致,但機制上是獨立的多權杖集合而非單一布林,滿足 `save-system.md` Core Rules #2 允許多槽並行操作的前提(見 GDD Core Rules #6「為何不能是布林旗標或裸計數」段落)。
+- **「操作進行中」判準**:`_serialization_tokens` 非空 ⇔ 寫入方法(`append_record`/`advance_campaign_tick`/`notify_death`)一律拒絕(`SERIALIZATION_WINDOW_ACTIVE`)——與 ADR-0001 的 `authoritative_write_in_progress`(ADR-0001 於 2026-09-09 由 `settlement_in_progress` 改名) 拒絕式輸入閘門精神一致,但機制上是獨立的多權杖集合而非單一布林,滿足 `save-system.md` Core Rules #2 允許多槽並行操作的前提(見 GDD Core Rules #6「為何不能是布林旗標或裸計數」段落)。
 - **逐權杖惰性逾時清除**(`TR-affinity-015`,不使用獨立 `Timer` 節點輪詢):`begin_non_atomic_window`/`end_non_atomic_window`/任一寫入方法呼叫時,先檢查 `_serialization_tokens` 中是否有任何 `issue_time` 早於 `Time.get_ticks_msec() - TOKEN_TIMEOUT_MS`(Tuning Knob;**定值責任自 2026-08-19 C1 起由 ADR-0004 擁有**。⚠️ **2026-08-21 誠實標註**:本機制對 `TOKEN_TIMEOUT_MS` 的引用是 `Depends On: None` 的一個**既存例外**,沿革見 C1 修訂。使用者 2026-08-21 的裁決範圍是「本次新增的比例規則」,**不含這筆舊帳**;本次修訂不處理它,明文記錄於此,避免下一輪把它誤讀為新引入的依賴)的殘留權杖;若有,將其從 `_serialization_tokens` 移除、加入 `_reclaimed_tokens`(短期保留識別碼,供上方 `TIMED_OUT_RECLAIMED` 判斷用)。
 
 > **🔴 2026-08-21 修訂(R7E-14,使用者裁決)——`_reclaimed_tokens` 的次要逾時撤回時間門檻,改為固定容量 FIFO**
@@ -1106,7 +1106,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 - **與存檔系統 ADR 完全解耦**:`export_state()`/`import_state()` 的通用 `Dictionary` 契約讓存檔格式決策(`TR-save-001`)可以在本 ADR 之後任意時間點做出,不需要回頭修改本 ADR 或已寫好的程式碼。
 - **並發保護已就位,但目前無競爭對手**(**2026-08-21 改寫,R7E-11**):本項原寫「執行緒安全義務**一次性、無條件滿足**……並發正確性**已經成立**」,與機制七 C3 修訂明文的「本 ADR **不再宣稱**這是已成立的執行緒安全義務——它是一個目前無競爭對手的鎖」**直接矛盾**(第六輪 R6-4 修的是 `technical-preferences.md`,沒涵蓋 ADR 本體這一處)。正確陳述:ADR-0004 已把背景執行緒的條件判為「否」,故 `_serialization_tokens` 的 `Mutex` 是**縱深防禦**而非已成立的義務。若日後 `SaveIOBackend` 替換為背景執行緒實作,鎖已在位,不需要回頭重新推導並發正確性論證 —— **這是保留它的理由,不是宣稱現在有競爭。**
 - **可單元測試性**:DI 擁有模式 + 無場景樹依賴,讓 7 類拒絕情境、5 條跨結構不變量等大量邊界案例可以用乾淨、隔離、不需引擎執行環境的單元測試逐一覆蓋,直接對應 GDD Acceptance Criteria 章節的密集驗收條件。
-- **與 ADR-0001 的機制保持風格一致但不誤用**:序列化生命週期的拒絕式閘門精神與 `settlement_in_progress` 相同,但本 ADR 正確辨識出兩者本質不同(單一結算步 vs. 多重疊視窗),沒有錯誤地複用單一布林旗標。
+- **與 ADR-0001 的機制保持風格一致但不誤用**:序列化生命週期的拒絕式閘門精神與 `authoritative_write_in_progress` 相同,但本 ADR 正確辨識出兩者本質不同(單一寫入窗口 vs. 多重疊視窗)⚠️ 2026-09-09:原寫「單一結算步」,而 ADR-0001 該旗標已擴大涵蓋六條寫入路徑、不只結算步;「單一窗口 vs 多重疊窗口」這個區別本身不受影響,沒有錯誤地複用單一布林旗標。
 
 ### Negative
 
@@ -1182,7 +1182,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 5. **`0^0 := 1` 慣例的顯式測試**(對應 Verification Required 第 3 項):`λ=0`、`age=0` 的邊界輸入,驗證 `combat_strength_read`/`narrative_depth_read` 回傳精確等於 `m_i`,不依賴 `pow()` 的引擎預設行為。
 6. **`t_death(pair)` 凍結行為測試**:陣亡配對的 `combat_strength_read`/`narrative_depth_read` 省略 `t_query` 時,驗證回傳值不隨陣亡後 `_t_now` 繼續推進而改變(除非有合法的死後追憶寫入,此時仍應凍結於 `t_death(pair)`,不含追憶寫入的影響);`shape_feature_read` 則相反,驗證確實反映追憶寫入。
 7. **公式四邊界測試**:零筆假設性項目呼叫回傳 `EMPTY_HYPOTHETICAL_SET`;陣亡配對呼叫回傳 `DEAD_PAIR_NOT_ALLOWED`;多筆假設性項目驗證 `t_new` 嚴格遞增且結果與「依序真實寫入後再讀取」完全一致(GDD 明文的等價性要求)。
-8. **後續 `/architecture-review`** 判定本 ADR 與其他 ADR(尤其 ADR-0001 的拒絕式閘門模式、`settlement_in_progress` 先例)無衝突、且對 `affinity-data-pool.md` 24 項需求的涵蓋無缺口。
+8. **後續 `/architecture-review`** 判定本 ADR 與其他 ADR(尤其 ADR-0001 的拒絕式閘門模式、`authoritative_write_in_progress`(ADR-0001 於 2026-09-09 由 `settlement_in_progress` 改名) 先例)無衝突、且對 `affinity-data-pool.md` 24 項需求的涵蓋無缺口。
 
 9. **兩條邊界規則各自的迴歸測試(兩項,不可合併)**(2026-08-20 新增):(a) **鍵邊界**——驗證「以 `Variant` 直接當 subscript 鍵寫入 `_records`/`_death_marks`」不存在於本系統任何程式碼路徑(靜態檢查/lint 層,非執行期),且所有公開寫入介面的鍵參數簽章皆為型別化 enum;(b) **值邊界**——驗證 `_records`/`_death_marks` 的每一處值槽賦值,其右手側的靜態型別皆為 `AffinityRecordList`/`AffinityRecord`/`int`,無任何一處是 `Variant`。**兩者必須是兩個獨立的測試**——(a) 通過不蘊含 (b) 通過,這正是本次修訂初稿把兩者混為一談時 Step 5.5 覆核抓到的錯誤。
 10. **`validate_semantics()` 的型別錯配案例測試(三類,缺一不可)**(2026-08-20 新增):對每個欄位各構造 (a)「型別正確、值域非法」、(b)「型別錯誤為 `String`」、(c)「型別錯誤為數值近親」三種輸入,驗證**三者都回傳結構化 `ImportResult` 而非執行期中止或靜默通過**。(b) 對應已實測的中止路徑:`m` 為 `String` 時不得走到 `is_nan()`/`is_inf()`,`t` 為 `String` 時不得走到 `t >= 1` 的比較。**(c) 是最容易漏的一類,且它不會中止**:`t`/`c` 給 `float 1.5`,驗證回傳型別失敗而**不是**被靜默截斷為 `1` 後通過全部檢查——這一類沒有任何引擎層錯誤可依賴,是本 ADR 自己的檢查漏掉就完全沒有人擋的唯一一類。
@@ -1201,7 +1201,7 @@ func import_state(data: Dictionary) -> ImportResult          # 內部呼叫 vali
 ## Related Decisions
 
 - `design/gdd/affinity-data-pool.md` — 本 ADR 服務的全部義務之權威定義處,本 ADR 只定案機制。
-- `docs/architecture/adr-0001-tactical-query-atomicity-contract.md` — 拒絕式並發閘門(`settlement_in_progress`)的先例,本 ADR 的序列化生命週期機制借鑑其精神但因涉及多重疊視窗而採獨立的權杖式機制,非直接複用。
+- `docs/architecture/adr-0001-tactical-query-atomicity-contract.md` — 拒絕式並發閘門(`authoritative_write_in_progress`)的先例,本 ADR 的序列化生命週期機制借鑑其精神但因涉及多重疊視窗而採獨立的權杖式機制,非直接複用。
 - `docs/registry/architecture.yaml` — 本 ADR 完成後將登記的新增立場(state ownership、api_decisions、forbidden_patterns 候選,見下方 Registry 更新提案)。
 - `docs/architecture/architecture-review-2026-08-18.md` — 記錄本 ADR 為全專案最高優先 ADR 缺口的稽核結果。
 - `docs/architecture/adr-0003-save-system-serialization-format-and-type-safety.md`(2026-08-18 新增)——消費本 ADR 的 `export_state()`/`import_state()` 契約作為好感度區塊的 payload 來源,並促成本 ADR 新增 `validate_semantics()`(見機制八回填修訂)。
