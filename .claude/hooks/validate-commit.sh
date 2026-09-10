@@ -202,6 +202,21 @@ fi
 # "inject the RNG" prose in doc comments. A gate that noisy gets switched off,
 # and a switched-off gate is worse than none.
 #
+#
+# 🔴 KNOWN LIMITATION, found the same day this gate was written: it only sees
+# injections that carry a marker. On 2026-09-10 a fifth specialist proved AC-5
+# by replacing `_selected_card.delta_atk` with a literal `0` in
+# card_play_session.gd's confirm() -- no marker, so this gate was blind to it.
+# That particular break means "every ATK buff card silently does nothing": it
+# does not crash, does not fail to compile, and would only ever surface as a
+# player wondering why the cards feel useless.
+#
+# What caught it was a human reading the diff, which is the same thing that
+# caught the two marked ones. So: this gate raises the floor, it does not
+# replace review. Do not read a green gate as "no injection present."
+# Dispatch briefs should tell specialists to always mark injections -- the
+# marker is their own insurance too, since three of ten agent reports that day
+# truncated while an injection was still live.
 # Escape hatch: SKIP_INJECTION_GATE=1 (for committing this hook's own docs).
 if [ "$SKIP_INJECTION_GATE" != "1" ]; then
     GATE_FILES=$(echo "$STAGED" | grep -E '^(src|tests|tools)/')
