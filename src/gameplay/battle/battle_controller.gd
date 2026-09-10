@@ -76,6 +76,16 @@ signal battle_ended(outcome: BattleState.Outcome)
 var _state: BattleState
 var _order: TurnOrder
 
+## story-008-play-session-wiring.md: this battle's [CardPlaySession], or
+## [code]null[/code] if no [CardDeck] was ever attached — mirrors
+## [member BattleState._card_deck]'s own optionality (AC-P6: card play is
+## exactly as optional as the deck it plays from). Every forwarding method
+## below ([method open_hand], [method select_card], [method legal_targets],
+## [method select_target], [method select_second_target], [method confirm],
+## [method cancel]) checks this for [code]null[/code] first and returns a
+## safe default ([code]false[/code] or an empty array) rather than crashing.
+var _card_play_session: CardPlaySession = null
+
 ## Injected affinity-bonus (Φ) provider — signature
 ## [code]func(attacker_id: int, target_id: int) -> int[/code]. Only ever
 ## consulted for a PLAYER-faction attacker: this matches the project
@@ -133,18 +143,46 @@ var _selected_unit_id: int = -1
 ## opening hand via [method BattleState.deal_opening_hand] — see that
 ## method's own doc comment for why round 1 gets exactly the opening hand
 ## and never one extra card drawn on top of it.
+##
+## story-008-play-session-wiring.md: when [param card_deck] is non-null, a
+## [CardPlaySession] is also constructed over it (see [member
+## _card_play_session]) — [param affinity_links] and [param write_port] are
+## the last two of [method CardPlaySession._init]'s five dependencies,
+## forwarded through unchanged. [param write_port] defaults to
+## [code]null[/code]; when unset, a [NullAffinityWritePort] is substituted
+## instead of ever handing [CardPlaySession] a literal [code]null[/code]
+## (AC-P7 — see that class's own doc comment for why a bare [code]null[/code]
+## there would be a crash, not a rejection, the moment a 丙類 card's pair
+## passes [method PermanentAffinityWriteRules.has_canon_link]). [param
+## authoritative_write_in_progress_check] defaults to an unset [Callable],
+## identical to [method CardPlaySession._init]'s own default — see
+## [member CardPlaySession._authoritative_write_in_progress_check] for what
+## an unset value means. No [CardPlaySession] is constructed at all when
+## [param card_deck] is [code]null[/code] — card play is exactly as optional
+## as the deck it plays from (AC-P6).
 func _init(
 	state: BattleState,
 	order: TurnOrder,
 	phi_provider: Callable = Callable(),
 	decide: Callable = Callable(),
-	card_deck: CardDeck = null
+	card_deck: CardDeck = null,
+	affinity_links: Array[AffinityLink] = [],
+	write_port: AffinityWritePort = null,
+	authoritative_write_in_progress_check: Callable = Callable()
 ) -> void:
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
 	_state.attach_card_deck(card_deck)
 	_state.deal_opening_hand()
+	if card_deck != null:
+		var effective_write_port: AffinityWritePort = (
+			write_port if write_port != null else NullAffinityWritePort.new()
+		)
+		_card_play_session = CardPlaySession.new(
+			card_deck, _state, affinity_links, effective_write_port,
+			authoritative_write_in_progress_check
+		)
 	# story-002-modifier-lifecycle.md: a fresh controller's initial _phase is
 	# already PLAYER_INPUT (see the field default above) without ever routing
 	# through _order.advance_faction() — the round-1 player phase never takes
@@ -275,6 +313,119 @@ func resolve_forced_discard(card: Card) -> bool:
 	if not _state.has_pending_discard():
 		return false
 	return _state.card_deck().discard_card(card)
+
+
+## story-008-play-session-wiring.md: forwards to [method
+## CardPlaySession.open_hand]. Returns [code]false[/code] without touching
+## anything if no [CardDeck] is attached to this battle (AC-P6) or the
+## controller is outside PLAYER_INPUT ([CardPlaySession] itself holds no
+## phase reference and documents this as the caller's obligation — see its
+## own class doc comment, point 1). 🔴 NOT gated on [method
+## has_pending_discard] — design/ux/skill-card-play.md S4: the hand must be
+## open (and stay open) precisely while a discard is owed, so the player can
+## see what to discard (AC-P3).
+func open_hand() -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	return _card_play_session.open_hand()
+
+
+## story-008-play-session-wiring.md: forwards to [method
+## CardPlaySession.select_card]. Same "safe false, not gated on forced
+## discard" shape as [method open_hand] — see that method's doc comment for
+## why (AC-P3: browsing/selecting a card must stay available while a
+## discard is owed, since that is how the player picks which one to
+## discard).
+func select_card(card: Card) -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	return _card_play_session.select_card(card)
+
+
+## story-008-play-session-wiring.md: forwards to [method
+## CardPlaySession.legal_targets] — a pure query, same "safe empty, not
+## gated on forced discard" shape as [method open_hand] (AC-P3).
+func legal_targets() -> Array[int]:
+	if _card_play_session == null:
+		return []
+	if _phase != Phase.PLAYER_INPUT:
+		return []
+	return _card_play_session.legal_targets()
+
+
+## story-008-play-session-wiring.md AC-P3: forwards to [method
+## CardPlaySession.select_target], but — unlike [method open_hand]/[method
+## select_card]/[method legal_targets] above — ALSO returns [code]false[/code]
+## without touching anything while [method has_pending_discard] is true.
+## Picking WHICH pending card to discard is exactly what [method
+## open_hand]/[method select_card] above stay available for; picking a
+## card's own PLAY target is a step toward playing it, which the forced
+## discard must block (design/ux/skill-card-play.md S4: "只能選一張棄掉").
+func select_target(unit_id: int) -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
+		return false
+	return _card_play_session.select_target(unit_id)
+
+
+## story-008-play-session-wiring.md AC-P3: forwards to [method
+## CardPlaySession.select_second_target] — 丙類's second-target step. Same
+## gating as [method select_target], including the forced-discard block.
+func select_second_target(unit_id: int) -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
+		return false
+	return _card_play_session.select_second_target(unit_id)
+
+
+## story-008-play-session-wiring.md AC-P3: forwards to [method
+## CardPlaySession.confirm] — the actual write. Same gating as [method
+## select_target], including the forced-discard block: this is the single
+## most load-bearing gate of the three card-play commands, mirroring why
+## [method end_faction_phase] is the most load-bearing of the four
+## board-mutating commands (story-007-forced-discard-gate.md) — it is the
+## one call in this class that can make [method CardPlaySession] actually
+## write anything.
+func confirm() -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
+		return false
+	return _card_play_session.confirm()
+
+
+## story-008-play-session-wiring.md AC-P3: forwards to [method
+## CardPlaySession.cancel], gated identically to [method select_target] —
+## including the forced-discard block, per design/ux/skill-card-play.md S4's
+## explicit rule that the cancel key does nothing while a discard is owed
+## ("取消鍵在此狀態無效"). Unlike [method CardPlaySession.cancel] itself
+## (which returns [code]void[/code] and is unconditionally safe to call),
+## this wrapper returns [code]bool[/code] so a blocked cancel is observable
+## the same way every other gated command in this class is: [code]true[/code]
+## means the gate let the call through (even if [CardPlaySession.cancel]
+## itself then no-ops, e.g. because nothing was open), [code]false[/code]
+## means the gate itself refused it.
+func cancel() -> bool:
+	if _card_play_session == null:
+		return false
+	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
+		return false
+	_card_play_session.cancel()
+	return true
 
 
 ## Attempts to select [param id]. Returns [code]false[/code] and changes no

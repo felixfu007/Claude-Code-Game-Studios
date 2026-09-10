@@ -5,7 +5,7 @@
 > **介面權威**:`design/ux/skill-card-play.md` —— 🔴 **介面故事一律引用該檔,不得引用 GDD**
 > **治理 ADR**:ADR-0001(戰棋查詢原子性,Accepted · 2026-09-09 第一次修訂)、
 > ADR-0002(好感度數值池,Accepted)、ADR-0005(游標/高亮,Accepted)
-> **狀態**:✅ **邏輯層 5 張 + 接線 2 張全部完成(2026-09-10)**;介面層未建立
+> **狀態**:✅ **邏輯層 5 張 + 接線 3 張全部完成(2026-09-10)**;介面層未建立
 > **建立日期**:2026-09-10
 
 ## 這個 epic 涵蓋什麼、不涵蓋什麼
@@ -71,6 +71,7 @@ grep -rn "append_record\|combat_card\|AffinityPool\|data_pool" src/ --include=*.
 | 005 | [打牌四步流程的資料層(取消零寫入 + 預覽串接)](story-005-play-session.md) | Integration | ✅ **Complete**(2026-09-10) | M | 001, 003, 004 |
 | 006 | [把卡牌接進戰鬥迴圈](story-006-battle-loop-wiring.md) | Integration | ✅ **Complete**(2026-09-10) | M | 001~005 |
 | 007 | [強制棄牌的阻塞閘門](story-007-forced-discard-gate.md) | Integration | ✅ **Complete**(2026-09-10) | M | 006 |
+| 008 | [把「打牌」這個動作接上](story-008-play-session-wiring.md) | Integration | ✅ **Complete**(2026-09-10) | M | 005~007 |
 
 **001~004 彼此獨立,可任意順序。005 需要前三張。**
 

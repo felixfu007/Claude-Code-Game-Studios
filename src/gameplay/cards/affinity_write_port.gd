@@ -90,11 +90,23 @@ const SOURCE_COMBAT_CARD: StringName = &"combat_card"
 ## exists on this enum purely so [code]PermanentAffinityWriteRules.play[/code]
 ## can hand every caller a single result type, whether it rejected the pair
 ## itself (before ever touching [param port]) or forwarded to a real port.
+##
+## [b]NO_PORT_CONFIGURED added 2026-09-10 (story-008-play-session-wiring.md
+## AC-P7)[/b] — the value [NullAffinityWritePort]
+## ([code]src/gameplay/cards/null_affinity_write_port.gd[/code]) always
+## returns. [BattleController] substitutes that class whenever a battle
+## attaches a [CardDeck] but the caller supplies no real
+## [AffinityWritePort] — this is what lets a 丙類 confirm on such a battle
+## return an observable rejection instead of calling a method on a
+## [code]null[/code] object. Like INVALID_PAIR, no real implementation of
+## [method append_record] is expected to ever return this value; it exists
+## purely for the null-object stand-in.
 enum Rejection {
 	NONE,                  ## Write accepted.
 	ZERO_MAGNITUDE,         ## m == 0 (GDD Formula 三: illegal — reject, never silently correct)
 	DEAD_PAIR_FORBIDDEN,    ## AC-7b's second line of defense — a member of the pair has died
 	INVALID_PAIR,           ## No canon relationship line exists for this pair at all (界線 4)
+	NO_PORT_CONFIGURED,     ## story-008: no real AffinityWritePort was ever supplied for this battle
 }
 
 ## Appends one 丙類 write record for the pair ([param character_a],
