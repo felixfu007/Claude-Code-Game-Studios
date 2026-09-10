@@ -201,11 +201,12 @@ func test_is_alive_true_immediately_after_construction() -> void:
 
 # ---- effective_atk() / effective_def() (base/effective value seam) --------
 #
-# No modifier source exists yet (that's #6 skill-card-system's job) — these
-# tests lock in the current, deliberately trivial behavior (effective ==
-# base) so that whenever a modifier source is added, a reviewer sees this
-# test start asserting something meaningful rather than assuming it always
-# passed by construction.
+# 🔴 更新(story-001-modifier-model.md,skill-card-system #6):修正來源
+# (CardModifier/CardModifierRules)已經存在。以下兩條測試只鎖住「一張修正都
+# 沒掛」這個特例(effective == base 是 CardModifierRules 對空清單的自然結果,
+# 不是 Unit 特別為了這個案例寫的分支)。掛了修正之後的加總/夾限/下限行為屬於
+# CardModifierRules 的職責,測試在
+# tests/unit/gameplay/cards/card_modifier_test.gd,不在本檔重複。
 
 func test_effective_atk_equals_base_atk_with_no_modifier_source() -> void:
 	# Arrange

@@ -2,8 +2,12 @@
 ##
 ## Pure data holder — no combat math lives here. Damage, range legality, and
 ## enemy stat scaling are owned by [CombatRules]
-## ([code]src/gameplay/combat/combat_rules.gd[/code]); this class only
-## parses and stores the values that combat math consumes.
+## ([code]src/gameplay/combat/combat_rules.gd[/code]); the ATK/DEF modifier
+## stack's clamp-and-floor arithmetic is owned by [CardModifierRules]
+## ([code]src/gameplay/cards/card_modifier_rules.gd[/code]). This class only
+## parses and stores the values that combat math and modifier math consume,
+## including the list of currently active [CardModifier]s
+## ([member _modifiers]) — it never computes a clamp or a floor itself.
 class_name Unit
 extends RefCounted
 
@@ -25,6 +29,13 @@ var mp: int
 var min_range: int
 var max_range: int
 var start_pos: Vector2i
+
+# Currently active card-driven ATK/DEF modifiers (skill-card-system #6,
+# story-001-modifier-model.md). Never transferred to another Unit and never
+# survives this unit's death — see take_damage()'s doc comment. Owned
+# exclusively through add_modifier()/active_modifiers() below; nothing
+# outside this file appends to or reads this array directly.
+var _modifiers: Array[CardModifier] = []
 
 
 ## Parses a single roster line into a [Unit]. [member hp] is initialized to
@@ -72,27 +83,59 @@ func is_alive() -> bool:
 
 
 ## Returns this unit's currently effective ATK — the value combat math must
-## read, as opposed to [member atk] (the roster-parsed base value). Returns
-## [member atk] unmodified: there is no modifier source yet. This method is
-## the seam the skill-card system (design/gdd/skill-card-system.md, #6) will
-## use to layer temporary card-driven bonuses on top of the base value
-## without any caller of this method needing to change. Card-applied
-## modifiers, their duration bookkeeping, stacking, and clamping are #6's
-## responsibility and are not implemented here.
+## read, as opposed to [member atk] (the roster-parsed base value). [member
+## atk] itself is never mutated by this method or by [method add_modifier]:
+## it stays the roster-parsed baseline for this unit's entire lifetime, and
+## every active [CardModifier] is layered on top of it fresh on each call.
+## The clamp-and-floor arithmetic is delegated to
+## [method CardModifierRules.effective_atk] — see that method's doc comment
+## for the formula (skill-card-system #6, story-001-modifier-model.md).
 func effective_atk() -> int:
-	return atk
+	return CardModifierRules.effective_atk(atk, _modifiers)
 
 
 ## Returns this unit's currently effective DEF — see [method effective_atk]
-## for the full rationale; the same seam applies symmetrically to DEF.
+## for the full rationale; the same seam applies symmetrically to DEF via
+## [method CardModifierRules.effective_def].
 func effective_def() -> int:
-	return def
+	return CardModifierRules.effective_def(def, _modifiers)
+
+
+## Attaches [param modifier] to this unit — it stacks additively with any
+## other active modifiers (see [CardModifierRules]) starting from the very
+## next [method effective_atk]/[method effective_def] call. Does not clone
+## [param modifier]; the caller must not keep mutating the instance it hands
+## in if it wants this unit's effective values to stay stable between reads.
+func add_modifier(modifier: CardModifier) -> void:
+	_modifiers.append(modifier)
+
+
+## Returns a read-only, per-entry snapshot of every [CardModifier] currently
+## active on this unit — source, signed ATK/DEF delta, and remaining turns
+## per entry, as required by GDD OQ-12 (`design/gdd/skill-card-system.md`
+## #6, "逐條可讀的查詢"). Each returned [CardModifier] is an independent
+## [method CardModifier.clone], and the array itself is a new [Array] — the
+## caller mutating either the array or any entry it contains can never affect
+## this unit's actual modifier state. Order matches attachment order; there
+## is no other defined ordering.
+func active_modifiers() -> Array[CardModifier]:
+	var result: Array[CardModifier] = []
+	for modifier: CardModifier in _modifiers:
+		result.append(modifier.clone())
+	return result
 
 
 ## Reduces [member hp] by [param amount], clamped at 0 — [member hp] never
-## goes negative.
+## goes negative. When this reduces [member hp] to exactly 0, every active
+## [CardModifier] is discarded immediately in the same call: a dead unit's
+## modifiers do not transfer, do not persist, and are not readable through
+## [method active_modifiers] or [method effective_atk]/[method effective_def]
+## by any caller from this point on — see story-001-modifier-model.md's
+## "甲類修正隨宿主單位陣亡消失" supplementary test.
 func take_damage(amount: int) -> void:
 	hp = maxi(0, hp - amount)
+	if hp == 0:
+		_modifiers.clear()
 
 
 ## Maps the roster file's faction string to a [enum Faction] value.
