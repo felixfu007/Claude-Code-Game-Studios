@@ -6,6 +6,12 @@
 # 好感度數值池（ADR-0002，Accepted）零實作，本 story 定義一個窄寫入埠並注入。
 # 本檔只驗到埠這一層——「記錄真的落在池裡」的端到端驗證待 #1 實作，不計入本檔完成度。
 #
+# 2026-09-10 管理者裁決更正（design/ux/skill-card-play.md S2p/S2q）：丙類的作用
+# 配對由玩家在棋盤上選，不是卡片自己寫死。play() 因此改為接受呼叫端傳入的配對，
+# 而 Card.affinity_character_a/b 兩個欄位降級為牌面敘事用途（見 card.gd 該兩個
+# 欄位的文件註解）。本檔的卡片建構仍傳入這兩個欄位（保留敘事一致性），但斷言只針對
+# play() 實際收到的參數，不再假設卡片欄位等於作用配對。
+#
 # 純資料/純函式測試——AffinityWritePort、PermanentAffinityWriteRules、Card、
 # AffinityLink 全部是 RefCounted，不建立任何 Node，也不需要 tear-down，不會留下
 # 孤兒節點。命名慣例沿用既有先例 tests/unit/gameplay/cards/card_deck_test.gd 的
@@ -41,6 +47,11 @@ const WU: int = 5
 ## [member dead_pairs] 是本測試替身自己對 ADR-0002 `t_death()`/`_death_marks`
 ## 機制的簡化：真正的池會從自己的陣亡標記表判斷，這裡直接由測試指定，因為
 ## 這個替身本來就沒有一個真正的戰鬥狀態可查。
+##
+## ⚠️ 這個替身刻意不知道「配對有沒有關係線」——那一層檢查現在由
+## PermanentAffinityWriteRules.play() 自己在呼叫這個替身之前做掉（INVALID_PAIR），
+## 這個替身只處理 m==0 與陣亡兩種拒絕，恰好對應真正的池會做、而不會做（前者）
+## 與會做（後者）的檢查。
 class _FakeAffinityWritePort extends AffinityWritePort:
 	var calls: Array[Dictionary] = []
 	var accepted_count: int = 0
@@ -79,14 +90,18 @@ func _all_alive(_unit_id: int) -> bool:
 # ---- AC-6：打出丙類 → 埠收到一次呼叫，source=combat_card、幅度為卡定義值 ------
 
 func test_ac6_playing_permanent_card_reaches_port_with_combat_card_source_and_card_magnitude() -> void:
-	# Arrange
+	# Arrange — 玩家在 S2p/S2q 選定的配對是甲乙（canon、皆存活）；卡片只提供幅度
+	# （affinity_character_a/b 這裡仍填甲乙只是牌面敘事一致，play() 不讀它們）
+	var links: Array[AffinityLink] = _vs01_links()
 	var port: _FakeAffinityWritePort = _FakeAffinityWritePort.new()
 	var card: Card = Card.new_permanent_affinity_write("bond_up_1", JIA, YI, 2)
 
 	# Act
-	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(card, port)
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, JIA, YI, links, port
+	)
 
-	# Assert — 只驗到埠：恰好一次呼叫，內容逐字等於卡片定義值
+	# Assert — 只驗到埠：恰好一次呼叫，內容逐字等於玩家選定的配對與卡片定義的幅度
 	assert_int(port.calls.size()).is_equal(1)
 	assert_int(port.calls[0]["character_a"]).is_equal(JIA)
 	assert_int(port.calls[0]["character_b"]).is_equal(YI)
@@ -96,6 +111,7 @@ func test_ac6_playing_permanent_card_reaches_port_with_combat_card_source_and_ca
 
 
 # ---- AC-7：配對成員已陣亡 → 不出現在合法作用對象集合中 ------------------------
+# （S2p/S2q 選取畫面用的正是這個集合——這條測的是選取階段的排除，不是 play()）
 
 func test_ac7_pair_with_dead_member_excluded_from_legal_set() -> void:
 	# Arrange — 丙(3) 陣亡；真實配對表裡丙丁(3,4,NEGATIVE) 是既有關係線
@@ -114,17 +130,22 @@ func test_ac7_pair_with_dead_member_excluded_from_legal_set() -> void:
 # ---- AC-7b：繞過選擇介面直接以陣亡配對呼叫寫入 → 埠拒絕，記錄筆數不變 ----------
 
 func test_ac7b_bypassing_selection_with_dead_pair_is_rejected_by_the_port_not_upstream() -> void:
-	# Arrange — 卡片本身鎖定丙丁配對；埠被告知這對已陣亡。刻意完全不呼叫
+	# Arrange — 玩家（或繞過選擇介面的呼叫）指定丙丁配對；丙丁是 canon 關係線
+	# （has_canon_link() 會通過），但埠被告知這對已陣亡。刻意完全不呼叫
 	# legal_pairs()/is_legal_target()，模擬繞過選擇介面直接打出。
+	var links: Array[AffinityLink] = _vs01_links()
 	var port: _FakeAffinityWritePort = _FakeAffinityWritePort.new()
 	port.dead_pairs.append(Vector2i(BING, DING))
 	var card: Card = Card.new_permanent_affinity_write("bond_dead_pair", BING, DING, -2)
 
 	# Act
-	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(card, port)
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, BING, DING, links, port
+	)
 
 	# Assert ① — 呼叫確實送到了埠（不是被本系統提前攔下）：埠的呼叫紀錄裡
-	# 恰好多了一筆，且參數就是這張卡的陣亡配對本身
+	# 恰好多了一筆，且參數就是這個陣亡配對本身。這條也順帶證明了 has_canon_link()
+	# 沒有把丙丁誤判成非法配對而提前攔下——丙丁本來就是真實資料裡的關係線。
 	assert_int(port.calls.size()).is_equal(1)
 	assert_int(port.calls[0]["character_a"]).is_equal(BING)
 	assert_int(port.calls[0]["character_b"]).is_equal(DING)
@@ -156,6 +177,35 @@ func test_ac8a_pair_without_any_relationship_line_is_not_in_legal_set_including_
 	assert_int(legal.size()).is_equal(2)  # 真實資料只有兩條：甲乙、丙丁
 
 
+# ---- 新增：繞過選擇介面，直接對無關係線的配對呼叫 play() → 被拒絕，且從未
+#      送達埠 --------------------------------------------------------------
+#
+# 這是 2026-09-10 裁決（作用配對改由玩家在棋盤上選）之後新開的繞過路徑：
+# 呼叫端現在可以對 play() 傳入「任意」配對，而不再受限於卡片自己的欄位。
+# AC-8a 測的是「選取介面不會把這種配對端出來」；這一條測的是「就算有人/ 有 bug
+# 繞過選取介面硬塞一個非 canon 配對，play() 自己也會擋下來，不會讓它送到埠」——
+# 因為真正的池對關係線零認知（界線 4），這一層防線只能在本系統，不能指望埠。
+
+func test_play_rejects_pair_with_no_canon_relationship_line_bypassing_selection() -> void:
+	# Arrange — 甲戊（1,5）在真實資料裡完全沒有關係線；卡片的敘事欄位甚至可以
+	# 寫別的配對（這裡故意也填甲戊，兩者一致與否不影響結果——play() 根本不讀它）
+	var links: Array[AffinityLink] = _vs01_links()
+	var port: _FakeAffinityWritePort = _FakeAffinityWritePort.new()
+	var card: Card = Card.new_permanent_affinity_write("bond_bypass_non_canon", JIA, WU, 1)
+
+	# Act — 直接呼叫 play()，不經過 legal_pairs()/is_legal_target()
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, JIA, WU, links, port
+	)
+
+	# Assert ① — 拒絕碼正確
+	assert_int(result).is_equal(AffinityWritePort.Rejection.INVALID_PAIR)
+	# Assert ② — 而且這次呼叫從未送達埠（與 AC-7b 相反：那條必須送達，這條必須
+	# 不送達，因為兩者的防線分別歸屬不同層）
+	assert_int(port.calls.size()).is_equal(0)
+	assert_int(port.accepted_count).is_equal(0)
+
+
 # ---- AC-8b：正面控制組 —— 甲乙可選定、寫入成功、筆數 +1、極性不變 --------------
 
 func test_ac8b_existing_relationship_pair_is_selectable_and_write_succeeds_polarity_unchanged() -> void:
@@ -169,7 +219,9 @@ func test_ac8b_existing_relationship_pair_is_selectable_and_write_succeeds_polar
 	var card: Card = Card.new_permanent_affinity_write("bond_up_jia_yi", JIA, YI, 1)
 
 	# Act
-	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(card, port)
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, JIA, YI, links, port
+	)
 
 	# Assert — 寫入成功，記錄筆數 +1
 	assert_int(result).is_equal(AffinityWritePort.Rejection.NONE)
@@ -188,12 +240,15 @@ func test_ac8b_existing_relationship_pair_is_selectable_and_write_succeeds_polar
 # ---- AC-9：m=0 → 拒絕並拋驗證錯誤，不靜默糾正、不產生記錄、計數器不遞增 --------
 
 func test_ac9_zero_magnitude_is_rejected_not_silently_corrected() -> void:
-	# Arrange
+	# Arrange — 配對本身合法（甲乙），問題只出在幅度
+	var links: Array[AffinityLink] = _vs01_links()
 	var port: _FakeAffinityWritePort = _FakeAffinityWritePort.new()
 	var card: Card = Card.new_permanent_affinity_write("bond_zero", JIA, YI, 0)
 
 	# Act
-	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(card, port)
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, JIA, YI, links, port
+	)
 
 	# Assert — 拒絕碼正確；呼叫送達時 m 仍是字面 0（沒有被本系統偷偷改成 ±1
 	# 再轉送出去）；記錄筆數（接受計數器）沒有遞增

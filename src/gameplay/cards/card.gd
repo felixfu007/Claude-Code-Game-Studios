@@ -25,10 +25,14 @@ extends RefCounted
 ## [constant TEMPORARY_STAT_MODIFIER] (甲類) uses [member delta_atk],
 ## [member delta_def], [member duration_rounds] and never touches the
 ## affinity data pool. [constant PERMANENT_AFFINITY_WRITE] (丙類) uses
-## [member affinity_character_a], [member affinity_character_b],
-## [member affinity_magnitude] and carries no duration — it is a single
-## fire-and-forget write, not an ongoing effect. See the class doc comment
-## for why 乙類 has no entry here.
+## [member affinity_magnitude] as the mechanically-read write amount;
+## [member affinity_character_a] / [member affinity_character_b] are
+## card-face flavor only as of the 2026-09-10 manager ruling (see their own
+## doc comments) — the actual write target is chosen by the player on the
+## board and passed to [code]PermanentAffinityWriteRules.play()[/code]
+## separately. 丙類 carries no duration — it is a single fire-and-forget
+## write, not an ongoing effect. See the class doc comment for why 乙類 has
+## no entry here.
 enum Category { TEMPORARY_STAT_MODIFIER, PERMANENT_AFFINITY_WRITE }
 
 ## Stable identifier for this card's definition (e.g. a future card-table
@@ -65,15 +69,24 @@ var delta_def: int = 0
 ## when the card is played, and owns it from that point on.
 var duration_rounds: int = 0
 
-## 丙類 only — first character of the affected pair, as a roster/unit id
-## (same convention as [member AffinityLink.unit_a] — see that class for
-## why characters are addressed by roster id rather than by name string).
-## -1 is the "unset" sentinel for a [constant Category.TEMPORARY_STAT_MODIFIER]
-## card, where this field is meaningless.
+## 丙類 only — [b]NARRATIVE / CARD-FACE ONLY as of the 2026-09-10 manager
+## ruling (design/ux/skill-card-play.md S2p/S2q) — the MECHANICAL target
+## pair is chosen by the player on the board at play time, NOT read off
+## this field.[/b] [code]PermanentAffinityWriteRules.play()[/code] (Story
+## 004) takes the actual pair as caller-supplied parameters instead. This
+## field remains so a card's face can still name specific characters (GDD's
+## own hard rule: "每一張 MVP 卡牌的牌面都必須是一組具名角色之間的互動",
+## e.g. flavor text like "甲對乙說了句話") independent of which pair the
+## player ultimately selects — the two are no longer required to match.
+## Same roster-id convention as [member AffinityLink.unit_a] when it IS
+## used for flavor. -1 is the "unset" sentinel for a
+## [constant Category.TEMPORARY_STAT_MODIFIER] card, where this field is
+## meaningless.
 var affinity_character_a: int = -1
 
-## 丙類 only — second character of the affected pair (see
-## [member affinity_character_a]).
+## 丙類 only — second character named on the card's face (see
+## [member affinity_character_a] for why this is narrative-only and not
+## read by [code]PermanentAffinityWriteRules.play()[/code]).
 var affinity_character_b: int = -1
 
 ## 丙類 only — signed write magnitude, GDD Formula 三's [code]m[/code],

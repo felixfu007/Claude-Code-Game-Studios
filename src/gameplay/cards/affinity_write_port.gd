@@ -25,16 +25,17 @@
 ## - [param source]: a [StringName] constant ([constant SOURCE_COMBAT_CARD]),
 ##   matching this system's own vocabulary (GDD Formula 三:
 ##   [code]source = combat_card[/code]) — not [code]AffinityTypes.Source[/code].
-## - [enum Rejection]: a reduced 3-value enum covering only what THIS
+## - [enum Rejection]: a reduced 4-value enum covering only what THIS
 ##   story's own contract needs a caller to distinguish, not ADR-0002's full
-##   7-value [code]WriteRejection[/code]. The other 4 values there
-##   ([code]SERIALIZATION_WINDOW_ACTIVE[/code], [code]NON_FINITE_AMPLITUDE[/code],
-##   [code]INVALID_SOURCE[/code], [code]INVALID_PAIR[/code]) are concerns of
-##   the pool's own internal state or of a [code]Variant[/code] boundary
-##   this port does not have — see [member SOURCE_COMBAT_CARD]'s doc comment
-##   for why [code]INVALID_SOURCE[/code] cannot occur here, and this file's
-##   own [code]m: int[/code] note for why [code]NON_FINITE_AMPLITUDE[/code]
-##   cannot either.
+##   7-value [code]WriteRejection[/code]. Two of the remaining 3 values there
+##   ([code]SERIALIZATION_WINDOW_ACTIVE[/code], [code]NON_FINITE_AMPLITUDE[/code])
+##   are concerns of the pool's own internal state or of a [code]Variant[/code]
+##   boundary this port does not have — see [member SOURCE_COMBAT_CARD]'s
+##   doc comment for why [code]INVALID_SOURCE[/code] (the third) cannot
+##   occur here, and this file's own [code]m: int[/code] note for why
+##   [code]NON_FINITE_AMPLITUDE[/code] cannot either. [code]INVALID_PAIR[/code]
+##   IS included, but see [enum Rejection]'s own doc comment — it is decided
+##   by a caller, not by an implementation of this port.
 ##
 ## [b]m: int, not float — this is the one real type boundary the work order
 ## calls out explicitly.[/b] ADR-0002's [code]AffinityRecord.m[/code] is
@@ -73,13 +74,27 @@ extends RefCounted
 ## way to occur through this port and is not part of [enum Rejection].
 const SOURCE_COMBAT_CARD: StringName = &"combat_card"
 
-## Rejection reasons a caller of [method append_record] must be able to
+## Rejection reasons a caller of [method append_record] — or of
+## [code]PermanentAffinityWriteRules.play[/code], which can return this same
+## enum WITHOUT ever calling [method append_record] — must be able to
 ## distinguish. See the class doc comment for why this is a reduced set,
 ## not ADR-0002's full [code]WriteRejection[/code].
+##
+## [b]INVALID_PAIR is decided BEFORE this port is ever reached, not by an
+## implementation of [method append_record] itself[/b] (added 2026-09-10,
+## same manager ruling that moved pair selection off [Card]'s own fields —
+## design/ux/skill-card-play.md S2p/S2q). GDD Core Rules 一之三 界線 4 says
+## the real future pool has ZERO awareness of narrative canon and would
+## accept any of the 10 possible pairs — so this specific rejection can
+## never live inside a concrete [AffinityWritePort] implementation; it
+## exists on this enum purely so [code]PermanentAffinityWriteRules.play[/code]
+## can hand every caller a single result type, whether it rejected the pair
+## itself (before ever touching [param port]) or forwarded to a real port.
 enum Rejection {
 	NONE,                  ## Write accepted.
 	ZERO_MAGNITUDE,         ## m == 0 (GDD Formula 三: illegal — reject, never silently correct)
 	DEAD_PAIR_FORBIDDEN,    ## AC-7b's second line of defense — a member of the pair has died
+	INVALID_PAIR,           ## No canon relationship line exists for this pair at all (界線 4)
 }
 
 ## Appends one 丙類 write record for the pair ([param character_a],
