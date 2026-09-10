@@ -12,7 +12,7 @@
 | **判定** | 🔴 **NEEDS REVISION** |
 | **阻擋項** | **1**(同一根因的兩面) |
 | **建議項** | 4 |
-| **執行者** | `/ux-review` skill,由協調者執行(該 skill 為唯讀檢查表,不需派專家) |
+| **執行者** | `/ux-review` skill,由協調者執行(🔴 **應由 `ux-designer` 執行,見下方更正**) |
 | **平台** | PC + Console(鍵鼠 + 完整手把),取自 `.claude/docs/technical-preferences.md` 而非本檔檔頭 |
 | **無障礙層級** | Standard(`design/ux/accessibility-requirements.md`,2026-08-19 管理者裁決) |
 
@@ -91,7 +91,7 @@
 
 ### 本輪的執行說明(留給下一個跑這個 skill 的人)
 
-- **`/ux-review` 是唯讀檢查表,不需要派專家** —— 本輪由協調者直接執行。
+- 🔴 **本輪由協調者直接執行,而這是錯的** —— `/ux-review` 的 SKILL.md 檔頭第一行即 `agent: ux-designer`。原文寫「唯讀檢查表不需派專家」,推理是「專案的副檔名路由表管的是 `.gd`」—— **那句話本身沒錯,但查錯了地方:skill 自己的設定檔就宣告了執行者。**
   ⚠️ 本專案 `CLAUDE.md` 把 `.gd` 檔routing 給 specialist,**但那條規則管的是程式碼,不是審查 skill**。
 - **依劑量規則**(`.claude/docs/technical-preferences.md` 流程劑量上限),
   `/design-review` 每份文件 ≤ 2 輪。**`/ux-review` 未被該規則明文涵蓋**,

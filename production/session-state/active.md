@@ -214,7 +214,7 @@ legal_targets / select_target / select_second_target / confirm / cancel。
 ④檔頭缺 `Platform Target`(純形式,本 skill 以 `technical-preferences.md` 為準)。
 
 📌 **`design/ux/battle-menu.md` 同樣未經任何審查**,而它與該檔綁著同批交付義務。
-📌 **`/ux-review` 是唯讀檢查表,不需派專家** —— 專案的 specialist routing 管的是 `.gd` 檔,不是審查 skill。
+🔴 **更正(2026-09-10 管理者提問後查證)**:`/ux-review` 的 SKILL.md 宣告 `agent: ux-designer`,**本輪與打牌那輪都該由該專家執行,協調者代跑是違反路由。** 原推理「路由表只管 `.gd`」查錯了地方 —— skill 檔頭自己就寫了。**發現的事實各附可重跑的指令、不因此失效,但判定需由網域擁有者複驗。**
 
 ### 〇之十四、🔴 `/ux-review battle-menu.md` 第一輪:NEEDS REVISION,**4 個阻擋項**
 
