@@ -30,10 +30,22 @@ var _decide: Callable
 ## [param order] (both assumed to describe the same roster), driven by
 ## [param decide]. See [member _decide] for the required callable
 ## signature.
-func _init(state: BattleState, order: TurnOrder, decide: Callable) -> void:
+##
+## [param card_deck] defaults to [code]null[/code] —
+## story-006-battle-loop-wiring.md's hard requirement that card play be
+## entirely optional per battle (AC-W6). When supplied, it is attached to
+## [param state] via [method BattleState.attach_card_deck] and dealt its
+## opening hand via [method BattleState.deal_opening_hand] — see that
+## method's own doc comment for why round 1 gets exactly the opening hand
+## and never one extra card drawn on top of it.
+func _init(
+	state: BattleState, order: TurnOrder, decide: Callable, card_deck: CardDeck = null
+) -> void:
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
+	_state.attach_card_deck(card_deck)
+	_state.deal_opening_hand()
 	# story-002-modifier-lifecycle.md: a fresh TurnOrder starts on the PLAYER
 	# side without run() ever having called advance_faction() yet — round 1's
 	# player phase does not go through the advance_faction() branch inside
@@ -77,8 +89,14 @@ func run(max_rounds: int) -> Dictionary:
 			# (rather than ticking unconditionally) is what keeps a
 			# PLAYER -> ENEMY boundary from double-counting a round's
 			# decrement.
+			#
+			# story-006-battle-loop-wiring.md: this is also the per-turn
+			# card-draw point — BattleState.begin_player_turn() wraps
+			# tick_all_modifiers() AND (if a CardDeck is attached)
+			# CardDeck.draw_for_turn(), tick always before draw, for the
+			# same reason begin_player_turn()'s own doc comment gives.
 			if _order.current_faction() == TurnOrder.Side.PLAYER:
-				_state.tick_all_modifiers()
+				_state.begin_player_turn()
 			continue
 
 		for id: int in acting_ids:
@@ -94,6 +112,11 @@ func run(max_rounds: int) -> Dictionary:
 				# caller can observe a modifier that should not survive past
 				# this battle.
 				_state.clear_all_modifiers()
+				# AC-W4 (story-006-battle-loop-wiring.md): every card still
+				# in hand or the used pile returns to the pool at the same
+				# battle-end moment, if a CardDeck is attached — no-op
+				# otherwise (AC-W6).
+				_state.return_cards_to_pool()
 				return _build_result(outcome, log, false, _order.round_number())
 
 	# Unreachable — the while(true) above only exits through a return above.

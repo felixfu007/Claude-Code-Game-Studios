@@ -125,15 +125,26 @@ var _selected_unit_id: int = -1
 ## caller has had the chance to connect to it yet; a caller that cares must
 ## check [method outcome] right after construction instead of relying on
 ## the signal.
+##
+## [param card_deck] defaults to [code]null[/code] —
+## story-006-battle-loop-wiring.md's hard requirement that card play be
+## entirely optional per battle (AC-W6). When supplied, it is attached to
+## [param state] via [method BattleState.attach_card_deck] and dealt its
+## opening hand via [method BattleState.deal_opening_hand] — see that
+## method's own doc comment for why round 1 gets exactly the opening hand
+## and never one extra card drawn on top of it.
 func _init(
 	state: BattleState,
 	order: TurnOrder,
 	phi_provider: Callable = Callable(),
-	decide: Callable = Callable()
+	decide: Callable = Callable(),
+	card_deck: CardDeck = null
 ) -> void:
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
+	_state.attach_card_deck(card_deck)
+	_state.deal_opening_hand()
 	# story-002-modifier-lifecycle.md: a fresh controller's initial _phase is
 	# already PLAYER_INPUT (see the field default above) without ever routing
 	# through _order.advance_faction() — the round-1 player phase never takes
@@ -336,7 +347,14 @@ func run_enemy_phase() -> Array[String]:
 	# expired is still sitting in a unit's active list. See
 	# BattleState.tick_all_modifiers()'s doc comment for why this is a single
 	# shared call rather than a second, independent handler.
-	_state.tick_all_modifiers()
+	#
+	# story-006-battle-loop-wiring.md: this is also the per-turn card-draw
+	# point — BattleState.begin_player_turn() wraps tick_all_modifiers() AND
+	# (if a CardDeck is attached) CardDeck.draw_for_turn(), in that fixed
+	# order, for exactly the reason its own doc comment gives: drawing before
+	# ticking could let a forced-discard decision reach the player while a
+	# modifier that should already be expired is still showing as active.
+	_state.begin_player_turn()
 	_set_phase(Phase.PLAYER_INPUT)
 	return log
 
@@ -604,6 +622,10 @@ func _check_outcome_and_finish() -> void:
 	# reading unit state never observes a modifier that should not survive
 	# past this battle.
 	_state.clear_all_modifiers()
+	# AC-W4 (story-006-battle-loop-wiring.md): every card still in hand or
+	# the used pile returns to the pool at the same battle-end moment, if a
+	# CardDeck is attached — no-op otherwise (AC-W6).
+	_state.return_cards_to_pool()
 	_set_phase(Phase.FINISHED)
 	battle_ended.emit(result)
 

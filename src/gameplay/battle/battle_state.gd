@@ -60,6 +60,16 @@ var _positions: Dictionary = {}
 # this change; a design that required touching it would not be viable here.
 var _turn_order: TurnOrder = null
 
+# This battle's CardDeck, optionally set by whichever driver (BattleController
+# or BattleLoop) is constructed against this state — see attach_card_deck().
+# null until a driver attaches one (or forever, if the caller never supplies
+# one): unlike _turn_order, every existing test constructs both drivers
+# WITHOUT a deck (story-006-battle-loop-wiring.md's hard constraint — see
+# attach_card_deck()'s doc comment), so every card-facing method below must
+# tolerate this staying null for this battle's entire lifetime and behave as
+# a no-op when it does (AC-W6).
+var _card_deck: CardDeck = null
+
 
 ## Builds a [BattleState] from a terrain grid and a roster text blob: parses
 ## both, then places every unit on the board at its [member Unit.start_pos].
@@ -97,6 +107,32 @@ func turn_order() -> TurnOrder:
 ## see the ADR's five hard obligations under Mechanism One.
 func attach_turn_order(order: TurnOrder) -> void:
 	_turn_order = order
+
+
+## Returns the [CardDeck] attached to this battle, or [code]null[/code] if
+## none was ever attached — see [method attach_card_deck]. Card play is
+## entirely optional for a battle (story-006-battle-loop-wiring.md, AC-W6):
+## every existing test file constructs [BattleController]/[BattleLoop]
+## without a deck, so [code]null[/code] here must remain a fully supported,
+## permanent state, not merely a construction-time transient.
+func card_deck() -> CardDeck:
+	return _card_deck
+
+
+## Attaches [param deck] as this battle's [CardDeck], mirroring
+## [method attach_turn_order]'s shape — see that method's doc comment for why
+## a driver attaches rather than this class constructing one itself. Called
+## once, from each driver's [code]_init[/code], with whatever [CardDeck] that
+## constructor itself received (or [code]null[/code], the default both
+## drivers' constructors fall back to when no card system is wired into a
+## given battle — story-006-battle-loop-wiring.md's hard requirement that the
+## card system be entirely optional, AC-W6). Passing [code]null[/code] is a
+## valid, supported call, not a caller error: it is exactly what every
+## pre-Story-006 test still does today, and every method that consults
+## [member _card_deck] treats [code]null[/code] as "no card system for this
+## battle" rather than asserting.
+func attach_card_deck(deck: CardDeck) -> void:
+	_card_deck = deck
 
 
 ## Returns the current position of the unit with the given id.
@@ -278,6 +314,72 @@ func tick_all_modifiers() -> void:
 		unit.tick_modifiers()
 
 
+## Battle-start hook (story-006-battle-loop-wiring.md): deals the opening
+## hand ([method CardDeck.deal_opening_hand]) if a [CardDeck] is attached; a
+## complete no-op if [method card_deck] is [code]null[/code] (AC-W6). Called
+## once, by each driver's [code]_init[/code].
+##
+## Deliberately NOT folded into [method begin_player_turn] below, and
+## deliberately NOT paired with a [method CardDeck.draw_for_turn] call here —
+## this is why round 1 always ends up with exactly
+## [constant CardDeck.OPENING_HAND_SIZE] (5) cards in hand, never
+## [constant CardDeck.OPENING_HAND_SIZE] +
+## [constant CardDeck.CARDS_DRAWN_PER_TURN] (6): the GDD states "開局手牌 5
+## 張" and "每回合開始補 1 張" as two separate rules without saying whether
+## round 1 gets both, and dealing 6 into a hand whose limit is also 5 would
+## force the player's very first action in the battle to be a discard. Round
+## 1's player phase never calls [method begin_player_turn] at all (see that
+## method's own doc comment on why the construction-time hook and the
+## faction-transition hook are two different call sites) — [method
+## draw_for_turn] is therefore never invoked for round 1 under either driver,
+## by construction, not by a runtime check.
+func deal_opening_hand() -> void:
+	if _card_deck != null:
+		_card_deck.deal_opening_hand()
+
+
+## Story 006's shared "a player turn just started, cards included" hook — the
+## single function both [BattleController] and [BattleLoop] call at every
+## faction-transition point a player phase begins (everywhere [method
+## tick_all_modifiers] was called directly before this story; construction
+## time is NOT one of these points — see [method deal_opening_hand]'s doc
+## comment for why round 1 is handled separately).
+##
+## 🔴 Ordering is the entire reason this method exists rather than staying
+## two independent calls at each call site: [method tick_all_modifiers] is
+## called FIRST, [method CardDeck.draw_for_turn] SECOND, always, in every
+## caller, because this is a single shared method rather than two statements
+## copy-pasted at four call sites. If a player's hand is already full when a
+## card-driven modifier is due to expire this same turn, drawing before
+## ticking would let the forced-discard flag ([method
+## CardDeck.has_pending_discard]) turn true while the soon-to-expire modifier
+## is still sitting in [method Unit.active_modifiers] — the player would be
+## asked to make an irreversible discard choice against a board state that
+## is about to become stale. Ticking first guarantees that by the moment
+## [method CardDeck.has_pending_discard] can possibly read true from this
+## call, every modifier due to expire this turn is already gone.
+##
+## The draw half is skipped — silently, not an error — in two cases: no deck
+## is attached (AC-W6), or a forced discard from a previous turn was never
+## resolved. The second guard is not one of this story's six acceptance
+## criteria; it exists because [constant CardDeck.HAND_SIZE_LIMIT] and
+## [constant CardDeck.OPENING_HAND_SIZE] are both 5 in the current tuning
+## data, which means the round-2 draw already fills the hand to its limit
+## and sets [method CardDeck.has_pending_discard] — and neither driver in
+## this project gates further turn progression on that flag (the GDD assigns
+## that gating to the interface layer, which does not exist yet). Without
+## this guard, a battle that reaches a third player turn before any card is
+## played or discarded would call [method CardDeck.draw_for_turn] while a
+## discard is already pending, which is that method's own documented
+## precondition violation (its [code]assert[/code] would fire). Skipping the
+## draw in that case is the only choice that neither crashes nor grows the
+## hand past the limit the GDD never describes.
+func begin_player_turn() -> void:
+	tick_all_modifiers()
+	if _card_deck != null and not _card_deck.has_pending_discard():
+		_card_deck.draw_for_turn()
+
+
 ## AC-11a's battle-end hook (`story-002-modifier-lifecycle.md`): discards
 ## every unit's active [CardModifier]s unconditionally, regardless of
 ## [member CardModifier.remaining_turns] — called exactly once by each
@@ -287,6 +389,20 @@ func tick_all_modifiers() -> void:
 func clear_all_modifiers() -> void:
 	for unit: Unit in _units.values():
 		unit.clear_modifiers()
+
+
+## AC-W4's battle-end hook (story-006-battle-loop-wiring.md): returns every
+## card still in hand or the used pile back to the pool ([method
+## CardDeck.return_all_to_pool]) if a [CardDeck] is attached; a complete
+## no-op if [method card_deck] is [code]null[/code] (AC-W6). Called exactly
+## once by each driver, immediately after [method clear_all_modifiers], at
+## the same battle-end moment — mirroring how [method clear_all_modifiers]
+## and [method CardDeck.return_all_to_pool] are the two independent
+## battle-end resets Story 002 and Story 003 each already owned before this
+## story existed to wire the second one in.
+func return_cards_to_pool() -> void:
+	if _card_deck != null:
+		_card_deck.return_all_to_pool()
 
 
 ## Returns the current battle [enum Outcome]. Defeat is checked before
