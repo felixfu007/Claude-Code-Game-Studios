@@ -34,6 +34,16 @@ func _init(state: BattleState, order: TurnOrder, decide: Callable) -> void:
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
+	# story-002-modifier-lifecycle.md: a fresh TurnOrder starts on the PLAYER
+	# side without run() ever having called advance_faction() yet — round 1's
+	# player phase does not go through the advance_faction() branch inside
+	# run() below, so without this call it would be the one player-turn-start
+	# event this class never ticks modifiers for. No modifier can exist yet
+	# at construction time in current gameplay, so this is a no-op today —
+	# see BattleController._init()'s matching comment for the same reasoning,
+	# mirrored here because these two classes are the two independent battle
+	# drivers this story's hook must cover identically.
+	_state.tick_all_modifiers()
 	_decide = decide
 
 
@@ -59,6 +69,16 @@ func run(max_rounds: int) -> Dictionary:
 		var acting_ids: Array[int] = _order.units_with_flags_remaining()
 		if acting_ids.is_empty():
 			_order.advance_faction()
+			# story-002-modifier-lifecycle.md: this branch fires for BOTH
+			# faction transitions (PLAYER -> ENEMY and ENEMY -> PLAYER) — the
+			# tick only ever belongs to the latter, since GDD Formula 二's
+			# decrement is a once-per-round, player-turn-start rule, not a
+			# per-faction-boundary one. Gating on current_faction() here
+			# (rather than ticking unconditionally) is what keeps a
+			# PLAYER -> ENEMY boundary from double-counting a round's
+			# decrement.
+			if _order.current_faction() == TurnOrder.Side.PLAYER:
+				_state.tick_all_modifiers()
 			continue
 
 		for id: int in acting_ids:
@@ -68,6 +88,12 @@ func run(max_rounds: int) -> Dictionary:
 
 			var outcome: BattleState.Outcome = _state.outcome()
 			if outcome != BattleState.Outcome.ONGOING:
+				# AC-11a (story-002-modifier-lifecycle.md): see
+				# BattleController._check_outcome_and_finish()'s matching
+				# comment — cleared before the result is handed back so no
+				# caller can observe a modifier that should not survive past
+				# this battle.
+				_state.clear_all_modifiers()
 				return _build_result(outcome, log, false, _order.round_number())
 
 	# Unreachable — the while(true) above only exits through a return above.

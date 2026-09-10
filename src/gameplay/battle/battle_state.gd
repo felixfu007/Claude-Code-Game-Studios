@@ -252,6 +252,43 @@ func _compute_attack_damage(attacker_id: int, target_id: int, phi: int) -> int:
 	return CombatRules.damage(attacker.effective_atk(), target.effective_def(), effective_phi)
 
 
+## Story 002's shared "a player turn just started" hook
+## (`story-002-modifier-lifecycle.md`) — the single function both
+## [BattleController] and [BattleLoop] call at every point a player faction
+## phase begins, including the very first one at battle start (a fresh
+## driver's initial phase is already PLAYER without ever calling
+## [method TurnOrder.advance_faction] — see each driver's own comment on why
+## that construction-time call exists too, not just the later
+## enemy-phase-ending one). Deliberately a single call on a single shared
+## object rather than two independent per-driver implementations: the story
+## treats "decrement/expire, then (later) draw" as one ordered step, not two
+## independently-triggered handlers, precisely to keep that order from ever
+## depending on signal-connection order instead of an explicit sequence.
+##
+## Iterates every unit in the battle regardless of faction or side-to-move —
+## a card can buff an ally or debuff an enemy, and GDD Formula 二's
+## decrement is a per-modifier turn-boundary rule, not a per-faction one; it
+## fires once per round (at the player-turn boundary), never a second time
+## at the enemy-turn boundary. Dead units are included too: their
+## [member Unit._modifiers] is already empty per [method Unit.take_damage],
+## so ticking them is a harmless no-op, and skipping them here would just be
+## an extra branch that changes nothing observable.
+func tick_all_modifiers() -> void:
+	for unit: Unit in _units.values():
+		unit.tick_modifiers()
+
+
+## AC-11a's battle-end hook (`story-002-modifier-lifecycle.md`): discards
+## every unit's active [CardModifier]s unconditionally, regardless of
+## [member CardModifier.remaining_turns] — called exactly once by each
+## driver, at the moment [method outcome] is first observed to have left
+## ONGOING (win or lose, the rule does not distinguish). Iterates every unit
+## regardless of faction, same reasoning as [method tick_all_modifiers].
+func clear_all_modifiers() -> void:
+	for unit: Unit in _units.values():
+		unit.clear_modifiers()
+
+
 ## Returns the current battle [enum Outcome]. Defeat is checked before
 ## victory: if any PLAYER unit has died, the result is DEFEAT even if every
 ## ENEMY unit also happens to be dead at the same time.

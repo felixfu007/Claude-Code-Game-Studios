@@ -33,8 +33,9 @@ var start_pos: Vector2i
 # Currently active card-driven ATK/DEF modifiers (skill-card-system #6,
 # story-001-modifier-model.md). Never transferred to another Unit and never
 # survives this unit's death — see take_damage()'s doc comment. Owned
-# exclusively through add_modifier()/active_modifiers() below; nothing
-# outside this file appends to or reads this array directly.
+# exclusively through add_modifier() / active_modifiers() / tick_modifiers() /
+# clear_modifiers() below; nothing outside this file appends to, mutates, or
+# reads this array directly.
 var _modifiers: Array[CardModifier] = []
 
 
@@ -125,6 +126,51 @@ func active_modifiers() -> Array[CardModifier]:
 	return result
 
 
+## Story 002's turn-decrement step (`story-002-modifier-lifecycle.md`, GDD
+## Formula 二): decrements [member CardModifier.remaining_turns] by 1 on
+## every currently active modifier, then removes — from this unit's actual
+## internal list, not merely from what a later query happens to report —
+## every modifier whose [member CardModifier.remaining_turns] is now [code]<=
+## 0[/code]. Mutates the [CardModifier] instances this unit already holds
+## in place (unlike [method active_modifiers], which only ever hands out
+## clones); this is deliberate, since this is the one path in the project
+## allowed to change [member CardModifier.remaining_turns] after a card was
+## played.
+##
+## 🔴 Removal happens here, synchronously, before this method returns — never
+## deferred to the next [method effective_atk] / [method effective_def] /
+## [method active_modifiers] call. This is load-bearing, not a style choice:
+## the story's AC-4 requires that the round a modifier expires in, the
+## [i]first[/i] query of that round already reflects the removal, and a
+## design that instead filtered expired-but-still-present entries out at
+## query time would make [method active_modifiers] keep reporting a
+## zero-or-negative-[code]remaining_turns[/code] entry that was never
+## actually taken out of [member _modifiers] — which is exactly the failure
+## mode the story's own sensitivity-proof instruction calls out
+## ("把「遞減後移除」改成「查詢後移除」").
+##
+## Callers do not invoke this per-unit directly during normal play — see
+## [method BattleState.tick_all_modifiers], the single shared "a player turn
+## just started" hook both battle drivers call into.
+func tick_modifiers() -> void:
+	var still_active: Array[CardModifier] = []
+	for modifier: CardModifier in _modifiers:
+		modifier.remaining_turns -= 1
+		if modifier.remaining_turns > 0:
+			still_active.append(modifier)
+	_modifiers = still_active
+
+
+## Discards every currently active [CardModifier] on this unit unconditionally
+## — regardless of [member CardModifier.remaining_turns] — the same effect
+## [method take_damage] already applies on death, factored out here so
+## [method BattleState.clear_all_modifiers] (the battle-end AC-11a hook) has
+## one call to make per unit instead of reaching into [member _modifiers]
+## itself.
+func clear_modifiers() -> void:
+	_modifiers.clear()
+
+
 ## Reduces [member hp] by [param amount], clamped at 0 — [member hp] never
 ## goes negative. When this reduces [member hp] to exactly 0, every active
 ## [CardModifier] is discarded immediately in the same call: a dead unit's
@@ -135,7 +181,7 @@ func active_modifiers() -> Array[CardModifier]:
 func take_damage(amount: int) -> void:
 	hp = maxi(0, hp - amount)
 	if hp == 0:
-		_modifiers.clear()
+		clear_modifiers()
 
 
 ## Maps the roster file's faction string to a [enum Faction] value.

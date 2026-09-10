@@ -134,6 +134,19 @@ func _init(
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
+	# story-002-modifier-lifecycle.md: a fresh controller's initial _phase is
+	# already PLAYER_INPUT (see the field default above) without ever routing
+	# through _order.advance_faction() — the round-1 player phase never takes
+	# the transition path run_enemy_phase() ticks from. Without this call,
+	# round 1 would be the one player-turn-start event in the entire battle
+	# that never ticks modifiers. No modifier can exist yet at construction
+	# time in current gameplay (cards are only ever played during
+	# PLAYER_INPUT, which has not started until this constructor returns), so
+	# this is a no-op today — it exists so this constructor and
+	# run_enemy_phase() together cover every player-turn-start point, not
+	# just the one that happens to already have an existing call site to hang
+	# off of.
+	_state.tick_all_modifiers()
 	_phi_provider = phi_provider
 	_decide = decide
 	_check_outcome_and_finish()
@@ -316,6 +329,14 @@ func run_enemy_phase() -> Array[String]:
 				return log
 
 	_order.advance_faction()
+	# story-002-modifier-lifecycle.md: this is the ENEMY -> PLAYER transition,
+	# i.e. a player turn just started — tick before flipping the phase, so
+	# _set_phase()'s phase_changed signal (which a screen layer uses to
+	# refresh its view) never fires while a modifier that should already be
+	# expired is still sitting in a unit's active list. See
+	# BattleState.tick_all_modifiers()'s doc comment for why this is a single
+	# shared call rather than a second, independent handler.
+	_state.tick_all_modifiers()
 	_set_phase(Phase.PLAYER_INPUT)
 	return log
 
@@ -577,6 +598,12 @@ func _check_outcome_and_finish() -> void:
 	var result: BattleState.Outcome = _state.outcome()
 	if result == BattleState.Outcome.ONGOING:
 		return
+	# AC-11a (story-002-modifier-lifecycle.md): every active CardModifier is
+	# cleared the instant the battle resolves, win or lose — before
+	# battle_ended fires, so any listener that reacts to that signal by
+	# reading unit state never observes a modifier that should not survive
+	# past this battle.
+	_state.clear_all_modifiers()
 	_set_phase(Phase.FINISHED)
 	battle_ended.emit(result)
 
