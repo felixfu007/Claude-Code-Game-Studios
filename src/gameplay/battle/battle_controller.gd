@@ -238,12 +238,54 @@ func outcome() -> BattleState.Outcome:
 	return _state.outcome()
 
 
+## True while the player owes a forced discard, delegated to [method
+## BattleState.has_pending_discard] — always [code]false[/code] for a battle
+## with no [CardDeck] attached. story-007-forced-discard-gate.md: this is a
+## pure query, safe to call in any [enum Phase]; it is the four
+## board-mutating commands below ([method select_unit], [method click_tile],
+## [method end_unit_turn], [method end_faction_phase]) that gate on it, not
+## this method itself. A caller wiring up a discard-prompt UI polls this to
+## know whether to show one.
+func has_pending_discard() -> bool:
+	return _state.has_pending_discard()
+
+
+## story-007-forced-discard-gate.md AC-D9/AC-D10/AC-D11 — the player-facing
+## entry point for GDD's "玩家選擇後,系統棄掉該張牌" half. This is the
+## counterpart to the four gated commands: they refuse everything while a
+## discard is owed, and this is the one call that can actually lift that
+## refusal. Returns [code]false[/code] and changes no state in either
+## rejection case:
+## [br]
+## - [method has_pending_discard] is false right now — a discard is never
+##   legal to volunteer outside the rule that requires one (there is no
+##   "discard whenever you feel like it" action in the GDD).
+## [br]
+## - [param card] is not currently in the attached [CardDeck]'s hand.
+## [br]
+## On success, delegates straight to [method CardDeck.discard_card] — the
+## exact same call [BattleLoop]'s injected [code]discard_policy[/code] path
+## also ends at (see [method BattleLoop._resolve_forced_discard]), so the
+## human-driven and simulation-driven paths converge on one discard
+## implementation instead of two that could drift apart. This method never
+## chooses [param card] itself — GDD Edge Cases "不得由系統代選" — the
+## caller must always name the exact card; [param card] is not optional and
+## has no default.
+func resolve_forced_discard(card: Card) -> bool:
+	if not _state.has_pending_discard():
+		return false
+	return _state.card_deck().discard_card(card)
+
+
 ## Attempts to select [param id]. Returns [code]false[/code] and changes no
 ## state if [param id] does not exist, is dead, belongs to a faction other
-## than the one currently active, is already done for this phase, or the
-## controller is outside PLAYER_INPUT.
+## than the one currently active, is already done for this phase, the
+## controller is outside PLAYER_INPUT, or a forced discard is owed (story-007-
+## forced-discard-gate.md AC-D2 — see [method has_pending_discard]).
 func select_unit(id: int) -> bool:
 	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
 		return false
 	return _select_unit_internal(id)
 
@@ -260,11 +302,25 @@ func deselect() -> void:
 ## the full priority order this method applies. Returns a [Dictionary] with
 ## at least an [code]"action"[/code] key ([StringName], one of
 ## [code]&"selected"[/code], [code]&"deselected"[/code], [code]&"moved"[/code],
-## [code]&"attacked"[/code], [code]&"none"[/code]). Outside PLAYER_INPUT,
-## always returns [code]{"action": &"none"}[/code] and changes no state.
+## [code]&"attacked"[/code], [code]&"none"[/code],
+## [code]&"blocked_pending_discard"[/code]). Outside PLAYER_INPUT, always
+## returns [code]{"action": &"none"}[/code] and changes no state.
+##
+## 🔴 story-007-forced-discard-gate.md: while [method has_pending_discard] is
+## true, this method always returns
+## [code]{"action": &"blocked_pending_discard"}[/code] and changes no state
+## — deliberately NOT [code]&"none"[/code]. [code]&"none"[/code] already
+## means "clicked somewhere irrelevant, nothing was selected" (see the
+## residual branch below); reusing it here would make a screen layer unable
+## to tell "the click did nothing because there was nothing to click" apart
+## from "the click did nothing because the game is refusing all input right
+## now" — the single worst shape a rejected input can take (a control that
+## looks clickable and silently is not).
 func click_tile(pos: Vector2i) -> Dictionary:
 	if _phase != Phase.PLAYER_INPUT:
 		return {"action": &"none"}
+	if _state.has_pending_discard():
+		return {"action": &"blocked_pending_discard"}
 
 	var occupant: Unit = _state.unit_at(pos)
 	if occupant != null and occupant.faction == _current_faction_as_unit_faction():
@@ -284,10 +340,14 @@ func click_tile(pos: Vector2i) -> Dictionary:
 
 ## Actively ends [param id]'s turn via [method TurnOrder.end_unit_turn].
 ## Returns [code]false[/code] and changes no state if that call would fail
-## (wrong faction, already done, removed) or the controller is outside
-## PLAYER_INPUT. Clears the selection if [param id] was selected.
+## (wrong faction, already done, removed), the controller is outside
+## PLAYER_INPUT, or a forced discard is owed (story-007-forced-discard-
+## gate.md AC-D2 — see [method has_pending_discard]). Clears the selection if
+## [param id] was selected.
 func end_unit_turn(id: int) -> bool:
 	if _phase != Phase.PLAYER_INPUT:
+		return false
+	if _state.has_pending_discard():
 		return false
 	if not _order.end_unit_turn(id):
 		return false
@@ -300,9 +360,21 @@ func end_unit_turn(id: int) -> bool:
 ## selection, then calls [method TurnOrder.advance_faction] (resetting every
 ## player unit's flags for the *next* player phase, per [TurnOrder]'s own
 ## reset-on-boundary rule) and flips [method current_faction] over to
-## ENEMY. No-op outside PLAYER_INPUT.
+## ENEMY. No-op outside PLAYER_INPUT, and no-op while a forced discard is
+## owed (story-007-forced-discard-gate.md AC-D2 — see [method
+## has_pending_discard]).
+##
+## 🔴 This is the single most load-bearing gate of the four: it is the only
+## call in this class that can lead to [method run_enemy_phase] eventually
+## calling [method BattleState.begin_player_turn] again for the *next*
+## player turn. Blocking it here is what guarantees [method
+## BattleState.begin_player_turn] can never be reached — for a
+## human-driven battle — while an earlier discard is still unresolved; see
+## that method's own doc comment for the full argument.
 func end_faction_phase() -> void:
 	if _phase != Phase.PLAYER_INPUT:
+		return
+	if _state.has_pending_discard():
 		return
 	if _selected_unit_id != -1:
 		_clear_selection_internal()

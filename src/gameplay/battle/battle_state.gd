@@ -135,6 +135,27 @@ func attach_card_deck(deck: CardDeck) -> void:
 	_card_deck = deck
 
 
+## True while a player owes a forced discard for THIS battle (a [method
+## CardDeck.draw_for_turn] call grew an already-full hand) — delegates to
+## [method CardDeck.has_pending_discard], returning [code]false[/code]
+## unconditionally when no [CardDeck] is attached (story-006-battle-loop-
+## wiring.md AC-W6: card play is entirely optional per battle, and "no deck"
+## can never owe a discard).
+##
+## This is the single query story-007-forced-discard-gate.md's gate is built
+## on: [BattleController] checks this before every one of its four
+## board-mutating commands ([method BattleController.select_unit], [method
+## BattleController.click_tile], [method BattleController.end_unit_turn],
+## [method BattleController.end_faction_phase]) — see their own doc comments
+## for the enforcement side — and [BattleLoop] checks it right after every
+## call it makes to [method begin_player_turn]. This method only answers the
+## question; it never rejects anything itself.
+func has_pending_discard() -> bool:
+	if _card_deck == null:
+		return false
+	return _card_deck.has_pending_discard()
+
+
 ## Returns the current position of the unit with the given id.
 func position_of(id: int) -> Vector2i:
 	return _positions[id]
@@ -359,24 +380,50 @@ func deal_opening_hand() -> void:
 ## [method CardDeck.has_pending_discard] can possibly read true from this
 ## call, every modifier due to expire this turn is already gone.
 ##
-## The draw half is skipped — silently, not an error — in two cases: no deck
-## is attached (AC-W6), or a forced discard from a previous turn was never
-## resolved. The second guard is not one of this story's six acceptance
-## criteria; it exists because [constant CardDeck.HAND_SIZE_LIMIT] and
-## [constant CardDeck.OPENING_HAND_SIZE] are both 5 in the current tuning
-## data, which means the round-2 draw already fills the hand to its limit
-## and sets [method CardDeck.has_pending_discard] — and neither driver in
-## this project gates further turn progression on that flag (the GDD assigns
-## that gating to the interface layer, which does not exist yet). Without
-## this guard, a battle that reaches a third player turn before any card is
-## played or discarded would call [method CardDeck.draw_for_turn] while a
-## discard is already pending, which is that method's own documented
-## precondition violation (its [code]assert[/code] would fire). Skipping the
-## draw in that case is the only choice that neither crashes nor grows the
-## hand past the limit the GDD never describes.
+## The draw half is skipped — silently, not an error — only when no deck is
+## attached (AC-W6).
+##
+## 🔴 story-007-forced-discard-gate.md removed the second guard story 006 had
+## here (also skipping the draw whenever a forced discard from a previous
+## turn was never resolved). That guard existed only because, at the time,
+## nothing else in the project stopped a battle from reaching a second call
+## into this method with the first discard still pending — [constant
+## CardDeck.HAND_SIZE_LIMIT] and [constant CardDeck.OPENING_HAND_SIZE] are
+## both 5 in the current tuning data, so the round-2 draw already fills the
+## hand and sets [method has_pending_discard], and neither driver gated
+## further turn progression on that flag yet. Silently skipping the draw
+## avoided the alternative — [method CardDeck.draw_for_turn]'s own
+## documented precondition assert firing — but left the hand stuck below its
+## rightful size for as long as the discard stayed unresolved, which is
+## exactly the "silent swallow" [code].claude/docs/coding-standards.md[/code]
+## warns against.
+##
+## As of story 007, nothing reaches this method with a discard still pending
+## any more, by construction rather than by a runtime check here:
+## [br]
+## - [BattleController] gates every one of its four board-mutating commands
+##   ([method BattleController.select_unit], [method
+##   BattleController.click_tile], [method BattleController.end_unit_turn],
+##   [method BattleController.end_faction_phase]) on [method has_pending_discard]
+##   — in particular [method BattleController.end_faction_phase] itself, the
+##   one call that leads to the next enemy-phase-ending call into this
+##   method, cannot succeed while a discard is owed. A human-driven battle
+##   can therefore never reach a second call here with the first discard
+##   still pending.
+## [br]
+## - [BattleLoop] (no human player exists in that driver) checks [method
+##   has_pending_discard] itself immediately after every call it makes to
+##   this method, and either resolves it through an injected
+##   [code]discard_policy[/code] or aborts the run outright — see [method
+##   BattleLoop.run]'s own comment. It, too, never lets a second call reach
+##   this method with the first discard still pending.
+##
+## If either caller's obligation above is ever violated, this method now
+## surfaces that as a loud [method CardDeck.draw_for_turn] assert failure
+## instead of silently skipping the draw — deliberate, not an oversight.
 func begin_player_turn() -> void:
 	tick_all_modifiers()
-	if _card_deck != null and not _card_deck.has_pending_discard():
+	if _card_deck != null:
 		_card_deck.draw_for_turn()
 
 

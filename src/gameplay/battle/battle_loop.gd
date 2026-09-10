@@ -25,6 +25,17 @@ var _order: TurnOrder
 ## [code]"attack"[/code] (target unit id [int], or [code]-1[/code]).
 var _decide: Callable
 
+## story-007-forced-discard-gate.md: optional forced-discard resolver for a
+## battle with no human player. Signature contract:
+## [code]discard_policy.call(deck: CardDeck) -> Card[/code], returning the
+## exact [Card] instance (from [method CardDeck.hand]) this run should
+## discard. Unset ([code]Callable()[/code], the default) means "no policy" —
+## see [method run]'s own comment for what happens then. See
+## [member _resolve_forced_discard] for how an invalid [Callable], a
+## [code]null[/code] return, or a card [method CardDeck.discard_card]
+## rejects are all treated identically (as "still unresolved").
+var _discard_policy: Callable
+
 
 ## Builds a loop over an already-constructed [param state] and
 ## [param order] (both assumed to describe the same roster), driven by
@@ -38,8 +49,27 @@ var _decide: Callable
 ## opening hand via [method BattleState.deal_opening_hand] — see that
 ## method's own doc comment for why round 1 gets exactly the opening hand
 ## and never one extra card drawn on top of it.
+##
+## [param discard_policy] (story-007-forced-discard-gate.md) defaults to an
+## unset [Callable] — see [member _discard_policy] for its signature. This
+## class has no human player to ask when a forced discard becomes owed, so
+## [method run] consults this policy the instant one does; if it is unset,
+## invalid, or its answer is rejected, [method run] aborts the entire battle
+## rather than choosing a card itself. 🔴 This class must never pick a card
+## on its own initiative: [BattleLoop] is this project's balance-measurement
+## harness, and a discard choice nobody decided on would silently become
+## part of every measurement taken with it, exactly the kind of
+## undocumented, un-owned rule [code]procedural_terrain_generation[/code]'s
+## sibling project rules warn against for combat-adjacent randomness — the
+## card drawn is allowed to be random (GDD Core Rules 三), but which one
+## gets discarded is a decision, not a roll, and this class does not make
+## decisions.
 func _init(
-	state: BattleState, order: TurnOrder, decide: Callable, card_deck: CardDeck = null
+	state: BattleState,
+	order: TurnOrder,
+	decide: Callable,
+	card_deck: CardDeck = null,
+	discard_policy: Callable = Callable()
 ) -> void:
 	_state = state
 	_order = order
@@ -57,6 +87,7 @@ func _init(
 	# drivers this story's hook must cover identically.
 	_state.tick_all_modifiers()
 	_decide = decide
+	_discard_policy = discard_policy
 
 
 ## Runs the battle to completion: processes one unit action at a time,
@@ -64,19 +95,24 @@ func _init(
 ## until [method BattleState.outcome] leaves [code]ONGOING[/code] or
 ## [param max_rounds] is reached first (safety valve — two AIs can in
 ## principle stalemate forever, and this is what stops the loop from
-## hanging when they do).
+## hanging when they do), or a forced discard cannot be resolved (story-007-
+## forced-discard-gate.md — see the loop body below).
 ##
-## Returns a [Dictionary] with exactly four keys: [code]"outcome"[/code]
+## Returns a [Dictionary] with exactly five keys: [code]"outcome"[/code]
 ## ([enum BattleState.Outcome]), [code]"rounds"[/code] ([int], the number of
-## rounds actually elapsed), [code]"aborted"[/code] ([bool], true only if
-## the round cap was hit before the battle resolved), and [code]"log"[/code]
+## rounds actually elapsed), [code]"aborted"[/code] ([bool], true if the
+## round cap was hit OR a forced discard could not be resolved before the
+## battle resolved), [code]"abort_reason"[/code] ([StringName],
+## [code]&""[/code] unless [code]aborted[/code] is true, in which case one
+## of [code]&"max_rounds_reached"[/code] or
+## [code]&"forced_discard_unresolved"[/code]), and [code]"log"[/code]
 ## ([Array][String], a human-readable step-by-step trace).
 func run(max_rounds: int) -> Dictionary:
 	var log: Array[String] = []
 
 	while true:
 		if _order.round_number() > max_rounds:
-			return _build_result(_state.outcome(), log, true, max_rounds)
+			return _build_result(_state.outcome(), log, true, max_rounds, &"max_rounds_reached")
 
 		var acting_ids: Array[int] = _order.units_with_flags_remaining()
 		if acting_ids.is_empty():
@@ -95,8 +131,31 @@ func run(max_rounds: int) -> Dictionary:
 			# tick_all_modifiers() AND (if a CardDeck is attached)
 			# CardDeck.draw_for_turn(), tick always before draw, for the
 			# same reason begin_player_turn()'s own doc comment gives.
+			#
+			# 🔴 story-007-forced-discard-gate.md: this class has no human
+			# player, so nothing else here blocks progress the way
+			# BattleController's four gated commands do for a human-driven
+			# battle (see BattleState.begin_player_turn()'s own doc comment
+			# on that split responsibility). The instant begin_player_turn()
+			# leaves a discard pending, this loop must resolve it via
+			# _discard_policy or abort outright — it must NEVER fall through
+			# to `continue` and let another unit act while a discard is
+			# owed, because the next ENEMY -> PLAYER transition would call
+			# begin_player_turn() -> CardDeck.draw_for_turn() a second time
+			# with the first discard still unresolved, which is that
+			# method's own documented precondition violation (its assert
+			# would fire). Checked every single time this branch runs, not
+			# only on the very first — a battle that resolves a discard and
+			# later fills its hand again a second time must be caught here
+			# again, not assumed already handled.
 			if _order.current_faction() == TurnOrder.Side.PLAYER:
 				_state.begin_player_turn()
+				if _state.has_pending_discard():
+					if not _resolve_forced_discard():
+						return _build_result(
+							_state.outcome(), log, true, _order.round_number(),
+							&"forced_discard_unresolved"
+						)
 			continue
 
 		for id: int in acting_ids:
@@ -195,12 +254,35 @@ func _side_name() -> String:
 	return TurnOrder.Side.keys()[_order.current_faction()]
 
 
+# story-007-forced-discard-gate.md: resolves a forced discard using the
+# injected _discard_policy (see its own doc comment for the signature and
+# the reasoning against this class ever picking a card itself). Returns
+# true only if a card was actually discarded; false for every other case —
+# no policy supplied, an invalid Callable, a null return, or a card
+# CardDeck.discard_card() rejects because it is not actually in hand — so
+# the caller (run()) can treat every one of those uniformly as "still
+# unresolved" and abort, never retrying or guessing on this class's behalf.
+func _resolve_forced_discard() -> bool:
+	if not _discard_policy.is_valid():
+		return false
+	var deck: CardDeck = _state.card_deck()
+	var card: Card = _discard_policy.call(deck)
+	if card == null:
+		return false
+	return deck.discard_card(card)
+
+
 func _build_result(
-	outcome: BattleState.Outcome, log: Array[String], aborted: bool, rounds: int
+	outcome: BattleState.Outcome,
+	log: Array[String],
+	aborted: bool,
+	rounds: int,
+	abort_reason: StringName = &""
 ) -> Dictionary:
 	return {
 		"outcome": outcome,
 		"rounds": rounds,
 		"aborted": aborted,
+		"abort_reason": abort_reason,
 		"log": log,
 	}
