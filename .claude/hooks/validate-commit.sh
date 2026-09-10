@@ -175,4 +175,118 @@ if [ -f ".claude/hooks/validate-doc-consistency.sh" ]; then
     fi
 fi
 
+
+# ---------------------------------------------------------------------------
+# Sensitivity-proof injection gate (added 2026-09-10).
+#
+# WHY: proving a test is sensitive means deliberately breaking the production
+# code and checking the test goes red. That break must then be reverted. Twice
+# now it was not: once a specialist left
+# `return atk + 1 # INJECTED FAULT FOR SENSITIVITY PROOF -- DO NOT COMMIT`
+# in production code with its report truncated before "Now revert", and on
+# 2026-09-10 two specialists each stopped mid-proof with a live injection in
+# src/gameplay/cards/card_modifier_rules.gd. BOTH times the only thing that
+# caught it was a human running grep by hand. A defence that depends on
+# someone remembering to look is exactly the shape this project keeps failing
+# at (docs/consistency-failures.md).
+#
+# BLOCKING, unlike the prose gate below it. An uppercase INJECT marker in
+# staged source has no legitimate use -- and a deliberately broken formula
+# reaching main is not a style nit, it is a wrong game rule that every later
+# test would then be validated against.
+#
+# UPPERCASE ONLY, and that is measured rather than assumed. On 2026-09-10 the
+# case-sensitive pattern below matched 0 lines across src/ tests/ tools/
+# (excluding the live injection it was written for), while a case-INsensitive
+# `inject` matched 60 -- every one of them ordinary "dependency injection" /
+# "inject the RNG" prose in doc comments. A gate that noisy gets switched off,
+# and a switched-off gate is worse than none.
+#
+# Escape hatch: SKIP_INJECTION_GATE=1 (for committing this hook's own docs).
+if [ "$SKIP_INJECTION_GATE" != "1" ]; then
+    GATE_FILES=$(echo "$STAGED" | grep -E '^(src|tests|tools)/')
+    if [ -n "$GATE_FILES" ]; then
+        FOUND=""
+        while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                HITS=$(grep -nE '(INJECT[A-Z_]*|INJECTED FAULT|DO NOT COMMIT)' "$file" 2>/dev/null)
+                if [ -n "$HITS" ]; then
+                    FOUND="$FOUND\n  $file:\n$(echo "$HITS" | sed 's/^/    /')"
+                fi
+            fi
+        done <<< "$GATE_FILES"
+        if [ -n "$FOUND" ]; then
+            echo "BLOCKED: staged code still contains a sensitivity-proof injection marker." >&2
+            echo -e "$FOUND" >&2
+            echo "" >&2
+            echo "A deliberately broken formula must be reverted before committing." >&2
+            echo "If this is a false positive, rename the marker or set SKIP_INJECTION_GATE=1." >&2
+            exit 2
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Disabled-test gate (added 2026-09-10, same session as the injection gate).
+#
+# WHY: the correct way to prove test N is sensitive is to rename the test_
+# functions BEFORE it out of GdUnit4's collection, because a real failure
+# aborts the remaining tests in its own suite (coding-standards.md). That
+# rename must then be undone. On 2026-09-10 a specialist stopped mid-proof
+# with 12 of 18 tests renamed to off_test_*: the file still looked full, the
+# suite still went green, and it was running one third of what it claimed.
+# That is this project's signature failure -- "the test exists" != "the test
+# ran" -- and the injection gate above does NOT catch it, because a renamed
+# test contains no INJECT marker.
+#
+# BLOCKING. A test file committed with two thirds of its cases uncollected is
+# worse than one with no tests at all, because the count in the CI log reads
+# as coverage.
+#
+# Pattern measured 2026-09-10 across the whole tests/ tree: 12 hits, all of
+# them the live in-flight renames it was written for; 0 hits among the 448
+# pre-existing tests. Matches a func whose name embeds test_ but does not
+# start with it -- off_test_, ztest_, xtest_, disabled_test_, skip_test_.
+#
+# Escape hatch: SKIP_DISABLED_TEST_GATE=1
+if [ "$SKIP_DISABLED_TEST_GATE" != "1" ]; then
+    TEST_FILES=$(echo "$STAGED" | grep -E '^tests/.*\.gd$')
+    if [ -n "$TEST_FILES" ]; then
+        DISABLED=""
+        while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                # Precise, because the obvious regex is wrong. A first version
+                # used `^func [a-z_]+_test_`, which also matched a legitimate
+                # `test_latest_test_naming_ok` -- any test whose own name
+                # happens to contain `_test_` again further along. Measured on
+                # a scratch probe 2026-09-10: that regex flagged it, this awk
+                # does not. Rule: the function name embeds `test_` but does
+                # NOT start with `test_` (a real case) and does NOT start with
+                # `_` (a private helper).
+                HITS=$(awk '
+                    /^func [A-Za-z_][A-Za-z0-9_]*[ \t]*\(/ {
+                        name = $2
+                        sub(/[ \t]*\(.*/, "", name)
+                        if (index(name, "test_") > 0 && name !~ /^test_/ && name !~ /^_/)
+                            printf "%d: func %s\n", FNR, name
+                    }
+                ' "$file" 2>/dev/null)
+                if [ -n "$HITS" ]; then
+                    DISABLED="$DISABLED\n  $file:\n$(echo "$HITS" | sed 's/^/    /')"
+                fi
+            fi
+        done <<< "$TEST_FILES"
+        if [ -n "$DISABLED" ]; then
+            echo "BLOCKED: staged test files contain cases renamed out of collection." >&2
+            echo -e "$DISABLED" >&2
+            echo "" >&2
+            echo "These will never run, while the file still reads as full coverage." >&2
+            echo "Rename them back to test_* before committing." >&2
+            echo "If a case is disabled on purpose, say so in the story and set" >&2
+            echo "SKIP_DISABLED_TEST_GATE=1 for this commit." >&2
+            exit 2
+        fi
+    fi
+fi
+
 exit 0
