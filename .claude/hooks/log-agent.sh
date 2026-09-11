@@ -16,11 +16,16 @@
 # validate-commit.sh(PID 35748)各自卡死 89 分鐘,把整個 session 凍住,
 # 而 Claude Code 的 hook 逾時只取消了「邏輯上的 hook」,沒有殺掉行程。
 #
+# 🔴 2026-09-11 傍晚更正:上面那個「89 分鐘卡死」的根因判定是錯的(真因是
+# hook 逾時上限低於實際耗時,見 production/session-state/hook-stdin-hang-2026-09-11.md
+# 的「更正」節)。本保護予以保留 —— 那種卡法理論上仍存在、且現在零成本:
+# 改用 bash 內建 read -t,不再開 timeout 與 cat 兩個行程(本機實測每次省約 780ms)。
+#
 # 逾時後的行為是【放行,但大聲說出來】。理由:本專案明文規則是
 # 「沉默不得與『hook 沒跑』長得一樣」(commit c9f2f88)。靜默 exit 0
 # 會讓「檢查通過」與「檢查根本沒執行」在畫面上無法區分。
-INPUT=$(timeout 2 cat)
-if [ $? -eq 124 ]; then
+IFS= read -r -d "" -t 2 INPUT
+if [ $? -gt 128 ]; then
     echo "⚠️  [log-agent.sh] 讀取 stdin 逾時 2 秒 —— 本次閘門【未執行】。" >&2
     echo "    這不是『檢查通過』,是這道檢查沒有跑。若本次操作涉及受管檔案" >&2
     echo "    或提交/推送,請自行確認,或重跑一次讓閘門真的執行。" >&2
