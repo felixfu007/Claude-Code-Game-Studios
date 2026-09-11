@@ -203,3 +203,67 @@
 - `tests/unit/gameplay/battle/battle_controller_test.gd`
 - `design/gdd/reviews/battle-menu-review-log.md`
 - `design/gdd/reviews/skill-card-play-ux-review-log.md`
+
+---
+
+## 六、🔴 給接手者:回來後第一件事(2026-09-11 18:30 由第三個 session 寫)
+
+### ① 兩個 session 還卡著,只有手動中斷能救
+
+在那兩個視窗各按一次 **Esc**。**殺行程沒有用**,早上已經證實過(15:58 殺掉行程後
+那個 session 又靜止了 30 分鐘,直到 16:28:43 使用者手動中斷才恢復)。
+
+| Session | 卡住時間 | 卡在什麼 | 恢復後要做什麼 |
+|---|---|---|---|
+| `f370b9c1` | 16:52:16 | 一個 `git status` | 見下方 ③;它排隊中的訊息是「整理成選項給我,也比較一下優劣」 |
+| `657c8e77` | 16:56:46 | `git commit` | **不用重下** —— 那筆提交已由第三個 session 代為完成(`97d495e`) |
+
+### ② 環境已修好,不會再犯
+
+`97d495e` + `b79da9b` 已提交並推送。逾時上限依實測重訂、stdin 保護改零成本寫法。
+**修完後本 session 執行了數十個 Bash 指令,零卡死。**
+⚠️ **已卡住的那兩個 session 不會因此自己好** —— 設定是啟動時載入的,它們載的還是舊值。
+
+### ③ `f370b9c1` 的工作:已驗證完整,但**要不要進版控是管理者的裁決**
+
+工作區有 6 個檔案未提交。**本 session 刻意沒有提交它們**,理由在下面第二段。
+
+**已代為完成的查核**(`f370b9c1` 卡住前最後一句話要求的,它沒機會做):
+
+- ✅ **沒有留下注入的錯誤。** 它擔心「寫程式的專家停在注入還沒還原的狀態」——
+  實測 `src/` 的改動是純新增一個 `is_card_play_in_progress()`,無破壞痕跡。
+- ✅ **測試全過。** 559 條全數執行,唯一失敗是既有那條刻意紅且已核准的
+  `affinity_phi_provider`。新增的 5 條 `test_is_card_play_in_progress_*` 全部執行並通過。
+- ✅ **背景 agent「Fix S4 gap in battle-menu spec」於 18:17:08 完成**(它跑了一整個下午),
+  寫入 `skill-card-play.md` 三處。內容完整無截斷;文件內的事實宣稱
+  (`combat_strength_read` 在 `src/` 零命中)**經實測成立**;與 `battle-menu.md` N5
+  雙向對得上(符合模式 G 的兩側各記要求);表格欄數一致。
+- ✅ 所有派出的 agent 皆為 `completed`,**沒有還在跑的**。
+
+🔴 **為什麼還是沒有提交:`f370b9c1` 自己說那位寫程式的專家「工作視為取消」。**
+而 `src/gameplay/battle/battle_controller.gd` 與其測試,正是那次被取消的派工的產物。
+**「程式能跑、測試全過」與「這份工作該不該算數」是兩個問題,後者是管理者的裁決。**
+本 session 只回答得了前者,所以停在這裡,沒有代為決定。
+
+未提交清單(全部已驗證,原封不動留在工作區):
+
+| 檔案 | 來源 | 狀態 |
+|---|---|---|
+| `design/ux/skill-card-play.md` | agent「Fix S4 gap」18:16 寫入 | 完整、已查證 |
+| `design/ux/battle-menu.md` | agent「Write UX rulings」 | 完整 |
+| `design/gdd/reviews/battle-menu-review-log.md` | 同上 | 完整 |
+| `design/gdd/reviews/skill-card-play-ux-review-log.md` | 同上 | 完整 |
+| `src/gameplay/battle/battle_controller.gd` | 🔴 **被取消的派工** | 能跑、測試過,**歸屬待裁決** |
+| `tests/unit/gameplay/battle/battle_controller_test.gd` | 🔴 同上 | 同上 |
+
+### ④ 兩件仍待裁決(本 session 不代決)
+
+1. **`.claude/hooks/` 的專家覆核仍欠兩筆**(`97d495e`、`b79da9b`)。依 `agent-routing.tsv`
+   應由工具/流程專家經手,兩次都因使用者不在線上由協調者逕行處理。
+   **補審重點**:逾時放行對 `validate-commit` / `validate-push` 兩道阻擋型閘門是否可接受。
+2. **`session-log.md` 已 187 MB,仍在長。** 實測 `session-stop.sh` 每觸發一次就把整份
+   `active.md`(508 KB)複製進去,**而它是每次回話都觸發,不是每個 session 一次**。
+   本 session 量到單次耗時 5.7 秒(上限已放寬到 60 秒,**暫時不是卡死風險**)。
+   ✅ 已在 `.gitignore`,沒有污染版控。
+   **需要的決定**(同第四節,至今未決):要不要每次都存一份 `active.md` 快照?
+   要的話該存差異;不要的話該改成只記 commit 與變更檔清單。
