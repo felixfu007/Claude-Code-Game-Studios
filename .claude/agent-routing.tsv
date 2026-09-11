@@ -1,0 +1,150 @@
+# .claude/agent-routing.tsv
+# 路徑 / skill -> 擁有者對照表。2026-09-11 由 tools-programmer 依管理者派工建立。
+# 起因:2026-09-10 協調者代跑 /ux-review,未查該 skill 的 agent: 欄(ux-designer),
+# 而三個既有路由來源(副檔名表、skill agent 欄、目錄擁有推導)散在三處,無人一次查全。
+#
+# 🔴 2026-09-11 訂正:原版把「skill 無 agent: 欄」與「查無擁有者」同標 UNASSIGNED,
+# 59 項擠在一起會讓多數(53 項屬正常狀態)淹沒真正的 5 項缺口 —— 讀的人會學會無視這個標籤,
+# 然後連真缺口一起無視。已拆成 NO_DESIGNATED_AGENT(正常)與 UNASSIGNED(缺口)兩個值。
+#
+# 欄位(Tab 分隔):type<TAB>key<TAB>owner<TAB>source
+#   type  = skill(skill 名稱) | ext(副檔名/資源型別) | path(目錄前綴)
+#   owner = 單一 agent 名稱 | NO_DESIGNATED_AGENT(該 skill 無 agent: 欄,由主線執行,正常狀態不是缺口) |
+#           UNASSIGNED(三個來源都查不到、且確實需要擁有者 —— 真正的治理缺口) | AMBIGUOUS:a|b(多個候選,未定案)
+#   source= 這一列從哪個來源查得,格式為 <來源類別>: <可查證依據>
+#
+# 重新產生 skill 列的指令(來源一):
+#   for d in .claude/skills/*/; do awk '/^---$/{n++;next} n==1&&/^agent:/{print FILENAME, $2}' "$d/SKILL.md"; done
+#
+# 來源二(副檔名):.claude/docs/technical-preferences.md 的 "File Extension Routing" 表
+# 來源三(目錄):.claude/docs/coordination-rules.md 第 5 條(No Unilateral Cross-Domain Changes)
+#   導出 —— 導出過程是判斷,不是逐字抄錄,標 AMBIGUOUS 的列代表推導時找不到唯一候選,
+#   刻意不擅自選一個,需要人裁決。
+#
+# 🔴 已知豁免(來源:使用者裁決,倉庫外,記錄於協調者長期筆記,非本倉庫任何檔案):
+# 協調者保留「記帳」工作 —— 狀態標籤、計數、交叉引用、把管理者已下的裁決寫進各處、
+# 修正過時敘述、git 操作、執行既有指令。判準是「讓已有的決定一致」vs「產生一個新的決定」,
+# 後者一律委派。本對照表與這兩道 hook 不對此豁免做特殊處理 —— 豁免的是「誰可以做」,
+# 不是「這個路徑歸誰」,兩者是不同的問題。
+#
+# 已知缺口(本表尚未涵蓋,見任務回報第 3 節):
+#   - Control 節點 / CanvasLayer 屬「內容特徵」而非副檔名或路徑可判斷,本表無法偵測,
+#     已用 .tscn/.tres -> godot-specialist 涵蓋同一組結論,但無法從檔名本身分辨觸發原因。
+#   - .claude/skills/ 本身(skill 檔案的「作者」是誰)未涵蓋,只涵蓋每個 skill 的執行歸屬。
+
+# --- type=skill (來源一:73 個 skill 的 SKILL.md frontmatter agent: 欄,2026-09-11 實查) ---
+skill	adopt	technical-director	SKILL.md frontmatter: .claude/skills/adopt/SKILL.md agent: 欄
+skill	architecture-decision	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/architecture-decision/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	architecture-review	technical-director	SKILL.md frontmatter: .claude/skills/architecture-review/SKILL.md agent: 欄
+skill	art-bible	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/art-bible/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	asset-audit	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/asset-audit/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	asset-spec	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/asset-spec/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	balance-check	economy-designer	SKILL.md frontmatter: .claude/skills/balance-check/SKILL.md agent: 欄
+skill	brainstorm	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/brainstorm/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	bug-report	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/bug-report/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	bug-triage	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/bug-triage/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	changelog	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/changelog/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	code-review	lead-programmer	SKILL.md frontmatter: .claude/skills/code-review/SKILL.md agent: 欄
+skill	consistency-check	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/consistency-check/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	content-audit	producer	SKILL.md frontmatter: .claude/skills/content-audit/SKILL.md agent: 欄
+skill	create-architecture	technical-director	SKILL.md frontmatter: .claude/skills/create-architecture/SKILL.md agent: 欄
+skill	create-control-manifest	technical-director	SKILL.md frontmatter: .claude/skills/create-control-manifest/SKILL.md agent: 欄
+skill	create-epics	technical-director	SKILL.md frontmatter: .claude/skills/create-epics/SKILL.md agent: 欄
+skill	create-stories	lead-programmer	SKILL.md frontmatter: .claude/skills/create-stories/SKILL.md agent: 欄
+skill	day-one-patch	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/day-one-patch/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	design-review	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/design-review/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	design-system	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/design-system/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	dev-story	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/dev-story/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	estimate	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/estimate/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	gate-check	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/gate-check/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	help	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/help/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	hotfix	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/hotfix/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	launch-checklist	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/launch-checklist/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	localize	localization-lead	SKILL.md frontmatter: .claude/skills/localize/SKILL.md agent: 欄
+skill	map-systems	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/map-systems/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	milestone-review	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/milestone-review/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	onboard	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/onboard/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	patch-notes	community-manager	SKILL.md frontmatter: .claude/skills/patch-notes/SKILL.md agent: 欄
+skill	perf-profile	performance-analyst	SKILL.md frontmatter: .claude/skills/perf-profile/SKILL.md agent: 欄
+skill	playtest-report	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/playtest-report/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	project-stage-detect	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/project-stage-detect/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	propagate-design-change	technical-director	SKILL.md frontmatter: .claude/skills/propagate-design-change/SKILL.md agent: 欄
+skill	prototype	prototyper	SKILL.md frontmatter: .claude/skills/prototype/SKILL.md agent: 欄
+skill	qa-plan	qa-lead	SKILL.md frontmatter: .claude/skills/qa-plan/SKILL.md agent: 欄
+skill	quick-design	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/quick-design/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	regression-suite	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/regression-suite/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	release-checklist	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/release-checklist/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	retrospective	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/retrospective/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	reverse-document	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/reverse-document/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	review-all-gdds	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/review-all-gdds/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	scope-check	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/scope-check/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	security-audit	security-engineer	SKILL.md frontmatter: .claude/skills/security-audit/SKILL.md agent: 欄
+skill	setup-engine	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/setup-engine/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	skill-improve	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/skill-improve/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	skill-test	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/skill-test/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	smoke-check	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/smoke-check/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	soak-test	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/soak-test/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	sprint-plan	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/sprint-plan/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	sprint-status	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/sprint-status/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	start	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/start/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	story-done	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/story-done/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	story-readiness	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/story-readiness/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-audio	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-audio/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-combat	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-combat/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-level	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-level/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-live-ops	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-live-ops/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-narrative	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-narrative/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-polish	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-polish/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-qa	qa-lead	SKILL.md frontmatter: .claude/skills/team-qa/SKILL.md agent: 欄
+skill	team-release	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-release/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	team-ui	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/team-ui/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	tech-debt	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/tech-debt/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	test-evidence-review	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/test-evidence-review/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	test-flakiness	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/test-flakiness/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	test-helpers	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/test-helpers/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	test-setup	NO_DESIGNATED_AGENT	SKILL.md frontmatter: .claude/skills/test-setup/SKILL.md 無 agent: 欄(該 skill 無單一專屬擁有者,或由呼叫端 agent 自行執行)
+skill	ux-design	ux-designer	SKILL.md frontmatter: .claude/skills/ux-design/SKILL.md agent: 欄
+skill	ux-review	ux-designer	SKILL.md frontmatter: .claude/skills/ux-review/SKILL.md agent: 欄
+skill	vertical-slice	prototyper	SKILL.md frontmatter: .claude/skills/vertical-slice/SKILL.md agent: 欄
+
+# --- type=ext (來源二:.claude/docs/technical-preferences.md "File Extension Routing" 表) ---
+ext	.gd	godot-gdscript-specialist	technical-preferences.md File Extension Routing 表:Game code (.gd files)
+ext	.gdshader	godot-shader-specialist	technical-preferences.md File Extension Routing 表:Shader / material files
+ext	.tscn	godot-specialist	technical-preferences.md File Extension Routing 表:Scene / prefab / level files
+ext	.tres	godot-specialist	technical-preferences.md File Extension Routing 表:Scene / prefab / level files
+ext	.gdextension	godot-gdextension-specialist	technical-preferences.md File Extension Routing 表:Native extension / plugin files
+ext	.cpp	godot-gdextension-specialist	technical-preferences.md File Extension Routing 表:Native extension / plugin files (C++)
+ext	.hpp	godot-gdextension-specialist	technical-preferences.md File Extension Routing 表:Native extension / plugin files (C++)
+ext	.h	godot-gdextension-specialist	technical-preferences.md File Extension Routing 表:Native extension / plugin files (C++)
+
+# --- type=path (來源三:coordination-rules.md #5 導出,配對 directory-structure.md 目錄與 .claude/agents/*.md 職掌描述,2026-09-11 判斷) ---
+path	src/ai/	ai-programmer	derived: directory-structure.md src/ai/ + ai-programmer.md description(implements game AI systems)
+path	src/core/	engine-programmer	derived: directory-structure.md src/core/ + engine-programmer.md description(core engine systems, core framework code)
+path	src/gameplay/	gameplay-programmer	derived: directory-structure.md src/gameplay/ + gameplay-programmer.md description
+path	src/tools/	tools-programmer	derived: directory-structure.md src/tools/ + tools-programmer.md description(builds internal development tools)
+path	src/ui/	ui-programmer	derived: directory-structure.md src/ui/ + ui-programmer.md description
+path	design/ux/	ux-designer	derived: directory-structure.md design/ux/ + ux-designer.md description(owns user experience flows, interaction design)。本列即 2026-09-10 漏抓的那一格
+path	design/art/	art-director	derived: directory-structure.md design/art/ + art-director.md description(owns visual identity, art bible)
+path	design/gdd/	AMBIGUOUS:game-designer|systems-designer	derived: game-designer.md 與 systems-designer.md 職掌重疊(前者「how does the game work」、後者「detailed mechanical designs」),來源文件無明文判準區分,未擅自擇一
+path	design/quick-specs/	AMBIGUOUS:game-designer|systems-designer	derived: 同 design/gdd/ 理由(directory-structure.md 定義為「未升格為正式 GDD」,同一批候選)
+path	design/narrative/	AMBIGUOUS:narrative-director|writer	derived: narrative-director.md(結構與方向)與 writer.md(逐行內容)皆涉本目錄,依內容類型而定,無單一判準
+path	design/registry/	UNASSIGNED	derived: economy-designer.md 與 systems-designer.md 皆有「存取前查登記表、新增前徵求使用者同意」流程,但兩者都是消費者/提案者語氣,無人自稱維護者 —— 是「記載為共享資產、無單一擁有者」,不是「查無記載」
+path	assets/art/	art-director	derived: directory-structure.md assets/art/ + art-director.md description
+path	assets/fonts/	AMBIGUOUS:art-director|technical-artist	derived: art-director(視覺標準)與 technical-artist(美術/工程橋接、pipeline)皆可能相關,無來源文件明確歸屬字型檔
+path	assets/data/	AMBIGUOUS:game-designer|systems-designer|economy-designer	derived: 資料驅動數值橫跨戰鬥/進程/經濟三個 agent 的職掌描述,無單一判準
+path	docs/architecture/	technical-director	derived: technical-director.md description(owns architecture decisions)+ create-architecture skill 的 agent: 欄同為 technical-director,兩者互相印證
+path	docs/registry/	technical-director	derived: docs/registry/architecture.yaml 為架構立場登記表,與上一列同一職掌範圍
+path	docs/engine-reference/	godot-specialist	derived: CLAUDE.md "Engine Specialists" 節明文 Primary: godot-specialist,本專案引擎為 Godot
+path	tools/	AMBIGUOUS:tools-programmer|devops-engineer	derived: tools-programmer.md 自身職掌描述明文 "Coordinates with: devops-engineer for build integration" —— tools/build/ 與 tools/asset-pipeline/ 可能分屬不同候選,未擅自切分
+path	tests/	AMBIGUOUS:qa-lead|lead-programmer	derived: qa-lead.md(owns test strategy)與 lead-programmer.md(code review, coding standards)皆涉本目錄,coding-standards.md 未指名單一擁有者
+path	prototypes/	prototyper	derived: directory-structure.md prototypes/ 描述與 prototyper.md description 逐字對應(拋棄式試作)
+path	production/	producer	derived: directory-structure.md production/ + producer.md description(manages all production concerns, primary coordination agent)
+path	.claude/hooks/	UNASSIGNED	derived: 本次派工單本身明文實測 —— 專案三個路由來源對 .claude/hooks/ 皆零命中(見任務指示背景段)
+path	.claude/agents/	UNASSIGNED	derived: 49 份 agent 檔皆未宣告「agent 定義本身」由誰維護
+path	.claude/skills/	UNASSIGNED	derived: skill 檔案的作者/維護者未涵蓋,個別 skill 的執行歸屬請查 type=skill 列
+path	addons/	UNASSIGNED	derived: 日常維護無人認領;唯 godot-specialist.md 明文列 technical-director 為「addon/plugin 決策」的 escalation target —— 決策權不等於維護權,兩者是不同問題,故仍列 UNASSIGNED
+path	CLAUDE.md	UNASSIGNED	derived: 每次對話開場自動載入的承重文件;49 份 agent 職掌描述皆為「照它做」而非「維護它」的引用語氣(如 godot-specialist.md:「Document every autoload's purpose in CLAUDE.md」),查無自稱維護者,2026-09-11 使用者要求後補查
+path	.claude/docs/technical-preferences.md	UNASSIGNED	derived: 同上,自動載入承重文件;prototyper.md/godot-csharp-specialist.md 皆是「查閱/記錄進去」語氣,非維護語氣,查無自稱維護者
+path	.claude/docs/coordination-rules.md	UNASSIGNED	derived: 同上,自動載入承重文件;49 份 agent 檔皆未提及,查無自稱維護者
+path	.claude/docs/coding-standards.md	lead-programmer	derived: lead-programmer.md description 逐字寫「owns code-level architecture, coding standards, code review」—— 直接命中檔名本身,是本表少數有直接文字依據(非純推導)的目錄列
+path	.claude/docs/context-management.md	UNASSIGNED	derived: 同上,自動載入承重文件;49 份 agent 檔皆未提及,查無自稱維護者
