@@ -67,6 +67,11 @@
             "type": "command",
             "command": "bash .claude/hooks/validate-push.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/advise-file-owner.sh",
+            "timeout": 5
           }
         ]
       },

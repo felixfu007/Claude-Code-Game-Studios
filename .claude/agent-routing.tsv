@@ -31,6 +31,12 @@
 #   - Control 節點 / CanvasLayer 屬「內容特徵」而非副檔名或路徑可判斷,本表無法偵測,
 #     已用 .tscn/.tres -> godot-specialist 涵蓋同一組結論,但無法從檔名本身分辨觸發原因。
 #   - .claude/skills/ 本身(skill 檔案的「作者」是誰)未涵蓋,只涵蓋每個 skill 的執行歸屬。
+#
+# 🔴 2026-09-11 補(協調者實測抓到):.claude/hooks/advise-file-owner.sh 對 Bash 指令
+# (sed -i、重導向、tee、mv、cp、rm)的偵測是啟發式的,不是語法解析器 —— 沒有比對到
+# 已知樣式就完全不出聲。**沒有提醒不代表沒有寫入,只代表沒有比對到已知樣式。**
+# 已知偵測不到的寫入樣式(見該 hook 檔頭 KNOWN BLIND SPOTS 節,同一份清單,不重複列):
+# 變數/命令替換路徑、heredoc 內文、PowerShell 寫入、python/git apply/rsync/curl -o、git mv。
 
 # --- type=skill (來源一:73 個 skill 的 SKILL.md frontmatter agent: 欄,2026-09-11 實查) ---
 skill	adopt	technical-director	SKILL.md frontmatter: .claude/skills/adopt/SKILL.md agent: 欄
