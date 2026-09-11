@@ -39,17 +39,17 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/session-start.sh",
-            "timeout": 10
+            "timeout": 60
           },
           {
             "type": "command",
             "command": "bash .claude/hooks/detect-gaps.sh",
-            "timeout": 10
+            "timeout": 60
           },
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-doc-consistency.sh",
-            "timeout": 20
+            "timeout": 60
           }
         ]
       }
@@ -61,17 +61,17 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-commit.sh",
-            "timeout": 15
+            "timeout": 90
           },
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-push.sh",
-            "timeout": 10
+            "timeout": 30
           },
           {
             "type": "command",
             "command": "bash .claude/hooks/advise-file-owner.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       },
@@ -81,7 +81,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/advise-skill-owner.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       },
@@ -91,7 +91,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/advise-file-owner.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       }
@@ -103,12 +103,12 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-assets.sh",
-            "timeout": 10
+            "timeout": 30
           },
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-skill-change.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       }
@@ -120,7 +120,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/notify.sh",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }
@@ -132,7 +132,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/pre-compact.sh",
-            "timeout": 10
+            "timeout": 60
           }
         ]
       }
@@ -144,7 +144,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/post-compact.sh",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }
@@ -156,7 +156,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/session-stop.sh",
-            "timeout": 10
+            "timeout": 60
           }
         ]
       }
@@ -168,7 +168,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/log-agent.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       }
@@ -180,7 +180,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/log-agent-stop.sh",
-            "timeout": 5
+            "timeout": 30
           }
         ]
       }
