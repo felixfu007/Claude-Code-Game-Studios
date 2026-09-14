@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# 🔴 2026-09-14:本 hook 已從 .claude/settings.json 移除掛載(commit 1416ed7),
+#    目前【不會執行】(原掛在 PreToolUse 的 Bash 與 Write|Edit 兩處)。
+#    移除原因(第一手遙測,9/8 起六天):逾時 100 次 —— 佔全庫 151 次逾時的 66%;
+#    成功執行 36 次平均 6.3 秒,為當時最貴的一支。而本檔設計上 exit 0 always,
+#    【永遠不會擋下任何東西】—— 付最高的價,買不到阻擋力。
+#    掛回去之前請先確認:下方 KNOWN BLIND SPOTS 列的漏判是否仍可接受,以及本檔
+#    成本是否已改善(量法見 .claude/docs/permission-rules-scope.md 第七節)。
 # Claude Code PreToolUse hook: Advises which agent owns a file path before it
 # gets written. Covers two tools: Write/Edit directly, and Bash commands that
 # write files by other means (sed -i, redirects, tee, mv, cp, rm).

@@ -1,4 +1,14 @@
 #!/bin/bash
+#
+# 🔴 2026-09-14:本 hook 已從 .claude/settings.json 移除掛載(commit 1416ed7),
+#    目前【不會執行】。掛回去之前必須先修下列兩項,否則掛回來也只是空轉:
+#    ① 下方 '^git[[:space:]]+push' 錨在【整條指令】開頭。實測 6096 條 Bash 指令
+#       中 4400 條(72%)開頭是 cd,含 git push 的 14 條裡只有 8 條認得出來。
+#       修法見 validate-commit.sh 的 segment_starts_with()(commit 783b27d)。
+#    ② 抽值用的 '"[^"]*"' 遇到指令內的跳脫引號 \" 會截斷,而本機【沒有 jq】,
+#       走的一直是這條備援。修法見同檔的 extract_command()。
+#    移除原因(遙測實測):平均 25.5 秒、6 天內逾時 10 次,而本檔的 exit 2 是被
+#    註解掉的 —— 花 25 秒只換到一行提醒。詳見 commit 1416ed7。
 # Claude Code PreToolUse hook: Validates git push commands
 # Warns on pushes to protected branches
 # Exit 0 = allow, Exit 2 = block
