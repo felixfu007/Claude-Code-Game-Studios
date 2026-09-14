@@ -57,7 +57,14 @@ Fired before a tool is executed. Can **allow** (exit 0) or **block** (exit 2).
 
 ## PostToolUse
 
-Fired after a tool completes. **Cannot block** (exit code ignored for blocking). Stderr messages are shown as warnings.
+Fired after a tool completes. **Cannot block** (exit code ignored for blocking).
+
+🔴 **"Stderr messages are shown as warnings" — this line used to say that, and it is WRONG.**
+Measured 2026-09-14 with a throwaway probe hook registered on `PostToolUse:Bash` that wrote a
+distinct marker to each stream: stdout landed in the transcript's `content` field, stderr landed
+only in the discarded `stderr` field, and **neither reached Claude**. Same result for
+`PreToolUse`. See the channel matrix in the Notes section below before designing any hook that
+needs to be heard.
 
 ### PostToolUse: Write
 
@@ -119,6 +126,37 @@ Fired when the Claude Code session ends. **No stdin input** — the hook runs fo
 | Other | Treated as error, tool proceeds | All events |
 
 ## Notes
+
+### 🔴 Which output channels actually reach anyone (measured 2026-09-14)
+
+Established with throwaway probe hooks that wrote a distinct marker to each stream, then
+cross-checked against every `hook_success` / `hook_cancelled` record in the project's session
+transcripts. **Do not design a hook message without reading this table.**
+
+| Channel | Lands in transcript `content` | Reaches Claude | Seen by the user | Blocks the tool |
+|---|---|---|---|---|
+| stdout + `exit 0` (PreToolUse) | ✅ | ❌ | ❌ | no |
+| stderr + `exit 0` (PreToolUse) | ❌ | ❌ | ❌ | no |
+| stdout + `exit 0` (PostToolUse) | ✅ | ❌ | ❌ | no |
+| stderr + `exit 0` (PostToolUse) | ❌ | ❌ | ❌ | no |
+| **stderr + `exit 2` (PreToolUse)** | — | ✅ **yes** | ✅ | **yes** |
+| **stdout of a `SessionStart` hook** | ✅ | ✅ **yes** | ✅ | n/a |
+
+**There is no "does not block AND is seen immediately" combination.** That is a platform
+property, not a bug in any hook.
+
+**How this was found, and why it matters:** all nine gates under `.claude/hooks/` wrote to
+stderr and exited 0. Across the whole project history that produced **45 records with stderr
+text and 0 with `content`** — `advise-file-owner` fired 29 times and was never once read,
+`validate-push` announced "Push to protected branch 'main'" 8 times into the void, and
+`validate-doc-consistency` reported 157 line-reference violations nobody saw. The project
+believed it had gates it did not have. `advise-file-owner`'s own header comment warns against
+exactly this shape of failure — "a gate that looks like protection and is silently inert" — and
+it was the clearest example of it.
+
+**Current design** (see `.claude/hooks/lib/hook-queue.sh`): blocking findings use `exit 2`;
+everything else is appended to a capped queue file and read out, then cleared, by
+`session-start.sh` at the next session start.
 
 - Hooks receive JSON on **stdin** (pipe). 🔴 **Use `INPUT=$(timeout 2 cat)`, never a bare
   `INPUT=$(cat)`** — a bare `cat` blocks forever if stdin is never closed, with 0% CPU, no

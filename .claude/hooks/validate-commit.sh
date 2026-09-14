@@ -36,6 +36,19 @@ if [ $? -eq 124 ]; then
 fi
 # ----------------------------------------------------------------------
 
+# --- 訊息分級(2026-09-14 加)-----------------------------------------
+# 本檔真正的阻擋型檢查(doc-consistency 的 [ERROR] 級矛盾、injection 標記、
+# 停用測試偵測)一律維持 exit 2,不受本次改動影響 —— 那條管道已實測會
+# 送達 Claude。本次只改「不阻擋的那些」:它們原本 stderr + exit 0,
+# 該組合已實測從不送達。改為額外排入佇列,由 session-start.sh 於下次
+# 對話開場一次讀出並清空。完整理由見 .claude/hooks/lib/hook-queue.sh 檔頭。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
+fi
+# ----------------------------------------------------------------------
+
 # Parse command -- use jq if available, fall back to grep
 if command -v jq >/dev/null 2>&1; then
     COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
@@ -124,6 +137,11 @@ fi
 # Print warnings (non-blocking) and allow commit
 if [ -n "$WARNINGS" ]; then
     echo -e "=== Commit Validation Warnings ===$WARNINGS\n================================" >&2
+    # 佇列版本需先展開 $WARNINGS 裡的字面 \n(printf %b,builtin,不 fork)。
+    EXPANDED_WARNINGS=$(printf '%b' "$WARNINGS")
+    queue_message "validate-commit:warnings" "=== Commit Validation Warnings ===
+$EXPANDED_WARNINGS
+================================"
 fi
 
 # ---------------------------------------------------------------------------
@@ -176,14 +194,14 @@ if [ -n "$CLAIM_DOCS" ]; then
         END { if (hits) printf "  --- %d unproven completion claim(s) ---\n", hits }
     ')
     if [ -n "$UNPROVEN" ]; then
-        {
-            echo "=== Unproven completion claims in staged docs ==="
-            echo "$UNPROVEN"
-            echo "Each line above says something is done without naming a checkable artifact"
-            echo "on the same line (a path, a test count, an exit code, or 測試/證據/spike)."
-            echo "If it IS done, cite the proof. If it is not, say what it is waiting on."
-            echo "================================================"
-        } >&2
+        UNPROVEN_MSG="=== Unproven completion claims in staged docs ===
+$UNPROVEN
+Each line above says something is done without naming a checkable artifact
+on the same line (a path, a test count, an exit code, or 測試/證據/spike).
+If it IS done, cite the proof. If it is not, say what it is waiting on.
+================================================"
+        echo "$UNPROVEN_MSG" >&2
+        queue_message "validate-commit:unproven-claims" "$UNPROVEN_MSG"
     fi
 fi
 
@@ -196,10 +214,18 @@ fi
 # place and left stale in another; blocking here stops new drift from landing.
 # Escape hatch: SKIP_DOC_CONSISTENCY=1
 if [ -f ".claude/hooks/validate-doc-consistency.sh" ]; then
-    bash .claude/hooks/validate-doc-consistency.sh --gate
+    # 2026-09-14:捕捉輸出而非直接串流,以便在 WARN-only(不阻擋)時排入佇列。
+    # ERROR 級(DOC_RC=2)行為完全不變 —— 仍是 stderr + exit 2,立即送達。
+    DOC_OUTPUT=$(bash .claude/hooks/validate-doc-consistency.sh --gate 2>&1)
     DOC_RC=$?
+    if [ -n "$DOC_OUTPUT" ]; then
+        echo "$DOC_OUTPUT" >&2
+    fi
     if [ "$DOC_RC" -eq 2 ]; then
         exit 2
+    fi
+    if [ -n "$DOC_OUTPUT" ]; then
+        queue_message "validate-commit:doc-consistency" "$DOC_OUTPUT"
     fi
 fi
 

@@ -88,6 +88,20 @@ if [ $? -eq 124 ]; then
 fi
 # ----------------------------------------------------------------------
 
+# --- 訊息分級(2026-09-14 加)-----------------------------------------
+# 本檔全部訊息一律 stderr + exit 0(非阻擋型閘門,manager ruling,見檔頭)。
+# 該組合已實測從不送達 Claude 或使用者。改為額外排入佇列,由
+# session-start.sh 於下次對話開場一次讀出並清空。完整理由見
+# .claude/hooks/lib/hook-queue.sh 檔頭。原本的 stderr 輸出保留不變 ——
+# 這裡只是新增一條送達得到的管道,不是取代既有邏輯。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
+    queue_no_match_hit() { :; }
+fi
+# ----------------------------------------------------------------------
+
 if command -v jq >/dev/null 2>&1; then
     TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 else
@@ -193,7 +207,20 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
     FILE_PATH="${FILE_PATH//\\//}"
     [ -z "$FILE_PATH" ] && exit 0
     REL_PATH="${FILE_PATH##*/Claude-Code-Game-Studios/}"
-    report_owner_for_path "$REL_PATH" "1" ""
+    OUT=$(report_owner_for_path "$REL_PATH" "1" "" 2>&1)
+    RC=$?
+    # 2026-09-14(協調者實測後追加):RC=0 才是真的找到擁有者 -- 這才需要
+    # 逐筆進佇列、維持顯眼。RC=1 是「對照表查無此路徑」,實測本專案歷史
+    # 29/29 筆 advise-file-owner 訊息都是這一種、0 筆是真正命中。逐筆佇列
+    # 會讓開場摘要被幾百行一模一樣的「查無擁有者」淹沒,等於換個地方失效
+    # (見 queue_no_match_hit 的檔頭說明)。摺疊成計數,不是靜音掉。
+    if [ "$RC" -eq 0 ]; then
+        echo "$OUT" >&2
+        queue_message "advise-file-owner" "$OUT"
+    elif [ -n "$OUT" ]; then
+        echo "$OUT" >&2
+        queue_no_match_hit
+    fi
     exit 0
 fi
 
@@ -236,7 +263,19 @@ if [ "$TOOL_NAME" = "Bash" ]; then
         case "$CAND" in
             */*|*.*)
                 REL_PATH="${CAND##*/Claude-Code-Game-Studios/}"
-                report_owner_for_path "$REL_PATH" "" "(Bash 指令偵測,啟發式、可能有漏)"
+                OUT=$(report_owner_for_path "$REL_PATH" "" "(Bash 指令偵測,啟發式、可能有漏)" 2>&1)
+                RC=$?
+                # 同上一處的分流理由。此分支 SHOW_NO_MATCH="" 本來就不會在
+                # 查無擁有者時印出任何東西(既有的 QUIETING RULE),所以這裡
+                # 的 elif 實務上不會被觸發 -- 保留是為了與另一個呼叫點行為
+                # 一致,萬一將來這裡也開放印出不命中訊息,分流邏輯已經備妥。
+                if [ "$RC" -eq 0 ]; then
+                    echo "$OUT" >&2
+                    queue_message "advise-file-owner" "$OUT"
+                elif [ -n "$OUT" ]; then
+                    echo "$OUT" >&2
+                    queue_no_match_hit
+                fi
                 ;;
         esac
     done

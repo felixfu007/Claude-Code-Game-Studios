@@ -36,6 +36,18 @@ if [ $? -eq 124 ]; then
 fi
 # ----------------------------------------------------------------------
 
+# --- 訊息分級(2026-09-14 加)-----------------------------------------
+# 本檔的保護分支提醒一律 stderr + exit 0(本專案是 trunk-based,每次 push
+# 都是推 main,故不當場阻擋 —— manager ruling)。該組合已實測從不送達,
+# 8 次提醒、0 次送達。改為額外排入佇列,由 session-start.sh 於下次對話
+# 開場一次讀出並清空。完整理由見 .claude/hooks/lib/hook-queue.sh 檔頭。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
+fi
+# ----------------------------------------------------------------------
+
 # Parse command -- use jq if available, fall back to grep
 if command -v jq >/dev/null 2>&1; then
     COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
@@ -65,8 +77,10 @@ for branch in develop main master; do
 done
 
 if [ -n "$MATCHED_BRANCH" ]; then
-    echo "Push to protected branch '$MATCHED_BRANCH' detected." >&2
-    echo "Reminder: Ensure build passes, unit tests pass, and no S1/S2 bugs exist." >&2
+    MSG="Push to protected branch '$MATCHED_BRANCH' detected.
+Reminder: Ensure build passes, unit tests pass, and no S1/S2 bugs exist."
+    echo "$MSG" >&2
+    queue_message "validate-push" "$MSG"
     # Allow the push but warn -- uncomment below to block instead:
     # echo "BLOCKED: Run tests before pushing to $CURRENT_BRANCH" >&2
     # exit 2
