@@ -11,15 +11,32 @@ mkdir -p "$SESSION_LOG_DIR" 2>/dev/null
 RECENT_COMMITS=$(git log --oneline --since="8 hours ago" 2>/dev/null)
 MODIFIED_FILES=$(git diff --name-only 2>/dev/null)
 
-# --- Archive active session state on shutdown (do NOT delete) ---
+# --- Note that active session state exists (do NOT delete, do NOT copy) ---
 # active.md persists across clean exits so multi-session recovery works.
 # It is only valid to delete active.md manually or when explicitly superseded.
+# That part is unchanged. What changed (2026-09-14, manager ruling) is that this
+# hook no longer COPIES active.md into session-log.md.
+#
+# 🔴 WHY the copy was removed — it was redundant AND unbounded:
+#   1. REDUNDANT. active.md is itself under version control (verified
+#      2026-09-14: `git ls-files` matches it, 139 historical revisions). Every
+#      version is already recoverable from git history. session-log.md is
+#      gitignored, so the copy was the *less* durable of the two.
+#   2. UNBOUNDED. Stop is NOT "once per session" — it fires every time Claude
+#      finishes a reply. Measured 2026-09-11: 970 whole-file copies, active.md
+#      508 KB, session-log.md 187 MB and accelerating (the longer active.md
+#      grows, the faster the log grows). 190 MB by 2026-09-14.
+#
+# The block below already records what this log actually exists for: which
+# commits happened and which files changed. That is kept untouched.
+#
+# ⚠️ Deliberately records no size/mtime here: each would cost an extra process,
+# and on this machine every fork/exec costs 0.5-1.5s (measured 2026-09-11).
 STATE_FILE="production/session-state/active.md"
 if [ -f "$STATE_FILE" ]; then
     {
-        echo "## Archived Session State: $TIMESTAMP"
-        cat "$STATE_FILE"
-        echo "---"
+        echo "## Session State Pointer: $TIMESTAMP"
+        echo "- $STATE_FILE exists (content NOT copied — it is in git; see hook header)"
         echo ""
     } >> "$SESSION_LOG_DIR/session-log.md" 2>/dev/null
 fi
