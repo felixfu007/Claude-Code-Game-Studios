@@ -89,6 +89,50 @@ if ! segment_starts_with "$COMMAND" '^git[[:space:]]+commit'; then
     exit 0
 fi
 
+# --- 閘門執行帳(2026-09-14 加,管理者裁決)-----------------------------
+# 解決的問題:hook 被 harness 逾時取消時【完全靜默】—— 逐字紀錄裡那筆
+# {"type":"hook_cancelled"} 只有 durationMs/timedOut 等數字,【沒有任何訊息欄位】,
+# 所以「閘門沒跑」與「閘門通過」在畫面上長得一模一樣。
+# 這直接違反本專案規則:「沉默」不能與「hook 沒跑」長得一樣(commit c9f2f88)。
+#
+# 做法:進入重檢查之前留一個記號,正常結束時刪掉;被中止時記號會留下。
+# 下一次【提交】時發現孤兒記號 → exit 2 擋下並說明。
+#
+# ⚠️ 為什麼是「下一次提交」而不是「下一個指令」:本檔上方註解已實測記載
+#    「stderr + exit 0 該組合從不送達 Claude」—— 不阻擋的警告傳不出去。
+#    exit 2 是本檔唯一實測會送達的管道,而提交正是這個警告該出現的時刻。
+#    另外同步排入佇列,讓下次對話開場也看得到(兩條管道,都經實測)。
+#
+# 成本:非提交指令【完全不執行到這裡】(上面那個 if 已經 exit 0 了)。
+#      提交時多一個檔案寫入與一個刪除。
+GATE_MARKER="production/session-logs/.commit-gate-running"
+GATE_KILLED=0
+
+if [ -f "$GATE_MARKER" ] && [ "$SKIP_GATE_LEDGER" != "1" ]; then
+    read -r O_TS O_PID < "$GATE_MARKER" 2>/dev/null
+    if ! kill -0 "$O_PID" 2>/dev/null; then
+        MSG="🔴 BLOCKED: 上一次提交時,本閘門【沒有跑完】。
+    那次檢查在 epoch $O_TS 啟動(PID $O_PID),沒有正常結束 —— 幾乎確定是被
+    逾時取消。也就是說:【上一次提交未經本閘門檢查就進版控了】。
+    這不是這次提交有問題,是上一次沒被檢查過。
+
+    請做以下其中一件,然後重新提交:
+      1. 對上一次提交的內容自行複查(或 git show HEAD 看一遍)
+      2. 若確認無虞,直接重跑本次提交即可 —— 記號已清除,不會再擋第二次
+      3. 要略過本檢查:SKIP_GATE_LEDGER=1"
+        echo "$MSG" >&2
+        queue_message "validate-commit" "$MSG"
+        rm -f "$GATE_MARKER"
+        exit 2
+    fi
+fi
+
+[ -d "production/session-logs" ] || mkdir -p "production/session-logs" 2>/dev/null
+printf '%s %s\n' "$EPOCHSECONDS" "$$" > "$GATE_MARKER" 2>/dev/null
+trap 'GATE_KILLED=1' TERM INT
+trap '[ "$GATE_KILLED" = "1" ] || rm -f "$GATE_MARKER"' EXIT
+# ----------------------------------------------------------------------
+
 # Get staged files
 STAGED=$(git diff --cached --name-only 2>/dev/null)
 if [ -z "$STAGED" ]; then

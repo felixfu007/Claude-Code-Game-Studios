@@ -103,5 +103,22 @@ if [ -f "$STATE_FILE" ]; then
     echo "=== END SESSION STATE PREVIEW ==="
 fi
 
+
+# --- 提交閘門孤兒記號(2026-09-14 加)---------------------------------
+# validate-commit.sh 進入重檢查前會留一個記號,正常結束時刪除。若 harness
+# 因逾時中止它,記號會留下 —— 那代表【有一次提交沒被檢查過】。
+# 這裡只負責「讓你在開場就看到」,不清除記號:清除由下一次提交時的閘門負責,
+# 那條路會 exit 2 並要求確認。本檔的輸出經實測會送達,是第二條管道。
+GATE_MARKER="production/session-logs/.commit-gate-running"
+if [ -f "$GATE_MARKER" ]; then
+    read -r G_TS G_PID < "$GATE_MARKER" 2>/dev/null
+    if ! kill -0 "$G_PID" 2>/dev/null; then
+        echo ""
+        echo "🔴 提交閘門有一次沒有跑完(epoch $G_TS, PID $G_PID)"
+        echo "   代表【有一次提交未經檢查就進版控了】,幾乎確定是閘門被逾時取消。"
+        echo "   下次提交時會再擋一次並要求確認;要略過:SKIP_GATE_LEDGER=1"
+    fi
+fi
+# ----------------------------------------------------------------------
 echo "==================================="
 exit 0
