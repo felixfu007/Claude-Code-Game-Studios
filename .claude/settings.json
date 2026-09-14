@@ -62,16 +62,6 @@
             "type": "command",
             "command": "bash .claude/hooks/validate-commit.sh",
             "timeout": 90
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/validate-push.sh",
-            "timeout": 60
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/advise-file-owner.sh",
-            "timeout": 30
           }
         ]
       },
@@ -81,16 +71,6 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/advise-skill-owner.sh",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/advise-file-owner.sh",
             "timeout": 30
           }
         ]
