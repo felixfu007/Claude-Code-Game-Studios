@@ -134,7 +134,7 @@ path	design/art/	art-director	derived: directory-structure.md design/art/ + art-
 path	design/gdd/	AMBIGUOUS:game-designer|systems-designer	derived: game-designer.md 與 systems-designer.md 職掌重疊(前者「how does the game work」、後者「detailed mechanical designs」),來源文件無明文判準區分,未擅自擇一
 path	design/quick-specs/	AMBIGUOUS:game-designer|systems-designer	derived: 同 design/gdd/ 理由(directory-structure.md 定義為「未升格為正式 GDD」,同一批候選)
 path	design/narrative/	AMBIGUOUS:narrative-director|writer	derived: narrative-director.md(結構與方向)與 writer.md(逐行內容)皆涉本目錄,依內容類型而定,無單一判準
-path	design/registry/	UNASSIGNED	derived: economy-designer.md 與 systems-designer.md 皆有「存取前查登記表、新增前徵求使用者同意」流程,但兩者都是消費者/提案者語氣,無人自稱維護者 —— 是「記載為共享資產、無單一擁有者」,不是「查無記載」
+path	design/registry/	producer	🔴 管理者裁決 2026-09-14。依據為 coordination-rules.md 第 4 條逐字:「設計變更影響多個領域時由 producer 協調傳播」—— 登記表就是那件事的產物。⚠️ 範圍:producer 負責【各處是否一致】,不負責【數值對不對】;後者仍住在各自的 GDD 裡。此為裁決當下明文接受的邊界,不是遺漏
 path	assets/art/	art-director	derived: directory-structure.md assets/art/ + art-director.md description
 path	assets/fonts/	AMBIGUOUS:art-director|technical-artist	derived: art-director(視覺標準)與 technical-artist(美術/工程橋接、pipeline)皆可能相關,無來源文件明確歸屬字型檔
 path	assets/data/	AMBIGUOUS:game-designer|systems-designer|economy-designer	derived: 資料驅動數值橫跨戰鬥/進程/經濟三個 agent 的職掌描述,無單一判準
@@ -150,7 +150,7 @@ path	.claude/agents/	UNASSIGNED	derived: 49 份 agent 檔皆未宣告「agent �
 path	.claude/skills/	UNASSIGNED	derived: skill 檔案的作者/維護者未涵蓋,個別 skill 的執行歸屬請查 type=skill 列
 path	addons/	UNASSIGNED	derived: 日常維護無人認領;唯 godot-specialist.md 明文列 technical-director 為「addon/plugin 決策」的 escalation target —— 決策權不等於維護權,兩者是不同問題,故仍列 UNASSIGNED
 path	CLAUDE.md	UNASSIGNED	derived: 每次對話開場自動載入的承重文件;49 份 agent 職掌描述皆為「照它做」而非「維護它」的引用語氣(如 godot-specialist.md:「Document every autoload's purpose in CLAUDE.md」),查無自稱維護者,2026-09-11 使用者要求後補查
-path	.claude/docs/technical-preferences.md	UNASSIGNED	derived: 同上,自動載入承重文件;prototyper.md/godot-csharp-specialist.md 皆是「查閱/記錄進去」語氣,非維護語氣,查無自稱維護者
+path	.claude/docs/technical-preferences.md	technical-director	🔴 管理者裁決 2026-09-14,擁有整份。⚠️ 明文附帶條件:「美術方向與像素風設定」與「流程劑量上限」兩節是【別處權威的摘要】(權威全文分別在 design/art/art-direction.md 與 production/milestones/one-year-plan.md 第六節②),內容變更必須由該處擁有者發動;technical-director 只負責讓摘要與權威來源一致。裁決時已知該檔改過 40 次且自己記載過多次「這裡寫錯了」
 path	.claude/docs/coordination-rules.md	UNASSIGNED	derived: 同上,自動載入承重文件;49 份 agent 檔皆未提及,查無自稱維護者
 path	.claude/docs/coding-standards.md	lead-programmer	derived: lead-programmer.md description 逐字寫「owns code-level architecture, coding standards, code review」—— 直接命中檔名本身,是本表少數有直接文字依據(非純推導)的目錄列
 path	.claude/docs/context-management.md	UNASSIGNED	derived: 同上,自動載入承重文件;49 份 agent 檔皆未提及,查無自稱維護者
