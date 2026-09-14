@@ -120,7 +120,18 @@ Fired when the Claude Code session ends. **No stdin input** — the hook runs fo
 
 ## Notes
 
-- Hooks receive JSON on **stdin** (pipe). Use `INPUT=$(cat)` to capture.
+- Hooks receive JSON on **stdin** (pipe). 🔴 **Use `INPUT=$(timeout 2 cat)`, never a bare
+  `INPUT=$(cat)`** — a bare `cat` blocks forever if stdin is never closed, with 0% CPU, no
+  output and no trace, which from the outside is indistinguishable from "still working".
+  Claude Code's hook timeout cancels the *logical* hook but does **not** kill the process.
+  Check `$?` for `124` (timed out) and exit **loudly** — the project rule is that silence
+  must never look like "the gate passed". All 9 hooks under `.claude/hooks/` follow this.
+  ⚠️ It is **not** free: the two extra processes cost ~780–860 ms per invocation on this
+  machine (every `fork`/`exec` here costs 0.5–1.5 s). Do **not** "optimise" it to the bash
+  builtin `read -r -d '' -t 2` — that was tried (`b79da9b`) and reverted (`5039e27`) because
+  `read` is byte-at-a-time: a 5 MB payload went from 2.8 s to 21.4 s, and `advise-file-owner`
+  runs on `Write`/`Edit`, whose input carries the whole file body.
+  Full write-up: `production/session-state/hook-stdin-hang-2026-09-11.md`.
 - Parse with `jq` if available, fall back to `grep` for cross-platform compatibility.
 - On Windows, `grep -P` (Perl regex) is often unavailable. Use `grep -E` (POSIX extended) instead.
 - Path separators may be `\` on Windows. Normalize with `sed 's|\\|/|g'` when comparing paths.
