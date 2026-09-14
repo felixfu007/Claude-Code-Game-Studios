@@ -667,3 +667,112 @@ func test_constructing_controller_attaches_its_turn_order_into_state() -> void:
 
 	# Assert — same instance the controller itself was constructed with
 	assert_object(state.turn_order()).is_same(order)
+
+
+# ---- is_card_play_in_progress() (design/ux/battle-menu.md Data Requirements
+# row 2 / AC-M5) -------------------------------------------------------------
+#
+# AC-M5 requires the battle-menu screen's "結束回合" disabled-state to share
+# ONE predicate with whatever this query answers, rather than the screen
+# keeping its own copy that could drift. The battle-menu screen does not
+# exist in src/ yet (2026-09-11), so the full "menu row flips when I flip
+# the ground truth, with zero edits to the menu" test cannot be written
+# today — these tests instead pin down the one thing that predicate must be
+# built on: this method must be a live forward to
+# CardPlaySession.is_open(), never an independently-tracked flag.
+
+# Builds a controller with a real CardDeck attached, mirroring
+# card_battle_wiring_test.gd's _build_controller() — a far-apart roster so no
+# test here needs to worry about combat resolution.
+func _build_with_deck(deck: CardDeck) -> BattleController:
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,3,0,1,1,0,0",
+		"2,E1,ENEMY,20,5,3,0,1,1,12,5",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster))
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	return BattleController.new(state, order, Callable(), Callable(), deck)
+
+
+func _make_temp_cards(count: int) -> Array[Card]:
+	var cards: Array[Card] = []
+	for i: int in range(count):
+		cards.append(Card.new_temporary_stat_modifier("c%d" % i, 1, 0, 1))
+	return cards
+
+
+func test_is_card_play_in_progress_false_when_no_deck_attached() -> void:
+	# Arrange
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,0,3,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,3,1,1,10,0",
+	]
+	var bundle: Dictionary = _build(roster, [1], [2])
+	var controller: BattleController = bundle["controller"]
+
+	# Act / Assert — AC-P6: card play is exactly as optional as the deck
+	assert_bool(controller.is_card_play_in_progress()).is_false()
+
+
+func test_is_card_play_in_progress_false_before_hand_opened() -> void:
+	# Arrange
+	var deck: CardDeck = CardDeck.new(_make_temp_cards(10), RandomNumberGenerator.new())
+	var controller: BattleController = _build_with_deck(deck)
+
+	# Act / Assert — session starts at Step.CLOSED
+	assert_bool(controller.is_card_play_in_progress()).is_false()
+
+
+func test_is_card_play_in_progress_true_after_open_hand_with_no_card_selected() -> void:
+	# Arrange — pins the SELECTING_CARD boundary this method's doc comment
+	# argues for: "just browsing, nothing picked yet" still counts as
+	# in-progress, matching CardPlaySession.is_open()'s own AC-14 boundary.
+	var deck: CardDeck = CardDeck.new(_make_temp_cards(10), RandomNumberGenerator.new())
+	var controller: BattleController = _build_with_deck(deck)
+	assert_bool(controller.open_hand()).is_true()
+
+	# Act / Assert
+	assert_bool(controller.is_card_play_in_progress()).is_true()
+
+
+func test_is_card_play_in_progress_false_again_after_cancel_closes_hand() -> void:
+	# Arrange
+	var deck: CardDeck = CardDeck.new(_make_temp_cards(10), RandomNumberGenerator.new())
+	var controller: BattleController = _build_with_deck(deck)
+	assert_bool(controller.open_hand()).is_true()
+	assert_bool(controller.is_card_play_in_progress()).is_true()
+
+	# Act — cancel from SELECTING_CARD returns straight to CLOSED
+	assert_bool(controller.cancel()).is_true()
+
+	# Assert
+	assert_bool(controller.is_card_play_in_progress()).is_false()
+
+
+func test_is_card_play_in_progress_tracks_card_play_session_live_not_a_cached_copy() -> void:
+	# Arrange — this is the regression test AC-M5 cares about: the value
+	# must be read fresh from CardPlaySession every call, not snapshotted at
+	# open_hand() time. Drive the underlying session directly through a full
+	# card play and confirm the query reflects every step without any
+	# separate "refresh" call in between.
+	var deck: CardDeck = CardDeck.new(_make_temp_cards(10), RandomNumberGenerator.new())
+	var controller: BattleController = _build_with_deck(deck)
+	var hand: Array[Card] = deck.hand()
+	assert_array(hand).is_not_empty()
+	var card: Card = hand[0]
+
+	assert_bool(controller.is_card_play_in_progress()).is_false()
+
+	# Act / Assert — step by step, no method on this test's controller other
+	# than the ones a real caller would use in sequence
+	assert_bool(controller.open_hand()).is_true()
+	assert_bool(controller.is_card_play_in_progress()).is_true()
+
+	assert_bool(controller.select_card(card)).is_true()
+	assert_bool(controller.is_card_play_in_progress()).is_true()
+
+	assert_bool(controller.select_target(1)).is_true()
+	assert_bool(controller.is_card_play_in_progress()).is_true()
+
+	assert_bool(controller.confirm()).is_true()
+	assert_bool(controller.is_card_play_in_progress()).is_false()

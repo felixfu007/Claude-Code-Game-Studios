@@ -315,6 +315,43 @@ func resolve_forced_discard(card: Card) -> bool:
 	return _state.card_deck().discard_card(card)
 
 
+## design/ux/battle-menu.md Data Requirements row 2 / AC-M5: single source of
+## truth for "打牌流程是否進行中". The battle-menu screen's "結束回合" row
+## MUST read this exact method rather than maintain a parallel flag — AC-M5
+## tests precisely that: flipping the ground truth this method reads must
+## change the menu's disabled state without the menu itself changing a
+## single line, and the reverse edit (each side keeping its own copy) must
+## make that test fail.
+##
+## Delegates straight to [method CardPlaySession.is_open] — [code]true[/code]
+## from a successful [method open_hand] until the session returns to
+## [constant CardPlaySession.Step.CLOSED] (via [method confirm] completing or
+## [method cancel] walking all the way back out). This deliberately reuses
+## the exact boundary [method CardPlaySession.is_open]'s own doc comment
+## already documents as the authoritative signal for AC-14
+## ("打牌介面開啟中不得發起攻擊"), rather than drawing a second, narrower line
+## at [constant CardPlaySession.Step.SELECTING_CARD] (hand open, no card
+## chosen yet).
+##
+## Cost of this choice: a player who opens the hand purely to browse — no
+## card selected — cannot end their turn from the menu until they cancel
+## back out of the hand first (one extra input). The alternative (treating
+## SELECTING_CARD as "not in progress") was rejected: [CardPlaySession] would
+## then answer "is the play interface open" two different ways depending on
+## who asked, which is exactly the two-sources-of-truth drift this method
+## exists to prevent — just relocated one level down instead of removed.
+##
+## Returns [code]false[/code] if no [CardDeck] is attached to this battle
+## (AC-P6 — mirrors every other card-play forwarding method's null handling).
+## Not gated on [method phase] or [method has_pending_discard] — this is a
+## pure read of the session's own state, same shape as
+## [method has_pending_discard] itself.
+func is_card_play_in_progress() -> bool:
+	if _card_play_session == null:
+		return false
+	return _card_play_session.is_open()
+
+
 ## story-008-play-session-wiring.md: forwards to [method
 ## CardPlaySession.open_hand]. Returns [code]false[/code] without touching
 ## anything if no [CardDeck] is attached to this battle (AC-P6) or the
