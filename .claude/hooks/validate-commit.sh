@@ -115,9 +115,17 @@ fi
 DATA_FILES=$(echo "$STAGED" | grep -E '^assets/data/.*\.json$')
 if [ -n "$DATA_FILES" ]; then
     # Find a working Python command
+    # 🔴 2026-09-14:判準從「找得到」改為「跑得起來」(管理者裁決)。
+    #    本機的 python / python3 都是 Windows 商店的空殼
+    #    (AppData/Local/Microsoft/WindowsApps/),command -v 找得到,執行卻印出
+    #    安裝提示並回傳 49。舊判準因此會選中空殼,接著把【完全合法的 JSON】
+    #    判成 "not valid JSON" 並 exit 2 擋下提交 —— 而那句錯誤訊息是假的,
+    #    會讓人去修一個本來就對的檔案,永遠修不好。
+    #    實測 2026-09-14:python 49 / python3 49 / py 不存在 —— 新判準全部正確跳過。
+    #    ⚠️ 當時 assets/data/ 尚無 .json,所以這個陷阱從未引爆過,是查出來的不是踩到的。
     PYTHON_CMD=""
     for cmd in python python3 py; do
-        if command -v "$cmd" >/dev/null 2>&1; then
+        if command -v "$cmd" >/dev/null 2>&1 && "$cmd" --version >/dev/null 2>&1; then
             PYTHON_CMD="$cmd"
             break
         fi

@@ -58,7 +58,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-commit.sh",
-            "timeout": 90
+            "timeout": 150
           }
         ]
       },
