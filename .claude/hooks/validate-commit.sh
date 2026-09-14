@@ -49,15 +49,43 @@ else
 fi
 # ----------------------------------------------------------------------
 
-# Parse command -- use jq if available, fall back to grep
+# Parse command -- 純 bash,零子行程(本機每個 fork/exec 要 0.5~1.5 秒,實測)
+# 🔴 2026-09-14 重寫,修掉兩個實測到的漏判(管理者裁決)。原版兩行,各有一個洞:
+#   ① 舊備援用 '"[^"]*"' 抽值,遇到指令內的跳脫引號 \" 就截斷。本機【沒有 jq】,
+#      所以一直走這條備援 —— cd "專案" && git commit 被抽成 `cd \` 兩個字。
+#   ② 舊比對是 '^git[[:space:]]+commit' 對【整條指令】,但實測 51 個對話紀錄共
+#      6096 條指令中有 4400 條(72%)開頭是 cd。含 git commit 的 71 條裡舊版只
+#      認得 20 條(28%)—— 其餘 51 條提交【完全沒經過本閘門,且不留痕跡】。
+# 新版把指令拆成片段(換行 / && / || / ; / |)後逐段比對開頭。
+# ⚠️ 刻意【不】改成「整串搜尋 git commit」:那會讓 grep 'git commit' 這類純查詢
+#    指令觸發本閘門,而本閘門會 exit 2 —— 等於用無關指令被擋來換涵蓋率。
+# 實測:9 個單元案例(含 4 個必須不觸發者)全過;71 條真實提交指令 71/71 命中、零誤判。
+extract_command() {
+    local s="$1" SENT=$'\x01' BSQ='\"' BSN='\n' BST='\t'
+    case "$s" in *'"command"'*) ;; *) return;; esac
+    s="${s#*\"command\"}"; s="${s#*\"}"
+    s="${s//"$BSQ"/$SENT}"; s="${s%%\"*}"; s="${s//$SENT/\"}"
+    s="${s//"$BSN"/$'\n'}"; s="${s//"$BST"/$'\t'}"
+    printf '%s' "$s"
+}
+segment_starts_with() {
+    local s="$1" line
+    s="${s//&&/$'\n'}"; s="${s//||/$'\n'}"; s="${s//;/$'\n'}"; s="${s//|/$'\n'}"
+    while IFS= read -r line; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        [[ $line =~ $2 ]] && return 0
+    done <<< "$s"
+    return 1
+}
+
 if command -v jq >/dev/null 2>&1; then
-    COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+    COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 else
-    COMMAND=$(echo "$INPUT" | grep -oE '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+    COMMAND=$(extract_command "$INPUT")
 fi
 
 # Only process git commit commands
-if ! echo "$COMMAND" | grep -qE '^git[[:space:]]+commit'; then
+if ! segment_starts_with "$COMMAND" '^git[[:space:]]+commit'; then
     exit 0
 fi
 
