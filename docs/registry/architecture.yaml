@@ -1328,10 +1328,35 @@ api_decisions:
       period; on refocus it resets and reseeds at the current mouse position (GDD trigger
       point (c), round-10 rewrite) — there is no possibility of it silently crossing the
       threshold in the background.
+      NO EXPLICIT "REAPPLY" ON REFOCUS (ADDED 2026-09-15, factual correction,
+      manager ruling: "更正架構文件,拿掉那兩個方法"). The FOCUS_IN branch does NOT
+      call any force-redraw / reapply-visibility method, and MUST NOT be given one.
+      ADR-0005 previously froze CursorState.force_redraw_current_authority() (AC-30)
+      and CursorState.reapply_native_cursor_visibility() (Core Rules #5) in its Key
+      Interfaces list and called both from the FOCUS_IN branch; NEITHER WAS EVER
+      IMPLEMENTED IN src/ (verified 2026-09-15:
+      grep -rn "func .*force_redraw\|func .*reapply_native" src/ -> the only hit is a
+      doc-comment quoting that same command). Both are now DELETED from the ADR.
+      WHAT REPLACES THEM IS STRUCTURE, NOT ANOTHER METHOD: the two presentation nodes
+      (src/ui/cursor/native_pointer_visibility_arbiter.gd and
+      src/ui/cursor/self_drawn_reclaim_cursor.gd, Story 011) re-derive their output
+      from _state UNCONDITIONALLY every _process() frame — neither checks
+      _arbitration_suspended and neither checks window focus — so they self-correct on
+      the frame after refocus. AC-30 asks for an OUTCOME on the next rendered frame,
+      not for a named call, so it still holds.
+      🔴 NOT COVERED, REGISTERED HONESTLY: downstream that ONLY SUBSCRIBES to
+      target_changed() and does not poll is NOT protected — refocus does not change the
+      target, so no signal fires, and the method that used to carry that obligation is
+      gone. Same shape as R6-7 ("輪詢派不受影響,只有訂閱派中招"). No object exists today
+      (zero CursorSurface is registered anywhere in src/ — verified: grep -rn "\.register(" src/
+      -> zero hits), so no fix is legislated here. THE FIRST STORY THAT REGISTERS A
+      CursorSurface MUST ANSWER IT, and until then AC-30 MUST NOT be counted as fully
+      covered by any review, traceability index, or /architecture-review.
+      Full derivation: ADR-0005 機制九, section "🔴 2026-09-15 事實層更正".
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-09-15"
 
   - purpose: cursor_action_class_classification
     status: active

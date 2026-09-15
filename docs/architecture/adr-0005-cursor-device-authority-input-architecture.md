@@ -26,6 +26,22 @@
 > `/architecture-review`」(**非五個必要條件之一**,且 `TD-ADR` 已專門查過與 ADR-0001 的衝突);
 > 本 ADR 1653 行中未被任一輪逐行讀完的部分。
 
+> 🔴 **2026-09-15 事實層更正 —— `## Status` 維持 `Accepted`,本次不重開任何決策。**
+> 管理者裁決(逐字:**「更正架構文件,拿掉那兩個方法」**)刪除了
+> `CursorState.force_redraw_current_authority()` 與 `CursorState.reapply_native_cursor_visibility()`
+> ——**這兩個方法在 `src/` 從未存在**,而 Story 011 已以**等效但不同**的做法達成同一結果
+> (呈現層兩個節點無條件逐幀輪詢 `_state`,結構上每一幀自我修正)。
+> 亦即本次更正是**讓文件追上既成的實作選擇**,不是改變實作該做什麼。
+>
+> **為什麼不動搖核准**:核准的定義是「可以安全地開始照這份文件寫正式程式碼」。
+> 更正**之前**照文件寫會得到編譯錯誤(呼叫不存在的方法);更正**之後**照文件寫會得到
+> 現行程式實際的做法。**本次更正只會讓核准更成立,不會更不成立。**
+> 五個必要條件無一被本次更正否證。
+>
+> ⚠️ **但它留下一項未涵蓋、已誠實登記的缺口**:只訂閱訊號、不逐幀輪詢的下游不受
+> 逐幀輪詢保護,而復焦不發訊號 —— 全文與處置寫在**機制九下方「🔴 2026-09-15 事實層更正」節**。
+> **在第一個 `CursorSurface` 落地並回答該節的問題之前,AC-30 不得被計為「完全涵蓋」。**
+
 > **2026-08-19 修訂**:回應第三輪 `/architecture-review`(`docs/architecture/architecture-review-2026-08-19.md`,全新 session 獨立推導)判定的 9 項待修訂——**F1、F5 為 BLOCKING**(修好前不得進 `Accepted`),F2/F3/F4 為高/中,N1~N4 為 `godot-specialist` 於該輪額外發現。本次修訂已逐項處理全部 9 項,並經 `godot-specialist` 對修法本身的技術假設做第二輪驗證(見各機制內「F1/F2/…/N4 修訂」標記段落)。**本次修訂不改動任何其餘機制的既有決策**,也不重啟滑鼠奪權子機制的凍結重新設計(機制八的門檻數學本身仍是使用者裁決暫停的範圍)。修訂結果須待**全新 session** 的第四輪 `/architecture-review` 獨立驗證,本 ADR 不自陳此次修訂已使涵蓋率達 19/19。
 
 > **2026-08-19 第四輪修訂(第二次修訂)**:回應第四輪 `/architecture-review`(`docs/architecture/architecture-review-2026-08-19-round4.md`,全新 session 獨立重推)。該輪判定上一次修訂 9 項中**完整關閉 6 項**(F5、F2、F4、N1、N2、N4),但 **F1 只關一半、F3 修法引入新違反**,並新增 7 項發現 R4-1~R4-7 與 `TR-cursor-015` 的兩項落差(第三輪未編號、修訂 session 依 9 項清單作業而漏掉)。**R4-2 為 BLOCKING(編譯期錯誤),R4-1/R4-3 視同 BLOCKING。** 本次修訂逐項處理全部 9 項,並額外處理撰寫本次修訂時核對出的**三項新事實**:(A) `ResetTrigger` 四個觸發點中 **(a)(b)(d) 三者在上一版全文零呼叫點**——與 `-015`(a) 漏掉「甲/乙分支重置為 0」是同一根因(補了列舉與訊號、沒補呼叫點地圖);(B) F2 把 `evaluate()` 改收滑鼠座標,但 `CursorState` 是 `RefCounted`、不在場景樹上,**全文沒有任何管道讓它取得座標**;(C) 上一版 Consequences 仍留著「19 項全部有機制支撐(其中 3 項為部分)」的舊自陳,與 Status 宣告的「不自陳涵蓋分佈」互相矛盾,已刪除。**本次修訂同樣不自陳修訂後的涵蓋分佈**——留給第五輪獨立 `/architecture-review` 重新推導。**模式警示**:第三輪抓到的是自陳膨脹,第四輪抓到的是**修法本身引入新缺陷**(R4-2/R4-3/R4-4 三項皆為上一次修訂新產生)。本次修訂因此對每一項修法額外自問「這個修法會不會製造下一個 R4-x」,並把答案寫進各機制的修訂標記段落。
@@ -107,7 +123,7 @@
 | 5 | **Steam 疊加層是否觸發 `NOTIFICATION_APPLICATION_FOCUS_IN`** —— GDD AC-30 依賴此通知涵蓋 alt-tab / 最小化 / Steam 疊加層三情境,但 Steam 疊加層常以應用程式內 swapchain 層級掛鉤,不一定產生 OS 層焦點轉移 | GDD Open Question(第四輪) | 中 —— 若不觸發,機制九需備援偵測路徑 |
 | 6 | **`InputMap.get_actions()`/`action_get_events()` 於 headless 載入後能正確反映「引擎內建預設綁定 + 專案自訂覆寫」的合併結果** | GDD Open Question —— **已於第十輪由 `godot-specialist` 覆核關閉**(此二 API 於 4.5→4.6→4.7 穩定、未變更、未棄用) | 低 —— 保留登記供追溯 |
 | 7 | **暫停/模態的讓路手段** —— GDD Open Question 問「`SceneTree.paused` + `process_mode` 是否足以涵蓋專案內全部彈出情境」。**本 ADR 機制九不採用 `SceneTree.paused` 作為判準**(見機制九的拒絕理由),因此此 Open Question 對本 ADR 的實作可行性不再構成阻擋;仍須於 `/create-architecture` 盤點彈窗情境以確認機制九的顯式旗標有被正確呼叫 | GDD Open Question(第六輪) | 低(已被機制九降級) |
-| 10 | ✅ **已查證(2026-09-01):時序乾淨,擔心的交錯情形未發生。** 實測 2 個完整 OUT/IN 循環、4 個含 FOCUS 事件的影格,**每一格皆為「全部 FOCUS 通知先於全部 PROCESS」**(例:frame 24 之 focus_seq [120,124] 全早於 process_seq [125,129]),跨 5 個 `process_priority` 一致。非 headless、真實 OS 焦點切換(外部 PowerShell 腳本奪焦,已存檔為 `prototypes/adr0005-engine-probes-2026-09-01/logs/focus_steal_script_used.ps1`)。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed.txt`。<br>⚠️ **執行過程撞到一個真坑並保留了失敗證據**:第一次嘗試未鎖 FPS,只錄到半筆資料;`prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed_attempt1_uncapped_fps.txt` 保留供追溯。<br>**原文如下(保留供追溯)**:**`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT` 相對 `process_priority`(`_process()` 執行序)的時序完全未定義**——若 FOCUS_IN 在部分節點 `_process()` 已跑完、部分未跑的中途觸發,`force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 可能讓部分下游在同影格讀到新舊混合的視覺狀態 | 第三輪 `/architecture-review`(**N2**,godot-specialist 於該輪額外發現) | 中——印象等級(信心度偏高),參考庫零涵蓋 |
+| 10 | ✅ **已查證(2026-09-01):時序乾淨,擔心的交錯情形未發生。** 實測 2 個完整 OUT/IN 循環、4 個含 FOCUS 事件的影格,**每一格皆為「全部 FOCUS 通知先於全部 PROCESS」**(例:frame 24 之 focus_seq [120,124] 全早於 process_seq [125,129]),跨 5 個 `process_priority` 一致。非 headless、真實 OS 焦點切換(外部 PowerShell 腳本奪焦,已存檔為 `prototypes/adr0005-engine-probes-2026-09-01/logs/focus_steal_script_used.ps1`)。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed.txt`。<br>⚠️ **執行過程撞到一個真坑並保留了失敗證據**:第一次嘗試未鎖 FPS,只錄到半筆資料;`prototypes/adr0005-engine-probes-2026-09-01/logs/probe10_windowed_attempt1_uncapped_fps.txt` 保留供追溯。<br>🔴 **2026-09-15 事實層更正:下方原文提及的 `force_redraw_current_authority()` 與 `reapply_native_cursor_visibility()` 兩個方法已永久刪除**(管理者裁決,見機制九下方「🔴 2026-09-15 事實層更正」節;兩者在 `src/` 從未存在)。**本項的已查證結論不受影響** —— 它量的是 FOCUS 通知與 `_process()` 鏈的相對時序,與 FOCUS_IN 分支裡呼叫了什麼無關。**而且現行做法讓本項原本的疑慮更不可能發生**:呈現層兩個節點改為無條件逐幀輪詢 `_state`,不再存在「顯式 reapply」與「逐幀重算」兩條可能交錯的路徑,新舊混合的視覺狀態沒有產生管道。<br>**原文如下(保留供追溯)**:**`NOTIFICATION_APPLICATION_FOCUS_IN`/`_OUT` 相對 `process_priority`(`_process()` 執行序)的時序完全未定義**——若 FOCUS_IN 在部分節點 `_process()` 已跑完、部分未跑的中途觸發,`force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 可能讓部分下游在同影格讀到新舊混合的視覺狀態 | 第三輪 `/architecture-review`(**N2**,godot-specialist 於該輪額外發現) | 中——印象等級(信心度偏高),參考庫零涵蓋 |
 | 11a | **~~機制八的淨位移計算受 `CanvasLayer` 變換影響~~ —— 第四輪引擎專家更正:此項為虛驚,已降級為資訊項**。機制八全程只是兩個 viewport-space 座標相減求距離(`current_mouse_position.distance_to(_seed)`),兩個座標都來自 `get_viewport().get_mouse_position()`,**從未轉進 `CanvasLayer` 的局部空間** → 結構上不受該層是否恆等變換影響 | 第一次修訂列為風險;**第四輪 `godot-specialist` 更正並降級** | **低**(原判高)——保留登記供追溯,不佔用 Day-1 spike 額度 |
 | 11b | ✅ **已於 2026-09-01 關閉。** 依據 `prototypes/ui-canvas-scale-spike-2026-09-01/`(非 headless、真實 GPU、1080p/2K/4K/超寬四種解析度)+ 同日管理者畫面架構裁決(`design/art/screen-architecture.md`)。**結論的形狀與本項原本問的問題不同**:決定安不安全的**不是介面基準畫布選什麼,而是游標圖層有沒有自己獨佔一顆節點** —— 而本 ADR 機制十二本來就是這樣設計的(Autoload `CursorStateHost` 持專屬 `CanvasLayer`),專屬節點下四種解析度實測**全部恆等**。同批實測另確認該 Autoload 掛 `/root`、不在 `SubViewport` 內,四種解析度 `get_viewport() == get_tree().root` 皆為真。🔴 **2026-09-03 理由更新(條文本身不變)**:機制十二現在的存在理由是服務機制十三/十三之二(TR-cursor-016 待機指示已取消,見機制十二),但本項驗證的是同一顆 `CanvasLayer` 節點的變換恆等性,與它承載哪些子節點無關——結論不受影響。<br>**原文如下(保留供追溯)**:機制十三/十三之二的視覺定位受 `CanvasLayer` 變換影響 —— 若把 viewport 座標直接指派給掛在該 `CanvasLayer` 底下的自繪節點 `position`,而該層帶非恆等變換,自繪游標的畫出位置會與滑鼠實際位置脫節;機制十三之二的 hover 判定亦同 | 第四輪 `godot-specialist` 自 #11 拆出;**2026-09-01 由畫面架構 spike 關閉** | 🔴 **原判高,現為已關閉 —— 但留下一條實作義務**:誤把游標圖層與介面圖層混成同一顆節點的實測誤差為 1080p **1440px** / 2K **2178px** / 4K **3304px**,游標系統實質失效。**已補為 Validation Criteria 第 20 條。本項不再佔用 Day-1 spike 額度。** |
 | 13 | 🔴 **已查證(2026-09-01):不過濾 —— 落在危險的那一側,ADR 的疑慮坐實。** `event_is_action(pressed=true, echo=true, ui_up)` 與 `echo=false` 回傳**相同**(皆 `true`)。證據 `prototypes/adr0005-engine-probes-2026-09-01/logs/probe13_and_3_headless.txt`。<br>**後果**:機制四之二 `classify_action()` 若不自行加 `event is InputEventKey and event.echo` 過濾,玩家**按住**方向鍵會每一影格都被判為 `NAVIGATION`、亦即每一影格都在主張裝置權威。<br>🔴 **本次另確認一項新事實**:E1 缺陷(「類比搖桿持續按住造成滑鼠奪權永久鎖死」)原本**只有手把路徑的實測證據**,現確認**鍵盤持續按鍵會餵進同一條因果鏈**。<br>⚠️ **本項後果全部落在管理者明文凍結的滑鼠奪權子機制內。** 依 `adr-acceptance-criteria.md` 第四節第 4 項「凍結是決定,不是缺陷」,**不阻擋核准**;此處**只登記事實與因果鏈,不提修法**(執行者已依此界線回報)。<br>**原文如下(保留供追溯)**:**`InputMap.event_is_action()` 是否過濾 `InputEventKey.echo`**(2026-08-19 第四輪修訂新增)——若不過濾,玩家**按住**方向鍵產生的重複 echo 事件會與初次按下同樣被機制四之二判為 `NAVIGATION`,亦即每一影格都在主張裝置權威。這會直接餵進機制八觸發點 (d)(同幀否決)與 E1 缺陷(類比搖桿持續按住造成滑鼠奪權永久鎖死)的因果鏈——**上一版 ADR 對此完全未討論** | 第四輪 `godot-specialist` 判定為「本次最值得回頭確認的一項」 | **高**——若不過濾,機制四之二須自行加 `event is InputEventKey and event.echo` 過濾,且該過濾要不要套用於觸發點 (d) 需回頭對照 GDD;但**該子機制已凍結**,此處只登記、不預先設計修法 |
@@ -800,9 +816,72 @@ func _notification(what: int) -> void:
             _arbitration_suspended = false
             _frame_events.clear()
             _state.reseed_reclaim_on_focus_regained()             # 觸發點 (c):復焦重新播種(R5-3:改為轉發)
-            _state.force_redraw_current_authority()               # AC-30
-            _state.reapply_native_cursor_visibility()             # 機制十三
+            # 🔴 2026-09-15 事實層更正:此處原有兩行呼叫,已刪除且**刻意不以任何
+            #    其他呼叫取代**——**這不是漏寫**。原文逐字保留供追溯:
+            #        _state.force_redraw_current_authority()               # AC-30
+            #        _state.reapply_native_cursor_visibility()             # 機制十三
+            #    **為什麼不需要它們**:呈現層的兩個節點在各自的 `_process()` 內
+            #    **無條件**重新從 `_state` 推導自己的輸出,**既不檢查
+            #    `_arbitration_suspended`,也不檢查視窗焦點** —— 亦即復焦後的
+            #    下一個影格就會自我修正,不存在「殘留舊視覺狀態」可言。
+            #    結構上每一幀都在做這件事,所以沒有東西需要被「重新套用」。
+            #    ⚠️ **此結論只涵蓋每幀輪詢的下游,不涵蓋只訂閱訊號的下游。**
+            #       見本節下方「🔴 2026-09-15 事實層更正」的未涵蓋項。
 ```
+
+#### 🔴 2026-09-15 事實層更正:FOCUS_IN 分支的兩行呼叫已永久刪除
+
+| 項目 | 內容 |
+|---|---|
+| **裁決者 / 日期** | **管理者,2026-09-15。** 逐字裁決:**「更正架構文件,拿掉那兩個方法」** |
+| **性質** | **事實層更正** —— 讓文件符合**既成的**實作選擇。**不是重開決策;`## Status` 維持 `Accepted`** |
+| **取代了什麼** | 本 ADR 原先在**兩處**要求 `CursorState` 提供、並由本節 FOCUS_IN 分支呼叫 `force_redraw_current_authority()`(標 AC-30)與 `reapply_native_cursor_visibility()`(標 Core Rules #5):① 本節 pseudocode 的兩行呼叫;② Key Interfaces 凍結清單的兩行宣告。**兩處皆已刪除,原文逐字保留在各自位置供追溯。** |
+| **取代它們的是什麼** | **不是另一個方法,是呈現層的結構。** 見下方「為什麼不需要它們」 |
+
+**實測依據(2026-09-15,技術總監當場執行;定義域即 `src/` 全庫)**:
+
+```bash
+# (1) 任何縮排的函式定義
+grep -rn "func .*force_redraw\|func .*reapply_native" src/
+#  → 唯一命中為 src/ui/cursor/cursor_state_host.gd:35,該行是**文件註解內引述的指令字串**,
+#    不是函式定義。
+
+# (2) 全部命中扣掉註解行後還剩什麼
+grep -rn "force_redraw_current_authority\|reapply_native_cursor_visibility" src/ \
+  | grep -v ':[0-9]*:[[:space:]]*#'
+#  → 零筆。
+```
+
+亦即:**這兩個方法在 `src/` 從未存在過**,而本 ADR 全文提到它們 **8 次**。
+
+**為什麼是「改文件」而不是「補實作」**(Story 008 實作者查證後的三條理由,管理者採納):
+
+1. 現在呼叫它們會**直接編譯錯誤** —— `CursorState` 上不存在這兩個成員。
+2. 全庫**尚未有任何 `CursorSurface` 被註冊**(實測:`grep -rn "\.register(" src/` → **零命中**,`CursorSurfaceRegistry` 只被建構與注入,`register()` 一次都沒被呼叫過),因此補了也**沒有下游可以驗證它對不對**。
+3. 擅自補上會與 Story 011 **實際選擇的做法互相打架**。
+
+**為什麼不需要它們 —— 無條件逐幀輪詢,結構上每一幀自我修正**:
+
+Story 011 沒有把 AC-30 的兩項要求做成 `CursorState` 上的兩個具名方法,而是做成呈現層兩個節點的**無條件逐幀輪詢**:
+
+| 節點(對應機制) | 檔案 | `_process()` 每幀做什麼 | 是否檢查暫停/焦點 |
+|---|---|---|---|
+| 原生指標仲裁器(機制十三之二) | `src/ui/cursor/native_pointer_visibility_arbiter.gd` | 重新自 `_state.get_device_authority()` + AC-60 白名單推導 `desired`,再 `if Input.mouse_mode != desired` 寫入 | **否**(兩者皆不檢查) |
+| 自繪游標(機制十三) | `src/ui/cursor/self_drawn_reclaim_cursor.gd` | 重新讀 `_state.reclaim_progress()` 收斂 `_presented_alpha`,再寫 `modulate.a` | **否**(兩者皆不檢查) |
+
+因為兩者**既不檢查 `_arbitration_suspended`、也不檢查視窗焦點**,失焦期間它們照樣每幀執行,復焦後的下一幀也照樣每幀執行 —— **「重新套用」是它們的常態,不是一個需要被觸發的事件。** 沒有東西會殘留,所以沒有東西需要被 force。
+
+**AC-30 因此仍然成立,理由也沒有變弱**:AC-30 的措辭要求的是**結果** ——「檢視 `NOTIFICATION_APPLICATION_FOCUS_IN` 觸發後的**下一個渲染影格**,高亮視覺**已確認重繪**,且原生滑鼠指標的顯示/隱藏狀態**已依目前裝置權威重新套用**」。它**沒有要求任何具名呼叫**。逐幀輪詢在下一個渲染影格交付的正是這個結果。
+
+🔴 **本次更正「未」涵蓋的一項 —— 誠實登記,不得被計為已解決**
+
+**只訂閱訊號、不逐幀輪詢的下游,不受上述結構保護。** 機制十的 N4 修法明文祝福「不想每幀輪詢的下游系統」只訂閱 `target_changed()`;而**復焦並不改變目標,因此不會發出任何訊號** —— 這類下游在復焦後不會重新推導自己的視覺,AC-30 第一句(高亮視覺已確認重繪)對它**不成立**,而原本要扛這件事的 `force_redraw_current_authority()` 已經不在了。
+
+⚠️ **這與 R6-7 記載的形狀逐字相同**(見 Key Interfaces 的「訊號發出規則」段:「輪詢派不受影響,**只有訂閱派中招**」)—— **同一個坑,第二次以不同面貌出現。**
+
+**現在不需要動作,但必須在第一個 `CursorSurface` 落地時解決**:今天全庫零註冊表面(上方實測),所以這個缺口**沒有對象**,也無從驗證任何修法 —— 現在立法等於對假想情況立法。**第一張要註冊 `CursorSurface` 的工作單必須同時回答**:該表面是逐幀輪詢派還是訊號訂閱派?若是後者,復焦重繪由誰負責?
+
+🔴 **在那之前,任何審查、追溯索引或 `/architecture-review` 不得把 AC-30 計為「完全涵蓋」。** 本節即為此缺口的登記處。
 
 **R5-3 修法(2026-08-19 第三次修訂,中高)—— `MouseReclaimPolicy` 實例的擁有權與取得管道**:第五輪 `/architecture-review` 指出,`_reclaim` 在全文有**三個**消費方各自假設了不同的存取路徑——機制一/十把它宣告為 `CursorState` 經建構子注入的私有欄位(擁有者),機制九此處把它當成 `CursorStateHost` 自己的欄位直接呼叫,機制十三的自繪節點把 `reclaim` 當成一個已存在的可存取欄位訂閱其訊號,而 `CursorState` 的 Key Interfaces **沒有任何 getter**。三者不可能同時成立。
 
@@ -817,6 +896,18 @@ func _notification(what: int) -> void:
 **連帶收攏滑鼠座標的三條路徑**:上一版機制九用 `get_viewport().get_mouse_position()` 直呼、機制八/十用注入的 `_mouse_position_provider.call()`,ADR 自己寫「兩處不得分歧」但字面上就是三條路徑——**這正是本 ADR 在別處反覆批評別人的同一種毛病**(以紀律要求代替結構保證)。本次定案:**`get_viewport().get_mouse_position()` 全專案只准出現在 `CursorStateHost` 建構 `mouse_position_provider` 的那一處**,其餘一律經 `_mouse_position_provider`(實際取值再經機制十的 `_safe_mouse_position()`,見 S-1)。機制九此處的直呼因上述轉發而消失,三條路徑收斂為一條。
 
 **S-3 修法(2026-08-19 第三次修訂,中)—— `_notification()` 的派發順序是樹序,不是 `process_priority` 序**:這是獨立於 Verification Required #10(FOCUS_IN/OUT 相對 `_process()` 鏈的**時點**未定義)之外、更基礎的一項事實:即使 #10 驗證完成,**同一次通知廣播對不同節點的呼叫順序仍是樹序**,與機制六那張表的 `process_priority` 是**兩個獨立的排序機制**,不得互相推論。這與機制六已經對 `CanvasLayer.layer`(繪製疊放序)vs `process_priority`(更新序)做過的區辨是同一類澄清——**上一版在這裡少做了一次**。實務影響:機制九的 FOCUS_IN 分支呼叫 `force_redraw_current_authority()`/`reapply_native_cursor_visibility()` 之後,下游節點**何時**看到新值仍受 #10 管轄,但「哪個下游節點先收到通知」則完全由樹序決定,本 ADR 對此**不作任何保證,也不得有任何機制依賴它**。
+
+> 🔴 **2026-09-15 事實層更正:上一段的「實務影響」舉例已失效,但 S-3 的結論本身完全不變。**
+> 該句舉的例子是「機制九的 FOCUS_IN 分支呼叫 `force_redraw_current_authority()` /
+> `reapply_native_cursor_visibility()` 之後……」—— **那兩行呼叫已於本日刪除**
+> (管理者裁決,見上方「🔴 2026-09-15 事實層更正」節),**所以這個例子今天沒有對象**。
+> 原句逐字保留供追溯,**不要照它去找那兩個呼叫,它們不存在。**
+>
+> **S-3 的結論不受影響,而且適用面更廣**:「`_notification()` 的派發順序是樹序、與
+> `process_priority` 是兩個獨立排序機制、不得互相推論」是一項**引擎事實**,不依賴
+> FOCUS_IN 分支裡有沒有那兩行。它管的是**任何**掛在 `_notification()` 上的行為
+> —— 目前 FOCUS_IN 分支仍有 `_arbitration_suspended = false`、`_frame_events.clear()`
+> 與 `_state.reseed_reclaim_on_focus_regained()` 三件事,全部照樣受此約束。
 
 **`resume_arbitration()` 一併補上重新播種(2026-08-19 第一次修訂新增;第三次修訂改為轉發)**:原版本只有 `_notification()` 的 FOCUS_IN 分支重新播種累積起點,`resume_arbitration()`(呼叫方主動關閉暫停選單時呼叫)沒有對應動作——但暫停/模態的關閉不透過 OS 焦點通知,若不比照處理,關閉選單瞬間的累積起點會停留在選單開啟前的過期座標,與觸發點 (a)(裝置權威轉移)的既有精神矛盾。此為本次修訂中發現的相鄰缺口,一併修正。
 
@@ -1376,6 +1467,25 @@ CanvasLayer,自繪載體的邊際成本接近零」——**TR-cursor-016 已於�
 >
 > ⚠️ ~~待機指示器的資料來源尚未定義(Step 5.5 新發現,誠實登記)~~ 🔴 **2026-09-03:本項因 TR-cursor-016 取消而失去對象,不再是待辦缺口。** 原文保留供追溯:`TR-cursor-016` 要求「每裝置待機指示」,代表它至少要知道「當前哪個裝置閒置中」,而 `CursorState` 的頂層欄位裡沒有任何 idle 概念——這不是拆分造成的(拆分前被「同一節點」的措辭蓋住了),曾列為下一輪必須處理的缺口。**該缺口隨需求移除一併消失,不需回頭定義,也不需要任何後續動作。**
 
+
+> ⚠️ **2026-09-15 命名釐清(事實層,零決策變更)—— 下方的 `_reapply_native_cursor_visibility_with_unregistered_surface_exception()` 與已刪除的 `CursorState.reapply_native_cursor_visibility()` 是兩個不同的東西,不要混淆。**
+>
+> | | 已刪除的那個 | 下方這個 |
+> |---|---|---|
+> | 完整名稱 | `CursorState.reapply_native_cursor_visibility()` | `_reapply_native_cursor_visibility_with_unregistered_surface_exception()` |
+> | 擁有者 | `CursorState`(核心,`RefCounted`) | 本節的 hover 判定器節點(`priority = 50`) |
+> | 可見性 | 公開,列於 Key Interfaces 凍結清單 | **私有**,只被本節點自己的 `_process()` 呼叫 |
+> | 現況 | 🔴 **已於 2026-09-15 永久刪除**(管理者裁決),`src/` 從未實作 | ✅ **行為已實作**,見下方「實作落差」 |
+>
+> 兩者名稱前綴相同,`grep reapply_native_cursor_visibility` 會同時命中 —— **這正是本日
+> 稽核必須逐處判讀而非一律取代的原因。**
+>
+> 📌 **實作落差(事實登記,不構成缺陷,本次不修改上下文 pseudocode)**:現行
+> `src/ui/cursor/native_pointer_visibility_arbiter.gd` 把這段邏輯**直接內聯在 `_process()` 裡**,
+> 沒有抽成一個同名私有方法。**行為逐行一致**(白名單判定、`if Input.mouse_mode != desired`
+> 的 S-2 賦值前守衛皆在),差別只在有沒有多一層函式呼叫。下方 pseudocode 是**說明性寫法**,
+> 不是凍結簽章 —— Key Interfaces 節從未登記這個私有方法。
+
 新增每影格 hover 檢查:
 
 ```gdscript
@@ -1691,8 +1801,24 @@ func is_current_target_valid() -> bool
 func get_device_authority() -> CursorTypes.Authority
 func get_current_target() -> CursorTarget          # 新配置的複本
 func reclaim_progress() -> float                   # 第三次修訂新增(R5-3):對 _reclaim 的純轉發
-func force_redraw_current_authority() -> void      # AC-30
-func reapply_native_cursor_visibility() -> void    # Core Rules #5
+# 🔴 2026-09-15 事實層更正(管理者裁決,逐字:「更正架構文件,拿掉那兩個方法」)——
+#    原本列在此處的以下兩行**已永久刪除**,不是改名、不是移到別處:
+#        func force_redraw_current_authority() -> void      # AC-30
+#        func reapply_native_cursor_visibility() -> void    # Core Rules #5
+#    **取代它們的不是另一個方法,而是呈現層的結構**:機制十三的自繪游標
+#    (`src/ui/cursor/self_drawn_reclaim_cursor.gd`)與機制十三之二的原生指標仲裁器
+#    (`src/ui/cursor/native_pointer_visibility_arbiter.gd`)在各自的 `_process()` 內
+#    **無條件**重新從 `_state` 推導自己的輸出,**不檢查 `_arbitration_suspended`、
+#    也不檢查視窗焦點** —— 復焦後的下一格即自我修正,不需要任何人顯式呼叫
+#    「reapply」或「force redraw」。
+#    **依據**:Story 011 的既成實作選擇;Story 008 實作者查證後明確**不建議**補實作
+#    (① 現在呼叫會直接編譯錯誤 —— 兩者在 `src/` 全庫零實作;② 全庫尚無任何
+#     `CursorSurface` 被註冊,補了也沒有下游可以驗證它對不對;③ 擅自加會與
+#     Story 011 實際選擇的做法互相打架)。
+#    完整推導、未涵蓋項與實測指令見機制九下方「🔴 2026-09-15 事實層更正」節。
+#    ⚠️ **本刪除為事實層更正,不重開任何決策,`## Status` 維持 `Accepted`** ——
+#       AC-30 要求的是**結果**(`NOTIFICATION_APPLICATION_FOCUS_IN` 後的下一個
+#       渲染影格「已確認重繪」「已重新套用」),不是某個具名呼叫。
 
 # ─── cursor_surface_registry.gd ──────────────────────────────
 class_name CursorSurfaceRegistry extends RefCounted
