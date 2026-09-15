@@ -1,6 +1,6 @@
 # Epics 索引
 
-**最後更新**:2026-09-10(建立技能卡牌系統 epic —— 邏輯層 5 張)
+**最後更新**:2026-09-15(建立卡牌介面 epic —— 切片內 16 單元、切片外 6)
 **引擎**:Godot 4.7.1
 **控制清單版本**:2026-09-02
 
@@ -8,8 +8,9 @@
 |---|---|---|---|---|---|
 | [cursor-highlight-state](cursor-highlight-state/EPIC.md) | Core | 單一游標/高亮狀態系統 | `design/gdd/cursor-highlight-state.md` | **14 張**(完成 9) | 進行中 |
 | [screen-scaling](screen-scaling/EPIC.md) | Presentation | 畫面縮放與定位(手動管理) | `design/art/screen-architecture.md`(**非 GDD**) | **2 張**(全部完成) | ✅ **Complete** |
-| [skill-card-system](skill-card-system/EPIC.md) | Gameplay | 技能卡牌系統(僅好感度對話卡牌) | `design/gdd/skill-card-system.md` + `design/ux/skill-card-play.md` | **8 張**(邏輯層 5 + 接線 3,**全部完成**;介面層未建立) | 🟡 進行中(資料層完成,介面層零工作單) |
+| [skill-card-system](skill-card-system/EPIC.md) | Gameplay | 技能卡牌系統(僅好感度對話卡牌) | `design/gdd/skill-card-system.md` + `design/ux/skill-card-play.md` | **8 張**(邏輯層 5 + 接線 3,**全部完成**;介面層未建立) | 🟡 進行中(邏輯層完成;**介面層已由 [card-play-interface](card-play-interface/EPIC.md) 接手,不要再開第三份**) |
 | [affinity-data-pool](affinity-data-pool/EPIC.md) | Core | 好感度數值池(Delta Log) | `design/gdd/affinity-data-pool.md` + ADR-0002(**Accepted**) | **16 張**(切片內 9 / 切片外 7,全部尚未建立 story 檔) | 📋 **未開工**(2026-09-15 建立 epic) |
+| [card-play-interface](card-play-interface/EPIC.md) | Presentation | 卡牌介面 + 戰鬥選單 + 取消鍵重綁 | `design/ux/skill-card-play.md` + `design/ux/battle-menu.md`(**非 GDD**) | **22 個單元**(切片內 16 / 切片外 6,全部尚未建立 story 檔) | 📋 **未開工**(2026-09-15 建立 epic) |
 
 ⚠️ **第三欄原名「GDD」,2026-09-04 改為「權威文件」** —— `screen-scaling` 是呈現層基礎設施,
 不是遊戲系統,沒有 GDD 也不會有。硬塞一個 GDD 欄位會讓下一個人去找一份不存在的文件。
