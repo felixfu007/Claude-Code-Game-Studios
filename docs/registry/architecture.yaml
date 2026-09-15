@@ -1352,6 +1352,13 @@ api_decisions:
       -> zero hits), so no fix is legislated here. THE FIRST STORY THAT REGISTERS A
       CursorSurface MUST ANSWER IT, and until then AC-30 MUST NOT be counted as fully
       covered by any review, traceability index, or /architecture-review.
+      RATIFIED 2026-09-15 BY MANAGER RULING: the "MUST NOT be counted as fully covered"
+      sentence above was NOT part of that day's factual-correction ruling (which was
+      verbatim only "更正架構文件,拿掉那兩個方法") — technical-director added it
+      unilaterally in the same revision and self-flagged it for confirmation; the manager
+      ratified the EXISTING WORDING on 2026-09-15 (not a revised version, not one word
+      changed), so it now carries the same standing as any other ruled content here.
+      Provenance in full: ADR-0005 ## Status, section "🔴 2026-09-15 管理者追認".
       Full derivation: ADR-0005 機制九, section "🔴 2026-09-15 事實層更正".
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
