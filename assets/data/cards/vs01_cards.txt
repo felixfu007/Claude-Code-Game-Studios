@@ -1,9 +1,13 @@
 # vs01 技能卡牌表(好感度對話卡牌)— 固定欄位順序:
-# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,flavor_text
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
 #
 # 本檔是「先求能驗證流程,不求最終平衡」的第一批可用卡(2026-09-15 管理者裁決:
 # 「先出一小批可用的牌,讓畫面跑得起來」)。數值皆為起始值,之後可隨時改動,
 # 不代表最終平衡結果。
+#
+# 🔴 本檔只管機制數值,不含牌面顯示文字。顯示文字另在
+# assets/data/cards/vs01_card_text.txt,以同一個 id 對應——2026-09-15 管理者
+# 裁決分離,理由見該檔檔頭。本檔每一列新增/刪除都必須同步那張表的對應列。
 #
 # ── 欄位定義,逐一對應 src/gameplay/cards/card.gd 的實際欄位 ──────────────
 #
@@ -47,18 +51,6 @@
 #                         ⚠️ 注意這是兩件不同的事:0 在甲類卡是合法的「未使用」,
 #                         在丙類卡是被拒絕的非法值 —— 不要把兩者混為一談。
 #
-# flavor_text             ⚠️ 這一欄不是 Card 的欄位 —— card.gd 目前沒有任何欄位
-#                         儲存牌面顯示文字,本欄純粹是這批內容先帶著敘事文字走,
-#                         尚無任何程式碼會讀它(見下方報告「還缺什麼」一節)。
-#                         這是為了滿足 GDD 檔頭的硬性判準:「每一張 MVP 卡牌的
-#                         牌面都必須是一組具名角色之間的互動」。角色以代號表示
-#                         (1=甲…5=戊,同 vs01_roster.txt 的 code_name 欄),正式
-#                         姓名對照見 design/narrative/characters.md 第一節 ——
-#                         該檔第八節已裁決「這一批不做」姓名欄位,本檔沿用同一
-#                         裁決,故不在此提前對應真名。
-#                         ⚠️ 本欄內容避免使用逗號(改用「、」或破折號),因為
-#                         本表沿用專案既有簡單 CSV 慣例,沒有引號跳脫機制。
-#
 # ── 丙類的合法配對(2026-09-15 撰寫時逐一查證) ─────────────────────────
 # 只有 vs01_affinity_links.txt 已登記的兩對是合法的:(1,2) 甲乙、(3,4) 丙丁。
 # 戊(5)沒有任何關係線,任何以 5 為 affinity_character_a/b 的丙類卡都無法通過
@@ -68,14 +60,15 @@
 # 兩張丙類卡的 magnitude 方向刻意與 vs01_affinity_links.txt 的既有 polarity 同向
 # (甲乙用正值、丙丁用負值)。這是刻意迴避,不是驗證過安全——「丙類不得翻轉任何
 # 角色設定的正負號」這條界線在「往相反方向寫」時會不會被拒絕、拒絕的判準是什麼,
-# 目前沒有任何驗收條件可查證,詳見報告「不確定的事」一節。
+# 目前沒有任何驗收條件可查證。已登記為已知缺口,見
+# design/gdd/skill-card-system.md Core Rules 一之三界線 1(2026-09-15 補述)。
 #
-id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,flavor_text
-card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0,甲:「我先上、別管我」——這股衝勁讓她這回合下手更狠
-card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0,乙在耳邊喊了聲「我挺你」——那股底氣撐得住兩回合
-card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0,乙一句「別衝、我在」——讓人放心地把後背交出去
-card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0,丁一個手勢穩住陣腳——這回合誰都攻不進來
-card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0,戊看準一個空檔——「機會來了」
-card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0,丙壓低身形——山裡練出的警覺讓他這兩回合穩得住
-card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2,甲在乙耳邊說了句「謝了、剛才那手漂亮」——兩人之間的默契又深了一分
-card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2,丙眼神閃避不敢與丁對視——這份心虛丁看得一清二楚
+id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
+card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0
+card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0
+card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0
+card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0
+card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0
+card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0
+card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2
+card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2
