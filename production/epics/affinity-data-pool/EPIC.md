@@ -376,6 +376,7 @@ AC-37 / AC-41 / AC-48 三條都寫「呼叫**任一讀取函數**取得 `c_now`�
 | 7 | **預判模式(`game-concept.md` 第四輪已訂為正式功能)在資料層無支援。** 系統 #5 目前讀的是 `assets/data/affinity/vs01_affinity_links.txt` 而非本池(已登記於 `architecture.yaml` 的 `affinity_pairing_data_per_query_refetch`),故今天沒有人在等 | S-012 |
 | 8 | 🔴 **埠的 `Rejection` 列舉裝不下 `SERIALIZATION_WINDOW_ACTIVE`。** 埠 5 值、池 7 值。`NON_FINITE_AMPLITUDE` / `INVALID_SOURCE` 在這條路徑上結構不可達(埠檔頭已論證),但 `SERIALIZATION_WINDOW_ACTIVE` **只是今天不可達,不是結構不可達** —— 等 S-014 與存檔系統都在,池就會丟一個埠承載不了的值回來 | 一次裁決(見下) |
 | 9 | ⚠️ **`INVALID_PAIR` 在接縫兩側同名不同義。** 埠側 = 「這兩人在劇情上沒有關係線」(由 `PermanentAffinityWriteRules.play()` 在碰埠**之前**決定);池側 = 「配對序數不在 10 個合法值內」。**S-008 不可把池的 `INVALID_PAIR` 直接轉送成埠的 `INVALID_PAIR`** —— 那會把一個程式錯誤讀成一個劇情事實。正解是靠陷阱二的驗證讓池側那個值**永遠不會發生** | S-008 |
+| 10 | 🔴 **`entry_appended` 訊號未實作,而工作單對它零命中。** ADR-0002 在 **5 處**要求它(含兩處 `AffinityDataPool` 的介面宣告 `signal entry_appended(pair, record)`,以及追溯編號 `TR-affinity-024`),明文「`append_record()` 成功時 emit」;而 `story-004` 全文提到它 **0 次**。S-004 實作者依權威順序(工作單 > ADR)沒有加,**並主動在報告裡舉手** —— 判斷可辯護,但那代表 `TR-affinity-024` 今天沒有實作、也沒有任何地方記著這件事。⚠️ **今天不會壞任何東西**(實測 `grep -rn entry_appended src/ tests/ design/` → 零命中,沒有人在等它),且 ADR 自己明文這是「實作慣例決策,非已承諾的契約」、下游不得假設其存在。**故此處只登記,不自行補** —— 補不補是一次裁決,不是實作細節 | 一次裁決(管理者 / `technical-director`) |
 
 ### 限制 8 的處置:登記,不由本 epic 發起裁決
 
