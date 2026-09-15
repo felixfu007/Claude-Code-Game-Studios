@@ -108,6 +108,32 @@ fi
 
 OWNER=$(echo "$ROW" | cut -f3)
 
+# --- 送達管道(2026-09-15 修)-----------------------------------------
+# 🔴 本檔原本 18 行輸出全部是 stderr + exit 0,全檔沒有任何非 0 的 exit。
+# 依 2026-09-14 探針實測的管道矩陣(.claude/docs/hooks-reference/hook-input-schemas.md):
+# PreToolUse 的 stderr + exit 0 →【不送達 Claude、使用者也看不到】。
+# 亦即這道「跑 skill 前先確認擁有者」的閘門,說的每一句話都沒有人收到。
+#
+# ⚠️ 這裡有一個【修不掉的先天限制,必須講清楚】:
+# 同一份矩陣的結論逐字是「不存在『不阻擋 且 立即看得到』的組合」。
+# PreToolUse 唯一會即時送達的管道是 stderr + exit 2,而那會【擋下這次 skill 呼叫】。
+# 本閘門的設計意圖是「開跑【前】提醒」,而佇列是「下次對話開場才讀到」——
+# 🔴 所以改走佇列之後,它仍然【做不到】它本來要做的事,只是從「永遠沒人知道」
+# 變成「事後補一筆紀錄」。要真正做到事前提醒,只有把它改成 exit 2 擋下、
+# 印出擁有者、由呼叫端確認後重跑一次 —— 那是每次跑 skill 都多一次來回的代價,
+# 屬於【新增摩擦】,需要管理者裁決,協調者不自行決定。已列入待辦。
+#
+# NO_DESIGNATED_AGENT 刻意【不排入佇列】:73 個 skill 裡 53 個屬此(正常狀態)。
+# 把正常狀態也排進去,會重演 advise-file-owner 那件事 —— 29 則訊息 29 則都是
+# 同一句、把真正要看的訊號淹掉(見 lib/hook-queue.sh 的 queue_no_match_hit 檔頭)。
+# stderr 那行保留,逐字紀錄裡查得到。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
+fi
+
+OWNER_MSG=""
 case "$OWNER" in
     NO_DESIGNATED_AGENT)
         # Normal state, not a gap -- 53 of 73 skills have no single dedicated
@@ -118,22 +144,30 @@ case "$OWNER" in
         echo "=== 擁有者提醒:skill '$SKILL_NAME' 無單一專屬 agent,由主線執行(正常狀態) ===" >&2
         ;;
     UNASSIGNED)
-        echo "=== 擁有者提醒:即將執行 skill '$SKILL_NAME' ===" >&2
-        echo "⚠️ 對照表判定此為治理缺口 —— 三個來源都查無擁有者,而這個位置理當要有一個。" >&2
-        echo "若這份工作理當有專家覆核,現在是核對的時機,不要等到寫完。" >&2
-        echo "==========================================================" >&2
+        OWNER_MSG="=== 擁有者提醒:已執行 skill '$SKILL_NAME' ===
+⚠️ 對照表判定此為治理缺口 —— 三個來源都查無擁有者,而這個位置理當要有一個。
+若這份工作理當有專家覆核,現在是核對的時機。
+🔴 本訊息是【事後】送達的(見本檔「送達管道」段),該 skill 已經跑過了。
+=========================================================="
         ;;
     AMBIGUOUS:*)
         CANDS=$(echo "$OWNER" | sed 's/^AMBIGUOUS://;s/|/、/g')
-        echo "=== 擁有者提醒:即將執行 skill '$SKILL_NAME' ===" >&2
-        echo "⚠️ 對照表列為候選未定案:$CANDS" >&2
-        echo "==========================================================" >&2
+        OWNER_MSG="=== 擁有者提醒:已執行 skill '$SKILL_NAME' ===
+⚠️ 對照表列為候選未定案:$CANDS
+🔴 本訊息是【事後】送達的,該 skill 已經跑過了。
+=========================================================="
         ;;
     *)
-        echo "=== 擁有者提醒:skill '$SKILL_NAME' 的擁有者是 $OWNER ===" >&2
-        echo "若你不是以 $OWNER 的身分/視角在執行這份工作,先確認是否該由它覆核。" >&2
-        echo "==========================================================" >&2
+        OWNER_MSG="=== 擁有者提醒:skill '$SKILL_NAME' 的擁有者是 $OWNER ===
+若你不是以 $OWNER 的身分/視角在執行這份工作,先確認是否該由它覆核。
+🔴 本訊息是【事後】送達的,該 skill 已經跑過了。
+=========================================================="
         ;;
 esac
+
+if [ -n "$OWNER_MSG" ]; then
+    echo "$OWNER_MSG" >&2
+    queue_message "advise-skill-owner" "$OWNER_MSG"
+fi
 
 exit 0

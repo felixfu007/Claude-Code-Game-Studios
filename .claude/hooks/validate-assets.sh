@@ -4,7 +4,7 @@
 #
 # Exit behavior:
 #   exit 0 = success or advisory warnings only (non-blocking)
-#   exit 1 = blocking error (build-breaking issues: invalid JSON, missing required fields)
+#   exit 1 = 有 build-breaking 問題(🔴 實測【不會阻擋】,詳見檔尾「送達管道」段)
 #
 # Input schema (PostToolUse for Write/Edit):
 # { "tool_name": "Write", "tool_input": { "file_path": "assets/data/foo.json", "content": "..." } }
@@ -56,7 +56,7 @@ fi
 
 FILENAME=$(basename "$FILE_PATH")
 WARNINGS=""   # Style/convention issues -- exit 0 with advisory message
-ERRORS=""     # Build-breaking issues -- exit 1 to block the operation
+ERRORS=""     # Build-breaking issues -- 排入佇列(exit 1 實測【不阻擋】,見檔尾)
 
 # ADVISORY: Check naming convention (lowercase with underscores only)
 # Naming issues are style violations -- warn but do not block
@@ -86,14 +86,45 @@ if echo "$FILE_PATH" | grep -qE '(^|/)assets/data/.*\.json$'; then
     fi
 fi
 
-# Report warnings (advisory -- non-blocking)
-if [ -n "$WARNINGS" ]; then
-    echo -e "=== Asset Validation: Warnings ===$WARNINGS\n==================================\n(Warnings are advisory. Fix before final commit.)" >&2
+# --- 送達管道(2026-09-15 修)-----------------------------------------
+# 🔴 修正一個假的檔頭宣告。本檔原本寫「exit 1 = blocking error … to block
+# the operation」,而那是【錯的】:依本專案 2026-09-14 以探針實測的管道矩陣
+# (.claude/docs/hooks-reference/hook-input-schemas.md),PostToolUse 事件
+# 只有 exit 0 與「其他」兩種結果,「其他」的定義逐字是
+# 「Treated as error, tool proceeds」—— 亦即 exit 1 【不會擋下任何東西】。
+# 而 exit 2 的阻擋語意是 PreToolUse 專屬,對 PostToolUse 同樣無效,
+# 所以這裡【不能】靠把 1 改成 2 來修。
+#
+# 同一份矩陣另一列:PostToolUse 的 stderr + exit 0 →「不送達 Claude、
+# 使用者也看不到」。本檔原本 5 行輸出全部走這條,亦即這道資產閘門
+# 從上線以來說的每一句話都沒有任何人收到,同時還自稱它會擋。
+#
+# 修法與其餘閘門一致:排入佇列,由 session-start.sh 於下次對話開場一次讀出
+# (實測 SessionStart 的 stdout 是會送達的管道)。
+# ⚠️ stderr 那兩行【保留不刪】—— 它們會進逐字紀錄的 stderr 欄位,事後稽核
+# 查得到;刪掉只是少一份證據,留著不會多花任何行程。
+# ⚠️ exit 1 同樣【保留不改】—— 它實測不阻擋,但也沒有害處,而「其他 exit code
+# 對使用者到底看不看得到」本專案【尚未實測】。把它改掉等於在沒有量測的情況下
+# 動一條可能有用的管道。本次只補上一條確定會送達的,不移除未知的。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
 fi
 
-# Report errors and block if any build-breaking issues found
+# Report warnings (advisory -- non-blocking)
+if [ -n "$WARNINGS" ]; then
+    WARN_MSG=$(echo -e "=== Asset Validation: Warnings ===$WARNINGS\n==================================\n(Warnings are advisory. Fix before final commit.)")
+    echo "$WARN_MSG" >&2
+    queue_message "validate-assets:warnings" "$WARN_MSG"
+fi
+
+# Report errors.
+# 🔴 標題原寫「Report errors and block」—— 見上方,它從來沒有 block 過。
 if [ -n "$ERRORS" ]; then
-    echo -e "=== Asset Validation: ERRORS (Blocking) ===$ERRORS\n===========================================\nFix these errors before proceeding." >&2
+    ERR_MSG=$(echo -e "=== Asset Validation: ERRORS ===$ERRORS\n================================\nFix these errors before proceeding.\n⚠️ 本檢查【無法阻擋】這次寫入(PostToolUse 沒有阻擋語意),檔案已經寫下去了。")
+    echo "$ERR_MSG" >&2
+    queue_message "validate-assets:ERRORS" "$ERR_MSG"
     exit 1
 fi
 

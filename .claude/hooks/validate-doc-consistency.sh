@@ -510,7 +510,7 @@ if [ "$N_ERR" -eq 0 ] && [ "$N_WARN" -eq 0 ]; then
     exit 0
 fi
 
-{
+emit_report() {
     echo "=== Doc Consistency Check ==="
     if [ "$N_ERR" -gt 0 ]; then
         echo "--- CONTRADICTIONS ($N_ERR) — two docs disagree; one of them is wrong ---"
@@ -528,7 +528,27 @@ fi
     # itself and reported a finding on a clean repo — the output has to be safely
     # greppable, because grepping it is exactly how anyone will consume it.
     echo "Cross-file fact agreement. Escape hatch: SKIP_DOC_CONSISTENCY=1"
-} >&2
+}
+
+# 2026-09-15:輸出串流改為【依模式而定】,依據是本專案實測的送達矩陣
+# (.claude/docs/hooks-reference/hook-input-schemas.md 的 channel matrix):
+#     SessionStart 的 stdout .............. ✅ 送達 Claude
+#     任何 hook 的 stderr + exit 0 ........ ❌ 不送達任何人
+#
+# 🔴 修掉的問題:本檔在 report 模式下【就是】掛在 SessionStart 的那一個,
+# 而原本整段寫 stderr 然後 exit 0 —— 亦即每次對話開場花約 5 秒跑完,
+# 產出的 10 筆判斷題【一個字都沒送到任何人】。2026-09-15 實測確認:
+# 該次開場三個 SessionStart hook 只有兩個的輸出出現在 Claude 的脈絡裡。
+#
+# ⚠️ gate 模式維持 stderr,那是刻意的、不要「順手統一」:
+#   1. 呼叫端 validate-commit.sh 是用 $(bash ... --gate 2>&1) 捕捉的,兩條流都收;
+#   2. gate 的阻擋路徑是 stderr + exit 2,而 exit 2 是實測會送達的那條。
+# handoff 模式同樣維持 stderr(由 session-stop.sh 呼叫,非送達路徑)。
+if [ "$MODE" = "report" ]; then
+    emit_report
+else
+    emit_report >&2
+fi
 
 if [ "$MODE" = "gate" ] && [ "$HAS_ERR" = "1" ]; then
     echo "BLOCKED: resolve the cross-file contradictions above, or set SKIP_DOC_CONSISTENCY=1 to override." >&2

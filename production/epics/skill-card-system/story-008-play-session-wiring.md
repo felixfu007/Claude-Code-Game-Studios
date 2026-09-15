@@ -2,7 +2,9 @@
 
 > **Epic**:技能卡牌系統
 > **型別**:Integration(**BLOCKING**)
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete**(2026-09-10 實作完成;本狀態欄 2026-09-15 補正)
+> **測試**:`tests/integration/gameplay/cards/card_play_wiring_test.gd`
+> ⚠️ **`/story-done` 從未對本張執行** —— 本欄是依 EPIC.md 的 Stories 表與測試檔實際存在補正的,**不是走完收尾覆核的結果**。
 > **估時**:M
 > **依賴**:005(打牌流程資料層)、006(接線)、007(棄牌閘門)—— 全部已完成
 

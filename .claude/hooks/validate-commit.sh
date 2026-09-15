@@ -304,9 +304,15 @@ if [ -f ".claude/hooks/validate-doc-consistency.sh" ]; then
     if [ "$DOC_RC" -eq 2 ]; then
         exit 2
     fi
-    if [ -n "$DOC_OUTPUT" ]; then
-        queue_message "validate-commit:doc-consistency" "$DOC_OUTPUT"
-    fi
+    # 2026-09-15:移除原本在此的 queue_message "validate-commit:doc-consistency"。
+    # 🔴 移除的是【重複】,不是保護 —— 同日修好 validate-doc-consistency.sh 的
+    # report 模式後(改走 stdout,SessionStart 實測唯一會送達的管道),同一份
+    # 報告會在每次對話開場自己送達一次。留著這行的話,N 次提交就會在下次開場
+    # 印出 N 份舊快照 + 1 份現況,共 N+1 份幾乎一樣的東西。
+    # ⚠️ 而且舊快照會【比現況更糟】:它是提交當下的狀態,若之後把漂移修掉了,
+    # 那份快照仍在報告一個已經不存在的問題 —— 排隊的訊息無法自我作廢。
+    # ✅ 阻擋路徑完全未動:上面的 DOC_RC -eq 2 → stderr + exit 2 照舊,
+    #    那是實測會即時送達的那條,不依賴本佇列。
 fi
 
 

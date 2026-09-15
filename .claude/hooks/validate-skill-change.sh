@@ -60,8 +60,25 @@ if [ -z "$SKILL_NAME" ]; then
     exit 0
 fi
 
-echo "=== Skill Modified: $SKILL_NAME ===" >&2
-echo "Run /skill-test static $SKILL_NAME to validate structural compliance." >&2
-echo "====================================" >&2
+# --- 送達管道(2026-09-15 修)-----------------------------------------
+# 🔴 本檔原本 3 行輸出全部是 stderr + exit 0,而本專案 2026-09-14 的探針實測
+# (.claude/docs/hooks-reference/hook-input-schemas.md 的管道矩陣)顯示
+# PostToolUse 的 stderr + exit 0【不送達 Claude、使用者也看不到】。
+# 加上本檔全檔沒有任何非 0 的 exit,它在結構上從來不可能被任何人讀到 ——
+# 亦即「改了 skill 要記得跑 /skill-test」這句話,從上線至今說了幾次就落空幾次。
+# 改走佇列,由 session-start.sh 於下次對話開場讀出(實測會送達的管道)。
+# ⚠️ 提醒會【延遲到下次開場】才出現,這是平台限制不是設計選擇:
+# 依同一份矩陣,「不阻擋 + 立即看得到」這個組合不存在。
+if [ -f ".claude/hooks/lib/hook-queue.sh" ]; then
+    source ".claude/hooks/lib/hook-queue.sh"
+else
+    queue_message() { :; }
+fi
+
+SKILL_MSG="=== Skill Modified: $SKILL_NAME ===
+Run /skill-test static $SKILL_NAME to validate structural compliance.
+===================================="
+echo "$SKILL_MSG" >&2
+queue_message "validate-skill-change" "$SKILL_MSG"
 
 exit 0
