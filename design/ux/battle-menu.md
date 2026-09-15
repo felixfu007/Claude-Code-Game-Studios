@@ -308,12 +308,17 @@
 游標系統有一個「暫停/模態期間不裁定」機制(復用失焦不運算模式),
 **而它假設有一個呼叫方 —— 那個呼叫方從未被指派,直到本檔。**
 
-⚠️ **這兩個函式在 `src/` 目前只有宣告意圖的註解,沒有函式本體**
-(`grep -rn "^func suspend_arbitration\|^func resume_arbitration" src/` 零命中;
-`grep -rn "suspend_arbitration\|resume_arbitration" src/` 5 處命中,全在
-`cursor_state.gd`/`cursor_state_host.gd` 的文件註解裡)。**規則本身不因此改變**——
-本畫面仍要求呼叫這兩個介面,只是它們的實作屬於游標系統(#3),見 Data Requirements
-與 Open Questions 的對應登記。
+✅ **2026-09-15 已解除(Story 008,提交 `99ccbdf`)**:這兩個函式當時在 `src/` 只有
+宣告意圖的註解、沒有函式本體;**今天已落地**——`src/ui/cursor/cursor_state_host.gd`
+第 364 行(`suspend_arbitration()`)與第 376 行(`resume_arbitration()`),
+`grep -rn "^func suspend_arbitration\|^func resume_arbitration" src/` 現為兩處命中,
+並有 `tests/integration/cursor/focus_pause_gating_test.gd` 15 條測試覆蓋(含成對
+暫停/恢復、暫停期間殘留事件被丟棄、恢復後以目前滑鼠座標重新播種)。**語意與本節
+的要求相符**:`suspend_arbitration()` 立旗標並清空當幀緩衝,`resume_arbitration()`
+降旗標、清空緩衝並重新播種滑鼠奪權累計值——確實是本節要的「暫停/恢復游標裁定」。
+**規則本身不因此改變**——本畫面仍要求呼叫這兩個介面。
+🔴 **但本畫面自己尚未落地**——`src/` 對 `battle_menu` 零命中,目前沒有任何呼叫方
+把這兩個函式接進實際選單場景,見 Open Questions BM-8 的更新版與 BM-9。
 
 🔴 **而做暫停選單的第一直覺是錯的,架構登記表已經明文擋掉它:**
 
@@ -411,7 +416,7 @@ ADR-0005 機制十四禁止使用引擎原生 Control focus/hover —— **但�
 | 權威寫入是否進行中 | `BattleState`(`authoritative_write_in_progress`) | 讀 | 開啟選單時查一次 | 不適用——恆有值 | 決定 N5 |
 | 是否欠棄牌(強制棄牌 S4 進行中) | 技能卡牌系統(#6),`BattleController.has_pending_discard()` | 讀 | 開啟選單時查一次 | 不適用——恆有值 | 🔴 **N5 的第二個觸發條件**(2026-09-11 裁決)。**沿用既有查詢,不新增判斷式**——Story 007 已用它擋 `end_faction_phase()` |
 | 結束陣營回合 | `BattleController` / `BattleLoop` | **寫**(經 `commit_authoritative_change`) | 玩家選定時一次性 | 不適用(寫入動作) | ⚠️ **兩條平行驅動路徑,互不呼叫** —— 見下 |
-| 游標裁定暫停/恢復 | `CursorStateHost.suspend_arbitration()` / `resume_arbitration()` | **呼叫** | 開啟/關閉選單各一次 | 不適用(呼叫動作) | 🔴 **`src/` 尚未實作**(只有文件註解,見上方三件必做事項之①);成對;**不得改用 `SceneTree.paused` 或 `process_mode` 當裁定閘門** —— 登記表明文排除 |
+| 游標裁定暫停/恢復 | `CursorStateHost.suspend_arbitration()` / `resume_arbitration()` | **呼叫** | 開啟/關閉選單各一次 | 不適用(呼叫動作) | ✅ **2026-09-15 `src/` 已實作**(Story 008,提交 `99ccbdf`,`cursor_state_host.gd:364`/`:376`,見上方三件必做事項之①);成對;**不得改用 `SceneTree.paused` 或 `process_mode` 當裁定閘門** —— 登記表明文排除。🔴 **本畫面自己尚未實作**,無呼叫方接線 |
 | `SceneTree.paused` | 本畫面(開啟時設 `true`、關閉時設 `false`) | **寫** | 開啟/關閉選單各一次 | 不適用(寫入動作) | 🔴 **本畫面的暫停選單需要它真的暫停**(游標 GDD AC-59 前提);**不當裁定閘門用**,閘門仍是上一列的顯式旗標 |
 | 字級與安全區 | `HudLayout` | 讀 | 視窗尺寸改變時 | 不適用——恆有值 | 🔴 **不得自行重刻** |
 
@@ -501,7 +506,7 @@ ADR-0005 機制十四禁止使用引擎原生 Control focus/hover —— **但�
 | **BM-5** | **標題畫面不存在**(`project.godot` 的啟動場景直接是戰鬥畫面)。**故「離開遊戲」目前只能結束行程,不能回主選單** | 不阻擋 | 待有標題畫面時回頭修本檔的離開路徑 |
 | **BM-6** | **字級可調 75%~150% 的功能未實作** | AC-M10 的兩個檔位 | 無障礙檔已登記 `Not Started` |
 | **BM-7** | **視覺樣式全部未定**(遮罩透明度、面板邊框、焦點標記形狀、分隔線) | 不阻擋行為實作 | `art-director` + `/art-bible` |
-| **BM-8** | 🔴 **`CursorStateHost.suspend_arbitration()` / `resume_arbitration()` 在 `src/` 只有文件註解,沒有函式本體**(`grep -rn "^func suspend_arbitration\|^func resume_arbitration" src/` 零命中)。**規則本身不變**,本畫面仍要求成對呼叫這兩個介面 | 阻擋 AC-M3 今天可驗證 | 游標系統(**#3**)/ ADR-0005 **機制九**(焦點/暫停閘控) |
+| **BM-8** | ✅ **2026-09-15 已解除(Story 008,提交 `99ccbdf`)**。本項原記載:「`CursorStateHost.suspend_arbitration()` / `resume_arbitration()` 在 `src/` 只有文件註解,沒有函式本體」(`grep -rn "^func suspend_arbitration\|^func resume_arbitration" src/` 曾為零命中)。**實測(2026-09-15)兩函式已落地**:`src/ui/cursor/cursor_state_host.gd:364`(`suspend_arbitration()`)與 `:376`(`resume_arbitration()`),同一次 grep 現為兩處命中;`tests/integration/cursor/focus_pause_gating_test.gd` 15 條測試覆蓋,含成對暫停/恢復、暫停期間殘留事件被丟棄、恢復後以目前滑鼠座標重新播種——**語意與本項原始要求相符**(立旗標暫停裁定/降旗標並恢復裁定),不是名字對得上但行為不同的分岔。**規則本身不變**,本畫面仍要求成對呼叫這兩個介面。🔴 **但本畫面自己尚未實作**——`src/` 對 `battle_menu` 零命中,無任何呼叫方把這兩個函式接進實際選單場景 | 本項單獨阻擋已解除;**AC-M3 是否「今天可驗證」仍受下列 BM-9 阻擋**(`process_mode` 排除 `SceneTree.paused` 尚未落地),且本畫面本身無實作可供驗證 | 游標系統(**#3**,已完成)/ ADR-0005 **機制九**(焦點/暫停閘控) |
 | **BM-9** | **`CursorStateHost` 需新增「不受 `SceneTree.paused` 影響」的 `process_mode` 設定**,現況零命中(`grep -n "process_mode" src/ui/cursor/cursor_state_host.gd`)。本畫面首次要求真的設定 `SceneTree.paused = true`,若不排除,暫停期間該 Autoload 的 `_process()` 會連同旗標邏輯一起停擺 | 阻擋 AC-M3「選單開啟期間游標宿主節點仍在運作」 | 游標系統(**#3**) |
 | **BM-10** | 🔴 **`CursorStateHost` 需新增一個診斷用唯讀狀態或訊號**,供 AC-M14 佐證「暫停期間 `_process()` 仍在執行」——`src/ui/cursor/cursor_state_host.gd` 現況未提供此介面(僅一般 `_process()`,無診斷輸出)。**本輪修訂新增的實作依賴**,先前未登記 | 阻擋 AC-M14 今天可驗證 | 游標系統(**#3**) |
 

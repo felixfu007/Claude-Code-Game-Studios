@@ -24,31 +24,38 @@
 ## [method flush_buffered_navigation] all gate on
 ## [member _arbitration_suspended] first.
 ##
-## 🔴 [b]Discovered gap, reported not silently worked around[/b]: ADR-0005's
-## frozen Key Interfaces section (`docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`,
-## the two lines immediately after [method CursorState.reclaim_progress])
-## lists [code]CursorState.force_redraw_current_authority()[/code] (tagged
-## "# AC-30") and [code]CursorState.reapply_native_cursor_visibility()[/code]
+## 🔴 [b]Removed from ADR-0005, not a pending gap[/b] (2026-09-15, manager
+## ruling, commit [code]599108e[/code]): ADR-0005's frozen Key Interfaces
+## section used to list [code]CursorState.force_redraw_current_authority()[/code]
+## (tagged "# AC-30") and [code]CursorState.reapply_native_cursor_visibility()[/code]
 ## (tagged "# Core Rules #5") as calls [method _notification]'s FOCUS_IN
 ## branch should make, per the ADR's own illustrative pseudocode for 機制九.
-## [b]Neither method exists anywhere in [code]src/[/code][/b] (verified:
-## [code]grep -rn "^func force_redraw_current_authority\|^func
-## reapply_native_cursor_visibility" src/[/code] → 0 matches). This story's own
-## dependency note (`production/epics/cursor-highlight-state/story-008-focus-pause-gating.md`,
-## "Dependencies") records that [code]reapply_native_cursor_visibility()[/code]
-## was assigned to Story 011 — Story 011 did not build it as a literal
-## [CursorState] method; it built the EQUIVALENT behaviour differently, as
-## unconditional per-frame polling inside [code]NativePointerVisibilityArbiter._process()[/code]
-## and [code]SelfDrawnReclaimCursor._process()[/code] (neither of those nodes
-## checks [member _arbitration_suspended] or window focus at all, so both
-## already re-derive their output from [member _state] every single frame,
-## focus-out or not — see each file's own class doc comment). This story does
-## NOT add either method to [CursorState]: doing so would be a new
-## architectural decision (what "force redraw" even means with no
-## [CursorSurface] registered anywhere in [code]src/[/code] yet to redraw) that
-## is outside 機制九's own scope. See this story's final report; covered by an
-## executable gap test in
-## [code]tests/integration/cursor/focus_pause_gating_test.gd[/code].
+## Neither method was ever built anywhere in [code]src/[/code] (this story's
+## own original finding: [code]grep -rn "^func force_redraw_current_authority\|^func
+## reapply_native_cursor_visibility" src/[/code] → 0 matches). On 2026-09-15 the
+## manager ruled to delete both from the ADR itself, rather than build them:
+## Story 011's [code]NativePointerVisibilityArbiter._process()[/code] and
+## [code]SelfDrawnReclaimCursor._process()[/code] already re-derive their
+## output from [member _state] unconditionally every frame — neither checks
+## [member _arbitration_suspended] or window focus at all — so nothing needs
+## to be explicitly "reapplied" on FOCUS_IN. See
+## [code]docs/architecture/adr-0005-cursor-device-authority-input-architecture.md[/code]'s
+## 機制九 section, "🔴 2026-09-15 事實層更正" (and the matching Key Interfaces
+## entry further down the same file), for the full ruling and the zero-hits
+## [code]grep -rn[/code] the technical director ran against all of
+## [code]src/[/code] as of that date.
+## [b]This host must NOT add either method to [CursorState][/b]: doing so
+## would reopen a ruling the manager already made, not complete pending work.
+## Guarded by an executable regression test — not merely this comment — in
+## [code]tests/integration/cursor/focus_pause_gating_test.gd[/code]'s
+## [code]test_force_redraw_and_reapply_native_cursor_visibility_stay_removed_from_cursor_state[/code].
+##
+## ⚠️ Do not confuse either name with
+## [code]_reapply_native_cursor_visibility_with_unregistered_surface_exception()[/code]
+## on [NativePointerVisibilityArbiter] (機制十三之二, [code]native_pointer_visibility_arbiter.gd[/code])
+## — a private, already-implemented, unrelated method. A plain
+## [code]grep reapply_native_cursor_visibility[/code] matches both; see ADR-0005's
+## own "2026-09-15 命名釐清" table for why they are two different symbols.
 ##
 ## [b]Interim collaborator gap — CLOSED 2026-09-07 (Story 011).[/b] Story 014
 ## landed [ThresholdMouseReclaimPolicy] the same day as this story; this host
@@ -386,9 +393,12 @@ func resume_arbitration() -> void:
 ## notification.
 ##
 ## 🔴 [b]force_redraw_current_authority() / reapply_native_cursor_visibility()
-## deliberately NOT called here[/b] — see this file's class doc comment's
-## "Discovered gap" paragraph for the full finding; calling either would be a
-## compile error today since neither exists on [CursorState].
+## are not called here because they no longer exist[/b] — both were deleted
+## from ADR-0005 itself on 2026-09-15 (manager ruling, commit
+## [code]599108e[/code]), not merely left unbuilt. See this file's class doc
+## comment's "Removed from ADR-0005, not a pending gap" paragraph for the full
+## finding and why Story 011's per-frame polling already covers what these two
+## calls used to do.
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_APPLICATION_FOCUS_OUT:

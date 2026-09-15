@@ -1424,9 +1424,42 @@ api_decisions:
       still conflicts with Core Rules #5's intent, the GDD must be revised and this mechanism
       adjusted or removed accordingly — ADR-0005 does not claim authority to settle this
       design question unilaterally.
-      Runs on the same CanvasLayer node/single _process() as the mechanism-13 presentation
-      smoother (not a separate node) specifically to avoid same-priority (=50) sibling
-      ordering being undefined.
+      CORRECTED 2026-09-15 (technical-director) — the three lines previously here were STALE
+      and stated the OPPOSITE of both ADR-0005 and src/. They read: "Runs on the same
+      CanvasLayer node/single _process() as the mechanism-13 presentation smoother (not a
+      separate node) specifically to avoid same-priority (=50) sibling ordering being
+      undefined." That text was written 2026-08-19c and was overturned two days later by R6-8
+      (ADR-0005 fourth revision, 2026-08-21); this entry was never updated to follow — the
+      2026-08-21b registry batch revised other ADR-0005 entries but not this one. This was the
+      only stale copy repo-wide; ADR-0005's own three statements (mechanism 6 table, and the
+      mechanism-13a decision + its "why it must be split" note) were all already correct.
+      CURRENT VALUE: the mechanism-13a hover arbiter is its OWN node, a SIBLING of the
+      mechanism-13 self-drawn cursor under CursorStateHost's CanvasLayer, both at
+      process_priority = 50. R6-8 originally ruled THREE nodes; the third (the per-device idle
+      indicator) was removed 2026-09-03 when TR-cursor-016 was cancelled, leaving two.
+      WHY SPLIT (R6-8): modulate.a is a PER-NODE property. Mechanism 13's _process() ends with
+      `modulate.a = _presented_alpha`; on a shared node that write would drag the hover
+      arbiter's own visibility along with the reclaim fade — a behavioural bug, not a style
+      concern. See ADR-0005 mechanism 13a's "為何必須拆(R6-8)" note.
+      WHAT BECAME OF THE OLD RATIONALE: the "avoid undefined same-priority ordering" concern
+      was not worked around — it DISSOLVED. Per R6-9's scoping, R5-2's "architecture-forced
+      priorities must be pairwise distinct" governs BETWEEN ROLES; these two nodes are two
+      INSTANCES OF ONE ROLE (actor 5, global visual layer, see api decision
+      cursor_actor_process_priority_ladder), and instances of one role get no ordering
+      guarantee because they need none: neither writes CursorState (no same-frame write race)
+      and neither reads the other's output — the arbiter reads get_device_authority() and
+      writes the window-global Input.mouse_mode, while the self-drawn cursor reads
+      reclaim_progress() and writes its own modulate.a.
+      OBSERVED STATE OF src/ ON 2026-09-15, NOT A CONTRACT: cursor_state_host.gd add_child()s
+      SelfDrawnReclaimCursor and NativePointerVisibilityArbiter separately onto _cursor_layer,
+      each setting process_priority = 50 in its own _init() (R6-12); repo-wide there is
+      exactly ONE writer of Input.mouse_mode (native_pointer_visibility_arbiter.gd) and
+      exactly TWO nodes at priority 50 (these two). THESE COUNTS ARE A MEASUREMENT OF TODAY'S
+      CODE, NOT A RULE — nothing in this registry or in ADR-0005 forbids a second
+      Input.mouse_mode writer or a third priority-50 node from being added, and if one were
+      added the ordering question would reopen silently. Whether to make that a forbidden
+      pattern is an OPEN PROPOSAL requiring a manager ruling; it is deliberately NOT recorded
+      here as a decided constraint.
       REVISED 2026-08-19c (round-5 R5-6 MEDIUM-HIGH + Step-5.5 finding F): the denylist form
       had two independent failure paths, BOTH ending in "native pointer wrongly shown",
       i.e. a direct violation of Core Rules #5. (R5-6) gui_get_hovered_control() does not
@@ -1450,7 +1483,7 @@ api_decisions:
     referenced_by:
       - docs/architecture/adr-0005-cursor-device-authority-input-architecture.md
     added: 2026-08-19
-    revised: "2026-08-19c"
+    revised: "2026-09-15"
 
   - purpose: token_timeout_ms_ownership
     status: active

@@ -7,9 +7,14 @@
 ## plus AC-59 (present in that story file's own Acceptance Criteria section,
 ## even though this story's dispatch brief listed only the other six — see
 ## this story's final report for that discrepancy) and an explicit,
-## executable registration of a gap this story's own investigation found
-## (ADR-0005's Key Interfaces list two [CursorState] methods neither this nor
-## any prior story ever built).
+## executable architectural guard this story's own investigation originally
+## registered as a gap (ADR-0005's Key Interfaces once listed two
+## [CursorState] methods neither this nor any prior story ever built — on
+## 2026-09-15 the manager ruled to delete both from the ADR itself, so this
+## same assertion now guards against their reintroduction rather than
+## tracking pending work; see
+## [method test_force_redraw_and_reapply_native_cursor_visibility_stay_removed_from_cursor_state]
+## below for the full history).
 ##
 ## [b]Isolation — every test builds its OWN detached [CursorStateHost]-script
 ## instance, the real registered Autoload singleton at [code]/root[/code] is
@@ -194,33 +199,71 @@ func _inject_residual_event(host: Node) -> void:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 🔴 Explicit gap registration (this story's own finding, not silently worked
-# around) — see cursor_state_host.gd's class doc comment "Discovered gap"
-# paragraph for the full write-up.
+# 🔴 Architectural guard, NOT a gap registration (renamed 2026-09-15 — see the
+# test's own doc comment below for the full history and why the OLD framing
+# below no longer applies). cursor_state_host.gd's class doc comment ("Discovered
+# gap" paragraph) still uses the pre-2026-09-15 gap framing as of this writing
+# — that is a src/ file, out of this test-file-only change's authorized scope;
+# flagged in this story's report rather than edited here.
 # ═══════════════════════════════════════════════════════════════════════════
 
-## Documents, as an EXECUTABLE test, that ADR-0005's frozen Key Interfaces
-## section lists [code]CursorState.force_redraw_current_authority()[/code]
-## (tagged "# AC-30") and [code]CursorState.reapply_native_cursor_visibility()[/code]
-## (tagged "# Core Rules #5") as calls this story's [method Node._notification]
-## FOCUS_IN branch should make — and NEITHER exists in
-## [code]src/ui/cursor/cursor_state.gd[/code] as of this story. If this
-## assertion now FAILS because one of them was added, update this story's
-## report rather than deleting this test — see this file's class doc comment
-## and [code]cursor_state_host.gd[/code]'s own class doc comment for why they
-## are not called from [method Node._notification] here.
-func test_gap_force_redraw_and_reapply_native_cursor_visibility_do_not_exist_on_cursor_state() -> void:
+## 🔴 [b]This is an architectural guard, not a gap registration[/b] — the
+## test's ASSERTIONS are unchanged since it was first written, but their
+## MEANING changed on 2026-09-15. Originally this documented a temporary gap:
+## ADR-0005's frozen Key Interfaces section listed
+## [code]CursorState.force_redraw_current_authority()[/code] (tagged "# AC-30")
+## and [code]CursorState.reapply_native_cursor_visibility()[/code] (tagged
+## "# Core Rules #5") as calls this story's [method Node._notification]
+## FOCUS_IN branch was expected to eventually make, and neither existed yet.
+##
+## 🔴 [b]On 2026-09-15 the manager ruled to delete both methods from ADR-0005
+## itself[/b] (verbatim ruling: 「更正架構文件,拿掉那兩個方法」— commit
+## [code]599108e[/code]), because Story 011 already achieves AC-30's visual
+## guarantee a different way: [code]SelfDrawnReclaimCursor._process()[/code]
+## and [code]NativePointerVisibilityArbiter._process()[/code] unconditionally
+## re-derive their output from [CursorState] every frame regardless of
+## [member CursorStateHost._arbitration_suspended] or window focus, so nothing
+## needs to be explicitly "reapplied" on FOCUS_IN. See
+## [code]docs/architecture/adr-0005-cursor-device-authority-input-architecture.md[/code]'s
+## 機制九 section, "🔴 2026-09-15 事實層更正" (and the matching entry against the
+## Key Interfaces list further down the same file), for the full ruling and
+## the zero-hits [code]grep -rn[/code] the technical director ran against all
+## of [code]src/[/code] as of that date.
+##
+## This test therefore no longer pins down "not built yet, still to do" — it
+## pins down [b]"must never come back"[/b]: these two names were removed from
+## the architecture that specified them, and their reintroduction would be an
+## undocumented, unreviewed re-opening of that 2026-09-15 ruling, not a
+## completion of pending work. If this assertion ever FAILS because one of
+## these methods was added back to [code]cursor_state.gd[/code], that is a
+## regression against the ruling above, not a milestone — stop and get the
+## addition reviewed against ADR-0005 before touching this test.
+##
+## ⚠️ Do not confuse either name with
+## [code]_reapply_native_cursor_visibility_with_unregistered_surface_exception()[/code]
+## — a private, already-implemented, unrelated method on the hover arbiter
+## node (機制十三之二), documented in ADR-0005's own "2026-09-15 命名釐清" table
+## specifically because a plain [code]grep reapply_native_cursor_visibility[/code]
+## matches both. This test's [FileAccess]-based string search below targets
+## [code]cursor_state.gd[/code] only, so it was never at risk of matching that
+## unrelated method — noted here only so the next reader does not go looking
+## for it.
+func test_force_redraw_and_reapply_native_cursor_visibility_stay_removed_from_cursor_state() -> void:
 	var source: String = FileAccess.get_file_as_string("res://src/ui/cursor/cursor_state.gd")
 
 	assert_bool(source.contains("func force_redraw_current_authority")).append_failure_message(
-		"force_redraw_current_authority() now exists on CursorState — this "
-		+ "story's _notification() FOCUS_IN branch does NOT call it; if it "
-		+ "should, wire it in and update this story's report."
+		"force_redraw_current_authority() now exists on CursorState — ADR-0005 "
+		+ "deleted this method on 2026-09-15 (commit 599108e); its "
+		+ "reintroduction is a regression against that ruling, not a "
+		+ "completion of pending work. Get it reviewed against ADR-0005's "
+		+ "機制九 \"2026-09-15 事實層更正\" section before updating this test."
 	).is_false()
 	assert_bool(source.contains("func reapply_native_cursor_visibility")).append_failure_message(
-		"reapply_native_cursor_visibility() now exists on CursorState — this "
-		+ "story's _notification() FOCUS_IN branch does NOT call it; if it "
-		+ "should, wire it in and update this story's report."
+		"reapply_native_cursor_visibility() now exists on CursorState — ADR-0005 "
+		+ "deleted this method on 2026-09-15 (commit 599108e); its "
+		+ "reintroduction is a regression against that ruling, not a "
+		+ "completion of pending work. Get it reviewed against ADR-0005's "
+		+ "機制九 \"2026-09-15 事實層更正\" section before updating this test."
 	).is_false()
 
 
@@ -554,12 +597,15 @@ func test_ac30_focus_out_then_focus_in_suspends_clears_and_reseeds_via_notificat
 
 	# 🔴 NOT asserted here, and why: AC-30's other two clauses ("the highlight
 	# visual is confirmed redrawn", "native pointer visibility is reapplied")
-	# are visual/engine-applied effects. This story's own investigation found:
-	# (1) CursorState.force_redraw_current_authority() /
-	#     reapply_native_cursor_visibility() do not exist (see
-	#     test_gap_force_redraw_and_reapply_native_cursor_visibility_do_not_exist_on_cursor_state
-	#     above) and are not called from _notification() here;
-	# (2) SelfDrawnReclaimCursor._process() and
+	# are visual/engine-applied effects. As of 2026-09-15 ADR-0005 no longer
+	# specifies force_redraw_current_authority() / reapply_native_cursor_visibility()
+	# at all (manager ruling, commit 599108e — see
+	# test_force_redraw_and_reapply_native_cursor_visibility_stay_removed_from_cursor_state
+	# above for the full history). Those two names were REMOVED from the ADR
+	# itself, not merely left unbuilt, so there is nothing left here to "not
+	# call yet". What actually covers AC-30's visual half is a structural
+	# fact, unaffected by that ruling:
+	# (1) SelfDrawnReclaimCursor._process() and
 	#     NativePointerVisibilityArbiter._process() (Story 011) both already
 	#     re-derive their output from _state UNCONDITIONALLY every frame —
 	#     neither checks _arbitration_suspended or window focus at all — so
@@ -571,6 +617,14 @@ func test_ac30_focus_out_then_focus_in_suspends_clears_and_reseeds_via_notificat
 	#     registered CursorSurface anywhere in src/ yet whose "redraw" could
 	#     be asserted against — see frame_buffer_ordering_test.gd's own
 	#     registered gap test for that fact).
+	# (2) ADR-0005 itself registers one honestly-open gap this structural
+	#     argument does NOT cover: subscriber-only downstreams that never
+	#     poll _state per-frame receive no signal on refocus (the target is
+	#     unchanged across a focus cycle, so target_changed() never fires) —
+	#     see the ADR's 機制九 "🔴 2026-09-15 事實層更正" section, subsection
+	#     "本次更正「未」涵蓋的一項". AC-30's first clause is not "fully
+	#     covered" until the first real CursorSurface lands and answers that
+	#     question.
 
 
 # ═══════════════════════════════════════════════════════════════════════════
