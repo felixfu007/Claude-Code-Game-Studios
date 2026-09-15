@@ -9,6 +9,15 @@
 # session) are delivered. advise-file-owner fired 23 times with 0 delivered
 # before this existed; the manager confirmed never having seen these warnings.
 #
+# 🔴 那段是【本檔為何誕生】的歷史,不是【今天誰在用它】。2026-09-15 實測:
+# 它點名的 advise-file-owner.sh 與 validate-push.sh 兩者已於 2026-09-14
+# (1416ed7)取消掛載,不可能再供稿;validate-commit 的 doc-consistency 那一路
+# 也已於 2026-09-15(8462c75)移除。今天實際的供稿者是四個:
+#   advise-skill-owner / validate-assets / validate-commit / validate-skill-change
+# (查法:`grep -l queue_message .claude/hooks/*.sh` 與 settings.json 掛載表取交集。)
+# ⚠️ 連帶:queue_no_match_hit() 的唯一呼叫者就是未掛載的 advise-file-owner.sh,
+# 因此該計數路徑今天是死碼 —— 詳見 session-start.sh 排空段的註解。
+#
 # POLICY (manager ruling, 2026-09-14): a real cross-document contradiction
 # (validate-doc-consistency.sh's [ERROR] tier, surfaced through
 # validate-commit.sh) still blocks immediately via exit 2 -- that path is

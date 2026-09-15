@@ -55,14 +55,26 @@ if [ -d "src" ]; then
 fi
 
 # --- Pending hook messages (2026-09-14 加) ---
-# 累積來源:advise-file-owner.sh / validate-push.sh / validate-commit.sh
-# 的非阻擋訊息(見 .claude/hooks/lib/hook-queue.sh 檔頭)。讀出後立即清空,
-# 讀取用 bash 內建 $(<file) 而非 cat(同一支檔案內已實測 cat 類外部行程
-# 每次約多付 0.6~0.8 秒)。
+# 🔴 累積來源 —— 2026-09-15 全面更正,原文列的三個今天沒有一個還在供稿。
+# 實測(`grep -l 'queue_message' .claude/hooks/*.sh` 對照 settings.json 掛載表):
+#   實際在供稿的四個:advise-skill-owner / validate-assets /
+#                     validate-commit / validate-skill-change
+#   在磁碟上但【未掛載,故不可能供稿】:advise-file-owner、validate-push
+#                     (兩者於 2026-09-14 `1416ed7` 取消掛載)
+# 原註解列的是 advise-file-owner / validate-push / validate-commit ——
+# 前兩者當天就被取消掛載,而 validate-commit 的 doc-consistency 那一路
+# 於 2026-09-15 `8462c75` 移除。**同一天寫的註解,同一天就過期了。**
+# 送達管道本身已於 2026-09-15 端到端實測通過(塞一則進佇列 → 開場印出 → 檔案歸零)。
+# 讀出後立即清空,讀取用 bash 內建 $(<file) 而非 cat(同一支檔案內已實測 cat 類
+# 外部行程每次約多付 0.6~0.8 秒)。
 #
-# 「查無擁有者」計數獨立於主佇列(2026-09-14 協調者實測後追加):實測本專案
-# 歷史 advise-file-owner 的 29 筆訊息 29 筆都是這一種、0 筆是真正命中,逐筆
-# 排隊會讓這裡被幾百行一模一樣的訊息淹沒。摺疊成一行計數,不是丟掉 ——
+# 🔴 「查無擁有者」計數這一段【今天零個可能的供稿者】,刻意保留而非刪除。
+# 實測:`queue_no_match_hit()` 全庫唯一呼叫者是 advise-file-owner.sh,而它未掛載。
+# 亦即下方 NOMATCH 分支永遠不會觸發,計數檔恆為空。保留的理由是該檔仍在磁碟上、
+# 日後若重新掛載就需要這段;刪掉會讓重新掛載的人拿到一個靜默丟訊息的閘門。
+# **但在它重新掛載之前,這段是死碼 —— 不要把「計數是 0」讀成「沒有查無擁有者的情況」。**
+# 原設計理由(仍然有效,供重新掛載時參考):實測歷史 29 筆訊息 29 筆都是這一種、
+# 0 筆是真正命中,逐筆排隊會被幾百行一模一樣的訊息淹沒。摺疊成一行計數,不是丟掉 ——
 # 「查無擁有者不等於沒有擁有者」這件事本身仍要露出來。
 QUEUE_FILE="production/session-logs/hook-queue.log"
 NOMATCH_FILE="production/session-logs/hook-queue-nomatch-count.txt"
