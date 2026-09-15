@@ -1,0 +1,81 @@
+# vs01 技能卡牌表(好感度對話卡牌)— 固定欄位順序:
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,flavor_text
+#
+# 本檔是「先求能驗證流程,不求最終平衡」的第一批可用卡(2026-09-15 管理者裁決:
+# 「先出一小批可用的牌,讓畫面跑得起來」)。數值皆為起始值,之後可隨時改動,
+# 不代表最終平衡結果。
+#
+# ── 欄位定義,逐一對應 src/gameplay/cards/card.gd 的實際欄位 ──────────────
+#
+# id                      Card.id(String)。本表內任選,不得重複,尚未綁定任何正式
+#                         卡表格式(design/gdd/skill-card-system.md OQ-6 仍未定案)。
+#
+# category                Card.Category 的字面字串,必須逐字等於下列兩者之一
+#                         (對應 card.gd 的 enum 名稱):
+#                           TEMPORARY_STAT_MODIFIER   = 甲類(暫時性戰鬥數值)
+#                           PERMANENT_AFFINITY_WRITE  = 丙類(永久好感度寫入)
+#                         乙類(暫時性關係極性覆蓋)不在本表 —— GDD 定案 MVP 不實作。
+#
+# delta_atk / delta_def   甲類專用,對應 Card.delta_atk / Card.delta_def。帶號整數。
+#                         單卡 |Δ| 落在 1~3(design/quick-specs/unit-stats-provisional.md
+#                         §7-4 尺度錨點:上限 = Φ 單線最強貢獻 +3)。
+#                         這裡的 0 代表「這張牌不動這個軸」(例:純 ATK 卡的
+#                         delta_def=0),是合法的正常值,不是任何 sentinel。
+#                         丙類卡此兩欄一律填 0(card.gd 該情況下的預設值;card.gd
+#                         doc comment 明文:非本類別的欄位群「must be ignored by
+#                         readers」)。
+#
+# duration_rounds         甲類專用,對應 Card.duration_rounds,r ∈ {1,2}
+#                         (GDD 公式二)。丙類卡填 0(丙類沒有存續狀態,
+#                         「single fire-and-forget write」,card.gd 類別文件註明)。
+#
+# affinity_character_a/b  丙類專用,對應 Card.affinity_character_a /
+#                         affinity_character_b。與 vs01_affinity_links.txt 同一套
+#                         id(1=甲 2=乙 3=丙 4=丁 5=戊)。
+#                         🔴 2026-09-10 管理者裁決後,這兩欄「僅供牌面敘事」——
+#                         機制上實際作用的配對由玩家在棋盤上兩步選定(S2p/S2q),
+#                         PermanentAffinityWriteRules.play() 不讀這兩欄
+#                         (見 card.gd 這兩個欄位各自的 doc comment、
+#                         design/gdd/skill-card-system.md 一之三、
+#                         design/ux/skill-card-play.md「確認面板欄位」節)。
+#                         甲類卡此兩欄一律填 -1(card.gd 明文的 unset sentinel)。
+#
+# affinity_magnitude      丙類專用,對應 Card.affinity_magnitude,GDD 公式三的
+#                         m。值域固定為 {-3,-2,-1,1,2,3},絕不可為 0——0 會在
+#                         寫入埠被拒絕並拋驗證錯誤(GDD AC-9)。
+#                         甲類卡此欄填 0,這是 card.gd 明文的 unset sentinel。
+#                         ⚠️ 注意這是兩件不同的事:0 在甲類卡是合法的「未使用」,
+#                         在丙類卡是被拒絕的非法值 —— 不要把兩者混為一談。
+#
+# flavor_text             ⚠️ 這一欄不是 Card 的欄位 —— card.gd 目前沒有任何欄位
+#                         儲存牌面顯示文字,本欄純粹是這批內容先帶著敘事文字走,
+#                         尚無任何程式碼會讀它(見下方報告「還缺什麼」一節)。
+#                         這是為了滿足 GDD 檔頭的硬性判準:「每一張 MVP 卡牌的
+#                         牌面都必須是一組具名角色之間的互動」。角色以代號表示
+#                         (1=甲…5=戊,同 vs01_roster.txt 的 code_name 欄),正式
+#                         姓名對照見 design/narrative/characters.md 第一節 ——
+#                         該檔第八節已裁決「這一批不做」姓名欄位,本檔沿用同一
+#                         裁決,故不在此提前對應真名。
+#                         ⚠️ 本欄內容避免使用逗號(改用「、」或破折號),因為
+#                         本表沿用專案既有簡單 CSV 慣例,沒有引號跳脫機制。
+#
+# ── 丙類的合法配對(2026-09-15 撰寫時逐一查證) ─────────────────────────
+# 只有 vs01_affinity_links.txt 已登記的兩對是合法的:(1,2) 甲乙、(3,4) 丙丁。
+# 戊(5)沒有任何關係線,任何以 5 為 affinity_character_a/b 的丙類卡都無法通過
+# 寫入埠驗證(design/gdd/skill-card-system.md AC-8a/AC-8c)——本表沒有這樣的卡。
+#
+# ── 本批的設計裁量(供之後檢視,非機制規則) ─────────────────────────────
+# 兩張丙類卡的 magnitude 方向刻意與 vs01_affinity_links.txt 的既有 polarity 同向
+# (甲乙用正值、丙丁用負值)。這是刻意迴避,不是驗證過安全——「丙類不得翻轉任何
+# 角色設定的正負號」這條界線在「往相反方向寫」時會不會被拒絕、拒絕的判準是什麼,
+# 目前沒有任何驗收條件可查證,詳見報告「不確定的事」一節。
+#
+id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,flavor_text
+card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0,甲:「我先上、別管我」——這股衝勁讓她這回合下手更狠
+card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0,乙在耳邊喊了聲「我挺你」——那股底氣撐得住兩回合
+card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0,乙一句「別衝、我在」——讓人放心地把後背交出去
+card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0,丁一個手勢穩住陣腳——這回合誰都攻不進來
+card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0,戊看準一個空檔——「機會來了」
+card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0,丙壓低身形——山裡練出的警覺讓他這兩回合穩得住
+card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2,甲在乙耳邊說了句「謝了、剛才那手漂亮」——兩人之間的默契又深了一分
+card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2,丙眼神閃避不敢與丁對視——這份心虛丁看得一清二楚
