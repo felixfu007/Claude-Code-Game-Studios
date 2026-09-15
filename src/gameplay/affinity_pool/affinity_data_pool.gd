@@ -40,11 +40,39 @@
 #   - 🔴 record.c(戰役刻度)本 story 恆寫入佔位值 0——真正的戰役刻度計數器
 #     由 S-005 引入,本 story 只保證欄位存在、寫入後不再變動
 #
+# 2026-09-15 補件(管理者裁決,非新 story——見 EPIC.md 限制表第 10 條)：
+#   - [signal entry_appended] 本體與 append_record() 成功路徑的 emit。
+#     S-004 原始交付漏了這個訊號(工作單全文對它零命中),ADR-0002 機制七/
+#     TR-affinity-024 明文要求。管理者裁決依據:card-play-interface epic
+#     需要即時反映關係變化,是這個訊號第一個看得見的使用者。
+#     🔴 這不是把訊號升格成契約——ADR-0002 原文（TR-affinity-024)明寫
+#     此訊號是「實作慣例決策，非已承諾的契約」，下游不得假設它會被
+#     其他 ADR 或未來重構保留。見下方 [signal entry_appended] 文件註解。
+#
 # 尚未在此檔出現、屬於後續 story 的東西(避免下一個人誤以為漏寫):
 # advance_campaign_tick()、三個加權讀取函數、can_write()、
 # export_state()/import_state()——全部不在本 story 範圍。
 class_name AffinityDataPool
 extends RefCounted
+
+
+## [method append_record] 成功寫入一筆記錄時發出(ADR-0002 機制七、機制四逐字:
+## 「全數通過 → 建立 AffinityRecord…回傳 WriteRejection.NONE,並 emit
+## entry_appended(pair, record) 訊號」)。[param pair] 為寫入的配對、[param record]
+## 為剛附加進 Delta Log 的記錄本體(與 [code]_records[pair][/code] 最新一筆同一個實例)。
+##
+## 🔴 [b]任何拒絕路徑一律不 emit[/b]——七類 [enum WriteRejection] 分支(含
+## [constant WriteRejection.SERIALIZATION_WINDOW_ACTIVE] 恆不可達分支)皆不觸發本訊號,
+## 對應 [method append_record] 逐一頁首的「不遞增 t_now、不附加記錄」慣例:沒有附加就
+## 沒有訊號。
+##
+## 🔴 [b]本訊號是實作慣例決策,不是已承諾的契約[/b](ADR-0002 追溯編號
+## `TR-affinity-024` 逐字:「entry_appended 信號為實作慣例,非承諾契約……明文下游
+## 不得假設其被保留」)。下游(例如卡牌介面用它即時反映關係變化)**不得假設**這個
+## 訊號的存在會被其他 ADR 或未來重構保留——今天補上它是 2026-09-15 管理者裁決
+## (依據:card-play-interface epic 是它第一個看得見的使用者),不是把它升格為
+## 正式介面契約。若未來移除或改變它的語意,呼叫端沒有任何 ADR 保證可以援引。
+signal entry_appended(pair: AffinityTypes.Pair, record: AffinityRecord)
 
 
 ## 陣亡通知介面 [method notify_death] 的四值回傳結果。
@@ -271,7 +299,9 @@ func _validate_source_ordinal(s: AffinityTypes.Source) -> bool:
 ##    「陣亡配對的寫入限制」——判定條件是【至少一人】陣亡,不論另一人是否亦已陣亡)
 ##
 ## 全數通過 → 建立 [AffinityRecord]、附加進 `_records[pair]`、[member _t_now] 前進一格、
-## 回傳 [constant WriteRejection.NONE]。
+## 發出 [signal entry_appended] 訊號(2026-09-15 補件,見該訊號文件註解的重要但書)、
+## 回傳 [constant WriteRejection.NONE]。**任何一步拒絕都不會走到這裡,故七類拒絕分支
+## 一律不 emit [signal entry_appended]**。
 ##
 ## 🔴 `record.c`(戰役刻度)本 story 恆寫入佔位值 `0`——真正的戰役刻度計數器由 S-005
 ## 引入。本 story 只保證欄位存在、寫入後不再變動(AC-2 的部分涵蓋,精確值斷言待 S-005)。
@@ -317,5 +347,9 @@ func append_record(
 
 	_records[pair].append(record)
 	_t_now = new_t
+
+	# ADR-0002 機制四逐字順序:附加記錄 → t_now 前進一格 → emit entry_appended → 回傳 NONE。
+	# 2026-09-15 補件(見 [signal entry_appended] 文件註解的重要但書——實作慣例,非契約)。
+	entry_appended.emit(pair, record)
 
 	return WriteRejection.NONE

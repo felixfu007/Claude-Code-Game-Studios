@@ -12,6 +12,12 @@
 # notify_death() 作為 Arrange 步驟(EPIC.md 陷阱五:同一實作檔的不同切面各自建立
 # 獨立測試檔,不合併)。
 #
+# 2026-09-15 補件(管理者裁決,非新 story——見 EPIC.md 限制表第 10 條):新增
+# entry_appended 訊號的測試段落。放在本檔而非另開新檔的理由——它與本檔既有測試
+# 是同一個切面(append_record() 的成功/拒絕路徑),不是 EPIC.md 陷阱五要防的「不同
+# 切面塞進同一檔」;陷阱五本身的例子是 notify_death()/t_death() 這種另一個方法,
+# 不是同一個方法的另一個副作用。
+#
 # 純資料結構與純函式、無節點——不建立任何 Node,不需要 tear-down,不會留下孤兒節點。
 # 每個測試自成一組斷言,彼此不共用可變狀態、不依賴執行順序。
 extends GdUnitTestSuite
@@ -290,3 +296,71 @@ func test_two_ordinal_validation_paths_agree_on_same_inputs() -> void:
 		assert_bool(pool._validate_source_ordinal(input)).is_equal(
 			AffinityTypes.is_valid_source(input)
 		)
+
+
+# ---- entry_appended 訊號(2026-09-15 補件,TR-affinity-024/ADR-0002 機制七) ----
+# 🔴 本訊號是實作慣例決策,不是承諾契約(ADR-0002 逐字,見 affinity_data_pool.gd
+# 對 [signal entry_appended] 的文件註解)。這裡的測試釘住的是「今天的行為」,
+# 不是在替 ADR 加碼一個它自己都拒絕承諾的保證。
+#
+# 🔴 GdUnit4 陷阱(本檔第一次寫「不發出」斷言時實測踩到,注入驗證過程才發現):
+# `is_not_emitted("entry_appended")`(不帶任何引數)**看起來**符合官方文件註解
+# 「若省略引數,驗證訊號完全沒有發出」,但底層 `GdUnitSignalCollector.match()` 是
+# 對「已收到的引數陣列」與「期望的引數陣列」做**含長度**的相等比較——不帶引數時期望
+# 陣列是 `[]`,而本訊號實際發出時攜帶 2 個引數,長度不同,`match()` 恆傳回 false,
+# 導致 `is_not_emitted` 恆為「沒等到符合的發出」= 恆通過,**不論訊號有沒有真的發出
+# 都會綠燈**。已用故意注入一次假發出(見下方兩條測試各自的 Story 記錄/PR 討論)
+# 實測證實這個恆綠陷阱,修法是改用引數比對器 `any()` 佔住訊號的每一個位置
+# (`is_not_emitted("entry_appended", any(), any())`)——這樣期望陣列長度與實際
+# 引數數量一致,`any()` 逐一比對「有沒有這個位置的值」而非「值是什麼」,注入驗證
+# 通過後才改用此寫法。**往後任何「訊號不發出」斷言,若該訊號帶引數,一律要用
+# `any()` 佔滿每個位置,不能只給訊號名稱。**
+
+func test_append_record_emits_entry_appended_with_pair_and_record_on_success() -> void:
+	# Arrange
+	var pool: AffinityDataPool = monitor_signals(AffinityDataPool.new())
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+
+	# Act
+	var rejection: AffinityDataPool.WriteRejection = pool.append_record(
+		pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION
+	)
+	# 剛附加的那一筆——與訊號攜帶的 record 必須是同一個實例(Object 相等比較為身分比較)。
+	# 🔴 不得用 get_at(-1):AffinityRecordList.get_at() 明文負索引一律視為越界回傳
+	# null(ADR-0002 機制二第 3 點,VR#11——本檔第一次跑測試時就是踩到這個,見報告)。
+	var appended_record: AffinityRecord = pool._records[pair].get_at(
+		pool._records[pair].size() - 1
+	)
+
+	# Assert
+	assert_int(rejection).is_equal(AffinityDataPool.WriteRejection.NONE)
+	await assert_signal(pool).wait_until(200).is_emitted("entry_appended", pair, appended_record)
+
+
+func test_append_record_does_not_emit_entry_appended_on_zero_amplitude_rejection() -> void:
+	# Arrange — AC-24 拒絕路徑之一:m == 0.0
+	var pool: AffinityDataPool = monitor_signals(AffinityDataPool.new())
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+
+	# Act
+	var rejection: AffinityDataPool.WriteRejection = pool.append_record(
+		pair, 0.0, AffinityTypes.Source.COMBAT_CARD
+	)
+
+	# Assert — 拒絕碼正確,且沒有任何一次 entry_appended 發出(不限定引數,涵蓋任何呼叫)
+	assert_int(rejection).is_equal(AffinityDataPool.WriteRejection.ZERO_AMPLITUDE)
+	await assert_signal(pool).wait_until(200).is_not_emitted("entry_appended", any(), any())
+
+
+func test_append_record_does_not_emit_entry_appended_on_invalid_pair_rejection() -> void:
+	# Arrange — AC-27b/30 拒絕路徑之一:配對序數不在 10 個合法值內
+	var pool: AffinityDataPool = monitor_signals(AffinityDataPool.new())
+
+	# Act
+	var rejection: AffinityDataPool.WriteRejection = pool.append_record(
+		999, 1.0, AffinityTypes.Source.COMBAT_CARD
+	)
+
+	# Assert
+	assert_int(rejection).is_equal(AffinityDataPool.WriteRejection.INVALID_PAIR)
+	await assert_signal(pool).wait_until(200).is_not_emitted("entry_appended", any(), any())
