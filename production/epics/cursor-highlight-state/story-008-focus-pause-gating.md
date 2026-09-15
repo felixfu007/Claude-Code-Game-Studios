@@ -1,7 +1,11 @@
 # Story 008:焦點/暫停閘控(顯式旗標,不用 `SceneTree.paused`)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:Ready
+> **Status**:🟡 **邏輯半部 Complete(2026-09-15),AC-30 的視覺兩個子句未涵蓋**
+> **測試**:`tests/integration/cursor/focus_pause_gating_test.gd`(15 條)。協調者實跑覆驗:
+> 574 條 / 44 套件全部執行 / 0 errors / **0 orphans** / 唯一 failure 仍是既有那條刻意留紅的
+> `affinity_phi_provider`(基線 559 → 574,+15 正好等於新增測試數)。
+> ⚠️ **`/story-done` 未對本張執行** —— 本欄依實跑結果補正,不是走完收尾覆核的結果。
 > **Layer**:Core
 > **Type**:Integration
 > **Estimate**:M(約 5–6 小時)

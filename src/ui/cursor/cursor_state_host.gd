@@ -14,14 +14,41 @@
 ## 011 landed the presentation [CanvasLayer]; this story lands the
 ## frame-buffered [code]_input()[/code]/[code]_process()[/code] collection
 ## points below (機制五) and the [CursorNavigationApplier] child (機制六③).
-## [b]Still NOT implemented by this story[/b]: 機制九's pause/focus gate
-## ([code]_arbitration_suspended[/code], [code]suspend_arbitration()[/code],
-## [code]resume_arbitration()[/code], the
-## [code]NOTIFICATION_APPLICATION_FOCUS_*[/code] branches) — that is Story
-## 008's explicit scope (this story's own dispatch, "Out of Scope"). Until
-## Story 008 lands, [member _frame_events] is collected and drained
-## unconditionally, every frame, with no pause/focus check anywhere in this
-## file.
+##
+## 🔴 [b]Corrected 2026-09-15 (Story 008) — 機制九 is now implemented, the
+## paragraph that used to stand here was stale.[/b] [member _arbitration_suspended],
+## [method suspend_arbitration], [method resume_arbitration] and the
+## [method _notification] [code]NOTIFICATION_APPLICATION_FOCUS_*[/code]
+## branches all exist below. [member _frame_events] no longer fills or drains
+## unconditionally — [method _input], [method _process] and
+## [method flush_buffered_navigation] all gate on
+## [member _arbitration_suspended] first.
+##
+## 🔴 [b]Discovered gap, reported not silently worked around[/b]: ADR-0005's
+## frozen Key Interfaces section (`docs/architecture/adr-0005-cursor-device-authority-input-architecture.md`,
+## the two lines immediately after [method CursorState.reclaim_progress])
+## lists [code]CursorState.force_redraw_current_authority()[/code] (tagged
+## "# AC-30") and [code]CursorState.reapply_native_cursor_visibility()[/code]
+## (tagged "# Core Rules #5") as calls [method _notification]'s FOCUS_IN
+## branch should make, per the ADR's own illustrative pseudocode for 機制九.
+## [b]Neither method exists anywhere in [code]src/[/code][/b] (verified:
+## [code]grep -rn "^func force_redraw_current_authority\|^func
+## reapply_native_cursor_visibility" src/[/code] → 0 matches). This story's own
+## dependency note (`production/epics/cursor-highlight-state/story-008-focus-pause-gating.md`,
+## "Dependencies") records that [code]reapply_native_cursor_visibility()[/code]
+## was assigned to Story 011 — Story 011 did not build it as a literal
+## [CursorState] method; it built the EQUIVALENT behaviour differently, as
+## unconditional per-frame polling inside [code]NativePointerVisibilityArbiter._process()[/code]
+## and [code]SelfDrawnReclaimCursor._process()[/code] (neither of those nodes
+## checks [member _arbitration_suspended] or window focus at all, so both
+## already re-derive their output from [member _state] every single frame,
+## focus-out or not — see each file's own class doc comment). This story does
+## NOT add either method to [CursorState]: doing so would be a new
+## architectural decision (what "force redraw" even means with no
+## [CursorSurface] registered anywhere in [code]src/[/code] yet to redraw) that
+## is outside 機制九's own scope. See this story's final report; covered by an
+## executable gap test in
+## [code]tests/integration/cursor/focus_pause_gating_test.gd[/code].
 ##
 ## [b]Interim collaborator gap — CLOSED 2026-09-07 (Story 011).[/b] Story 014
 ## landed [ThresholdMouseReclaimPolicy] the same day as this story; this host
@@ -153,11 +180,27 @@ const CURSOR_LAYER_DRAW_ORDER: int = 100
 ## [method flush_buffered_navigation] below) across two [member Node.process_priority]
 ## tiers, then cleared by the LAST consumer — never by [method _process].
 ##
-## 🔴 [b]This story does NOT gate on 機制九's pause/focus flag.[/b] See this
-## file's class doc comment's "Still NOT implemented by this story" paragraph
-## — [code]_arbitration_suspended[/code] does not exist yet (Story 008). Until
-## then this buffer fills and drains unconditionally every frame.
+## 🔴 [b]Corrected 2026-09-15 (Story 008)[/b]: this buffer no longer fills or
+## drains unconditionally. [method _input], [method _process] and
+## [method flush_buffered_navigation] all gate on [member _arbitration_suspended]
+## first (機制五 F5). [member suspend_arbitration], [member resume_arbitration]
+## and both [method _notification] FOCUS branches additionally clear this
+## buffer directly, on top of the gating — see each one's own doc comment for
+## why (F5's two confirmed determinism gaps: a 100%-reproducible same-frame
+## race if only the gate existed, and stale-event carryover across a
+## suspend/resume or focus cycle if only the gate existed without also
+## clearing on every transition).
 var _frame_events: Array[InputEvent] = []
+
+## Story 008 (ADR-0005 機制九). Explicit pause/focus gate for the PASSIVE
+## arbitration path only — [b]never checked by[/b] [method CursorState.set_target]
+## / [method CursorState.mark_pending_reresolve] / their handoff-branch
+## siblings, which the ADR calls the "呼叫方主動 API 呼叫" path and requires to
+## keep working even while this flag is [code]true[/code] (存檔讀取的甲/丙分支
+## may legitimately run during a pause-menu transition). This project
+## deliberately rejects [member SceneTree.paused] as the gating criterion —
+## see [method suspend_arbitration]'s doc comment for why.
+var _arbitration_suspended: bool = false
 
 ## [b]Story 005.[/b] Dedicated child node for 機制六③ (see
 ## [code]cursor_navigation_applier.gd[/code]'s own class doc comment for why
@@ -246,10 +289,14 @@ func _ready() -> void:
 ## never reaches [method Node._unhandled_input] at all — a silent omission,
 ## not a reordering, that no buffering scheme downstream could repair.
 ##
-## 🔴 Does NOT check [code]_arbitration_suspended[/code] — that field does not
-## exist yet (Story 008, see class doc comment). Every event collected here
-## is drained unconditionally.
+## 🔴 [b]Corrected 2026-09-15 (Story 008)[/b]: gates on [member _arbitration_suspended]
+## first. A suspended event is dropped here, not merely left uncollected —
+## there is nothing to buffer for a later resume to replay; the ADR's own
+## model is "the passive path does not run at all while suspended", not "runs
+## later, delayed".
 func _input(event: InputEvent) -> void:
+	if _arbitration_suspended:
+		return
 	_frame_events.append(event)
 
 
@@ -259,8 +306,16 @@ func _input(event: InputEvent) -> void:
 ## ([method flush_buffered_navigation] below) still needs to read it. The
 ## buffer's clear point is that method, the frame's LAST consumer (機制五
 ## R4-1).
+##
+## 🔴 [b]Corrected 2026-09-15 (Story 008, F5)[/b]: also gates on
+## [member _arbitration_suspended]. This closes the 100%-reproducible
+## same-frame race the ADR names: without this check, an event appended by
+## [method _input] in the same frame [member _arbitration_suspended] later
+## flips [code]true[/code] would still be arbitrated here — this project's
+## own [code]/architecture-review[/code] confirmed that race does not depend
+## on any unverified engine behaviour.
 func _process(_delta: float) -> void:
-	if _frame_events.is_empty():
+	if _arbitration_suspended or _frame_events.is_empty():
 		return
 	_state.arbitrate_device_authority(_frame_events)
 
@@ -271,11 +326,78 @@ func _process(_delta: float) -> void:
 ## (-100, -25), both exclusive. Buffer stays private (no getter hands out the
 ## internal [Array] — forbidden pattern
 ## [code]returning_internal_container_references[/code], ADR-0001).
+##
+## 🔴 [b]Corrected 2026-09-15 (Story 008, F5)[/b]: also gates on
+## [member _arbitration_suspended]. Per ADR-0005's own documented "R4-1 修法對
+## F5 的連帶影響": if [method suspend_arbitration] runs between 機制六① and
+## this method within the same frame, [member _frame_events] has already been
+## cleared by [method suspend_arbitration] itself, so this early-return is
+## almost always a no-op in that exact interleaving — kept anyway because the
+## ADR requires it explicitly and a future change to [method suspend_arbitration]
+## should not silently reopen the gap by relying on this method's emptiness
+## check alone.
 func flush_buffered_navigation() -> void:
-	if _frame_events.is_empty():
+	if _arbitration_suspended or _frame_events.is_empty():
 		return
 	_state.apply_buffered_navigation(_frame_events)
 	_frame_events.clear()
+
+
+## Story 008 (ADR-0005 機制九). Called by a pause menu / modal UI when it
+## opens. [b]Does not touch device authority or the cursor target[/b] — only
+## the passive-arbitration gate and this frame's buffer.
+##
+## [b]Why a explicit flag and not [member SceneTree.paused][/b]: GDD's own
+## AC-60 already establishes, in its own test scenario, that non-modal
+## surfaces exist which do NOT set [member SceneTree.paused] true (a
+## non-modal settings sidebar, an achievement toast) — so building the
+## pause/focus gate on [member SceneTree.paused] would build it on a
+## criterion this project's own design documents already know is incomplete.
+## See ADR-0005 機制九's "拒絕 SceneTree.paused 的理由" for the full argument.
+func suspend_arbitration() -> void:
+	_arbitration_suspended = true
+	_frame_events.clear()
+
+
+## Story 008 (ADR-0005 機制九). Called by a pause menu / modal UI when it
+## closes. Reseeds the mouse-reclaim accumulator at the CURRENT mouse
+## position via [method CursorState.reseed_reclaim_on_focus_regained] — a
+## one-line forward, never a direct [code]_reclaim.reset(...)[/code] call
+## (R5-3: [member CursorState._reclaim] is private to [CursorState], and
+## choosing which [enum CursorTypes.ResetTrigger] applies IS arbitration
+## logic, which this Autoload shell must not contain).
+func resume_arbitration() -> void:
+	_arbitration_suspended = false
+	_frame_events.clear()
+	_state.reseed_reclaim_on_focus_regained()
+
+
+## Story 008 (ADR-0005 機制九). OS-level focus loss/regain — distinct from
+## [method suspend_arbitration] / [method resume_arbitration], which a
+## pause-menu/modal caller drives explicitly. Both paths converge on the same
+## two effects ([member _arbitration_suspended] + buffer clear), which is why
+## FOCUS_IN also reseeds via the same forwarding call FOCUS_OUT's counterpart
+## [method resume_arbitration] uses.
+##
+## ⚠️ [b]Dispatch order across nodes is TREE order, not
+## [member Node.process_priority] order[/b] (ADR-0005 S-3) — this is
+## independent of, and not resolved by, whatever this method does. Nothing in
+## this method may assume any other node has or has not yet observed this
+## notification.
+##
+## 🔴 [b]force_redraw_current_authority() / reapply_native_cursor_visibility()
+## deliberately NOT called here[/b] — see this file's class doc comment's
+## "Discovered gap" paragraph for the full finding; calling either would be a
+## compile error today since neither exists on [CursorState].
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT:
+			_arbitration_suspended = true
+			_frame_events.clear()
+		NOTIFICATION_APPLICATION_FOCUS_IN:
+			_arbitration_suspended = false
+			_frame_events.clear()
+			_state.reseed_reclaim_on_focus_regained()
 
 
 ## Sole call site in the project for [method Viewport.get_mouse_position], used
