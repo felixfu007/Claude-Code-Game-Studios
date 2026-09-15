@@ -18,6 +18,39 @@
 - **Verification-driven development**: Write tests first when adding gameplay systems.
   For UI changes, verify with screenshots. Compare expected output to actual output
   before marking work complete. Every implementation should have a way to prove it works.
+- 🔴 **Never use `assert()` to guard an "unreachable" branch in a function that returns an enum.**
+  Measured 2026-09-15 by the coordinator (own probe, engine-executed, Godot 4.7.1 headless):
+  when an `assert()` fails it aborts the calling function, and the function yields
+  **ordinal 0 of its declared return type**. For the near-universal convention where the
+  success value is listed first (`enum R { NONE = 0, ... }`), that means
+  **a failed assertion silently returns "success"** — the exact opposite of what the
+  assertion was written to prevent. Use `push_error()` followed by an explicit `return`
+  of a deliberately non-success value instead.
+
+  Reproduce (self-contained — no need to trust this entry; save and run it):
+
+  ```gdscript
+  extends SceneTree
+  enum R { NONE = 0, BAD_A = 1, BAD_B = 2 }
+  func _fails_assert() -> R:
+      assert(false, "deliberate probe failure")
+      return R.BAD_B
+  func _init() -> void:
+      print("returned = ", _fails_assert(), "  is NONE? ", _fails_assert() == R.NONE)
+      quit()
+  ```
+  ```
+  godot --headless --path . -s <that file>
+  ```
+  Measured output: `returned = 0  is NONE? true`, alongside
+  `SCRIPT ERROR: Assertion failed: deliberate probe failure`.
+
+  ⚠️ **The error message is printed, so this is loud in a terminal and silent in a return
+  value.** A caller that only inspects the returned rejection code sees `NONE` and proceeds
+  as if the write succeeded. This was found during Story S-008 (affinity write-port adapter)
+  by the implementer, who had been about to use `assert()` for exactly this purpose and
+  probed it first; the coordinator then re-verified it independently rather than taking the
+  report at face value.
 
 # Design Document Standards
 
