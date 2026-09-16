@@ -62,9 +62,26 @@
 #     此訊號是「實作慣例決策，非已承諾的契約」，下游不得假設它會被
 #     其他 ADR 或未來重構保留。見下方 [signal entry_appended] 文件註解。
 #
+# S-006 交付範圍(本次新增,production/epics/affinity-data-pool/story-006-*.md):
+#   - ReadRejection 統一列舉本體(六值全數宣告;本 story 只讓 NONE/INVALID_PAIR/
+#     INVALID_T_QUERY_TYPE/FUTURE_TIME_QUERY 四值在三個讀取函數內可達——
+#     EMPTY_HYPOTHETICAL_SET/DEAD_PAIR_NOT_ALLOWED 僅預留位置給 S-012)
+#   - AffinityReadResult / ShapeFeatureResult 兩個結果型別(ADR-0002 2026-08-24
+#     同檔強制規則:並列 inner class,不獨立成檔、不掛 class_name——見機制五
+#     附近的「同檔裸引用 COMPILED OK / 跨檔裸引用 Parse Error」探針)
+#   - combat_strength_read() / narrative_depth_read() / shape_feature_read()
+#     三個入口:t_query 型別閘門(match typeof() 三分支,case 順序不可交換)、
+#     pair 序數驗證(機制四之四入口 3–5)、拒絕分流(_rejected_read_result()/
+#     _rejected_shape_feature_result() 統一哨兵值)。
+#     🔴 三個函數對合法輸入(rejection == NONE)只回傳佔位中性值——加權計算
+#     本身、n(p)=0 的完整合法回傳值、陣亡配對條件式預設查詢時點的實際值,
+#     全部屬 S-007,本 story 不宣稱這些值現在就有意義。
+#
 # 尚未在此檔出現、屬於後續 story 的東西(避免下一個人誤以為漏寫):
-# 三個加權讀取函數、can_write()、export_state()/import_state()——全部不在
-# 本 story 範圍。（advance_campaign_tick() 已於 S-005 交付,不再列在此處。）
+# 三個讀取函數的真正加權計算邏輯(S-007)、can_write()、
+# export_state()/import_state()——全部不在本 story 範圍。
+# (advance_campaign_tick() 已於 S-005 交付;三個讀取函數的入口/閘門/拒絕分流
+# 已於 S-006 交付,不再列在此處——只有「真正的計算」還沒有。)
 class_name AffinityDataPool
 extends RefCounted
 
@@ -148,6 +165,85 @@ enum AdvanceRejection {
 	NONE,
 	SERIALIZATION_WINDOW_ACTIVE,
 }
+
+
+## 三個真實讀取函數([method combat_strength_read]/[method narrative_depth_read]/
+## [method shape_feature_read])與公式四預判讀取([code]speculative_read()[/code],
+## S-012、切片外)共用的統一拒絕碼(ADR-0002 機制五、機制五之二)。
+##
+## 🔴 本 story(S-006)只讓前四個分支([constant NONE]/[constant INVALID_PAIR]/
+## [constant INVALID_T_QUERY_TYPE]/[constant FUTURE_TIME_QUERY])在三個真實讀取
+## 函數內可達。後兩個分支([constant EMPTY_HYPOTHETICAL_SET]/
+## [constant DEAD_PAIR_NOT_ALLOWED])僅供 S-012 的 [code]speculative_read()[/code]
+## 使用——本 story 只保留列舉成員位置,避免該 story 落地時需要變動列舉型別本身
+## (工作單 Out of Scope 第 4 項),不宣稱本 story 的任何分支會產生這兩個值。
+enum ReadRejection {
+	NONE,
+	INVALID_PAIR,
+	INVALID_T_QUERY_TYPE,
+	FUTURE_TIME_QUERY,
+	EMPTY_HYPOTHETICAL_SET,   # 僅 speculative_read()(S-012,切片外)
+	DEAD_PAIR_NOT_ALLOWED,    # 僅 speculative_read()(S-012,切片外)
+}
+
+
+## 公式一(戰鬥強度)/公式二(敘事深度)讀取結果容器(ADR-0002 機制五)。
+##
+## 🔴 呼叫端義務(機制五之二、`docs/architecture/control-manifest.md`):必須先
+## 檢查 [member rejection] 是否為 [constant ReadRejection.NONE],才可讀取其餘
+## 欄位——拒絕時其餘欄位一律為機制五之二表定的哨兵值,不代表任何真實讀值。
+##
+## 🔴 [member value] 拒絕時為 [constant @GDScript.NAN] 而非 `0.0`——多筆記錄
+## 正負相消時,成功呼叫完全可能算出 `0.0`;若用 `0.0` 當拒絕哨兵,呼叫端漏檢
+## [member rejection] 時無法區分「淨值為零」與「被拒絕」(工作單 Implementation
+## Notes #5)。
+##
+## 🔴 [member diagnostic_visited_count] 為 QA-only 診斷輸出(見 S-007)——
+## 業務邏輯不得依賴此欄位做任何判斷,理由與 [member value] 同(用 `-1` 而非
+## `0` 當拒絕哨兵)。
+##
+## 🔴 [b]同檔強制規則[/b](ADR-0002 2026-08-24 修訂):本型別因跨檔裸引用
+## [enum ReadRejection] 在 Godot 4.7.1 是編譯期限制(同檔裸引用 `COMPILED OK`,
+## 跨檔裸引用 `Parse Error`,已實機驗證),故必須與 [AffinityDataPool] 同檔宣告
+## 為並列 inner class,不得獨立成檔、不得擁有自己的 `class_name`。
+##
+## 🔴 本 story(S-006)只交付本型別定義本身與拒絕時的哨兵值——成功呼叫時各
+## 欄位的真實計算值屬 S-007,本 story 回傳的是佔位中性值(見
+## [method combat_strength_read]/[method narrative_depth_read] 文件註解)。
+class AffinityReadResult extends RefCounted:
+	var rejection: ReadRejection = ReadRejection.NONE
+	var value: float
+	var t_query: int
+	var n_pair: int
+	var diagnostic_visited_count: int
+
+
+## 公式三(形狀特徵)讀取結果容器(ADR-0002 機制五)。呼叫端義務、同檔強制規則
+## 皆與 [AffinityReadResult] 相同,見該型別文件註解,不重複。
+##
+## 🔴 三個 [Dictionary] 欄位([member source_distribution]/[member source_polarity]/
+## [member source_absence])拒絕時為 `{}` 而非 `null`——它們的成功型別是非雙態
+## [Dictionary],改用 `null` 會讓下游對它們的 `.has()`/`.get()` 操作變成中止風險
+## (工作單 Implementation Notes #5)。三個雙態欄位([member time_distribution]/
+## [member segment_profile]/[member low_confidence])拒絕時維持 `null`,因為
+## `null` 本來就是它們的合法成功值之一([code]n_pair == 0[/code] 時)。
+##
+## 🔴 七項形狀特徵欄位([member reversal_count] 起算)的實際計算邏輯屬 S-007——
+## 本 story 只保證欄位存在、拒絕時哨兵值正確(工作單 Implementation Notes #1)。
+class ShapeFeatureResult extends RefCounted:
+	var rejection: ReadRejection = ReadRejection.NONE
+	var reversal_count: int
+	var source_distribution: Dictionary   # {n_cc, n_sc, n_se, p_cc, p_sc, p_se}
+	var time_distribution: Variant        # {span_c, spread_ratio} 或 null(n_pair==0)
+	var source_polarity: Dictionary       # {net_cc, net_sc, net_se}
+	var total_churn: float
+	var segment_profile: Variant          # Array 或 null(n_pair==0)
+	var low_confidence: Variant           # bool 或 null(n_pair==0)
+	var source_absence: Dictionary        # {cc, sc, se} 三態 enum
+	var n_pair: int
+	var t_query: int
+	var c_now: int
+	var diagnostic_visited_count: int
 
 
 ## 陣亡標記表:記錄「誰陣亡、陣亡當下的全域好感度寫入計數器現值是多少」。
@@ -446,3 +542,172 @@ func append_record(
 	entry_appended.emit(pair, record)
 
 	return WriteRejection.NONE
+
+
+## 三個真實讀取函數共用的入口驗證(ADR-0002 機制五、Story S-006)。依序:
+## 1. [param t_query] 型別閘門——[code]match typeof(t_query)[/code] 三分支。
+##    [b]case 順序不可交換[/b](已實測):若把 `_` 預設分支寫在 [constant TYPE_NIL]
+##    之前,`null` 會被 `_` 提前吃掉,[constant TYPE_NIL] 分支變成不可達的死碼,
+##    且引擎[b]既不擋編譯、執行期也不印任何警告[/b](工作單 Implementation
+##    Notes #2)。[constant TYPE_FLOAT] 一律落入 `_` 被拒絕——不接受 `3.0`,理由
+##    與機制八對 `t`/`c` 嚴格 [constant TYPE_INT] 一致:浮點截斷後落入合法範圍
+##    會靜默通過後續值域檢查。
+## 2. [param pair] 序數驗證(機制四之四入口 3–5)——非法序數若不在此攔下,
+##    下游 `_records[非法序數]` 缺鍵讀取會直接中止呼叫函式。
+## 3. 型別通過為 [constant TYPE_INT] 時,[param t_query] 大於目前 [member _t_now]
+##    一律視為未來時間點查詢,拒絕(GDD Edge Cases「若 t_query 大於目前實際的
+##    t_now」,AC-36)。[b]若 [param t_query] 早於配對最早一筆記錄的
+##    [code]t_i[/code],視同該配對在此刻 [code]n(p, t_query) = 0[/code],是合法
+##    情境,不觸發本分支[/b]——本方法只與 [member _t_now] 比較,不查任何配對的
+##    最早記錄時間,故此情境自然不會誤觸。
+##
+## 🔴 [b]步驟 1(型別閘門)必須最先[/b]是規格明文(ADR-0002 機制五「機制五
+## 開頭,先於任何其他運算」,BLOCKING)。[b]步驟 2(pair 驗證)與步驟 3
+## (未來時點檢查)之間的相對順序不是[/b]——GDD/ADR 均未針對「同一次呼叫
+## 同時違反兩者時回傳哪個拒絕碼」給出可測試的明文斷言。目前實作選擇
+## 「pair 驗證先於未來時點檢查」,由
+## `test_combined_invalid_pair_and_future_t_query_returns_invalid_pair_first`
+## 這條回歸測試釘死[b]這個實作選擇[/b],不是在斷言某個規格保證——若日後
+## 需要調整此順序,必須同步改動那條測試,而不是任由它悄悄變成一個假的契約。
+##
+## 🔴 [b]明文禁止[/b] [code]if t_query != null and t_query > _t_now[/code]——
+## 對 [String] 會在比較運算子處中止所在函式(已實測)。[param t_query] 的型別
+## 判定[b]只能用[/b] `typeof()`:不可用 `!= null`、不可用比較、不可用賦值進
+## 型別化變數當檢查。
+##
+## 回傳 [constant ReadRejection.NONE] 表示通過全部三步——呼叫端(即下方三個
+## 讀取函數自身)接著仍需依 [code]typeof(t_query) == TYPE_INT[/code] 判斷是走
+## 「明確查詢時點」還是「條件式預設查詢時點」分支。本方法[b]不[/b]決定後者
+## 實際應該解出什麼值(屬 S-007,見三個讀取函數的文件註解)。
+func _validate_read_query(pair: AffinityTypes.Pair, t_query: Variant) -> ReadRejection:
+	match typeof(t_query):
+		TYPE_NIL:
+			pass   # 走條件式預設查詢時點分支——實際預設值由 S-007 決定
+		TYPE_INT:
+			pass   # 繼續下方值域檢查
+		_:
+			return ReadRejection.INVALID_T_QUERY_TYPE
+
+	if not _validate_pair_ordinal(pair):
+		return ReadRejection.INVALID_PAIR
+
+	if typeof(t_query) == TYPE_INT and t_query > _t_now:
+		return ReadRejection.FUTURE_TIME_QUERY
+
+	return ReadRejection.NONE
+
+
+## 建立一個帶指定 [param rejection] 碼與機制五之二哨兵值的 [AffinityReadResult]。
+## [method combat_strength_read]/[method narrative_depth_read] 的所有拒絕分支
+## 共用本方法,避免哨兵值表在多處各自手寫、日後只改到其中幾處——本專案已登記過
+## 這個失效模式(見 [method _validate_pair_ordinal] 文件註解對「兩份獨立實作」
+## 與「同一份手寫兩處」的區分)。
+func _rejected_read_result(rejection: ReadRejection) -> AffinityReadResult:
+	var result := AffinityReadResult.new()
+	result.rejection = rejection
+	result.value = NAN
+	result.t_query = -1
+	result.n_pair = -1
+	result.diagnostic_visited_count = -1
+	return result
+
+
+## 建立一個帶指定 [param rejection] 碼與機制五之二哨兵值的 [ShapeFeatureResult]。
+## [method shape_feature_read] 的所有拒絕分支共用本方法,理由同
+## [method _rejected_read_result]。
+func _rejected_shape_feature_result(rejection: ReadRejection) -> ShapeFeatureResult:
+	var result := ShapeFeatureResult.new()
+	result.rejection = rejection
+	result.reversal_count = -1
+	result.source_distribution = {}
+	result.time_distribution = null
+	result.source_polarity = {}
+	result.total_churn = NAN
+	result.segment_profile = null
+	result.low_confidence = null
+	result.source_absence = {}
+	result.n_pair = -1
+	result.t_query = -1
+	result.c_now = -1
+	result.diagnostic_visited_count = -1
+	return result
+
+
+## 公式一(戰鬥強度讀取,GDD Formulas 公式一)。ADR-0002 機制五,Story S-006。
+##
+## 🔴 本 story 只交付入口驗證([method _validate_read_query])與拒絕分流——加權
+## 計算邏輯本身(公式一的實際數學)、`n(p)=0` 的完整合法回傳值、陣亡配對的
+## 條件式預設查詢時點實際算出的值,全部屬 S-007。通過驗證後回傳的是[b]佔位
+## 中性值[/b]([code]value = 0.0[/code]、[code]n_pair = 0[/code]、
+## [code]diagnostic_visited_count = 0[/code]),[b]不代表任何真實讀值[/b]——
+## 本 story 的測試範圍嚴格限定在型別/閘門/拒絕層級,不涉及此處回傳值的正確性。
+##
+## [param t_query] 省略([code]null[/code])時走「條件式預設查詢時點」
+## (GDD Core Rules #3):若 [method t_death] 非 `null` 則預設為該值,否則預設
+## 為目前 [member _t_now]。[b]本 story 只保證落到這個分支,不決定實際算出
+## 什麼[/b]——下方佔位實作直接使用 [member _t_now],真正呼叫 [method t_death]
+## 分流屬 S-007。
+func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+	var rejection: ReadRejection = _validate_read_query(pair, t_query)
+	if rejection != ReadRejection.NONE:
+		return _rejected_read_result(rejection)
+
+	var result := AffinityReadResult.new()
+	result.rejection = ReadRejection.NONE
+	result.value = 0.0
+	result.t_query = t_query if typeof(t_query) == TYPE_INT else _t_now
+	result.n_pair = 0
+	result.diagnostic_visited_count = 0
+	return result
+
+
+## 公式二(敘事深度讀取,GDD Formulas 公式二)。ADR-0002 機制五,Story S-006。
+## 結構與 [method combat_strength_read] 完全對稱(同一套入口驗證、同一種條件式
+## 預設查詢時點、同一種佔位中性值)——見該方法文件註解,不重複。
+func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+	var rejection: ReadRejection = _validate_read_query(pair, t_query)
+	if rejection != ReadRejection.NONE:
+		return _rejected_read_result(rejection)
+
+	var result := AffinityReadResult.new()
+	result.rejection = ReadRejection.NONE
+	result.value = 0.0
+	result.t_query = t_query if typeof(t_query) == TYPE_INT else _t_now
+	result.n_pair = 0
+	result.diagnostic_visited_count = 0
+	return result
+
+
+## 公式三(形狀特徵讀取,GDD Formulas 公式三)。ADR-0002 機制五,Story S-006。
+##
+## 🔴 [param t_query] 省略時[b]一律[/b]預設為目前 [member _t_now]——不受陣亡
+## 凍結規則影響(GDD 明文形狀特徵須能反映陣亡後的追憶寫入),與
+## [method combat_strength_read]/[method narrative_depth_read] 的條件式預設
+## [b]不同[/b]。這條規則本身無條件、不依賴 [method t_death],故本 story 直接
+## 落地,不留待 S-007。
+##
+## 🔴 七項形狀特徵欄位([member ShapeFeatureResult.reversal_count] 起算)的
+## 實際計算邏輯屬 S-007——本 story 只保證欄位存在、拒絕時哨兵值正確(工作單
+## Implementation Notes #1)。成功呼叫時回傳佔位中性值,[member c_now] 例外:
+## 它呼叫既有的 [method _c_now]()(S-005 已交付的真實實作),不是佔位值。
+func shape_feature_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> ShapeFeatureResult:
+	var rejection: ReadRejection = _validate_read_query(pair, t_query)
+	if rejection != ReadRejection.NONE:
+		return _rejected_shape_feature_result(rejection)
+
+	var effective_t_query: int = t_query if typeof(t_query) == TYPE_INT else _t_now
+	var result := ShapeFeatureResult.new()
+	result.rejection = ReadRejection.NONE
+	result.reversal_count = 0
+	result.source_distribution = {}
+	result.time_distribution = null
+	result.source_polarity = {}
+	result.total_churn = 0.0
+	result.segment_profile = null
+	result.low_confidence = null
+	result.source_absence = {}
+	result.n_pair = 0
+	result.t_query = effective_t_query
+	result.c_now = _c_now(effective_t_query)
+	result.diagnostic_visited_count = 0
+	return result
