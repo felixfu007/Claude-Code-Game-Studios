@@ -67,6 +67,30 @@ const ROSTER_PATH: String = "res://assets/data/units/vs01_roster.txt"
 ## block the load for this path; a legal empty result does not.
 const AFFINITY_PATH: String = "res://assets/data/affinity/vs01_affinity_links.txt"
 
+## Card mechanics table source (Story U-003), read once in [method _ready]
+## via [method Card.cards_from_text] and used to build the [CardDeck] passed
+## into [BattleController]. Same MISSING/UNREADABLE gating discipline as
+## [constant TERRAIN_PATH] / [constant ROSTER_PATH] / [constant AFFINITY_PATH]
+## (ships with the game; absence is a packaging defect) — but unlike terrain/
+## roster, a file that parses CLEANLY to zero cards is a legal, expressible
+## design state (GDD Edge Cases "卡池張數少於開局手牌數"; [CardDeck]'s own doc
+## comment on empty-pool handling), never escalated to [method _fail_load].
+## A CORRUPT row ([method Card.cards_from_text] returning [code]null[/code] —
+## that method's own 2026-09-16 manager ruling for this table) IS a load
+## failure, distinguished from the legal-empty case via
+## [method classify_card_parse], mirroring [constant AFFINITY_PATH]'s
+## [method classify_affinity_parse] null/array distinction.
+const CARDS_PATH: String = "res://assets/data/cards/vs01_cards.txt"
+
+## Card-face flavor text table (Story U-003), read once in [method _ready]
+## via [method CardText.flavor_texts_from_text]. Only ever gated by
+## [constant LoadFailure.MISSING] / [constant LoadFailure.UNREADABLE] — that
+## parser has no [code]null[/code]/failure return path (see its own doc
+## comment, "placeholder, deliberately undecided" for a malformed row), so
+## there is no analogous parse-error classification for this path the way
+## there is for [constant CARDS_PATH] / [constant AFFINITY_PATH].
+const CARD_TEXT_PATH: String = "res://assets/data/cards/vs01_card_text.txt"
+
 ## Classification of why loading terrain/roster/affinity data failed, checked
 ## independently per file in [method _ready]. Ordered from "never got to open
 ## the file" through "opened it but the content was useless" so a single
@@ -110,6 +134,13 @@ const _LOG_LOAD_FAILURE_FORMAT: String = "BattleScreen: failed to load %s (%s)"
 # PARSED_EMPTY) borrowed purely as a diagnostic label so a truly empty file is
 # distinguishable in the log from a file containing only comments/blank lines.
 const _LOG_AFFINITY_ZERO_LINKS_FORMAT: String = "BattleScreen: %s parsed to zero affinity links (%s) — proceeding with no pairings"
+
+# Developer-facing log line for the card table's zero-cards case (Story
+# U-003 Implementation Notes #2) — a legal design state (GDD Edge Cases "卡池
+# 張數少於開局手牌數"), so this never blocks the load and is never routed
+# through _fail_load(), mirroring _LOG_AFFINITY_ZERO_LINKS_FORMAT's own
+# never-a-failure discipline.
+const _LOG_CARDS_ZERO_PARSED_FORMAT: String = "BattleScreen: %s parsed to zero cards — proceeding with an empty CardDeck"
 
 ## UI-facing display strings, centralized here as the single point a future
 ## localization pass has to touch. Per [code].claude/rules/ui-code.md[/code]
@@ -233,6 +264,26 @@ var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
 var _device: DeviceAuthority
+
+## Owning instance of the affinity data pool for this battle (ADR-0002
+## mechanism one — a general, non-Autoload object constructed once and
+## injected by reference; the forbidden pattern
+## `autoload_singleton_for_testable_data_layers` in
+## [code]docs/registry/architecture.yaml[/code] is why this is a member here
+## rather than a singleton). Story U-003 (合流自
+## story-009-wiring.md) judged [BattleScreen] the appropriate holder in this
+## vertical slice, since no campaign-level node exists above it yet — see
+## that story's Implementation Notes #4 for the reasoning and its explicit
+## caveat that this is a slice-level judgment call, not a permanent
+## architectural home. Kept as a member (rather than a local in
+## [method _ready]) purely so the ownership decision is visible at the class
+## level; [member BattleController._card_play_session] holding an
+## [AffinityPoolWritePort] that holds this instance would keep it alive even
+## as a local; see [member _phi]'s doc comment for the one case in this file
+## where a local WOULD be a bug (an unset [Callable]) — this is not that
+## case, since a plain object reference (not a [Callable] bound to one) keeps
+## its normal [RefCounted] refcount.
+var _affinity_pool: AffinityDataPool
 
 ## Injected Φ provider for [member _controller]'s [code]phi_provider: Callable[/code]
 ## constructor argument. [b]MUST stay a member field — never a local variable
@@ -368,12 +419,50 @@ func _ready() -> void:
 					_LOG_AFFINITY_ZERO_LINKS_FORMAT % [AFFINITY_PATH, LoadFailure.find_key(diagnostic)]
 				)
 
+	# Card mechanics table load (Story U-003) — same MISSING/UNREADABLE
+	# file-access gating as terrain/roster/affinity above. Unlike those, a
+	# CORRUPT row (Card.cards_from_text() returning null) is ALSO a load
+	# failure here, via classify_card_parse() — mirroring the affinity
+	# table's null/legal-empty-array distinction. A file that parses CLEANLY
+	# to zero cards is legal (Story U-003 Implementation Notes #2: "卡池張數
+	# 少於開局手牌數" is an existing, documented CardDeck edge case) and only
+	# ever produces a push_warning(), never reaching _fail_load().
+	var cards: Array[Card] = []
+	var cards_failure: LoadFailure = classify_file_access(CARDS_PATH)
+	if cards_failure == LoadFailure.NONE:
+		var cards_text: String = FileAccess.get_file_as_string(CARDS_PATH)
+		var parsed_cards: Variant = Card.cards_from_text(cards_text)
+		cards_failure = classify_card_parse(parsed_cards)
+		if cards_failure == LoadFailure.NONE:
+			cards = parsed_cards
+			if cards.is_empty():
+				push_warning(_LOG_CARDS_ZERO_PARSED_FORMAT % CARDS_PATH)
+
+	# Card flavor-text table load (Story U-003) — file-access gating only;
+	# CardText.flavor_texts_from_text() has no null/failure return path (see
+	# its own doc comment), so there is no analogous parse-error branch to
+	# classify here. Parsed purely to prove the table loads cleanly — no
+	# screen in this slice consumes flavor text yet (U-009+, out of scope for
+	# this story), so the result is not retained past this call.
+	var card_text_failure: LoadFailure = classify_file_access(CARD_TEXT_PATH)
+	if card_text_failure == LoadFailure.NONE:
+		var card_text_text: String = FileAccess.get_file_as_string(CARD_TEXT_PATH)
+		CardText.flavor_texts_from_text(card_text_text)
+
 	if (
 		terrain_failure != LoadFailure.NONE
 		or roster_failure != LoadFailure.NONE
 		or affinity_failure != LoadFailure.NONE
+		or cards_failure != LoadFailure.NONE
+		or card_text_failure != LoadFailure.NONE
 	):
-		_fail_load(terrain_failure, roster_failure, affinity_failure)
+		_fail_load({
+			TERRAIN_PATH: terrain_failure,
+			ROSTER_PATH: roster_failure,
+			AFFINITY_PATH: affinity_failure,
+			CARDS_PATH: cards_failure,
+			CARD_TEXT_PATH: card_text_failure,
+		})
 		return
 
 	_state = BattleState.create(terrain_rows, roster_text)
@@ -391,7 +480,23 @@ func _ready() -> void:
 	# BattleState.resolve_attack() already forces phi to 0 for ENEMY
 	# attackers by design, regardless of what this provider returns.
 	_phi = AffinityPhiProvider.new(_state, links)
-	_controller = BattleController.new(_state, _order, Callable(_phi, "phi"))
+
+	# Story U-003 — the two halves this story's merge exists to wire: a real
+	# CardDeck (rng=null here means production, time-seeded
+	# shuffling — see _build_card_deck()'s own doc comment for why tests call
+	# it directly with a fixed-seed RNG instead of going through this path),
+	# and a real AffinityDataPool wrapped in AffinityPoolWritePort in place of
+	# the NullAffinityWritePort BattleController._init() would otherwise
+	# substitute. _affinity_pool is this battle's single instance (ADR-0002
+	# mechanism one — see that member's own doc comment for why it is owned
+	# here).
+	var card_deck: CardDeck = _build_card_deck(cards)
+	_affinity_pool = AffinityDataPool.new()
+	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(_affinity_pool)
+
+	_controller = BattleController.new(
+		_state, _order, Callable(_phi, "phi"), Callable(), card_deck, links, write_port
+	)
 	_device = DeviceAuthority.new()
 
 	_controller.unit_selected.connect(func(_id: int) -> void: _refresh_view())
@@ -621,6 +726,38 @@ static func classify_affinity_parse(parsed: Variant) -> LoadFailure:
 	return LoadFailure.NONE
 
 
+## Classifies [method Card.cards_from_text]'s [code]Variant[/code] result:
+## [constant LoadFailure.PARSE_ERROR] if [param parsed] is [code]null[/code]
+## (a row failed to parse — that method's own 2026-09-16 manager ruling for
+## THIS table, transcribed in its doc comment: a partially-valid card table
+## must abort loudly, naming the line, not be used as if fully valid),
+## [constant LoadFailure.NONE] otherwise — including when [param parsed] is a
+## legally empty array, which per Story U-003's Implementation Notes #2 is
+## NOT a failure ("卡池張數少於開局手牌數" is an existing, documented
+## [CardDeck] edge case, not a packaging defect). Structurally identical to
+## [method classify_affinity_parse] — see that method's doc comment for the
+## same null/legal-empty-array distinction, applied to the sibling table.
+static func classify_card_parse(parsed: Variant) -> LoadFailure:
+	if parsed == null:
+		return LoadFailure.PARSE_ERROR
+	return LoadFailure.NONE
+
+
+## Builds a [CardDeck] from [param cards], forwarding [param rng] straight to
+## [method CardDeck._init]. Extracted as a [code]static[/code], node-
+## independent method (Story U-003 Implementation Notes #3) purely so a test
+## can call it directly with a fixed-seed [RandomNumberGenerator] and get a
+## reproducible opening hand for screenshot/greyscale-diff evidence — [method
+## _ready] always calls this with [param rng] left at its default
+## [code]null[/code] (production behavior unchanged: time-seeded, genuinely
+## random shuffling, matching [CardDeck]'s own documented default). Card-face
+## randomness itself is legal here — the project's `rng_in_combat_settlement`
+## ban covers the settlement path, not which card comes up on a draw (GDD
+## Core Rules 三, [CardDeck]'s own class doc comment).
+static func _build_card_deck(cards: Array[Card], rng: RandomNumberGenerator = null) -> CardDeck:
+	return CardDeck.new(cards, rng)
+
+
 ## Builds the on-screen message for [param failure] at [param path] from
 ## [constant TEXT_LOAD_FAILURE_FORMAT]. Never called with [constant
 ## LoadFailure.NONE] — callers check for [constant LoadFailure.NONE] before
@@ -684,27 +821,33 @@ static func _parse_terrain_rows(text: String) -> PackedStringArray:
 # Also hides _info_label: LoadErrorLabel spans y=8..262, which fully overlaps
 # InfoLabel's y=8..32 — left visible, InfoLabel's stale/empty text would sit
 # on top of the failure message.
-func _fail_load(
-	terrain_failure: LoadFailure, roster_failure: LoadFailure, affinity_failure: LoadFailure
-) -> void:
-	if terrain_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [TERRAIN_PATH, LoadFailure.find_key(terrain_failure)])
-	if roster_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [ROSTER_PATH, LoadFailure.find_key(roster_failure)])
-	if affinity_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [AFFINITY_PATH, LoadFailure.find_key(affinity_failure)])
+#
+# Story U-003: signature extended from three named LoadFailure parameters to
+# a single Dictionary[String, LoadFailure] keyed by res:// path — the shape
+# the story's own Implementation Notes #2 explicitly left to this
+# implementer's judgment ("擴充方式由實作時判斷"), on the condition that
+# existing enum semantics and existing call-site behavior stay unchanged.
+# [param failures] is iterated in insertion order (GDScript Dictionary
+# preserves it) for BOTH the push_error() loop below AND the "which one gets
+# shown on screen" choice — this preserves the exact precedence the old
+# positional signature had (terrain, then roster, then affinity all still
+# come first in the caller's literal below) while extending cleanly to the
+# two new paths this story adds (CARDS_PATH, CARD_TEXT_PATH) without a
+# growing positional parameter list.
+func _fail_load(failures: Dictionary[String, LoadFailure]) -> void:
+	for path: String in failures:
+		var failure: LoadFailure = failures[path]
+		if failure != LoadFailure.NONE:
+			push_error(_LOG_LOAD_FAILURE_FORMAT % [path, LoadFailure.find_key(failure)])
 
 	var display_failure: LoadFailure = LoadFailure.NONE
 	var display_path: String = ""
-	if terrain_failure != LoadFailure.NONE:
-		display_failure = terrain_failure
-		display_path = TERRAIN_PATH
-	elif roster_failure != LoadFailure.NONE:
-		display_failure = roster_failure
-		display_path = ROSTER_PATH
-	else:
-		display_failure = affinity_failure
-		display_path = AFFINITY_PATH
+	for path: String in failures:
+		var failure: LoadFailure = failures[path]
+		if failure != LoadFailure.NONE:
+			display_failure = failure
+			display_path = path
+			break
 	_load_error_label.text = load_failure_message(display_failure, display_path)
 	_load_error_label.visible = true
 	_status_label.visible = false
