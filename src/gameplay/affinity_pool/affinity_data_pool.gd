@@ -17,6 +17,7 @@
 # Story:
 #   - production/epics/affinity-data-pool/story-003-death-marks.md(S-003)
 #   - production/epics/affinity-data-pool/story-004-pool-skeleton-and-write-path.md(S-004)
+#   - production/epics/affinity-data-pool/story-005-campaign-tick.md(S-005)
 #
 # 🔴 本檔是本 epic 的序列化點(EPIC.md「開工順序」)——S-003/004/005/006/007
 # 全部往同一個檔案裡加東西,彼此之間沒有真正的平行機會。
@@ -37,8 +38,20 @@
 #     ——SERIALIZATION_WINDOW_ACTIVE 沿用 S-003 已建立的 _serialization_tokens
 #     檢查點,今天同樣恆不可達,不宣稱測過)
 #   - append_record() 六步驗證
-#   - 🔴 record.c(戰役刻度)本 story 恆寫入佔位值 0——真正的戰役刻度計數器
-#     由 S-005 引入,本 story 只保證欄位存在、寫入後不再變動
+#   - 🔴 record.c(戰役刻度)本 story(S-004)恆寫入佔位值 0——真正的戰役刻度
+#     計數器由 S-005 引入,本 story 只保證欄位存在、寫入後不再變動
+#
+# S-005 交付範圍(本次新增):
+#   - _campaign_tick_marks 欄位(獨立於 _records 的 append-only 標記列表)
+#   - AdvanceRejection 列舉本體(僅 NONE 分支落地——SERIALIZATION_WINDOW_ACTIVE
+#     沿用既有的 _serialization_tokens 檢查點,今天恆不可達,不宣稱測過)
+#   - advance_campaign_tick():附加當下 _t_now 現值到 _campaign_tick_marks,
+#     不遞增 _t_now 本身
+#   - _c_now(t_query):Formulas 3c 的 c_now(t_query) 精確定義,內部/私有輔助
+#     方法(不對外公開獨立查詢介面——GDD 明文 c_now 隨三個讀取函數的回傳值
+#     附帶,S-006/S-007 負責接線)
+#   - append_record() 的 record.c 改為呼叫 _c_now() 取得真實現值,S-004 遺留的
+#     恆 0 佔位腳手架自本 story起不再成立
 #
 # 2026-09-15 補件(管理者裁決,非新 story——見 EPIC.md 限制表第 10 條)：
 #   - [signal entry_appended] 本體與 append_record() 成功路徑的 emit。
@@ -50,8 +63,8 @@
 #     其他 ADR 或未來重構保留。見下方 [signal entry_appended] 文件註解。
 #
 # 尚未在此檔出現、屬於後續 story 的東西(避免下一個人誤以為漏寫):
-# advance_campaign_tick()、三個加權讀取函數、can_write()、
-# export_state()/import_state()——全部不在本 story 範圍。
+# 三個加權讀取函數、can_write()、export_state()/import_state()——全部不在
+# 本 story 範圍。（advance_campaign_tick() 已於 S-005 交付,不再列在此處。）
 class_name AffinityDataPool
 extends RefCounted
 
@@ -122,6 +135,21 @@ enum WriteRejection {
 }
 
 
+## 前進戰役刻度介面 [method advance_campaign_tick] 的回傳結果(ADR-0002 機制四之四,
+## 8 個帶 enum 參數入口清單之一;本方法無參數,但回傳值本身是 enum,故仍屬同一清單
+## 統一序數驗證慣例的延伸)。
+##
+## 🔴 本 story(S-005)只落地 [constant NONE] 分支。[constant SERIALIZATION_WINDOW_ACTIVE]
+## 依賴 S-014(切片外)的序列化生命週期權杖集合——與 [enum DeathNotifyResult] /
+## [enum WriteRejection] 的同名分支共用同一顆檢查點欄位([member _serialization_tokens]),
+## 今天恆為空集合、此分支恆不可達。不得刪除 [method advance_campaign_tick] 對這顆欄位的
+## 檢查,也不得在任何測試/註解裡宣稱這個分支今天被測過。
+enum AdvanceRejection {
+	NONE,
+	SERIALIZATION_WINDOW_ACTIVE,
+}
+
+
 ## 陣亡標記表:記錄「誰陣亡、陣亡當下的全域好感度寫入計數器現值是多少」。
 ## 獨立於 Delta Log(`_records`,S-004 加入)之外的結構,鍵查找 O(1)。
 ##
@@ -140,6 +168,18 @@ var _death_marks: Dictionary[AffinityTypes.Character, int] = {}
 ## [method notify_death] 本身**不**遞增它(GDD Core Rules #1「前進戰役刻度」
 ## 的既有慣例:記錄呼叫當下的現值,不推進計數器本身)。
 var _t_now: int = 0
+
+## 戰役刻度標記列表(GDD Core Rules #1「戰役刻度標記列表」段落、ADR-0002 機制二
+## 末段)——**獨立於** [member _records](Delta Log)之外的 append-only 結構。
+## [method advance_campaign_tick] 每次成功呼叫時附加當下的 [member _t_now] 現值。
+##
+## 🔴 刻意不預填——與 [member _records] 相反,與 [member _death_marks] 一致
+## (戰役尚未開始的最初狀態就是空列表,這是合法初始狀態,不是需要守衛的邊緣情境;
+## 讀取邏輯([method _c_now])對空列表天然回傳 0,不需要守衛)。
+##
+## ⚠️ 本 story 不處理序列化——是否整份持久化或如何重建屬 S-013(切片外)範圍,
+## 本檔不對此做任何宣稱。
+var _campaign_tick_marks: Array[int] = []
 
 ## S-014(切片外)的序列化生命週期權杖集合佔位——今天恆為空,
 ## [constant DeathNotifyResult.SERIALIZATION_WINDOW_ACTIVE] 分支因此恆不可達
@@ -251,6 +291,58 @@ func t_death(pair: AffinityTypes.Pair) -> Variant:
 	return earliest
 
 
+## 前進戰役刻度介面(GDD Core Rules #1「戰役刻度標記列表」段落、ADR-0002 機制二末段,
+## Story S-005)。每次成功呼叫附加當下的 [member _t_now] 現值到
+## [member _campaign_tick_marks]。[b]此呼叫不遞增 [member _t_now] 本身[/b]——呼叫前後
+## `t_now` 相同(與 [method notify_death] 的既有慣例一致:記錄呼叫當下的現值,不推進
+## 計數器本身)。
+##
+## 回傳 [enum AdvanceRejection]:
+## - [constant AdvanceRejection.NONE]:成功附加標記。
+## - [constant AdvanceRejection.SERIALIZATION_WINDOW_ACTIVE]:🔴 本 story 未實作
+##   觸發路徑——依賴 S-014(切片外)的序列化生命週期權杖集合,
+##   [member _serialization_tokens] 今天恆為空,此分支恆不可達。檢查點結構保留在
+##   下方,供 S-014 落地時接上,不宣稱今天測得到。
+func advance_campaign_tick() -> AdvanceRejection:
+	# 檢查點(S-014 接口,今天恆為 false):理由與 notify_death()/append_record()
+	# 的同名檢查點一致——避免副作用發生在資料被視為凍結快照的期間。最先檢查。
+	if not _serialization_tokens.is_empty():
+		return AdvanceRejection.SERIALIZATION_WINDOW_ACTIVE
+
+	_campaign_tick_marks.append(_t_now)
+	return AdvanceRejection.NONE
+
+
+## 計算 `c_now(t_query)`(GDD Formulas 3c 精確定義,Story S-005):回傳
+## [member _campaign_tick_marks] 中「標記值 ≤ t_query」的筆數——即在 `t_query` 這個
+## 全域時間點以前(含當下),[method advance_campaign_tick] 總共被呼叫過幾次。這個
+## 定義不依賴 Delta Log([member _records])中任何配對是否被寫入,這正是本 story
+## 存在的理由(工作單 Implementation Notes #3)。
+##
+## [param t_query] 省略時(維持預設的負數哨兵值)等同「目前已呼叫次數」——因為每個
+## 標記都是在某次呼叫當下以 [member _t_now] 現值寫入,而 [member _t_now] 只會隨後續
+## 寫入單調不減,故任何既有標記在之後任一時刻查詢都必然滿足「≤ 現值」,全部標記數
+## 與「以目前 t_now 查詢」得到的計數恆相等,故省略時直接回傳標記總數,不需重新取得
+## 目前的 [member _t_now]。
+##
+## 🔴 本 story 只交付這個內部/私有輔助方法本身,不對外公開獨立的 `c_now()` 查詢
+## 介面——GDD 明文 `c_now` 是隨三個讀取函數的回傳值一併附帶的欄位(Core Rules #3
+## 「回傳值中的計數器可觀測性」),不是獨立方法;S-006/S-007 負責把它接進各自的
+## 回傳簽章。
+##
+## 線性計數,`O(m)`(`m` = 目前標記筆數),滿足 GDD 鎖定的 `O(n_p+m)` 效能契約
+## (ADR-0002 逐字)。
+func _c_now(t_query: int = -1) -> int:
+	if t_query < 0:
+		return _campaign_tick_marks.size()
+
+	var count: int = 0
+	for mark: int in _campaign_tick_marks:
+		if mark <= t_query:
+			count += 1
+	return count
+
+
 ## 三個私有序數驗證器(機制四之四),讀 [method _init] 快取的序數陣列而非每次重新呼叫
 ## `.values()`(理由見 [member _pair_ordinals] 文件註解)。
 ##
@@ -303,8 +395,9 @@ func _validate_source_ordinal(s: AffinityTypes.Source) -> bool:
 ## 回傳 [constant WriteRejection.NONE]。**任何一步拒絕都不會走到這裡,故七類拒絕分支
 ## 一律不 emit [signal entry_appended]**。
 ##
-## 🔴 `record.c`(戰役刻度)本 story 恆寫入佔位值 `0`——真正的戰役刻度計數器由 S-005
-## 引入。本 story 只保證欄位存在、寫入後不再變動(AC-2 的部分涵蓋,精確值斷言待 S-005)。
+## `record.c`(戰役刻度)自 Story S-005 起改為呼叫 [method _c_now]() 取得寫入當下的
+## 戰役刻度計數器現值——即目前已成功呼叫過幾次 [method advance_campaign_tick]。
+## S-004 遺留的恆 0 佔位腳手架至此不再成立(AC-2 的精確值涵蓋、AC-39 由本 story 交付)。
 ##
 ## 呼叫端型別義務(機制四之三,本方法【不】涵蓋):`pair`/`source` 為型別化 enum 參數、
 ## `m` 為型別化 `float`——上游若持有來源不明的 `Variant`,必須在呼叫本方法之前自行以
@@ -342,7 +435,7 @@ func append_record(
 	record.pair = pair
 	record.m = m
 	record.t = new_t
-	record.c = 0  # 佔位值,見上方文件註解——真正的戰役刻度現值由 S-005 引入
+	record.c = _c_now()  # 戰役刻度現值(Story S-005)——見 _c_now() 文件註解
 	record.source = source
 
 	_records[pair].append(record)
