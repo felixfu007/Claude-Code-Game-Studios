@@ -137,6 +137,34 @@ func test_classify_content_nonempty_with_positive_parsed_returns_none() -> void:
 	assert_int(result).is_equal(BattleScreen.LoadFailure.NONE)
 
 
+# 2026-09-16 管理者裁決(PROJECT-STATUS.md「等你裁決」第二項,選項甲「響亮地
+# 停」):名冊陣營欄打錯字,遊戲必須不啟動。這條測試不是憑空斷言「應該會停」——
+# 它串起 _ready() 實際呼叫的兩個真實靜態函式(Unit.roster_from_text() 與
+# BattleScreen.classify_content()),證明「一列陣營欄打錯字」確實會走到
+# _ready() 用來觸發 _fail_load() 的同一個判斷式(roster_failure != NONE)。
+# 不 load()/instantiate() BattleScreen 場景 —— 與本檔其餘測試同一個理由,見檔頭。
+# 文字本身完全在記憶體中建構,不讀寫 assets/data/ 底下任何檔案。
+func test_roster_load_pipeline_unknown_faction_row_yields_parsed_empty() -> void:
+	# Arrange — 陣營欄故意打錯字(ENEMEY),前後各放一個合法列，證明合法列不會
+	# 被誤留下來、讓 parsed_count 剛好卡在 1 以上而躲過 PARSED_EMPTY 判定。
+	var text: String = (
+		"1,甲,PLAYER,30,16,8,6,1,1,0,2\n"
+		+ "7,丁,ENEMEY,10,10,10,5,1,2,11,1\n"
+		+ "2,乙,PLAYER,26,14,6,5,1,2,0,3\n"
+	)
+
+	# Act — 與 battle_screen.gd _ready() 完全相同的兩步：先解析，再分類
+	var roster: Array[Unit] = Unit.roster_from_text(text)
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_content(text, roster.size())
+
+	# Assert — roster_from_text() 整份作廢（見 unit_test.gd 的對應迴歸測試），
+	# 而 classify_content() 把「內容非空、但解析出 0 筆」判成 PARSED_EMPTY ——
+	# 這正是 _ready() 呼叫 _fail_load() 並把 _load_failed 設為 true 的條件。
+	assert_int(roster.size()).is_equal(0)
+	assert_int(result).is_equal(BattleScreen.LoadFailure.PARSED_EMPTY)
+	assert_int(result).is_not_equal(BattleScreen.LoadFailure.NONE)
+
+
 # --- load_failure_message() ---
 
 func test_load_failure_message_missing_contains_reason_and_path() -> void:

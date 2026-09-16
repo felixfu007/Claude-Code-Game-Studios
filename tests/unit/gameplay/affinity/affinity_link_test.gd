@@ -50,6 +50,22 @@ func test_from_csv_line_parses_amp_greater_than_one() -> void:
 	assert_int(link.amp).is_equal(2)
 
 
+# 2026-09-16 管理者裁決(產出於 PROJECT-STATUS.md「等你裁決」第二項):角色/配對表
+# 未知列舉字串一律「響亮地停」,不得靜默落回列舉序數 0
+# (.claude/docs/coding-standards.md 2026-09-15 條目所禁止的
+# assert(false)+return 序數0 寫法,兩者恰好都是 0 == Polarity.POSITIVE,
+# 今天測不出行為差異,但資料檔打錯字會被當成合法配對靜默使用)。
+func test_from_csv_line_unknown_polarity_returns_null() -> void:
+	# Arrange — polarity 欄位打錯字(例如漏打或拼錯 NEGATIVE)
+	var line: String = "1,2,NEGATVIE,1"
+
+	# Act
+	var link: AffinityLink = AffinityLink.from_csv_line(line)
+
+	# Assert
+	assert_object(link).is_null()
+
+
 # ---- links_from_text() --------------------------------------------------
 
 func test_links_from_text_parses_three_links_in_file_order() -> void:
@@ -93,6 +109,22 @@ func test_links_from_text_only_comments_returns_empty_array() -> void:
 	var links: Array[AffinityLink] = AffinityLink.links_from_text(text)
 
 	# Assert
+	assert_int(links.size()).is_equal(0)
+
+
+# 迴歸測試(2026-09-16 裁決)— 見 test_from_csv_line_unknown_polarity_returns_null()
+# 的裁決背景。這裡鎖住 links_from_text() 這一層的行為:一列打錯字,不是只丟掉
+# 那一列,是整張表當作解析失敗、回傳空陣列 —— 呼叫端(battle_screen.gd)因此
+# 不會誤以為「檔案讀到了、只是少一對」,而是走向與「整份內容都無效」相同的
+# 診斷路徑。刻意在打錯字那一列前後各放一個合法列,證明合法列不會被誤留。
+func test_links_from_text_unknown_polarity_discards_entire_table() -> void:
+	# Arrange
+	var text: String = "%s\n1,3,BADVALUE,1\n%s" % [LINE_POSITIVE, LINE_NEGATIVE]
+
+	# Act
+	var links: Array[AffinityLink] = AffinityLink.links_from_text(text)
+
+	# Assert — 不是 1(只丟壞列)也不是 2(只留好列),必須是 0(整表作廢)
 	assert_int(links.size()).is_equal(0)
 
 

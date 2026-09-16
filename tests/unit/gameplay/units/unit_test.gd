@@ -67,6 +67,22 @@ func test_from_csv_line_bing_start_pos_and_range() -> void:
 	assert_int(unit.max_range).is_equal(4)
 
 
+# 2026-09-16 管理者裁決(產出於 PROJECT-STATUS.md「等你裁決」第二項):名冊未知
+# 陣營字串一律「響亮地停」,不得靜默落回列舉序數 0
+# (.claude/docs/coding-standards.md 2026-09-15 條目所禁止的
+# assert(false)+return 序數0 寫法,兩者恰好都是 0 == Faction.PLAYER,今天測不出
+# 行為差異,但陣營欄打錯字會被靜默當成我方單位)。
+func test_from_csv_line_unknown_faction_returns_null() -> void:
+	# Arrange — faction 欄位打錯字(例如把 ENEMY 拼錯)
+	var line: String = "7,丁,ENEMEY,10,10,10,5,1,2,11,1"
+
+	# Act
+	var unit: Unit = Unit.from_csv_line(line)
+
+	# Assert
+	assert_object(unit).is_null()
+
+
 # ---- roster_from_text() ---------------------------------------------------
 
 func test_roster_from_text_parses_full_roster_returns_ten_units() -> void:
@@ -79,6 +95,27 @@ func test_roster_from_text_parses_full_roster_returns_ten_units() -> void:
 
 	# Assert
 	assert_array(roster).has_size(10)
+
+
+# 迴歸測試(2026-09-16 裁決)— 見 test_from_csv_line_unknown_faction_returns_null()
+# 的裁決背景。這裡鎖住 roster_from_text() 這一層的行為:一列打錯字,不是只丟掉
+# 那一列,是整份名冊當作解析失敗、回傳空陣列 —— 這正是讓 battle_screen.gd 的
+# _ready() 判為 LoadFailure.PARSED_EMPTY、整個畫面停掉的那個條件(見
+# tests/unit/ui/battle_screen_load_guard_test.gd 對同一條鏈路的驗證)。刻意在
+# 打錯字那一列前後各放一個合法列,證明合法列不會被誤留下來。
+func test_roster_from_text_unknown_faction_discards_entire_roster() -> void:
+	# Arrange
+	var text: String = (
+		"1,甲,PLAYER,30,16,8,6,1,1,0,2\n"
+		+ "7,丁,ENEMEY,10,10,10,5,1,2,11,1\n"
+		+ "2,乙,PLAYER,26,14,6,5,1,2,0,3\n"
+	)
+
+	# Act
+	var roster: Array[Unit] = Unit.roster_from_text(text)
+
+	# Assert — 不是 2(只丟壞列)也不是 1(只留一筆),必須是 0(整份名冊作廢)
+	assert_int(roster.size()).is_equal(0)
 
 
 func test_roster_from_text_skips_comment_and_blank_lines() -> void:

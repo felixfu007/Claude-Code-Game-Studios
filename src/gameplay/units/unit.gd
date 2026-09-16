@@ -39,9 +39,22 @@ var start_pos: Vector2i
 var _modifiers: Array[CardModifier] = []
 
 
-## Parses a single roster line into a [Unit]. [member hp] is initialized to
-## [member hp_max]. Field order is fixed: [code]id,code_name,faction,hp_max,
+## Parses a single roster line into a [Unit], or returns [code]null[/code] if
+## [param line]'s faction field is not a recognized [enum Faction] name. Field
+## order is fixed: [code]id,code_name,faction,hp_max,
 ## atk,def,mp,min_range,max_range,start_x,start_y[/code].
+##
+## 🔴 Returns [code]null[/code] rather than asserting on an unrecognized
+## faction string — per [code].claude/docs/coding-standards.md[/code]'s
+## 2026-09-15 entry, an [code]assert()[/code] on that branch would abort and
+## silently yield ordinal 0 of [enum Faction] ([constant Faction.PLAYER]),
+## indistinguishable from a genuine [code]"PLAYER"[/code] match. Concretely: a
+## roster row whose faction column is typo'd would silently be treated as a
+## player unit instead of failing loudly — this is the exact defect
+## `.claude/docs/coding-standards.md`'s rule and this change both exist to
+## prevent. [method roster_from_text] is the caller that turns a
+## [code]null[/code] result here into a loud, whole-roster parse failure —
+## see that method's doc comment.
 static func from_csv_line(line: String) -> Unit:
 	var fields: PackedStringArray = line.split(",")
 	assert(
@@ -53,7 +66,13 @@ static func from_csv_line(line: String) -> Unit:
 	var unit: Unit = Unit.new()
 	unit.id = int(fields[0])
 	unit.code_name = fields[1]
-	unit.faction = _faction_from_string(fields[2])
+	var faction: Variant = _faction_from_string(fields[2])
+	if faction == null:
+		push_error(
+			"Unit.from_csv_line: unknown faction '%s' in line: %s" % [fields[2], line]
+		)
+		return null
+	unit.faction = faction
 	unit.hp_max = int(fields[3])
 	unit.hp = unit.hp_max
 	unit.atk = int(fields[4])
@@ -68,13 +87,39 @@ static func from_csv_line(line: String) -> Unit:
 ## Parses an entire roster text blob (as read from a roster data file) into
 ## an array of [Unit]s, one per non-skipped line. Blank lines and lines
 ## starting with [code]#[/code] are skipped.
+##
+## 🔴 If any non-skipped line fails to parse (currently: an unrecognized
+## faction string — see [method from_csv_line]), the [b]entire[/b] result is
+## discarded and an empty array is returned, after logging the 1-based line
+## number of the offending row via [method @GlobalScope.push_error]. This is
+## deliberate, per the 2026-09-16 manager ruling for this failure ("響亮地停"
+## — loud stop, not skip-and-continue): a roster that is partially valid must
+## not be used as if it were fully valid.
+##
+## This empty-array result is what [code]src/ui/battle/battle_screen.gd[/code]'s
+## [code]_ready()[/code] already treats as [constant
+## BattleScreen.LoadFailure.PARSED_EMPTY] via [method
+## BattleScreen.classify_content] — unlike the affinity table (see [method
+## AffinityLink.links_from_text]'s doc comment), a roster that parses to zero
+## units was already a hard load failure before this change, so no caller
+## change was needed to make a corrupted roster row stop the battle from
+## starting.
 static func roster_from_text(text: String) -> Array[Unit]:
 	var roster: Array[Unit] = []
+	var line_number: int = 0
 	for raw_line: String in text.split("\n"):
+		line_number += 1
 		var line: String = raw_line.strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		roster.append(Unit.from_csv_line(line))
+		var unit: Unit = Unit.from_csv_line(line)
+		if unit == null:
+			push_error(
+				"Unit.roster_from_text: aborting -- invalid data at line %d: %s"
+				% [line_number, line]
+			)
+			return []
+		roster.append(unit)
 	return roster
 
 
@@ -184,13 +229,23 @@ func take_damage(amount: int) -> void:
 		clear_modifiers()
 
 
-## Maps the roster file's faction string to a [enum Faction] value.
-static func _faction_from_string(value: String) -> Faction:
+## Maps the roster file's faction string to a [enum Faction] value, or
+## returns [code]null[/code] if [param value] is not a recognized name.
+##
+## 🔴 Returns [code]null[/code] on the unknown branch instead of
+## [code]assert(false, ...)[/code] — see [method from_csv_line]'s doc comment
+## for why an assert here is exactly the pattern
+## [code].claude/docs/coding-standards.md[/code] banned on 2026-09-15: it
+## would abort and silently return ordinal 0 of [enum Faction] ([constant
+## Faction.PLAYER]), making an unknown string indistinguishable from a genuine
+## [code]"PLAYER"[/code] match. [method from_csv_line] is the sole caller and
+## is responsible for turning [code]null[/code] into a loud failure; this
+## method itself never logs or aborts.
+static func _faction_from_string(value: String) -> Variant:
 	match value:
 		"PLAYER":
 			return Faction.PLAYER
 		"ENEMY":
 			return Faction.ENEMY
 		_:
-			assert(false, "Unit._faction_from_string: unknown faction '%s'" % value)
-			return Faction.PLAYER
+			return null

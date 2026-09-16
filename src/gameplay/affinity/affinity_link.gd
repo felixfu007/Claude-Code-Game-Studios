@@ -71,8 +71,20 @@ const _LOG_AMP_OUT_OF_RANGE_FORMAT: String = (
 )
 
 
-## Parses a single pairing-table line into an [AffinityLink]. Field order is
-## fixed: [code]unit_a,unit_b,polarity,amp[/code].
+## Parses a single pairing-table line into an [AffinityLink], or returns
+## [code]null[/code] if [param line]'s polarity field is not a recognized
+## [enum Polarity] name. Field order is fixed:
+## [code]unit_a,unit_b,polarity,amp[/code].
+##
+## 🔴 Returns [code]null[/code] rather than asserting on an unrecognized
+## polarity string — per [code].claude/docs/coding-standards.md[/code]'s
+## 2026-09-15 entry, an [code]assert()[/code] on that branch would abort and
+## silently yield ordinal 0 of [enum Polarity] ([constant Polarity.POSITIVE]),
+## which is indistinguishable from a genuine match and would (in a release
+## build, where asserts are stripped entirely) silently treat a data-entry
+## typo as a real, legal pairing. [method links_from_text] is the caller that
+## turns a [code]null[/code] result here into a loud, whole-table parse
+## failure — see that method's doc comment.
 static func from_csv_line(line: String) -> AffinityLink:
 	var fields: PackedStringArray = line.split(",")
 	assert(
@@ -84,7 +96,13 @@ static func from_csv_line(line: String) -> AffinityLink:
 	var link: AffinityLink = AffinityLink.new()
 	link.unit_a = int(fields[0])
 	link.unit_b = int(fields[1])
-	link.polarity = _polarity_from_string(fields[2])
+	var polarity: Variant = _polarity_from_string(fields[2])
+	if polarity == null:
+		push_error(
+			"AffinityLink.from_csv_line: unknown polarity '%s' in line: %s" % [fields[2], line]
+		)
+		return null
+	link.polarity = polarity
 	link.amp = int(fields[3])
 	assert(
 		link.unit_a != link.unit_b,
@@ -105,13 +123,44 @@ static func from_csv_line(line: String) -> AffinityLink:
 ## Parses an entire pairing-table text blob (as read from an affinity data
 ## file) into an array of [AffinityLink]s, one per non-skipped line. Blank
 ## lines and lines starting with [code]#[/code] are skipped.
+##
+## 🔴 If any non-skipped line fails to parse (currently: an unrecognized
+## polarity string — see [method from_csv_line]), the [b]entire[/b] result is
+## discarded and an empty array is returned, after logging the 1-based line
+## number of the offending row via [method @GlobalScope.push_error]. This is
+## deliberate, matching the 2026-09-16 manager ruling for this failure ("響亮
+## 地停" — loud stop, not skip-and-continue): a table that is partially valid
+## must not be used as if it were fully valid, since which row was corrupt is
+## exactly the information a silent partial load would throw away.
+##
+## ⚠️ The caller of this method ([code]src/ui/battle/battle_screen.gd[/code])
+## currently treats an empty result from this method as the pre-existing
+## legal "no pairings configured" design state (a [method push_warning], not
+## a load failure — see that file's [code]_ready()[/code] doc comment) and
+## therefore still lets the battle start. Making a corrupted-row result
+## actually block the battle (as the ruling intends) requires that caller to
+## be able to distinguish "genuinely zero rows" from "a row failed to parse",
+## which this method's return value alone cannot carry — that is an
+## out-of-scope change to [code]battle_screen.gd[/code], flagged rather than
+## made. Until that lands, a corrupted affinity row is at least never
+## silently used as if it were valid data (the defect this change fixes),
+## but it does not yet stop the game from starting.
 static func links_from_text(text: String) -> Array[AffinityLink]:
 	var links: Array[AffinityLink] = []
+	var line_number: int = 0
 	for raw_line: String in text.split("\n"):
+		line_number += 1
 		var line: String = raw_line.strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		links.append(AffinityLink.from_csv_line(line))
+		var link: AffinityLink = AffinityLink.from_csv_line(line)
+		if link == null:
+			push_error(
+				"AffinityLink.links_from_text: aborting -- invalid data at line %d: %s"
+				% [line_number, line]
+			)
+			return []
+		links.append(link)
 	return links
 
 
@@ -131,16 +180,26 @@ func partner_of(unit_id: int) -> int:
 	return unit_b if unit_id == unit_a else unit_a
 
 
-## Maps the data file's polarity string to a [enum Polarity] value. Uses a
+## Maps the data file's polarity string to a [enum Polarity] value, or
+## returns [code]null[/code] if [param value] is not a recognized name. Uses a
 ## [code]match[/code] rather than an enum-name subscript, which would abort the
 ## calling function on an unknown name (forbidden pattern
 ## [code]raw_enum_name_subscript_from_untrusted_string[/code]).
-static func _polarity_from_string(value: String) -> Polarity:
+##
+## 🔴 Returns [code]null[/code] on the unknown branch instead of
+## [code]assert(false, ...)[/code] — see [method from_csv_line]'s doc comment
+## for why an assert here is exactly the pattern
+## [code].claude/docs/coding-standards.md[/code] banned on 2026-09-15: it
+## would abort and silently return ordinal 0 of [enum Polarity]
+## ([constant Polarity.POSITIVE]), making an unknown string indistinguishable
+## from a genuine [code]"POSITIVE"[/code] match. [method from_csv_line] is the
+## sole caller and is responsible for turning [code]null[/code] into a loud
+## failure; this method itself never logs or aborts.
+static func _polarity_from_string(value: String) -> Variant:
 	match value:
 		"POSITIVE":
 			return Polarity.POSITIVE
 		"NEGATIVE":
 			return Polarity.NEGATIVE
 		_:
-			assert(false, "AffinityLink._polarity_from_string: unknown polarity '%s'" % value)
-			return Polarity.POSITIVE
+			return null
