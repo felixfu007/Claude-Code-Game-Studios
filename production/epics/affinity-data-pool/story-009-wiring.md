@@ -2,9 +2,23 @@
 
 > **Epic**:好感度數值池(Delta Log)—— 資料層(`production/epics/affinity-data-pool/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 Ready
+> **狀態**:🔴 **不單獨執行 —— 已併入卡牌介面 epic 的 U-003**(2026-09-15 管理者裁決二)
 > **估時**:M
 > **依賴**:S-007、S-008
+
+> 🔴 **不要把這張單獨做掉。**(2026-09-15 管理者裁決二,全文在
+> `production/session-state/active.md`「裁決二:接線合併成一張工作單」節)
+>
+> **理由**:本張的足跡是 `battle_controller.gd` + `battle_screen.gd`,而卡牌介面 epic 的
+> **U-003** 改的是同一支檔案的同一件事(「把新東西接進戰鬥畫面」)。兩張分開做等於同一個
+> 檔案改兩次。**已合併為一次接好:好感度池 + 卡牌組。**
+>
+> **接手的人請改去做** `production/epics/card-play-interface/story-u003-battle-screen-deck-wiring.md`。
+>
+> ⚠️ **已知代價,管理者知情接受**:好感度線會停在「差最後一步」一段時間,要等卡牌線推到
+> 需要接線時才一起完成。**那不是進度倒退。**
+>
+> 📌 **本檔內容刻意保留不刪** —— 它的 Context / AC / 測試證據仍是 U-003 好感度那一半的規格來源。
 
 ## Context
 
