@@ -178,41 +178,6 @@ func test_build_card_deck_default_rng_is_still_a_random_number_generator() -> vo
 	assert_int(deck.hand_size()).is_equal(1)
 
 
-# ---- 兩表（vs01_cards.txt / vs01_card_text.txt）id 集合一致性 -----------------
-#
-# 🔴 派工單澄清：U-003 story 文件本身的 Out of Scope 節明文把這條檢查列為
-# 「本 story 亦不主動承接...留待實作時判斷是否順手補上，或另開工作單」——即
-# 明確排除在原始驗收範圍外。本測試依協調者 2026-09-16 的續做指示新增，屬於
-# 協調者在派工單既有缺口登記基礎上做的追加裁決，不是我重新解讀了原始 story
-# 的範圍；詳見本次任務最終回報。
-#
-# vs01_cards.txt 檔頭逐字：「本檔每一列新增/刪除都必須同步那張表的對應列」。
-# 全庫先前沒有任何測試同時載入兩張表比對過這個不變式。
-func test_cards_table_and_card_text_table_have_identical_id_sets() -> void:
-	# Arrange
-	var cards_text: String = FileAccess.get_file_as_string(BattleScreen.CARDS_PATH)
-	var card_text_text: String = FileAccess.get_file_as_string(BattleScreen.CARD_TEXT_PATH)
-	var parsed_cards: Variant = Card.cards_from_text(cards_text)
-	assert_object(parsed_cards).is_not_null()
-	var cards: Array[Card] = parsed_cards
-	var flavor: Dictionary[String, String] = CardText.flavor_texts_from_text(card_text_text)
-
-	# Act
-	var card_ids: Dictionary = {}
-	for card: Card in cards:
-		card_ids[card.id] = true
-	var flavor_ids: Dictionary = {}
-	for id: String in flavor.keys():
-		flavor_ids[id] = true
-
-	# Assert — 每一張機制卡都有恰一列對應的顯示文字，反之亦然
-	for id: String in card_ids.keys():
-		assert_bool(flavor_ids.has(id)).is_true()
-	for id: String in flavor_ids.keys():
-		assert_bool(card_ids.has(id)).is_true()
-	assert_int(card_ids.size()).is_equal(flavor_ids.size())
-
-
 # ---- 缺一個檔案 -> 進入 _fail_load() 的失敗集合（透過場景真正跑一次 _ready()）--
 #
 # 🔴 這一條之所以要真正 load()/instantiate() 場景，而不是只呼叫靜態函式：AC 要

@@ -1,7 +1,7 @@
 # Story U-003: 戰鬥畫面載入兩張表、建 `CardDeck`、傳進 `BattleController`
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16,`ui-programmer` 實作與驗收;24 條測試全綠。**AC 逐條核對全數滿足**,含 AC-1 三子句的常駐敏感度證明。🔴 **依 2026-09-16 管理者裁決的新完成門檻標記**:原門檻「全部測試補齊敏感度證明才算完成」在新資訊下**結構上不可能達成**(15 條屬 static 純函式 / 真實資料檔 / RNG 決定性契約 / `.tscn` `@onready` 參照 / 注入點在受限範圍外 五類),門檻已改為「每條要嘛有證明、要嘛有寫下來可查證的不可證理由」,全文見 `.claude/rules/test-standards.md`。那 15 條的逐條理由記於提交 `403099c`。⚠️ 原屬本檔但不對應任何 AC 的 `test_cards_table_and_card_text_table_have_identical_id_sets` 已依同日裁決搬離,另立 U-017)
 > **層**: Integration —— **資料層與好感度池接線的合流點**
 > **型別**: Integration
 > **估時**: M
