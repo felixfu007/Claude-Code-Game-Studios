@@ -119,6 +119,29 @@
 ## illustrative snippet and [code]technical-preferences.md[/code]'s Autoload
 ## Pattern example may need a correction note for future systems that copy
 ## this pattern.
+##
+## [b]Story U-006 (2026-09-16, `battle-menu.md` BM-9 / BM-10)[/b]: this Node's
+## [member process_mode] is now [constant PROCESS_MODE_ALWAYS] (see
+## [method _init]) so [method Node._process] keeps running while a pause menu
+## sets [member SceneTree.paused] = [code]true[/code] — otherwise the engine
+## would stop calling [method _process] on this Autoload entirely, and 機制九's
+## [member _arbitration_suspended] check inside it would never execute, even
+## though nothing about that flag itself changed. [b]This does not make
+## [member SceneTree.paused] or [member process_mode] an arbitration gate[/b]
+## (`cursor_arbitration_suspension_gate`'s `not:` entry forbids exactly that,
+## and ADR-0005 機制九 explains why) — it only keeps the REAL gate,
+## [member _arbitration_suspended], reachable during a pause. A new QA-only
+## [member diagnostic_process_tick_count] counter (declared next to
+## [member _arbitration_suspended] below) proves this in
+## [code]tests/unit/cursor/cursor_host_pause_exclusion_test.gd[/code] — it
+## lives on this Node rather than on [CursorState] because [CursorState] is a
+## plain [RefCounted] with no [method Node._process] of its own, so it cannot
+## be the thing AC-M14 needs proof of. Confirmed against a throwaway headless
+## probe (this story's own report) that [member SceneTree.paused] +
+## [member process_mode] are pure scheduling logic that behaves identically
+## headless and windowed — unlike [member Input.mouse_mode]
+## (`.claude/docs/coding-standards.md`'s "What NOT to Automate" no-op-headless
+## trap), which this is NOT an instance of.
 extends Node
 
 ## The single DI core this host owns for the process's lifetime. Built once
@@ -209,6 +232,27 @@ var _frame_events: Array[InputEvent] = []
 ## see [method suspend_arbitration]'s doc comment for why.
 var _arbitration_suspended: bool = false
 
+## [b]Story U-006[/b] (`battle-menu.md` BM-10, AC-M14). QA-only, monotonically
+## incrementing tick counter — proves this Node's [method _process] keeps
+## executing during a real [member SceneTree.paused] = [code]true[/code]
+## (thanks to [member process_mode] above), independent of whatever
+## [member _arbitration_suspended] is doing. Incremented UNCONDITIONALLY, as
+## the very first statement of [method _process], before either early-return
+## branch — a counter that only advanced past those branches would prove
+## nothing during exactly the suspended/paused period AC-M14 cares about.
+##
+## Per control-manifest's global [code]diagnostic_*[/code] convention ("QA/
+## 測試專用,下游業務邏輯不得依賴"), nothing in this file or elsewhere reads
+## this field to make a decision — see
+## [code]test_diagnostic_state_does_not_affect_arbitration_suspended_flag[/code]
+## in [code]tests/unit/cursor/cursor_host_pause_exclusion_test.gd[/code] for
+## the executable guard. This does not reopen forbidden pattern
+## [code]logic_in_cursor_autoload_shell[/code]: that pattern bars ARBITRATION
+## LOGIC and duplicated GDD state fields on this shell, not a passive
+## observation counter that never feeds back into any decision — the same
+## category as [CursorState]'s own [code]diagnostic_*[/code] counters.
+var diagnostic_process_tick_count: int = 0
+
 ## [b]Story 005.[/b] Dedicated child node for 機制六③ (see
 ## [code]cursor_navigation_applier.gd[/code]'s own class doc comment for why
 ## it cannot be a second role folded onto THIS node). Built once in
@@ -232,6 +276,13 @@ var _navigation_applier: CursorNavigationApplier
 ## it costs nothing. Do not move it back to [method _ready] without a reason.
 func _init() -> void:
 	process_priority = -100
+	# Story U-006 (BM-9): survive SceneTree.paused = true so _process() below
+	# (and the 機制九 _arbitration_suspended check inside it) keeps running
+	# during a pause menu. Set here rather than _ready() purely to match this
+	# file's existing process_priority convention (as early as possible, before
+	# this Autoload is ever added to /root) — unlike process_priority there is
+	# no R6-12-style ordering requirement forcing this specific placement.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 func _ready() -> void:
@@ -322,6 +373,10 @@ func _input(event: InputEvent) -> void:
 ## own [code]/architecture-review[/code] confirmed that race does not depend
 ## on any unverified engine behaviour.
 func _process(_delta: float) -> void:
+	# Story U-006 (BM-10): incremented unconditionally, before either
+	# early-return branch below — see diagnostic_process_tick_count's own doc
+	# comment for why this ordering is the entire point of the diagnostic.
+	diagnostic_process_tick_count += 1
 	if _arbitration_suspended or _frame_events.is_empty():
 		return
 	_state.arbitrate_device_authority(_frame_events)
