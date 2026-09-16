@@ -2,7 +2,7 @@
 
 > **Epic**:好感度數值池(Delta Log)—— 資料層(`production/epics/affinity-data-pool/EPIC.md`)
 > **型別**:Logic
-> **狀態**:📋 Ready
+> **狀態**:✅ Complete(狀態標記 2026-09-16 補正 —— 實作早已完成,但本欄一直停在 `Ready`)
 > **估時**:S
 > **依賴**:無
 

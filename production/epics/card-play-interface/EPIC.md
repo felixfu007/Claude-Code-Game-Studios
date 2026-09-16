@@ -373,7 +373,21 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
 而 Space 已被 `battle_confirm` 佔用 → **同一次按鍵觸發兩個動作**。
 **這是已實測過的失效形狀,而它不會報錯。**
 
-UX 規格建議手把用 **X(左動作鍵)**,正是為了避開已知的那一個。**U-004 的探針要覆核這件事。**
+🔴 **U-004 探針已於 2026-09-16 執行,推翻了下面這句話的字面版本 —— 原文保留於此以存證:**
+
+> ~~UX 規格建議手把用 **X(左動作鍵)**,正是為了避開已知的那一個。**U-004 的探針要覆核這件事。**~~
+
+**實測:X 並非未被佔用。** 它被一個雙側綁定(鍵盤 Delete + 手把 X)的內建動作
+`ui_colorpicker_delete_preset` 佔用。**「正是為了避開已知的那一個」這個理由不成立** ——
+不是只有一個,X 也有一個。
+
+⚠️ **但結論(用 X 不用 Y)仍然成立,理由換了**:Y 的衝突對象 `ui_select` 鍵盤側是 Space、
+與現有 `battle_confirm` 直接重疊,且觸發前提(清單類原生元件取得焦點)與 `battle-menu.md`
+明文允許的原生 focus **有真實交集**;X 的衝突對象觸發前提是 ColorPicker 元件,本專案完全
+沒有這個需求。**這一段是判斷不是量測**,探針作者已明文標示。
+
+**逐項量測結果、原始 log、探針自陳的未計入因素**:`prototypes/u004-inputmap-probe-2026-09-16/README.md`。
+**對 U-005 的具體措辭約束**已寫入 `story-u005-input-actions-registration.md`。
 
 ### 陷阱十:操作提示橫條放不下,而餘裕只有 12px
 

@@ -1,7 +1,7 @@
 # Story U-001: `Card.from_csv_line()` + `Card.cards_from_text()` 卡表解析
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16,管理者裁決 B)
 > **層**: Gameplay(資料層 —— A 段,不碰按鍵,不受取消鍵同批義務約束)
 > **型別**: Logic
 > **估時**: S
@@ -93,6 +93,20 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
    討論)。**`AffinityLink._polarity_from_string()` 本身這個問題不在本 story 授權範圍內,
    協調者已接手另行處理 —— 本 story 不修改該檔,只是不把同一個問題帶進新程式碼。**
 
+   > 🔴 **本節上述文字已於 2026-09-16 被管理者裁決推翻,原文保留於上供查考。**
+   > 它引用的「`AffinityLink.links_from_text()` 的 log-and-continue 精神」是**過期描述** ——
+   > 該函式已於 2026-09-16 的兩次裁決改為「任一列壞掉即整批中止」,**本工作單寫成時的描述
+   > 在執行時已不成立**。是 U-001 的實作者比對現行原始碼後停下來舉手,這件事才浮出來。
+   >
+   > **現行規則**:未知 `category` → `push_error()` 帶行號 → `cards_from_text()` **整批回傳 `null`**
+   > (回傳型別為 `Variant`,不是 `Array[Card]`)。
+   > ⚠️ **不得用「回傳空 `Array[Card]`」表示失敗** —— 本專案實測登記:宣告 `-> Array[X]` 的函式
+   > `return null`,呼叫端收到的是**普通空陣列**,只印一行 `SCRIPT ERROR`,會把「整批失敗」
+   > 偽裝成「這關沒有牌」。
+   >
+   > 🔴 **此裁決僅涵蓋卡表。** 管理者同批明文裁定**維持一張資料表一張裁,不簡化為單一政策**,
+   > 故**不得**據此推廣到牌面文字表或任何其他資料檔。
+
 4. 🔴 **`0` 在這張表上是三種不同的東西,不得收斂成同一個判斷(EPIC.md 陷阱二,轉錄)**:
 
    | 欄位 / 類別 | `0` 的意思 | 合法嗎 |
@@ -138,8 +152,12 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
       2 張丙類(對照現有資料檔)
 - [ ] 甲類卡的 `delta_def = 0` 被正確保留為 `0`,不被當成「未填」而觸發任何跳過或警告
       (驗證第 4 點的區分)
-- [ ] `category` 欄位是未知字串時,`push_error()` 被呼叫且該列不出現在回傳陣列中,其餘合法列
-      仍正常回傳(驗證第 3 點——這條測試必須刻意構造一筆壞資料來證明)
+- [ ] `category` 欄位是未知字串時,`push_error()` 被呼叫且 `Card.cards_from_text()` **整批回傳 `null`**
+      (不是回傳少一列的陣列),即使壞列前後都有合法列也一樣
+      —— 🔴 **2026-09-16 管理者裁決 B**,推翻本節原文「跳過該列、其餘正常回傳」。
+      **此裁決僅涵蓋卡表,同批明文裁定不推廣為通用規則。**
+- [ ] **裸表頭迴歸**:內容含一列未加 `#` 的表頭(如 `id,category,...`)時整批回傳 `null`
+      —— `vs01_cards.txt:66` 真的有過這個缺陷,2026-09-16 修正並鎖入迴歸測試
 - [ ] 空行與 `#` 註解列被跳過,不產生任何 `Card` 或錯誤
 
 ## Test Evidence
@@ -152,8 +170,10 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
 - `test_from_csv_line_parses_permanent_affinity_write_fields`
 - `test_cards_from_text_parses_vs01_cards_txt_into_eight_cards`
 - `test_delta_def_zero_is_preserved_not_treated_as_unset`(陷阱二核心宣稱)
-- `test_unknown_category_string_logs_error_and_skips_line_others_still_parse`
-  (陷阱一/警告核心宣稱——需要一筆刻意構造的壞資料列,不得用既有 `vs01_cards.txt`)
+- `test_unknown_category_string_logs_error_and_aborts_whole_batch`
+  (陷阱一/警告核心宣稱,驗證**整批 `null`**——需要刻意構造的壞資料列,不得用既有 `vs01_cards.txt`)
+- `test_cards_from_text_bare_header_line_without_hash_prefix_aborts_whole_batch`
+  (2026-09-16 覆核發現的真實缺陷迴歸鎖)
 - `test_blank_and_comment_lines_are_skipped`
 
 ## Out of Scope

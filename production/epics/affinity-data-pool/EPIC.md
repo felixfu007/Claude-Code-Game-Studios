@@ -127,7 +127,7 @@ godot --headless --path . --import      # 一次性,每個工作副本各一次
 | 003 | 陣亡標記表:`notify_death()` / `t_death()`(**不預填**,一律 `has()` 守衛) | Logic | 📋 Ready | S | 001 |
 | 004 | 池骨架與寫入路徑:建構子預填 10 對、`append_record()` 六步驗證、七類拒絕 | Logic | 📋 Ready | M | 001, 002, 003 |
 | 005 | 戰役刻度:`advance_campaign_tick()` + 標記列表 + `c_now(t_query)` | Logic | 📋 Ready | S | 004 |
-| 006 | 讀取結果型別與 `t_query` 型別閘門 + 拒絕哨兵兩張表 | Logic | 📋 Ready | M | 004 |
+| 006 | 讀取結果型別與 `t_query` 型別閘門 + 拒絕哨兵兩張表 | Logic | ✅ Complete | M | 004 |
 | 007 | 公式一/二:兩個加權讀取 + 陣亡凍結預設 + `0^0:=1` + `O(n_p)` 診斷 | Logic | 📋 Ready | M | 003, 006 |
 | 008 | **丙類寫入轉接器**:`AffinityWritePort` 的第一個真實實作 | Integration | 📋 Ready | M | 001, 003, 004 |
 | 009 | **接線**:池的生命週期宿主 + 用真實埠取代 `NullAffinityWritePort` | Integration | 📋 Ready | M | 007, 008 |

@@ -1,7 +1,7 @@
 # Story U-006: 游標宿主 —— `process_mode` 排除暫停 + 診斷用唯讀狀態
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16)
 > **層**: Presentation(游標系統,#3)
 > **型別**: Logic
 > **估時**: S

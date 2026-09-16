@@ -1,7 +1,7 @@
 # Story U-002: 牌面文字表解析(id → flavor_text 對照)
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16)
 > **層**: Gameplay(資料層 —— A 段,不碰按鍵,不受取消鍵同批義務約束)
 > **型別**: Logic
 > **估時**: S

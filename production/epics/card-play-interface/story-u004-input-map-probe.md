@@ -1,7 +1,7 @@
 # Story U-004: `InputMap` 探針 —— 5 個候選鍵是否已被內建動作佔用
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16,探針報告 `prototypes/u004-inputmap-probe-2026-09-16/`)
 > **層**: Presentation(拋棄式探針,不進 `src/`)
 > **型別**: Logic(拋棄式探針 —— 產出是一份量測報告,不是功能)
 > **估時**: S
