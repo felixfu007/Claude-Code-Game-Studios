@@ -200,6 +200,25 @@
 
 ## 完整矩陣 — 單一游標/高亮狀態系統(cursor-highlight-state.md)— Foundation 層(**第四輪:13 ✅ / 6 ⚠️ / 0 ❌**;「全部需求皆為缺口」是第二輪的標題,自第三輪起已不成立)
 
+> 🔴 **本表是 TR 索引,不是 AC 索引 —— 而 `cursor-highlight-state.md` 的 `AC-30` 身上有一條
+> 本表原本看不見的封頂約束。**(2026-09-16 補入;該約束於 2026-09-15 由管理者追認,
+> 而當日同時登記「本表對 `AC-30` 零命中」為未關閉缺口 —— 本段即為關閉它的動作。)
+>
+> **約束全文與完整來歷在 `adr-0005-cursor-device-authority-input-architecture.md` 的
+> `## Status` 節**,該 ADR 機制九下方「事實層更正」節自稱為此缺口的登記處,並逐字寫著
+> 「任何審查、**追溯索引**或 `/architecture-review` 不得把 AC-30 計為『完全涵蓋』」。
+> **本段刻意不複述理由** —— 該約束已有四份措辭互異的複本(其中兩份已改為指回 `## Status`
+> 的短版),再加第五份完整敘述只會多開一個會各自漂移的面。
+>
+> **對更新本表的人的具體後果**:AC-30 的內容是「復焦後的下一個渲染影格,高亮視覺已重繪
+> **且**原生指標顯示狀態已重新套用」。**把 TR-cursor-010 升為 ✅ 之前,先去讀那一節。**
+> ⚠️ **AC-30 ↔ TR 的對應關係 ADR 並未明寫**;上句的 TR-cursor-010 是依 AC 條文比對得出的
+> (前半句對應 OS 焦點閘控),**後半句(原生指標)另落在 TR-cursor-017** —— 兩列都要看。
+> 🔴 **本表沒有任何自動檢查會攔你,這段字就是唯一的攔阻。**
+>
+> 📌 `AC-30` 在 `save-system.md`(型別白名單)另有一個**完全不同**的同名條目,
+> `affinity-data-pool.md` 亦然。本段只管 `cursor-highlight-state.md` 那一個。
+
 | TR-ID | 需求 | 領域 | 涵蓋情形 |
 |---|---|---|---|
 | TR-cursor-001 | 全域狀態恰為 3 個已認定的頂層欄位;擁有節點的生命週期須涵蓋所有使用本系統的畫面(Autoload 類機制) | 資料/架構 | ⚠️ 部分——機制一 Autoload 薄殼 + DI 核心。**第四輪**:第三輪的條件式待決已由修訂補上 `diagnostic_seed_position()` 關閉,方向正確;但該方法寫在抽象基底 `MouseReclaimPolicy` 內卻 `return _seed`,而 `_seed` 只宣告於子類別 `ThresholdMouseReclaimPolicy` → **編譯期錯誤**(R4-2,BLOCKING,修法一行)。關閉本項的機制本身不成立,故維持 ⚠️。**第五輪:R4-2 完整關閉,升為 ✅**——`diagnostic_seed_position()` 已改標 `@abstract`、實作下放 `ThresholdMouseReclaimPolicy`,基底只留簽章;Key Interfaces 與機制八兩處文字現已一致(第四輪點名的「一處無主體、一處有主體」矛盾消失);`ImmediateMouseReclaimPolicy` 亦被要求實作,診斷契約對所有策略一致。三頂層欄位的計數論證不變 → **✅ 已涵蓋** |

@@ -140,6 +140,10 @@ frame, which is the narrow case it was written for.
 - **No hardcoded data**: Test fixtures use constant files or factory functions, not inline magic numbers
   (exception: boundary value tests where the exact number IS the point)
 - **Independence**: Unit tests do not call external APIs, databases, or file I/O — use dependency injection
+  > 🔴 **2026-09-16:實測 `tests/unit` 的 43 支裡有 10 支在違反這一條,而沒有任何自動檢查會攔。**
+  > 其中 8 支讀 `assets/data/` 的真實資料檔 —— **照上一條(「Test fixtures use constant files」)做就必然違反這一條**,
+  > 兩條相隔兩行、同在這份每次開場載入的文件裡。逐檔清單、量測指令原始輸出、兩類動機的區分,
+  > 以及「這是登記不是許可」的位階說明,全部在 `.claude/rules/test-standards.md`。**本行刻意不複述。**
 
 ## What NOT to Automate
 
