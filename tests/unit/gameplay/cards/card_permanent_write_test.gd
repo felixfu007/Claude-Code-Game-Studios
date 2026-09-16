@@ -78,9 +78,26 @@ class _FakeAffinityWritePort extends AffinityWritePort:
 		return false
 
 
+# 2026-09-16(第二次覆核修正)— 見
+# tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd 與
+# affinity_phi_provider_test.gd 同名輔助函式的完整理由:AffinityLink
+# .links_from_text() 回傳 Variant,null 代表解析失敗。不直接
+# `return AffinityLink.links_from_text(...)`——那樣寫,null 會被靜默轉型成
+# 空陣列(SCRIPT ERROR 不保證被算成測試失敗),把「真實資料檔壞掉」誤讀成
+# 「合法的零配對」。改為先接 Variant、null 時 fail() 響亮標紅(不用 assert())。
 func _vs01_links() -> Array[AffinityLink]:
 	var text: String = FileAccess.get_file_as_string(VS01_LINKS_PATH)
-	return AffinityLink.links_from_text(text)
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	if parsed == null:
+		fail(
+			(
+				"_vs01_links(): AffinityLink.links_from_text() returned null while parsing "
+				+ "%s — the real, version-controlled affinity data file failed to parse. "
+				+ "This is a data-file defect, not a bug in the test or in the code under test."
+			) % VS01_LINKS_PATH
+		)
+		return []
+	return parsed
 
 
 func _all_alive(_unit_id: int) -> bool:

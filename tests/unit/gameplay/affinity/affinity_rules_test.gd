@@ -65,8 +65,23 @@ const _R2_TO_CELLS: Array[Vector2i] = [
 
 # ---- 測試資料工廠 --------------------------------------------------------
 
+# 2026-09-16(第二次覆核修正)— 見
+# tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd 與
+# affinity_phi_provider_test.gd 同名輔助函式的完整理由:AffinityLink
+# .links_from_text() 回傳 Variant,null 代表解析失敗。不直接
+# `return AffinityLink.links_from_text(...)`——那樣寫,null 會被靜默轉型成
+# 空陣列(SCRIPT ERROR 不保證被算成測試失敗),把「治具資料寫錯」誤讀成
+# 「合法的零配對」。改為先接 Variant、null 時 fail() 響亮標紅(不用 assert())。
 func _links(lines: Array[String]) -> Array[AffinityLink]:
-	return AffinityLink.links_from_text("\n".join(lines))
+	var parsed: Variant = AffinityLink.links_from_text("\n".join(lines))
+	if parsed == null:
+		fail(
+			"_links(): AffinityLink.links_from_text() returned null — the test fixture " +
+			"lines passed to this helper contain a row that failed to parse. This is a " +
+			"bug in the fixture, not in the production code under test."
+		)
+		return []
+	return parsed
 
 
 # 讓「單位 1 與夥伴相距 distance 格」的一組座標。

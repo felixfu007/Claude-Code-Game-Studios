@@ -27,8 +27,26 @@ const LINK_1_2_POSITIVE: String = "1,2,POSITIVE,1"
 const LINK_1_2_NEGATIVE: String = "1,2,NEGATIVE,1"
 
 
+# 2026-09-16(第二次覆核修正):AffinityLink.links_from_text() 回傳 Variant,
+# null 代表解析失敗、Array[AffinityLink] 才是合法結果(可能是空陣列)。這裡
+# 刻意不直接 `return AffinityLink.links_from_text(text)` ——若這樣寫,一旦某個
+# 測試不小心餵進打錯字的資料列,GDScript 會把 null 靜默轉型回空陣列並印一行
+# SCRIPT ERROR(不保證被 GdUnit4 算成測試失敗),整個測試套件就會安靜地把
+# 「治具資料寫錯」誤讀成「合法的零配對」—— 正是這兩次管理者裁決要消滅的那個
+# 靜默行為,只是換了個入口。改成先接 Variant、null 時呼叫 fail() 響亮地標紅
+# （不用 assert(),原因見 .claude/docs/coding-standards.md 2026-09-15 條目）。
+# 見 tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd 這支
+# 治理測試,它掃描原始碼確保這個寫法不會在別處重新出現。
 func _links(text: String) -> Array[AffinityLink]:
-	return AffinityLink.links_from_text(text)
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	if parsed == null:
+		fail(
+			"_links(): AffinityLink.links_from_text() returned null — the test fixture " +
+			"string passed to this helper has a row that failed to parse. This is a bug " +
+			"in the fixture, not in the production code under test; fix the fixture text."
+		)
+		return []
+	return parsed
 
 
 # ---- (1) phi()：回報攻擊者當下的好感度加成 ---------------------------------

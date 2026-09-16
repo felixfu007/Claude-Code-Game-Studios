@@ -35,9 +35,27 @@ class _AlwaysInvalidPairPool extends AffinityDataPool:
 		return WriteRejection.INVALID_PAIR
 
 
+# 2026-09-16(第二次覆核修正)— 見
+# tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd 與
+# tests/unit/gameplay/affinity/affinity_phi_provider_test.gd 同名輔助函式的
+# 完整理由:AffinityLink.links_from_text() 回傳 Variant,null 代表解析失敗。
+# 不直接 `return AffinityLink.links_from_text(...)`——那樣寫,null 會被靜默
+# 轉型成空陣列(SCRIPT ERROR 不保證被算成測試失敗),把「真實資料檔壞掉」
+# 誤讀成「合法的零配對」。改為先接 Variant、null 時 fail() 響亮標紅
+# (不用 assert())。
 func _real_links() -> Array[AffinityLink]:
 	var text: String = FileAccess.get_file_as_string(_AFFINITY_LINKS_PATH)
-	return AffinityLink.links_from_text(text)
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	if parsed == null:
+		fail(
+			(
+				"_real_links(): AffinityLink.links_from_text() returned null while parsing "
+				+ "%s — the real, version-controlled affinity data file failed to parse. "
+				+ "This is a data-file defect, not a bug in the test or in the code under test."
+			) % _AFFINITY_LINKS_PATH
+		)
+		return []
+	return parsed
 
 
 # ---- AC-6:打出丙類 -> 池新增一筆記錄,source 為 combat_card、幅度為卡定義值 ----

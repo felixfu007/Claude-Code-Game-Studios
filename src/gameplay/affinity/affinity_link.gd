@@ -124,28 +124,36 @@ static func from_csv_line(line: String) -> AffinityLink:
 ## file) into an array of [AffinityLink]s, one per non-skipped line. Blank
 ## lines and lines starting with [code]#[/code] are skipped.
 ##
-## 🔴 If any non-skipped line fails to parse (currently: an unrecognized
-## polarity string — see [method from_csv_line]), the [b]entire[/b] result is
-## discarded and an empty array is returned, after logging the 1-based line
+## 🔴 Returns [code]null[/code] — [b]not[/b] an empty array — if any
+## non-skipped line fails to parse (currently: an unrecognized polarity
+## string — see [method from_csv_line]), after logging the 1-based line
 ## number of the offending row via [method @GlobalScope.push_error]. This is
 ## deliberate, matching the 2026-09-16 manager ruling for this failure ("響亮
 ## 地停" — loud stop, not skip-and-continue): a table that is partially valid
 ## must not be used as if it were fully valid, since which row was corrupt is
 ## exactly the information a silent partial load would throw away.
 ##
-## ⚠️ The caller of this method ([code]src/ui/battle/battle_screen.gd[/code])
-## currently treats an empty result from this method as the pre-existing
-## legal "no pairings configured" design state (a [method push_warning], not
-## a load failure — see that file's [code]_ready()[/code] doc comment) and
-## therefore still lets the battle start. Making a corrupted-row result
-## actually block the battle (as the ruling intends) requires that caller to
-## be able to distinguish "genuinely zero rows" from "a row failed to parse",
-## which this method's return value alone cannot carry — that is an
-## out-of-scope change to [code]battle_screen.gd[/code], flagged rather than
-## made. Until that lands, a corrupted affinity row is at least never
-## silently used as if it were valid data (the defect this change fixes),
-## but it does not yet stop the game from starting.
-static func links_from_text(text: String) -> Array[AffinityLink]:
+## 🔴 [code]null[/code], not [code][][/code], is what marks failure — this is
+## the second (2026-09-16) manager ruling on this method. An empty array is a
+## genuinely [i]legal[/i] result: unlike a roster (see
+## [method Unit.roster_from_text]'s doc comment, where zero parsed units is
+## always a failure), a pairing table that parses to zero rows is a valid
+## design state meaning "nobody is paired" (unit 5, 戊, deliberately has no
+## links — see
+## [code]tests/unit/gameplay/affinity/affinity_link_test.gd[/code]'s
+## [code]test_links_from_text_vs01_file_gives_unit_five_no_links[/code]).
+## The first ruling's implementation returned [code][][/code] for BOTH cases,
+## which left [code]src/ui/battle/battle_screen.gd[/code]'s caller unable to
+## tell "genuinely zero rows" apart from "a row failed to parse" — that
+## ambiguity is what this return-type change removes. Return type is
+## [code]Variant[/code] rather than [code]Array[AffinityLink][/code] purely to
+## make [code]null[/code] expressible; see [method BattleScreen._ready] for
+## how the caller now branches on it (a [code]null[/code] check before ever
+## touching the array), and
+## [method BattleScreen.classify_affinity_parse] for the pure helper that
+## turns this method's [code]Variant[/code] result into a
+## [code]LoadFailure[/code].
+static func links_from_text(text: String) -> Variant:
 	var links: Array[AffinityLink] = []
 	var line_number: int = 0
 	for raw_line: String in text.split("\n"):
@@ -159,7 +167,7 @@ static func links_from_text(text: String) -> Array[AffinityLink]:
 				"AffinityLink.links_from_text: aborting -- invalid data at line %d: %s"
 				% [line_number, line]
 			)
-			return []
+			return null
 		links.append(link)
 	return links
 

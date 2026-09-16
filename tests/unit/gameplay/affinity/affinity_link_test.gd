@@ -112,20 +112,27 @@ func test_links_from_text_only_comments_returns_empty_array() -> void:
 	assert_int(links.size()).is_equal(0)
 
 
-# 迴歸測試(2026-09-16 裁決)— 見 test_from_csv_line_unknown_polarity_returns_null()
+# 迴歸測試(2026-09-16 第一次裁決)— 見 test_from_csv_line_unknown_polarity_returns_null()
 # 的裁決背景。這裡鎖住 links_from_text() 這一層的行為:一列打錯字,不是只丟掉
-# 那一列,是整張表當作解析失敗、回傳空陣列 —— 呼叫端(battle_screen.gd)因此
-# 不會誤以為「檔案讀到了、只是少一對」,而是走向與「整份內容都無效」相同的
-# 診斷路徑。刻意在打錯字那一列前後各放一個合法列,證明合法列不會被誤留。
-func test_links_from_text_unknown_polarity_discards_entire_table() -> void:
+# 那一列,是整張表當作解析失敗。
+#
+# 2026-09-16 第二次裁決更正本測試的斷言:第一次裁決落地時,失敗與「合法的零
+# 配對」(戊沒有任何關係線,見下面 test_links_from_text_vs01_file_gives_unit_five_no_links)
+# 曾經都回傳空陣列 [] —— 兩者對呼叫端(battle_screen.gd)而言無法區分,而空陣列
+# 本身是合法狀態、不能一律擋下。因此改為回傳 null:null 代表「解析失敗」,
+# [] 代表「確實沒有任何配對」,兩者現在型別上就分得開,呼叫端據此決定是否
+# 走向 _fail_load()。刻意在打錯字那一列前後各放一個合法列,證明合法列不會
+# 讓結果誤變成「部分成功」。
+func test_links_from_text_unknown_polarity_returns_null_not_empty_array() -> void:
 	# Arrange
 	var text: String = "%s\n1,3,BADVALUE,1\n%s" % [LINE_POSITIVE, LINE_NEGATIVE]
 
 	# Act
-	var links: Array[AffinityLink] = AffinityLink.links_from_text(text)
+	var links: Variant = AffinityLink.links_from_text(text)
 
-	# Assert — 不是 1(只丟壞列)也不是 2(只留好列),必須是 0(整表作廢)
-	assert_int(links.size()).is_equal(0)
+	# Assert — null(解析失敗),不是空陣列(合法的零配對)。這兩者曾經無法區分,
+	# 這支測試鎖住修好之後的樣子。
+	assert_object(links).is_null()
 
 
 func test_links_from_text_loads_vs01_file_returns_the_two_canon_links() -> void:

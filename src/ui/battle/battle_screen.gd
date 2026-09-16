@@ -62,22 +62,40 @@ const ROSTER_PATH: String = "res://assets/data/units/vs01_roster.txt"
 ## [method AffinityLink.links_from_text] and wired into [member _phi]. Unlike
 ## [constant TERRAIN_PATH] / [constant ROSTER_PATH], a file that parses to
 ## zero links is a legal, expressible design state (see [method _ready]) —
-## only [constant LoadFailure.MISSING] / [constant LoadFailure.UNREADABLE]
-## block the load for this path.
+## [constant LoadFailure.MISSING], [constant LoadFailure.UNREADABLE], and (as
+## of the 2026-09-16 second manager ruling) [constant LoadFailure.PARSE_ERROR]
+## block the load for this path; a legal empty result does not.
 const AFFINITY_PATH: String = "res://assets/data/affinity/vs01_affinity_links.txt"
 
-## Classification of why loading terrain/roster data failed, checked
+## Classification of why loading terrain/roster/affinity data failed, checked
 ## independently per file in [method _ready]. Ordered from "never got to open
 ## the file" through "opened it but the content was useless" so a single
 ## failing file always maps to exactly one value — see [method
-## classify_file_access] and [method classify_content] for how each value is
-## reached.
+## classify_file_access], [method classify_content], and (affinity-only)
+## [method classify_affinity_parse] for how each value is reached.
+##
+## [constant PARSE_ERROR] is appended at the tail rather than inserted among
+## the content-related values above it, as a general convention for adding
+## enum members — not, as of this correction, because label lookups depend on
+## ordinal position. [method _fail_load] and the affinity zero-links
+## diagnostic both used to look up a value's name via
+## [code]LoadFailure.keys()[value][/code], which reads a value out of the
+## KEY-ORDER array by treating it as if it were indexed by VALUE — exactly the
+## registered project-forbidden pattern
+## [code]enum_value_positional_string_conversion[/code]
+## ([code]docs/registry/architecture.yaml[/code]) — a real hazard for any enum
+## with explicit/non-sequential ordinals, and fragile even here where the
+## ordinals happen to be sequential from 0. Both call sites now use
+## [code]LoadFailure.find_key(value)[/code] instead, which does a reverse
+## value→name lookup and is therefore correct regardless of where in the
+## declaration a member sits.
 enum LoadFailure {
 	NONE,
 	MISSING,
 	UNREADABLE,
 	EMPTY_CONTENT,
 	PARSED_EMPTY,
+	PARSE_ERROR,
 }
 
 # Developer-facing log line only (never shown to the player) — deliberately
@@ -155,6 +173,8 @@ const TEXT_LOAD_REASON_UNREADABLE: String = "資料檔案存在,但無法讀取�
 const TEXT_LOAD_REASON_EMPTY_CONTENT: String = "資料檔案是空的。"
 ## Reason text for [constant LoadFailure.PARSED_EMPTY].
 const TEXT_LOAD_REASON_PARSED_EMPTY: String = "資料檔案沒有可用的內容。"
+## Reason text for [constant LoadFailure.PARSE_ERROR].
+const TEXT_LOAD_REASON_PARSE_ERROR: String = "資料檔案內容格式錯誤,其中一列資料無法辨識。"
 
 ## Always-on control hint, drawn in the bottom margin strip below the board
 ## (board occupies y=[39,231) per [member BoardCoords.BOARD_ORIGIN] and its
@@ -307,32 +327,46 @@ func _ready() -> void:
 		roster_failure = classify_content(roster_text, roster_units.size())
 
 	# Affinity table load — deliberately a DIFFERENT policy from terrain/roster
-	# above. classify_file_access() alone still gates this file (MISSING /
-	# UNREADABLE): it ships with the game, so its absence is a packaging
-	# defect, not a design choice — the same class of bug fixed earlier today
-	# when a data file was not packed into the .exe and the game silently
-	# drew an empty board while 151 tests stayed green. But unlike
-	# terrain/roster, a file that PARSES to zero links is never escalated to
-	# a load failure: it is a legal, expressible design state meaning
-	# "nobody is paired" (unit 5, 戊, deliberately has no links, and a test
-	# pins that) — blocking it would make "remove all pairings" impossible to
-	# express. So classify_content() still runs here, but purely to pick a
+	# above. classify_file_access() still gates this file the same way
+	# (MISSING / UNREADABLE): it ships with the game, so its absence is a
+	# packaging defect, not a design choice — the same class of bug fixed
+	# earlier when a data file was not packed into the .exe and the game
+	# silently drew an empty board while 151 tests stayed green.
+	#
+	# 2026-09-16 (second manager ruling): a row that fails to parse now ALSO
+	# gates this file, via classify_affinity_parse() — AffinityLink
+	# .links_from_text() returns null (not []) on a parse failure specifically
+	# so this branch can tell it apart from a legal empty table. Before this
+	# change, both cases returned [], and this file could not distinguish
+	# "a row is corrupt" from "nobody is paired by design" — see
+	# links_from_text()'s doc comment for the full history.
+	#
+	# But a file that PARSES CLEANLY to zero links is still never escalated to
+	# a load failure: it is a legal, expressible design state meaning "nobody
+	# is paired" (unit 5, 戊, deliberately has no links, and a test pins that)
+	# — blocking it would make "remove all pairings" impossible to express.
+	# classify_content() still runs in that case, but purely to pick a
 	# diagnostic label for the push_warning() below (EMPTY_CONTENT vs
 	# PARSED_EMPTY, so a truncated file stays distinguishable from a
 	# comments-only file in the log) — its result is never written back into
-	# affinity_failure, so it can never reach _fail_load(). affinity_failure
-	# therefore only ever carries MISSING / UNREADABLE / NONE forward.
+	# affinity_failure, so it can never reach _fail_load() on its own.
+	# affinity_failure therefore carries MISSING / UNREADABLE / PARSE_ERROR /
+	# NONE forward (never EMPTY_CONTENT / PARSED_EMPTY — those two remain
+	# diagnostic-only for this path).
 	var affinity_text: String = ""
 	var links: Array[AffinityLink] = []
 	var affinity_failure: LoadFailure = classify_file_access(AFFINITY_PATH)
 	if affinity_failure == LoadFailure.NONE:
 		affinity_text = FileAccess.get_file_as_string(AFFINITY_PATH)
-		links = AffinityLink.links_from_text(affinity_text)
-		if links.is_empty():
-			var diagnostic: LoadFailure = classify_content(affinity_text, links.size())
-			push_warning(
-				_LOG_AFFINITY_ZERO_LINKS_FORMAT % [AFFINITY_PATH, LoadFailure.keys()[diagnostic]]
-			)
+		var parsed_links: Variant = AffinityLink.links_from_text(affinity_text)
+		affinity_failure = classify_affinity_parse(parsed_links)
+		if affinity_failure == LoadFailure.NONE:
+			links = parsed_links
+			if links.is_empty():
+				var diagnostic: LoadFailure = classify_content(affinity_text, links.size())
+				push_warning(
+					_LOG_AFFINITY_ZERO_LINKS_FORMAT % [AFFINITY_PATH, LoadFailure.find_key(diagnostic)]
+				)
 
 	if (
 		terrain_failure != LoadFailure.NONE
@@ -565,6 +599,28 @@ static func classify_content(text: String, parsed_count: int) -> LoadFailure:
 	return LoadFailure.NONE
 
 
+## Classifies [method AffinityLink.links_from_text]'s [code]Variant[/code]
+## result: [constant LoadFailure.PARSE_ERROR] if [param parsed] is
+## [code]null[/code] (a row failed to parse), [constant LoadFailure.NONE]
+## otherwise — including when [param parsed] is a legally empty array,
+## which is NOT a failure (see [constant AFFINITY_PATH]'s doc comment and
+## [method links_from_text]'s own doc comment on why an empty result is not
+## the same thing as a failed one). Deliberately separate from
+## [method classify_content], which the affinity path also calls but only to
+## pick a diagnostic label for the zero-links [method push_warning] in
+## [method _ready] — that call's result is never allowed to reach
+## [member _fail_load], whereas this function's result is what [method _ready]
+## actually assigns into [code]affinity_failure[/code]. Pure and
+## node-independent, mirroring [method classify_file_access] /
+## [method classify_content], so the affinity table's null/array distinction
+## is unit-testable without instantiating [code]BattleScreen.tscn[/code] — see
+## [code]tests/unit/ui/battle_screen_load_guard_test.gd[/code].
+static func classify_affinity_parse(parsed: Variant) -> LoadFailure:
+	if parsed == null:
+		return LoadFailure.PARSE_ERROR
+	return LoadFailure.NONE
+
+
 ## Builds the on-screen message for [param failure] at [param path] from
 ## [constant TEXT_LOAD_FAILURE_FORMAT]. Never called with [constant
 ## LoadFailure.NONE] — callers check for [constant LoadFailure.NONE] before
@@ -580,6 +636,8 @@ static func load_failure_message(failure: LoadFailure, path: String) -> String:
 			reason = TEXT_LOAD_REASON_EMPTY_CONTENT
 		LoadFailure.PARSED_EMPTY:
 			reason = TEXT_LOAD_REASON_PARSED_EMPTY
+		LoadFailure.PARSE_ERROR:
+			reason = TEXT_LOAD_REASON_PARSE_ERROR
 	return TEXT_LOAD_FAILURE_FORMAT % [reason, path]
 
 
@@ -608,9 +666,11 @@ static func _parse_terrain_rows(text: String) -> PackedStringArray:
 # guard; _load_failed is the second guard _process()/_input() check directly,
 # in case processing is ever re-enabled from outside this script.
 #
-# affinity_failure only ever arrives here as MISSING or UNREADABLE — see
-# _ready()'s affinity-loading block for why a zero-link table is never
-# escalated to a failure and therefore never reaches this method.
+# affinity_failure arrives here as MISSING, UNREADABLE, or (2026-09-16 second
+# manager ruling) PARSE_ERROR — never EMPTY_CONTENT or PARSED_EMPTY. See
+# _ready()'s affinity-loading block for why a table that parses CLEANLY to
+# zero links is never escalated to a failure and therefore never reaches this
+# method, while a table with a corrupt row now does.
 #
 # Also hides _controls_hint_bg, for two reasons (measured 2026-08-28): (a)
 # BattleScreen.tscn's LoadErrorLabel was enlarged to y=8..262 so the full
@@ -628,11 +688,11 @@ func _fail_load(
 	terrain_failure: LoadFailure, roster_failure: LoadFailure, affinity_failure: LoadFailure
 ) -> void:
 	if terrain_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [TERRAIN_PATH, LoadFailure.keys()[terrain_failure]])
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [TERRAIN_PATH, LoadFailure.find_key(terrain_failure)])
 	if roster_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [ROSTER_PATH, LoadFailure.keys()[roster_failure]])
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [ROSTER_PATH, LoadFailure.find_key(roster_failure)])
 	if affinity_failure != LoadFailure.NONE:
-		push_error(_LOG_LOAD_FAILURE_FORMAT % [AFFINITY_PATH, LoadFailure.keys()[affinity_failure]])
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [AFFINITY_PATH, LoadFailure.find_key(affinity_failure)])
 
 	var display_failure: LoadFailure = LoadFailure.NONE
 	var display_path: String = ""

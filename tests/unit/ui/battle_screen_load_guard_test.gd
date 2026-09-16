@@ -165,6 +165,102 @@ func test_roster_load_pipeline_unknown_faction_row_yields_parsed_empty() -> void
 	assert_int(result).is_not_equal(BattleScreen.LoadFailure.NONE)
 
 
+# --- classify_affinity_parse() ---
+#
+# 2026-09-16 第二次管理者裁決:AffinityLink.links_from_text() 改回傳
+# Variant(null = 解析失敗、Array[AffinityLink] = 合法結果,可能是空陣列)。
+# 這裡鎖住 classify_affinity_parse() 這個純函式把該 Variant 轉成 LoadFailure
+# 的三種輸入型態,不碰場景樹。
+
+func test_classify_affinity_parse_null_returns_parse_error() -> void:
+	# Arrange — links_from_text() 解析失敗時的回傳值
+	var parsed: Variant = null
+
+	# Act
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_int(result).is_equal(BattleScreen.LoadFailure.PARSE_ERROR)
+
+
+func test_classify_affinity_parse_empty_array_returns_none() -> void:
+	# Arrange — 合法的零配對(戊沒有任何關係線)絕不可被誤判為失敗 —— 這是這次
+	# 改動最重要的迴歸防護,見本檔案標頭與 battle_screen.gd 的 AFFINITY_PATH
+	# 文件註解。
+	var parsed: Array[AffinityLink] = []
+
+	# Act
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_int(result).is_equal(BattleScreen.LoadFailure.NONE)
+
+
+func test_classify_affinity_parse_nonempty_array_returns_none() -> void:
+	# Arrange — 正常、非空的配對表
+	var parsed: Array[AffinityLink] = [AffinityLink.from_csv_line("1,2,POSITIVE,1")]
+
+	# Act
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_int(result).is_equal(BattleScreen.LoadFailure.NONE)
+
+
+# 2026-09-16 第二次管理者裁決(選項甲「響亮地停」的迴歸終點):關係表某一列打
+# 錯字,遊戲必須不啟動 —— 與上面 test_roster_load_pipeline_unknown_faction_row_
+# yields_parsed_empty() 同一種串接手法,但這裡鎖的是 _ready() 實際呼叫的兩個
+# 真實函式(AffinityLink.links_from_text() 與 BattleScreen.classify_affinity_parse()),
+# 而不是只斷言其中一個。文字全部在記憶體中建構,不讀寫 assets/data/ 底下任何檔案。
+func test_affinity_load_pipeline_unknown_polarity_row_yields_parse_error() -> void:
+	# Arrange — polarity 欄位打錯字,前後各放一個合法列,證明合法列不會被誤留
+	var text: String = "1,2,POSITIVE,1\n1,3,BADVALUE,1\n2,5,NEGATIVE,1"
+
+	# Act — 與 battle_screen.gd _ready() 完全相同的兩步:先解析,再分類
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_object(parsed).is_null()
+	assert_int(result).is_equal(BattleScreen.LoadFailure.PARSE_ERROR)
+	assert_int(result).is_not_equal(BattleScreen.LoadFailure.NONE)
+
+
+# 迴歸防護的另一半:合法的零配對(檔案內容為空白/僅註解)不可被這次改動牽連
+# 誤判成失敗 —— 這正是這次裁決要保留、不能弄壞的既有設計(「拿掉所有配對」
+# 必須仍是可表達的合法狀態)。
+func test_affinity_load_pipeline_comments_only_table_still_yields_none() -> void:
+	# Arrange — 合法的「沒有任何配對」
+	var text: String = "# 只有註解\n# 沒有任何資料列\n"
+
+	# Act
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_object(parsed).is_not_null()
+	assert_int(result).is_equal(BattleScreen.LoadFailure.NONE)
+
+
+# 第三種情況:正常資料(現行 vs01_affinity_links.txt 的兩列)一樣照常通過。
+# 甲類例外(讀 assets/data/ 底下已進版控的真實資料檔)——見
+# .claude/rules/test-standards.md「單元測試不得碰檔案系統」節;本檔其餘測試
+# （test_classify_file_access_real_terrain_path_returns_none 等）已是同一類先例。
+func test_affinity_load_pipeline_real_vs01_file_yields_none() -> void:
+	# Arrange
+	var text: String = FileAccess.get_file_as_string(
+		"res://assets/data/affinity/vs01_affinity_links.txt"
+	)
+
+	# Act
+	var parsed: Variant = AffinityLink.links_from_text(text)
+	var result: BattleScreen.LoadFailure = BattleScreen.classify_affinity_parse(parsed)
+
+	# Assert
+	assert_object(parsed).is_not_null()
+	assert_int(result).is_equal(BattleScreen.LoadFailure.NONE)
+
+
 # --- load_failure_message() ---
 
 func test_load_failure_message_missing_contains_reason_and_path() -> void:
@@ -220,4 +316,17 @@ func test_load_failure_message_unreadable_contains_matching_reason() -> void:
 
 	# Assert
 	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_UNREADABLE)
+	assert_str(message).contains(path)
+
+
+func test_load_failure_message_parse_error_contains_matching_reason() -> void:
+	# Arrange — 2026-09-16 第二次管理者裁決新增的分類
+	var failure: BattleScreen.LoadFailure = BattleScreen.LoadFailure.PARSE_ERROR
+	var path: String = BattleScreen.AFFINITY_PATH
+
+	# Act
+	var message: String = BattleScreen.load_failure_message(failure, path)
+
+	# Assert
+	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_PARSE_ERROR)
 	assert_str(message).contains(path)
