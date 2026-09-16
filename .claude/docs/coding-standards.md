@@ -143,7 +143,9 @@ frame, which is the narrow case it was written for.
   > 🔴 **2026-09-16:實測 `tests/unit` 的 43 支裡有 10 支在違反這一條,而沒有任何自動檢查會攔。**
   > 其中 8 支讀 `assets/data/` 的真實資料檔 —— **照上一條(「Test fixtures use constant files」)做就必然違反這一條**,
   > 兩條相隔兩行、同在這份每次開場載入的文件裡。逐檔清單、量測指令原始輸出、兩類動機的區分,
-  > 以及「這是登記不是許可」的位階說明,全部在 `.claude/rules/test-standards.md`。**本行刻意不複述。**
+  > 以及 **2026-09-16 管理者裁決的「明文例外」範圍與其兩項附帶義務**,全部在
+  > `.claude/rules/test-standards.md`。**本行刻意不複述。**
+  > ⚠️ **上一條(第 140 行)與本條的矛盾本身尚未處理** —— 裁決的是「准不准」,不是「這兩行怎麼重寫」。
 
 ## What NOT to Automate
 
