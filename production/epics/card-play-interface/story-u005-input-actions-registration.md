@@ -1,7 +1,7 @@
 # Story U-005: `project.godot` 新增 5 個動作,刻意不動 `battle_end_phase`
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-16,`godot-specialist` 實作;5 動作落地、`battle_end_phase` 逐位元組未動;9 條測試 3 條已注入證明會紅、6 條誠實標記「綠燈未證明」)
 > **層**: Presentation(輸入設定,B/C 段的共用前置)
 > **型別**: Integration
 > **估時**: S
