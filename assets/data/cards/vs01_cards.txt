@@ -63,7 +63,7 @@
 # 目前沒有任何驗收條件可查證。已登記為已知缺口,見
 # design/gdd/skill-card-system.md Core Rules 一之三界線 1(2026-09-15 補述)。
 #
-id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
 card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0
 card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0
 card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0

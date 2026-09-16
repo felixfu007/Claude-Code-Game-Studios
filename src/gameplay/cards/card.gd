@@ -35,6 +35,16 @@ extends RefCounted
 ## no entry here.
 enum Category { TEMPORARY_STAT_MODIFIER, PERMANENT_AFFINITY_WRITE }
 
+## Number of comma-separated fields expected per card-table line, in fixed
+## order: [code]id,category,delta_atk,delta_def,duration_rounds,
+## affinity_character_a,affinity_character_b,affinity_magnitude[/code]. See
+## [code]assets/data/cards/vs01_cards.txt[/code]'s header for the field
+## definitions and Story U-001
+## ([code]production/epics/card-play-interface/story-u001-card-table-parser.md[/code])
+## for why a single [Card] constructor cannot consume all 8 columns directly
+## (the two existing constructors each take 4 of them, split by [enum Category]).
+const FIELD_COUNT: int = 8
+
 ## Stable identifier for this card's definition (e.g. a future card-table
 ## row key). Not yet tied to any card table format — GDD OQ-6 (卡表本體) is
 ## unresolved — but every [CardDeck] caller needs *some* way to refer to
@@ -130,3 +140,131 @@ static func new_permanent_affinity_write(
 	card.affinity_character_b = p_character_b
 	card.affinity_magnitude = p_magnitude
 	return card
+
+
+## Parses a single card-table line into a [Card], or returns [code]null[/code]
+## if [param line]'s [code]category[/code] field is not a recognized [enum
+## Category] name. Field order is fixed: [code]id,category,delta_atk,
+## delta_def,duration_rounds,affinity_character_a,affinity_character_b,
+## affinity_magnitude[/code] (see [constant FIELD_COUNT]).
+##
+## Reads [code]category[/code] first and dispatches to exactly one of
+## [method new_temporary_stat_modifier] / [method new_permanent_affinity_write]
+## — this class's two constructors each take 4 of the 8 columns, split by
+## category, so all 8 fields are always read from the line but only 4 are ever
+## passed to the constructor actually used (Story U-001, Implementation Note 1).
+## The other group's columns are still present in [param line] (per
+## [code]vs01_cards.txt[/code]'s convention of filling the unused group with
+## its documented sentinel/default) but are never read here — the constructor
+## itself already defaults those fields.
+##
+## 🔴 Returns [code]null[/code] rather than asserting on an unrecognized
+## category string — per [code].claude/docs/coding-standards.md[/code]'s
+## 2026-09-15 entry, an [code]assert()[/code] on that branch would abort and
+## silently yield ordinal 0 of [enum Category] ([constant
+## Category.TEMPORARY_STAT_MODIFIER]), making an unknown string
+## indistinguishable from a genuine [code]"TEMPORARY_STAT_MODIFIER"[/code]
+## match — the exact failure shape that rule and this project's 2026-09-16
+## rulings on [method Unit.from_csv_line] / [method AffinityLink.from_csv_line]
+## both exist to prevent. [method cards_from_text] is the caller that turns a
+## [code]null[/code] result here into a loud, whole-table parse failure — see
+## that method's doc comment.
+static func from_csv_line(line: String) -> Card:
+	var fields: PackedStringArray = line.split(",")
+	assert(
+		fields.size() == FIELD_COUNT,
+		"Card.from_csv_line: expected %d fields, got %d in line: %s"
+		% [FIELD_COUNT, fields.size(), line]
+	)
+
+	var id: String = fields[0]
+	var category: Variant = _category_from_string(fields[1])
+	if category == null:
+		push_error(
+			"Card.from_csv_line: unknown category '%s' in line: %s" % [fields[1], line]
+		)
+		return null
+	if category == Category.TEMPORARY_STAT_MODIFIER:
+		return new_temporary_stat_modifier(id, int(fields[2]), int(fields[3]), int(fields[4]))
+	return new_permanent_affinity_write(id, int(fields[5]), int(fields[6]), int(fields[7]))
+
+
+## Parses an entire card-table text blob (as read from a card data file) into
+## an array of [Card]s, one per non-skipped line. Blank lines and lines
+## starting with [code]#[/code] are skipped, matching [method
+## Unit.roster_from_text] / [method AffinityLink.links_from_text].
+##
+## 🔴 Returns [code]null[/code] — [b]not[/b] an empty array — if any
+## non-skipped line fails to parse (currently: an unrecognized
+## [code]category[/code] string — see [method from_csv_line]), after logging
+## the 1-based line number of the offending row via [method
+## @GlobalScope.push_error]. This is the 2026-09-16 manager ruling for THIS
+## data table (card-play-interface Story U-001, "停下來,指出第幾行"): a card
+## table that is partially valid must not be used as if it were fully valid,
+## matching [method Unit.roster_from_text]'s "響亮地停" behavior exactly
+## (whole-batch abort, not skip-and-continue) rather than [method
+## AffinityLink.links_from_text]'s "genuinely zero rows can be legal" nuance —
+## a card table parsing to zero cards is not a meaningful game state the way
+## an affinity table parsing to zero links is, so there is no analogous
+## empty-but-legal case to preserve here.
+##
+## 🔴 **This ruling covers card tables only — it is NOT a general project
+## rule.** The manager's own 2026-09-16 ruling on this story explicitly kept
+## the "A vs B" choice a per-data-table decision rather than adopting a single
+## policy for every data file; do not cite this method as precedent for a
+## different data table's failure-handling shape without a ruling for that
+## table specifically.
+##
+## Return type is [code]Variant[/code] rather than [code]Array[Card][/code]
+## purely to make [code]null[/code] expressible. 🔴 A caller must NEVER
+## `return` this method's result directly from a function declared with a
+## concrete return type (e.g. [code]-> Array[Card][/code]) — per this
+## project's 2026-09-16 measured engine behavior (see
+## [code]tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd[/code]),
+## doing so silently coerces a [code]null[/code] failure back into an empty
+## array at the call boundary. Capture the [code]Variant[/code] result in a
+## local and branch on [code]null[/code] first, exactly as [method
+## AffinityLink.links_from_text]'s callers already do.
+static func cards_from_text(text: String) -> Variant:
+	var cards: Array[Card] = []
+	var line_number: int = 0
+	for raw_line: String in text.split("\n"):
+		line_number += 1
+		var line: String = raw_line.strip_edges()
+		if line.is_empty() or line.begins_with("#"):
+			continue
+		var card: Card = Card.from_csv_line(line)
+		if card == null:
+			push_error(
+				"Card.cards_from_text: aborting -- invalid data at line %d: %s"
+				% [line_number, line]
+			)
+			return null
+		cards.append(card)
+	return cards
+
+
+## Maps the card-table file's category string to a [enum Category] value, or
+## returns [code]null[/code] if [param value] is not a recognized name. Uses a
+## [code]match[/code] rather than an enum-name subscript, which would abort the
+## calling function on an unknown name (forbidden pattern
+## [code]raw_enum_name_subscript_from_untrusted_string[/code],
+## [code]docs/registry/architecture.yaml[/code]).
+##
+## 🔴 Returns [code]null[/code] on the unknown branch instead of
+## [code]assert(false, ...)[/code] — see [method from_csv_line]'s doc comment
+## for why an assert here is exactly the pattern
+## [code].claude/docs/coding-standards.md[/code] banned on 2026-09-15: it would
+## abort and silently return ordinal 0 of [enum Category] ([constant
+## Category.TEMPORARY_STAT_MODIFIER]), making an unknown string
+## indistinguishable from a genuine match. [method from_csv_line] is the sole
+## caller and is responsible for turning [code]null[/code] into a loud
+## failure; this method itself never logs or aborts.
+static func _category_from_string(value: String) -> Variant:
+	match value:
+		"TEMPORARY_STAT_MODIFIER":
+			return Category.TEMPORARY_STAT_MODIFIER
+		"PERMANENT_AFFINITY_WRITE":
+			return Category.PERMANENT_AFFINITY_WRITE
+		_:
+			return null
