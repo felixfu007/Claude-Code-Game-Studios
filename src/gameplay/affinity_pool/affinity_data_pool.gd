@@ -62,8 +62,8 @@
 #     此訊號是「實作慣例決策，非已承諾的契約」，下游不得假設它會被
 #     其他 ADR 或未來重構保留。見下方 [signal entry_appended] 文件註解。
 #
-# S-006 交付範圍(本次新增,production/epics/affinity-data-pool/story-006-*.md):
-#   - ReadRejection 統一列舉本體(六值全數宣告;本 story 只讓 NONE/INVALID_PAIR/
+# S-006 交付範圍(production/epics/affinity-data-pool/story-006-*.md):
+#   - ReadRejection 統一列舉本體(六值全數宣告;S-006 只讓 NONE/INVALID_PAIR/
 #     INVALID_T_QUERY_TYPE/FUTURE_TIME_QUERY 四值在三個讀取函數內可達——
 #     EMPTY_HYPOTHETICAL_SET/DEAD_PAIR_NOT_ALLOWED 僅預留位置給 S-012)
 #   - AffinityReadResult / ShapeFeatureResult 兩個結果型別(ADR-0002 2026-08-24
@@ -73,15 +73,27 @@
 #     三個入口:t_query 型別閘門(match typeof() 三分支,case 順序不可交換)、
 #     pair 序數驗證(機制四之四入口 3–5)、拒絕分流(_rejected_read_result()/
 #     _rejected_shape_feature_result() 統一哨兵值)。
-#     🔴 三個函數對合法輸入(rejection == NONE)只回傳佔位中性值——加權計算
-#     本身、n(p)=0 的完整合法回傳值、陣亡配對條件式預設查詢時點的實際值,
-#     全部屬 S-007,本 story 不宣稱這些值現在就有意義。
+#     S-006 對合法輸入(rejection == NONE)只回傳佔位中性值。
+#
+# S-007 交付範圍(本次新增,production/epics/affinity-data-pool/story-007-*.md):
+#   - combat_strength_read()/narrative_depth_read() 的真正加權計算邏輯
+#     (GDD Formulas 公式一/二,共用私有核心 _weighted_sum())、`0^0:=1` 顯式
+#     特判、陣亡配對條件式預設查詢時點的實際計算(_resolve_effective_t_query(),
+#     呼叫既有 t_death())、O(n_p) 走訪與 diagnostic_visited_count/n_pair 的區分。
+#   - _calibration 欄位 + AffinityCalibration 型別(新檔
+#     affinity_calibration.gd)——2026-09-16 technical-director 裁決:GDD Tuning
+#     Knobs 節六個校準旋鈕(λ_combat/λ_narrative/α/Q/n_min_segment/M;
+#     `n_gate_min` 不算,池永遠不讀它)既不是讀取函式的參數,也不是池上的散裝
+#     可寫欄位,而是這個獨立不可變設定型別,經 _init() 建構期注入、帶預設
+#     (AffinityCalibration.uncalibrated_placeholder())。見該檔案頭與
+#     diagnostic_calibration_is_placeholder() 文件註解。
+#   - shape_feature_read() 本 story 完全不動——公式三(七項子特徵)本身屬
+#     S-010/S-011,維持 S-006 交付的佔位骨架(Q/n_min_segment/M 三個旋鈕已存在
+#     於 AffinityCalibration,供該 story 落地時直接消費,本 story 不使用它們)。
 #
 # 尚未在此檔出現、屬於後續 story 的東西(避免下一個人誤以為漏寫):
-# 三個讀取函數的真正加權計算邏輯(S-007)、can_write()、
+# 公式三(形狀特徵)七項子特徵的真正計算邏輯(S-010/S-011)、can_write()、
 # export_state()/import_state()——全部不在本 story 範圍。
-# (advance_campaign_tick() 已於 S-005 交付;三個讀取函數的入口/閘門/拒絕分流
-# 已於 S-006 交付,不再列在此處——只有「真正的計算」還沒有。)
 class_name AffinityDataPool
 extends RefCounted
 
@@ -286,6 +298,16 @@ var _campaign_tick_marks: Array[int] = []
 ## 分支今天被測過:它依賴的權杖集合結構上不存在於本切片。
 var _serialization_tokens: Dictionary[int, bool] = {}
 
+## λ_combat/λ_narrative/α(以及 Q/n_min_segment/M,S-010/S-011 用)六個校準旋鈕
+## 的唯一持有者(2026-09-16 technical-director 裁決,見 [AffinityCalibration]
+## 檔頭——升交自本 story 對「旋鈕該是函式參數還是池上散裝可寫欄位」的架構衝突,
+## 兩案皆已否決)。[method combat_strength_read]/[method narrative_depth_read]
+## 只透過 [member _calibration] 讀取旋鈕,不在函式體內散落任何第二條讀取路徑。
+##
+## 🔴 `n_gate_min` 不在 [AffinityCalibration] 裡——本池永遠不會讀它(見該檔案頭
+## 逐字說明)。
+var _calibration: AffinityCalibration
+
 ## 每個合法配對的 Delta Log,依 [enum AffinityTypes.Pair] 索引(機制二,O(1) 鍵查找,
 ## 滿足 GDD Core Rules #1「效能介面要求」——單一配對查詢只需 `_records[pair]`,
 ## 不掃描其他配對)。
@@ -316,12 +338,39 @@ var _source_ordinals: Array
 ## (機制二,R7E-2)。見 [member _records] 與 [member _pair_ordinals] 的文件註解——
 ## 兩者存在的理由不同(前者是「未寫入的鍵讀取會中止」,後者是「`.values()` 重複配置陣列」),
 ## 但都必須在建構當下一次做完,不能延後到第一次使用時才做。
-func _init() -> void:
+##
+## [param calibration] 為 λ_combat/λ_narrative/α 等六個校準旋鈕的注入點
+## (2026-09-16 technical-director 裁決,見 [AffinityCalibration] 檔頭)。
+## 🔴 [b]本參數不在 ADR-0002「## Key Interfaces」節 `affinity_data_pool.gd`
+## 介面清單區塊(`class_name AffinityDataPool extends RefCounted` 起算)原先列出
+## 的建構子簽章裡[/b]——當時該清單未預留校準旋鈕的注入位置,依 2026-09-16
+## technical-director 裁決登記於 `docs/registry/architecture.yaml`,接受「ADR
+## 文字與程式碼多一處不一致」作為緩解條件,不追溯修改 ADR 文件本身。
+##
+## 🔴 [b]必須帶預設值 `null`,不得改為必填[/b]——實測
+## `grep -rn "AffinityDataPool.new(" --include=*.gd .` 命中約 54 處,絕大多數在
+## 測試,其中至少 1 處在 `src/ui/battle/battle_screen.gd`(另一位專家維護中的
+## 正式程式碼)。改成必填會讓這些既有呼叫點當場編譯失敗。省略時以
+## [method AffinityCalibration.uncalibrated_placeholder] 頂替(見
+## [member _calibration] 文件註解、[method diagnostic_calibration_is_placeholder])。
+func _init(calibration: AffinityCalibration = null) -> void:
 	_pair_ordinals = AffinityTypes.Pair.values()
 	_character_ordinals = AffinityTypes.Character.values()
 	_source_ordinals = AffinityTypes.Source.values()
 	for p in _pair_ordinals:
 		_records[p] = AffinityRecordList.new()
+	_calibration = (
+		calibration if calibration != null else AffinityCalibration.uncalibrated_placeholder()
+	)
+
+
+## QA/除錯用途:回傳本池目前的校準是否仍是
+## [method AffinityCalibration.uncalibrated_placeholder] 產生的佔位值(2026-09-16
+## technical-director 裁決「丙案」)。**業務邏輯不得依賴此欄位判斷任何事**——
+## 理由與 [member AffinityDataPool.AffinityReadResult.diagnostic_visited_count]
+## 相同,純粹供 QA/接線整合測試斷言「校準是否已經真的發生」。
+func diagnostic_calibration_is_placeholder() -> bool:
+	return _calibration.is_placeholder
 
 
 ## 記錄角色 [param character] 陣亡,標記值為呼叫當下的 [member _t_now]
@@ -633,48 +682,142 @@ func _rejected_shape_feature_result(rejection: ReadRejection) -> ShapeFeatureRes
 	return result
 
 
-## 公式一(戰鬥強度讀取,GDD Formulas 公式一)。ADR-0002 機制五,Story S-006。
+## 解析 [method combat_strength_read]/[method narrative_depth_read] 的有效查詢
+## 時點(GDD Core Rules #3「陣亡配對的條件式預設查詢時點」)。呼叫前提:
+## [param t_query] 已通過 [method _validate_read_query] 的型別/未來時點閘門,
+## 本函式只處理「省略時預設什麼值」這一步的分流:
 ##
-## 🔴 本 story 只交付入口驗證([method _validate_read_query])與拒絕分流——加權
-## 計算邏輯本身(公式一的實際數學)、`n(p)=0` 的完整合法回傳值、陣亡配對的
-## 條件式預設查詢時點實際算出的值,全部屬 S-007。通過驗證後回傳的是[b]佔位
-## 中性值[/b]([code]value = 0.0[/code]、[code]n_pair = 0[/code]、
-## [code]diagnostic_visited_count = 0[/code]),[b]不代表任何真實讀值[/b]——
-## 本 story 的測試範圍嚴格限定在型別/閘門/拒絕層級,不涉及此處回傳值的正確性。
+## - [param t_query] 為 [constant TYPE_INT]:直接採用(含歷史查詢,AC-34/AC-35)。
+## - [param t_query] 省略([code]null[/code]):若 [method t_death] 非 `null`,
+##   凍結於該值(AC-25/AC-62/AC-75——陣亡後即使全域計數器持續推進,讀值不再
+##   隨之衰減);否則預設目前 [member _t_now]。
+##
+## 🔴 [method shape_feature_read] [b]不[/b]呼叫本函式——它的省略預設恆為
+## [member _t_now],不受陣亡凍結規則影響(GDD 明文要求形狀特徵須能反映陣亡後
+## 的追憶寫入),既有分流(S-006 已交付)不受本 story 影響。
+func _resolve_effective_t_query(pair: AffinityTypes.Pair, t_query: Variant) -> int:
+	if typeof(t_query) == TYPE_INT:
+		return t_query
+
+	var death_mark: Variant = t_death(pair)
+	if death_mark != null:
+		return int(death_mark)
+	return _t_now
+
+
+## 公式一/公式二共用的加權加總核心(技術總監 2026-09-16 裁決建議的分工:
+## 「加權核心走訪 `_records[pair]`、過濾 `t_i<=t_query`、算 age、累加;公開函式
+## 只是去 calibration 拿 λ,呼叫它」)。[method combat_strength_read]/
+## [method narrative_depth_read] 皆只是「決定要用哪個 λ、哪個來源權重函式」
+## 後呼叫本函式,不各自重複走訪邏輯。
+##
+## 🔴 `0^0 := 1` 顯式特判(GDD 邊界值測試總表,Story S-007 Implementation
+## Notes #3)實作於本函式內:`age_i == 0` 時權重恆為 `1.0`,[b]不呼叫
+## [method @GlobalScope.pow][/b]——契約不允許依賴引擎對 `pow(0.0, 0.0)` 的預設
+## 行為,即使數值碰巧相符(已實測引擎預設本就回傳 `1.0`,但這裡刻意不倚賴它)。
+##
+## `O(n_p)` 效能保證(Core Rules #1「效能介面要求」):只走訪
+## [code]_records[pair][/code] 自身的記錄,不掃描其他配對。
+##
+## [param source_weight_fn] 為 `Callable(source: AffinityTypes.Source) -> float`
+## ——[method combat_strength_read] 傳入恆回傳 `1.0` 的閉包(所有來源等權),
+## [method narrative_depth_read] 傳入依 `source == COMBAT_CARD` 決定 `alpha`
+## 或 `1.0` 的閉包。
+##
+## 回傳 [Dictionary]:`{"value": float, "n_pair": int,
+## "diagnostic_visited_count": int}`。🔴 [code]diagnostic_visited_count[/code]
+## 與 [code]n_pair[/code] 的區分——**兩者不一定相等**:前者恆等於
+## [code]_records[pair].size()[/code](本次呼叫走訪的該配對記錄總筆數,回答
+## 「觸碰了多少筆」);後者只計入 `t_i ≤ t_query` 的筆數(回答「這次查詢納入
+## 計算的筆數」)。兩者在「t_query 等於預設值」時相等,但在歷史查詢
+## (AC-34/AC-35,`t_query` 早於該配對部分記錄)下,`n_pair` 會小於
+## `diagnostic_visited_count`——因為仍須走訪每一筆才能判斷是否落在 `t_query`
+## 之前。AC-55 驗證的是前者不受其他配對筆數影響,不是兩者相等。
+func _weighted_sum(
+	pair: AffinityTypes.Pair,
+	t_query: int,
+	lambda: float,
+	source_weight_fn: Callable
+) -> Dictionary:
+	var list: AffinityRecordList = _records[pair]
+	var visited: int = list.size()
+	var n_pair: int = 0
+	var value: float = 0.0
+	for i in range(visited):
+		var record: AffinityRecord = list.get_at(i)
+		if record.t > t_query:
+			continue
+		n_pair += 1
+		var age: int = t_query - record.t
+		var decay: float = 1.0 if age == 0 else pow(lambda, age)
+		var weight: float = float(source_weight_fn.call(record.source))
+		value += weight * record.m * decay
+	return {"value": value, "n_pair": n_pair, "diagnostic_visited_count": visited}
+
+
+## 公式一(戰鬥強度讀取,GDD Formulas 公式一)。ADR-0002 機制五,Story S-007。
+##
+## `combat_strength_read(p, t_query=t_now) = Σ (m_i · λ_combat^(t_query − t_i))`,
+## 對配對 [param pair] 中所有 `t_i ≤ t_query` 的記錄加總,所有來源權重相同
+## (=1.0)。λ_combat 讀自 [member _calibration]([member AffinityCalibration.lambda_combat],
+## 見該型別檔頭的裁決說明)。
 ##
 ## [param t_query] 省略([code]null[/code])時走「條件式預設查詢時點」
-## (GDD Core Rules #3):若 [method t_death] 非 `null` 則預設為該值,否則預設
-## 為目前 [member _t_now]。[b]本 story 只保證落到這個分支,不決定實際算出
-## 什麼[/b]——下方佔位實作直接使用 [member _t_now],真正呼叫 [method t_death]
-## 分流屬 S-007。
+## (GDD Core Rules #3,見 [method _resolve_effective_t_query])。
+##
+## 走訪、`0^0:=1` 特判、`O(n_p)` 保證、`diagnostic_visited_count`/`n_pair` 的
+## 區分,全部見 [method _weighted_sum] 文件註解,不重複。
 func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
 	var rejection: ReadRejection = _validate_read_query(pair, t_query)
 	if rejection != ReadRejection.NONE:
 		return _rejected_read_result(rejection)
 
+	var effective_t_query: int = _resolve_effective_t_query(pair, t_query)
+	var uniform_weight: Callable = func(_source: AffinityTypes.Source) -> float:
+		return 1.0
+	var summed: Dictionary = _weighted_sum(
+		pair, effective_t_query, _calibration.lambda_combat, uniform_weight
+	)
+
 	var result := AffinityReadResult.new()
 	result.rejection = ReadRejection.NONE
-	result.value = 0.0
-	result.t_query = t_query if typeof(t_query) == TYPE_INT else _t_now
-	result.n_pair = 0
-	result.diagnostic_visited_count = 0
+	result.value = summed["value"]
+	result.t_query = effective_t_query
+	result.n_pair = summed["n_pair"]
+	result.diagnostic_visited_count = summed["diagnostic_visited_count"]
 	return result
 
 
-## 公式二(敘事深度讀取,GDD Formulas 公式二)。ADR-0002 機制五,Story S-006。
+## 公式二(敘事深度讀取,GDD Formulas 公式二)。ADR-0002 機制五,Story S-007。
+##
+## `narrative_depth_read(p, t_query=t_now) = Σ (w(source_i) · m_i · λ_narrative^(t_query − t_i))`,
+## 其中戰鬥好感度對話卡牌來源 `w=α`,其餘來源 `w=1`。λ_narrative/α 讀自
+## [member _calibration]([member AffinityCalibration.lambda_narrative]/
+## [member AffinityCalibration.alpha])。
+##
 ## 結構與 [method combat_strength_read] 完全對稱(同一套入口驗證、同一種條件式
-## 預設查詢時點、同一種佔位中性值)——見該方法文件註解,不重複。
+## 預設查詢時點、共用同一個 [method _weighted_sum] 核心)——見該方法文件註解,
+## 不重複;本方法額外依每筆記錄的 `source` 決定來源權重:
+## `AffinityTypes.Source.COMBAT_CARD` 為 `alpha`,其餘為 `1.0`。
 func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
 	var rejection: ReadRejection = _validate_read_query(pair, t_query)
 	if rejection != ReadRejection.NONE:
 		return _rejected_read_result(rejection)
 
+	var effective_t_query: int = _resolve_effective_t_query(pair, t_query)
+	var alpha: float = _calibration.alpha
+	var source_weight: Callable = func(source: AffinityTypes.Source) -> float:
+		return alpha if source == AffinityTypes.Source.COMBAT_CARD else 1.0
+	var summed: Dictionary = _weighted_sum(
+		pair, effective_t_query, _calibration.lambda_narrative, source_weight
+	)
+
 	var result := AffinityReadResult.new()
 	result.rejection = ReadRejection.NONE
-	result.value = 0.0
-	result.t_query = t_query if typeof(t_query) == TYPE_INT else _t_now
-	result.n_pair = 0
-	result.diagnostic_visited_count = 0
+	result.value = summed["value"]
+	result.t_query = effective_t_query
+	result.n_pair = summed["n_pair"]
+	result.diagnostic_visited_count = summed["diagnostic_visited_count"]
 	return result
 
 
