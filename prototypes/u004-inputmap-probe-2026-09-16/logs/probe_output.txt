@@ -1,0 +1,108 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Story U-004 InputMap probe (2026-09-16) ===
+Engine version: { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+InputMap 在 headless 下可讀: true (get_actions() 回傳 93 個動作,非空即為可讀)
+
+--- 本次使用的引擎常數,由本引擎建置即時解析,非記憶中的數字 ---
+KEY_ESCAPE=4194305  KEY_C=67  KEY_TAB=4194306  KEY_M=77
+JOY_BUTTON_A=0  JOY_BUTTON_B=1  JOY_BUTTON_X=2  JOY_BUTTON_Y=3  JOY_BUTTON_START=6  JOY_BUTTON_LEFT_SHOULDER=9  JOY_BUTTON_RIGHT_SHOULDER=10
+
+--- 5 個候選鍵逐項查核(鍵盤 + 手把兩側,共 10 個按鍵) ---
+
+[battle_cancel — 取消 / 退一步]  鍵盤建議=Esc  手把建議=B (右動作鍵)
+  鍵盤 Esc -> 已被佔用: [&"ui_cancel", &"ui_close_dialog", &"ui_close_dialog.macos", &"ui_text_clear_carets_and_selection", &"battle_end_phase"]
+    - ui_cancel | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_close_dialog | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_close_dialog.macos | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_text_clear_carets_and_selection | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - battle_end_phase | 該動作同時有鍵盤與手把綁定: 是(同時有鍵盤+手把)
+  手把 B (右動作鍵) -> 已被佔用: [&"battle_end_phase"]
+    - battle_end_phase | 該動作同時有鍵盤與手把綁定: 是(同時有鍵盤+手把)
+
+[open_hand — 開 / 收手牌]  鍵盤建議=C  手把建議=X (左動作鍵)
+  鍵盤 C -> 未被佔用
+  手把 X (左動作鍵) -> 已被佔用: [&"ui_colorpicker_delete_preset"]
+    - ui_colorpicker_delete_preset | 該動作同時有鍵盤與手把綁定: 是(同時有鍵盤+手把)
+
+[next_target — 跳下一個合法目標]  鍵盤建議=Tab  手把建議=RB
+  鍵盤 Tab -> 已被佔用: [&"ui_focus_next", &"ui_text_completion_accept", &"ui_text_indent"]
+    - ui_focus_next | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_text_completion_accept | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_text_indent | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+  手把 RB -> 未被佔用
+
+[prev_target — 跳上一個合法目標]  鍵盤建議=Shift+Tab  手把建議=LB
+  鍵盤 Shift+Tab -> 已被佔用: [&"ui_focus_prev", &"ui_text_completion_replace", &"ui_text_dedent"]
+    - ui_focus_prev | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_text_completion_replace | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+    - ui_text_dedent | 該動作同時有鍵盤與手把綁定: 否(僅單側)
+  手把 LB -> 未被佔用
+
+[battle_menu — 開啟選單]  鍵盤建議=M  手把建議=Start
+  鍵盤 M -> 未被佔用
+  手把 Start -> 未被佔用
+
+--- 陷阱九覆核:手把 X(左動作鍵)是否真的比 Y(上動作鍵)更安全? ---
+既有結論(2026-08-27,轉錄於 EPIC.md):ui_select 的手把綁定 = Y(上動作鍵),
+鍵盤綁定 = Space,而 Space 已被 battle_confirm 佔用 → 同一次按鍵觸發兩個動作。
+本次覆核 JOY_BUTTON_Y 佔用者:
+  手把 Y -> 已被佔用: [&"ui_select"]
+    - ui_select | 該動作同時有鍵盤與手把綁定: 是(同時有鍵盤+手把)
+本次覆核 JOY_BUTTON_X 佔用者(即 open_hand 建議鍵,上方已查過,這裡重列以便對照):
+  手把 X -> 已被佔用: [&"ui_colorpicker_delete_preset"]
+    - ui_colorpicker_delete_preset | 該動作同時有鍵盤與手把綁定: 是(同時有鍵盤+手把)
+
+--- Esc / B 特別檢查:除了 battle_end_phase 之外,是否還有其他動作佔用? ---
+鍵盤 Esc 佔用者(全部): [&"ui_cancel", &"ui_close_dialog", &"ui_close_dialog.macos", &"ui_text_clear_carets_and_selection", &"battle_end_phase"]
+鍵盤 Esc 佔用者(排除 battle_end_phase 之後): [&"ui_cancel", &"ui_close_dialog", &"ui_close_dialog.macos", &"ui_text_clear_carets_and_selection"]
+手把 B 佔用者(全部): [&"battle_end_phase"]
+手把 B 佔用者(排除 battle_end_phase 之後): []
+
+--- 附:project.godot 自訂動作(battle_confirm / battle_end_phase)的完整綁定原始資料 ---
+  battle_confirm:
+    InputEventKey keycode=4194309 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventKey keycode=4194310 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventKey keycode=32 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventJoypadButton button_index=0
+  battle_end_phase:
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventJoypadButton button_index=1
+
+--- 附:上面每一項判定為「已被佔用」的動作,其完整綁定原始資料(逐一列出,供覆核不必相信本腳本的布林判定) ---
+  battle_end_phase:
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventJoypadButton button_index=1
+  ui_colorpicker_delete_preset:
+    InputEventJoypadButton button_index=2
+    InputEventKey keycode=4194312 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_text_clear_carets_and_selection:
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_text_dedent:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=true ctrl=false alt=false meta=false
+  ui_text_indent:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_text_completion_replace:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=true ctrl=false alt=false meta=false
+    InputEventKey keycode=4194309 physical_keycode=0 shift=true ctrl=false alt=false meta=false
+    InputEventKey keycode=4194310 physical_keycode=0 shift=true ctrl=false alt=false meta=false
+  ui_text_completion_accept:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventKey keycode=4194309 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+    InputEventKey keycode=4194310 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_focus_prev:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=true ctrl=false alt=false meta=false
+  ui_focus_next:
+    InputEventKey keycode=4194306 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_close_dialog.macos:
+    InputEventKey keycode=87 physical_keycode=0 shift=false ctrl=false alt=false meta=true
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_close_dialog:
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_cancel:
+    InputEventKey keycode=4194305 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+  ui_select:
+    InputEventJoypadButton button_index=3
+    InputEventKey keycode=32 physical_keycode=0 shift=false ctrl=false alt=false meta=false
+
+=== Probe complete ===
