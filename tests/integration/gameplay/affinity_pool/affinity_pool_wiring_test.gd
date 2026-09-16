@@ -99,6 +99,30 @@ class _SpyPoolReorderingReads extends AffinityDataPool:
 		return super.t_death(pair)
 
 
+# 2026-09-16 協調者裁決追加——為 test_playing_combat_card_end_to_end_writes_a_
+# record_and_is_readable_back() 補的敏感度證明用間諜:覆寫 append_record() 讓
+# 它偽稱「NONE(接受)」但完全不寫入任何記錄，模擬「寫入路徑某處把結果悄悄吞掉，
+# 呼叫端卻以為成功了」這個端到端測試存在的理由——AC-1 的三條測試只掃描
+# AffinityDataPool 自己「一個乾淨物件上」的方法清單，抓不到這種「回報成功但沒有
+# 真的做」的錯誤，只有端到端才看得到。
+class _SpyPoolSilentlyDropsWrites extends AffinityDataPool:
+	func append_record(_pair: AffinityTypes.Pair, _m: float, _source: AffinityTypes.Source) -> WriteRejection:
+		return WriteRejection.NONE
+
+
+# 2026-09-16 協調者裁決追加——為 test_null_write_port_fallback_path_still_
+# works_when_no_pool_is_supplied() 補的敏感度證明用間諜:偽裝成一個「本該像
+# NullAffinityWritePort 一樣恆拒絕，卻悄悄放行」的埠。⚠️ 這裡刻意【顯式傳入】
+# 這個間諜（不是省略 write_port 讓 BattleController 自己代入
+# NullAffinityWritePort）——battle_controller.gd 本身的「省略時代入
+# NullAffinityWritePort」那段程式碼是既有程式碼、本輪不得修改也無法注入，這條
+# 間諜證明的是「下面那條測試的斷言（confirmed == false、deck 沒有變化）確實會
+# 分辨埠的行為，而不是巧合通過」，不是證明 BattleController 的內部代入邏輯本身。
+class _SpyWritePortAlwaysAccepts extends AffinityWritePort:
+	func append_record(_character_a: int, _character_b: int, _m: int, _source: StringName) -> Rejection:
+		return Rejection.NONE
+
+
 # ---- 共用 fixture / helper ---------------------------------------------------
 
 static func _total_records(pool: AffinityDataPool) -> int:
@@ -231,8 +255,15 @@ func _real_links() -> Array[AffinityLink]:
 # 這個更精確的資訊。放在最後：即使它紅了，上面每一條測試各自的 PASS/FAIL 都已
 # 經是真實結果，不會被這條清單過期的事實連坐。
 
-func _method_names_from_source() -> Array[StringName]:
-	var source: String = FileAccess.get_file_as_string(_POOL_SOURCE_PATH)
+## [param source_override] 為 2026-09-16 協調者裁決追加，僅供下面的敏感度證明
+## 測試使用——省略時（本檔其餘呼叫端一律省略）行為與新增前完全相同：讀真實的
+## affinity_data_pool.gd 原始碼文字。不改變、不影響 test_known_public_method_
+## list_matches_the_real_source_file() 本身讀的是不是真實檔案。
+func _method_names_from_source(source_override: String = "") -> Array[StringName]:
+	var source: String = (
+		source_override if not source_override.is_empty()
+		else FileAccess.get_file_as_string(_POOL_SOURCE_PATH)
+	)
 	var regex: RegEx = RegEx.new()
 	regex.compile("(?m)^func ([a-zA-Z_][a-zA-Z0-9_]*)\\(")
 	var names: Array[StringName] = []
@@ -377,6 +408,47 @@ func test_playing_combat_card_end_to_end_writes_a_record_and_is_readable_back() 
 	assert_bool(pool.diagnostic_calibration_is_placeholder()).is_true()
 
 
+# 敏感度證明(2026-09-16 協調者裁決追加)——見 _SpyPoolSilentlyDropsWrites 的
+# 文件註解。用一個「偽稱成功但完全不寫入」的池重跑同一套端到端流程，證明上面
+# 那條測試 pool._records[pair].size() == 1 的斷言確實在做工:confirm() 仍然
+# 回傳 true(卡片一樣被判定為合法打出),但記錄筆數維持 0——這正是若真實
+# AffinityPoolWritePort/AffinityDataPool 的寫入路徑哪天真的悄悄失效時,上面那
+# 條測試會抓到的樣子,不是巧合綠燈。
+func test_sensitivity_proof_end_to_end_test_catches_a_pool_that_silently_drops_writes() -> void:
+	# Arrange — 與上面的端到端測試完全同型,只把 pool 換成間諜
+	var roster_lines: Array[String] = [
+		"1,P1,PLAYER,20,5,3,0,1,1,0,0",
+		"2,P2,PLAYER,20,5,3,0,1,1,1,0",
+		"6,E1,ENEMY,20,5,3,0,1,1,12,5",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster_lines))
+	var order: TurnOrder = TurnOrder.new([1, 2], [6])
+	var card: Card = Card.new_permanent_affinity_write("wiring_sensitivity_card", 1, 2, 2)
+	var deck: CardDeck = CardDeck.new([card])
+	var links: Array[AffinityLink] = _real_links()
+	var spy_pool: _SpyPoolSilentlyDropsWrites = _SpyPoolSilentlyDropsWrites.new()
+	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(spy_pool)
+	var controller: BattleController = BattleController.new(
+		state, order, Callable(), Callable(), deck, links, write_port
+	)
+
+	# Act
+	assert_bool(controller.open_hand()).is_true()
+	assert_bool(controller.select_card(card)).is_true()
+	assert_bool(controller.select_target(1)).is_true()
+	assert_bool(controller.select_second_target(2)).is_true()
+	var confirmed: bool = controller.confirm()
+
+	# Assert — 間諜讓 confirm() 看起來仍然成功(這正是為何光看 confirmed==true
+	# 不足以當作「有寫入」的證據),但記錄筆數維持 0——真正的端到端測試量的是
+	# 這件事,不是 confirmed 本身
+	assert_bool(confirmed).is_true()
+	var pair: AffinityTypes.Pair = AffinityTypes.pair_of(
+		AffinityTypes.Character.CHARACTER_1, AffinityTypes.Character.CHARACTER_2
+	)
+	assert_int(spy_pool._records[pair].size()).is_equal(0)
+
+
 # ---- 既有降級路徑（NullAffinityWritePort）在真實接線之後仍然有效 --------------
 #
 # story-009-wiring.md Implementation Notes #4 / Test Evidence 明文要求：本 story
@@ -412,6 +484,91 @@ func test_null_write_port_fallback_path_still_works_when_no_pool_is_supplied() -
 	assert_bool(confirmed).is_false()
 	assert_int(deck.used_size()).is_equal(0)
 	assert_bool(deck.hand().has(card)).is_true()
+
+
+# 敏感度證明(2026-09-16 協調者裁決追加)——見 _SpyWritePortAlwaysAccepts 的
+# 文件註解。🔴 誠實揭露這條證明了什麼、沒證明什麼:battle_controller.gd 裡
+# 「write_port 省略時代入 NullAffinityWritePort」那段程式碼本身是既有程式碼、
+# 本輪不得修改，因此無法對那段程式碼本身注入錯誤。這條測試改為【顯式傳入】
+# 一個偽裝成 NullAffinityWritePort、卻悄悄放行一切的間諜，證明上面那條測試賴
+# 以判斷「降級路徑仍然拒絕」的三個斷言(confirmed==false、used_size()==0、
+# hand().has(card)==true)確實會分辨埠的行為——換一個放行的埠，結果精確地
+# 反過來。這證明的是「斷言本身有分辨力」，不是「NullAffinityWritePort 的
+# 內部代入邏輯今天沒壞」——後者這輪結構上驗不到，如實記錄。
+func test_sensitivity_proof_null_write_port_fallback_test_would_catch_a_wrongly_permissive_substitute() -> void:
+	# Arrange — 與上面幾乎同型，唯一差異是顯式傳入間諜埠（不是省略讓
+	# BattleController 自己代入 NullAffinityWritePort）
+	var roster_lines: Array[String] = [
+		"1,P1,PLAYER,20,5,3,0,1,1,0,0",
+		"2,P2,PLAYER,20,5,3,0,1,1,1,0",
+		"6,E1,ENEMY,20,5,3,0,1,1,12,5",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster_lines))
+	var order: TurnOrder = TurnOrder.new([1, 2], [6])
+	var card: Card = Card.new_permanent_affinity_write("wiring_fallback_sensitivity_card", 1, 2, 2)
+	var deck: CardDeck = CardDeck.new([card])
+	var links: Array[AffinityLink] = _real_links()
+	var spy_port: _SpyWritePortAlwaysAccepts = _SpyWritePortAlwaysAccepts.new()
+	var controller: BattleController = BattleController.new(
+		state, order, Callable(), Callable(), deck, links, spy_port
+	)
+
+	# Act
+	assert_bool(controller.open_hand()).is_true()
+	assert_bool(controller.select_card(card)).is_true()
+	assert_bool(controller.select_target(1)).is_true()
+	assert_bool(controller.select_second_target(2)).is_true()
+	var confirmed: bool = controller.confirm()
+
+	# Assert — 換成錯誤放行的埠後，三個結果精確地與上面那條測試相反：確認、
+	# 已用區有一張、手牌不再持有這張卡
+	assert_bool(confirmed).is_true()
+	assert_int(deck.used_size()).is_equal(1)
+	assert_bool(deck.hand().has(card)).is_false()
+
+
+# 敏感度證明(2026-09-16 協調者裁決追加)——證明下面 test_known_public_method_
+# list_matches_the_real_source_file() 賴以判斷「清單過期」的比對邏輯，真的會
+# 在清單與原始碼不一致時抓到，而不是巧合綠燈。用 _method_names_from_source()
+# 的 source_override 參數餵一段【手寫、不讀任何真實檔案】的假原始碼文字，模擬
+# 「_KNOWN_PUBLIC_METHODS 少了一個新方法」這個真正會發生的情境。
+#
+# ⚠️ 這條測試不受「活性檢查必須放檔案最後一條」那條規則約束——它比對的兩邊都
+# 是本測試自己建構的常數（假原始碼字串 + 手寫的期望清單），不依賴真實原始碼
+# 檔案此刻的狀態，因此即使原始碼真的在別處被修改，這條測試的 PASS/FAIL 也不
+# 會受影響，可以放在檔案中段。
+func test_sensitivity_proof_source_method_scan_catches_a_known_list_missing_a_new_method() -> void:
+	# Arrange — 假原始碼比真實的 _KNOWN_PUBLIC_METHODS 多一個從未被登記過的
+	# 公開方法（模擬「有人加了新方法，忘記更新清單」），並混入一個底線開頭的
+	# 私有方法與一段刻意縮排的行，用來確認正規表示式的 column-0 錨點與「排除
+	# 底線開頭」這兩條規則本身也一起被驗證到，不是只驗證到「數量對不上」。
+	var fake_source: String = (
+		"func append_record(pair, m, source) -> void:\n" +
+		"\tpass\n" +
+		"func _private_helper() -> void:\n" +
+		"\tpass\n" +
+		"\tfunc nested_indented_not_top_level() -> void:\n" +
+		"\t\tpass\n" +
+		"func advance_campaign_tick() -> void:\n" +
+		"\tpass\n" +
+		"func brand_new_public_method_nobody_registered_yet() -> void:\n" +
+		"\tpass\n"
+	)
+	var known: Array = [&"append_record", &"advance_campaign_tick"]  # 故意缺一項
+	known.sort()
+
+	# Act
+	var from_fake_source: Array = _method_names_from_source(fake_source)
+	from_fake_source.sort()
+
+	# Assert — 兩邊不相等,證明清單過期這件事會被本檔的比對邏輯抓到；同時
+	# 順便鎖住「私有方法與縮排行不會被誤判為新增公開方法」這個既有假設
+	assert_array(from_fake_source).is_not_equal(known)
+	var expected: Array = [
+		&"append_record", &"advance_campaign_tick", &"brand_new_public_method_nobody_registered_yet"
+	]
+	expected.sort()
+	assert_array(from_fake_source).is_equal(expected)
 
 
 # 見上方 "---- 活性檢查 ----" 節的文件註解，說明為何刻意放在檔案最後一條。

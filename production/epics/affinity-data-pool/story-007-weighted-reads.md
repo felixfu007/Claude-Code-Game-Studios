@@ -2,7 +2,7 @@
 
 > **Epic**:好感度數值池(Delta Log)—— 資料層(`production/epics/affinity-data-pool/EPIC.md`)
 > **型別**:Logic
-> **狀態**:✅ Complete(2026-09-16,`gameplay-programmer` 實作;20 條 AC 全滿足、20 條測試。🔴 六個校準旋鈕的歸屬由 `technical-director` 2026-09-16 裁決,登記於 `docs/registry/architecture.yaml` 的 `affinity_calibration_knobs_constructor_injected`,ADR-0002 刻意未修訂。⚠️ 20 條測試**皆未經注入證明會紅**——協調者叫停,照實登記)
+> **狀態**:✅ Complete(2026-09-16,`gameplay-programmer` 實作;20 條 AC 全滿足、20 條測試。🔴 六個校準旋鈕的歸屬由 `technical-director` 2026-09-16 裁決,登記於 `docs/registry/architecture.yaml` 的 `affinity_calibration_knobs_constructor_injected`,ADR-0002 刻意未修訂。✅ **20 條敏感度證明已於 2026-09-16 第二輪全數補齊**(常駐 `test_sensitivity_proof_*` 形式,每條各以一個間諜子類別植入具體缺陷;AC-35 另含一個複製 S-006 佔位骨架的對照組,證明該條測試分得出「真的算對了」與「佔位值剛好是那個數」)。原「協調者叫停」的缺口已關閉)
 > **估時**:M
 > **依賴**:S-003、S-006
 

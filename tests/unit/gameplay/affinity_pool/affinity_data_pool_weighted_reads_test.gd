@@ -38,6 +38,35 @@
 #
 # 純資料結構與純函式、無節點——不建立任何 Node,不需要 tear-down,不會留下孤兒
 # 節點。每個測試自成一組斷言,彼此不共用可變狀態、不依賴執行順序。
+#
+# 🔴 2026-09-16 補件(協調者裁決,回應本檔案原始狀態「20 條測試皆未經注入證明
+# 會紅」的誠實登記):敏感度證明一律採用「子類別覆寫注入 + assert_failure()
+# 偵測」手法——範本是 tests/integration/gameplay/affinity_pool/
+# affinity_pool_wiring_test.gd 的三個間諜子類別(_SpyPoolAppendOnRead 等),
+# 不使用手動注入(改壞正式程式碼、跑一次、再改回——那個手法不留任何版本庫
+# 痕跡,管理者已裁決全面改用本手法)。做法:定義覆寫
+# combat_strength_read()/narrative_depth_read() 的間諜子類別,注入一個具體、
+# 可辨識的計算錯誤,再用 GdUnit4 內建的 assert_failure(Callable).is_failed()
+# (既有先例:tests/unit/harness/harness_selfcheck_test.gd 的
+# test_failing_assertion_is_actually_detected())證明——换成這個錯誤實作後,
+# 對應那條測試的核心斷言真的會變紅,不是巧合綠燈。20 條測試逐一對應 20 條
+# `test_sensitivity_proof_*` companion 測試,全部集中在檔案最後一節,只覆寫
+# combat_strength_read()/narrative_depth_read() 這兩個公開讀取入口(本檔案
+# 唯一允許修改的介面),不觸碰 src/ 底下任何正式程式碼。
+#
+# 🔴 陷阱一(撞名警告):下面出現的 `_inject_raw_record()` 是把測試【資料】
+# 塞進池子的夾具輔助函式(繞過 append_record() 的自動遞增 t_i,見其文件
+# 註解),*不是*敏感度證明——它在 20 條原始測試裡出現的每一處都只是建構
+# 情境。判準:`grep '^func test_sensitivity' <本檔路徑>`,只有這個模式命中
+# 的才是敏感度證明,`_inject_raw_record` 本身一次都不會命中這個 grep。
+#
+# 🔴 AC-35 的證明比其餘 19 條多一層(見檔案最後 AC-35 companion 測試的行內
+# 註解):S-006 遺留的佔位骨架(對合法輸入永遠回傳 value=0.0/n_pair=0,不論
+# 池裡有沒有記錄)若還留在今天的程式碼裡,n_pair/value 兩個斷言看不出來——
+# 這正是 AC-35 陷阱本身。該 companion 測試因此誠實地分兩段:先展示 n_pair/
+# value 對這個佔位骨架仍是綠燈(不是測試失敗,是刻意揭露這兩個斷言的盲區),
+# 再用 diagnostic_visited_count 斷言(assert_failure 包住)證明真正抓到它的
+# 是這一個斷言,不是前兩個。
 extends GdUnitTestSuite
 
 
@@ -587,3 +616,701 @@ func test_t_death_actually_used_as_frozen_query_point() -> void:
 	assert_float(result_omitted.value).is_equal_approx(result_at_death_mark.value, 0.000000001)
 	# 且明確不等於以目前推進後的 t_now 為 t_query 呼叫的結果
 	assert_float(absf(result_omitted.value - result_at_current_t_now.value)).is_greater(0.01)
+
+
+# =============================================================================
+# 敏感度證明——間諜子類別
+# =============================================================================
+#
+# 見檔頭「2026-09-16 補件」說明。每個子類別只覆寫 combat_strength_read()/
+# narrative_depth_read() 這兩個公開讀取入口,透過 `super` 呼叫取得型別閘門/
+# 陣亡凍結分流等既有驗證結果,只竄改本子類別要示範的那個具體錯誤——不是
+# 整個重寫兩個函數。
+
+# 錯誤:純讀取函式不該有任何副作用,這裡卻悄悄推進了全域計數器——模擬
+# 「有人在讀取路徑裡不小心夾帶了推進副作用」這個 AC-3 要擋下的具體錯誤
+# (與 affinity_pool_wiring_test.gd 的 _SpyPoolAppendOnRead 同一類錯誤形狀,
+# 這裡示範的是 _t_now 直接被讀取路徑推進)。
+class _SpyPoolAdvancesTNowOnRead extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		_t_now += 1
+		return super.combat_strength_read(pair, t_query)
+
+
+# 錯誤:完全忽略 age——把每筆記錄都當成剛發生(age=0),等同完全不套用衰減。
+# 用於證明 AC-5(age 應隨全域計數器推進而增長)、AC-17(λ<1 應收斂至穩態,
+# 不應無界成長)、AC-31(λ=0 時只有全域最後一次寫入才該非零)。
+class _SpyPoolIgnoresAgeDecay extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.value = _sum_without_decay(
+				pair, result.t_query, func(_s: AffinityTypes.Source) -> float: return 1.0
+			)
+		return result
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.narrative_depth_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			var alpha: float = _calibration.alpha
+			var weight_fn: Callable = func(s: AffinityTypes.Source) -> float:
+				return alpha if s == AffinityTypes.Source.COMBAT_CARD else 1.0
+			result.value = _sum_without_decay(pair, result.t_query, weight_fn)
+		return result
+
+	func _sum_without_decay(pair: AffinityTypes.Pair, t_query: int, weight_fn: Callable) -> float:
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > t_query:
+				continue
+			value += float(weight_fn.call(r.source)) * r.m
+		return value
+
+
+# 錯誤:把配對自己的記錄筆數 n(p) 與全域好感度寫入計數器現值 t_now 混為一談。
+# 用於證明 AC-6(n(p) 與 t_now 是兩個獨立追蹤的量)。
+class _SpyPoolNPairEqualsGlobalCounter extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.n_pair = _t_now
+		return result
+
+
+# 錯誤:加總時丟失幅度的正負號。用於證明 AC-9(λ=1 時 +5/−5 兩筆記錄應精確
+# 抵銷為 0,丟失符號會變成 10)。
+class _SpyPoolAbsoluteValueSum extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection != ReadRejection.NONE:
+			return result
+		var lambda: float = _calibration.lambda_combat
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > result.t_query:
+				continue
+			var age: int = result.t_query - r.t
+			var decay: float = 1.0 if age == 0 else pow(lambda, age)
+			value += absf(r.m) * decay
+		result.value = value
+		return result
+
+
+# 錯誤:combat_strength_read 誤植了公式二(敘事深度)的來源折扣邏輯——本該
+# 對所有來源等權(AC-11),這裡卻對 combat_card 來源套用 α 折扣,像是把
+# narrative_depth_read 的邏輯複製貼錯了函數。用於證明 AC-11(對來源不敏感)
+# 與 AC-13(同一份記錄,combat_strength_read 不應因來源打折,若誤套折扣會
+# 算出與 narrative_depth_read 相同的 ≈0.664,而非正確的 ≈0.712)。
+class _SpyPoolCombatBorrowsNarrativeSourceWeighting extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection != ReadRejection.NONE:
+			return result
+		var alpha: float = _calibration.alpha
+		var lambda: float = _calibration.lambda_combat
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > result.t_query:
+				continue
+			var age: int = result.t_query - r.t
+			var decay: float = 1.0 if age == 0 else pow(lambda, age)
+			var weight: float = alpha if r.source == AffinityTypes.Source.COMBAT_CARD else 1.0
+			value += weight * r.m * decay
+		result.value = value
+		return result
+
+
+# 錯誤:narrative_depth_read 漏掉來源折扣——combat_card 來源沒有被打 α 折扣,
+# 所有來源等權(等於誤套了公式一的邏輯)。用於證明 AC-12(GDD 逐字工作範例
+# ≈0.664)與 AC-18(純戰鬥地板值 = α·r_card/(1−λ_narrative);漏折扣會讓地板值
+# 變成 r_card/(1−λ_narrative),與正確值差距遠大於容許誤差)。
+class _SpyPoolNarrativeIgnoresSourceDiscount extends AffinityDataPool:
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.narrative_depth_read(pair, t_query)
+		if result.rejection != ReadRejection.NONE:
+			return result
+		var lambda: float = _calibration.lambda_narrative
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > result.t_query:
+				continue
+			var age: int = result.t_query - r.t
+			var decay: float = 1.0 if age == 0 else pow(lambda, age)
+			value += r.m * decay
+		result.value = value
+		return result
+
+
+# 錯誤:age 多算一格(t_query−t_i+1),破壞 `0^0:=1` 這個顯式特判本該保護的
+# 邊界——age_i=0 時,off-by-one 後變成 age=1,`pow(0,1)=0` 而非 1。用於證明
+# AC-15(戰鬥端 0^0 慣例)與 AC-33(敘事端 0^0 慣例)。
+class _SpyPoolOffByOneAge extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.value = _sum_off_by_one(
+				pair,
+				result.t_query,
+				_calibration.lambda_combat,
+				func(_s: AffinityTypes.Source) -> float: return 1.0
+			)
+		return result
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.narrative_depth_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			var alpha: float = _calibration.alpha
+			var weight_fn: Callable = func(s: AffinityTypes.Source) -> float:
+				return alpha if s == AffinityTypes.Source.COMBAT_CARD else 1.0
+			result.value = _sum_off_by_one(
+				pair, result.t_query, _calibration.lambda_narrative, weight_fn
+			)
+		return result
+
+	func _sum_off_by_one(
+		pair: AffinityTypes.Pair, t_query: int, lambda: float, weight_fn: Callable
+	) -> float:
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > t_query:
+				continue
+			var age: int = (t_query - r.t) + 1
+			var decay: float = pow(lambda, age)
+			value += float(weight_fn.call(r.source)) * r.m * decay
+		return value
+
+
+# 錯誤:公式一/二定義的是加總(Σ),這裡誤植成平均——λ=1 時應無界線性成長,
+# 這個錯誤實作卻會隨筆數增加而「收斂」到單筆平均值,方向完全相反。用於
+# 證明 AC-16(戰鬥端 λ=1)與 AC-32(敘事端 λ_narrative=1)。
+class _SpyPoolAveragesInsteadOfSums extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.value = _averaged_sum(
+				pair,
+				result.t_query,
+				_calibration.lambda_combat,
+				func(_s: AffinityTypes.Source) -> float: return 1.0
+			)
+		return result
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.narrative_depth_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			var alpha: float = _calibration.alpha
+			var weight_fn: Callable = func(s: AffinityTypes.Source) -> float:
+				return alpha if s == AffinityTypes.Source.COMBAT_CARD else 1.0
+			result.value = _averaged_sum(
+				pair, result.t_query, _calibration.lambda_narrative, weight_fn
+			)
+		return result
+
+	func _averaged_sum(
+		pair: AffinityTypes.Pair, t_query: int, lambda: float, weight_fn: Callable
+	) -> float:
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		var n: int = 0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			if r.t > t_query:
+				continue
+			n += 1
+			var age: int = t_query - r.t
+			var decay: float = 1.0 if age == 0 else pow(lambda, age)
+			value += float(weight_fn.call(r.source)) * r.m * decay
+		return value / float(n) if n > 0 else value
+
+
+# 錯誤:漏掉 `r.t > t_query` 的歷史過濾——把 t_query 之後才發生的記錄也納入
+# 計算與 n_pair 計數,洩漏了「未來」的資訊。用於證明 AC-34(歷史 t_query 不
+# 應洩漏未來記錄)。
+class _SpyPoolLeaksFutureRecords extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection != ReadRejection.NONE:
+			return result
+		var lambda: float = _calibration.lambda_combat
+		var list: AffinityRecordList = _records[pair]
+		var value: float = 0.0
+		var n: int = 0
+		for i in range(list.size()):
+			var r: AffinityRecord = list.get_at(i)
+			n += 1  # 錯誤:沒有 `if r.t > result.t_query: continue` 這一步
+			var age: int = result.t_query - r.t
+			var decay: float = 1.0 if age == 0 else pow(lambda, age)
+			value += r.m * decay
+		result.value = value
+		result.n_pair = n
+		return result
+
+
+# 錯誤:完全複製 S-006 遺留的佔位骨架行為——不論池裡有沒有記錄、t_query 落在
+# 哪裡,對合法輸入一律回傳中性值,從未真正走訪任何記錄
+# (diagnostic_visited_count 恆為 0)。用於證明 AC-35 companion 測試要單獨
+# 說明的那件事:n_pair/value 兩個斷言看不出這個佔位骨架,只有
+# diagnostic_visited_count 看得出來。
+class _SpyPoolMimicsS006PlaceholderPayload extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.value = 0.0
+			result.n_pair = 0
+			result.diagnostic_visited_count = 0
+		return result
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.narrative_depth_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.value = 0.0
+			result.n_pair = 0
+			result.diagnostic_visited_count = 0
+		return result
+
+
+# 錯誤:diagnostic_visited_count 對整個 Delta Log 全表計數,而不是只回報
+# `_records[pair]` 自己的筆數——正是 GDD Core Rules #1「效能介面要求」明文
+# 禁止的「全表掃描後過濾」形狀。用於證明 AC-55(診斷值須精確等於 n_p,且不
+# 隨其他配對筆數變動而改變)。
+class _SpyPoolDiagnosticScansGlobalTable extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		var result := super.combat_strength_read(pair, t_query)
+		if result.rejection == ReadRejection.NONE:
+			result.diagnostic_visited_count = _total_records_across_all_pairs()
+		return result
+
+	func _total_records_across_all_pairs() -> int:
+		var total: int = 0
+		for p: AffinityTypes.Pair in AffinityTypes.Pair.values():
+			total += _records[p].size()
+		return total
+
+
+# 錯誤:省略 t_query 時,不管配對是否已陣亡,一律當作存活配對處理(直接沿用
+# _t_now 現值),完全不查 t_death()——GDD Core Rules #3 明文的凍結規則被整條
+# 繞過。用於證明 AC-25(陣亡配對凍結於 t_death(p))與 AC-62(陣亡後追憶寫入
+# 不應改變凍結讀值)。
+class _SpyPoolNeverFreezes extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		if typeof(t_query) == TYPE_INT:
+			return super.combat_strength_read(pair, t_query)
+		return super.combat_strength_read(pair, _t_now)
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		if typeof(t_query) == TYPE_INT:
+			return super.narrative_depth_read(pair, t_query)
+		return super.narrative_depth_read(pair, _t_now)
+
+
+# 錯誤:確實有凍結行為(不像 _SpyPoolNeverFreezes 那樣完全不凍結),但凍結點
+# 寫死為 0,不是查 t_death(pair) 得到的真實標記值。用於證明 AC-75 驗證的不只
+# 是「有沒有凍結」,而是「凍結點是不是真的來自陣亡標記表」。
+class _SpyPoolFreezesAtWrongPoint extends AffinityDataPool:
+	func combat_strength_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		if typeof(t_query) == TYPE_INT:
+			return super.combat_strength_read(pair, t_query)
+		return super.combat_strength_read(pair, 0)
+
+	func narrative_depth_read(pair: AffinityTypes.Pair, t_query: Variant = null) -> AffinityReadResult:
+		if typeof(t_query) == TYPE_INT:
+			return super.narrative_depth_read(pair, t_query)
+		return super.narrative_depth_read(pair, 0)
+
+
+# =============================================================================
+# 敏感度證明——20 條 companion 測試(逐一對應上方原始 20 條測試的 AC 編號)
+# =============================================================================
+
+
+# ---- AC-3 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_read_method_that_mutates_t_now() -> void:
+	var pool: AffinityDataPool = _SpyPoolAdvancesTNowOnRead.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	pool.append_record(pair, 3.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	var t_now_before: int = pool._t_now
+
+	assert_failure(
+		func() -> void:
+			pool.combat_strength_read(pair)
+			assert_int(pool._t_now).is_equal(t_now_before)
+	).is_failed()
+
+
+# ---- AC-5 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_ignores_age_decay() -> void:
+	var pool: AffinityDataPool = _SpyPoolIgnoresAgeDecay.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair_b: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	var pair_a: AffinityTypes.Pair = AffinityTypes.Pair.C3_C4
+	pool.append_record(pair_b, 5.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	for i in range(4):
+		pool.append_record(pair_a, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=2..5
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair_b)
+			var expected: float = 5.0 * pow(0.9, 4)
+			assert_float(result.value).is_equal_approx(expected, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-6 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_conflates_n_pair_with_t_now() -> void:
+	var pool: AffinityDataPool = _SpyPoolNPairEqualsGlobalCounter.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair_b: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	var pair_a: AffinityTypes.Pair = AffinityTypes.Pair.C3_C4
+	pool.append_record(pair_b, 5.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	for i in range(4):
+		pool.append_record(pair_a, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=2..5
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair_b)
+			assert_int(result.n_pair).is_equal(1)
+	).is_failed()
+
+
+# ---- AC-9 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_drops_the_sign_of_m() -> void:
+	var pool: AffinityDataPool = _SpyPoolAbsoluteValueSum.new(_make_calibration(1.0, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 5.0, 10)
+	_inject_raw_record(pool, pair, -5.0, 20)
+	pool._t_now = 20
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(result.value).is_equal_approx(0.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-11 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_becomes_source_sensitive() -> void:
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+
+	var pool_cc: AffinityDataPool = _SpyPoolCombatBorrowsNarrativeSourceWeighting.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	_inject_raw_record(pool_cc, pair, 2.0, 5, AffinityTypes.Source.COMBAT_CARD)
+	_inject_raw_record(pool_cc, pair, -3.0, 8, AffinityTypes.Source.COMBAT_CARD)
+	pool_cc._t_now = 10
+
+	var pool_sc: AffinityDataPool = _SpyPoolCombatBorrowsNarrativeSourceWeighting.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	_inject_raw_record(pool_sc, pair, 2.0, 5, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	_inject_raw_record(pool_sc, pair, -3.0, 8, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	pool_sc._t_now = 10
+
+	assert_failure(
+		func() -> void:
+			var result_cc: AffinityDataPool.AffinityReadResult = pool_cc.combat_strength_read(pair)
+			var result_sc: AffinityDataPool.AffinityReadResult = pool_sc.combat_strength_read(pair)
+			assert_float(result_cc.value).is_equal_approx(result_sc.value, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-12 ----
+
+func test_sensitivity_proof_narrative_depth_read_detects_a_pool_that_forgets_the_alpha_discount() -> void:
+	var pool: AffinityDataPool = _SpyPoolNarrativeIgnoresSourceDiscount.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 2.0, 10, AffinityTypes.Source.COMBAT_CARD)
+	_inject_raw_record(pool, pair, -1.0, 25, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	_inject_raw_record(pool, pair, 1.0, 40, AffinityTypes.Source.STORY_EVENT)
+	pool._t_now = 42
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.narrative_depth_read(pair)
+			assert_float(result.value).is_equal_approx(0.664, 0.01)
+	).is_failed()
+
+
+# ---- AC-13 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_borrows_narrative_discounting() -> void:
+	var pool: AffinityDataPool = _SpyPoolCombatBorrowsNarrativeSourceWeighting.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 2.0, 10, AffinityTypes.Source.COMBAT_CARD)
+	_inject_raw_record(pool, pair, -1.0, 25, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	_inject_raw_record(pool, pair, 1.0, 40, AffinityTypes.Source.STORY_EVENT)
+	pool._t_now = 42
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(result.value).is_equal_approx(0.712, 0.01)
+	).is_failed()
+
+
+# ---- AC-15 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_an_off_by_one_age_bug_at_zero_age() -> void:
+	var pool: AffinityDataPool = _SpyPoolOffByOneAge.new(_make_calibration(0.0, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 2.0, 7)
+	pool._t_now = 7
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(result.value).is_equal_approx(2.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-16 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_averages_instead_of_sums() -> void:
+	var pool: AffinityDataPool = _SpyPoolAveragesInsteadOfSums.new(_make_calibration(1.0, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	for i in range(100):
+		pool.append_record(pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(result.value).is_equal_approx(200.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-17 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_never_decays() -> void:
+	var pool: AffinityDataPool = _SpyPoolIgnoresAgeDecay.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	for i in range(100):
+		pool.append_record(pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(result.value).is_equal_approx(20.0, 0.01)
+	).is_failed()
+
+
+# ---- AC-18 ----
+
+func test_sensitivity_proof_narrative_depth_read_detects_missing_alpha_discount_at_the_combat_floor() -> void:
+	var pool: AffinityDataPool = _SpyPoolNarrativeIgnoresSourceDiscount.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	for i in range(100):
+		pool.append_record(pair, 2.0, AffinityTypes.Source.COMBAT_CARD)
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.narrative_depth_read(pair)
+			assert_float(result.value).is_equal_approx(6.0, 0.01)
+	).is_failed()
+
+
+# ---- AC-25 ----
+
+func test_sensitivity_proof_reads_detect_a_pool_that_never_freezes_on_death() -> void:
+	var pool: AffinityDataPool = _SpyPoolNeverFreezes.new(_make_calibration(0.95, 0.95, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	var other_pair: AffinityTypes.Pair = AffinityTypes.Pair.C3_C4
+
+	pool.append_record(pair, 5.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	pool.append_record(pair, 3.0, AffinityTypes.Source.COMBAT_CARD)  # t=2
+	pool.notify_death(AffinityTypes.Character.CHARACTER_1)  # t_death(p) = 2
+
+	for i in range(10):
+		pool.append_record(other_pair, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	# _t_now 現為 12,遠大於 t_death(p)=2
+
+	assert_failure(
+		func() -> void:
+			var combat_frozen: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			var combat_at_death: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(
+				pair, 2
+			)
+			assert_float(combat_frozen.value).is_equal_approx(combat_at_death.value, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-31 ----
+
+func test_sensitivity_proof_reads_detect_a_pool_that_ignores_global_interleaving() -> void:
+	var pool: AffinityDataPool = _SpyPoolIgnoresAgeDecay.new(_make_calibration(0.0, 0.0, 0.3))
+	var pair_b: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	pool.append_record(pair_b, 5.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	_advance_other_pairs(pool, pair_b, 9)  # t=2..10
+
+	assert_failure(
+		func() -> void:
+			var combat_result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(
+				pair_b, 10
+			)
+			assert_float(combat_result.value).is_equal_approx(0.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-32 ----
+
+func test_sensitivity_proof_narrative_depth_read_detects_a_pool_that_averages_instead_of_sums() -> void:
+	var pool: AffinityDataPool = _SpyPoolAveragesInsteadOfSums.new(_make_calibration(0.9, 1.0, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	for i in range(100):
+		pool.append_record(pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.narrative_depth_read(pair)
+			assert_float(result.value).is_equal_approx(200.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-33 ----
+
+func test_sensitivity_proof_narrative_depth_read_detects_an_off_by_one_age_bug_at_zero_age() -> void:
+	var pool: AffinityDataPool = _SpyPoolOffByOneAge.new(_make_calibration(0.9, 0.0, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 2.0, 9, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	pool._t_now = 9
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.narrative_depth_read(pair)
+			assert_float(result.value).is_equal_approx(2.0, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-34 ----
+
+func test_sensitivity_proof_combat_strength_read_detects_a_pool_that_leaks_future_records() -> void:
+	var pool: AffinityDataPool = _SpyPoolLeaksFutureRecords.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 3.0, 5)
+	_inject_raw_record(pool, pair, 2.0, 15)
+	pool._t_now = 20
+
+	assert_failure(
+		func() -> void:
+			var result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair, 10)
+			assert_int(result.n_pair).is_equal(1)
+	).is_failed()
+
+
+# ---- AC-35(見檔頭「2026-09-16 補件」對本條的專屬說明) ----
+
+func test_sensitivity_proof_t_query_before_earliest_record_distinguishes_real_filtering_from_the_s006_placeholder() -> void:
+	# 這條 companion 測試要證明的不是「隨便一種錯都會被抓到」——是精確證明:
+	# S-006 遺留的佔位骨架(對合法輸入永遠回傳 value=0.0/n_pair=0,不論池裡
+	# 有沒有記錄)若原封不動留到今天,n_pair/value 兩個斷言【看不出來】,唯獨
+	# diagnostic_visited_count 斷言看得出來——這正是原始 AC-35 測試額外多驗
+	# diagnostic_visited_count 的理由。
+	var pool: AffinityDataPool = _SpyPoolMimicsS006PlaceholderPayload.new(
+		_make_calibration(0.9, 0.9, 0.3)
+	)
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	_inject_raw_record(pool, pair, 4.0, 20)
+	pool._t_now = 20
+
+	var combat_result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair, 10)
+
+	# 第一部分(誠實揭露,非失敗):n_pair/value 兩個斷言,對這個佔位骨架依然
+	# 是綠燈——單靠這兩個斷言測不出佔位骨架仍在運作。
+	assert_int(combat_result.n_pair).is_equal(0)
+	assert_float(combat_result.value).is_equal_approx(0.0, 0.000000001)
+
+	# 第二部分:diagnostic_visited_count 斷言才是真正的偵測器——佔位骨架從不
+	# 走訪任何記錄、恆回傳 0,而原始 AC-35 測試斷言的是 1(該配對確實有 1 筆
+	# 記錄被走訪過,只是被 t_query 過濾掉)。
+	assert_failure(
+		func() -> void:
+			assert_int(combat_result.diagnostic_visited_count).is_equal(1)
+	).is_failed()
+
+
+# ---- AC-55 ----
+
+func test_sensitivity_proof_diagnostic_visited_count_detects_a_pool_that_scans_the_full_table() -> void:
+	var pool: AffinityDataPool = _SpyPoolDiagnosticScansGlobalTable.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	pool.append_record(pair, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	pool.append_record(pair, 2.0, AffinityTypes.Source.COMBAT_CARD)
+	pool.append_record(pair, -1.5, AffinityTypes.Source.STORY_EVENT)
+	pool.append_record(pair, 3.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
+	_advance_other_pairs(pool, pair, 10)
+	var combat_small: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+
+	_advance_other_pairs(pool, pair, 1000)
+
+	assert_failure(
+		func() -> void:
+			var combat_large: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_int(combat_large.diagnostic_visited_count).is_equal(
+				combat_small.diagnostic_visited_count
+			)
+	).is_failed()
+
+
+# ---- AC-62 ----
+
+func test_sensitivity_proof_reads_detect_a_pool_that_lets_posthumous_writes_leak_through() -> void:
+	var pool: AffinityDataPool = _SpyPoolNeverFreezes.new(_make_calibration(0.9, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	pool.append_record(pair, 4.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	pool.notify_death(AffinityTypes.Character.CHARACTER_1)  # t_death(p) = 1
+
+	var combat_death_only: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+
+	pool.append_record(pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=2,死後追憶寫入
+
+	assert_failure(
+		func() -> void:
+			var combat_m1: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			assert_float(combat_m1.value).is_equal_approx(combat_death_only.value, 0.000000001)
+	).is_failed()
+
+
+# ---- AC-75 ----
+
+func test_sensitivity_proof_reads_detect_a_pool_that_freezes_at_a_hardcoded_point_instead_of_t_death() -> void:
+	var pool: AffinityDataPool = _SpyPoolFreezesAtWrongPoint.new(_make_calibration(0.95, 0.9, 0.3))
+	var pair: AffinityTypes.Pair = AffinityTypes.Pair.C1_C2
+	var other_pair: AffinityTypes.Pair = AffinityTypes.Pair.C3_C4
+
+	pool.append_record(pair, 4.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=1
+	pool.append_record(pair, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)  # t=2
+	pool.notify_death(AffinityTypes.Character.CHARACTER_1)  # 陣亡標記表:A -> 2
+
+	for i in range(10):
+		pool.append_record(other_pair, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	# _t_now 現為 12,遠大於陣亡標記表中 A 的標記值(2)
+
+	assert_failure(
+		func() -> void:
+			var result_omitted: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(pair)
+			var death_mark: Variant = pool.t_death(pair)
+			var result_at_death_mark: AffinityDataPool.AffinityReadResult = (
+				pool.combat_strength_read(pair, death_mark)
+			)
+			assert_float(result_omitted.value).is_equal_approx(
+				result_at_death_mark.value, 0.000000001
+			)
+	).is_failed()

@@ -1,7 +1,7 @@
 # Story U-005: `project.godot` 新增 5 個動作,刻意不動 `battle_end_phase`
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: ✅ Complete(2026-09-16,`godot-specialist` 實作;5 動作落地、`battle_end_phase` 逐位元組未動;9 條測試 3 條已注入證明會紅、6 條誠實標記「綠燈未證明」)
+> **狀態**: ✅ Complete(2026-09-16,`godot-specialist` 實作;5 動作落地、`battle_end_phase` 逐位元組未動;9 條測試。🔴 **2026-09-16 第二輪重新認定**:原宣稱的 3 次手動注入證明在版本庫中不留任何痕跡、無法查證,已作廢。改以常駐形式補上 2 條(涵蓋本檔唯一自有的非平凡邏輯:事件型別篩選);其餘 9 條經逐條分析判定**不應**證明——它們是直接讀取真實 InputMap 再做欄位比對,中間無自有判斷邏輯,硬做只能證明 `is_equal()` 分得出不等值,卻要冒污染其餘 700 餘條測試的風險)
 > **層**: Presentation(輸入設定,B/C 段的共用前置)
 > **型別**: Integration
 > **估時**: S

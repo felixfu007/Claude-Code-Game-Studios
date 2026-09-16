@@ -12,6 +12,35 @@
 # 視窗/顯示子系統,不受 headless 影響——這一點已由
 # `prototypes/u004-inputmap-probe-2026-09-16/README.md`(「headless 下 InputMap 讀得到
 # 真東西嗎?」節)實機驗證,本檔沿用同一個結論,不是本檔自己的新宣稱。
+#
+# 🔴 2026-09-16 敏感度證明手法評估(管理者裁決:全專案改用常駐測試,範本見
+# tests/integration/gameplay/affinity_pool/affinity_pool_wiring_test.gd)——本檔為何
+# 長得跟範本不一樣,原因寫在這裡,不要跳過:
+#
+# 範本的做法是「繼承受測類別、覆寫一個方法讓它帶壞掉的副作用、證明偵測邏輯真的抓到」。
+# 本檔的受測對象是 `project.godot` 載入後的 InputMap 內容——一份資料,不是一個類別,
+# 沒有東西可以繼承、沒有方法可以覆寫。範本手法在字面上搬不過來。
+#
+# 逐一盤點本檔 9 條測試後,只有一處是「本檔自己寫的、非顯而易見正確的邏輯」——
+# `_keyboard_events()` / `_joypad_events()`(現拆為薄殼 + `_filter_keyboard_events()` /
+# `_filter_joypad_events()` 兩個純函式)對一組混合型別事件做型別篩選。這段邏輯壞掉
+# (例如 `is InputEventKey` 誤寫成 `is InputEvent`、或漏篩掉 `InputEventMouseButton`)
+# 會讓下面全部 9 條測試同時被同一個 bug 污染,而且沒有任何一條測試能從自己的角度
+# 看出篩選器內部壞了——它們只看得到篩選後的輸出。這正是敏感度證明要防的情況,
+# 而且可以在**完全不碰真正的 `InputMap` 單例**的前提下證明:把 `InputEventKey`/
+# `InputEventJoypadButton`/`InputEventMouseButton` 純粹在記憶體中組出來,直接餵給
+# 拆出來的純篩選函式即可,不需要 teardown,不會有任何全域狀態污染風險(見檔案末尾
+# 兩條 test_sensitivity_proof_* )。
+#
+# 其餘 8 條(has_action 存在性檢查、各動作鍵盤/手把欄位比對、battle_cancel 與
+# battle_end_phase 綁定相同、battle_end_phase 綁定不變)全部是「直接讀真實引擎狀態、
+# 用 GdUnit4 自己的斷言原語(`assert_int().is_equal()` 等,本測試套件已使用超過 700 次)
+# 逐欄位比對常數」——比對邏輯本身就是斷言,中間沒有插入任何本檔自己寫的演算法可以
+# 注入缺陷。要「證明」這裡的敏感度,唯一手法是暫時竄改真正全域 `InputMap` 單例的內容
+# 再驗證斷言抓得到,但這只能證明「GdUnit4 的 is_equal 能分辨不相等」——這件事已經
+# 由這 700 次既有用法保證,不是本檔的邏輯可能弄壞的東西,竄改全域單例換來的只有
+# teardown 沒還原乾淨、污染其餘 700 多條測試的風險,沒有換到任何新的保證。
+# 🔴 因此這 8 條刻意不配對應的「注入證明」測試——這是評估後的結論,不是遺漏。
 extends GdUnitTestSuite
 
 const NEW_ACTIONS: PackedStringArray = [
@@ -23,20 +52,31 @@ const NEW_ACTIONS: PackedStringArray = [
 ]
 
 
-func _keyboard_events(action: StringName) -> Array[InputEventKey]:
+# 純函式——不查詢 InputMap,只對呼叫端給的事件陣列做型別篩選。從 `_keyboard_events()`
+# 拆出來的唯一理由是讓下面的敏感度證明可以直接餵記憶體中組出來的假事件進來測試,
+# 不必碰真正的 InputMap 單例(見檔案開頭「敏感度證明手法評估」節)。
+func _filter_keyboard_events(events: Array[InputEvent]) -> Array[InputEventKey]:
 	var result: Array[InputEventKey] = []
-	for event: InputEvent in InputMap.action_get_events(action):
+	for event: InputEvent in events:
 		if event is InputEventKey:
 			result.append(event as InputEventKey)
 	return result
 
 
-func _joypad_events(action: StringName) -> Array[InputEventJoypadButton]:
+func _filter_joypad_events(events: Array[InputEvent]) -> Array[InputEventJoypadButton]:
 	var result: Array[InputEventJoypadButton] = []
-	for event: InputEvent in InputMap.action_get_events(action):
+	for event: InputEvent in events:
 		if event is InputEventJoypadButton:
 			result.append(event as InputEventJoypadButton)
 	return result
+
+
+func _keyboard_events(action: StringName) -> Array[InputEventKey]:
+	return _filter_keyboard_events(InputMap.action_get_events(action))
+
+
+func _joypad_events(action: StringName) -> Array[InputEventJoypadButton]:
+	return _filter_joypad_events(InputMap.action_get_events(action))
 
 
 func test_five_new_actions_exist_in_input_map() -> void:
@@ -165,3 +205,76 @@ func test_battle_end_phase_bindings_unchanged() -> void:
 	assert_int(kb_events[0].keycode).is_equal(KEY_ESCAPE)
 	assert_int(pad_events.size()).is_equal(1)
 	assert_int(pad_events[0].button_index).is_equal(JOY_BUTTON_B)
+
+
+# ---- 敏感度證明 ---------------------------------------------------------------
+#
+# 刻意放在檔案最後兩條:GdUnit4 一條測試失敗會中止「同一個檔案」後面所有測試
+# (.claude/docs/coding-standards.md 已登記的既有陷阱)。這兩條測試的對象是本檔
+# 自己的篩選邏輯,不是上面 9 條測試賴以成立的前提——放在最後,即使這兩條其中
+# 一條意外壞掉,上面 9 條對 project.godot 真實內容的驗證結果不會被連坐。
+#
+# 🔴 兩條都刻意不碰真正的 InputMap 單例——事件物件全部在記憶體中直接 new 出來,
+# 不經過 InputMap.action_add_event()/action_erase_event()。因此不需要 teardown,
+# 也沒有污染其餘 700 多條測試全域狀態的風險。
+
+func test_sensitivity_proof_filter_keyboard_events_catches_a_type_confusion_bug() -> void:
+	# Arrange — 混合鍵盤、手把、滑鼠三種事件型別,鍵盤事件故意放兩個且不相鄰,
+	# 用來同時驗證「排除非鍵盤型別」與「不只抓到第一個/漏掉後面的」兩件事。
+	var kb_a: InputEventKey = InputEventKey.new()
+	kb_a.keycode = KEY_A
+	var kb_b: InputEventKey = InputEventKey.new()
+	kb_b.keycode = KEY_B
+	var pad: InputEventJoypadButton = InputEventJoypadButton.new()
+	pad.button_index = JOY_BUTTON_A
+	var mouse: InputEventMouseButton = InputEventMouseButton.new()
+	mouse.button_index = MOUSE_BUTTON_LEFT
+	var mixed: Array[InputEvent] = [kb_a, pad, mouse, kb_b]
+
+	# Act
+	var result: Array[InputEventKey] = _filter_keyboard_events(mixed)
+
+	# Assert — 若篩選邏輯壞成「什麼型別都收」(例如 `is InputEventKey` 誤寫成
+	# `is InputEvent`),這裡會拿到 4 筆而非 2 筆,斷言會紅;若壞成「漏篩掉不相鄰的
+	# 第二個」,會拿到 1 筆而非 2 筆。兩種壞法都會被下面兩行抓到。
+	assert_int(result.size()) \
+		.append_failure_message(
+			(
+				"_filter_keyboard_events() 對混合型別陣列的篩選結果筆數不對——" +
+				"預期只留下 2 個 InputEventKey,實際拿到 %d 筆。這代表型別篩選壞了," +
+				"依本檔頭部說明,下面全部 9 條 project.godot 內容測試都可能被同一個 bug" +
+				"污染而不自知。"
+			) % result.size()
+		) \
+		.is_equal(2)
+	assert_int(result[0].keycode).is_equal(KEY_A)
+	assert_int(result[1].keycode).is_equal(KEY_B)
+
+
+func test_sensitivity_proof_filter_joypad_events_catches_a_type_confusion_bug() -> void:
+	# Arrange — 與上一條對稱,證明的是 `_filter_joypad_events()`,鍵盤/滑鼠事件皆為
+	# 干擾項,手把事件故意放兩個且不相鄰。
+	var pad_a: InputEventJoypadButton = InputEventJoypadButton.new()
+	pad_a.button_index = JOY_BUTTON_A
+	var pad_b: InputEventJoypadButton = InputEventJoypadButton.new()
+	pad_b.button_index = JOY_BUTTON_B
+	var kb: InputEventKey = InputEventKey.new()
+	kb.keycode = KEY_ESCAPE
+	var mouse: InputEventMouseButton = InputEventMouseButton.new()
+	mouse.button_index = MOUSE_BUTTON_LEFT
+	var mixed: Array[InputEvent] = [pad_a, kb, mouse, pad_b]
+
+	# Act
+	var result: Array[InputEventJoypadButton] = _filter_joypad_events(mixed)
+
+	# Assert
+	assert_int(result.size()) \
+		.append_failure_message(
+			(
+				"_filter_joypad_events() 對混合型別陣列的篩選結果筆數不對——" +
+				"預期只留下 2 個 InputEventJoypadButton,實際拿到 %d 筆。"
+			) % result.size()
+		) \
+		.is_equal(2)
+	assert_int(result[0].button_index).is_equal(JOY_BUTTON_A)
+	assert_int(result[1].button_index).is_equal(JOY_BUTTON_B)
