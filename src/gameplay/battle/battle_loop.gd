@@ -250,8 +250,28 @@ func _process_unit(id: int, log: Array[String]) -> void:
 
 
 # Human-readable name for the faction currently acting, for log lines only.
+#
+# Uses find_key() rather than Side.keys()[value]: the latter indexes the
+# DECLARATION-ORDER key array as if it were indexed by VALUE, which is the
+# registered project-forbidden pattern enum_value_positional_string_conversion
+# (docs/registry/architecture.yaml). It happens to be correct today only
+# because Side ordinals run sequentially from 0.
+#
+# find_key() returns null for a value that is not a Side member. Returning
+# that null straight out of a String-declared function would hand the caller
+# an ordinary empty string plus one SCRIPT ERROR line — a silent wrong
+# answer, the same shape as the 2026-09-16 Array[int]-returns-null finding.
+# So the miss is reported loudly and yields a value no Side can collide with.
 func _side_name() -> String:
-	return TurnOrder.Side.keys()[_order.current_faction()]
+	var side_name: Variant = TurnOrder.Side.find_key(_order.current_faction())
+	if side_name == null:
+		push_error(
+			"BattleLoop._side_name(): current_faction() returned %d, which is not "
+			% _order.current_faction()
+			+ "a member of TurnOrder.Side."
+		)
+		return "UNKNOWN_SIDE"
+	return String(side_name)
 
 
 # story-007-forced-discard-gate.md: resolves a forced discard using the

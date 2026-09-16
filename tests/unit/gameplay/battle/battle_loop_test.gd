@@ -221,6 +221,40 @@ func test_run_reports_exact_round_count_elapsed() -> void:
 	assert_int(rounds).is_equal(3)
 
 
+# ---- log content: _side_name() actually reaches the log --------------------
+#
+# 2026-09-16 獨立覆核發現：run() 回傳的 "log" 陣列裡的字串內容（含
+# _side_name() 產出的 "PLAYER"/"ENEMY" 這兩個詞）從未被本檔或任何其他測試
+# 檔讀取過——上面每一條測試都只斷言 outcome/rounds/aborted 這三個
+# Dictionary 鍵。注入驗證證實：把 _side_name() 整個改成回傳一個寫死的錯誤
+# 字串，本檔 6 條測試原封不動全線通過（6/6 PASSED, 0 failures）。這條測試
+# 專門把 log 字串內容釘住，讓 _side_name() 的正確性第一次真正被測試覆蓋到。
+func test_run_log_contains_correct_side_names_for_each_turn() -> void:
+	# Arrange — 沿用 test_battle_runs_to_defeat_when_player_dies 的盤面：
+	# 玩家永不出手，敵人第 1 擊即可致死，恰好一輪內同時涵蓋 PLAYER 與 ENEMY
+	# 兩側的 log 行
+	var roster_text: String = "\n".join([
+		"1,P1,PLAYER,10,1,0,0,1,1,0,0",
+		"2,E1,ENEMY,50,20,100,0,1,1,1,0",
+	])
+	var state: BattleState = BattleState.create(PackedStringArray(), roster_text)
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var decide: Callable = _make_decide({}, -1, -1, 1)
+	var loop: BattleLoop = BattleLoop.new(state, order, decide)
+
+	# Act
+	var result: Dictionary = loop.run(20)
+	var log: Array = result["log"]
+
+	# Assert — exact strings, not just "non-empty": _side_name() must yield
+	# "PLAYER" and "ENEMY" (not "UNKNOWN_SIDE", not an empty string that
+	# find_key() returning null would otherwise smuggle through)
+	assert_array(log).has_size(3)
+	assert_str(log[0]).is_equal("R1 PLAYER: P1 ends turn without acting")
+	assert_str(log[1]).is_equal("R1 ENEMY: E1 attacks P1 for 20 damage")
+	assert_str(log[2]).is_equal("P1 is defeated")
+
+
 # ---- BattleState.turn_order() wiring (ADR-0001 2026-09-09 revision) --------
 #
 # Mirrors battle_controller_test.gd's equivalent test. BattleLoop is a second,
