@@ -1,0 +1,32 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+--- S7 whole frame ---
+target size = (1920, 1080) captured size = (1920, 1080) match = true
+12-point sample distinct colors = 4 (rule requires >= 3)
+dominant color share (subsampled every 4px) = 0.4294 (rule requires <= 0.80)
+--- S5 whole frame ---
+target size = (1920, 1080) captured size = (1920, 1080) match = true
+12-point sample distinct colors = 1 (rule requires >= 3)
+dominant color share (subsampled every 4px) = 0.9960 (rule requires <= 0.80)
+=== Story U-011 evidence capture — directional checks ===
+S7 slot 0: top-edge/interior luminance delta = 0.2118 (threshold 0.03) -> found
+S7 slot 1: top-edge/interior luminance delta = 0.4471 (threshold 0.03) -> found
+S7 slot 2: top-edge/interior luminance delta = 0.4000 (threshold 0.03) -> found
+S7 slot 3: top-edge/interior luminance delta = 0.2353 (threshold 0.03) -> found
+S7 slot 4: top-edge/interior luminance delta = 0.2118 (threshold 0.03) -> found
+S7: 5/5 slot outlines found at their layout-computed position
+S5 slot 0: top-edge/interior luminance delta = 0.0863 (threshold 0.03) -> found
+S5 slot 1: top-edge/interior luminance delta = 0.0863 (threshold 0.03) -> found
+S5 slot 2: top-edge/interior luminance delta = 0.0863 (threshold 0.03) -> found
+S5 slot 3: top-edge/interior luminance delta = 0.0863 (threshold 0.03) -> found
+S5 slot 4: top-edge/interior luminance delta = 0.0863 (threshold 0.03) -> found
+S5: 5/5 slot outlines found at their layout-computed position
+S5 lock glyph center luminance = 1.0000, far-corner background reference = 0.2980, delta = 0.7020 (threshold 0.03)
+Check C: crop diff mean = 0.0868, stddev = 0.1502 (n=40832 samples)
+--- summary ---
+S7 whole-frame dimensions ok = true
+S5 whole-frame dimensions ok = true
+Check A (slot outlines at layout position) S7 = true S5 = true
+Check B (S5 lock glyph positively present) = true
+Check C (crop difference is non-uniform, not just a brightness shift) = true

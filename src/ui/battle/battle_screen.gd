@@ -259,6 +259,13 @@ const _DIRECTION_VECTORS: Dictionary = {
 ## Failure-mode message box — hidden by default in the scene
 ## ([code]BattleScreen.tscn[/code]), shown only when [method _fail_load] runs.
 @onready var _load_error_label: Label = $UILayer/LoadErrorLabel
+## Z1 手牌縮圖帶(Story U-011,`hand_bar.gd`)— fed by [method _refresh_view]
+## from [method BattleState.card_deck]/[method BattleController.phase] via
+## [method hand_bar_slot_kinds]/[method availability_for] below. [HandBar]
+## itself has zero [Card]/[CardDeck] dependency (see its own class doc
+## comment) — this screen is the one class allowed to know both sides,
+## exactly as it already is for [BoardView]/[method line_tone_for].
+@onready var _hand_bar: HandBar = $UILayer/HandBar
 
 var _state: BattleState
 var _order: TurnOrder
@@ -609,6 +616,76 @@ static func line_tone_for(state: AffinityLineStatus.State) -> BoardView.LineTone
 			return BoardView.LineTone.MUTED
 		_:
 			return BoardView.LineTone.MUTED
+
+
+## Story U-011 — maps [param category] to the display-only
+## [enum HandBar.SlotKind] Z1 needs. Mirrors [method line_tone_for]'s existing
+## mapping-function placement convention immediately above: this class is the
+## one allowed to know both the gameplay enum ([enum Card.Category]) and the
+## UI enum ([enum HandBar.SlotKind]); [HandBar] itself never references
+## [Card] (see that file's own class doc comment).
+##
+## 🔴 [b]2026-09-17 coordinator review finding, addressed here[/b]: both of
+## [enum Card.Category]'s CURRENT values are matched explicitly rather than
+## letting a bare [code]_:[/code] wildcard cover the second one — [Card]'s own
+## class doc comment explicitly anticipates a THIRD category (乙類) being
+## added later ("Adding it later means adding a third [enum Category] value
+## and its own fields"). The wildcard branch is unreachable today ([enum
+## Card.Category] only has two members, so this is a forward-looking fix, not
+## a fix to an active bug) but exists so that day does not silently draw an
+## unrecognized category as 甲類 with zero signal — the same failure SHAPE
+## (an unexpected input silently producing a plausible-looking output) as the
+## `.claude/docs/coding-standards.md` 2026-09-15 `assert()` ruling, though not
+## the same mechanism: unlike that ruling's enum (where ordinal 0 doubles as
+## a real rejection code), [enum HandBar.SlotKind] has no "rejection" value to
+## accidentally masquerade as — a display fallback to 甲類's shape is a
+## reasonable degraded choice for a UI component that must never crash or
+## block the game thread. What must not happen is for that fallback to stay
+## SILENT once a third category exists, so [method push_error] fires before
+## returning it — loud in logs, not loud enough to block rendering.
+static func hand_bar_slot_kind_for(category: Card.Category) -> HandBar.SlotKind:
+	match category:
+		Card.Category.TEMPORARY_STAT_MODIFIER:
+			return HandBar.SlotKind.TEMPORARY_MODIFIER
+		Card.Category.PERMANENT_AFFINITY_WRITE:
+			return HandBar.SlotKind.PERMANENT_WRITE
+		_:
+			push_error(
+				"BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category %s -- Z1 falls back to 甲類's shape, but this is now logged rather than silent"
+				% category
+			)
+			return HandBar.SlotKind.TEMPORARY_MODIFIER
+
+
+## Story U-011 — maps an entire hand (as returned by [method CardDeck.hand])
+## to the [code]Array[HandBar.SlotKind][/code] [method HandBar.render]
+## expects, preserving [param hand]'s order. [method CardDeck.hand]'s own doc
+## comment guarantees the array it returns is already a fresh copy, never a
+## live reference, so no further defensive copy is needed here.
+static func hand_bar_slot_kinds(hand: Array[Card]) -> Array[HandBar.SlotKind]:
+	var result: Array[HandBar.SlotKind] = []
+	for card: Card in hand:
+		result.append(hand_bar_slot_kind_for(card.category))
+	return result
+
+
+## Story U-011 — maps [param phase] to the display-only
+## [enum HandBar.Availability] Z1's S5 channel needs.
+## [constant BattleController.Phase.FINISHED] folding into
+## [constant HandBar.Availability.LOCKED] — not just
+## [constant BattleController.Phase.ENEMY_ACTING] — is a 2026-09-17
+## [b]coordinator[/b] ruling (not a manager ruling — this project
+## distinguishes the two explicitly), grounded in
+## [code]design/ux/skill-card-play.md[/code]'s own S5 row wording: "不可用 ——
+## 現在不是你的回合/結算中". "結算中" already covers more than
+## [constant BattleController.Phase.ENEMY_ACTING] alone in the spec's own
+## text, so folding FINISHED in here is not a widening of the literal S5
+## definition — a FINISHED battle displaying its hand as usable would be a
+## plain error regardless of how S5 is scoped.
+static func availability_for(phase: BattleController.Phase) -> HandBar.Availability:
+	if phase == BattleController.Phase.PLAYER_INPUT:
+		return HandBar.Availability.NORMAL
+	return HandBar.Availability.LOCKED
 
 
 ## Converts a list of [AffinityLineStatus] into the
@@ -1094,6 +1171,16 @@ func _refresh_view() -> void:
 		_board_view.set_move_highlights([])
 		_board_view.set_threat_highlights([])
 		_board_view.set_attack_highlights([])
+
+	# Story U-011 — Z1 手牌縮圖帶。_state.card_deck() is never null in this
+	# slice (_ready() always builds one via _build_card_deck(), even for a
+	# cleanly-empty card table — see that method's doc comment), but the null
+	# check mirrors every other card_deck-optional call site in this project
+	# ([method BattleState.has_pending_discard] etc.) rather than assuming it.
+	var hand: Array[Card] = _state.card_deck().hand() if _state.card_deck() != null else []
+	_hand_bar.render(
+		hand_bar_slot_kinds(hand), CardDeck.HAND_SIZE_LIMIT, availability_for(_controller.phase())
+	)
 
 	_update_status_label()
 

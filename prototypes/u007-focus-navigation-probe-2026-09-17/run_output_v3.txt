@@ -1,0 +1,28 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== U-007 focus-navigation probe v3 — production-shaped structure (2026-09-17) ===
+
+--- Claim 1: automatic search, top row, no explicit focus_neighbor config ---
+row1.find_valid_focus_neighbor(SIDE_TOP)    = <null>
+ERROR: CursorState.apply_buffered_navigation(): a NAVIGATION-class ui_* event arrived while KEYBOARD_GAMEPAD holds device authority, but the surface registered under this target's CursorTypes.SurfaceType tag either has no registration at all, or does not implement cursor_navigate(from_id: int, direction: Vector2i) -> Variant. Cursor navigation is DISABLED for this surface tag until a registered surface implements the contract. This is reported once, not per frame; diagnostic_surface_navigation_unsupported_count keeps counting.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_buffered_navigation (res://src/ui/cursor/cursor_state.gd:611)
+       [1] flush_buffered_navigation (res://src/ui/cursor/cursor_state_host.gd:404)
+       [2] _process (res://src/ui/cursor/cursor_navigation_applier.gd:74)
+after ui_up from row1 (automatic, unconfigured) -> focus owner = ReturnToBattleRow
+
+--- Claim 2: production mechanism, focus_neighbor_top = self ---
+after ui_up from row1 (focus_neighbor_top=self) -> focus owner = ReturnToBattleRow
+
+--- Claim 3: down-navigation from row2 skips FOCUS_NONE divider, reaches row3 ---
+row2.find_valid_focus_neighbor(SIDE_BOTTOM) = QuitRow
+after ui_down from row2 -> focus owner = QuitRow
+
+--- Bonus: bottom edge, automatic search (no explicit config) ---
+row3.find_valid_focus_neighbor(SIDE_BOTTOM) = <null>
+
+=== SUMMARY ===
+Claim 1 (automatic search does not wrap top->bottom)      = true
+Claim 2 (focus_neighbor_top=self pins focus, production)  = true
+Claim 3 (FOCUS_NONE divider skipped by automatic search)  = true

@@ -1,0 +1,43 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== U-007 set_script() timing probe (2026-09-17) ===
+Answers: does pre-ready set_script() preserve @onready resolution
+and the inheritance dispatch chain? What about post-ready swap
+(the untested scenario test-standards.md Category C names)?
+
+--- Case A: set_script() BEFORE add_child() (pre-ready) ---
+A: @onready node resolves via get_node() = true (ReturnToBattleRow:<Button#31893489143>)
+A: return_row.has_focus() (default-focus _ready() logic ran) = true
+A: mutant override _on_row_focus_entered() was called = true
+A: marker text still applied by super call = '▸ 結束回合'
+
+--- Case B: set_script() AFTER add_child() (post-ready) ---
+B: (original script) return_row.has_focus() before swap = true
+B: script after post-ready swap = ():<GDScript#-9223372010497767986>
+B: get_node() still resolves the same path after swap = true (ReturnToBattleRow:<Button#32866567672>)
+B: is it the SAME Button instance as before the swap = true
+B: mutant_focus_entered_called immediately after swap (before any new signal) = false
+SCRIPT ERROR: Invalid access to property or key 'ReturnToBattleRow:<Button#32866567672>' on a base object of type 'Dictionary'.
+   at: _ProbeMutant._apply_unfocused_text (res://src/ui/menu/battle_menu.gd:219)
+   GDScript backtrace (most recent call first):
+       [0] _apply_unfocused_text (res://src/ui/menu/battle_menu.gd:219)
+       [1] _on_row_focus_exited (res://src/ui/menu/battle_menu.gd:227)
+       [2] _probe_post_ready_swap (res://prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd:120)
+SCRIPT ERROR: Invalid access to property or key 'EndPhaseRow:<Button#32916899323>' on a base object of type 'Dictionary'.
+   at: _ProbeMutant._on_row_focus_entered (res://src/ui/menu/battle_menu.gd:223)
+   GDScript backtrace (most recent call first):
+       [0] _on_row_focus_entered (res://src/ui/menu/battle_menu.gd:223)
+       [1] _on_row_focus_entered (res://prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd:45)
+       [2] _probe_post_ready_swap (res://prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd:120)
+B: mutant override _on_row_focus_entered() was called after grab_focus = true
+B: marker text after swap + grab_focus = '  結束回合'
+B: reading above answers whether a focus_entered Callable bound BEFORE the swap
+   dispatches through the NEW script's override at call time (polymorphic,
+   i.e. GDScript methods are resolved dynamically per-call) or is frozen to the
+   OLD script's method (bound at connect() time).
+SCRIPT ERROR: Invalid access to property or key 'EndPhaseRow:<Button#32916899323>' on a base object of type 'Dictionary'.
+   at: _ProbeMutant._apply_unfocused_text (res://src/ui/menu/battle_menu.gd:219)
+   GDScript backtrace (most recent call first):
+       [0] _apply_unfocused_text (res://src/ui/menu/battle_menu.gd:219)
+       [1] _on_row_focus_exited (res://src/ui/menu/battle_menu.gd:227)
+       [2] _probe_post_ready_swap (res://prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd:130)

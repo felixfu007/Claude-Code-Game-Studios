@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/battle/hand_bar.gd" id="1_script"]
+
+[node name="HandBar" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="CountLabel" type="Label" parent="."]
+mouse_filter = 2
+
+[node name="UnavailableLabel" type="Label" parent="."]
+visible = false
+mouse_filter = 2

@@ -1,0 +1,31 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== U-007 focus-navigation probe (2026-09-17) ===
+Engine version: { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+
+--- Q1: automatic wrap on ui_up from topmost row? ---
+Q1 initial focus: row1=true row2=false row3=false
+ERROR: CursorState.apply_buffered_navigation(): a NAVIGATION-class ui_* event arrived while KEYBOARD_GAMEPAD holds device authority, but the surface registered under this target's CursorTypes.SurfaceType tag either has no registration at all, or does not implement cursor_navigate(from_id: int, direction: Vector2i) -> Variant. Cursor navigation is DISABLED for this surface tag until a registered surface implements the contract. This is reported once, not per frame; diagnostic_surface_navigation_unsupported_count keeps counting.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_buffered_navigation (res://src/ui/cursor/cursor_state.gd:611)
+       [1] flush_buffered_navigation (res://src/ui/cursor/cursor_state_host.gd:404)
+       [2] _process (res://src/ui/cursor/cursor_navigation_applier.gd:74)
+Q1 after ui_up:    row1=true row2=false row3=false
+Q1 RESULT: wrapped_to_last_row=false  stayed_on_first_row=true
+Q1 sanity — ui_down from row1 (mid-list, should move): row2 focused=false
+
+--- Q2: explicit self-pointing focus_neighbor_top pins focus? ---
+Q2 after ui_up with focus_neighbor_top=self: row1=true row2=false row3=false
+Q2 RESULT: pinned_on_row1=true
+Q2b after ui_down with focus_neighbor_bottom=self on last row: row3=true
+
+--- Q3: automatic search skips a FOCUS_NONE divider sibling? ---
+Q3 after ui_down from row2 (divider between row2/row3): row3 focused=false
+Q3 RESULT: skipped_divider_reached_row3=false
+
+=== Probe complete ===
+Q1 (automatic wrap on up from first row) = false
+Q1 (automatic stays on first row without any explicit config) = true
+Q2 (explicit focus_neighbor_top=self pins focus on up-from-first) = true
+Q3 (FOCUS_NONE divider correctly skipped by automatic search) = false

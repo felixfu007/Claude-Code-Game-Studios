@@ -1,0 +1,30 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== U-007 focus-navigation probe v2 (2026-09-17) ===
+
+--- Baseline: grab_focus() alone ---
+owner after row1.grab_focus() = Row1 (row1.has_focus=true)
+
+--- Experiment A: Input.parse_input_event(ui_down key), interior case ---
+ERROR: CursorState.apply_buffered_navigation(): a NAVIGATION-class ui_* event arrived while KEYBOARD_GAMEPAD holds device authority, but the surface registered under this target's CursorTypes.SurfaceType tag either has no registration at all, or does not implement cursor_navigate(from_id: int, direction: Vector2i) -> Variant. Cursor navigation is DISABLED for this surface tag until a registered surface implements the contract. This is reported once, not per frame; diagnostic_surface_navigation_unsupported_count keeps counting.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_buffered_navigation (res://src/ui/cursor/cursor_state.gd:611)
+       [1] flush_buffered_navigation (res://src/ui/cursor/cursor_state_host.gd:404)
+       [2] _process (res://src/ui/cursor/cursor_navigation_applier.gd:74)
+owner after parse_input_event(DOWN) = Row2
+
+--- Experiment B: reset focus to row1, try push_input(ui_down) ---
+owner before push_input(DOWN) = Row1
+owner after push_input(DOWN) = Row2
+
+--- Experiment C: is find_valid_focus_neighbor reachable at all? Query directly ---
+row1.find_valid_focus_neighbor(SIDE_BOTTOM) = Row2
+row1.find_valid_focus_neighbor(SIDE_TOP) = <null>
+row2.find_valid_focus_neighbor(SIDE_BOTTOM) = Row3
+
+--- Experiment D: explicit focus_neighbor_bottom wiring, then push_input ---
+owner before push_input(DOWN) with explicit wiring = Row1
+owner after push_input(DOWN) with explicit focus_neighbor_bottom = Row2
+
+=== Probe v2 complete ===
