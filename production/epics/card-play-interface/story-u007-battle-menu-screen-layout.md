@@ -1,7 +1,7 @@
 # Story U-007: 戰鬥選單畫面 —— M0~M2 版面、原生 focus、上下導覽不繞回
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**: ✅ Complete(2026-09-17,`ui-programmer` 實作;18 條測試、4 條常駐敏感度證明,其餘 14 條逐條標明不可證分類。AC-M13 滿足;AC-M10/AC-M11 依 story 自陳範圍為部分滿足(75%/150% 字級功能不存在,UX-5/BM-6);AC-M15 為 ADVISORY 且開關未接線(U-008),以「元件本身零延遲」間接滿足。(A) 級版面複驗在 `tests/unit/ui/menu/battle_menu_layout_test.gd` 的 `test_battle_menu_md_table_values_match_hud_layout_derived_arithmetic`,該複驗抓出 `design/ux/battle-menu.md:142` 同列捨入方向相反。🔴 **獨立覆核抓到一處「宣稱的驗證來源查無此事」並已修畢** —— 補 `prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd`,其對照組另外回答了 test-standards.md C 類那個未知數。⚠️ **未完成項:截圖證據規則第 5 點(人工開圖確認)由管理者執行,尚未進行** —— 協調者已代看 1 張確認非假圖,但正式簽核未做)
 > **層**: Presentation(戰鬥選單,新畫面)
 > **型別**: UI
 > **估時**: M
