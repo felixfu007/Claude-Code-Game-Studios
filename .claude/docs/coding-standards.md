@@ -101,7 +101,52 @@ produce more distinct values than a pixel-art scene's large flat fills. **"More 
 as more real" points the wrong way.** The colour count only rules out a uniformly blank
 frame, which is the narrow case it was written for.
 
-### Required checks before an image counts as evidence
+### Screenshot classification — decide the category before applying any check
+
+**2026-09-17 addition.** The five checks below were written against one shape of screenshot
+(a full-window gameplay frame) and were then applied unmodified to two other shapes in the
+same batch of work, on the same day, by two different implementers, from two different
+directions:
+
+| | Screen | Check it hit | Measured |
+|---|---|---|---|
+| U-007 | **Forced-response overlay/mask** (translucent scrim covers the entire window, small panel centred inside it) | Check 3, dominant colour share ≤ 80% | **91.6% / 92.7%** at 1920×1080 / 2560×1440 — `prototypes/u007-battle-menu-evidence-capture-2026-09-17/README.md`, `production/qa/evidence/battle-menu-layout-evidence.md` |
+| U-011 | **Thin-line UI crop** (hand-bar strip, cropped from a full-window capture) | Check 2, 12-point sampling ≥ 3 colours | first attempt (wide-margin crop) measured **4 / 1** distinct colours, dominant share **53.26%–63.32% / 99.19%–99.60%** — `prototypes/story-u011-hand-bar-evidence-2026-09-17/README.md` and its `run_output.txt` |
+
+🔴 **The most informative thing that happened is not the two failures above — it is what the
+U-011 implementer reached for next.** Facing Check 2's failure, the first instinct was to
+switch the metric to **whole-image distinct-colour count**. That is the exact metric the table
+at the top of this section already names as pointing **backwards** (boot splash 493 colours >
+real frame 247 colours) — a reviewer caught it before it shipped (see
+`production/qa/evidence/story-u011-hand-bar-evidence.md`, section "第二次嘗試(已捨棄)").
+**When a check does not fit the screen in front of you, the replacement invented on the spot
+is not automatically safer than the check it's replacing — on this project, it has already
+turned out to be the exact thing this section was written to ban.**
+
+**Conclusion for this rule set: no category gets a "use your judgement" escape hatch.** Every
+screenshot is classified into exactly one of three categories below, by an objective test that
+does not depend on the capturer's self-description, and each category has its own fixed,
+fully-specified checks.
+
+#### Classification test (apply in this order — first match wins)
+
+1. **Category C — cropped / partial capture.** Test: **the image's dimensions do not equal
+   the full target window size** for the resolution under test. (This reuses Check 1's
+   dimension measurement — classification and Check 1 read the same number.)
+2. **Category B — full-window overlay/mask screen.** Test: dimensions **do** match the full
+   window, **and** the screen's own real layout function — the one production code actually
+   calls (e.g. `panel_rect()`), not a re-derivation of it — reports a content rect whose area
+   is **less than 50% of the full window's area** at that resolution, with the remaining area
+   an intentional single-colour scrim/mask. (Threshold chosen to unambiguously separate cases
+   like U-007's ~8.9% panel coverage from an ordinary partial-window widget; changing it is a
+   fresh decision, not a silent adjustment.)
+   🔴 **A claim of "this is a modal" with no named rect-function call behind it does not
+   qualify.** It stays Category A and inherits Category A's checks — which it will then
+   correctly fail. The escape hatch is the rect call, not the assertion.
+3. **Category A — full gameplay/world frame.** Everything not caught by 1 or 2 — the shape the
+   original five checks were written for. They apply to it unchanged.
+
+### Category A checks — full gameplay/world frame (the original five checks; one disclosure clause added to Check 4 on 2026-09-17 for symmetry with B/C, see below)
 
 1. **Dimensions** match the expected window size exactly.
 2. **Multi-point sampling** — sample at least 12 spread coordinates; require **≥ 3 distinct
@@ -114,10 +159,98 @@ frame, which is the narrow case it was written for.
    rather than a pixel font (`design/art/art-direction.md`), and that antialiased text
    produces more grid violations in a real frame (3.157%) than the splash logo does (1.748%).
    Restricted to the board region the signal is clean: real frame 0 of 66300 blocks,
-   splash 2265.
+   splash 2265. **If the screen has no world layer at all, say so explicitly; do not silently
+   omit the check without a stated reason** — this is the same disclosure obligation Category
+   B and C's Check 4 state below; Category A never needed it in practice (a full gameplay/world
+   frame has a world layer by definition), but the obligation itself applies uniformly to every
+   category, not just the two where it currently matters. Stating it only under B/C invited the
+   wrong inference — that A is exempt from disclosure rather than merely exempt, so far, from
+   ever triggering it.
 5. 🔴 **A human opens the image and confirms it shows what it claims.** The checks above are
    a filter, not a substitute. Every visual defect found on this project so far was found by
    a person opening the file; the automated suite has never caught one.
+
+### Category B checks — full-window overlay/mask screens
+
+**Why Check 3 as written points backwards here**: a modal's entire design intent is "one
+translucent colour covers most of the frame, plus a small panel." A dominant-share ceiling
+built to catch "this frame is suspiciously blank" will **always** fire on a correctly-rendered
+modal — U-007 measured 91.6%/92.7%, both confirmed complete and correct by human review
+(`production/qa/evidence/battle-menu-layout-evidence.md`). Applying Check 3 unmodified here
+does not detect a defect; it detects the design.
+
+1. **Dimensions** — unchanged, still required.
+2. **Sampling** — run the original blind grid **and keep its result on the record even if it
+   comes back with only 1 distinct colour** (expected, not a failure to hide — see U-007's own
+   disclosure of this exact result). **Add** sample points derived from the screen's real
+   content-rect function (the same one used for classification above); require **≥ 3 distinct
+   colours across the combined blind + targeted set**.
+3. **Dominant colour share ≤ 80% does not apply.** Replace it with an **edge/corner mask
+   coverage check**: sample the 4 corners and 4 edge midpoints of the full window and confirm
+   every one matches the intended overlay colour, with no gap. This targets the actual defect
+   this screen shape can have — an incompletely-covered scrim leaving a bright, un-masked strip
+   at the window edge (the risk `design/art/screen-architecture.md` names for non-16:9
+   windows) — instead of testing for a property (low dominant-colour share) the design
+   deliberately does not have.
+4. **Integer-scale grid** — same carve-out as Category A: world layer only. If the screen has
+   no world layer at all, say so explicitly; do not silently omit the check without a stated
+   reason.
+5. 🔴 **Human review — mandatory, unchanged.** See "why Check 5 survives every category" below.
+
+### Category C checks — cropped / partial UI captures
+
+**Why Check 2 as written points backwards here**: a blind 12-point grid assumes content is
+spread across the frame. A crop of a thin-line UI element (borders, a count label) is mostly
+empty space between lines at typical UI scale — U-011's first attempt measured 1 distinct
+colour among 12 blind points on a correctly-rendered crop
+(`prototypes/story-u011-hand-bar-evidence-2026-09-17/run_output.txt`). The grid tests "is
+content spread out," and a thin-line crop's honest answer is "no," independent of whether it
+is correct.
+
+1. **Dimensions** — must equal the crop rect as computed by the real layout function used to
+   produce it (name the function, e.g. `slot_bar_rect()` / `slot_rect()`), not the full window.
+2. **Blind sampling is replaced by directional/oriented sampling.** Coordinates must be
+   derived by calling the same real layout function that produced the crop — placed at
+   "should have a drawn edge here" positions and at "known interior, no edge" positions —
+   never at random or evenly-spaced coordinates chosen independently of that function.
+   🔴 **Explicitly banned substitute: whole-image distinct-colour count.** This was tried on
+   this project and withdrawn before shipping
+   (`production/qa/evidence/story-u011-hand-bar-evidence.md`, section "第二次嘗試(已捨棄)")
+   for the same reason the table at the top of this section exists: colour count points
+   backwards (more antialiasing → more colours → a boot splash beats a real frame). **A check
+   that fails on a real screen does not get replaced by a metric this document has already
+   named as unreliable, regardless of who proposes it or how reasonable it looks at the time.**
+3. **Dominant colour share ≤ 80% does not universally apply** — an isolated widget crop on an
+   otherwise-blank test backdrop is mostly one colour by design (U-011's isolated-widget crop
+   measured 99.6% and was correct). Use whichever of the following fits the evidence being
+   produced:
+   - **(a) Structural-difference check**, when two crops are being compared against each other
+     (e.g. two states of the same component): per-pixel luminance difference, requiring the
+     **standard deviation** of that difference to clear a threshold — this proves the
+     difference is not just a uniform brightness/contrast shift across the whole crop.
+   - **(b) Positive-presence check**, when there is no second crop to diff against: a named
+     region must be measurably brighter or darker than a named reference background point.
+4. **Integer-scale grid** — same carve-out as Category A/B: world layer only. Most UI crops
+   have no world-layer content at all (this project renders UI text in an antialiased Chinese
+   font, not a pixel font); state that explicitly rather than silently skipping the check.
+5. 🔴 **Human review — mandatory, and carries more weight here than in the other two
+   categories**, because checks 2 and 3 are, by construction, the most structurally weakened
+   of the three categories here — see below.
+
+### Why Check 5 is not replaced by anything above, in any category
+
+Check 5 was never "the automated checks, plus a human as a backstop for cases automation can't
+reach" — the original rule states it as **the only check that has ever actually caught a
+defect on this project**: "Every visual defect found on this project so far was found by a
+person opening the file; the automated suite has never caught one." Categories B and C exist
+*because* the mechanical checks calibrated for Category A misfire by construction on those
+shapes — which means, for exactly those two categories, automation's share of the detection
+burden is smaller than it is for Category A, not larger. **The category with the weakest
+mechanical coverage is never allowed to also have the weakest human coverage.**
+
+⚠️ **This classification framework has no automated check of its own**, consistent with the
+rest of this section — it buys "a screenshot's category and the reasoning behind it are
+written down and checkable by a second reader," not "no one will misclassify a screenshot."
 
 ### Rules for capture tooling
 
@@ -137,15 +270,29 @@ frame, which is the narrow case it was written for.
 - **Naming**: `[system]_[feature]_test.[ext]` for files; `test_[scenario]_[expected]` for functions
 - **Determinism**: Tests must produce the same result every run — no random seeds, no time-dependent assertions
 - **Isolation**: Each test sets up and tears down its own state; tests must not depend on execution order
-- **No hardcoded data**: Test fixtures use constant files or factory functions, not inline magic numbers
-  (exception: boundary value tests where the exact number IS the point)
-- **Independence**: Unit tests do not call external APIs, databases, or file I/O — use dependency injection
-  > 🔴 **2026-09-16:實測 `tests/unit` 的 43 支裡有 10 支在違反這一條,而沒有任何自動檢查會攔。**
-  > 其中 8 支讀 `assets/data/` 的真實資料檔 —— **照上一條(「Test fixtures use constant files」)做就必然違反這一條**,
-  > 兩條相隔兩行、同在這份每次開場載入的文件裡。逐檔清單、量測指令原始輸出、兩類動機的區分,
-  > 以及 **2026-09-16 管理者裁決的「明文例外」範圍與其兩項附帶義務**,全部在
-  > `.claude/rules/test-standards.md`。**本行刻意不複述。**
-  > ⚠️ **上一條(第 140 行)與本條的矛盾本身尚未處理** —— 裁決的是「准不准」,不是「這兩行怎麼重寫」。
+- **No hardcoded data**: Test fixtures use in-test constants, factory functions, or — **only via
+  the two registered exceptions named in the next bullet** — read-only version-controlled data
+  files. Never inline magic numbers. **Do not invent a third kind of file access to satisfy this
+  bullet.** (exception: boundary value tests where the exact number IS the point)
+- **Independence**: Unit tests do not call external APIs, databases, or **write to any filesystem
+  location** — use dependency injection. **Two narrow, registered read-only exceptions exist**;
+  their exact scope and two attached obligations (declare the exception in the test file's header;
+  disclose that it does not prove exhaustiveness) are in `.claude/rules/test-standards.md` —
+  **this line deliberately does not restate them**:
+  1. reading real, version-controlled fixture data under `assets/data/` — **this is what the
+     "constant files" wording in the bullet above actually means in practice**
+  2. reading `src/**/*.gd` / `tests/**/*.gd` source text to assert a static code-discipline rule
+
+  **All other file I/O remains prohibited.**
+  > ✅ **2026-09-17 管理者裁決:上面兩行已改寫,矛盾解除。**
+  > **原文的形狀**:上一條要求「Test fixtures use constant files」,下一條禁止「file I/O」——
+  > **照上一條做就必然違反下一條**,而兩條相隔兩行、同在這份每次開場載入的文件裡。
+  > 2026-09-16 管理者已裁決那 10 支違反者為明文例外,**但裁決的是「准不准」,不是「這兩行怎麼重寫」**,
+  > 於是矛盾又原封不動留了一天,直到 2026-09-17 才補上這次改寫。
+  > 🔴 **改寫刻意不重新推翻 9/16 那次裁決** —— 它只是把第一條的「constant files」明確指向
+  > 該次核准的例外範圍,讓兩條停止互相否定。**例外的範圍一個字都沒有變動。**
+  > ⚠️ **仍然沒有任何自動檢查會攔第三種檔案存取。** 上面那句「Do not invent a third kind」
+  > 是紀律要求,不是閘門 —— 與本專案其餘同類規則一樣,**遵守與否目前不可觀測**。
 
 ## What NOT to Automate
 

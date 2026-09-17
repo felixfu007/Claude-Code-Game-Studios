@@ -19,7 +19,28 @@
 
 ## 目標
 
-讓玩家能展開手牌(Z1 原地長大為 Z2)、左右瀏覽每一張卡並看到 Z3 的卡牌細節,並呼叫既有邏輯層 `CardPlaySession.select_card()` 完成 S1→S2 的轉換。
+讓玩家能展開手牌(Z1 原地長大為 Z2)、左右瀏覽每一張卡並看到 Z3 的卡牌細節,並在 `hand_bar.gd` 內部維護「游標停在第幾張」。
+
+> 🔴 **2026-09-17 協調者更正本節。** 原文為:
+> 「…並**呼叫既有邏輯層 `CardPlaySession.select_card()` 完成 S1→S2 的轉換**。」
+>
+> **那一句在本 story 的檔案範圍內物理上做不到,而且不是實作者偷懶。**
+> 由 `godot-gdscript-specialist` 於裁決手牌帶介面形狀時揪出,協調者逐項查證屬實:
+>
+> - `EPIC.md` 波次表把 U-012 的足跡**只**列 `hand_bar.gd`;`battle_screen.gd` 要到 U-013 才動。
+> - `CardPlaySession.select_card(card: Card)` 需要真正的 `Card` 物件,
+>   而 `hand_bar.gd` 依其 class doc **明文承諾永不引用 `Card`**。
+> - 要把「第幾張」換成 `Card`,必須由**唯一被授權同時知道兩邊**的 `battle_screen.gd` 執行
+>   (該檔 doc comment 逐字:「this class is the one allowed to know both sides」)。
+>
+> **本 story 交付的是「可被接上的渲染 + 導覽介面」,接線本身屬 U-013。**
+> ⚠️ **這是範圍更正,不是降低標準** —— U-013 的工作單已明文把
+> `select_target()` / `select_second_target()` 的呼叫點放在 `battle_screen.gd`,
+> **選卡與選對象採同一個形狀,不是本 story 的例外。**
+>
+> 📌 **連帶義務(尚未指派,請登記)**:U-013 必須補上「把 `hand_bar.gd` 的游標索引
+> 換成 `CardDeck.hand()[index]` 再呼叫 `select_card()`」這一段,
+> 否則 S1→S2 會在兩張工作單之間掉進縫裡。
 
 ## 本 story 必須讀而非重寫的既有邏輯層
 

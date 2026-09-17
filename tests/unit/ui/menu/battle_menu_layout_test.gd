@@ -119,6 +119,17 @@ func _real_ui_key_event(action: StringName) -> InputEventKey:
 	return null
 
 
+## Standard perceptual grayscale weights (ITU-R BT.601 luma). Used ONLY on
+## StyleBox DATA (declared [Color] values) below, never on rendered pixels —
+## this project's `--headless` runner does not rasterize [Control] drawing,
+## so no test in this suite can read back a real composited pixel. See
+## [code]test_focus_border_luminance_differs_from_real_default_button_background[/code]'s
+## own doc comment for exactly what this formula is, and is not, being used
+## to prove.
+func _luminance(color: Color) -> float:
+	return 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
+
+
 # ─── Implementation Notes #2 / EPIC.md 陷阱十二:版面驗算複驗義務 ───────────
 # [不可證 - 類 A]（BattleMenu.panel_rect() / row_height() / leave_confirm_size()
 # 皆為 static 純函式,沒有繼承鏈可覆寫——與 hud_layout_test.gd 對 HudLayout
@@ -452,59 +463,228 @@ func test_sensitivity_proof_divider_skip_detection_catches_wrong_neighbor_wiring
 
 
 # ─── 焦點視覺第二通道(P-F3)[常駐敏感度證明] ────────────────────────────────
+#
+# 🔴 2026-09-17 由 design/art/battle-ui-glyph-spec.md 第四節重寫(art-director
+# 裁決,「驗收後果」段明文要求):原本這裡斷言 FOCUS_MARKER(▸)字元是否出現/
+# 消失——該機制已整條移除(見 battle_menu.gd 類別文件註解 2026-09-17 更正),
+# 因為備援字型渲染 ▸ 的寬度與 Cubic 11 空白不保證一致,導致 Button 置中文字
+# 隨焦點左右跳動。P-F3 的第二通道現在是一個套用在 "focus" 佈景槽的
+# StyleBoxFlat(邊框+淡填色),不再改寫 .text。下面兩條測試取代舊的
+# test_focus_visual_has_position_marker_not_color_only /
+# test_sensitivity_proof_focus_marker_detection_catches_missing_marker_logic：
+# 一條驗「focus 佈景槽確實套用了規格數值」,一條驗「文字內容不再隨焦點改變」
+# ——後者直接對應本次修正要消除的缺陷本身(文字位移),不驗就等於沒驗到重點。
 
 
-func test_focus_visual_has_position_marker_not_color_only() -> void:
+func test_focus_stylebox_applied_to_all_rows_with_spec_border_and_fill() -> void:
+	var instance: Control = _instantiate()
+	add_child(instance)
+	var window_size: Vector2i = get_tree().root.size
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var expected_border_px: int = maxi(1, int(round(BattleMenu.FOCUS_BORDER_FPX_MULTIPLIER * fpx)))
+
+	for path in [
+		"Panel/ContentMargin/Rows/ReturnToBattleRow",
+		"Panel/ContentMargin/Rows/EndPhaseRow",
+		"Panel/ContentMargin/Rows/QuitRow",
+	]:
+		var row: Button = instance.get_node(path)
+		var style: StyleBox = row.get_theme_stylebox(&"focus")
+		assert_object(style).append_failure_message(
+			"%s: no \"focus\" theme stylebox override found." % path
+		).is_not_null()
+		assert_bool(style is StyleBoxFlat).append_failure_message(
+			"%s: \"focus\" stylebox is not a StyleBoxFlat." % path
+		).is_true()
+		var flat: StyleBoxFlat = style as StyleBoxFlat
+		assert_int(flat.border_width_left).append_failure_message(
+			"%s: focus border_width_left = %d, expected %d (round(0.1 * fpx), min 1px)." % [
+				path, flat.border_width_left, expected_border_px
+			]
+		).is_equal(expected_border_px)
+		assert_that(flat.border_color).append_failure_message(
+			"%s: focus border_color != spec white opaque." % path
+		).is_equal(BattleMenu.FOCUS_BORDER_COLOR)
+		assert_that(flat.bg_color).append_failure_message(
+			"%s: focus fill color != spec white 10%% alpha." % path
+		).is_equal(BattleMenu.FOCUS_FILL_COLOR)
+
+
+## 突變:把 _focus_stylebox() 覆寫成回傳一個刻意「隱形」的樣式(零邊框、全透明
+## 填色)——模擬「焦點的第二通道被悄悄拿掉/清空」這一類迴歸缺陷,證明上面
+## 測試的偵測方式(檢查 border_width_left 是否達到規格門檻)確實會在這種情況
+## 下轉紅。
+class _MutantFocusStyleboxInvisible extends BattleMenu:
+	func _focus_stylebox(_fpx: float) -> StyleBoxFlat:
+		var style := StyleBoxFlat.new()
+		style.border_width_left = 0
+		style.border_width_top = 0
+		style.border_width_right = 0
+		style.border_width_bottom = 0
+		style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+		return style
+
+
+func test_sensitivity_proof_focus_stylebox_detection_catches_invisible_override() -> void:
+	var mutant: Control = load(SCENE_PATH).instantiate()
+	mutant.set_script(_MutantFocusStyleboxInvisible)
+	auto_free(mutant)
+	add_child(mutant)
+	var return_row: Button = mutant.get_node("Panel/ContentMargin/Rows/ReturnToBattleRow")
+	var flat: StyleBoxFlat = return_row.get_theme_stylebox(&"focus") as StyleBoxFlat
+
+	assert_int(flat.border_width_left).append_failure_message(
+		"SENSITIVITY PROOF FAILED: mutant deliberately returns a zero-width " +
+		"border, so border_width_left must read 0 here — if it reads >= 1, " +
+		"the real test's \"is the border at least 1px\" check cannot tell a " +
+		"correct focus stylebox from a blanked-out one."
+	).is_equal(0)
+
+
+## `design/art/battle-ui-glyph-spec.md` 第四節的核心規格斷言:焦點移動時,
+## 每一列的文字內容從頭到尾不變——這正是本次修正要消除的缺陷本身(舊版
+## FOCUS_MARKER 前綴會讓 Button 置中文字隨焦點左右位移)。[常駐敏感度證明]
+## 見下方 _MutantReintroducesTextRewrite。
+func test_row_text_stays_constant_across_focus_changes() -> void:
 	var instance: Control = _instantiate()
 	add_child(instance)
 	var return_row: Button = instance.get_node("Panel/ContentMargin/Rows/ReturnToBattleRow")
 	var end_phase_row: Button = instance.get_node("Panel/ContentMargin/Rows/EndPhaseRow")
+	var return_text_before: String = return_row.text
+	var end_phase_text_before: String = end_phase_row.text
 
-	# 預設焦點在 ReturnToBattleRow —— 應該看得到標記字元。
-	assert_str(return_row.text).append_failure_message(
-		"Focused row's text should contain the position-marker glyph %s, got '%s'" % [
-			BattleMenu.FOCUS_MARKER, return_row.text
-		]
-	).contains(BattleMenu.FOCUS_MARKER)
-	# 未聚焦的列不應該看得到標記字元 —— 這是第二通道存在的直接證據:即使把
-	# 灰階截圖裡的顏色資訊全部拿掉,「有沒有這個字元」仍然可以分辨。
-	assert_str(end_phase_row.text).append_failure_message(
-		"Unfocused row's text should NOT contain the position-marker glyph, got '%s'" % end_phase_row.text
-	).not_contains(BattleMenu.FOCUS_MARKER)
-
-	# 移動焦點後,標記應該跟著移動(而不是黏在原本那一列)。
 	end_phase_row.grab_focus()
-	assert_str(end_phase_row.text).contains(BattleMenu.FOCUS_MARKER)
-	assert_str(return_row.text).not_contains(BattleMenu.FOCUS_MARKER)
+
+	assert_str(return_row.text).append_failure_message(
+		"ReturnToBattleRow's text changed after it LOST focus — row text must " +
+		"never be rewritten (design/art/battle-ui-glyph-spec.md 第四節)."
+	).is_equal(return_text_before)
+	assert_str(end_phase_row.text).append_failure_message(
+		"EndPhaseRow's text changed after it GAINED focus — row text must " +
+		"never be rewritten (design/art/battle-ui-glyph-spec.md 第四節)."
+	).is_equal(end_phase_text_before)
+
+	return_row.grab_focus()
+
+	assert_str(return_row.text).append_failure_message(
+		"ReturnToBattleRow's text changed after regaining focus."
+	).is_equal(return_text_before)
+	assert_str(end_phase_row.text).append_failure_message(
+		"EndPhaseRow's text changed after losing focus again."
+	).is_equal(end_phase_text_before)
 
 
-## 突變:覆寫 _on_row_focus_entered() 使其不套用任何標記(模擬「焦點視覺
-## 標記邏輯被移除/寫壞」的迴歸缺陷),證明上面測試的偵測方式(檢查 .text 是否
-## 含有標記字元)確實會在這種情況下轉紅。前置技巧(進樹前 set_script() 保留
-## @onready 節點解析、實例變數狀態與繼承呼叫鏈皆正常)實測見
-## prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd
-## 與其 run_output_set_script_timing.txt。
-class _MutantNoFocusMarker extends BattleMenu:
+## 突變:在 _ready() 之後額外接上焦點訊號,重新引入「焦點進入時改寫 .text」的
+## 迴歸缺陷(舊版 FOCUS_MARKER 機制的形狀),證明上面測試的偵測方式(逐次比對
+## focus 前後的 .text)確實會在這種情況下轉紅。
+class _MutantReintroducesTextRewrite extends BattleMenu:
 	var mutant_focus_entered_called: bool = false
-	func _on_row_focus_entered(_row: Button) -> void:
+	func _ready() -> void:
+		super._ready()
+		for row: Button in _focusable_rows:
+			row.focus_entered.connect(_on_mutant_focus_entered.bind(row))
+	func _on_mutant_focus_entered(row: Button) -> void:
 		mutant_focus_entered_called = true
-		# 刻意什麼都不做 —— 標記邏輯被拿掉。
+		row.text = "» " + row.text
 
 
-func test_sensitivity_proof_focus_marker_detection_catches_missing_marker_logic() -> void:
+func test_sensitivity_proof_text_invariance_detection_catches_reintroduced_rewrite() -> void:
 	var mutant: Control = load(SCENE_PATH).instantiate()
-	mutant.set_script(_MutantNoFocusMarker)
+	mutant.set_script(_MutantReintroducesTextRewrite)
 	auto_free(mutant)
 	add_child(mutant)
-	var return_row: Button = mutant.get_node("Panel/ContentMargin/Rows/ReturnToBattleRow")
+	var end_phase_row: Button = mutant.get_node("Panel/ContentMargin/Rows/EndPhaseRow")
+	var end_phase_text_before: String = end_phase_row.text
 
-	# PRECONDITION:覆寫確實生效(排除「根本沒呼叫到覆寫」這個混淆因素)。
+	end_phase_row.grab_focus()
+
 	assert_bool(mutant.get("mutant_focus_entered_called")).append_failure_message(
-		"PRECONDITION: mutant's _on_row_focus_entered override was never invoked — " +
-		"this sensitivity proof would be vacuous."
+		"PRECONDITION: mutant's reintroduced focus_entered handler was never " +
+		"invoked — this sensitivity proof would be vacuous."
 	).is_true()
-	assert_str(return_row.text).append_failure_message(
-		"SENSITIVITY PROOF FAILED: mutant deliberately disables the marker-apply logic, " +
-		"so the focused row's text must NOT contain the marker glyph here — if it does, " +
-		"the detection technique used by the real test cannot tell correct from broken."
-	).not_contains(BattleMenu.FOCUS_MARKER)
+	assert_str(end_phase_row.text).append_failure_message(
+		"SENSITIVITY PROOF FAILED: mutant deliberately rewrites .text on focus, " +
+		"so the text must have CHANGED here — if it did not, the real test's " +
+		"before/after equality check cannot tell a correct (frozen) row text " +
+		"from a regressed (focus-rewritten) one."
+	).is_not_equal(end_phase_text_before)
+
+
+## ─── AC-M11 support (BLOCKING — "焦點...狀態的截圖轉為灰階 → 仍可區分") ───
+##
+## 🔴 [b]This test is a partial, decision-layer support for AC-M11, not a full
+## proof[/b] — flagged explicitly per coordinator instruction rather than
+## silently treated as equivalent to the FOCUS_MARKER test it replaces. The
+## replaced test's presence/absence-of-a-character check was luminance-proof
+## BY CONSTRUCTION (a glyph is either drawn or it is not, independent of any
+## color channel). A [StyleBoxFlat] override is weaker evidence UNLESS this
+## test additionally establishes an actual luminance difference — which is
+## what this test does, within what is headlessly provable:
+##
+## [b]Rigorous, headless-computable half (what this test actually checks)[/b]:
+## [constant BattleMenu.FOCUS_BORDER_COLOR] is fully opaque (alpha 1.0) AND at
+## the theoretical maximum grayscale luminance (pure white, luminance 1.0
+## under [i]any[/i] non-negative-weighted grayscale formula, not only the one
+## in [method _luminance]). A fully-opaque color completely occludes whatever
+## draws underneath it — this is Godot's own documented alpha-compositing
+## behavior, not an assumption this test makes — so the focus border's
+## rendered pixels are DETERMINISTICALLY pure white regardless of the row's
+## unfocused background. This test then reads the REAL, unmodified engine
+## default [Button] [code]"normal"[/code] stylebox (via a bare, undecorated
+## [code]Button.new()[/code] — not this file's assumption about what it looks
+## like) and confirms it is NOT already opaque pure white itself — closing the
+## one gap that would make the comparison vacuous (an opaque white border
+## drawn over an already-opaque-white background would be invisible).
+##
+## [b]🔴 What this does NOT prove, registered honestly rather than silently
+## assumed[/b]: the actual COMPOSITED rendered pixel — including the
+## 10%-alpha fill's real blended result, anti-aliasing at stylebox corners,
+## and a REAL grayscale conversion applied to an actual screenshot — is not
+## computed anywhere in this suite. Godot's [code]--headless[/code] mode does
+## not rasterize [Control] drawing, so no test here can read back a real
+## rendered pixel. **AC-M11's full applied-layer verification (a real
+## windowed screenshot, converted to grayscale, opened and confirmed by a
+## human per `.claude/docs/coding-standards.md`'s Screenshot Evidence Rules)
+## is NOT covered by this test or any other in this file** — registered as an
+## open gap in this story's report, not silently treated as satisfied.
+func test_focus_border_luminance_differs_from_real_default_button_background() -> void:
+	# Arrange — a genuinely unmodified Button, so "normal" reads the real
+	# engine default rather than anything this scene or this test asserts.
+	var probe := Button.new()
+	add_child(probe)
+	auto_free(probe)
+	var normal_style: StyleBox = probe.get_theme_stylebox(&"normal")
+	assert_object(normal_style).append_failure_message(
+		"PRECONDITION: could not read the engine's own default Button " +
+		"\"normal\" theme stylebox — cannot compare against it."
+	).is_not_null()
+
+	# Assert (i) — the focus border itself: fully opaque, maximum luminance.
+	assert_float(BattleMenu.FOCUS_BORDER_COLOR.a).append_failure_message(
+		"FOCUS_BORDER_COLOR is not fully opaque — a translucent border would " +
+		"let the background show through, and the occlusion argument this " +
+		"test relies on would no longer hold."
+	).is_equal_approx(1.0, 0.0001)
+	assert_float(_luminance(BattleMenu.FOCUS_BORDER_COLOR)).append_failure_message(
+		"FOCUS_BORDER_COLOR's luminance is not the maximum (1.0) — expected " +
+		"pure white per design/art/battle-ui-glyph-spec.md 第四節."
+	).is_equal_approx(1.0, 0.0001)
+
+	# Assert (ii) — the REAL engine default is not ALSO opaque pure white.
+	if normal_style is StyleBoxFlat:
+		var normal_flat: StyleBoxFlat = normal_style as StyleBoxFlat
+		var is_also_opaque_white: bool = (
+			is_equal_approx(normal_flat.bg_color.a, 1.0)
+			and _luminance(normal_flat.bg_color) > 0.999
+		)
+		assert_bool(is_also_opaque_white).append_failure_message(
+			("the engine's real default Button \"normal\" background is ALSO " +
+				"opaque pure white (%s) — an opaque white focus border drawn on " +
+				"top of it would be invisible, and grayscale distinguishability " +
+				"would NOT hold. This is exactly the silent-failure case this " +
+				"test exists to catch.") % normal_flat.bg_color
+		).is_false()
+	# else: StyleBoxEmpty (or another non-flat type) has no bg_color to
+	# compare at all — structurally meaning the unfocused state has no
+	# comparable flat fill, so the opaque white border cannot coincide with
+	# "nothing" either.

@@ -146,8 +146,98 @@ tests/unit/gameplay/units/unit_test.gd                                   4
 | A | 斷言對象是 static 純函式 | 沒有繼承鏈可覆寫 |
 | A′ | 斷言對象是真實資料檔內容 | 沒有類別可注入錯誤版本(與甲類例外同源) |
 | B | 斷言對象是 RNG 決定性契約 | 任何**仍是純函式**的錯誤實作都會**繼續通過**「同種子兩次相等」,這是邏輯必然;而真會被抓的錯誤其後果本質非決定性,要展示就得引入真隨機,**正面撞上本檔的 Determinism 規則** |
-| C | 斷言對象綁在 `.tscn` 的 `@onready` 參照 | 注入需 `set_script()` 換腳本,而「`@onready` 已賦值狀態換腳本後是否保留」**本專案從未驗證**,依「先探針再相信」不在未驗證行為上蓋證明 |
+| C | 斷言對象需要在節點**已進樹、`_ready()` 已跑過一次之後**才注入突變子類別(`set_script()` 換腳本) | 2026-09-17 實測推翻舊理由(見下方):節點樹結構與 `get_node()` 路徑不受影響,但**原腳本 `_ready()` 建立的實例變數狀態(例如 Dictionary)不會在新腳本下重建**,後續存取直接 `SCRIPT ERROR`。「進樹後換腳本」目前沒有已驗證安全的補救寫法,此情境仍不蓋證明 |
 | D | 唯一有意義的注入點在受限範圍外 | 例:斷言的是 `X.new(...)` 呼叫點本身,注入等於改該處正式程式碼 |
+
+#### 🔴 2026-09-17 更正:C 類原本的理由是錯的,已用探針測出正確理由
+
+**舊文字**(已取代,不再適用)寫的是:「注入需 `set_script()` 換腳本,而『`@onready`
+已賦值狀態換腳本後是否保留』本專案從未驗證」——把疑慮掛在 `@onready` 參照本身能不能
+撐過換腳本。**這個描述被推翻了**,不是疑慮消失,是疑慮的**對象**錯了。
+
+**(A) 級量測**:`prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd`,
+本機 Godot 4.7.1 headless 執行,逐字輸出在同目錄 `run_output_set_script_timing.txt`。
+執行指令:
+
+```bash
+"<Godot 4.7.1 執行檔路徑>" --headless --path . -s prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd
+```
+
+驗證該路徑真的存在且做了聲稱的事(不只信檔名):
+
+```bash
+$ grep -n "set_script" prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd
+65:	instance.set_script(_ProbeMutant)
+102:	instance.set_script(_ProbeMutant)
+$ grep -n "SCENE_PATH" prototypes/u007-focus-navigation-probe-2026-09-17/probe_set_script_timing.gd
+34:const SCENE_PATH: String = "res://src/ui/menu/BattleMenu.tscn"
+```
+
+（`res://src/ui/menu/BattleMenu.tscn` 是正式場景本體,不是複本 —— 探針對兩種時機各
+`set_script(_ProbeMutant)` 一次,`_ProbeMutant extends BattleMenu`。)
+
+**測到兩種情境,結論方向相反**:
+
+- **Case A(進樹前換腳本 `set_script()` → `add_child()`,本專案敏感度證明測試實際
+  採用的技巧)—— 安全**。逐字輸出:
+  ```
+  A: @onready node resolves via get_node() = true (ReturnToBattleRow:<Button#...>)
+  A: return_row.has_focus() (default-focus _ready() logic ran) = true
+  A: mutant override _on_row_focus_entered() was called = true
+  A: marker text still applied by super call = '▸ 結束回合'
+  ```
+  `@onready` 解析、`_ready()` 邏輯、覆寫方法的呼叫鏈、`super` 呼叫全部正常。
+
+  🔴 **2026-09-17 協調者覆核更正(原句全稱宣稱過寬,已當場量測推翻)**:原文寫
+  「本專案現行全部敏感度證明測試只用這個時機」——**不成立**。逐字覆核輸出:
+
+  ```bash
+  $ grep -rn "^func test_sensitivity" tests/ | wc -l
+  38
+  $ grep -rc "^func test_sensitivity" tests/ | grep -v ":0"
+  tests/integration/gameplay/affinity_pool/affinity_pool_wiring_test.gd:6
+  tests/integration/ui/input/battle_new_actions_registration_test.gd:2
+  tests/unit/cursor/cursor_layer_transform_test.gd:2
+  tests/unit/gameplay/affinity_pool/affinity_data_pool_weighted_reads_test.gd:20
+  tests/unit/ui/hand_bar_test.gd:4
+  tests/unit/ui/menu/battle_menu_layout_test.gd:4
+  $ grep -n "set_script" tests/unit/ui/hand_bar_test.gd
+  85:# HandBar.tscn 呼叫 set_script() 換腳本 —— 後者依        ← 這是【註解】,不是呼叫
+  $ grep -n "set_script(_Mutant" tests/unit/ui/menu/battle_menu_layout_test.gd
+  325:	mutant.set_script(_MutantStealsDefaultFocus)
+  376:	mutant.set_script(_MutantWrapsToLastRow)
+  432:	mutant.set_script(_MutantWrongNeighborPointsAtDivider)
+  496:	mutant.set_script(_MutantNoFocusMarker)
+  ```
+
+  **正確敘述**:全專案 38 條敏感度證明分佈在 6 支檔案,**只有 1 支檔案、4 條**真的
+  呼叫 `set_script()`(`battle_menu_layout_test.gd`),且**全部**在 `add_child()`
+  之前(Case A)——**這 4 條**的時機安全性疑慮已被本探針解除。`hand_bar_test.gd`
+  裡對 `set_script` 的唯一命中是**註解**,不是呼叫,該檔實際注入手法是裸子類別
+  `.new()`,與 Case A/B 這組疑慮無關。**其餘 34 條**(另外 5 支檔案)全部使用非
+  `set_script()` 的注入技巧,從一開始就不落在本項風險內,**不是因為本次量測
+  「解除」了它們** —— 讀成「解除全部 38 條」是高估涵蓋範圍,方向與本專案一直在防的
+  那一類問題相同。
+- **Case B(進樹後才換腳本,即舊文字含糊指向的情境)—— 不安全,且已測出具體壞法**。
+  逐字輸出:
+  ```
+  B: get_node() still resolves the same path after swap = true (ReturnToBattleRow:<Button#...>)
+  B: is it the SAME Button instance as before the swap = true
+  SCRIPT ERROR: Invalid access to property or key 'ReturnToBattleRow:<Button#...>' on a base object of type 'Dictionary'.
+     at: _ProbeMutant._apply_unfocused_text (res://src/ui/menu/battle_menu.gd:219)
+  ```
+  節點樹**沒有壞**(`get_node()` 找到同一顆節點實例),壞的是**舊腳本 `_ready()`
+  填進實例變數的 Dictionary 狀態,新腳本底下不會重建**,新腳本的方法一存取該
+  Dictionary 就是執行期錯誤,不是靜默失敗。
+
+**結論:C 類的謹慎依然成立,但理由要換成 Case B(進樹後換腳本 + `_ready()` 建立的
+實例狀態),不是 `@onready` 參照本身。** 上表的 C 類形狀已改寫為只描述 Case B
+這個仍然無補救寫法的情境;凡實際使用 Case A 技巧的敏感度證明(現行專案內僅
+`battle_menu_layout_test.gd` 的 4 條,見上方覆核),不落在 C 類的「做不到」清單裡。
+
+**未查證範圍(誠實登記)**:本次更正沒有重新清點「47 條裡 24 條落在此」這個總數,
+也沒有逐條核對現行測試檔裡標記「屬 C 類」的個別案例是否因此改分類——
+如果需要更新那個總數,需要另一次逐條掃描,本次未做。
 
 **第六類(實務上最常見)**:斷言對象是直接讀取真實全域狀態再做欄位比對,
 中間沒有任何**自有的判斷邏輯**。硬做只能證明 `is_equal()` 分得出兩個不等的值,

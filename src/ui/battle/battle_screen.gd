@@ -236,6 +236,17 @@ const _DIRECTION_VECTORS: Dictionary = {
 	&"ui_right": Vector2i.RIGHT,
 }
 
+## story-018-enemy-phase-stepped-playback.md: how long to pause between two
+## consecutive [method BattleController.step_enemy_phase] calls in [method
+## _end_faction_phase_pressed] below — a PRESENTATION-layer timing value, not
+## gameplay data, which is why it lives here and not in
+## [code]battle_controller.gd[/code] (that story's Implementation Note #2
+## draws this line explicitly). [code]0.3[/code] sits inside the story's
+## suggested 0.25-0.4s band; proposed by this implementer, not separately
+## playtested — a designer wanting a different pace only has to change this
+## one constant, nothing in [BattleController].
+const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
+
 ## 2026-09-04 (Story 001): [code]_world_viewport_container[/code] used to be
 ## kept as a member here for [code].global_position[/code] in the mouse
 ## coordinate math — removed because that math now goes entirely through
@@ -363,6 +374,40 @@ var _last_mouse_window_pos: Vector2 = Vector2(-1000.0, -1000.0)
 ## polling rather than [method Input.is_action_just_pressed] so the edge
 ## logic is self-contained and easy to verify by reading this file alone.
 var _direction_was_pressed: Dictionary = {}
+
+## story-018-enemy-phase-stepped-playback.md AC-E3 — QA/test-only diagnostic
+## surface, mirroring this project's existing `diagnostic_*` convention (e.g.
+## [method MouseReclaimPolicy.diagnostic_seed_position]); no gameplay code
+## reads this. Counts [method _process] calls observed while [method
+## BattleController.phase] is [constant BattleController.Phase.ENEMY_ACTING],
+## reset to 0 at the start of every [method _end_faction_phase_pressed] call
+## that actually proceeds past its phase guard. A real, engine-driven proxy
+## for "did the enemy phase actually span more than one frame", since no
+## other externally-observable signal answers that question directly.
+var _diagnostic_enemy_acting_process_frame_count: int = 0
+
+## See [member _diagnostic_enemy_acting_process_frame_count].
+func diagnostic_enemy_acting_process_frame_count() -> int:
+	return _diagnostic_enemy_acting_process_frame_count
+
+## story-018-enemy-phase-stepped-playback.md AC-E4 — QA/test-only diagnostic
+## surface, same convention as [member _diagnostic_enemy_acting_process_frame_count].
+## Counts calls to [method BattleController.step_enemy_phase] made by [method
+## _end_faction_phase_pressed], reset alongside the frame counter above.
+## [b]Why this exists rather than reading [method
+## TurnOrder.units_with_flags_remaining]'s size as a proxy[/b]: that count
+## conflates "visited" with "done" — a unit that spends only one of its two
+## flags in a single [method BattleController._process_enemy_unit] call stays
+## in that list (it is not yet done), so the list's size does not shrink by
+## one per call the way a naive reading would assume. This counter measures
+## the thing AC-E4's re-entrancy tests actually need — how many times this
+## screen invoked [method BattleController.step_enemy_phase] — without that
+## ambiguity.
+var _diagnostic_step_enemy_phase_call_count: int = 0
+
+## See [member _diagnostic_step_enemy_phase_call_count].
+func diagnostic_step_enemy_phase_call_count() -> int:
+	return _diagnostic_step_enemy_phase_call_count
 
 
 func _ready() -> void:
@@ -525,6 +570,8 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _load_failed:
 		return
+	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
+		_diagnostic_enemy_acting_process_frame_count += 1
 	_device.resolve_frame()
 	_update_cursor_visual()
 
@@ -1000,17 +1047,79 @@ func _confirm_at_cursor() -> void:
 # button — Xbox B / Sony Circle / Switch A). Added 2026-08-27 alongside
 # battle_confirm: the built-in ui_cancel this used to be bound to has no
 # default gamepad binding, which would otherwise leave a gamepad-only player
-# unable to ever hand the turn to the enemy. Synchronous by design: both
-# BattleController calls below return only after their work is fully done,
-# so there is no async/deferred window for FINISHED or a mid-phase state to
-# leak into an _input() call — matches the "no call_deferred() in the
-# settlement path" forbidden pattern.
+# unable to ever hand the turn to the enemy.
+#
+# story-018-enemy-phase-stepped-playback.md: REWRITTEN from a single
+# synchronous run_enemy_phase() call into a cross-frame loop over
+# BattleController.step_enemy_phase() — see that method's own doc comment for
+# why it, not run_enemy_phase(), is the entry point a presentation layer must
+# drive (run_enemy_phase()'s signature and behavior are unchanged; the two
+# are parallel drivers over the same shared per-unit rule, never calling each
+# other). battle_controller.gd itself stays fully synchronous end to end (no
+# await anywhere in step_enemy_phase()'s own call chain) — every await below
+# is this function's own, never anything battle_controller.gd does.
+#
+# 🔴 PAUSE PLACEMENT (binds even though the flag itself is not implemented
+# yet): ADR-0001 mechanism 二's deadlock detection requires
+# authoritative_write_in_progress to never remain true across two consecutive
+# _process frames. That flag has NO field anywhere in src/ today (see
+# step_enemy_phase()'s own doc comment and this story's AC-E1 section) — but
+# the pause point below must already sit on the correct side of that future
+# check, not be retrofitted later. The await is placed STRICTLY BETWEEN two
+# step_enemy_phase() calls, never inside one: each call commits and returns
+# fully synchronously, so at the moment this function suspends, no
+# authoritative write is or ever could be in progress. Whoever eventually
+# builds the real flag does not need to re-derive this — the placement is
+# already on the correct side of it.
+#
+# 🔴 Re-entrancy (AC-E4): the SAME phase-guard below
+# (phase() != PLAYER_INPUT: return) is what keeps this function from
+# double-driving the phase if the player presses battle_end_phase again while
+# a stepped playback is already running. BattleController.phase() stays
+# ENEMY_ACTING for the entire loop below (it only becomes PLAYER_INPUT on the
+# call that finalizes the phase), so a second press arriving mid-playback
+# sees ENEMY_ACTING, not PLAYER_INPUT, and returns immediately. This is
+# proven by a real test, not assumed by inspection — see
+# tests/integration/ui/battle/battle_screen_enemy_phase_playback_test.gd
+# (placed alongside this file's other integration tests under
+# tests/integration/ui/battle/, mirroring src/ui/battle/ — this story's own
+# text suggested tests/integration/gameplay/battle/, which does not match
+# where this screen's existing integration tests already live) — because
+# this function is now a coroutine: a second call starts running "at the
+# same time" as the first from the caller's point of view, which is a
+# meaningfully different situation from the old synchronous version this
+# exact guard used to protect.
+#
+# 🔴 Host lifecycle (ADR-0001 line 262, cross-frame coroutine obligation):
+# this coroutine's host is this BattleScreen node itself, whose lifetime
+# spans the entire battle (it is this screen's own script, not a transient
+# child panel) — not a temporary node that could be queue_free()'d out from
+# under a suspended await. Every await below is followed by an
+# is_instance_valid(self) guard before touching any member state, so a screen
+# teardown mid-playback (e.g. returning to a menu) aborts the loop instead of
+# resuming into a freed instance.
 func _end_faction_phase_pressed() -> void:
 	if _controller.phase() != BattleController.Phase.PLAYER_INPUT:
 		return
+	_diagnostic_enemy_acting_process_frame_count = 0
+	_diagnostic_step_enemy_phase_call_count = 0
 	_controller.end_faction_phase()
-	_controller.run_enemy_phase()
-	_refresh_view()
+
+	while _controller.phase() == BattleController.Phase.ENEMY_ACTING:
+		_controller.step_enemy_phase()
+		_diagnostic_step_enemy_phase_call_count += 1
+		# story-018: rebuild after EVERY step, not once at the end — otherwise
+		# the cross-frame pause below has nothing new to show and the whole
+		# point of stepping is lost. _refresh_view()'s own doc comment already
+		# discloses the ~50-node rebuild cost per call; paying it once per
+		# enemy step (not once per _process frame) is the same known,
+		# deliberate trade-off this story's Implementation Note #4 calls for.
+		_refresh_view()
+		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
+			return
+		await get_tree().create_timer(ENEMY_STEP_PAUSE_SECONDS).timeout
+		if not is_instance_valid(self):
+			return
 
 
 # Repositions/toggles the self-drawn cursor sprite based on current device

@@ -48,8 +48,14 @@ const MAX_SLOTS: int = 5
 class _SpyHandBarDropsLockVisuals extends HandBar:
 	func diagnostic_dim_factor() -> float:
 		return 1.0
-	func render(slot_kinds: Array[SlotKind], max_slots: int, availability: Availability) -> void:
-		super.render(slot_kinds, max_slots, availability)
+	func render(
+		slot_kinds: Array[SlotKind],
+		max_slots: int,
+		availability: Availability,
+		expanded: bool = false,
+		card_faces: Array[Dictionary] = []
+	) -> void:
+		super.render(slot_kinds, max_slots, availability, expanded, card_faces)
 		_unavailable_label.visible = false
 
 
@@ -58,9 +64,19 @@ class _SpyHandBarDropsLockVisuals extends HandBar:
 # test_normal_availability_shows_no_lock_glyph_or_caption_and_full_alpha
 # 要擋下的錯誤形狀,與「LOCKED 被砍成 NORMAL 的樣子」是相反的兩個錯誤,
 # 需要各自的敏感度證明,其中一個測試通過不代表另一個方向也被驗證過。
+#
+# 🔴 U-012 補簽章:HandBar.render() 新增 expanded/card_faces 兩個帶預設值的
+# 參數後,GDScript 要求覆寫方法的簽章(含預設值)必須與父類逐字相同,否則
+# 場景/測試在載入期就是 Parse Error(2026-09-17 U-012 落地時實測踩到)。
 class _SpyHandBarAlwaysAppliesLockedVisuals extends HandBar:
-	func render(slot_kinds: Array[SlotKind], max_slots: int, _availability: Availability) -> void:
-		super.render(slot_kinds, max_slots, Availability.LOCKED)
+	func render(
+		slot_kinds: Array[SlotKind],
+		max_slots: int,
+		_availability: Availability,
+		expanded: bool = false,
+		card_faces: Array[Dictionary] = []
+	) -> void:
+		super.render(slot_kinds, max_slots, Availability.LOCKED, expanded, card_faces)
 
 
 # 模擬「空槽判斷被誤植為恆真」——即使手牌是空的,diagnostic_slot_is_filled()
@@ -73,8 +89,14 @@ class _SpyHandBarAlwaysReportsSlotsFilled extends HandBar:
 # 模擬「count label 與實際傳入的 slot_kinds 脫鉤」——render() 正常跑完後,把
 # 顯示文字覆寫成與傳入張數不符的字串。
 class _SpyHandBarDesyncsCountLabel extends HandBar:
-	func render(slot_kinds: Array[SlotKind], max_slots: int, availability: Availability) -> void:
-		super.render(slot_kinds, max_slots, availability)
+	func render(
+		slot_kinds: Array[SlotKind],
+		max_slots: int,
+		availability: Availability,
+		expanded: bool = false,
+		card_faces: Array[Dictionary] = []
+	) -> void:
+		super.render(slot_kinds, max_slots, availability, expanded, card_faces)
 		_count_label.text = HandBar.count_text(0, max_slots)
 
 

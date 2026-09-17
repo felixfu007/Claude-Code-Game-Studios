@@ -122,6 +122,20 @@ var _decide: Callable
 var _phase: Phase = Phase.PLAYER_INPUT
 var _selected_unit_id: int = -1
 
+## story-018-enemy-phase-stepped-playback.md: cursor into the CURRENT pass's
+## snapshot of [method TurnOrder.units_with_flags_remaining], used ONLY by
+## [method step_enemy_phase] — [method run_enemy_phase] neither reads nor
+## writes these two fields and is completely unaware of them. Empty/zero
+## means "no pass in progress"; reset to that state the instant a pass
+## finalizes the phase or the battle ends, so the next ENEMY_ACTING phase
+## always starts [method step_enemy_phase] from a clean slate — regardless
+## of whether the PREVIOUS phase was driven by this method or by [method
+## run_enemy_phase] (which never leaves anything here to see in the first
+## place, since it never touches these fields). See [method step_enemy_phase]
+## for the hard rule against interleaving the two drivers mid-phase.
+var _enemy_step_snapshot: Array[int] = []
+var _enemy_step_index: int = 0
+
 
 ## Builds a controller over an already-constructed [param state] and
 ## [param order] (both assumed to describe the same roster, and [param order]
@@ -599,24 +613,208 @@ func run_enemy_phase() -> Array[String]:
 			if _phase == Phase.FINISHED:
 				return log
 
+	_finalize_enemy_phase()
+	return log
+
+
+# Ends the enemy phase and hands the round back to the player: rolls enemy
+# flags over, ticks modifiers / draws for the player's new turn, then flips
+# the phase. story-018-enemy-phase-stepped-playback.md: extracted out of
+# run_enemy_phase()'s own body (this exact sequence used to sit inline,
+# directly below its while loop) so that BOTH run_enemy_phase() (falling out
+# of its while loop once acting_ids comes back empty) and step_enemy_phase()
+# (a call whose _next_enemy_step_id() returns -1) share the one copy of the
+# ORDERING RULE below, instead of one carrying this reasoning and a second
+# copy silently not — see AC-E2 / Implementation Note ①③ for why that
+# distinction matters here specifically.
+#
+# story-002-modifier-lifecycle.md: this is the ENEMY -> PLAYER transition,
+# i.e. a player turn just started — tick before flipping the phase, so
+# _set_phase()'s phase_changed signal (which a screen layer uses to
+# refresh its view) never fires while a modifier that should already be
+# expired is still sitting in a unit's active list. See
+# BattleState.tick_all_modifiers()'s doc comment for why this is a single
+# shared call rather than a second, independent handler.
+#
+# story-006-battle-loop-wiring.md: this is also the per-turn card-draw
+# point — BattleState.begin_player_turn() wraps tick_all_modifiers() AND
+# (if a CardDeck is attached) CardDeck.draw_for_turn(), in that fixed
+# order, for exactly the reason its own doc comment gives: drawing before
+# ticking could let a forced-discard decision reach the player while a
+# modifier that should already be expired is still showing as active.
+func _finalize_enemy_phase() -> void:
 	_order.advance_faction()
-	# story-002-modifier-lifecycle.md: this is the ENEMY -> PLAYER transition,
-	# i.e. a player turn just started — tick before flipping the phase, so
-	# _set_phase()'s phase_changed signal (which a screen layer uses to
-	# refresh its view) never fires while a modifier that should already be
-	# expired is still sitting in a unit's active list. See
-	# BattleState.tick_all_modifiers()'s doc comment for why this is a single
-	# shared call rather than a second, independent handler.
-	#
-	# story-006-battle-loop-wiring.md: this is also the per-turn card-draw
-	# point — BattleState.begin_player_turn() wraps tick_all_modifiers() AND
-	# (if a CardDeck is attached) CardDeck.draw_for_turn(), in that fixed
-	# order, for exactly the reason its own doc comment gives: drawing before
-	# ticking could let a forced-discard decision reach the player while a
-	# modifier that should already be expired is still showing as active.
 	_state.begin_player_turn()
 	_set_phase(Phase.PLAYER_INPUT)
-	return log
+
+
+## story-018-enemy-phase-stepped-playback.md: presentation-layer entry point
+## that advances **exactly one** step of the enemy phase per call, instead of
+## draining the whole phase synchronously the way [method run_enemy_phase]
+## does. Both methods resolve one unit's action through the exact same
+## private helper, [method _process_enemy_unit] — this method does not
+## reimplement any AI decision or turn-flag rule, it only reimplements the
+## OUTER iteration shape (which unit goes next), and even that shape reads
+## straight off [TurnOrder] via [method TurnOrder.units_with_flags_remaining]
+## and [method TurnOrder.is_done] — the exact two queries [method
+## run_enemy_phase]'s own loop already uses. The phase-finalize step (rolling
+## the round over and returning to PLAYER_INPUT) is likewise shared, via
+## [method _finalize_enemy_phase] — see that method's doc comment for the
+## ordering rule it carries. Per AC-E2 (this story), [method run_enemy_phase]
+## keeps its own SIGNATURE AND OBSERVABLE BEHAVIOR unchanged (proven by the 6
+## existing test files that call it staying green) even though its BODY was
+## edited once, to extract [method _finalize_enemy_phase] out of it — an
+## extraction is not the same claim as "not one character changed", and this
+## story's own work order conflated the two; the manager ruling that
+## resolved the conflation is recorded in this story's Test Evidence section.
+##
+## No-op (returns [code]{"log": [], "has_next": false}[/code]) unless
+## [method phase] is already ENEMY_ACTING — same phase-guard [method
+## run_enemy_phase] itself applies.
+##
+## Returns a [Dictionary] with exactly two keys:
+## [br]
+## - [code]"log"[/code] ([Array][String]): the log lines this ONE call
+##   produced — either exactly what a single [method _process_enemy_unit]
+##   call appended, or empty if this call only finalized the phase (see
+##   below) or found nothing left to do.
+## [br]
+## - [code]"has_next"[/code] ([bool]): [code]true[/code] iff a following call
+##   to this method would find another unit to advance. Callers drive the
+##   whole phase with a loop shaped like:
+##   [codeblock]
+##   while controller.phase() == BattleController.Phase.ENEMY_ACTING:
+##       var step := controller.step_enemy_phase()
+##       # ... use step.log, await a pause, refresh the view, etc.
+##   [/codeblock]
+##   [method phase] itself (not a field on this Dictionary) is how a caller
+##   learns whether a call finalized the enemy phase (phase becomes
+##   PLAYER_INPUT) or ended the battle (phase becomes FINISHED) — this
+##   mirrors how [method run_enemy_phase]'s own callers already learn the
+##   outcome, so callers of the two methods check the same thing.
+##
+## 🔴 MUST NOT be interleaved with [method run_enemy_phase] on the SAME
+## ENEMY_ACTING phase — call exactly one of the two for a phase's entire
+## duration. [method run_enemy_phase] neither reads nor clears this method's
+## cursor, so switching drivers mid-phase would silently strand a stale
+## cursor for the NEXT phase to trip over. Production code only ever calls
+## this method (see battle_screen.gd); [method run_enemy_phase] remains the
+## whole-phase entry point for tests and any future non-presentation driver.
+##
+## 🔴 Fully synchronous — contains no [code]await[/code], no
+## [code]call_deferred()[/code], and no [code]CONNECT_DEFERRED[/code] signal
+## connection anywhere in its call chain (it only ever calls
+## [method _process_enemy_unit], [method _finalize_enemy_phase],
+## [method TurnOrder.units_with_flags_remaining], [method TurnOrder.is_done],
+## [method TurnOrder.advance_faction], and [method BattleState.begin_player_turn]
+## — all synchronous). This is what AC-E1's requirement ("no authoritative
+## write is left in-progress across the call boundary") reduces to in this
+## codebase today: ADR-0001's own [code]authoritative_write_in_progress[/code]
+## flag has NO field anywhere in [code]src/[/code] yet (verified:
+## [CardPlaySession]'s own doc comment records this same finding, dated
+## 2026-09-10, and this story re-verified it unchanged on 2026-09-17) — it is
+## a documented gap owned by the not-yet-built tactical-combat-system write
+## guard, not something this story builds.
+##
+## 🔴 THIS IS A WEAKER GUARANTEE THAN THE ORIGINAL AC WORDING, NOT AN
+## EQUIVALENT ONE — say so plainly rather than treating them as the same
+## claim. The synchronous-call-chain proof above covers exactly one thing:
+## TODAY, nothing in this call chain yields, so a caller pausing (via
+## [code]await[/code] in its OWN code, never in this method) between two
+## calls to this method is provably pausing between two fully-committed
+## writes, never mid-write. It does NOT cover tomorrow: it cannot detect a
+## FUTURE change that introduces a yield point into this call chain the way a
+## real deadlock-detecting flag would (ADR-0001 Mechanism Two's own
+## "not true across two consecutive _process frames" check catches exactly
+## that class of regression, structurally, for free — a source-text scan
+## does not). 🔴 OBLIGATION FOR WHOEVER BUILDS THAT FLAG: when
+## [code]authoritative_write_in_progress[/code] gains a real implementation,
+## come back and bring [method step_enemy_phase]'s cross-call boundary under
+## its deadlock-detection coverage — this method's synchronous-today proof
+## must not be mistaken for "already covered" and quietly left outside it.
+func step_enemy_phase() -> Dictionary:
+	var log: Array[String] = []
+	if _phase != Phase.ENEMY_ACTING:
+		return {"log": log, "has_next": false}
+
+	var id: int = _next_enemy_step_id()
+	if id == -1:
+		_finalize_enemy_phase()
+		return {"log": log, "has_next": false}
+
+	_process_enemy_unit(id, log)
+
+	if _phase == Phase.FINISHED:
+		_enemy_step_snapshot = []
+		_enemy_step_index = 0
+		return {"log": log, "has_next": false}
+
+	var has_next: bool = (
+		_enemy_step_index < _enemy_step_snapshot.size()
+		or not _order.units_with_flags_remaining().is_empty()
+	)
+	return {"log": log, "has_next": has_next}
+
+
+# Shared by step_enemy_phase() only (run_enemy_phase() has its own inline
+# while/for and does not call this). Returns the next enemy unit id to
+# advance, or -1 if the current pass's snapshot AND a freshly taken one are
+# both exhausted — i.e. the phase itself is over. Mirrors run_enemy_phase()'s
+# "while true: snapshot; for id in snapshot: skip if done" shape, just spread
+# across separate calls instead of one straight run: a snapshot is taken
+# lazily the first time it is needed and re-taken whenever the current one
+# runs out, and exactly one candidate index is examined per outer-loop
+# iteration (not a nested inner loop) — this flatter, single-loop-with-break
+# shape is deliberate, not stylistic: GDScript's "not all code paths return a
+# value" check does not accept the nested while-inside-while-true form this
+# method originally used (confirmed on-engine, 2026-09-17 — see this story's
+# Test Evidence section), so this shape mirrors run_enemy_phase()'s own
+# proven-compiling pattern (a while loop that only ever exits via break,
+# followed by a trailing, unconditional statement) instead.
+func _next_enemy_step_id() -> int:
+	var result: int = -1
+	while true:
+		if _enemy_step_index >= _enemy_step_snapshot.size():
+			_enemy_step_snapshot = _order.units_with_flags_remaining()
+			_enemy_step_index = 0
+			if _enemy_step_snapshot.is_empty():
+				break
+		var candidate: int = _enemy_step_snapshot[_enemy_step_index]
+		_enemy_step_index += 1
+		# Defense in depth, matching _apply_attack()'s own "re-check
+		# immediately before settling" discipline — TurnOrder's own
+		# units_with_flags_remaining() already excludes done ids today (see
+		# its doc comment). This mirrors run_enemy_phase()'s identical
+		# `if _order.is_done(id): continue` rather than assuming that will
+		# always stay true.
+		#
+		# 🔴 CORRECTED 2026-09-17 by the independent reviewer's probe. This
+		# comment previously claimed the branch "is not currently reachable".
+		# That is FALSE and the correction matters, because the claim was the
+		# stated reason for leaving it untested.
+		#
+		# Measured: prototypes/step-enemy-phase-removal-parity-probe-2026-09-17/
+		# (probe_removal_parity.gd, Godot 4.7.1 headless, exit 0) drives this
+		# exact branch — any caller of TurnOrder.remove_unit() can invalidate
+		# an id that a live _enemy_step_snapshot has not walked to yet, and
+		# the probe's call #3 takes this branch, skips the removed id and
+		# returns -1 correctly.
+		#
+		# What IS true, and is the narrower fact the old wording overshot:
+		# COMBAT SETTLEMENT cannot reach it today. BattleState.can_attack()
+		# rejects same-faction targets unconditionally, and that check gates
+		# the project's only production call site of remove_unit() — so no
+		# legal enemy action can remove another enemy mid-phase. The probe
+		# therefore had to call remove_unit() directly, bypassing settlement.
+		#
+		# Behavior is correct either way (both paths skip the dead id
+		# identically — that parity is what the probe measured). Still not
+		# covered by an automated test; the gap is real, the stated reason
+		# for it was not.
+		if not _order.is_done(candidate):
+			result = candidate
+			break
+	return result
 
 
 # Returns the Unit.Faction matching TurnOrder's currently active Side.
