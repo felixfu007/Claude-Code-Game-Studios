@@ -1,0 +1,66 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+CENTERING ANSWER -- WorldLayout.compute_scale((1280, 720)) = 2
+CENTERING ANSWER -- WorldLayout.compute_rect((1280, 720)) = [P: (160, 90), S: (960, 540)]
+CENTERING ANSWER -- this means the world layer at this window size is (960, 540) centered with margins (160, 90) on each side (left==right and top==bottom being the definition of centered, per WorldLayout.compute_rect's own doc comment)
+terrain rows loaded: 6 rows, first row length = 13
+COORDINATE DISCLOSURE: LEGAL_CELL=(3, 0) ILLEGAL_CELL=(5, 0) NEUTRAL_CELL=(7, 0) (all row 0, all "." plain ground)
+Category A Check 1 -- dimensions: actual=(1280, 720) target=(1280, 720)
+Category A Check 2 -- blind 12-point distinct colors = 3 (rule requires >= 3)
+Category A Check 3 -- dominant color share = 0.6500 (rule requires <= 0.80)
+Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 229440
+Category C Check 1 -- crop rect from BoardCoords.grid_to_local()/CELL_SIZE via WorldLayout.compute_scale()/compute_rect() = [P: (400, 152), S: (352, 96)] clamped=[P: (400, 152), S: (352, 96)]
+Category C Check 2 -- left-border clear-zone max brightness: legal=0.94901961088181 (zone [P: (422, 190), S: (4, 30)]) illegal=0.94901961088181 (zone [P: (550, 190), S: (4, 30)]) neutral=0.50980392595132 (zone [P: (678, 190), S: (4, 30)]) -- outline color is (1.0, 1.0, 1.0, 0.9), threshold=0.75
+Category C Check 3(b) -- center-pixel brightness (X mark crosses center for illegal only): legal=0.50980392595132 at (448, 200); illegal=0.99477124214172 at (576, 200)
+Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 7488
+=== attempt 1/5 -- crop_ok=false context_ok=false ===
+  failures this attempt: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+Category A Check 1 -- dimensions: actual=(1280, 720) target=(1280, 720)
+Category A Check 2 -- blind 12-point distinct colors = 3 (rule requires >= 3)
+Category A Check 3 -- dominant color share = 0.6500 (rule requires <= 0.80)
+Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 229440
+Category C Check 1 -- crop rect from BoardCoords.grid_to_local()/CELL_SIZE via WorldLayout.compute_scale()/compute_rect() = [P: (400, 152), S: (352, 96)] clamped=[P: (400, 152), S: (352, 96)]
+Category C Check 2 -- left-border clear-zone max brightness: legal=0.94901961088181 (zone [P: (422, 190), S: (4, 30)]) illegal=0.94901961088181 (zone [P: (550, 190), S: (4, 30)]) neutral=0.50980392595132 (zone [P: (678, 190), S: (4, 30)]) -- outline color is (1.0, 1.0, 1.0, 0.9), threshold=0.75
+Category C Check 3(b) -- center-pixel brightness (X mark crosses center for illegal only): legal=0.50980392595132 at (448, 200); illegal=0.99477124214172 at (576, 200)
+Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 7488
+=== attempt 2/5 -- crop_ok=false context_ok=false ===
+  failures this attempt: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+Category A Check 1 -- dimensions: actual=(1280, 720) target=(1280, 720)
+Category A Check 2 -- blind 12-point distinct colors = 3 (rule requires >= 3)
+Category A Check 3 -- dominant color share = 0.6500 (rule requires <= 0.80)
+Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 229440
+Category C Check 1 -- crop rect from BoardCoords.grid_to_local()/CELL_SIZE via WorldLayout.compute_scale()/compute_rect() = [P: (400, 152), S: (352, 96)] clamped=[P: (400, 152), S: (352, 96)]
+Category C Check 2 -- left-border clear-zone max brightness: legal=0.94901961088181 (zone [P: (422, 190), S: (4, 30)]) illegal=0.94901961088181 (zone [P: (550, 190), S: (4, 30)]) neutral=0.50980392595132 (zone [P: (678, 190), S: (4, 30)]) -- outline color is (1.0, 1.0, 1.0, 0.9), threshold=0.75
+Category C Check 3(b) -- center-pixel brightness (X mark crosses center for illegal only): legal=0.50980392595132 at (448, 200); illegal=0.99477124214172 at (576, 200)
+Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 7488
+=== attempt 3/5 -- crop_ok=false context_ok=false ===
+  failures this attempt: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+Category A Check 1 -- dimensions: actual=(1280, 720) target=(1280, 720)
+Category A Check 2 -- blind 12-point distinct colors = 3 (rule requires >= 3)
+Category A Check 3 -- dominant color share = 0.6500 (rule requires <= 0.80)
+Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 229440
+Category C Check 1 -- crop rect from BoardCoords.grid_to_local()/CELL_SIZE via WorldLayout.compute_scale()/compute_rect() = [P: (400, 152), S: (352, 96)] clamped=[P: (400, 152), S: (352, 96)]
+Category C Check 2 -- left-border clear-zone max brightness: legal=0.94901961088181 (zone [P: (422, 190), S: (4, 30)]) illegal=0.94901961088181 (zone [P: (550, 190), S: (4, 30)]) neutral=0.50980392595132 (zone [P: (678, 190), S: (4, 30)]) -- outline color is (1.0, 1.0, 1.0, 0.9), threshold=0.75
+Category C Check 3(b) -- center-pixel brightness (X mark crosses center for illegal only): legal=0.50980392595132 at (448, 200); illegal=0.99477124214172 at (576, 200)
+Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 7488
+=== attempt 4/5 -- crop_ok=false context_ok=false ===
+  failures this attempt: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+Category A Check 1 -- dimensions: actual=(1280, 720) target=(1280, 720)
+Category A Check 2 -- blind 12-point distinct colors = 3 (rule requires >= 3)
+Category A Check 3 -- dominant color share = 0.6500 (rule requires <= 0.80)
+Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 229440
+Category C Check 1 -- crop rect from BoardCoords.grid_to_local()/CELL_SIZE via WorldLayout.compute_scale()/compute_rect() = [P: (400, 152), S: (352, 96)] clamped=[P: (400, 152), S: (352, 96)]
+Category C Check 2 -- left-border clear-zone max brightness: legal=0.94901961088181 (zone [P: (422, 190), S: (4, 30)]) illegal=0.94901961088181 (zone [P: (550, 190), S: (4, 30)]) neutral=0.50980392595132 (zone [P: (678, 190), S: (4, 30)]) -- outline color is (1.0, 1.0, 1.0, 0.9), threshold=0.75
+Category C Check 3(b) -- center-pixel brightness (X mark crosses center for illegal only): legal=0.50980392595132 at (448, 200); illegal=0.99477124214172 at (576, 200)
+Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = 194 / 7488
+=== attempt 5/5 -- crop_ok=false context_ok=false ===
+  failures this attempt: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+RETRY-LOOP FINDING: all 5 attempts produced byte-identical failures+diagnostics = true (deterministic static scene -- see class doc comment)
+VALIDATE-BEFORE-WRITE (Category C crop, production/qa/evidence/): exhausted 5 attempts, checks never passed. Wrote nothing; deleted any stale file.
+VALIDATE-BEFORE-WRITE (Category A context, production/qa/evidence/): exhausted 5 attempts, checks never passed. Wrote nothing; deleted any stale file.
+save_png(res://prototypes/u013-highlight-evidence-2026-09-22/diagnostic-crop-2026-09-22-CHECK4-FAILED.png) err=0 (0 == OK)
+save_png(res://prototypes/u013-highlight-evidence-2026-09-22/diagnostic-context-full-window-2026-09-22-CHECK4-FAILED.png) err=0 (0 == OK)
+DIAGNOSTIC COPIES written to res://prototypes/u013-highlight-evidence-2026-09-22/ regardless of pass/fail (per coordinator instruction) -- NOT evidence, NOT in production/qa/evidence/.
+Final (last attempt's) failure list: ["Category A Check 4 FAILED: 194/229440 blocks violate integer-scale grid outside excluded HP text panels", "Category C Check 4 FAILED: 194/7488 blocks violate integer-scale grid outside excluded HP text panels"]
+Final (last attempt's) diagnostics: { "context_grid_violations": 194, "context_grid_total_blocks": 229440, "crop_grid_violations": 194, "crop_grid_total_blocks": 7488 }
