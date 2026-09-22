@@ -352,43 +352,101 @@ func test_exempt_shell_lines_would_otherwise_be_flagged_by_the_matcher_alone() -
 		).is_true()
 
 
-## Documents, as an EXECUTABLE test, that this project's actual game code
-## does not register anything under ANY [enum CursorTypes.SurfaceType] tag
-## today — via EITHER registration path — so "a player sees the highlight
-## move when pressing arrow keys" cannot happen yet, regardless of how
-## correct this story's Option E mechanism is (see every other test in this
-## file, which DOES register test doubles/real-[Board] fixtures, deliberately,
-## to prove the mechanism itself works). This test is about [code]res://src/[/code]
-## only.
-##
-## 🔴 [b]This assertion WILL go red the moment U-013 (or any later story)
-## registers [constant CursorTypes.SurfaceType.BOARD_TILE] for real[/b] —
-## whether that call is written as [code]CursorStateHost.register_surface(...)[/code]
-## or directly against a [CursorSurfaceRegistry] instance, and regardless of
-## which file it is written in (only the two named shell-body lines inside
-## [code]cursor_state_host.gd[/code] itself are exempt). [b]That is the
-## correct, intended outcome[/b]: turning red means the gap this test was
-## registered to track has closed. The correct response is to update this
-## story's report and narrow or retire this test — never to widen the
-## exemption to make it pass again.
-func test_gap_no_surface_is_registered_anywhere_in_src_yet() -> void:
-	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
+## 🔴 [b]RETIRED 2026-09-22 (U-013 下半, CursorStateHost 整合)[/b] — this used
+## to be [code]test_gap_no_surface_is_registered_anywhere_in_src_yet[/code],
+## asserting NO [enum CursorTypes.SurfaceType] tag is registered anywhere in
+## [code]res://src[/code]. That is now permanently false, by design:
+## [code]src/ui/battle/battle_screen.gd[/code]'s [method
+## BattleScreen._confirm_selected_card] registers
+## [constant CursorTypes.SurfaceType.BOARD_TILE] for real the moment a card
+## enters target selection (S1 -> S2/S2p), and unregisters it on the way back
+## out — this IS the gap the old test was written to track, now closed. Per
+## that test's own doc comment ("update this story's report and narrow or
+## retire this test — never to widen the exemption to make it pass again"),
+## this is a RETIREMENT: the absolute claim is deleted outright rather than
+## exempted back to green, and [b]the exemption mechanism below
+## ([constant _EXEMPT_SHELL_FILE] / [constant _EXEMPT_SHELL_LINES]) is
+## untouched[/b] — it still exempts only [code]cursor_state_host.gd[/code]'s
+## own two forwarding-shell lines, nothing in [code]battle_screen.gd[/code].
+## [b]battle_screen.gd's real BOARD_TILE calls show up in
+## [method _files_matching_surface_registration_calls]'s output exactly like
+## any other real registration would — the narrower test immediately below
+## reads that same, unmodified output and only changes what it asserts about
+## it[/b] (filters BOARD_TILE lines out before checking "is the remainder
+## empty" — a strictly TIGHTER claim than the deleted one, not a looser one:
+## it still catches every registration path the deleted test caught, for the
+## three [enum CursorTypes.SurfaceType] tags this story does not touch).
+## Real production behavior for BOARD_TILE is covered by
+## [code]tests/integration/ui/card_target_selection_test.gd[/code]'s own
+## register/unregister-pairing tests, not by this file.
 
-	assert_array(matches).append_failure_message(
-		"EXPECTED EMPTY. This is the explicit gap this story registered: "
-		+ "nothing outside the two named shell-body lines in cursor_state_host.gd "
-		+ "calls CursorSurfaceRegistry.register()/unregister() (directly or via "
-		+ "the CursorStateHost.register_surface()/unregister_surface() shell) "
-		+ "for ANY CursorTypes.SurfaceType tag, so a player pressing arrow keys "
-		+ "cannot see the highlight move in any real running scene yet — "
-		+ "this story's Option E mechanism is correct and tested (see the "
-		+ "rest of this file), but nothing wires a real surface into it. "
-		+ "If this assertion now FAILS because a real caller registered a real "
-		+ "surface: GOOD — that is the intended outcome. Update this story's "
-		+ "report and narrow/retire this test; do not widen the exemption list "
-		+ "to make it pass again. Matches: %s"
-		% str(matches)
+
+## Narrower successor to the retired test above — the part of the original
+## claim that is STILL true today: no [enum CursorTypes.SurfaceType] tag
+## OTHER THAN [constant CursorTypes.SurfaceType.BOARD_TILE] is registered
+## anywhere in [code]res://src[/code] yet (RELATION_MINIMAP_NODE / CARD_SLOT /
+## DIALOGUE_CHOICE all still have zero registrations — a player cannot see a
+## highlight move on the relationship minimap, a card slot, or a dialogue
+## choice yet, regardless of how correct 機制六③'s Option E mechanism is).
+##
+## [b]Filters by the literal substring "BOARD_TILE" on the matched LINE
+## text[/b], not by parsing the [enum CursorTypes.SurfaceType] argument out of
+## each call — [method _files_matching_surface_registration_calls] returns raw
+## source lines, and every real call site in this codebase (as of this story)
+## spells the tag out literally as [code]CursorTypes.SurfaceType.BOARD_TILE[/code]
+## rather than through an indirection that would hide the substring. This is a
+## narrower, weaker parse than a real argument extractor would be — flagged,
+## not hidden — but it costs nothing extra today (zero call sites this story
+## adds spell the tag any other way) and avoids building an argument parser
+## for a scanner this file's own history already shows is easy to get subtly
+## wrong (see this file's own "SECOND PASS" correction note above).
+##
+## 🔴 [b]This assertion WILL go red the moment ANY of the other three
+## [enum CursorTypes.SurfaceType] tags is registered for real[/b] — same
+## discipline as the retired test: that is the correct, intended outcome
+## (the gap it tracks has closed for that tag), and the correct response is
+## the same — narrow/retire, never widen the exemption to force green.
+func test_gap_no_surface_other_than_board_tile_is_registered_anywhere_in_src_yet() -> void:
+	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
+	var non_board_tile_matches: Array[String] = []
+	for matched_line: String in matches:
+		if not matched_line.contains("BOARD_TILE"):
+			non_board_tile_matches.append(matched_line)
+
+	assert_array(non_board_tile_matches).append_failure_message(
+		"EXPECTED EMPTY. Only CursorTypes.SurfaceType.BOARD_TILE is registered "
+		+ "anywhere in src/ as of U-013 (battle_screen.gd's target-selection "
+		+ "wiring) — RELATION_MINIMAP_NODE/CARD_SLOT/DIALOGUE_CHOICE should "
+		+ "still have zero registrations. If this assertion now FAILS because "
+		+ "a real caller registered one of those: GOOD — narrow/retire this "
+		+ "test for that tag, do not widen the filter to hide it. "
+		+ "Non-BOARD_TILE matches: %s (all matches, for context: %s)"
+		% [str(non_board_tile_matches), str(matches)]
 	).is_empty()
+
+
+## Companion presence check for the narrower test above — without this, an
+## unrelated bug that made [method _files_matching_surface_registration_calls]
+## return NOTHING at all (e.g. a broken [DirAccess] path) would make the
+## narrower test above pass VACUOUSLY, indistinguishable from "correctly
+## found BOARD_TILE-only registrations". Asserts the scan actually found
+## battle_screen.gd's real calls — a positive-presence proof that the scanner
+## still runs and still sees this codebase's one real registration path.
+func test_board_tile_registration_in_battle_screen_is_found_by_the_scanner() -> void:
+	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
+	var board_tile_matches: Array[String] = []
+	for matched_line: String in matches:
+		if matched_line.contains("res://src/ui/battle/battle_screen.gd") and matched_line.contains("BOARD_TILE"):
+			board_tile_matches.append(matched_line)
+
+	assert_int(board_tile_matches.size()).append_failure_message(
+		"PRECONDITION for the narrower test above: expected the scanner to "
+		+ "find battle_screen.gd's real register_surface()/unregister_surface() "
+		+ "BOARD_TILE calls (at least 1 register + 1 unregister call site). "
+		+ "Found: %s -- if this is 0, the narrower test above is passing "
+		+ "VACUOUSLY (scanner found nothing at all), not because BOARD_TILE is "
+		+ "the only registered tag." % str(board_tile_matches)
+	).is_greater_equal(2)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

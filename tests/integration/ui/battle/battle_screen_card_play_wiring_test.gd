@@ -44,6 +44,45 @@ func _fresh_instance() -> BattleScreen:
 	return instance
 
 
+## Story U-013 (下半, 2026-09-22) — cross-test-pollution hygiene, found by
+## actually running the full suite: [method
+## test_confirm_selected_card_reads_index_maps_to_card_and_calls_select_card]
+## below drives a real card all the way to a successful
+## [method BattleController.select_card], which (as of U-013's下半) calls
+## [method CursorStateHost.register_surface] with
+## [constant CursorTypes.SurfaceType.BOARD_TILE] and [code]self[/code] (the
+## test's own [code]auto_free()[/code]'d [BattleScreen] instance) on the REAL,
+## shared Autoload singleton — and that test never cancels back out, so
+## nothing in it ever calls the matching
+## [method CursorStateHost.unregister_surface]. Without this cleanup, the
+## registry is left holding a DANGLING reference to a freed node for the rest
+## of this engine process, and the next unrelated test file anywhere in the
+## suite that exercises [CursorNavigationApplier]'s buffered-navigation path
+## against [constant CursorTypes.SurfaceType.BOARD_TILE] hits
+## [code]SCRIPT ERROR: Trying to return a previously freed instance.[/code] —
+## measured directly: [code]tests/integration/ui/menu/battle_menu_end_turn_wiring_test.gd[/code]'s
+## own [code]test_navigating_down_from_return_row_skips_disabled_end_phase_row[/code]
+## / [code]test_sensitivity_proof_navigation_skip_detection_catches_missing_neighbor_rewiring[/code]
+## failed with exactly that error when the full suite ran with U-013's
+## production change but WITHOUT this fix — confirmed by re-running the full
+## suite on the pre-U-013 commit (909/909, only the pre-existing
+## affinity_phi_provider_test.gd red) and then with only this file's
+## production-code dependency (battle_screen.gd) restored (896/896, 4 named
+## failures including the two above), narrowing the cause to this file's own
+## missing cleanup rather than anything in the production code path itself.
+## Unconditional and idempotent — [method
+## CursorSurfaceRegistry.unregister]'s own doc comment: a second/redundant
+## unregister call is a harmless [constant CursorSurfaceRegistry.RegisterResult.UNREGISTERED_NOT_FOUND],
+## same discipline [code]tests/integration/ui/menu/battle_menu_gating_test.gd[/code]'s
+## own [method after_test] already established for this exact Autoload.
+func after_test() -> void:
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	if host == null:
+		return
+	var registry: CursorSurfaceRegistry = host.get(&"_registry")
+	registry.unregister(CursorTypes.SurfaceType.BOARD_TILE)
+
+
 # ─── battle_open_hand —— S0 -> S1 ───────────────────────────────────────────
 
 

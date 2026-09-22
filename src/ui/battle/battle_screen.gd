@@ -422,23 +422,78 @@ var _hand_direction_was_pressed: Dictionary = {}
 ## [method BattleController.select_card] / [method BattleController.cancel]),
 ## never re-derived independently.
 ##
-## ⚠️ [b]Known, disclosed gap[/b]: cancelling out of target selection
-## (S2 -> S1) does not flip this back to [code]true[/code] — [method _input]'s
-## S2+ branch calls [method BattleController.cancel] unconditionally on
-## [code]battle_cancel[/code] without touching this flag, since (without the
-## missing accessor above) it cannot tell whether that cancel landed back on
-## SELECTING_CARD or merely one step shallower within S2+. Consequence:
-## backing all the way out of an in-progress target selection currently takes
-## one EXTRA [code]battle_cancel[/code] press before hand navigation resumes
-## — never a hard lock (each [method BattleController.cancel] call provably
-## reduces [CardPlaySession]'s real depth by one step, converging to
-## [constant CardPlaySession.Step.CLOSED]), just a briefly-unresponsive hand
-## cursor for that one extra step. Target selection (S2/S2p/S2q) itself is out
-## of scope for this batch (blocked on a separate ADR-0005 [CursorStateHost]
-## integration question — see this story's task report), so this gap is not
-## yet reachable by anything this story wires end to end; recorded here so it
-## is not silently inherited once S2 lands.
+## ✅ [b]2026-09-22 (U-013 下半, CursorStateHost 整合) — 原本這裡登記的缺口已
+## 關閉[/b]: cancelling out of target selection (S2 -> S1) now DOES flip this
+## back to [code]true[/code] — see [method _handle_target_selection_cancel_transition],
+## called from the [member _card_selecting_target] branch of [method _input]
+## on every [code]battle_cancel[/code] press while target selection is
+## active. The missing-accessor problem this paragraph used to describe is
+## sidestepped, not solved: rather than adding
+## [code]card_play_step() -> CardPlaySession.Step[/code] to
+## [code]battle_controller.gd[/code] (still outside this story's file lock),
+## [method _handle_target_selection_cancel_transition] infers the destination
+## purely from [method BattleController.legal_targets]'s OWN return value
+## immediately after the [method BattleController.cancel] call — empty means
+## SELECTING_CARD (the only other place [method CardPlaySession.cancel] can
+## land from SELECTING_TARGET), non-empty means SELECTING_TARGET (arrived from
+## SELECTING_TARGET_B). This holds specifically because [method
+## CardPlaySession.cancel]'s SELECTING_TARGET/SELECTING_TARGET_B branches never
+## transition to CONFIRMING (only the reverse direction does) — read from that
+## method's own code, not re-derived independently.
+##
+## 🔴 [b]A DIFFERENT, still-open gap this story's own scope does not close[/b]:
+## cancelling OUT of CONFIRMING (S3) back into SELECTING_TARGET_B/
+## SELECTING_TARGET does not re-register [constant CursorTypes.SurfaceType.BOARD_TILE]
+## or restore [member _card_selecting_target] — see [method
+## _after_target_selection_advanced]'s doc comment. S3 has no built UI yet
+## (U-014), so this path is not reachable through anything this story wires
+## end to end; recorded here so it is not silently inherited once S3 lands.
 var _card_selecting_from_hand: bool = false
+
+## Story U-013 — mirrors [member _card_selecting_from_hand]'s own "ONE
+## boundary, written only from this screen's own return values" discipline
+## (see that field's doc comment), applied to the SELECTING_TARGET /
+## SELECTING_TARGET_B boundary instead of SELECTING_CARD. True from a
+## successful [method BattleController.select_card] call (S1 -> S2/S2p) until
+## either a successful [method BattleController.select_target] / [method
+## BattleController.select_second_target] call moves the session past target
+## selection into CONFIRMING ([method _after_target_selection_advanced]), or
+## [method BattleController.cancel] returns it all the way to SELECTING_CARD
+## ([method _handle_target_selection_cancel_transition]). Also gates whether
+## [constant CursorTypes.SurfaceType.BOARD_TILE] is currently registered on
+## [code]CursorStateHost[/code] — the two are set/cleared together at every
+## call site, never independently.
+var _card_selecting_target: bool = false
+
+## Story U-013 (ADR-0005 機制六②) — a pending "move CursorStateHost's target"
+## request queued synchronously from [method _input] (jump keys) or this
+## screen's own state-transition helpers (entering/re-entering target
+## selection), consumed by [_TargetRetargetActor]'s own [method Node._process]
+## at [code]process_priority = -60[/code] — the architecture-mandated open
+## interval strictly between -100 and -25 (ADR-0005 R5-2; see
+## [_TargetRetargetActor]'s own doc comment for why -60 specifically and why
+## this cannot simply run inside THIS node's own [method _process]).
+## [member _target_jump_forward] is only meaningful while this is
+## [code]true[/code].
+var _target_jump_requested: bool = false
+var _target_jump_forward: bool = true
+
+## Story U-013 (ADR-0005 機制六⑥) — a pending "read CursorStateHost's
+## arbitrated state and, if valid, select the unit under the cursor" request,
+## queued synchronously from a [code]battle_confirm[/code] press in
+## [method _input] while [member _card_selecting_target] is true, consumed by
+## [method _process] — see this story's Implementation Note #1 (quoted
+## verbatim in that method's own comment) for why the actual read of
+## [method CursorStateHost.get_current_target] /
+## [method CursorStateHost.is_current_target_valid] must happen there and
+## never in [method _input] itself.
+var _pending_target_confirm_press: bool = false
+
+## Story U-013 — dedicated child [Node] for ADR-0005 機制六② (see
+## [_TargetRetargetActor]'s own doc comment for why this cannot be folded
+## onto this screen's own [method _process]). Built once in [method _ready],
+## never reassigned.
+var _target_retarget_actor: Node
 
 ## story-018-enemy-phase-stepped-playback.md AC-E3 — QA/test-only diagnostic
 ## surface, mirroring this project's existing `diagnostic_*` convention (e.g.
@@ -473,6 +528,76 @@ var _diagnostic_step_enemy_phase_call_count: int = 0
 ## See [member _diagnostic_step_enemy_phase_call_count].
 func diagnostic_step_enemy_phase_call_count() -> int:
 	return _diagnostic_step_enemy_phase_call_count
+
+
+## Story U-013 (ADR-0005 機制六⑥, R4-7's own suggested split for a system
+## that is simultaneously role ② and role ⑥ — see [_TargetRetargetActor]'s
+## doc comment for role ②'s side of the split) — [b]this node's own
+## [member Node.process_priority] is 100, not the engine default 0[/b].
+##
+## R4-1's table pins role ⑥ ("下游讀取方(含確認動作判讀)") at EXACTLY 100; this
+## screen becomes role ⑥ the moment [method _apply_target_confirm_from_cursor_state]
+## exists (called from THIS node's own [method _process], see that method's
+## body). R4-7 explicitly names "戰棋系統同時是②...與⑥幾乎是必然" and forbids
+## folding both roles onto one node at one priority (② needs a value strictly
+## less than -25; ⑥ needs exactly 100 — no single [member Node.process_priority]
+## value satisfies both), then gives its own suggested fix verbatim: "主節點
+## 設 100 承擔⑥,另建一個極薄的子節點設 −60 承擔②" (ADR-0005, R4-7 section) —
+## literally what this file does: [_TargetRetargetActor] (below) is that thin
+## child node.
+##
+## [b]Side effect, disclosed rather than silent[/b]: this ALSO moves this
+## screen's own pre-existing, CursorState-unrelated per-frame work
+## ([member _device]'s [method DeviceAuthority.resolve_frame], [method
+## _update_cursor_visual], the enemy-phase diagnostic counter — none of it
+## reads or writes [code]CursorStateHost[/code]) from the engine default
+## priority (0) to 100. Nothing else in this scene currently orders itself
+## against this node's own [member Node.process_priority] (no sibling/child
+## node in this slice declares one of its own, other than the cursor system's
+## own Autoload children), so this is expected to be behavior-preserving for
+## that unrelated work — confirmed by this story's full test-suite run, not
+## merely reasoned about; see this story's task report if that run ever
+## regresses.
+func _init() -> void:
+	process_priority = 100
+
+
+## Story U-013 (ADR-0005 機制六②, R5-2's open interval, R4-7's suggested
+## "thin child node" split — see [method _init]'s own doc comment for why
+## this screen cannot just do role ② inside its own [method _process]).
+## Mirrors [code]cursor_navigation_applier.gd[/code]'s [CursorNavigationApplier]
+## shape exactly: bare owner reference, [member Node.process_priority] set in
+## its OWN [method Node._init] before [method Node.add_child] (R6-12), single
+## responsibility of forwarding to one method on its owner.
+##
+## [b]Deliberately an inner class, not a new file[/b] — this story's file
+## lock is explicit: "本 story 修改兩個既有檔案(累加修改,不新建)"
+## ([code]production/epics/card-play-interface/story-u013-target-selection-and-highlight.md[/code]
+## 第 20-22 行, section "🔴 本 story 決定的原始碼目錄路徑"). A new top-level
+## class would need its own [code].gd[/code] file, which that line forbids;
+## an inner class stays inside [code]battle_screen.gd[/code] while still
+## satisfying ADR-0005's own node-splitting requirement ("process_priority 是
+## 逐節點屬性,同一節點不可能同時位於 −100 與 −25,故 GDD 四步序列的步驟一與
+## 步驟三必須落在兩個節點上", R4-1 row for actor ③) — [b]U-013 is the FIRST
+## caller of this exact pattern anywhere in this codebase[/b] (R4-1's table
+## marks its own "零命中" for this mechanism); flagged here so the next
+## caller of this pattern has a precedent to point at.
+##
+## [b]-60, not some other value in (-100, -25)[/b]: the ADR's own reference
+## value for role ②, used verbatim rather than picking a different in-range
+## number (R5-2, "修法兩點" 第一點: "② 的參考值由 −50 改為 −60...取 −60 而非
+## −50,是為了與兩端都留出安全間距 —— 下游若因為別的理由微調這個值,±10 的
+## 漂移不會撞到任何一端"). No reason was found to deviate from the
+## architecture's own documented choice.
+class _TargetRetargetActor extends Node:
+	var _owner: BattleScreen
+
+	func _init(owner: BattleScreen) -> void:
+		process_priority = -60
+		_owner = owner
+
+	func _process(_delta: float) -> void:
+		_owner._apply_pending_target_jump()
 
 
 func _ready() -> void:
@@ -629,6 +754,14 @@ func _ready() -> void:
 	_board_view.render_terrain(terrain_rows)
 	if not player_ids.is_empty():
 		_cursor_cell = _state.position_of(player_ids[0])
+
+	# Story U-013 (機制六②) — process_priority (-60) set in its own _init(),
+	# before add_child() (R6-12), same convention this file's own
+	# CursorStateHost dependency already establishes for
+	# CursorNavigationApplier/SelfDrawnReclaimCursor/NativePointerVisibilityArbiter.
+	_target_retarget_actor = _TargetRetargetActor.new(self)
+	add_child(_target_retarget_actor)
+
 	_refresh_view()
 
 
@@ -639,6 +772,22 @@ func _process(_delta: float) -> void:
 		_diagnostic_enemy_acting_process_frame_count += 1
 	_device.resolve_frame()
 	_update_cursor_visual()
+
+	# Story U-013 (ADR-0005 機制六⑥, Implementation Note #1 quoted verbatim
+	# below) — this screen's own [member Node.process_priority] is 100 (see
+	# [method _init]), so this is the ONLY place in this file allowed to read
+	# CursorStateHost.get_current_target() / is_current_target_valid() /
+	# get_device_authority(). The battle_confirm KEY PRESS itself is captured
+	# in _input() (see the _card_selecting_target branch there) only as a
+	# pending flag, never acted on there:
+	#
+	#   "打牌確認若要讀「游標系統裁定後的狀態」(當前選了哪張卡、哪個目標、哪個
+	#   裝置持權威),該讀取不得放在按鍵處理(_input / _unhandled_input)裡,
+	#   必須放在 _process(priority=100)。"
+	#   (story-u013-target-selection-and-highlight.md, Implementation Note #1)
+	if _pending_target_confirm_press:
+		_pending_target_confirm_press = false
+		_apply_target_confirm_from_cursor_state()
 
 
 func _input(event: InputEvent) -> void:
@@ -697,13 +846,53 @@ func _input(event: InputEvent) -> void:
 				return
 			return
 
-		# S2 / S2p / S2q / S3 — target-selection navigation, the jump keys
-		# (battle_next_target/battle_prev_target), and reading the
-		# cursor-arbitrated confirm state in _process(priority=100) are all
-		# blocked pending the ADR-0005 CursorStateHost integration question
-		# (godot-specialist deciding, see this story's task report). Only
-		# cancel is wired here; it steps back exactly one stage regardless of
-		# which of these four steps the session is actually in.
+		# Story U-013 (ADR-0005 機制六) — S2/S2p/S2q target-selection input.
+		# Directional ui_up/ui_down/ui_left/ui_right are DELIBERATELY not
+		# matched anywhere in this branch: those are NAVIGATION-class ui_*
+		# actions (CursorTypes.NAVIGATION_ACTIONS), so CursorStateHost's own
+		# _input()/機制六①③ pipeline already buffers and applies them via
+		# this screen's own cursor_navigate() (registered in
+		# _confirm_selected_card() below) — battle_screen.gd must not also
+		# consume them here, or the event would never reach CursorStateHost's
+		# _input() at all (both are separate nodes receiving the same raw
+		# InputEvent; nothing here calls accept_event()/set_input_as_handled(),
+		# so simply not matching the event is enough to let it propagate).
+		if _card_selecting_target:
+			if event.is_action_pressed(&"battle_next_target"):
+				_device.note_pad_input()
+				_target_jump_requested = true
+				_target_jump_forward = true
+				return
+			if event.is_action_pressed(&"battle_prev_target"):
+				_device.note_pad_input()
+				_target_jump_requested = true
+				_target_jump_forward = false
+				return
+			if event.is_action_pressed(&"battle_confirm"):
+				_device.note_pad_input()
+				# Implementation Note #1 — captured as a pending flag ONLY;
+				# see _process()'s own comment for where this is actually
+				# read (never here).
+				_pending_target_confirm_press = true
+				return
+			if event.is_action_pressed(&"battle_cancel"):
+				_device.note_pad_input()
+				_controller.cancel()
+				_handle_target_selection_cancel_transition()
+				_refresh_view()
+				return
+			return
+
+		# S3 (CONFIRMING) — no UI exists for this step yet (U-014). Only
+		# cancel is wired here, unchanged pre-existing behavior; it steps back
+		# exactly one stage regardless of which sub-branch
+		# CardPlaySession.cancel() resolves to.
+		# 🔴 Known, disclosed gap — see _card_selecting_from_hand's own doc
+		# comment's "still-open gap" paragraph: cancelling OUT of CONFIRMING
+		# back into SELECTING_TARGET_B/SELECTING_TARGET does not re-register
+		# CursorTypes.SurfaceType.BOARD_TILE or restore _card_selecting_target,
+		# so the jump/confirm handling above would not resume. Not reachable
+		# through anything this story wires end to end (S3 has no built UI).
 		if event.is_action_pressed(&"battle_cancel"):
 			_device.note_pad_input()
 			_controller.cancel()
@@ -820,6 +1009,32 @@ static func cells_excluding(
 		if not excluded_set.has(cell):
 			result.append(cell)
 	return result
+
+
+## Story U-013 — partitions every unit's position (both factions) into the
+## two arrays [method BoardView.set_card_target_highlights] expects: every id
+## in [param legal_ids] becomes "legal" (outline only); every OTHER id present
+## in [param unit_positions] becomes "illegal" (outline+X); an empty tile
+## (no entry in [param unit_positions] at all) is the third, undrawn state,
+## simply never emitted — matches that method's own "absence of any mark IS
+## that state" convention. Presentation composition only, same contract as
+## [method cells_excluding] immediately above: [param legal_ids] is decided
+## by [method BattleController.legal_targets], never re-derived here.
+static func card_target_highlight_cells(
+	legal_ids: Array[int], unit_positions: Dictionary[int, Vector2i]
+) -> Dictionary:
+	var legal_set: Dictionary = {}
+	for id: int in legal_ids:
+		legal_set[id] = true
+
+	var legal_cells: Array[Vector2i] = []
+	var illegal_cells: Array[Vector2i] = []
+	for id: int in unit_positions:
+		if legal_set.has(id):
+			legal_cells.append(unit_positions[id])
+		else:
+			illegal_cells.append(unit_positions[id])
+	return {"legal": legal_cells, "illegal": illegal_cells}
 
 
 ## Maps an [enum AffinityLineStatus.State] to the display-only [enum
@@ -1277,7 +1492,232 @@ func _confirm_selected_card() -> void:
 		return
 	if _controller.select_card(hand[index]):
 		_card_selecting_from_hand = false
+		# Story U-013 (下半) — S1 -> S2/S2p. Registers this screen itself as
+		# the BOARD_TILE CursorSurface (see cursor_navigate() below for the
+		# Option E contract this satisfies) and queues an initial seed onto
+		# the first legal target — see _apply_pending_target_jump()'s own
+		# comment for why "queue a forward jump with no prior target" IS the
+		# correct seeding mechanism (next_target_id()'s own documented
+		# "not found" fallback already lands on the first entry).
+		_card_selecting_target = true
+		# Kept on ONE line deliberately (not wrapped the way the rest of this
+		# file wraps long calls): the U-013 下半 register/unregister call
+		# sites are what frame_buffer_ordering_test.gd's line-based scanner
+		# greps for, and it checks for the "BOARD_TILE" substring on the SAME
+		# line as the call — see that file's own
+		# test_board_tile_registration_in_battle_screen_is_found_by_the_scanner
+		# doc comment. A wrapped call would put the enum literal on a
+		# different source line than the registration call and silently
+		# defeat that scanner (found by actually running it, not reasoned
+		# about — and this very sentence had to be reworded once already
+		# because writing the literal method-name substring out here, even
+		# inside a comment, tripped the SAME scanner it is describing).
+		var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
+		if register_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+			push_error(
+				"BattleScreen: CursorStateHost.register_surface(BOARD_TILE) returned %s instead of REGISTERED -- target-selection cursor navigation will not work this session."
+				% register_result
+			)
+		_target_jump_requested = true
+		_target_jump_forward = true
 		_refresh_view()
+
+
+## Story U-013 (ADR-0005 機制六③ Option E contract —
+## [constant CursorState.NAVIGATE_METHOD_NAME]) — the duck-typed navigation
+## entry [CursorNavigationApplier] calls (via [method Object.call] on the
+## [Node] registered under [constant CursorTypes.SurfaceType.BOARD_TILE]).
+## [param from_id] and the return value are board-tile ids
+## ([method CursorTypes.encode_tile]/[method CursorTypes.decode_tile]), never
+## unit ids — mirrors [code]tests/integration/cursor/frame_buffer_ordering_test.gd[/code]'s
+## own [code]_BoardBackedSurface[/code] test fixture almost exactly (this IS
+## the production adapter that fixture's own doc comment said did not exist
+## yet in this project).
+##
+## Returns [code]null[/code] — "no legal target this direction" — only when
+## [param direction] leaves the board ([method BoardCoords.is_in_bounds]
+## rejects the destination). [b]Deliberately does NOT constrain the
+## destination to [method BattleController.legal_targets][/b] — Implementation
+## Note #3 requires every on-board tile to be reachable by directional
+## navigation regardless of whether the unit standing there (if any) is a
+## legal target; only confirm is gated on legality (see
+## [method _apply_target_confirm_from_cursor_state]).
+func cursor_navigate(from_id: int, direction: Vector2i) -> Variant:
+	var from_cell: Vector2i = CursorTypes.decode_tile(from_id, BoardCoords.BOARD_COLS)
+	var to_cell: Vector2i = from_cell + direction
+	if not BoardCoords.is_in_bounds(to_cell):
+		return null
+	return CursorTypes.encode_tile(to_cell, BoardCoords.BOARD_COLS)
+
+
+## Story U-013 (ADR-0005 機制六②) — consumed by [_TargetRetargetActor]'s own
+## [method Node._process] at [code]process_priority = -60[/code]. No-op if no
+## jump was queued, if target selection is no longer active (a stale request
+## from before this screen left target selection — [member _card_selecting_target]
+## became false in between the request and this call, e.g. a same-frame
+## cancel), or if the current legal-target set is empty.
+##
+## [b]"Queue a forward jump with no prior target" IS the seeding
+## mechanism[/b] — deliberately not a separate code path. [method next_target_id]'s
+## own documented contract: a [param current_id] not found in [param sorted_ids]
+## (which is exactly what happens here the FIRST time this runs after
+## entering/re-entering target selection, since the cursor's current board
+## tile generally has no unit standing on it, or a unit not in THIS step's
+## legal set) is treated as "start from the first entry going forward" — so
+## every call site that wants "land on the first legal target" (S1->S2 in
+## [method _confirm_selected_card], the S2p->S2q / S2q->S2p transitions in
+## [method _after_target_selection_advanced] / [method
+## _handle_target_selection_cancel_transition]) simply queues
+## [code]_target_jump_forward = true[/code] — the SAME request a real
+## [code]battle_next_target[/code] press queues.
+##
+## [b]Reading [method CursorStateHost.get_current_target] from THIS priority
+## (-60), not 100[/b] — a deliberate reading of ADR-0005's own text, flagged
+## in this story's report as this implementer's own judgment call rather than
+## something the ADR spells out for this exact case: the "must read at
+## priority 100" obligation ([method CursorStateHost.get_current_target]'s
+## own doc comment) is stated for "callers belonging to 機制六⑥(下游讀取方)"
+## — readers that need the FULLY SETTLED per-frame value, after ③'s own
+## write. Role ② is not such a reader: it runs BEFORE ③ by architecture
+## design (that is the entire point of the (-100,-25) window), and here it
+## reads the pre-③ value purely to establish ITS OWN basis for computing a
+## new target, which becomes part of what ③/⑥ later observe as settled — not
+## a claim about the settled value itself.
+func _apply_pending_target_jump() -> void:
+	if not _target_jump_requested:
+		return
+	_target_jump_requested = false
+	if not _card_selecting_target:
+		return
+
+	var forward: bool = _target_jump_forward
+	var legal_ids: Array[int] = _controller.legal_targets()
+	if legal_ids.is_empty():
+		return
+	var positions: Dictionary[int, Vector2i] = {}
+	for id: int in legal_ids:
+		positions[id] = _state.position_of(id)
+	var sorted_ids: Array[int] = sort_targets_by_position(legal_ids, positions)
+
+	var current_unit_id: int = -1
+	var current: CursorTarget = CursorStateHost.get_current_target()
+	if current != null and current.surface == CursorTypes.SurfaceType.BOARD_TILE:
+		var current_cell: Vector2i = CursorTypes.decode_tile(current.id, BoardCoords.BOARD_COLS)
+		var current_unit: Unit = _state.unit_at(current_cell)
+		if current_unit != null:
+			current_unit_id = current_unit.id
+
+	var next_id: int = next_target_id(current_unit_id, sorted_ids, forward)
+	if next_id == -1:
+		return
+	var tile_id: int = CursorTypes.encode_tile(positions[next_id], BoardCoords.BOARD_COLS)
+	CursorStateHost.set_target(CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, tile_id))
+
+
+## Story U-013 (ADR-0005 機制六⑥) — called from [method _process] only (see
+## that method's own comment), never from [method _input]. Reads
+## CursorStateHost's per-frame-arbitrated state and, if the target is valid
+## and a unit stands on its cell, tries [method BattleController.select_target]
+## then (only if that was rejected) [method BattleController.select_second_target]
+## — trying both rather than tracking which step the session is at avoids
+## re-deriving [CardPlaySession]'s own step (both methods are safe, side-
+## effect-free no-ops when their own leading step-gate does not match — see
+## [method CardPlaySession.select_target] / [method
+## CardPlaySession.select_second_target]'s own code), the same "never
+## re-derive the transition table" discipline [member _card_selecting_from_hand]'s
+## own doc comment already establishes for this file.
+##
+## 不合法的格子仍然走得到(見 [method cursor_navigate]),但這裡是唯一會真的
+## 拒絕的地方 —— [param unit] 為 null(空格)或兩個 select_* 呼叫都回傳
+## [code]false[/code](不合法目標)時直接不動作,游標留在原地,可以繼續移動
+## 再按一次確認(Implementation Note #3)。
+func _apply_target_confirm_from_cursor_state() -> void:
+	if not _card_selecting_target:
+		return
+	if not CursorStateHost.is_current_target_valid():
+		return
+	var target: CursorTarget = CursorStateHost.get_current_target()
+	if target == null or target.surface != CursorTypes.SurfaceType.BOARD_TILE:
+		return
+	var cell: Vector2i = CursorTypes.decode_tile(target.id, BoardCoords.BOARD_COLS)
+	var unit: Unit = _state.unit_at(cell)
+	if unit == null:
+		return
+
+	var advanced: bool = _controller.select_target(unit.id)
+	if not advanced:
+		advanced = _controller.select_second_target(unit.id)
+	if advanced:
+		_after_target_selection_advanced()
+
+
+## Story U-013 — shared tail for both successful [method
+## _apply_target_confirm_from_cursor_state] branches. [method
+## BattleController.legal_targets]'s OWN return value (not a re-derivation of
+## [CardPlaySession]'s step table) decides which happened: empty means the
+## session moved past target selection entirely into CONFIRMING (S3, for
+## either 甲類's single pick or 丙類's second pick — [method
+## CardPlaySession.legal_targets] only returns non-empty at SELECTING_TARGET/
+## SELECTING_TARGET_B); non-empty means a 丙類 first pick just landed the
+## session at SELECTING_TARGET_B (S2q), still target selection.
+##
+## 🔴 Known, disclosed gap — see [member _card_selecting_from_hand]'s own doc
+## comment's "still-open gap" paragraph: reaching CONFIRMING here unregisters
+## [constant CursorTypes.SurfaceType.BOARD_TILE], and cancelling back OUT of
+## CONFIRMING does not currently re-register it. S3 has no built UI yet
+## (U-014), so this is not reachable through anything this story wires end to
+## end.
+func _after_target_selection_advanced() -> void:
+	var legal: Array[int] = _controller.legal_targets()
+	if legal.is_empty():
+		_card_selecting_target = false
+		# Kept on ONE line — see _confirm_selected_card()'s matching comment
+		# for why (frame_buffer_ordering_test.gd's scanner is line-based).
+		var unregister_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
+		if unregister_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+			push_error(
+				"BattleScreen: CursorStateHost.unregister_surface(BOARD_TILE) returned %s instead of REGISTERED -- was it already unregistered by something else?"
+				% unregister_result
+			)
+	else:
+		_target_jump_requested = true
+		_target_jump_forward = true
+	_refresh_view()
+
+
+## Story U-013 — called from the [member _card_selecting_target] branch of
+## [method _input] immediately after a [code]battle_cancel[/code] press calls
+## [method BattleController.cancel]. Distinguishes the two destinations
+## [method CardPlaySession.cancel] can reach FROM SELECTING_TARGET/
+## SELECTING_TARGET_B purely from [method BattleController.legal_targets]'s
+## OWN post-call return value — see [member _card_selecting_from_hand]'s doc
+## comment for why an empty result is unambiguous here specifically (never
+## re-deriving [CardPlaySession]'s full transition table): [method
+## CardPlaySession.cancel]'s SELECTING_TARGET branch only ever steps to
+## SELECTING_CARD, and its SELECTING_TARGET_B branch only ever steps to
+## SELECTING_TARGET — CONFIRMING is never a destination from either, only ever
+## a source (see that method's own code) — so within this call site
+## specifically, "legal_targets() is empty" unambiguously means SELECTING_CARD
+## (S1), never CONFIRMING.
+func _handle_target_selection_cancel_transition() -> void:
+	var legal: Array[int] = _controller.legal_targets()
+	if legal.is_empty():
+		# S2/S2p -> S1 (SELECTING_CARD).
+		_card_selecting_target = false
+		_card_selecting_from_hand = true
+		# Kept on ONE line — see _confirm_selected_card()'s matching comment
+		# for why (frame_buffer_ordering_test.gd's scanner is line-based).
+		var unregister_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
+		if unregister_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+			push_error(
+				"BattleScreen: CursorStateHost.unregister_surface(BOARD_TILE) returned %s instead of REGISTERED -- was it already unregistered by something else?"
+				% unregister_result
+			)
+	else:
+		# S2q -> S2p (SELECTING_TARGET) — stays registered, reseed onto the
+		# (now S2p) legal set's first entry.
+		_target_jump_requested = true
+		_target_jump_forward = true
 
 
 # Confirm action bound to the project-level "battle_confirm" input action
@@ -1532,6 +1972,24 @@ func _refresh_view() -> void:
 		_board_view.set_move_highlights([])
 		_board_view.set_threat_highlights([])
 		_board_view.set_attack_highlights([])
+
+	# Story U-013 (下半) — card-play target-selection 3-state highlight
+	# overlay (board_view.gd's set_card_target_highlights(), already built by
+	# the first half of this story; this is that method's first production
+	# call site). Legal = every unit in _controller.legal_targets(); illegal =
+	# every OTHER unit on the board (either faction); an empty tile is the
+	# third, undrawn state — see that method's own doc comment.
+	if _card_selecting_target:
+		var target_legal_ids: Array[int] = _controller.legal_targets()
+		var unit_positions: Dictionary[int, Vector2i] = {}
+		for player_unit: Unit in _state.units_of(Unit.Faction.PLAYER):
+			unit_positions[player_unit.id] = _state.position_of(player_unit.id)
+		for enemy_unit: Unit in _state.units_of(Unit.Faction.ENEMY):
+			unit_positions[enemy_unit.id] = _state.position_of(enemy_unit.id)
+		var target_partition: Dictionary = card_target_highlight_cells(target_legal_ids, unit_positions)
+		_board_view.set_card_target_highlights(target_partition["legal"], target_partition["illegal"])
+	else:
+		_board_view.set_card_target_highlights([], [])
 
 	# Story U-011 — Z1 手牌縮圖帶。_state.card_deck() is never null in this
 	# slice (_ready() always builds one via _build_card_deck(), even for a

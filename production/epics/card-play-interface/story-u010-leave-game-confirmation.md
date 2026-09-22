@@ -56,6 +56,7 @@
 *以下為 `design/ux/battle-menu.md` 的條文原文轉錄,未改寫:*
 
 - [ ] **AC-M6**:進入離開確認 → 預設焦點在「取消」;自「離開遊戲」列連按兩次確認 → 遊戲未關閉(UI,BLOCKING)
+  🔴 **本條有一半永遠沒有自動防線,見 `design/ux/battle-menu.md` Acceptance Criteria 表格正下方的登記**(2026-09-22 管理者裁決)。
 - [ ] **AC-M7**:離開確認的文字明確說出「進度會消失」(UI,ADVISORY)
 
 ## Test Evidence

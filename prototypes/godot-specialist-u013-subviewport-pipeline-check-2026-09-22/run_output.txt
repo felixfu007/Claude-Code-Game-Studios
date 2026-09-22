@@ -1,0 +1,14 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+PIPELINE PROBE -- WorldLayout.compute_scale((1280, 720)) = 2
+PIPELINE PROBE -- WorldLayout.compute_rect((1280, 720)) = [P: (160, 90), S: (960, 540)]
+PIPELINE PROBE -- SubViewportContainer.position/size = (160.0, 90.0) / (960.0, 540.0)
+PIPELINE PROBE -- SubViewportContainer.stretch_shrink = 2
+PIPELINE PROBE -- SubViewport.size (should be exactly BASE_WIDTHxBASE_HEIGHT = 480x270 if the stretch_shrink hypothesis is right) = (480, 270)
+PIPELINE PROBE -- full window image size = (1280, 720)
+save_png(res://prototypes/godot-specialist-u013-subviewport-pipeline-check-2026-09-22/pipeline-probe-full-window-2026-09-22.png) err=0 (0 == OK)
+PIPELINE PROBE -- SubViewport's OWN internal texture size = (480, 270)
+save_png(res://prototypes/godot-specialist-u013-subviewport-pipeline-check-2026-09-22/pipeline-probe-subviewport-internal-2026-09-22.png) err=0 (0 == OK)
+PIPELINE PROBE -- Check 4 (corrected single-count algorithm) on REAL SubViewport pipeline, full window = 0 / 229440
+PIPELINE PROBE DONE

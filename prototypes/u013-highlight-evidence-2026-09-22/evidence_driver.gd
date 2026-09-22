@@ -4,10 +4,10 @@ extends Node
 ## outline+X / no mark) -- the "AC needs a real GPU frame + human eyes" item
 ## flagged in production/session-state/active.md's 2026-09-22 handoff table.
 ##
-## Loads the REAL production scene (res://src/ui/battle/BoardView.tscn) as a
-## child of the root Window -- not a copy, not a re-implementation -- and
-## calls its real public methods (render_terrain / render_pieces /
-## set_card_target_highlights) exactly as battle_screen.gd would.
+## Loads the REAL production scene (res://src/ui/battle/BoardView.tscn) --
+## not a copy, not a re-implementation -- and calls its real public methods
+## (render_terrain / render_pieces / set_card_target_highlights) exactly as
+## battle_screen.gd would.
 ##
 ## Non-headless (real GPU window), same command shape as
 ## prototypes/u007-battle-menu-evidence-capture-2026-09-17/README.md:
@@ -15,90 +15,89 @@ extends Node
 ##
 ## Real terrain data (not a hand-typed fixture): assets/data/levels/vs01_terrain.txt.
 ##
-## 🔴 3RD REVISION (2026-09-22, after 2nd coordinator review) -- SCALE/POSITION
-## FIX: the 1st and 2nd revisions scaled the instance by a hardcoded, made-up
-## "SCALE_FACTOR = 4" and left its position at the default (0,0) -- NEITHER
-## number came from the project's actual scaling authority. technical-
-## preferences.md is explicit that world-layer scale "必須呼叫
-## src/ui/battle/world_layout.gd 的 compute_scale(),不得自行計算,不得複製
-## 公式" ("MUST be obtained by calling world_layout.gd's compute_scale() --
-## never self-computed, never a copied formula"). This revision calls
-## [WorldLayout]'s real [method WorldLayout.compute_scale] / [method
-## WorldLayout.compute_rect] instead, and positions the instance at the
-## computed centered rect exactly as production code would. For a 1280x720
-## window this yields scale=2 (NOT the old driver's invented 4), position
-## =(160,90) (NOT the old driver's implicit (0,0)) -- see the printed
-## "CENTERING ANSWER" line at startup for the exact numbers from THIS run.
-## This was the coordinator's explicit priority item: whether the earlier
-## "board looks off-center" observation was (a) a real board_view.gd/
-## production defect or (b) an artifact of this throwaway driver never having
-## used the real centering authority in the first place. Answer, from this
-## run's own printed output: it was (b) -- this driver's own prior omission,
-## not a src/ defect. src/ is unmodified either way.
+## 🔴 4TH REVISION (2026-09-22, manager ruling: "重寫成走真正的管線(推薦)") --
+## PIPELINE FIX: the 1st-3rd revisions instantiated BoardView DIRECTLY under
+## the root Window and applied WorldLayout's scale/position BY HAND
+## (`_instance.scale = Vector2(_scale, _scale)`). That is NOT how production
+## renders BoardView -- src/ui/battle/BattleScreen.tscn puts BoardView inside
+## a real SubViewport, wrapped in a SubViewportContainer driven by the real
+## src/ui/battle/world_viewport_scaler.gd script. Per SubViewportContainer's
+## stretch_shrink semantics, that forces the SubViewport to render internally
+## at EXACTLY WorldLayout.BASE_WIDTH x BASE_HEIGHT (480x270) regardless of
+## window size, then nearest-upscales that fixed low-res texture -- which is
+## what makes vector primitives (ColorRect/Line2D) just as pixel-grid-clean as
+## texture-based content, the same guarantee move/attack/threat's Sprite2D
+## highlights already had. This revision builds that REAL subtree (same node
+## types, same texture_filter=1/stretch=true BattleScreen.tscn ships with,
+## same real world_viewport_scaler.gd script -- not reimplemented) instead of
+## hand-rolling BoardView's transform. Verified first in the throwaway spike
+## prototypes/godot-specialist-u013-subviewport-pipeline-check-2026-09-22/
+## (0/229440 Check-4 violations on this exact scenario through the real
+## pipeline, vs the 194 this file's own 3rd revision measured) -- this
+## revision reuses that spike's proven construction, not a rewrite from zero.
 ##
-## SCENARIO DESIGN (2nd revision after 1st coordinator review): all three
-## demo cells use the IDENTICAL piece (PLAYER faction, sprite_index 0) on the
-## IDENTICAL terrain tile ("." plain ground, row 0). This means any measured
-## pixel difference between the three cells' highlight zones can ONLY be
-## caused by set_card_target_highlights() itself, never by a difference in
-## piece art or terrain.
+## Also fixes a double-counting bug in _integer_grid_violations() found by
+## the same investigation (prototypes/godot-specialist-u013-check4-
+## decomposition-2026-09-22/README.md): the inner `break` only exited the
+## `dx` loop, not the `dy` loop, so a block whose violating pixel appeared in
+## more than one row got counted more than once (194 reported vs 178 real
+## distinct violating blocks, before the pipeline fix above made the count 0
+## either way). This revision breaks both loops.
+##
+## SCENARIO DESIGN (unchanged since 2nd revision): all three demo cells use
+## the IDENTICAL piece (PLAYER faction, sprite_index 0) on the IDENTICAL
+## terrain tile ("." plain ground, row 0). This means any measured pixel
+## difference between the three cells' highlight zones can ONLY be caused by
+## set_card_target_highlights() itself, never by a difference in piece art or
+## terrain.
 ##
 ## COORDINATE DISCLOSURE: the exact cells fed to set_card_target_highlights()
 ## are printed to stdout (see run_output.txt) -- LEGAL_CELL=(3,0),
 ## ILLEGAL_CELL=(5,0), NEUTRAL_CELL=(7,0), all on terrain row 0 (all "."
 ## plain ground per assets/data/levels/vs01_terrain.txt).
 ##
-## OCCLUSION FINDING (1st coordinator review): board_view.gd's own documented
-## layer order draws StatsLayer (HP bar + HP text panel) ABOVE
+## OCCLUSION FINDING (1st coordinator review, unchanged): board_view.gd's own
+## documented layer order draws StatsLayer (HP bar + HP text panel) ABOVE
 ## CardTargetHighlightLayer. The HP text panel is a FULL-CELL-WIDTH box
 ## sitting at y=[HP_TEXT_TOP_MARGIN, HP_TEXT_TOP_MARGIN+HP_TEXT_HEIGHT) from
 ## the cell's top edge, which overlaps and hides the outline's top border.
-## Diagnosed via prototypes/u013-highlight-evidence-2026-09-22/
-## diag_scan_column.gd (a headless pixel-readback probe against an
-## already-saved PNG). Fix: sample the LEFT border strip in the vertical band
-## BELOW the HP text panel and ABOVE the HP bar (both real BoardView
-## constants) -- board_view.gd's own geometry guarantees neither reaches
-## that band.
+## Fix: sample the LEFT border strip in the vertical band BELOW the HP text
+## panel and ABOVE the HP bar (both real BoardView constants) -- board_view
+## .gd's own geometry guarantees neither reaches that band.
 ##
 ## CLASSIFICATION: this driver produces TWO images with two different
 ## classifications per coding-standards.md's "Screenshot classification"
 ## section -- the crop (does not match full window -> Category C) and the
 ## full-window context capture (matches full window -> Category A).
 ##
-## VALIDATE-BEFORE-WRITE (2nd coordinator review confirmed this is now
-## correctly wired): production/qa/evidence/ only ever receives a file if
-## ALL of that category's checks pass, independently per image, after
-## retrying up to MAX_ATTEMPTS times. On exhaustion, nothing is written
-## there and any stale file at that exact path is deleted.
+## VALIDATE-BEFORE-WRITE (unchanged rule, still enforced): production/qa/
+## evidence/ only ever receives a file if ALL of that category's checks pass,
+## independently per image, after retrying up to MAX_ATTEMPTS times. On
+## exhaustion, nothing is written there and any stale file at that exact path
+## is deleted.
 ##
-## 🔴 DIAGNOSTIC COPIES (2nd coordinator review, explicit instruction): in
-## ADDITION to the gated production/qa/evidence/ writes above, this revision
-## ALWAYS also writes a copy of the last attempt's two images into THIS
-## prototype directory (never production/qa/evidence/), with the filename
-## itself stating whether Check 4 (integer-scale grid) passed or failed for
-## that image. These are diagnostic material for a human to inspect while
-## judging whether the still-open Check 4 finding (see run_output.txt) is a
-## real board_view.gd defect or a check-applicability question -- that
-## judgment is NOT made by this script. Per coding-standards.md's Category C
-## Check 2 discipline ("a check that fails on a real screen does not get
-## replaced by a metric ... because it looks reasonable at the time"), this
-## revision does NOT invent an exclusion region to make Check 4 pass; the
-## number is reported as measured, unmodified, for a human to judge.
+## 🔴 DIAGNOSTIC COPIES (unchanged): in ADDITION to the gated production/qa/
+## evidence/ writes above, this revision ALWAYS also writes a copy of the
+## last attempt's two images into THIS prototype directory (never production/
+## qa/evidence/), with the filename itself stating whether Check 4 passed or
+## failed for that image.
 ##
-## 🔴 RETRY-LOOP FINDING (2nd coordinator review flagged this explicitly):
-## the 2nd revision's 5 retry attempts produced BYTE-IDENTICAL numbers
-## (482 violations, 0.4594 dominant share, 4 distinct blind-sample colors)
-## on every single attempt. Rendering here is deterministic and there is no
-## async content (no animation, no font streaming observed across attempts)
-## -- retrying the SAME static scene 5 times cannot change the outcome, only
-## cost wall-clock time. This is not a defect in this driver, but it is a
-## real cost future capture-tool authors should know about before assuming a
-## retry loop buys anything against a check that is failing for a structural
-## (non-timing) reason.
+## 🔴 NO INVENTED EXCLUSION REGIONS (unchanged, explicit manager instruction
+## for this revision too): if any check still fails after the pipeline fix,
+## this script does not carve out a region to force it green -- the number is
+## reported as measured, for a human to judge. (In practice, after the
+## pipeline fix, all four checks per image pass -- see run_output.txt -- so
+## this clause is currently inert, but the discipline stands for the next
+## person who changes this file.)
 
 const PROD_OUTPUT_DIR: String = "res://production/qa/evidence/"
 const DIAG_OUTPUT_DIR: String = "res://prototypes/u013-highlight-evidence-2026-09-22/"
 const BOARD_VIEW_SCENE_PATH: String = "res://src/ui/battle/BoardView.tscn"
+## Real production script driving the world-layer SubViewportContainer --
+## loaded and used as-is, never modified, never reimplemented. See
+## src/ui/battle/BattleScreen.tscn for the exact node shape
+## (SubViewportContainer -> SubViewport -> BoardView) this driver mirrors.
+const WORLD_SCALER_SCRIPT_PATH: String = "res://src/ui/battle/world_viewport_scaler.gd"
 const TERRAIN_DATA_PATH: String = "res://assets/data/levels/vs01_terrain.txt"
 const MAX_ATTEMPTS: int = 5
 const TARGET_WINDOW_SIZE: Vector2i = Vector2i(1280, 720)
@@ -111,6 +110,8 @@ const ILLEGAL_CELL: Vector2i = Vector2i(5, 0)
 const NEUTRAL_CELL: Vector2i = Vector2i(7, 0)
 
 var _instance: Node2D
+var _container: SubViewportContainer
+var _sub_viewport: SubViewport
 # Set once in _ready() from WorldLayout.compute_scale()/compute_rect() --
 # NEVER computed by this file's own formula (technical-preferences.md's
 # hard requirement). Every window<->local conversion below reads these two,
@@ -125,21 +126,41 @@ func _ready() -> void:
 	DisplayServer.window_set_size(TARGET_WINDOW_SIZE)
 	await get_tree().process_frame
 
-	# ── CENTERING ANSWER (coordinator's required item #4) ──
-	# Calling the project's real, sole-source-of-truth scaling authority --
-	# not re-deriving the formula -- exactly as technical-preferences.md
-	# requires.
+	# ── REAL PIPELINE (4th revision) ──────────────────────────────────
+	# SubViewportContainer (real world_viewport_scaler.gd script attached,
+	# same texture_filter/stretch BattleScreen.tscn's WorldViewportContainer
+	# ships with) -> SubViewport -> BoardView. BoardView itself gets NO
+	# manual scale/position -- it draws at its own native 480x270-local
+	# coordinates inside the SubViewport; the container handles the
+	# window-space scale/position/upscale, exactly as in production.
+	_container = SubViewportContainer.new()
+	_container.texture_filter = 1  # NEAREST -- matches BattleScreen.tscn's WorldViewportContainer
+	_container.stretch = true      # matches BattleScreen.tscn
+	_container.set_script(load(WORLD_SCALER_SCRIPT_PATH))
+
+	_sub_viewport = SubViewport.new()
+	_instance = load(BOARD_VIEW_SCENE_PATH).instantiate()
+	_sub_viewport.add_child(_instance)
+	_container.add_child(_sub_viewport)
+
+	get_tree().root.add_child(_container)  # fires world_viewport_scaler.gd's _ready() -> _apply_layout()
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# ── CENTERING ANSWER (coordinator's required item #4, still calling the
+	# project's real, sole-source-of-truth scaling authority -- never
+	# re-derived) ──
 	_scale = WorldLayout.compute_scale(TARGET_WINDOW_SIZE)
 	_world_rect = WorldLayout.compute_rect(TARGET_WINDOW_SIZE)
 	print("CENTERING ANSWER -- WorldLayout.compute_scale(", TARGET_WINDOW_SIZE, ") = ", _scale)
 	print("CENTERING ANSWER -- WorldLayout.compute_rect(", TARGET_WINDOW_SIZE, ") = ", _world_rect)
 	print("CENTERING ANSWER -- this means the world layer at this window size is ", _world_rect.size, " centered with margins ", _world_rect.position, " on each side (left==right and top==bottom being the definition of centered, per WorldLayout.compute_rect's own doc comment)")
 
-	_instance = load(BOARD_VIEW_SCENE_PATH).instantiate()
-	get_tree().root.add_child(_instance)
-	_instance.scale = Vector2(_scale, _scale)
-	_instance.position = Vector2(_world_rect.position)
-	await get_tree().process_frame
+	# ── PIPELINE CHECK -- proves the SubViewport is really rendering at the
+	# fixed 480x270 base canvas (not just trusting the construction above) ──
+	print("PIPELINE CHECK -- SubViewportContainer.position/size = ", _container.position, " / ", _container.size)
+	print("PIPELINE CHECK -- SubViewportContainer.stretch_shrink = ", _container.stretch_shrink)
+	print("PIPELINE CHECK -- SubViewport.size (must be exactly WorldLayout.BASE_WIDTH x BASE_HEIGHT = 480x270) = ", _sub_viewport.size)
 
 	var terrain_rows: PackedStringArray = _load_terrain_rows()
 	print("terrain rows loaded: ", terrain_rows.size(), " rows, first row length = ", (terrain_rows[0].length() if terrain_rows.size() > 0 else -1))
@@ -269,7 +290,12 @@ func _local_bounding_rect(cells: Array[Vector2i], margin: float) -> Rect2:
 
 
 # Local (480x270-space) point -> window-pixel point, using THIS RUN'S real
-# _scale/_world_rect (from WorldLayout, never self-derived).
+# _scale/_world_rect (from WorldLayout, never self-derived). Still valid
+# under the 4th revision's real-SubViewport pipeline: WorldLayout.compute_
+# rect()'s returned rect IS the SubViewportContainer's window-space position/
+# size (see world_viewport_scaler.gd's _apply_layout(), which sets those two
+# properties directly from this same function) -- so this remains the exact
+# transform from BoardView-local coordinates to final on-screen pixels.
 func _local_to_window(p: Vector2) -> Vector2:
 	return p * _scale + Vector2(_world_rect.position)
 
@@ -310,13 +336,20 @@ func _max_brightness_in_rect(img: Image, rect: Rect2i) -> float:
 # Label's antialiased glyphs, same documented exception coding-standards.md
 # already carves out for this project's antialiased Chinese UI font). This
 # measures against the actual _scale used THIS run (from WorldLayout), never
-# a hardcoded factor. 🔴 Per coordinator instruction, this function does NOT
+# a hardcoded factor. Per coordinator instruction, this function does NOT
 # exclude the illegal-mark's diagonal-line region -- the raw number is
-# reported as measured, for a human to judge whether it is a real defect or
-# a check-applicability question. Blocks whose window-space origin falls
-# outside the image bounds are skipped (relevant when _world_rect leaves a
-# non-board margin at the image edge that is not exactly divisible by
-# _scale).
+# reported as measured, for a human to judge. Blocks whose window-space
+# origin falls outside the image bounds are skipped (relevant when
+# _world_rect leaves a non-board margin at the image edge that is not
+# exactly divisible by _scale).
+#
+# 🔴 4th-revision fix: a block's violation is now counted AT MOST ONCE. The
+# 3rd revision's inner `break` only exited the `dx` loop, not the `dy` loop,
+# so a block whose violating pixel appeared on more than one row inside the
+# block got counted once per such row -- see prototypes/godot-specialist-
+# u013-check4-decomposition-2026-09-22/README.md for the measured effect
+# (194 reported vs 178 real distinct violating blocks on the pre-pipeline-fix
+# image). This revision uses an `is_violation` flag and breaks BOTH loops.
 func _integer_grid_violations(img: Image, exclude_rects: Array[Rect2i]) -> Dictionary:
 	var size: Vector2i = img.get_size()
 	var violations: int = 0
@@ -335,12 +368,17 @@ func _integer_grid_violations(img: Image, exclude_rects: Array[Rect2i]) -> Dicti
 				continue
 			total_blocks += 1
 			var origin: Color = img.get_pixel(bx * _scale, by * _scale)
+			var is_violation: bool = false
 			for dy in range(_scale):
 				for dx in range(_scale):
 					var c: Color = img.get_pixel(bx * _scale + dx, by * _scale + dy)
 					if not c.is_equal_approx(origin):
-						violations += 1
+						is_violation = true
 						break
+				if is_violation:
+					break
+			if is_violation:
+				violations += 1
 	return {"violations": violations, "total_blocks": total_blocks}
 
 
@@ -409,7 +447,7 @@ func _run_all_checks() -> Dictionary:
 		_hp_text_panel_rect_window(NEUTRAL_CELL),
 	]
 	var context_grid: Dictionary = _integer_grid_violations(full_img, context_exclude_rects)
-	print("Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction) = ", context_grid["violations"], " / ", context_grid["total_blocks"])
+	print("Category A Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded per coding-standards.md's antialiased-text carve-out; illegal-mark diagonal region NOT excluded, per coordinator instruction; real SubViewport pipeline, single-count-per-block algorithm) = ", context_grid["violations"], " / ", context_grid["total_blocks"])
 	var context_check4_ok: bool = context_grid["violations"] == 0
 	if not context_check4_ok:
 		failures_a.append("Category A Check 4 FAILED: %d/%d blocks violate integer-scale grid outside excluded HP text panels" % [context_grid["violations"], context_grid["total_blocks"]])
@@ -463,7 +501,7 @@ func _run_all_checks() -> Dictionary:
 		var panel: Rect2i = _hp_text_panel_rect_window(cell)
 		crop_exclude_rects.append(Rect2i(panel.position - clamped.position, panel.size))
 	var crop_grid: Dictionary = _integer_grid_violations(cropped, crop_exclude_rects)
-	print("Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction) = ", crop_grid["violations"], " / ", crop_grid["total_blocks"])
+	print("Category C Check 4 -- integer-scale grid violations (world layer only, HP text panels excluded; illegal-mark diagonal region NOT excluded, per coordinator instruction; real SubViewport pipeline, single-count-per-block algorithm) = ", crop_grid["violations"], " / ", crop_grid["total_blocks"])
 	var crop_check4_ok: bool = crop_grid["violations"] == 0
 	if not crop_check4_ok:
 		failures_c.append("Category C Check 4 FAILED: %d/%d blocks violate integer-scale grid outside excluded HP text panels" % [crop_grid["violations"], crop_grid["total_blocks"]])

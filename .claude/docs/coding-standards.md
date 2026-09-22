@@ -237,6 +237,53 @@ is correct.
    categories**, because checks 2 and 3 are, by construction, the most structurally weakened
    of the three categories here — see below.
 
+### 已知陷阱(Check 4,A/B/C 三類共通):分析/證據腳本繞過真實渲染管線,以及重複計數的方向性偏誤(2026-09-22)
+
+Check 4 的違規數字假設量測自真實像素。2026-09-22(Story U-013)兩個陷阱由協調者獨立複驗,非傳聞。
+**兩者事後都已在同一支腳本內修正**(見該腳本檔頭「4TH REVISION」註解自述的修訂記錄)——
+記載在此是為了這類錯誤本身會重演,不是要人去該檔案現在的行號找這段程式碼,現行版本已經不是這樣寫。
+
+🔴 **陷阱①——證據腳本繞過真實渲染管線,產生假性失敗,而假性數字足以觸發對正確程式碼的錯誤修改。**
+本專案世界層實際走 `SubViewportContainer` + `SubViewport`,內部固定 480×270 原生解析度再 nearest
+整數放大:
+```
+$ grep -n "SubViewport" src/ui/battle/BattleScreen.tscn
+12:[node name="WorldViewportContainer" type="SubViewportContainer" parent="."]
+17:[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer"]
+```
+`prototypes/u013-highlight-evidence-2026-09-22/evidence_driver.gd` 前三版把 `BoardView` 直接掛在
+根 `Window` 下、手動套 `WorldLayout` 算出的 scale/position,跳過這層 —— Check 4 報
+**194 / 229440**。改走真實管線複驗(`prototypes/godot-specialist-u013-subviewport-pipeline-check-2026-09-22/`):
+```
+PIPELINE PROBE -- SubViewport.size (should be exactly BASE_WIDTHxBASE_HEIGHT = 480x270 ...) = (480, 270)
+PIPELINE PROBE -- Check 4 (corrected single-count algorithm) on REAL SubViewport pipeline, full window = 0 / 229440
+```
+那個 194 曾引發跨網域調查:`art-director` 依專案明文的像素對齊規範**正確地**判定「該改遊戲」——
+它的判斷原則沒錯,錯的是它相信了那個數字。若當時沒有第二位專家改查渲染管線,
+就會去改一段本來正確的 `src/ui/battle/board_view.gd`。**與 `technical-preferences.md`
+「(A) 的精確定義」節記載的 awk 棋盤量測案例是同一個失效模式的第三次** —— 分析腳本重新實作
+一份規則、繞過真正的程式碼,而沒有任何規則管得到分析腳本。
+
+⚠️ **陷阱②——重複計數寫法只會高估,不會低估。**
+同一支腳本第 3 版(修正前)的 `_integer_grid_violations()`:
+```gdscript
+			var origin: Color = img.get_pixel(bx * _scale, by * _scale)
+			for dy in range(_scale):
+				for dx in range(_scale):
+					var c: Color = img.get_pixel(bx * _scale + dx, by * _scale + dy)
+					if not c.is_equal_approx(origin):
+						violations += 1
+						break
+```
+`break` 只跳出 `dx` 迴圈,`dy` 繼續執行,同一個方塊若多列不合格會被重複計入。去重後真值是
+**178**,不是 194(見 `prototypes/godot-specialist-u013-check4-decomposition-2026-09-22/run_output.txt`)。
+**方向與本節其餘規則相反** —— 本節上方多數陷阱(例如顏色數量、Check 3 的支配色佔比)指向的是
+**低估**風險,把壞畫面誤判成過關;這一條只會**高估**,把好畫面誤判成壞掉,不會讓壞畫面蒙混過關。
+套用本節其餘規則的直覺時,這一條要反過來讀。
+
+以上兩項皆為紀律記載,**沒有任何 lint 或自動檢查會攔** —— 與本節其餘規則一樣,遵守與否目前
+不可觀測,唯一的防線是下一個人讀到這裡並照做。
+
 ### Why Check 5 is not replaced by anything above, in any category
 
 Check 5 was never "the automated checks, plus a human as a backstop for cases automation can't
