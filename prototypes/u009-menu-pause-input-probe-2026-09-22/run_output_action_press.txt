@@ -1,0 +1,4 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+after Input.action_press(ui_accept): a_pressed_count = 0
+after Input.action_release(ui_accept): a_pressed_count = 0

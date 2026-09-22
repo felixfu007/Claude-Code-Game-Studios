@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+action_mode = 1 (0=BUTTON_PRESS, 1=BUTTON_RELEASE)
+after PRESS half only: a_pressed_count = 0
+after RELEASE half too: a_pressed_count = 0

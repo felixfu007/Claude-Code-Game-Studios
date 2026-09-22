@@ -197,18 +197,88 @@ func _open_board_rows() -> PackedStringArray:
 # of that registration — the other half is this story's final report.
 # ═══════════════════════════════════════════════════════════════════════════
 
+## 🔴 [b]Corrected 2026-09-22, SECOND PASS (coordinator review)[/b]: the first
+## pass of this fix (same date) excluded the whole [code]res://src/ui/cursor[/code]
+## directory and reasoned "a genuine future registration call would still show
+## up as [code].register([/code] wherever it is written." [b]That reasoning
+## was wrong in exactly the direction it needed to be right[/b]: it is true for
+## a call written directly against a [CursorSurfaceRegistry] instance, but
+## [code]CursorStateHost.register_surface(...)[/code] — the exact thin shell
+## U-013 added and the path a real caller is now expected to use — contains
+## the substring [code].register_surface([/code], which does [b]NOT[/b]
+## contain the substring [code].register([/code] (after "register" comes
+## "_surface(", not "("). Measured directly:
+## [codeblock]
+## $ printf 'CursorStateHost.register_surface(x, y)\n_registry.register(a, b)\n' | grep -c '\.register('
+## 1   # only the second line matches
+## [/codeblock]
+## Whole-directory exclusion therefore made EVERY future call through the new
+## shell — written anywhere in [code]src/[/code], not only inside
+## [code]src/ui/cursor[/code] — invisible to this scan, regardless of the
+## directory it lived in. This is corrected below by (a) scanning for BOTH
+## registration paths and (b) narrowing the exemption from a whole directory
+## to the exact two shell-body lines that legitimately need one.
+
+
+## Returns [code]true[/code] if [param line] contains a substring this test
+## treats as evidence of a real [CursorSurfaceRegistry] registration /
+## deregistration call — via EITHER path that exists in this project:
+## - the low-level path, directly on a [CursorSurfaceRegistry] instance
+##   ([code].register([/code] / [code].unregister([/code]);
+## - the thin forwarding shell U-013 added on [code]CursorStateHost[/code]
+##   ([code].register_surface([/code] / [code].unregister_surface([/code]).
+## [b]These four substrings are mutually independent[/b] — none is a subset
+## of another (verified above for the register/register_surface pair; the
+## unregister/unregister_surface pair is the same shape) — so checking all
+## four costs nothing extra and cannot double-count a single line.
+## [code]func register([/code] / [code]func register_native_pointer_exception([/code]
+## (method DEFINITIONS, not calls) do not match any of the four — there is no
+## dot immediately before "register" in a function declaration — so they are
+## excluded without any special-casing. Extracted as its own function so it
+## can be unit-tested directly against string literals, with no file I/O
+## (see the [code]test_line_indicates_surface_registration_call_*[/code]
+## tests below) — proving the matcher itself catches both paths, independent
+## of which files happen to exist in [code]src/[/code] today.
+func _line_indicates_surface_registration_call(line: String) -> bool:
+	return (
+		line.contains(".register(")
+		or line.contains(".unregister(")
+		or line.contains(".register_surface(")
+		or line.contains(".unregister_surface(")
+	)
+
+
+## The ONLY lines this test deliberately does NOT treat as "a real surface was
+## registered" — [code]cursor_state_host.gd[/code]'s own thin forwarding shell
+## bodies (see that file's "Story U-013" section:
+## [method CursorStateHost.register_surface] /
+## [method CursorStateHost.unregister_surface]). Matched by EXACT stripped
+## line content within [constant _EXEMPT_SHELL_FILE] only — never a whole
+## file, never a whole directory (the mistake the first pass of this fix
+## made). A line-NUMBER-keyed exemption was considered and rejected: it would
+## silently point at the wrong line the moment anything above it in that file
+## changes. Content-keyed instead: if [code]cursor_state_host.gd[/code] is
+## ever edited so these two lines no longer read exactly this way, the
+## exemption simply stops matching and this scan starts reporting them again
+## — a loud, safe failure (a human re-reads and re-approves), not a silent
+## widening of the blind spot.
+const _EXEMPT_SHELL_FILE: String = "res://src/ui/cursor/cursor_state_host.gd"
+const _EXEMPT_SHELL_LINES: Array[String] = [
+	"return _registry.register(surface, node)",
+	"return _registry.unregister(surface)",
+]
+
+
 ## Recursively collects every line in every [code].gd[/code] file under
-## [param dir_path] containing the literal substring [code].register([/code].
+## [param dir_path] for which [method _line_indicates_surface_registration_call]
+## returns [code]true[/code] — except the two exact lines named in
+## [constant _EXEMPT_SHELL_LINES], and only within [constant _EXEMPT_SHELL_FILE].
 ## Pure [DirAccess]/[FileAccess] — deliberately NOT a shelled-out
 ## [code]grep[/code] call: [code].claude/docs/coding-standards.md[/code]
 ## documents this exact class of hazard for this project (`godot` itself not
 ## being on PATH in some shells), and an external-tool dependency inside an
-## automated test is the same fragility one level down. [code]func register([/code]
-## / [code]func register_native_pointer_exception([/code] (the registry's own
-## method DEFINITIONS) do not match — there is no dot immediately before
-## "register" in a function declaration — so they are excluded without any
-## special-casing.
-func _files_matching_dot_register(dir_path: String) -> Array[String]:
+## automated test is the same fragility one level down.
+func _files_matching_surface_registration_calls(dir_path: String) -> Array[String]:
 	var matches: Array[String] = []
 	var dir: DirAccess = DirAccess.open(dir_path)
 	if dir == null:
@@ -219,36 +289,104 @@ func _files_matching_dot_register(dir_path: String) -> Array[String]:
 		if entry != "." and entry != "..":
 			var full_path: String = dir_path.path_join(entry)
 			if dir.current_is_dir():
-				matches.append_array(_files_matching_dot_register(full_path))
+				matches.append_array(_files_matching_surface_registration_calls(full_path))
 			elif entry.ends_with(".gd"):
 				var lines: PackedStringArray = FileAccess.get_file_as_string(full_path).split("\n")
 				for i: int in range(lines.size()):
-					if lines[i].contains(".register("):
-						matches.append("%s:%d: %s" % [full_path, i + 1, lines[i].strip_edges()])
+					var stripped: String = lines[i].strip_edges()
+					if full_path == _EXEMPT_SHELL_FILE and stripped in _EXEMPT_SHELL_LINES:
+						continue
+					if _line_indicates_surface_registration_call(lines[i]):
+						matches.append("%s:%d: %s" % [full_path, i + 1, stripped])
 		entry = dir.get_next()
 	dir.list_dir_end()
 	return matches
 
 
+# ─── Sensitivity proof for the matcher itself — no file I/O, no manual
+# injection: pure string literals in, boolean out. Proves the exact blind
+# spot the coordinator caught (".register_surface(" not matching ".register(")
+# is now covered, and that the exemption above is narrow enough to still let
+# the SAME literal shell-body text be flagged when it is NOT the exempt file. ─
+
+func test_line_indicates_surface_registration_call_catches_the_low_level_path() -> void:
+	assert_bool(_line_indicates_surface_registration_call("_registry.register(surface, node)")).is_true()
+	assert_bool(_line_indicates_surface_registration_call("_registry.unregister(surface)")).is_true()
+
+
+func test_line_indicates_surface_registration_call_catches_the_shell_path() -> void:
+	# This is the exact substring the first-pass fix missed — see this file's
+	# "SECOND PASS" correction note above.
+	assert_bool(_line_indicates_surface_registration_call(
+		"CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)"
+	)).append_failure_message(
+		"the matcher is blind to calls through CursorStateHost.register_surface() "
+		+ "— this is the exact gap a 2026-09-22 coordinator review caught."
+	).is_true()
+	assert_bool(_line_indicates_surface_registration_call(
+		"CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)"
+	)).is_true()
+
+
+func test_line_indicates_surface_registration_call_does_not_flag_method_definitions() -> void:
+	assert_bool(_line_indicates_surface_registration_call("func register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult:")).is_false()
+	assert_bool(_line_indicates_surface_registration_call("func register_surface(surface: CursorTypes.SurfaceType, node: Node) -> CursorSurfaceRegistry.RegisterResult:")).is_false()
+	assert_bool(_line_indicates_surface_registration_call("func register_native_pointer_exception(node: Control) -> ExceptionRegisterResult:")).is_false()
+
+
+func test_line_indicates_surface_registration_call_does_not_go_blind_on_unrelated_text() -> void:
+	assert_bool(_line_indicates_surface_registration_call("var _registry: CursorSurfaceRegistry")).is_false()
+	assert_bool(_line_indicates_surface_registration_call("# a comment about registration")).is_false()
+
+
+func test_exempt_shell_lines_would_otherwise_be_flagged_by_the_matcher_alone() -> void:
+	# Proves the exemption in _files_matching_surface_registration_calls() is a
+	# DELIBERATE, narrow carve-out — not the matcher itself being blind to this
+	# text. If this assertion ever went false, the exemption list would be
+	# hiding nothing (dead code), which would be worth knowing.
+	for exempt_line: String in _EXEMPT_SHELL_LINES:
+		assert_bool(_line_indicates_surface_registration_call(exempt_line)).append_failure_message(
+			"exempt line %s no longer matches the general pattern — the "
+			+ "exemption is not doing what this test claims it does."
+			% exempt_line
+		).is_true()
+
+
 ## Documents, as an EXECUTABLE test, that this project's actual game code
 ## does not register anything under ANY [enum CursorTypes.SurfaceType] tag
-## today — so "a player sees the highlight move when pressing arrow keys"
-## cannot happen yet, regardless of how correct this story's Option E
-## mechanism is (see every other test in this file, which DOES register test
-## doubles/real-[Board] fixtures, deliberately, to prove the mechanism
-## itself works). This test is about [code]res://src/[/code] only.
+## today — via EITHER registration path — so "a player sees the highlight
+## move when pressing arrow keys" cannot happen yet, regardless of how
+## correct this story's Option E mechanism is (see every other test in this
+## file, which DOES register test doubles/real-[Board] fixtures, deliberately,
+## to prove the mechanism itself works). This test is about [code]res://src/[/code]
+## only.
+##
+## 🔴 [b]This assertion WILL go red the moment U-013 (or any later story)
+## registers [constant CursorTypes.SurfaceType.BOARD_TILE] for real[/b] —
+## whether that call is written as [code]CursorStateHost.register_surface(...)[/code]
+## or directly against a [CursorSurfaceRegistry] instance, and regardless of
+## which file it is written in (only the two named shell-body lines inside
+## [code]cursor_state_host.gd[/code] itself are exempt). [b]That is the
+## correct, intended outcome[/b]: turning red means the gap this test was
+## registered to track has closed. The correct response is to update this
+## story's report and narrow or retire this test — never to widen the
+## exemption to make it pass again.
 func test_gap_no_surface_is_registered_anywhere_in_src_yet() -> void:
-	var matches: Array[String] = _files_matching_dot_register("res://src")
+	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
 
 	assert_array(matches).append_failure_message(
 		"EXPECTED EMPTY. This is the explicit gap this story registered: "
-		+ "nothing in src/ calls CursorSurfaceRegistry.register() for ANY "
-		+ "CursorTypes.SurfaceType tag, so a player pressing arrow keys "
+		+ "nothing outside the two named shell-body lines in cursor_state_host.gd "
+		+ "calls CursorSurfaceRegistry.register()/unregister() (directly or via "
+		+ "the CursorStateHost.register_surface()/unregister_surface() shell) "
+		+ "for ANY CursorTypes.SurfaceType tag, so a player pressing arrow keys "
 		+ "cannot see the highlight move in any real running scene yet — "
 		+ "this story's Option E mechanism is correct and tested (see the "
 		+ "rest of this file), but nothing wires a real surface into it. "
-		+ "If this assertion now FAILS, something changed that — update "
-		+ "this story's report, do not just widen this assertion. Matches: %s"
+		+ "If this assertion now FAILS because a real caller registered a real "
+		+ "surface: GOOD — that is the intended outcome. Update this story's "
+		+ "report and narrow/retire this test; do not widen the exemption list "
+		+ "to make it pass again. Matches: %s"
 		% str(matches)
 	).is_empty()
 

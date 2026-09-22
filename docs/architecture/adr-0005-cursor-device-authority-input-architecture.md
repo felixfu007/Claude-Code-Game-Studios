@@ -1861,6 +1861,22 @@ func flush_buffered_navigation() -> void  # 第四輪新增(R4-1):供 -25 子節
 # get_viewport().get_mouse_position() 全專案只准出現在建構 mouse_position_provider 的那一處,
 # 且採具名方法綁定 Callable(self, "_get_mouse_position") 而非 lambda(發現 G,VR #15)。
 # 全部公開 API 為對 _state 的一行轉發,不新增任何判斷邏輯。
+#
+# 🔴 事實層更正(2026-09-22,U-013 派工,godot-specialist 裁決)—— 本節原本只列
+# 上面三個方法,而 U-013 是本 epic 第一個讓打牌流程接上本系統的單元,接上去才發現
+# 下游(battle_screen.gd,非本 Host 自己建構的子節點)沒有任何管道拿到 CursorState
+# 的讀取查詢、寫入介面或 CursorSurfaceRegistry 的註冊介面——本節上一句「全部公開
+# API 為對 _state 的一行轉發,不新增任何判斷邏輯」這條治理原則早已存在,只是成員
+# 清單不完整。新增六個同形狀的一行轉發,**不重開任何決策,`## Status` 維持 Accepted**:
+func is_current_target_valid() -> bool                                          # 轉發 CursorState 同名方法,機制十/TR-cursor-014
+func get_device_authority() -> CursorTypes.Authority                            # 轉發 CursorState 同名方法,機制十/TR-cursor-014
+func get_current_target() -> CursorTarget                                       # 轉發 CursorState 同名方法(已回傳複本),機制十/TR-cursor-014
+func set_target(target: CursorTarget) -> CursorState.SetTargetResult            # 轉發 CursorState 同名方法,機制十/TR-cursor-012(機制六②角色用)
+func register_surface(surface: CursorTypes.SurfaceType, node: Node) -> CursorSurfaceRegistry.RegisterResult    # 轉發 _registry.register(),機制三/TR-cursor-003
+func unregister_surface(surface: CursorTypes.SurfaceType) -> CursorSurfaceRegistry.RegisterResult              # 轉發 _registry.unregister(),機制三/TR-cursor-003
+# 落地位置:src/ui/cursor/cursor_state_host.gd 檔尾「Story U-013: thin forwarding
+# read/write/registration entries」節。刻意不加 mark_pending_reresolve() / 甲乙分支 /
+# reclaim_progress() / target_changed() 訊號轉發——理由見該節註解,U-013 目前不需要。
 
 # ─── cursor_navigation_applier.gd(第四輪修訂新增,R4-1)───────
 class_name CursorNavigationApplier extends Node

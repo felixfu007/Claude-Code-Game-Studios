@@ -18,6 +18,8 @@ script = ExtResource("1_bv_script")
 
 [node name="AttackHighlightLayer" type="Node2D" parent="."]
 
+[node name="CardTargetHighlightLayer" type="Node2D" parent="."]
+
 [node name="StatsLayer" type="Node2D" parent="."]
 
 [node name="CursorSprite" type="Sprite2D" parent="."]

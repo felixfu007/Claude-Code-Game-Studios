@@ -1,0 +1,15 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+BASELINE (unpaused): a.has_focus() = true
+BASELINE (unpaused): after ui_accept on focused Button A, a_pressed_count = 0
+paused = true; a.process_mode = 0 (0 = INHERIT)
+ERROR: CursorState.apply_buffered_navigation(): a NAVIGATION-class ui_* event arrived while KEYBOARD_GAMEPAD holds device authority, but the surface registered under this target's CursorTypes.SurfaceType tag either has no registration at all, or does not implement cursor_navigate(from_id: int, direction: Vector2i) -> Variant. Cursor navigation is DISABLED for this surface tag until a registered surface implements the contract. This is reported once, not per frame; diagnostic_surface_navigation_unsupported_count keeps counting.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_buffered_navigation (res://src/ui/cursor/cursor_state.gd:611)
+       [1] flush_buffered_navigation (res://src/ui/cursor/cursor_state_host.gd:404)
+       [2] _process (res://src/ui/cursor/cursor_navigation_applier.gd:74)
+PAUSED / default process_mode: after ui_down, b.has_focus() = true
+PAUSED / default process_mode: after ui_accept, b_pressed_count = 0
+PAUSED / process_mode=ALWAYS: after ui_down, b.has_focus() = true
+PAUSED / process_mode=ALWAYS: after ui_accept, b_pressed_count = 0

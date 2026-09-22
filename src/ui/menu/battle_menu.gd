@@ -60,21 +60,44 @@
 ## the more STABLE half of the two (native focus outline geometry does not
 ## depend on a fallback font's metrics the way rewritten text did).
 ##
-## [b]Story U-007 scope only[/b] — per that story's own "Out of Scope" section,
-## this file does NOT (yet):
-## - wire the "結束回合" row's real enable/disable judgement to
-##   [code]BattleController.phase() / is_card_play_in_progress()[/code] (U-009 —
-##   AC-M5), so that row is unconditionally enabled today
-## - build M4 (leave-confirmation) itself (U-010) — only its SIZE arithmetic is
-##   verified here (see [method leave_confirm_size]), because Implementation
-##   Notes #2 requires that verification regardless of M4's build status
+## [b]Story U-009 (this story) adds[/b]: the "結束回合" row's real enable/
+## disable judgement (AC-M4/AC-M5/AC-M12), wired to the injected [member
+## controller] and re-evaluated every frame the menu is visible (see [method
+## can_end_faction_phase] / [method end_faction_phase_disabled_reason] /
+## [method _refresh_end_phase_row] / [method _process]), and the row's press
+## handler (see [method _on_end_phase_row_pressed] for the ADR-0001 write path
+## and why it deliberately stops short of draining the enemy phase itself).
+##
+## [b]Story U-010 (this story) adds[/b]: M4 (離開確認) itself — [method
+## open_leave_confirm] / [method close_leave_confirm] / [method
+## is_leave_confirm_open] / [method _on_leave_confirmed_pressed] / [method
+## leave_confirm_rect], wired to [member _quit_row]'s previously-unconnected
+## [signal BaseButton.pressed] (U-007/U-008/U-009 all explicitly left this row
+## unconnected — see the "Still Story U-007/U-008 scope" note this paragraph
+## replaces below), plus [member quit_callable] / [method
+## diagnostic_would_call_real_quit] for the one irreversible action this
+## whole file performs, and [method _unhandled_input] for the
+## [code]battle_cancel[/code]-closes-M4-only path (`design/ux/battle-menu.md`
+## Implementation Note #7). [method leave_confirm_size]'s SIZE arithmetic was
+## already verified by U-007 before M4 existed; this story only added the
+## POSITION half.
+##
+## [b]Still Story U-007/U-008 scope, unchanged by this story[/b] — per those
+## stories' own "Out of Scope" sections, this file does NOT (yet):
 ## - get instantiated anywhere in [code]BattleScreen.tscn[/code], or respond to
-##   the [code]battle_menu[/code] / [code]battle_cancel[/code] actions itself
-##   — this scene is a standalone, not-yet-wired-in deliverable. This story's
-##   file-scope is [code]battle_menu.gd[/code] only (dispatch brief: do not
-##   touch [code]battle_screen.gd[/code]), so the actual "M / Start opens
-##   this" wiring is deferred to whichever future story instantiates this
-##   scene into the real battle screen.
+##   the [code]battle_menu[/code] / [code]battle_cancel[/code] actions ITSELF
+##   at the top level (opening/closing the WHOLE menu) — this scene is a
+##   standalone, not-yet-wired-in deliverable. This story's file-scope is
+##   [code]battle_menu.gd[/code] (+ its companion [code]BattleMenu.tscn[/code])
+##   only (dispatch brief: do not touch [code]battle_screen.gd[/code] /
+##   [code]board_view.gd[/code]), so the actual "M / Start opens this" wiring
+##   — and draining the enemy phase after [signal end_faction_phase_confirmed]
+##   fires — is deferred to whichever future story instantiates this scene
+##   into the real battle screen (BM-1 in `battle-menu.md`'s Open Questions is
+##   still unresolved on whether/how that wiring happens at all). Note this is
+##   narrower than it used to read: [method _unhandled_input] DOES now handle
+##   [code]battle_cancel[/code], but ONLY to close M4 back to M1 — never to
+##   close the whole menu, which remains exactly as unwired as before.
 ##
 ## [b]Layout math is single-sourced[/b]: every size below is expressed as a
 ## multiple of [method HudLayout.font_size] anchored to [method HudLayout.safe_rect]
@@ -136,6 +159,15 @@ const ROW_HEIGHT_FPX_MULTIPLIER: float = 2.0
 const LEAVE_CONFIRM_WIDTH_FPX_MULTIPLIER: float = 14.0
 ## M4 height — SIZE ONLY, see above.
 const LEAVE_CONFIRM_HEIGHT_FPX_MULTIPLIER: float = 7.0
+
+## Story U-010 — M4 title, `design/ux/battle-menu.md`'s own wireframe wording,
+## verbatim (not this file's invention).
+const LEAVE_CONFIRM_TITLE: String = "離開遊戲?"
+
+## Story U-010 — M4 body, `design/ux/battle-menu.md` Implementation Notes #3's
+## own literal wording, verbatim: AC-M7 requires the consequence be spelled
+## out ("進度會消失"), not a generic "確定要離開嗎?".
+const LEAVE_CONFIRM_BODY: String = "目前沒有存檔功能,離開後這場\n戰鬥的進度會消失。"
 
 ## Placeholder internal spacing (this file's own judgement call, not a spec
 ## number — see class doc comment). Outer margin on all four sides of the
@@ -246,14 +278,129 @@ var authoritative_write_in_progress_check: Callable = Callable()
 ## [signal open_rejected] at all.
 var forced_discard_in_progress_check: Callable = Callable()
 
+## Story U-009 (AC-M4/AC-M5/AC-M12) — the battle this menu is wired to, or
+## [code]null[/code] before anything injects one. Unlike [member
+## authoritative_write_in_progress_check] / [member forced_discard_in_progress_check]
+## above (narrow single-predicate [Callable]s), this is a direct reference —
+## `design/ux/battle-menu.md`'s Data Requirements table names
+## [code]BattleController.phase()[/code] / [code]is_card_play_in_progress()[/code] /
+## [code]has_pending_discard()[/code] as three EXISTING queries this screen
+## must read, not one this screen invents, so there is nothing to wrap in a
+## fresh [Callable] the way the two N5 checks above are (those two guard a
+## flag that has no [BattleController] method of its own at all).
+##
+## 🔴 [b]Deliberately a plain public field, not a property setter[/b] — this
+## file's own established idiom (see [member authoritative_write_in_progress_check]'s
+## doc comment: "an unset Callable ... means never blocked") already uses bare
+## injectable fields rather than setters anywhere a caller wires this scene,
+## and [method _refresh_end_phase_row] is idempotent and safe to call as many
+## times as needed (see [method _process] / [method open] below), so no
+## setter-triggered side effect is required for correctness.
+##
+## Left [code]null[/code] means "unconditionally enabled, no reason text" —
+## the exact behavior this row had before this story (U-007/U-008's own class
+## doc comment: "that row is unconditionally enabled today"), which keeps
+## every pre-existing test in [code]battle_menu_layout_test.gd[/code] /
+## [code]battle_menu_gating_test.gd[/code] (none of which inject a controller)
+## passing unchanged.
+var controller: BattleController = null
+
+## Story U-010 — injected [code]func() -> void[/code], called when the player
+## CONFIRMS leaving from M4 (pressing "離開"). 🔴 [b]THIS FIELD'S UNSET
+## MEANING IS THE OPPOSITE OF EVERY OTHER INJECTABLE [Callable] IN THIS
+## FILE.[/b] [member authoritative_write_in_progress_check] and
+## [member forced_discard_in_progress_check] above both use "unset means
+## NEVER blocked" (a safe, inert default). This field's unset default is NOT
+## inert: it means "call the REAL, irreversible [method SceneTree.quit]".
+## That asymmetry is deliberate, not an oversight — a leave button wired to
+## silently do nothing in production would be a worse defect than a test
+## forgetting to inject a stub (fail-loud beats fail-silent for the one
+## action in this whole file that cannot be undone) — but a reader who
+## pattern-matches this field against the two above WILL guess wrong, and the
+## wrong guess costs a live engine process mid test-run, not a wrong pixel.
+## 🔴 [b]Every test that presses [member _leave_quit_button] MUST inject a
+## stub here first[/b] — see [method diagnostic_would_call_real_quit] for how
+## "falls back to real quit when unset" is proven WITHOUT ever calling it,
+## and `tests/integration/ui/menu/battle_menu_leave_confirmation_test.gd`'s
+## own test pinning this asymmetry as intentional.
+var quit_callable: Callable = Callable()
+
+## Story U-010 — read-only, side-effect-free: lets a test assert which branch
+## [method _on_leave_confirmed_pressed] WOULD take without ever calling it.
+## Mirrors `coding-standards.md`'s "What NOT to Automate" split (assert the
+## component's DECISION headless via a diagnostic getter; the engine's real
+## APPLICATION is left to a manual/windowed run) — doubly so here, since the
+## real application is [method SceneTree.quit], which is fatal to the test
+## process itself if actually invoked.
+func diagnostic_would_call_real_quit() -> bool:
+	return not quit_callable.is_valid()
+
+## Placeholder M3 reason-text color — BM-7 (視覺樣式全部未定) is explicitly
+## unowned pending `art-director`, same caveat as [constant MASK_COLOR] /
+## [constant PANEL_BG_COLOR] / [constant DIVIDER_COLOR] above.
+const REASON_TEXT_COLOR: Color = Color(1.0, 1.0, 1.0, 0.9)
+
+## M3 font-size multiplier — `design/ux/battle-menu.md` Layout Zones table:
+## "M3 不可選原因 | ... | 一行,0.7 fpx 字級".
+const REASON_FONT_FPX_MULTIPLIER: float = 0.7
+
+## `design/ux/battle-menu.md`'s wireframe concrete wording for the
+## card-play-in-progress cause (N2): the literal string drawn in the "打牌流程
+## 進行中開啟" ASCII mockup ("結束回合 ✕ 請先完成或取消打牌"). Used verbatim,
+## not this file's invention.
+const REASON_CARD_PLAY_IN_PROGRESS: String = "請先完成或取消打牌"
+
+## N3's cause has no wireframe wording in `battle-menu.md` (BM-3: this state's
+## very existence is unmeasured — "N3 的存在與否尚未量測"), so this is a
+## reasonable interim placeholder in the same category as [constant
+## REJECTION_MESSAGE_AUTHORITATIVE_WRITE] above, not a design-authored string.
+const REASON_NOT_PLAYER_TURN: String = "現在不是你的回合"
+
+## Reuses [constant REJECTION_MESSAGE_FORCED_DISCARD] verbatim rather than
+## declaring a second string for the same underlying cause (`design/ux/battle-menu.md`'s
+## own N5 text, "請先完成棄牌") — belt-and-suspenders only: per that spec's N5,
+## a pending forced discard is supposed to already have refused this menu from
+## ever opening in the first place (once U-015 wires
+## [member forced_discard_in_progress_check]), so this row-level branch should
+## be structurally unreachable in practice, same status as the third conjunct
+## in [method can_end_faction_phase]'s own doc comment below.
+
 @onready var _mask: ColorRect = $Mask
 @onready var _panel: PanelContainer = $Panel
 @onready var _content_margin: MarginContainer = $Panel/ContentMargin
 @onready var _rows: VBoxContainer = $Panel/ContentMargin/Rows
 @onready var _return_row: Button = $Panel/ContentMargin/Rows/ReturnToBattleRow
 @onready var _end_phase_row: Button = $Panel/ContentMargin/Rows/EndPhaseRow
+@onready var _end_phase_reason_label: Label = $Panel/ContentMargin/Rows/EndPhaseReasonLabel
 @onready var _divider: ColorRect = $Panel/ContentMargin/Rows/Divider
 @onready var _quit_row: Button = $Panel/ContentMargin/Rows/QuitRow
+
+## Story U-010 — M4 (leave-confirmation) node refs. [member _leave_confirm_blocker]
+## is a transparent, [constant Control.MOUSE_FILTER_STOP] full-rect [ColorRect]
+## sitting between M1's rows and M4's own panel — it is what keeps M1 from
+## receiving mouse clicks while M4 is open, chosen deliberately over setting
+## [member BaseButton.disabled] on M1's rows directly: [method _process] (U-009)
+## re-evaluates [member _end_phase_row].disabled every frame from
+## [member controller]'s live state, so a manual disable here would race that
+## per-frame refresh and could be silently overwritten while M4 is still open.
+@onready var _leave_confirm: Control = $LeaveConfirm
+@onready var _leave_confirm_blocker: ColorRect = $LeaveConfirm/Blocker
+@onready var _leave_confirm_panel: PanelContainer = $LeaveConfirm/Panel
+@onready var _leave_confirm_content_margin: MarginContainer = $LeaveConfirm/Panel/ContentMargin
+@onready var _leave_confirm_content: VBoxContainer = $LeaveConfirm/Panel/ContentMargin/Content
+@onready var _leave_confirm_title_label: Label = $LeaveConfirm/Panel/ContentMargin/Content/TitleLabel
+@onready var _leave_confirm_body_label: Label = $LeaveConfirm/Panel/ContentMargin/Content/BodyLabel
+@onready var _leave_cancel_button: Button = $LeaveConfirm/Panel/ContentMargin/Content/Buttons/CancelButton
+@onready var _leave_quit_button: Button = $LeaveConfirm/Panel/ContentMargin/Content/Buttons/LeaveButton
+
+## Story U-009 (ADR-0001's registered path ⑤, `end_faction_phase()`) — emitted
+## right after this row's press handler calls [method BattleController.end_faction_phase]
+## successfully (never on a rejected/disabled press). 🔴 [b]Deliberately does
+## NOT also call [method BattleController.run_enemy_phase] or [method
+## BattleController.step_enemy_phase][/b] — see [method _on_end_phase_row_pressed]'s
+## own doc comment for why draining the enemy phase is this signal's listener's
+## job, not this file's.
+signal end_faction_phase_confirmed()
 
 ## The three focusable rows, captured once at [method _ready] purely as an
 ## iteration convenience for [method _apply_layout] (and, previously, for the
@@ -314,9 +461,73 @@ func _ready() -> void:
 	# menu (`battle-menu.md`'s "離開" table: battle_cancel / re-press
 	# battle_menu / select this row) — wiring its activation to close() is
 	# this story's own natural completion of a button U-007 built but left
-	# unconnected. The other two rows (EndPhaseRow / QuitRow) are deliberately
-	# left UNconnected — U-009 / U-010's jobs respectively, not this story's.
+	# unconnected. QuitRow is still deliberately left UNconnected — U-010's job,
+	# not this story's. EndPhaseRow is connected below (Story U-009).
 	_return_row.pressed.connect(close)
+
+	# Story U-009 (AC-M2/AC-M4/AC-M5/AC-M12) — see [method _on_end_phase_row_pressed]
+	# and [method _refresh_end_phase_row] for what this wires up.
+	_end_phase_row.pressed.connect(_on_end_phase_row_pressed)
+
+	# 🔴 Story U-009: without this, [method _process] below (this row's ONLY
+	# mechanism for the Data Requirements table's "選單開啟期間持續讀" —
+	# there is no change-signal for [method BattleController.is_card_play_in_progress]
+	# / [method BattleController.has_pending_discard] to connect to) would stop
+	# running the instant [method open] sets [member SceneTree.paused] = true
+	# (U-008) — [Node._process] is gated by [member Node.process_mode], and the
+	# engine default ([constant Node.PROCESS_MODE_INHERIT]) pauses right along
+	# with the rest of the tree. Measured directly (not assumed) in
+	# `prototypes/u009-menu-pause-input-probe-2026-09-22/`: with the default
+	# process_mode, a real ui_down [InputEvent] pushed while paused STILL moved
+	# focus (native Control directional-focus dispatch is NOT gated by
+	# [member SceneTree.paused] in this engine version) — so this override is
+	# NOT needed for input/navigation to keep working while the menu is open;
+	# it is needed specifically so [method _process]'s per-frame re-evaluation
+	# of this row's judgement does not silently stop the moment the menu that
+	# most needs it (a paused game) opens.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+	# Story U-010 — "離開遊戲" opens M4 (State N4). Deliberately left
+	# UNconnected by U-007/U-008/U-009 (see this class's own "Still Story
+	# U-007/U-008 scope" note above) — this story's own natural completion of
+	# a button they built but did not wire, the same shape as U-008 wiring
+	# ReturnToBattleRow.pressed -> close() above.
+	_quit_row.pressed.connect(open_leave_confirm)
+
+	_leave_confirm_title_label.text = LEAVE_CONFIRM_TITLE
+	_leave_confirm_body_label.text = LEAVE_CONFIRM_BODY
+
+	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
+		m4_button.focus_mode = Control.FOCUS_ALL
+
+	# 🔴 Confirm-key decision, affirmed for M4 explicitly rather than silently
+	# inherited (per this story's dispatch instruction that U-008/009/010 each
+	# decide explicitly): both buttons answer native [signal BaseButton.pressed]
+	# (hence [code]ui_accept[/code]) — the SAME mechanism every other row in
+	# this file already uses (see class doc comment's "Confirm-key decision"
+	# section). No new decision was needed because M4 does not introduce a new
+	# activation mechanism.
+	_leave_cancel_button.pressed.connect(close_leave_confirm)
+	_leave_quit_button.pressed.connect(_on_leave_confirmed_pressed)
+
+	# Explicit neighbor wiring, matching every other focus transition in this
+	# file (see this method's own comment above on why automatic geometric
+	# search is never relied on here): Cancel <-> Leave in both left/right
+	# directions; up/down self-loop (M4 has no vertical neighbor). This is
+	# what STRUCTURALLY prevents directional navigation from ever escaping M4
+	# back onto an M1 row while M4 is open — independent of whatever
+	# mouse-blocking state M1's rows are in ([member _leave_confirm_blocker]
+	# only stops mouse input, not keyboard focus search).
+	_leave_cancel_button.focus_neighbor_left = _leave_cancel_button.get_path_to(_leave_quit_button)
+	_leave_cancel_button.focus_neighbor_right = _leave_cancel_button.get_path_to(_leave_quit_button)
+	_leave_cancel_button.focus_neighbor_top = _leave_cancel_button.get_path_to(_leave_cancel_button)
+	_leave_cancel_button.focus_neighbor_bottom = _leave_cancel_button.get_path_to(_leave_cancel_button)
+	_leave_quit_button.focus_neighbor_left = _leave_quit_button.get_path_to(_leave_cancel_button)
+	_leave_quit_button.focus_neighbor_right = _leave_quit_button.get_path_to(_leave_cancel_button)
+	_leave_quit_button.focus_neighbor_top = _leave_quit_button.get_path_to(_leave_quit_button)
+	_leave_quit_button.focus_neighbor_bottom = _leave_quit_button.get_path_to(_leave_quit_button)
+
+	_refresh_end_phase_row()
 
 
 ## Story U-008 (ADR-0005 機制九, `battle-menu.md`'s "① 開啟時須呼叫
@@ -351,7 +562,25 @@ func open() -> OpenResult:
 	visible = true
 	get_tree().paused = true
 	CursorStateHost.suspend_arbitration()
+	# Story U-010 — force M4 CLOSED on every fresh open, the same "never leak
+	# state across a cycle" reasoning [member _return_row].grab_focus() below
+	# already applies to M1's own focus. 🔴 This reset lives HERE rather than
+	# in [method close] on purpose: [method close]'s own doc comment claims
+	# its body is "exactly these three lines" as part of AC-M9's reasoning
+	# (never touching board/gameplay state) — that claim is about
+	# [BattleState]/[BattleController]/[CursorState], not this menu's own M4
+	# visibility, so adding this line there would not violate AC-M9, but it
+	# WOULD invalidate a doc comment making a specific, load-bearing claim for
+	# a reset [method open] already covers unconditionally on the very next
+	# open. The two methods are intentionally asymmetric here, not an
+	# oversight.
+	_leave_confirm.visible = false
 	_return_row.grab_focus()
+	# Story U-009 (`design/ux/battle-menu.md` Data Requirements: "開啟選單時查
+	# 一次") — re-evaluate the 結束回合 row immediately on open, rather than
+	# waiting for the next [method _process] tick, so the very first frame the
+	# menu is visible already reflects current battle state.
+	_refresh_end_phase_row()
 	return OpenResult.OPENED
 
 
@@ -388,6 +617,266 @@ func is_open() -> bool:
 	return visible
 
 
+## Story U-010 (`design/ux/battle-menu.md` State N4, AC-M6's default-focus
+## requirement). Enters M4 OVER M1 — M1's mask/panel/rows are never touched
+## by this method (Implementation Note #2: "M1 的遮罩(M0)與面板持續存在於
+## M4 底下"); [member _leave_confirm_blocker] (see its own doc comment) is
+## what keeps M1 from receiving mouse input while M4 is up, not any change to
+## M1's own visibility/disabled state.
+##
+## 🔴 Default focus is forced onto [member _leave_cancel_button] on EVERY
+## call, never "whatever M4 was left on last time" — this IS the mechanical
+## reason this story exists (`battle-menu.md`: "理由是機械性的而非禮貌性的"):
+## the player just used the SAME confirm key to select "離開遊戲" from M1; if
+## M4 defaulted to "離開", a second press of that key would quit the game.
+func open_leave_confirm() -> void:
+	_leave_confirm.visible = true
+	_leave_cancel_button.grab_focus()
+
+
+## Symmetric reverse of [method open_leave_confirm] — returns to M1 WITHOUT
+## closing the whole menu (`design/ux/battle-menu.md` Implementation Note #7:
+## "選定「取消」,或按 battle_cancel...兩者皆回到 M1,不關閉整個選單"). Both
+## exit paths ([member _leave_cancel_button]'s [signal BaseButton.pressed]
+## and [method _unhandled_input]'s [code]battle_cancel[/code] branch) call
+## this same method, matching this file's own established "never let two
+## paths to the same outcome drift apart" convention.
+func close_leave_confirm() -> void:
+	_leave_confirm.visible = false
+	_quit_row.grab_focus()
+
+
+func is_leave_confirm_open() -> bool:
+	return _leave_confirm.visible
+
+
+## Story U-010 (AC-M6's actual destructive action). 🔴 [b]Never calls
+## [method SceneTree.quit] directly[/b] — always through
+## [member quit_callable] (see that field's own doc comment for why an UNSET
+## Callable here means "call the real one", the opposite of this file's other
+## two injectable Callables). This indirection exists for exactly one reason:
+## an automated test that accidentally executed the real branch would kill
+## the test runner's own engine process — see [method diagnostic_would_call_real_quit].
+func _on_leave_confirmed_pressed() -> void:
+	if quit_callable.is_valid():
+		quit_callable.call()
+	else:
+		get_tree().quit()
+
+
+## Story U-009 (`design/ux/battle-menu.md` Data Requirements: "選單開啟期間持續
+## 讀"). [method BattleController.phase] can change while this menu sits open
+## (a card-play interaction closing, or — BM-3, unmeasured — a non-player-turn
+## window) with no signal this file can connect to for the other two conjuncts
+## ([method BattleController.is_card_play_in_progress] / [method
+## BattleController.has_pending_discard] have none), so polling once per frame
+## while visible is the mechanism the spec's own wording calls for, not a
+## substitute this file invented. No-op while closed ([member Control.visible]
+## is false) — no point re-evaluating a row nobody can see or reach.
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	_refresh_end_phase_row()
+
+
+## Story U-009 (AC-M2/AC-M4/AC-M5/AC-M12) — single place this row's
+## enable/disable state and M3 reason text are computed and applied, called
+## from three sites ([method _ready], [method open], [method _process]) so
+## none of them duplicate the logic. Idempotent: safe to call every frame.
+##
+## 🔴 [b]Skip-on-navigate is implemented as NEIGHBOR-GRAPH REWIRING, not a
+## [member Control.focus_mode] change[/b] — `design/ux/battle-menu.md` itself
+## warns this behavior is a design decision, not a verified engine default
+## ("`focus_mode` / `disabled` 的實際行為本專案從未量測過"). Rewiring
+## [member Control.focus_neighbor_top] / [member Control.focus_neighbor_bottom]
+## to route directly between [member _return_row] and [member _quit_row] while
+## disabled is a STRUCTURAL guarantee (the neighbor graph physically has no
+## edge into this row), matching this file's own established convention (see
+## [method _ready]'s doc comment on why every row-to-row transition is wired
+## explicitly rather than left to automatic geometric search) — it does not
+## depend on how [member BaseButton.disabled] happens to interact with
+## directional focus search in this engine version, which is exactly the
+## untested assumption the spec warns against. [member Button.focus_mode] is
+## deliberately left at [constant Control.FOCUS_ALL] in both states, so this
+## does not disturb [code]battle_menu_layout_test.gd[/code]'s existing
+## [code]test_all_three_rows_resolve_as_buttons_with_focus_mode_all[/code].
+func _refresh_end_phase_row() -> void:
+	var can_end: bool = can_end_faction_phase(controller)
+	_end_phase_row.disabled = not can_end
+
+	var reason: String = end_faction_phase_disabled_reason(controller)
+	_end_phase_reason_label.visible = not can_end
+	if not can_end:
+		# Accessibility table's explicit two-channel requirement ("不可選用
+		# ✕ + 原因文字", not color/graying alone) — the ✕ glyph plus the
+		# reason string, verbatim from the wireframe's own formatting.
+		_end_phase_reason_label.text = "✕ " + reason
+
+	if can_end:
+		_return_row.focus_neighbor_bottom = _return_row.get_path_to(_end_phase_row)
+		_end_phase_row.focus_neighbor_top = _end_phase_row.get_path_to(_return_row)
+		_end_phase_row.focus_neighbor_bottom = _end_phase_row.get_path_to(_quit_row)
+		_quit_row.focus_neighbor_top = _quit_row.get_path_to(_end_phase_row)
+	else:
+		_return_row.focus_neighbor_bottom = _return_row.get_path_to(_quit_row)
+		_quit_row.focus_neighbor_top = _quit_row.get_path_to(_return_row)
+		# Defensive: if a still-open menu's focus was already sitting on this
+		# row the instant it became disabled (e.g. card play started while the
+		# player had navigated here but had not yet pressed anything), do not
+		# leave focus stranded on a now-disabled row with no incoming neighbor
+		# edge — evict it to the same row [method open] itself defaults to.
+		if _end_phase_row.has_focus():
+			_return_row.grab_focus()
+
+
+## Story U-009 (AC-M5's shared-predicate requirement) — the single judgement
+## `design/ux/battle-menu.md`'s N1/N2/N3 states and this story's Implementation
+## Note #1 both name: the conjunction of three EXISTING [BattleController]
+## queries, none of which this file re-derives or caches. [param controller]
+## is read fresh on every call (see [method _refresh_end_phase_row]'s
+## per-frame polling) — there is no cached bool anywhere in this file for this
+## question, which is what AC-M5's injection test (flip [method
+## BattleController.phase], expect this row to change with ZERO edits to this
+## file) actually exercises.
+##
+## [code]null[/code] (`controller` never injected) returns [code]true[/code]
+## (unconditionally enabled) — U-007/U-008's pre-existing baseline behavior;
+## see [member controller]'s own doc comment for why that compatibility
+## matters.
+##
+## 🔴 The third conjunct ([method BattleController.has_pending_discard])
+## should be structurally unreachable as an ACTUAL cause of [code]false[/code]
+## here in practice — `design/ux/battle-menu.md`'s N5 already refuses to let
+## this menu open at all while a discard is owed (once U-015 wires [member
+## forced_discard_in_progress_check]). It is still included because this
+## story's own Implementation Notes name it explicitly as one of exactly three
+## conjuncts ("不得新增第四個") and defense-in-depth already at this project's
+## own established discipline (every gated [BattleController] command
+## re-checks [method BattleController.has_pending_discard] itself rather than
+## trusting a caller to have checked first).
+static func can_end_faction_phase(controller: BattleController) -> bool:
+	if controller == null:
+		return true
+	return (
+		controller.phase() == BattleController.Phase.PLAYER_INPUT
+		and not controller.is_card_play_in_progress()
+		and not controller.has_pending_discard()
+	)
+
+
+## Story U-009 (AC-M4's "原因文字必須是玩家看得懂的白話") — companion to
+## [method can_end_faction_phase], read by [method _refresh_end_phase_row] to
+## fill M3. Returns [code]""[/code] whenever [method can_end_faction_phase]
+## would return [code]true[/code] for the same [param controller] — the two
+## methods are never called with the row in a state where one says "enabled"
+## and the other supplies a non-empty reason.
+##
+## Priority when more than one cause is simultaneously true (not specified by
+## `design/ux/battle-menu.md`, which treats the three as independent
+## conjuncts, not an ordered list) — this file's own judgement call, same
+## category as the placeholder visual constants above: card-play-in-progress
+## first (the one cause with a real wireframe string), pending-discard second
+## (see [method can_end_faction_phase]'s doc comment on why this branch should
+## not be reachable in practice), phase last (N3, BM-3's unmeasured window).
+static func end_faction_phase_disabled_reason(controller: BattleController) -> String:
+	if controller == null:
+		return ""
+	if controller.is_card_play_in_progress():
+		return REASON_CARD_PLAY_IN_PROGRESS
+	if controller.has_pending_discard():
+		return REJECTION_MESSAGE_FORCED_DISCARD
+	if controller.phase() != BattleController.Phase.PLAYER_INPUT:
+		return REASON_NOT_PLAYER_TURN
+	return ""
+
+
+## Story U-009 (Events Fired: "選定「結束回合」→ 陣營回合結束 → 敵方回合開始
+## ✅ 必須" — ADR-0001 registered path ⑤). Re-checks [method can_end_faction_phase]
+## itself immediately before acting (defense in depth, matching every gated
+## [BattleController] command's own "always re-check right before" discipline
+## — e.g. [method BattleController._apply_attack]'s doc comment) rather than
+## trusting [member Button.disabled] alone to have prevented this signal from
+## ever firing.
+##
+## 🔴 [b]Deliberately calls ONLY [method BattleController.end_faction_phase],
+## never [method BattleController.run_enemy_phase] or [method
+## BattleController.step_enemy_phase][/b] — a deviation from this story's own
+## Implementation Notes text (which names `run_enemy_phase()` as part of the
+## required call sequence), flagged explicitly rather than followed silently:
+##
+## That text was written against [code]battle_screen.gd[/code]'s PRE-U-018
+## [code]_end_faction_phase_pressed()[/code] (a flat three-call sequence:
+## [code]end_faction_phase() -> run_enemy_phase() -> _refresh_view()[/code]).
+## Story-018-enemy-phase-stepped-playback.md REWROTE that function into a
+## cross-frame coroutine driving [method BattleController.step_enemy_phase]
+## in a loop with an [code]await[/code] between steps — and [method
+## step_enemy_phase]'s own doc comment is explicit that the two enemy-phase
+## drivers "MUST NOT be interleaved... call exactly one of the two for a
+## phase's entire duration... [b]Production code only ever calls this
+## method[/b]; [method run_enemy_phase] remains the whole-phase entry point
+## for tests and any future non-presentation driver." Calling
+## [method run_enemy_phase] here would make this row a SECOND, differently-
+## behaved production driver of the enemy phase (instant, unanimated) living
+## alongside [code]battle_screen.gd[/code]'s stepped/animated one — exactly
+## the "另寫一條平行路徑" this same Implementation Notes paragraph says must
+## not happen, just reached by literally following its own now-stale example.
+##
+## This file's file-scope for this story is [code]battle_menu.gd[/code] only
+## (dispatch: do not touch [code]battle_screen.gd[/code] / [code]board_view.gd[/code]),
+## and [method BattleScreen._refresh_view] — the other half of the quoted
+## sequence — is private to that screen regardless. So the mutating half of
+## the sequence ([method BattleController.end_faction_phase], the actual
+## ADR-0001 write) happens here, directly, matching every other write this
+## project's UI layer performs by calling straight into [BattleController]
+## (see [code]battle_screen.gd[/code]'s own class doc comment: "player input
+## becomes [method BattleController.click_tile] calls" — this project's
+## established command-layer pattern, not a game-state ownership violation);
+## draining whichever enemy-phase driver is actually wired into the live game
+## is left to [signal end_faction_phase_confirmed]'s listener — whichever
+## future story instantiates this menu into [code]BattleScreen.tscn[/code]
+## (BM-1 in `battle-menu.md`'s Open Questions is still unresolved on whether/
+## how that wiring happens at all) already has to touch that file, so it is
+## the one place that can correctly pick "call the SAME driver
+## `_end_faction_phase_pressed()` already uses", not a second, independent
+## guess made from inside this file.
+## 🔴 Confirm-key decision, affirmed for THIS row rather than silently
+## inherited (per this story's dispatch instruction that U-008/009/010 each
+## decide explicitly): this row is connected to native [signal
+## BaseButton.pressed], the exact same mechanism [member _return_row] already
+## uses — so it answers to [code]ui_accept[/code], not [code]battle_confirm[/code],
+## for the identical reasons the class doc comment's "Confirm-key decision"
+## section already gives (ADR-0005 AC-60's native-focus/activation exemption).
+## No new decision was needed because this row does not introduce a new
+## activation mechanism — it reuses the one this file already decided on.
+func _on_end_phase_row_pressed() -> void:
+	if controller == null:
+		return
+	if not can_end_faction_phase(controller):
+		return
+	controller.end_faction_phase()
+	end_faction_phase_confirmed.emit()
+
+
+## Story U-010 — the ONLY way [member _leave_confirm] closes other than
+## selecting "取消" itself (`design/ux/battle-menu.md` Implementation Note
+## #7). Scoped to M4 alone: while M4 is closed, this method does nothing and
+## does not mark the event handled, leaving [code]battle_cancel[/code]'s
+## handling for the whole menu (closing M1 itself) to whichever future story
+## wires this scene's top-level open()/close() into [code]battle_screen.gd[/code]
+## — unchanged by this story (class doc comment's "Still Story U-007/U-008
+## scope" note). Reachable while [member SceneTree.paused] is true because
+## [method _ready] already sets [member Node.process_mode] =
+## [constant Node.PROCESS_MODE_ALWAYS] (U-009) — that override applies to
+## every per-node engine callback gated by process_mode, not only
+## [method _process].
+func _unhandled_input(event: InputEvent) -> void:
+	if not _leave_confirm.visible:
+		return
+	if event.is_action_pressed(&"battle_cancel"):
+		close_leave_confirm()
+		get_viewport().set_input_as_handled()
+
+
 func _apply_layout() -> void:
 	var window_size: Vector2i = get_window().size
 	var fpx: float = float(HudLayout.font_size(window_size))
@@ -420,6 +909,52 @@ func _apply_layout() -> void:
 
 	_divider.color = DIVIDER_COLOR
 	_divider.custom_minimum_size = Vector2(0, fpx * DIVIDER_HEIGHT_FPX_MULTIPLIER)
+
+	# Story U-009 (M3) — `design/ux/battle-menu.md` Layout Zones table: "M3
+	# 不可選原因 | ... | 一行,0.7 fpx 字級". Styled unconditionally (even while
+	# hidden) so the very first frame it becomes visible already has correct
+	# sizing — matches this loop's own convention for the three row Buttons
+	# above, which are also styled regardless of enabled/disabled state.
+	_end_phase_reason_label.add_theme_font_override(&"font", HUD_FONT)
+	_end_phase_reason_label.add_theme_font_size_override(
+		&"font_size", int(fpx * REASON_FONT_FPX_MULTIPLIER)
+	)
+	_end_phase_reason_label.add_theme_color_override(&"font_color", REASON_TEXT_COLOR)
+
+	# Story U-010 — M4 sizing/position via the SAME anchor math [method
+	# panel_rect] already established for M1 (see [method leave_confirm_rect]);
+	# style/margin/separation placeholders reuse M1's own placeholder
+	# constants rather than inventing a second set — BM-7 (視覺樣式全部未定)
+	# is unowned regardless of which modal it applies to, so a second
+	# placeholder surface for a second modal is not worth the extra drift
+	# risk. Styled unconditionally even while hidden, matching every other
+	# element in this function.
+	var leave_r: Rect2 = leave_confirm_rect(window_size)
+	_leave_confirm_panel.offset_left = leave_r.position.x
+	_leave_confirm_panel.offset_top = leave_r.position.y
+	_leave_confirm_panel.offset_right = leave_r.end.x
+	_leave_confirm_panel.offset_bottom = leave_r.end.y
+	_leave_confirm_panel.add_theme_stylebox_override(&"panel", _panel_stylebox())
+
+	for side in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
+		_leave_confirm_content_margin.add_theme_constant_override(side, content_margin_px)
+	_leave_confirm_content.add_theme_constant_override(&"separation", int(fpx * ROW_SEPARATION_FPX_MULTIPLIER))
+
+	_leave_confirm_title_label.add_theme_font_override(&"font", HUD_FONT)
+	_leave_confirm_title_label.add_theme_font_size_override(&"font_size", int(fpx))
+	_leave_confirm_body_label.add_theme_font_override(&"font", HUD_FONT)
+	_leave_confirm_body_label.add_theme_font_size_override(
+		&"font_size", int(fpx * REASON_FONT_FPX_MULTIPLIER)
+	)
+
+	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
+		m4_button.custom_minimum_size = Vector2(0, row_h)
+		m4_button.add_theme_font_override(&"font", HUD_FONT)
+		m4_button.add_theme_font_size_override(&"font_size", int(fpx))
+		# `P-F3`'s required second, non-color focus channel — same stylebox
+		# instance M1's rows already use (StyleBox resources are safely
+		# shared read-only across multiple Controls in Godot).
+		m4_button.add_theme_stylebox_override(&"focus", focus_style)
 
 
 func _panel_stylebox() -> StyleBoxFlat:
@@ -462,8 +997,22 @@ static func row_height(window_size: Vector2i) -> float:
 	return float(HudLayout.font_size(window_size)) * ROW_HEIGHT_FPX_MULTIPLIER
 
 
-## M4 (leave-confirmation) SIZE ONLY — see class doc comment for why M4 itself
-## is not built by this story.
+## M4 (leave-confirmation) SIZE ONLY — this size arithmetic was verified by
+## U-007 (Implementation Notes #2's obligation) before M4 itself existed; see
+## `tests/unit/ui/menu/battle_menu_layout_test.gd`'s own regression test
+## against this function, which this story does not touch.
 static func leave_confirm_size(window_size: Vector2i) -> Vector2:
 	var fpx: float = float(HudLayout.font_size(window_size))
 	return Vector2(fpx * LEAVE_CONFIRM_WIDTH_FPX_MULTIPLIER, fpx * LEAVE_CONFIRM_HEIGHT_FPX_MULTIPLIER)
+
+
+## Story U-010 — M4's rect in window-pixel space: the POSITION half
+## [method leave_confirm_size] never provided (that function is SIZE only —
+## see its own doc comment). Centers M4 within [method HudLayout.safe_rect],
+## the exact same anchor and centering formula [method panel_rect] already
+## established for M1 — this function does not invent a second convention.
+static func leave_confirm_rect(window_size: Vector2i) -> Rect2:
+	var safe: Rect2 = HudLayout.safe_rect(window_size)
+	var size: Vector2 = leave_confirm_size(window_size)
+	var pos: Vector2 = safe.position + (safe.size - size) / 2.0
+	return Rect2(pos, size)

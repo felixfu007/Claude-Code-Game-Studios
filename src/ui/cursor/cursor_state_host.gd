@@ -145,8 +145,17 @@
 extends Node
 
 ## The single DI core this host owns for the process's lifetime. Built once
-## in [method _ready], never reassigned. No getter exposes it by reference
-## yet — Story 007 adds the read interface.
+## in [method _ready], never reassigned.
+##
+## 🔴 [b]Corrected 2026-09-22 (U-013 dispatch)[/b]: this paragraph used to read
+## "No getter exposes it by reference yet — Story 007 adds the read
+## interface." Story 007 added the read interface to [CursorState] itself but
+## never wired it onto this Host, so the sentence was stale the moment Story
+## 007 landed. See this file's bottom section ("Story U-013: thin forwarding
+## read/write/registration entries") for the forwarding methods that now
+## close this gap — none of them expose [member _state] BY REFERENCE; each
+## forwards to one of its own public methods, which for
+## [method CursorState.get_current_target] already returns a copy.
 var _state: CursorState
 
 ## Same [CursorSurfaceRegistry] instance handed to [CursorState]'s constructor
@@ -488,3 +497,103 @@ func _get_mouse_position() -> Vector2:
 ## own engineering judgment call).
 func _get_hovered_control() -> Control:
 	return get_viewport().gui_get_hovered_control()
+
+
+# ─── Story U-013: thin forwarding read/write/registration entries ──────────
+#
+# 🔴 Added 2026-09-22 (U-013 dispatch, godot-specialist ruling). This file's
+# own class doc comment already flagged this as a known, anticipated gap
+# ("No getter exposes it by reference yet — Story 007 adds the read
+# interface."). Story 007 landed CursorState's OWN read queries but never
+# wired them onto this Autoload, so U-013 — the first downstream consumer
+# that is NOT a child node this Host constructs itself (unlike Story 011's
+# [SelfDrawnReclaimCursor] / [NativePointerVisibilityArbiter], which receive
+# [param _state]/[param _registry] via direct constructor injection) — had no
+# handle to reach either collaborator through.
+#
+# Every method below is a ONE-LINE FORWARD with zero added decision logic —
+# the same shape ADR-0005's Key Interfaces section already documents for this
+# class ("全部公開 API 為對 _state 的一行轉發,不新增任何判斷邏輯") and the same
+# shape [method suspend_arbitration] / [method resume_arbitration] above
+# already use. This completes previously-anticipated wiring under an already-
+# `Accepted` governing principle; it is not a new architectural decision, and
+# ADR-0005 is not being reopened (see that document's Key Interfaces
+# `CursorStateHost` block for the matching factual-correction note).
+#
+# Deliberately NOT added here (flagged, not silently omitted — do not add
+# these without a story that actually needs them):
+#   - mark_pending_reresolve() — U-013's own scope excludes external
+#     mid-selection invalidation (see that story's "Out of Scope" section).
+#   - handoff_before_unload() / handoff_after_mount() — 機制十一 screen-
+#     transition lifecycle, not this story.
+#   - reclaim_progress() / reclaim_reset_triggered forwarding — 機制十三's
+#     presentation layer already reaches [member _state] via direct
+#     constructor injection (Story 011); not battle_screen.gd's concern.
+#   - target_changed() / device_authority_changed() signal forwarding —
+#     U-013's own Implementation Note #1 commits to polling in
+#     [method Node._process] at [code]process_priority = 100[/code], not
+#     signal subscription.
+
+
+## Forwards to [method CursorState.is_current_target_valid] (ADR-0005 機制十,
+## TR-cursor-014). Gates confirm/select actions. Callers belonging to 機制六⑥
+## (下游讀取方) MUST read this from their OWN node's [method Node._process] at
+## [code]process_priority = 100[/code] — never from [code]_input()[/code] /
+## [code]_unhandled_input()[/code] (機制六 Requirements 第 11 項).
+func is_current_target_valid() -> bool:
+	return _state.is_current_target_valid()
+
+
+## Forwards to [method CursorState.get_device_authority] (ADR-0005 機制十,
+## TR-cursor-014). Gates mouse-click confirmation. See that method's own doc
+## comment for why this is a separate query from
+## [method is_current_target_valid] rather than one merged boolean — the two
+## rejection causes need opposite recoveries.
+func get_device_authority() -> CursorTypes.Authority:
+	return _state.get_device_authority()
+
+
+## Forwards to [method CursorState.get_current_target] (ADR-0005 機制十,
+## TR-cursor-014). Returns a freshly allocated COPY, never the internal
+## instance — that discipline lives entirely inside [CursorState] itself
+## (forbidden pattern [code]returning_internal_container_references[/code],
+## ADR-0001), so this one-line forward cannot leak the internal reference
+## even by accident.
+func get_current_target() -> CursorTarget:
+	return _state.get_current_target()
+
+
+## Forwards to [method CursorState.set_target] (ADR-0005 機制十,
+## TR-cursor-012). This is the 機制六② "呼叫方主動改標" entry point — a caller
+## using this (e.g. a jump-to-next-legal-target action that is NOT itself a
+## [constant CursorTypes.ActionClass.NAVIGATION]-class [code]ui_*[/code]
+## action, and therefore never reaches 機制六③'s buffered-navigation path at
+## all) must call this from ITS OWN node's [method Node._process] at a
+## [code]process_priority[/code] strictly between -100 and -25 (architecture-
+## mandated open interval, R5-2) — never from [code]_input()[/code].
+func set_target(target: CursorTarget) -> CursorState.SetTargetResult:
+	return _state.set_target(target)
+
+
+## Forwards to [method CursorSurfaceRegistry.register] (ADR-0005 機制三,
+## TR-cursor-003). Registers the [Node] that represents a mounted
+## [code]CursorSurface[/code] under a [enum CursorTypes.SurfaceType] tag —
+## single-tag, single-instance; fails loud
+## ([constant CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED])
+## on an already-occupied tag rather than silently overwriting.
+## [b]Registering a surface is also the precondition for 機制六③'s "Option E"
+## navigation contract[/b] (see [constant CursorState.NAVIGATE_METHOD_NAME]):
+## the registered [param node] must implement
+## [code]func cursor_navigate(from_id: int, direction: Vector2i) -> Variant[/code]
+## by name for directional keyboard/gamepad navigation to do anything on this
+## surface tag — registering alone does not satisfy that contract.
+func register_surface(surface: CursorTypes.SurfaceType, node: Node) -> CursorSurfaceRegistry.RegisterResult:
+	return _registry.register(surface, node)
+
+
+## Forwards to [method CursorSurfaceRegistry.unregister] (ADR-0005 機制三,
+## TR-cursor-003). Callers MUST call this explicitly when their surface
+## unmounts — this table has no automatic cleanup (unlike the AC-60 exception
+## whitelist, which auto-deregisters on [signal Node.tree_exited]).
+func unregister_surface(surface: CursorTypes.SurfaceType) -> CursorSurfaceRegistry.RegisterResult:
+	return _registry.unregister(surface)

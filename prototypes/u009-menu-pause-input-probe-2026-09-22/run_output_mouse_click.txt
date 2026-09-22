@@ -1,0 +1,3 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+mouse click sim: button_down_count=0 button_up_count=0 pressed_count=0

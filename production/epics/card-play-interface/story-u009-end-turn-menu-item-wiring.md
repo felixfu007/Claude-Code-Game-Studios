@@ -58,7 +58,26 @@
        _refresh_view()
    ```
 
-   選單「結束回合」列被選定時,必須觸發**同一組呼叫序列**(`end_faction_phase()` → `run_enemy_phase()` → 畫面刷新),不得另寫一條平行路徑。⚠️ **這個既有入口在本 story 完成後依然存在**(它綁在 `battle_end_phase` 動作上,直到 U-016 才解綁),期間選單與 Esc/B 是兩條並存的觸發手段,互不衝突。
+   🔴 **2026-09-22 更正:上面那段程式碼是 U-018 之前的舊版,現行程式碼不長這樣。**
+
+   實測現行 `battle_screen.gd` 的 `_end_faction_phase_pressed()` 是一個**跨幀協程**,
+   迴圈呼叫 `step_enemy_phase()` 並累計 `_diagnostic_step_enemy_phase_call_count`,
+   **不呼叫 `run_enemy_phase()`**。改動來自 `story-018-enemy-phase-stepped-playback.md`
+   (敵方階段分步播放),本檔撰寫時尚未發生。
+
+   ⚠️ **照舊版字面實作會造成本段自己明文禁止的結果**:選單若照抄
+   `end_faction_phase()` → `run_enemy_phase()`,就會生出**第二個行為與鍵盤入口不同的
+   敵方階段驅動器** —— 而本段原句的用意正是「不得另寫一條平行路徑」。
+   **字面意思與用意在 U-018 之後開始互相矛盾,而沒有任何東西會發現。**
+
+   ✅ **實作者(2026-09-22)偏離了字面、照現況實作,那是正確的處置。**
+   現行作法:選單列只呼叫 `end_faction_phase()` 並發出 `end_faction_phase_confirmed` 訊號,
+   由未來把本選單接進 `battle_screen.gd` 的 story 決定如何抽乾階段。
+   理由全文寫在 `battle_menu.gd` 的 `_on_end_phase_row_pressed()` 文件註解裡。
+
+   **本段保留的原意仍然成立**:不得另寫平行路徑。
+   ⚠️ **這個既有入口在本 story 完成後依然存在**(它綁在 `battle_end_phase` 動作上,
+   直到 U-016 才解綁),期間選單與 Esc/B 是兩條並存的觸發手段,互不衝突。
 
 ## Implementation Notes
 
@@ -88,14 +107,14 @@
 ## Test Evidence
 
 **型別**:Integration
-**測試檔**:`tests/integration/ui/battle_menu_end_turn_wiring_test.gd`
+**測試檔**:`tests/integration/ui/menu/battle_menu_end_turn_wiring_test.gd`(🔴 2026-09-22 更正:原寫 `tests/integration/ui/` 根層,而 U-008 的 `battle_menu_gating_test.gd` 早已在 `ui/menu/` 子目錄。實作者依既有慣例放置,非偏離)
 
 預期涵蓋:
 
 - `test_end_turn_item_disabled_when_card_play_in_progress`
 - `test_end_turn_item_disabled_when_pending_discard`
 - `test_end_turn_item_enabled_reverts_when_phase_becomes_player_input`(AC-M5 的注入測試——把共用改成各記一份,本測試必須轉紅,見 `battle-menu.md` 該條註記)
-- `test_selecting_end_turn_calls_end_faction_phase_then_run_enemy_phase`
+- `test_selecting_end_turn_calls_end_faction_phase`(🔴 2026-09-22 更正:原名含 `_then_run_enemy_phase`,而現行程式碼已不走 `run_enemy_phase()`——見本檔「既有程式碼」第 3 項的更正說明)
 - `test_reason_text_persists_when_focus_moves_off_end_turn_row`(AC-M12)
 - `test_gamepad_only_path_completes_open_menu_to_end_turn`(AC-M2)
 

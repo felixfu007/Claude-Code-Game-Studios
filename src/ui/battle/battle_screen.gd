@@ -236,6 +236,14 @@ const _DIRECTION_VECTORS: Dictionary = {
 	&"ui_right": Vector2i.RIGHT,
 }
 
+## Story U-013 — S1's card-browsing actions (Interaction Map step 2:
+## "← → ... 該卡上浮") mapped to [method HandBar.move_cursor]'s delta.
+## Deliberately left/right only; up/down are not part of hand navigation.
+const _HAND_DIRECTION_DELTAS: Dictionary = {
+	&"ui_left": -1,
+	&"ui_right": 1,
+}
+
 ## story-018-enemy-phase-stepped-playback.md: how long to pause between two
 ## consecutive [method BattleController.step_enemy_phase] calls in [method
 ## _end_faction_phase_pressed] below — a PRESENTATION-layer timing value, not
@@ -374,6 +382,63 @@ var _last_mouse_window_pos: Vector2 = Vector2(-1000.0, -1000.0)
 ## polling rather than [method Input.is_action_just_pressed] so the edge
 ## logic is self-contained and easy to verify by reading this file alone.
 var _direction_was_pressed: Dictionary = {}
+
+## Story U-013 — same edge-detection discipline as [member
+## _direction_was_pressed] (see that field's own doc comment for why a raw
+## event's [method InputEvent.is_action_pressed] is not enough by itself for
+## a held gamepad stick), but a SEPARATE [Dictionary] for [method
+## _handle_hand_navigation]'s S1 hand cursor. Kept distinct on purpose — the
+## board cursor and the hand cursor are two independent debounce states, and
+## sharing one tracker between them would let a held direction on one bleed
+## into the other's edge detection.
+var _hand_direction_was_pressed: Dictionary = {}
+
+## Story U-013 connective tissue — presentation-local mirror of "is [S1,
+## [constant CardPlaySession.Step.SELECTING_CARD]] the step this screen most
+## recently drove [BattleController]'s card-play session into", used ONLY to
+## route [code]ui_left[/code]/[code]ui_right[/code]/[code]battle_confirm[/code]
+## between [method HandBar.move_cursor]/[method _confirm_selected_card] and
+## the pre-existing board move/attack path in [method _input].
+##
+## 🔴 [b]Deliberately NOT a full mirror of [enum CardPlaySession.Step][/b] —
+## [BattleController] exposes [method BattleController.is_card_play_in_progress]
+## (a bool) but no query for the session's EXACT step. Adding one (e.g.
+## [code]card_play_step() -> CardPlaySession.Step[/code], mirroring [method
+## BattleController.is_card_play_in_progress]'s own null-check-then-forward
+## shape) would touch [code]src/gameplay/battle/battle_controller.gd[/code],
+## which is outside this story's file lock ([code]battle_screen.gd[/code] +
+## [code]board_view.gd[/code] only) — flagged to the coordinator, not added
+## unilaterally.
+##
+## [b]Why this field tracks only ONE boundary, not the whole state
+## machine[/b]: re-deriving [CardPlaySession]'s full SELECTING_TARGET /
+## SELECTING_TARGET_B / CONFIRMING transition table here — in particular
+## [method CardPlaySession.cancel]'s branch on the selected card's category —
+## would be exactly this project's own registered failure pattern, the same
+## formula implemented twice, agreeing only "today" (the same discipline
+## [WorldLayout]/[HudLayout] already enforce elsewhere in this codebase:
+## "呼叫端不得自行重刻"). This field is written ONLY from the return value of
+## a call THIS screen itself just made ([method BattleController.open_hand] /
+## [method BattleController.select_card] / [method BattleController.cancel]),
+## never re-derived independently.
+##
+## ⚠️ [b]Known, disclosed gap[/b]: cancelling out of target selection
+## (S2 -> S1) does not flip this back to [code]true[/code] — [method _input]'s
+## S2+ branch calls [method BattleController.cancel] unconditionally on
+## [code]battle_cancel[/code] without touching this flag, since (without the
+## missing accessor above) it cannot tell whether that cancel landed back on
+## SELECTING_CARD or merely one step shallower within S2+. Consequence:
+## backing all the way out of an in-progress target selection currently takes
+## one EXTRA [code]battle_cancel[/code] press before hand navigation resumes
+## — never a hard lock (each [method BattleController.cancel] call provably
+## reduces [CardPlaySession]'s real depth by one step, converging to
+## [constant CardPlaySession.Step.CLOSED]), just a briefly-unresponsive hand
+## cursor for that one extra step. Target selection (S2/S2p/S2q) itself is out
+## of scope for this batch (blocked on a separate ADR-0005 [CursorStateHost]
+## integration question — see this story's task report), so this gap is not
+## yet reachable by anything this story wires end to end; recorded here so it
+## is not silently inherited once S2 lands.
+var _card_selecting_from_hand: bool = false
 
 ## story-018-enemy-phase-stepped-playback.md AC-E3 — QA/test-only diagnostic
 ## surface, mirroring this project's existing `diagnostic_*` convention (e.g.
@@ -592,14 +657,57 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
-		_handle_directional(event)
-		if event.is_action_pressed(&"battle_confirm"):
+		# Story U-013 — `battle_open_hand` (S0<->S1) is checked before anything
+		# else regardless of card-play state, mirroring the Interaction Map's
+		# own framing of it as a toggle rather than a step-scoped action.
+		if event.is_action_pressed(&"battle_open_hand"):
 			_device.note_pad_input()
-			_confirm_at_cursor()
+			_handle_open_hand_pressed()
 			return
-		if event.is_action_pressed(&"battle_end_phase"):
+
+		# AC-14 (`card_play_session.gd`'s own class doc comment, point 2: "打牌
+		# 介面開啟中不得發起攻擊") — the pre-existing board move/attack path
+		# below is reachable ONLY while no card-play session is open. This is
+		# the first caller to actually close that documented gap; before this
+		# story nothing in src/ gated BattleController.click_tile() on
+		# is_card_play_in_progress() at all.
+		if not _controller.is_card_play_in_progress():
+			_handle_directional(event)
+			if event.is_action_pressed(&"battle_confirm"):
+				_device.note_pad_input()
+				_confirm_at_cursor()
+				return
+			if event.is_action_pressed(&"battle_end_phase"):
+				_device.note_pad_input()
+				_end_faction_phase_pressed()
+				return
+			return
+
+		if _card_selecting_from_hand:
+			_handle_hand_navigation(event)
+			if event.is_action_pressed(&"battle_confirm"):
+				_device.note_pad_input()
+				_confirm_selected_card()
+				return
+			if event.is_action_pressed(&"battle_cancel"):
+				_device.note_pad_input()
+				if _controller.cancel():
+					_card_selecting_from_hand = false
+					_refresh_view()
+				return
+			return
+
+		# S2 / S2p / S2q / S3 — target-selection navigation, the jump keys
+		# (battle_next_target/battle_prev_target), and reading the
+		# cursor-arbitrated confirm state in _process(priority=100) are all
+		# blocked pending the ADR-0005 CursorStateHost integration question
+		# (godot-specialist deciding, see this story's task report). Only
+		# cancel is wired here; it steps back exactly one stage regardless of
+		# which of these four steps the session is actually in.
+		if event.is_action_pressed(&"battle_cancel"):
 			_device.note_pad_input()
-			_end_faction_phase_pressed()
+			_controller.cancel()
+			_refresh_view()
 			return
 
 
@@ -614,6 +722,76 @@ static func clamp_cursor_move(cell: Vector2i, delta: Vector2i) -> Vector2i:
 		clampi(moved.x, 0, BoardCoords.BOARD_COLS - 1),
 		clampi(moved.y, 0, BoardCoords.BOARD_ROWS - 1)
 	)
+
+
+## Story U-013, AC-U3 (`design/ux/skill-card-play.md` Interaction Map: 「跳到
+## 上/下一個合法目標」)— orders [param unit_ids] by board position, ascending
+## row ([code]y[/code]) first, then ascending column ([code]x[/code]) within a
+## row ("先列後行"). Pure and node-independent: [param positions] is an
+## already-resolved lookup (built by the caller from whatever source it has —
+## a live [BattleState] in production, a hand-built [Dictionary] in a test),
+## never a live [BattleState] reference itself, so this is testable without a
+## scene or node.
+##
+## 🔴 [b]Determinism comes from the sort key, never from [param unit_ids]'s
+## own incoming order[/b] — this project has a registered failure pattern for
+## mistaking a container's traversal/hash order for a stable enumeration
+## order ([code]relying_on_container_iteration_order[/code],
+## [code]docs/registry/architecture.yaml[/code]). Two calls with the same ids
+## in a DIFFERENT starting order produce the IDENTICAL result, because every
+## id is re-keyed by its own board position before any comparison happens —
+## see [code]tests/integration/ui/card_target_selection_test.gd[/code]'s
+## [code]test_jump_order_identical_across_repeated_runs[/code] for the
+## executed proof, not merely this comment's claim.
+##
+## [b]The sort key is (y, x, id) — [param unit_ids] itself as the tertiary
+## tiebreaker — not just (y, x)[/b]. Two units can never legally share a board
+## cell (occupancy is an enforced invariant elsewhere in this codebase), so a
+## (y, x) collision cannot occur for a real [method
+## BattleController.legal_targets] result today; adding [code]id[/code] as a
+## third key costs nothing for that case (never consulted, since y/x alone
+## already decide it) and removes the one input shape — a caller passing two
+## entries at an identical position, e.g. malformed test data — where a
+## (y, x)-only comparator would have to declare them "equal" and hand the
+## outcome to [method Array.sort_custom]'s own internal tie-breaking, which
+## this project does not treat as a documented, reasoned-about contract.
+static func sort_targets_by_position(
+	unit_ids: Array[int], positions: Dictionary[int, Vector2i]
+) -> Array[int]:
+	var sorted_ids: Array[int] = unit_ids.duplicate()
+	sorted_ids.sort_custom(
+		func(a: int, b: int) -> bool:
+			var pos_a: Vector2i = positions[a]
+			var pos_b: Vector2i = positions[b]
+			if pos_a.y != pos_b.y:
+				return pos_a.y < pos_b.y
+			if pos_a.x != pos_b.x:
+				return pos_a.x < pos_b.x
+			return a < b
+	)
+	return sorted_ids
+
+
+## Story U-013, AC-U3 — steps one entry forward ([param forward] true,
+## [code]Tab[/code]/RB) or backward ([param forward] false,
+## [code]Shift+Tab[/code]/LB) through [param sorted_ids] (already ordered by
+## [method sort_targets_by_position]), wrapping around at either end so the
+## 6th forward jump from a 5-target set returns to the 1st. Returns
+## [code]-1[/code] if [param sorted_ids] is empty (nothing to jump to).
+##
+## [param current_id] not being found in [param sorted_ids] (e.g. the cursor
+## has not landed on any target yet) is treated as "start from the first
+## entry going forward, or the last entry going backward" rather than an
+## error — this is a legitimate first-press case, not a caller mistake.
+static func next_target_id(current_id: int, sorted_ids: Array[int], forward: bool) -> int:
+	if sorted_ids.is_empty():
+		return -1
+	var index: int = sorted_ids.find(current_id)
+	if index == -1:
+		return sorted_ids[0] if forward else sorted_ids[sorted_ids.size() - 1]
+	var step: int = 1 if forward else -1
+	var next_index: int = posmod(index + step, sorted_ids.size())
+	return sorted_ids[next_index]
 
 
 ## Returns every cell of [param source] that does not appear in
@@ -991,6 +1169,14 @@ func _fail_load(failures: Dictionary[String, LoadFailure]) -> void:
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	_last_mouse_window_pos = event.position
 	_device.note_mouse_motion()
+	# Story U-013, AC-14 — see the matching guard in _input()'s keyboard/
+	# gamepad branch for why this must not act while card play is open. Mouse
+	# is not wired for any card-play interaction (S1/S2+ are keyboard/gamepad
+	# only, matching this Interaction Map's own table and U-011/U-012's
+	# precedent — HandBar has zero mouse wiring), so while a session is open
+	# the only correct behavior for a click is to do nothing.
+	if _controller.is_card_play_in_progress():
+		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
 	var cell: Vector2i = _window_pos_to_cell(event.position)
@@ -1016,16 +1202,82 @@ func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
 
 
 # Edge-triggered directional cursor movement — see _direction_was_pressed's
-# doc comment for why this cannot just be event.is_action_pressed().
+# doc comment for why this cannot just be event.is_action_pressed(). Shared
+# debounce logic lives in _direction_just_pressed(); this method owns only
+# the board-cursor-specific effect (clamp + move + redraw the cursor sprite).
 func _handle_directional(_event: InputEvent) -> void:
 	for action: StringName in _DIRECTION_VECTORS:
-		var pressed_now: bool = Input.is_action_pressed(action)
-		var was_pressed: bool = _direction_was_pressed.get(action, false)
-		_direction_was_pressed[action] = pressed_now
-		if pressed_now and not was_pressed:
+		if _direction_just_pressed(action, _direction_was_pressed):
 			_device.note_pad_input()
 			_cursor_cell = clamp_cursor_move(_cursor_cell, _DIRECTION_VECTORS[action])
 			_board_view.set_cursor(_cursor_cell)
+
+
+# Story U-013 — S1's card-browsing input (Interaction Map step 2). Shares
+# _direction_just_pressed()'s edge-detection discipline with
+# _handle_directional() (see that method's own doc comment for why a raw
+# event's is_action_pressed() is not enough by itself for a held gamepad
+# stick) but tracks its OWN pressed-state Dictionary
+# (_hand_direction_was_pressed) so this cursor's debounce state never leaks
+# into the board cursor's, or vice versa.
+func _handle_hand_navigation(_event: InputEvent) -> void:
+	for action: StringName in _HAND_DIRECTION_DELTAS:
+		if _direction_just_pressed(action, _hand_direction_was_pressed):
+			_device.note_pad_input()
+			_hand_bar.move_cursor(_HAND_DIRECTION_DELTAS[action])
+
+
+# Shared by _handle_directional() (board cursor) and _handle_hand_navigation()
+# (S1 hand cursor) — see _direction_was_pressed's doc comment for why a raw
+# event's is_action_pressed() is not enough by itself for a held gamepad
+# stick. `tracker` is the CALLER's own Dictionary (never shared between the
+# two cursors) so one consumer's debounce state cannot leak into the other's.
+func _direction_just_pressed(action: StringName, tracker: Dictionary) -> bool:
+	var pressed_now: bool = Input.is_action_pressed(action)
+	var was_pressed: bool = tracker.get(action, false)
+	tracker[action] = pressed_now
+	return pressed_now and not was_pressed
+
+
+# Story U-013 connective tissue — `battle_open_hand` (S0<->S1 per
+# design/ux/skill-card-play.md's Interaction Map row 1 and its "選擇不打" row:
+# the SAME key both opens the hand from S0 and closes it back from S1,
+# "不需要專屬按鍵,它就是收起"). Deeper steps (S2+) do not respond to this key
+# at all — the Interaction Map only defines this toggle for S0<->S1; backing
+# out of S2+ is battle_cancel's job (see _input()'s per-branch dispatch), not
+# this key's. See _card_selecting_from_hand's own doc comment for why S2+
+# cannot even reliably ask "am I still just one step past SELECTING_CARD"
+# without the accessor this story flagged but did not add.
+func _handle_open_hand_pressed() -> void:
+	if not _controller.is_card_play_in_progress():
+		if _controller.open_hand():
+			_card_selecting_from_hand = true
+			_refresh_view()
+		return
+	if _card_selecting_from_hand:
+		if _controller.cancel():
+			_card_selecting_from_hand = false
+			_refresh_view()
+
+
+# Story U-013 connective tissue — the S1->S2 handoff the previous batch
+# flagged as at risk of falling between U-012 and U-013:
+# [HandBar]'s own cursor index (kept entirely inside that file, per its class
+# doc comment) has no game-data meaning by itself; this screen is the one
+# class allowed to know both [HandBar] and [Card]/[CardDeck] (mirrors the
+# existing hand_bar_slot_kind_for() mapping convention), so the index -> Card
+# lookup happens here, nowhere else. Bounds-checked defensively for S7 (empty
+# hand): diagnostic_cursor_index() clamps to 0 even with zero slots, and
+# hand.size() would then also be 0, so the out-of-range check below is what
+# keeps an empty-hand confirm a safe no-op rather than an out-of-bounds read.
+func _confirm_selected_card() -> void:
+	var hand: Array[Card] = _state.card_deck().hand()
+	var index: int = _hand_bar.diagnostic_cursor_index()
+	if index < 0 or index >= hand.size():
+		return
+	if _controller.select_card(hand[index]):
+		_card_selecting_from_hand = false
+		_refresh_view()
 
 
 # Confirm action bound to the project-level "battle_confirm" input action
@@ -1287,8 +1539,20 @@ func _refresh_view() -> void:
 	# check mirrors every other card_deck-optional call site in this project
 	# ([method BattleState.has_pending_discard] etc.) rather than assuming it.
 	var hand: Array[Card] = _state.card_deck().hand() if _state.card_deck() != null else []
+	# Story U-013 — `expanded` now reflects S1 (_card_selecting_from_hand, see
+	# that field's own doc comment). `card_faces` is left at its [] default:
+	# Z2/Z3's flavor-text/effect-summary content needs the parsed CardText
+	# table, which _ready() currently parses and discards (see its own
+	# CARD_TEXT_PATH comment, "no screen in this slice consumes flavor text
+	# yet") — wiring that is out of scope for this story's connective-tissue
+	# duty (index -> select_card()), not silently skipped: Z2 will render
+	# correctly-shaped, correctly-selectable slots with blank Z3 text until a
+	# future story supplies card_faces.
 	_hand_bar.render(
-		hand_bar_slot_kinds(hand), CardDeck.HAND_SIZE_LIMIT, availability_for(_controller.phase())
+		hand_bar_slot_kinds(hand),
+		CardDeck.HAND_SIZE_LIMIT,
+		availability_for(_controller.phase()),
+		_card_selecting_from_hand
 	)
 
 	_update_status_label()

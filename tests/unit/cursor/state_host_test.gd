@@ -635,3 +635,282 @@ func test_process_and_flush_are_both_no_ops_on_an_empty_buffer() -> void:
 	host._process(0.0)
 	host.flush_buffered_navigation()
 	assert_int(_host_frame_events(host).size()).is_equal(0)
+
+
+# ─── Story U-013: thin forwarding read/write/registration entries ──────────
+#
+# 🔴 Same shared-Autoload write hazard as the 機制五/機制六 section above:
+# CursorStateHost is the ONE Autoload instance shared by every test in this
+# suite, and _state/_registry are built once in _ready() and never
+# reassigned. Every test below that mutates _state's _target /
+# _device_authority fields, or _registry's surface table, restores a neutral
+# baseline in a final cleanup step so no test's leftover state can leak into
+# another test in this file or a future story's tests reusing the same
+# Autoload.
+
+## Surface tag these tests register/target. Sharing [CursorTypes.SurfaceType]
+## with production code is fine here — these tests always unregister
+## whatever they register within the same test, so no residue survives past
+## it (unlike a real production surface, which stays registered for the
+## screen's lifetime).
+const _U013_SURFACE: CursorTypes.SurfaceType = CursorTypes.SurfaceType.BOARD_TILE
+
+
+## Restores [param state]'s two mutable top-level fields to a neutral
+## baseline (invalid target on [constant _U013_SURFACE], id 0;
+## UNINITIALIZED authority) — the same shape [method CursorState._init] leaves
+## a fresh instance in, so a later test in this file finds the shared
+## Autoload's [CursorState] exactly as prior sections already expect it.
+func _reset_state_target_and_authority(state: CursorState) -> void:
+	state.set(&"_target", CursorTarget.invalidated(CursorTarget.make(_U013_SURFACE, 0)))
+	state.set(&"_device_authority", CursorTypes.Authority.UNINITIALIZED)
+
+
+func test_get_current_target_forwards_to_state_and_still_returns_a_copy() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var state: CursorState = host.get(&"_state")
+	var seeded: CursorTarget = CursorTarget.make(_U013_SURFACE, 42)
+	state.set(&"_target", seeded)
+
+	# Act
+	var forwarded: CursorTarget = host.get_current_target()
+
+	# Assert — the forward really reached the live _state (values match)...
+	assert_int(forwarded.surface).is_equal(_U013_SURFACE)
+	assert_int(forwarded.id).is_equal(42)
+	assert_bool(forwarded.is_valid).is_true()
+	# ...and the copy discipline CursorState.get_current_target() already
+	# guarantees survives being forwarded through the Host: this must NOT be
+	# the same instance CursorState holds internally.
+	assert_object(forwarded).append_failure_message(
+		"host.get_current_target() returned the SAME instance CursorState "
+		+ "holds internally — the forward must not leak the internal "
+		+ "reference (forbidden pattern returning_internal_container_references, "
+		+ "ADR-0001)."
+	).is_not_same(seeded)
+
+	# Cleanup
+	_reset_state_target_and_authority(state)
+
+
+func test_get_device_authority_forwards_to_state() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var state: CursorState = host.get(&"_state")
+	state.set(&"_device_authority", CursorTypes.Authority.KEYBOARD_GAMEPAD)
+
+	# Act / Assert
+	assert_int(host.get_device_authority()).is_equal(CursorTypes.Authority.KEYBOARD_GAMEPAD)
+
+	# Cleanup
+	_reset_state_target_and_authority(state)
+
+
+func test_is_current_target_valid_forwards_to_state() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var state: CursorState = host.get(&"_state")
+	state.set(&"_target", CursorTarget.invalidated(CursorTarget.make(_U013_SURFACE, 1)))
+
+	# Act / Assert
+	assert_bool(host.is_current_target_valid()).append_failure_message(
+		"host.is_current_target_valid() did not forward to the live _state's "
+		+ "own is_current_target_valid()."
+	).is_false()
+
+	# Cleanup
+	_reset_state_target_and_authority(state)
+
+
+func test_register_surface_and_unregister_surface_forward_to_registry() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var node: Node = auto_free(Node.new())
+
+	# Act / Assert — first registration succeeds
+	assert_int(host.register_surface(_U013_SURFACE, node)).append_failure_message(
+		"host.register_surface() did not forward to _registry.register()."
+	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+	# Act / Assert — a second registration under the SAME tag is rejected,
+	# not silently overwritten (TR-cursor-003, single-tag single-instance).
+	assert_int(host.register_surface(_U013_SURFACE, auto_free(Node.new()))).is_equal(
+		CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED
+	)
+
+	# Act / Assert — unregister forwards too
+	assert_int(host.unregister_surface(_U013_SURFACE)).append_failure_message(
+		"host.unregister_surface() did not forward to _registry.unregister()."
+	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+	# Act / Assert — a second unregister of the same, now-empty tag reports
+	# NOT_FOUND rather than a silent no-op (matches CursorSurfaceRegistry's
+	# own contract).
+	assert_int(host.unregister_surface(_U013_SURFACE)).is_equal(
+		CursorSurfaceRegistry.RegisterResult.UNREGISTERED_NOT_FOUND
+	)
+
+
+func test_set_target_forwards_to_state_and_applies_against_a_registered_surface() -> void:
+	# Arrange
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var state: CursorState = host.get(&"_state")
+	var node: Node = auto_free(Node.new())
+	host.register_surface(_U013_SURFACE, node)
+
+	# Act
+	var result: CursorState.SetTargetResult = host.set_target(CursorTarget.make(_U013_SURFACE, 7))
+
+	# Assert — the write really landed on the shared _state, not a local no-op
+	assert_int(result).append_failure_message(
+		"host.set_target() did not forward to _state.set_target() — expected "
+		+ "APPLIED against a registered surface."
+	).is_equal(CursorState.SetTargetResult.APPLIED)
+	assert_int(host.get_current_target().id).is_equal(7)
+
+	# Cleanup
+	_reset_state_target_and_authority(state)
+	host.unregister_surface(_U013_SURFACE)
+
+
+# ─── Story U-013: sensitivity proof for the six forwarding methods ─────────
+#
+# 🔴 Per `.claude/rules/test-standards.md`'s 2026-09-16 ruling, manual
+# break/run/revert injection is deprecated for this project (it leaves no
+# trace in the repo — a claim of "I injected a fault and it went red" cannot
+# be checked by a second reader). The sanctioned, persistent form is a spy
+# subclass + a `test_sensitivity_proof_*` test asserting the spy was actually
+# reached. This proves the six methods above really DELEGATE through
+# whatever object [member CursorStateHost._state] / [CursorStateHost._registry]
+# currently holds, rather than e.g. a hardcoded return value that happens to
+# equal what the earlier, non-spy tests in this section expect.
+
+## Spy [CursorState] subclass — overrides exactly the four methods
+## [method is_current_target_valid] / [method get_device_authority] /
+## [method get_current_target] / [method set_target] forward to. Each
+## override returns a sentinel value production logic could not plausibly
+## produce by coincidence (an out-of-range-looking id, [constant
+## CursorTypes.Authority.UNINITIALIZED] where the real state would never be
+## uninitialized once seeded, [constant SetTargetResult.REJECTED_REENTRANT]
+## on a call this spy never actually gates), and counts how many times it was
+## called.
+class _SpyCursorState extends CursorState:
+	var current_target_call_count: int = 0
+	var device_authority_call_count: int = 0
+	var target_valid_call_count: int = 0
+	var set_target_call_count: int = 0
+	var last_set_target_arg: CursorTarget = null
+
+	func get_current_target() -> CursorTarget:
+		current_target_call_count += 1
+		return CursorTarget.make(CursorTypes.SurfaceType.DIALOGUE_CHOICE, 918273)
+
+	func get_device_authority() -> CursorTypes.Authority:
+		device_authority_call_count += 1
+		return CursorTypes.Authority.UNINITIALIZED
+
+	func is_current_target_valid() -> bool:
+		target_valid_call_count += 1
+		return true
+
+	func set_target(target: CursorTarget) -> SetTargetResult:
+		set_target_call_count += 1
+		last_set_target_arg = target
+		return SetTargetResult.REJECTED_REENTRANT
+
+
+## Spy [CursorSurfaceRegistry] subclass — overrides [method register] /
+## [method unregister], each returning a sentinel result code and counting
+## calls, same reasoning as [_SpyCursorState] above.
+class _SpyCursorSurfaceRegistry extends CursorSurfaceRegistry:
+	var register_call_count: int = 0
+	var unregister_call_count: int = 0
+	var last_register_node: Node = null
+
+	func register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult:
+		register_call_count += 1
+		last_register_node = node
+		return RegisterResult.INVALID_NODE
+
+	func unregister(surface: CursorTypes.SurfaceType) -> RegisterResult:
+		unregister_call_count += 1
+		return RegisterResult.UNREGISTERED_NOT_FOUND
+
+
+func _make_spy_state() -> _SpyCursorState:
+	return _SpyCursorState.new(
+		_FakeMouseReclaimPolicy.new(),
+		CursorSurfaceRegistry.new(),
+		Callable(self, "_test_mouse_position")
+	)
+
+
+func test_sensitivity_proof_all_six_u013_forwards_delegate_through_live_state_and_registry() -> void:
+	# Arrange — swap the shared Autoload's two collaborator fields for spies.
+	# Both originals are captured first so they can be restored unconditionally
+	# below regardless of what happens in between: GdUnit4 assertions record
+	# a failure and CONTINUE rather than throwing, so the restoration lines at
+	# the bottom still run even if an assertion above them fails — the shared
+	# Autoload cannot leak spy state into any later test in this suite.
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	var original_state: CursorState = host.get(&"_state")
+	var original_registry: CursorSurfaceRegistry = host.get(&"_registry")
+	var spy_state: _SpyCursorState = _make_spy_state()
+	var spy_registry: _SpyCursorSurfaceRegistry = _SpyCursorSurfaceRegistry.new()
+	host.set(&"_state", spy_state)
+	host.set(&"_registry", spy_registry)
+
+	# Act / Assert — is_current_target_valid()
+	assert_bool(host.is_current_target_valid()).append_failure_message(
+		"host.is_current_target_valid() did not surface the SPY's sentinel "
+		+ "return value — it is not delegating through the live _state field."
+	).is_true()
+	assert_int(spy_state.target_valid_call_count).is_equal(1)
+
+	# Act / Assert — get_device_authority()
+	assert_int(host.get_device_authority()).append_failure_message(
+		"host.get_device_authority() did not surface the SPY's sentinel "
+		+ "return value."
+	).is_equal(CursorTypes.Authority.UNINITIALIZED)
+	assert_int(spy_state.device_authority_call_count).is_equal(1)
+
+	# Act / Assert — get_current_target()
+	var forwarded_target: CursorTarget = host.get_current_target()
+	assert_int(forwarded_target.id).append_failure_message(
+		"host.get_current_target() did not surface the SPY's sentinel target "
+		+ "— it is not delegating through the live _state field."
+	).is_equal(918273)
+	assert_int(spy_state.current_target_call_count).is_equal(1)
+
+	# Act / Assert — set_target()
+	var probe_target: CursorTarget = CursorTarget.make(CursorTypes.SurfaceType.CARD_SLOT, 55)
+	assert_int(host.set_target(probe_target)).append_failure_message(
+		"host.set_target() did not surface the SPY's sentinel return value."
+	).is_equal(CursorState.SetTargetResult.REJECTED_REENTRANT)
+	assert_int(spy_state.set_target_call_count).is_equal(1)
+	assert_object(spy_state.last_set_target_arg).append_failure_message(
+		"host.set_target() did not pass its argument through to the live "
+		+ "_state's set_target() unchanged."
+	).is_same(probe_target)
+
+	# Act / Assert — register_surface()
+	var probe_node: Node = auto_free(Node.new())
+	assert_int(host.register_surface(_U013_SURFACE, probe_node)).append_failure_message(
+		"host.register_surface() did not surface the SPY registry's sentinel "
+		+ "return value — it is not delegating through the live _registry field."
+	).is_equal(CursorSurfaceRegistry.RegisterResult.INVALID_NODE)
+	assert_int(spy_registry.register_call_count).is_equal(1)
+	assert_object(spy_registry.last_register_node).is_same(probe_node)
+
+	# Act / Assert — unregister_surface()
+	assert_int(host.unregister_surface(_U013_SURFACE)).append_failure_message(
+		"host.unregister_surface() did not surface the SPY registry's "
+		+ "sentinel return value."
+	).is_equal(CursorSurfaceRegistry.RegisterResult.UNREGISTERED_NOT_FOUND)
+	assert_int(spy_registry.unregister_call_count).is_equal(1)
+
+	# Cleanup — restore the REAL collaborators regardless of which assertions
+	# above passed or failed.
+	host.set(&"_state", original_state)
+	host.set(&"_registry", original_registry)

@@ -23,9 +23,17 @@
 ## [b]Layer order is deliberate and asymmetric[/b] (child order in
 ## [code]BoardView.tscn[/code], which is what Node2D draws in): TerrainLayer,
 ## MoveHighlightLayer, PiecesLayer, AffinityLineLayer, ThreatHighlightLayer,
-## AttackHighlightLayer, StatsLayer, CursorSprite. The move layer sits BELOW
-## the pieces while the threat and attack layers sit ABOVE them, for a
-## measured reason: the placeholder piece textures are fully opaque 32x40
+## AttackHighlightLayer, CardTargetHighlightLayer, StatsLayer, CursorSprite.
+## [b]Story U-013[/b] adds [code]CardTargetHighlightLayer[/code] — see
+## [method set_card_target_highlights]'s own doc comment for why it sits
+## above [code]AttackHighlightLayer[/code] (same "must draw above occupied
+## cells" reasoning as that layer) and below [code]StatsLayer[/code] (HP bar/
+## text must never be painted over, matching every other highlight layer's
+## existing relationship to it).
+## [br]
+## The move layer sits BELOW the pieces while the threat and attack layers
+## sit ABOVE them, for a measured reason: the placeholder piece textures are
+## fully opaque 32x40
 ## blocks (verified 2026-08-28 by reading their pixels —
 ## [code]piece_enemy_01.png[/code] is a single solid color across all 1280
 ## pixels), and a piece is anchored to cover its whole 32x32 cell plus an 8px
@@ -90,6 +98,29 @@ const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_th
 
 const CURSOR_PATH: String = "res://assets/art/placeholder/cursor_outline.png"
 
+## Story U-013 — S2/S2p/S2q target-selection highlight. See [method
+## set_card_target_highlights]'s own doc comment for why this is composed
+## from primitives ([ColorRect] / [Line2D]) rather than loaded [Texture2D]s
+## like every other highlight layer in this file: unlike move/attack/threat,
+## no placeholder art exists yet for this state, and this project's own
+## precedent for exactly that situation (`hand_bar.gd`'s lock glyph / category
+## icon shapes) is to compose from primitives rather than block on an art
+## asset. Deliberately the SAME colour for the outline AND the illegal mark —
+## per `design/ux/skill-card-play.md`'s Component Inventory ("合法/不合法須
+## 拆出成因") and this project's `P-F3` discipline ("無例外"), the outline vs
+## outline+X shape difference is what separates legal from illegal, not hue.
+const CARD_TARGET_OUTLINE_COLOR: Color = Color(1.0, 1.0, 1.0, 0.9)
+## Distance, in pixels, the outline is inset from the cell's own edge —
+## leaves a visible gap from [constant PIECE_SPRITE_HEIGHT]'s top overhang and
+## from any adjacent cell's own outline.
+const CARD_TARGET_OUTLINE_INSET: float = 3.0
+const CARD_TARGET_OUTLINE_WIDTH: float = 2.0
+## The illegal-only X mark is inset further than the outline (drawn INSIDE
+## it, not on top of it) so the two remain visually separable as two distinct
+## strokes rather than merging into one shape at their corners.
+const CARD_TARGET_ILLEGAL_MARK_INSET: float = 7.0
+const CARD_TARGET_ILLEGAL_MARK_WIDTH: float = 2.0
+
 ## Colour vocabulary for [method set_affinity_lines]. Deliberately BoardView's
 ## own enum rather than [code]AffinityLineStatus.State[/code]: this node must
 ## not gain a gameplay dependency (same reason [constant TERRAIN_TEXTURE_PATHS]
@@ -140,6 +171,11 @@ const HP_TEXT_COLOR_PREVIEW: Color = Color(1.0, 0.78, 0.28)
 @onready var _terrain_layer: Node2D = $TerrainLayer
 @onready var _move_highlight_layer: Node2D = $MoveHighlightLayer
 @onready var _attack_highlight_layer: Node2D = $AttackHighlightLayer
+## Story U-013 — S2/S2p/S2q legal/illegal target highlight. Sits above
+## [member _pieces_layer] (same reason as [member _threat_highlight_layer] /
+## [member _attack_highlight_layer]) and below [member _stats_layer] — see
+## [method set_card_target_highlights]'s own doc comment.
+@onready var _card_target_highlight_layer: Node2D = $CardTargetHighlightLayer
 ## Threat-range layer. Sits ABOVE [code]PiecesLayer[/code] in
 ## [code]BoardView.tscn[/code] — see the class doc comment's layer-order
 ## note for why that asymmetry with [member _move_highlight_layer] is
@@ -307,6 +343,40 @@ func set_threat_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_threat_highlight_layer, cells, THREAT_HIGHLIGHT_PATH)
 
 
+## Story U-013 — replaces the card-play target-selection highlight layer.
+## [param legal_cells] gets a hollow square outline; [param illegal_cells]
+## gets the SAME outline PLUS an X mark drawn across it — see
+## [constant CARD_TARGET_OUTLINE_COLOR]'s own doc comment for why the shape
+## difference, not colour, is what separates the two (`P-F3` 無例外). A cell
+## that appears in NEITHER array (S2's third state, "不可達或未涉及" — no unit
+## stands there at all) is drawn as nothing; absence of any mark IS that
+## state, the same convention [code]battle_screen.gd[/code]'s
+## [method _refresh_view] already uses to keep the move/attack/threat
+## highlight layers mutually exclusive. Pass two empty arrays to clear.
+##
+## The outline is hollow (never filled) for the same reason [method
+## set_threat_highlights]'s ring is hollow (see the class doc comment's
+## layer-order note): this layer draws above [member _pieces_layer], and a
+## filled highlight would hide whatever piece is standing on the cell.
+##
+## [b]Caller obligation — this method does not enforce it[/b]: [param
+## legal_cells] and [param illegal_cells] must be disjoint. Passing the same
+## cell in both draws both an outline and an outline+X stacked on each other,
+## which is a caller bug this method has no way to detect (it does not know
+## which unit occupies which cell, or which cells are even legally
+## meaningful — it only draws exactly what it is given, matching every other
+## method on this node).
+func set_card_target_highlights(
+	legal_cells: Array[Vector2i], illegal_cells: Array[Vector2i]
+) -> void:
+	_clear_children(_card_target_highlight_layer)
+	for cell: Vector2i in legal_cells:
+		_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+	for cell: Vector2i in illegal_cells:
+		_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+		_card_target_highlight_layer.add_child(_build_card_target_illegal_mark(cell))
+
+
 ## Shows the cursor outline centered on [param cell].
 func set_cursor(cell: Vector2i) -> void:
 	_cursor_sprite.visible = true
@@ -412,6 +482,76 @@ func _build_hp_text(cell_top_left: Vector2, hp: int, hp_max: int, hp_preview: in
 		label.text = "%d/%d" % [hp, hp_max]
 		label.add_theme_color_override("font_color", HP_TEXT_COLOR_NORMAL)
 	root.add_child(label)
+
+	return root
+
+
+# Story U-013 — shared by set_card_target_highlights() for BOTH legal and
+# illegal cells: four thin ColorRects forming a hollow square border, inset
+# CARD_TARGET_OUTLINE_INSET px from the cell's own edge. See that constant's
+# doc comment for why this is composed from primitives.
+func _build_card_target_outline(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * CARD_TARGET_OUTLINE_INSET
+	var side: float = BoardCoords.CELL_SIZE - CARD_TARGET_OUTLINE_INSET * 2.0
+	var border_width: float = CARD_TARGET_OUTLINE_WIDTH
+
+	var top: ColorRect = ColorRect.new()
+	top.color = CARD_TARGET_OUTLINE_COLOR
+	top.position = top_left
+	top.size = Vector2(side, border_width)
+	root.add_child(top)
+
+	var bottom: ColorRect = ColorRect.new()
+	bottom.color = CARD_TARGET_OUTLINE_COLOR
+	bottom.position = top_left + Vector2(0.0, side - border_width)
+	bottom.size = Vector2(side, border_width)
+	root.add_child(bottom)
+
+	var left: ColorRect = ColorRect.new()
+	left.color = CARD_TARGET_OUTLINE_COLOR
+	left.position = top_left
+	left.size = Vector2(border_width, side)
+	root.add_child(left)
+
+	var right: ColorRect = ColorRect.new()
+	right.color = CARD_TARGET_OUTLINE_COLOR
+	right.position = top_left + Vector2(side - border_width, 0.0)
+	right.size = Vector2(border_width, side)
+	root.add_child(right)
+
+	return root
+
+
+# Story U-013 — the illegal-only X mark: two diagonal Line2Ds, drawn INSIDE
+# the outline built by _build_card_target_outline() (see
+# CARD_TARGET_ILLEGAL_MARK_INSET's own doc comment for why it is inset
+# further, not the same amount). antialiased = false matches
+# set_affinity_lines()'s own pixel-art discipline at this project's 480x270
+# base resolution.
+func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = (
+		BoardCoords.grid_to_local(cell) + Vector2.ONE * CARD_TARGET_ILLEGAL_MARK_INSET
+	)
+	var side: float = BoardCoords.CELL_SIZE - CARD_TARGET_ILLEGAL_MARK_INSET * 2.0
+	var top_right: Vector2 = top_left + Vector2(side, 0.0)
+	var bottom_left: Vector2 = top_left + Vector2(0.0, side)
+	var bottom_right: Vector2 = top_left + Vector2(side, side)
+
+	var diagonal_a: Line2D = Line2D.new()
+	diagonal_a.points = PackedVector2Array([top_left, bottom_right])
+	diagonal_a.width = CARD_TARGET_ILLEGAL_MARK_WIDTH
+	diagonal_a.default_color = CARD_TARGET_OUTLINE_COLOR
+	diagonal_a.antialiased = false
+	root.add_child(diagonal_a)
+
+	var diagonal_b: Line2D = Line2D.new()
+	diagonal_b.points = PackedVector2Array([top_right, bottom_left])
+	diagonal_b.width = CARD_TARGET_ILLEGAL_MARK_WIDTH
+	diagonal_b.default_color = CARD_TARGET_OUTLINE_COLOR
+	diagonal_b.antialiased = false
+	root.add_child(diagonal_b)
 
 	return root
 

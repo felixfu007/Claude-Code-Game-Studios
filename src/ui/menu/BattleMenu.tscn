@@ -26,7 +26,47 @@ text = "回到遊戲"
 [node name="EndPhaseRow" type="Button" parent="Panel/ContentMargin/Rows"]
 text = "結束回合"
 
+[node name="EndPhaseReasonLabel" type="Label" parent="Panel/ContentMargin/Rows"]
+visible = false
+mouse_filter = 2
+focus_mode = 0
+
 [node name="Divider" type="ColorRect" parent="Panel/ContentMargin/Rows"]
 
 [node name="QuitRow" type="Button" parent="Panel/ContentMargin/Rows"]
 text = "離開遊戲"
+
+[node name="LeaveConfirm" type="Control" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Blocker" type="ColorRect" parent="LeaveConfirm"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0)
+mouse_filter = 0
+
+[node name="Panel" type="PanelContainer" parent="LeaveConfirm"]
+
+[node name="ContentMargin" type="MarginContainer" parent="LeaveConfirm/Panel"]
+
+[node name="Content" type="VBoxContainer" parent="LeaveConfirm/Panel/ContentMargin"]
+
+[node name="TitleLabel" type="Label" parent="LeaveConfirm/Panel/ContentMargin/Content"]
+horizontal_alignment = 1
+
+[node name="BodyLabel" type="Label" parent="LeaveConfirm/Panel/ContentMargin/Content"]
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="LeaveConfirm/Panel/ContentMargin/Content"]
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="LeaveConfirm/Panel/ContentMargin/Content/Buttons"]
+text = "取消"
+
+[node name="LeaveButton" type="Button" parent="LeaveConfirm/Panel/ContentMargin/Content/Buttons"]
+text = "離開"
