@@ -257,6 +257,149 @@ func _count_line2d_descendants(node: Node) -> int:
 	return count
 
 
+# ─── render_pieces() —— HP 讀出對比度修復(design/art/hp-readout-contrast-fix.md
+# 第二節,2026-09-23 管理者裁決「讀法一:整條黑底一起變深」)──────────────────────
+#
+# 觸發條件是 render_pieces() 的 pieces 字典多帶的 OPTIONAL 旗標
+# "card_target_illegal"(見 board_view.gd render_pieces() 自己的 doc comment)
+# 交集 "show_hp_text" 為真時,HP 文字襯底改用 HP_TEXT_BG_COLOR_TARGET_ILLEGAL
+# (alpha 0.90)取代 HP_TEXT_BG_COLOR(alpha 0.72)。headless 不 rasterize——
+# 以下只驗「建出的 ColorRect.color 是哪個值」這種結構性事實,驗不了「灰階複驗
+# 兩態肉眼看起來如何」——那項落在本次任務明文排除的 P-F3 複驗範圍,不在此檔。
+
+
+## 遞迴找出 HP 文字襯底那個 ColorRect —— 用高度 HP_TEXT_HEIGHT(10px)辨識,
+## 與 HP 血條的兩個 ColorRect(高度 HP_BAR_HEIGHT=3px)區分開,不依賴節點樹
+## 巢狀層數(_build_stat_block() 的兩層 Node2D wrapper 屬實作細節,不應綁死
+## 在測試裡)。
+func _find_hp_text_background(node: Node) -> ColorRect:
+	for child: Node in node.get_children():
+		if child is ColorRect and (child as ColorRect).size.y == float(BoardView.HP_TEXT_HEIGHT):
+			return child as ColorRect
+		var found: ColorRect = _find_hp_text_background(child)
+		if found != null:
+			return found
+	return null
+
+
+func _single_piece_dict(show_hp_text: bool, card_target_illegal: Variant) -> Dictionary:
+	var data: Dictionary = {
+		"cell": Vector2i(0, 0),
+		"faction": "PLAYER",
+		"sprite_index": 0,
+		"hp": 5,
+		"hp_max": 10,
+		"hp_preview": -1,
+		"show_hp_text": show_hp_text,
+	}
+	if card_target_illegal != null:
+		data["card_target_illegal"] = card_target_illegal
+	return data
+
+
+func test_render_pieces_illegal_card_target_with_hp_text_uses_darker_background() -> void:
+	# Arrange
+	var instance: BoardView = _fresh_board_view()
+	var pieces: Array[Dictionary] = [_single_piece_dict(true, true)]
+
+	# Act
+	instance.render_pieces(pieces)
+
+	# Assert
+	var background: ColorRect = _find_hp_text_background(instance.get_node("StatsLayer"))
+	assert_object(background).append_failure_message(
+		"show_hp_text=true 應該建出 HP 文字襯底 ColorRect,卻找不到"
+	).is_not_null()
+	assert_bool(
+		background.color.is_equal_approx(BoardView.HP_TEXT_BG_COLOR_TARGET_ILLEGAL)
+	).append_failure_message(
+		(
+			"不合法目標且顯示血量文字時,襯底應為 HP_TEXT_BG_COLOR_TARGET_ILLEGAL"
+			+ "(alpha 0.90),實得 %s"
+		) % [background.color]
+	).is_true()
+
+
+func test_render_pieces_legal_card_target_with_hp_text_uses_normal_background() -> void:
+	# Arrange
+	var instance: BoardView = _fresh_board_view()
+	var pieces: Array[Dictionary] = [_single_piece_dict(true, false)]
+
+	# Act
+	instance.render_pieces(pieces)
+
+	# Assert
+	var background: ColorRect = _find_hp_text_background(instance.get_node("StatsLayer"))
+	assert_object(background).is_not_null()
+	assert_bool(background.color.is_equal_approx(BoardView.HP_TEXT_BG_COLOR)).append_failure_message(
+		(
+			"合法目標(或非目標選取態)顯示血量文字時,襯底應維持既有 HP_TEXT_BG_COLOR"
+			+ "(alpha 0.72),實得 %s"
+		) % [background.color]
+	).is_true()
+
+
+func test_render_pieces_card_target_illegal_key_absent_defaults_to_normal_background() -> void:
+	# Arrange —— 字典完全不帶 "card_target_illegal" 這個 key(既有呼叫端在
+	# _card_selecting_target 為 false 時就是這樣呼叫),契約是 OPTIONAL、
+	# 缺席等同 false —— 見 board_view.gd render_pieces() 自己的 doc comment
+	var instance: BoardView = _fresh_board_view()
+	var pieces: Array[Dictionary] = [_single_piece_dict(true, null)]
+
+	# Act
+	instance.render_pieces(pieces)
+
+	# Assert
+	var background: ColorRect = _find_hp_text_background(instance.get_node("StatsLayer"))
+	assert_object(background).is_not_null()
+	assert_bool(background.color.is_equal_approx(BoardView.HP_TEXT_BG_COLOR)).append_failure_message(
+		"card_target_illegal 缺席時應預設為 false(維持既有 0.72 襯底),實得 %s"
+		% [background.color]
+	).is_true()
+
+
+## 敏感度證明用的間諜子類別——覆寫 _build_hp_text() 忽略呼叫端傳入的
+## card_target_illegal 引數,模擬「加深邏輯被還原/漏接」這個回歸。
+## set_script() 在 add_child() 之前呼叫,與本檔既有
+## test_card_target_highlight_layer_node_resolves_with_correct_type 一節文件
+## 記載的「Case A」同一個時機(test-standards.md 已驗證安全);本覆寫對象
+## (_build_hp_text)本身不讀取任何 _ready() 建立的實例狀態,純粹是之後由
+## render_pieces() 動態呼叫的一般方法,不覆寫 _ready() 也不受 Case B 的疑慮影響。
+class _MutantIgnoresCardTargetIllegalFlag extends BoardView:
+	func _build_hp_text(
+		cell_top_left: Vector2, hp: int, hp_max: int, hp_preview: int, _card_target_illegal: bool
+	) -> Node2D:
+		return super._build_hp_text(cell_top_left, hp, hp_max, hp_preview, false)
+
+
+func test_sensitivity_proof_card_target_illegal_flag_ignored_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantIgnoresCardTargetIllegalFlag)
+	add_child(instance)
+	var pieces: Array[Dictionary] = [_single_piece_dict(true, true)]
+
+	# Act
+	instance.render_pieces(pieces)
+
+	# Assert —— mutant 忽略旗標,襯底理應仍是舊值(0.72),證明
+	# test_render_pieces_illegal_card_target_with_hp_text_uses_darker_background()
+	# 的 is_true() 斷言(檢查 alpha 0.90)遇到這個回歸會失敗、抓得到問題
+	var background: ColorRect = _find_hp_text_background(instance.get_node("StatsLayer"))
+	assert_object(background).append_failure_message(
+		"mutant 應該仍然建出 HP 文字襯底節點,只是顏色錯——找不到節點代表本注入" +
+		" 手法本身有問題,不是在證明想證明的事"
+	).is_not_null()
+	assert_bool(
+		background.color.is_equal_approx(BoardView.HP_TEXT_BG_COLOR_TARGET_ILLEGAL)
+	).append_failure_message(
+		(
+			"mutant 忽略旗標時襯底應該還是舊值 0.72,若這裡量到 0.90 代表 mutant 沒有" +
+			"真的模擬到「旗標被忽略」這個回歸——本測試設計有誤,不代表正式程式碼有問題"
+		)
+	).is_false()
+
+
 # ─── sort_targets_by_position() —— 先列後行（y 升冪、同列再 x 升冪）─────────────
 
 

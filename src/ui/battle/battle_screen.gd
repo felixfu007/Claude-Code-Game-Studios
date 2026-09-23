@@ -1960,6 +1960,27 @@ func _refresh_view() -> void:
 	# 綁在游標而非滑鼠 hover:游標由鍵盤/手把/滑鼠三種裝置共同驅動
 	# (DeviceAuthority),所以主機端沒有指標也一樣看得到。
 	var focus_cell: Vector2i = _cursor_cell if _cursor_active else Vector2i(-1, -1)
+
+	# HP 讀出對比度修復(design/art/hp-readout-contrast-fix.md 第二節,2026-09-23
+	# 管理者裁決「讀法一:整條黑底一起變深」)。提前算出這個畫格的合法目標 id
+	# 集合,讓下面 pieces 迴圈能一併帶出「是否為不合法目標」旗標交給
+	# board_view.gd —— 這是複用 _controller.legal_targets() 同一份答案,不是
+	# 另外重新判斷合法性。下方 Story U-013 既有的 card-play 高亮區塊改為直接
+	# 重用這裡算好的 card_target_legal_ids,不再自己重複呼叫 legal_targets()
+	# ——兩處必須讀同一份答案,不是各自問一次。
+	# 2026-09-23 修正:原本的三元運算式 `x if cond else []` 讓 `else` 分支的
+	# 裸 `[]` 把整個運算式的推論型別退化成未型別化 Array,賦值給
+	# Array[int] 在 parse 期不會報錯、只在執行期炸(協調者實測 451 次
+	# SCRIPT ERROR、35 支測試連帶變紅)。改成先宣告型別化空陣列、
+	# 再用 if 覆寫,語意不變(_card_selecting_target 為真才取
+	# legal_targets(),否則維持空陣列)。
+	var card_target_legal_ids: Array[int] = []
+	if _card_selecting_target:
+		card_target_legal_ids = _controller.legal_targets()
+	var card_target_legal_set: Dictionary = {}
+	for legal_id: int in card_target_legal_ids:
+		card_target_legal_set[legal_id] = true
+
 	var pieces: Array[Dictionary] = []
 	for unit: Unit in _state.units_of(Unit.Faction.PLAYER):
 		pieces.append({
@@ -1973,6 +1994,9 @@ func _refresh_view() -> void:
 			"hp_max": unit.hp_max,
 			"hp_preview": -1,
 			"show_hp_text": unit.id == selected or _state.position_of(unit.id) == focus_cell,
+			"card_target_illegal": (
+				_card_selecting_target and not card_target_legal_set.has(unit.id)
+			),
 		})
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		pieces.append({
@@ -1983,6 +2007,9 @@ func _refresh_view() -> void:
 			"hp_max": unit.hp_max,
 			"hp_preview": preview_target_hp if unit.id == preview_target_id else -1,
 			"show_hp_text": _state.position_of(unit.id) == focus_cell,
+			"card_target_illegal": (
+				_card_selecting_target and not card_target_legal_set.has(unit.id)
+			),
 		})
 	_board_view.render_pieces(pieces)
 
@@ -2024,14 +2051,18 @@ func _refresh_view() -> void:
 	# call site). Legal = every unit in _controller.legal_targets(); illegal =
 	# every OTHER unit on the board (either faction); an empty tile is the
 	# third, undrawn state — see that method's own doc comment.
+	# 🔴 HP 對比度修復批次(2026-09-23)起,合法目標 id 陣列已在上面 pieces
+	# 迴圈前算好(card_target_legal_ids),這裡直接重用,不再另外呼叫一次
+	# _controller.legal_targets() —— 兩處是同一份答案。
 	if _card_selecting_target:
-		var target_legal_ids: Array[int] = _controller.legal_targets()
 		var unit_positions: Dictionary[int, Vector2i] = {}
 		for player_unit: Unit in _state.units_of(Unit.Faction.PLAYER):
 			unit_positions[player_unit.id] = _state.position_of(player_unit.id)
 		for enemy_unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 			unit_positions[enemy_unit.id] = _state.position_of(enemy_unit.id)
-		var target_partition: Dictionary = card_target_highlight_cells(target_legal_ids, unit_positions)
+		var target_partition: Dictionary = card_target_highlight_cells(
+			card_target_legal_ids, unit_positions
+		)
 		_board_view.set_card_target_highlights(target_partition["legal"], target_partition["illegal"])
 	else:
 		_board_view.set_card_target_highlights([], [])

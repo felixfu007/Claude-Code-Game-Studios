@@ -168,6 +168,21 @@ const HP_TEXT_BG_COLOR: Color = Color(0.0, 0.0, 0.0, 0.72)
 const HP_TEXT_COLOR_NORMAL: Color = Color.WHITE
 const HP_TEXT_COLOR_PREVIEW: Color = Color(1.0, 0.78, 0.28)
 
+## HP readout contrast fix (`design/art/hp-readout-contrast-fix.md` §2,
+## 2026-09-23 manager ruling — "讀法一:整條黑底一起變深"). When a cell's HP
+## text is shown WHILE that cell is also the "illegal target" state of
+## card-play target selection (S2/S2p/S2q), the ENTIRE [constant
+## HP_TEXT_HEIGHT]-tall backing strip uses this value instead of [constant
+## HP_TEXT_BG_COLOR] — same RGB, alpha only, no new hue. Deliberately named
+## without any word implying the HP VALUE itself changed (one of the three
+## obligations attached to the ruling): this is a target-legality indicator,
+## not a health effect. [b]Never touch[/b] [constant CARD_TARGET_OUTLINE_COLOR]
+## / [constant CARD_TARGET_ILLEGAL_MARK_INSET] or any other X-mark constant to
+## "fix" this further — the ruling explicitly keeps the X's size, position,
+## colour, alpha and symmetry untouched; this constant is the only thing this
+## fix is allowed to change.
+const HP_TEXT_BG_COLOR_TARGET_ILLEGAL: Color = Color(0.0, 0.0, 0.0, 0.90)
+
 @onready var _terrain_layer: Node2D = $TerrainLayer
 @onready var _move_highlight_layer: Node2D = $MoveHighlightLayer
 @onready var _attack_highlight_layer: Node2D = $AttackHighlightLayer
@@ -230,6 +245,20 @@ func render_terrain(terrain_rows: PackedStringArray) -> void:
 ##                              # 2026-08-28 from a screenshot).
 ##     "hp_preview": int,      # OPTIONAL — projected HP after a previewed
 ##                              # attack. Absent, or -1, means no preview.
+##     "card_target_illegal": bool,  # OPTIONAL — this cell is the "illegal
+##                              # target" state of card-play target selection
+##                              # while its HP text is shown. Absent = false.
+##                              # When true AND show_hp_text is true, the HP
+##                              # text background uses
+##                              # HP_TEXT_BG_COLOR_TARGET_ILLEGAL instead of
+##                              # HP_TEXT_BG_COLOR — see that constant's own
+##                              # doc comment. The caller (battle_screen.gd)
+##                              # derives this from the SAME legal/illegal
+##                              # partition it already computes for
+##                              # set_card_target_highlights(), never
+##                              # re-derived here — this node makes no rule
+##                              # decisions, matching every other flag on this
+##                              # dictionary.
 ## }
 ## [/codeblock]
 ## Replaces whatever pieces were previously rendered. This method does not
@@ -256,6 +285,7 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		var hp_max: int = data.get("hp_max", 1)
 		var hp_preview: int = data.get("hp_preview", -1)
 		var show_hp_text: bool = data.get("show_hp_text", false)
+		var card_target_illegal: bool = data.get("card_target_illegal", false)
 
 		var path: String = ENEMY_SPRITE_PATH
 		if faction == "PLAYER":
@@ -269,7 +299,7 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		_pieces_layer.add_child(sprite)
 
 		_stats_layer.add_child(
-			_build_stat_block(cell, hp, hp_max, hp_preview, show_hp_text)
+			_build_stat_block(cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal)
 		)
 
 
@@ -405,15 +435,20 @@ func _piece_anchor(cell: Vector2i) -> Vector2:
 # shape used elsewhere in this file). cell is the piece's board cell — every
 # child's geometry is derived from BoardCoords.grid_to_local(cell), never
 # from the piece sprite's anchor, so the stat block cannot inherit the
-# sprite's top-edge overhang.
+# sprite's top-edge overhang. card_target_illegal is passed straight through
+# to _build_hp_text() — see HP_TEXT_BG_COLOR_TARGET_ILLEGAL's doc comment;
+# it never affects the HP bar, only the HP text background.
 func _build_stat_block(
-	cell: Vector2i, hp: int, hp_max: int, hp_preview: int, show_text: bool
+	cell: Vector2i, hp: int, hp_max: int, hp_preview: int, show_text: bool,
+	card_target_illegal: bool
 ) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var cell_top_left: Vector2 = BoardCoords.grid_to_local(cell)
 	root.add_child(_build_hp_bar(cell_top_left, hp, hp_max))
 	if show_text:
-		root.add_child(_build_hp_text(cell_top_left, hp, hp_max, hp_preview))
+		root.add_child(
+			_build_hp_text(cell_top_left, hp, hp_max, hp_preview, card_target_illegal)
+		)
 	return root
 
 
@@ -456,14 +491,21 @@ func _build_hp_bar(cell_top_left: Vector2, hp: int, hp_max: int) -> Node2D:
 # colour change itself signals "this is a projection, not the current value"
 # (see render_pieces()'s doc comment). The Label is a Control parented under
 # a Node2D, so it gets no automatic layout — position and size are set
-# explicitly on both the background and the Label.
-func _build_hp_text(cell_top_left: Vector2, hp: int, hp_max: int, hp_preview: int) -> Node2D:
+# explicitly on both the background and the Label. card_target_illegal swaps
+# the WHOLE strip to HP_TEXT_BG_COLOR_TARGET_ILLEGAL (see that constant's own
+# doc comment for why the entire strip, not just the rows the X-mark overlaps
+# — 2026-09-23 manager ruling, "讀法一").
+func _build_hp_text(
+	cell_top_left: Vector2, hp: int, hp_max: int, hp_preview: int, card_target_illegal: bool
+) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var strip_top: float = cell_top_left.y + HP_TEXT_TOP_MARGIN
 	root.position = Vector2(cell_top_left.x, strip_top)
 
 	var background: ColorRect = ColorRect.new()
-	background.color = HP_TEXT_BG_COLOR
+	background.color = (
+		HP_TEXT_BG_COLOR_TARGET_ILLEGAL if card_target_illegal else HP_TEXT_BG_COLOR
+	)
 	background.position = Vector2.ZERO
 	background.size = Vector2(BoardCoords.CELL_SIZE, HP_TEXT_HEIGHT)
 	root.add_child(background)

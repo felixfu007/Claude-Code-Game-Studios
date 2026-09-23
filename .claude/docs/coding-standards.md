@@ -166,6 +166,7 @@ fully-specified checks.
    category, not just the two where it currently matters. Stating it only under B/C invited the
    wrong inference — that A is exempt from disclosure rather than merely exempt, so far, from
    ever triggering it.
+   📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
 5. 🔴 **A human opens the image and confirms it shows what it claims.** The checks above are
    a filter, not a substitute. Every visual defect found on this project so far was found by
    a person opening the file; the automated suite has never caught one.
@@ -195,6 +196,7 @@ does not detect a defect; it detects the design.
 4. **Integer-scale grid** — same carve-out as Category A: world layer only. If the screen has
    no world layer at all, say so explicitly; do not silently omit the check without a stated
    reason.
+   📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
 5. 🔴 **Human review — mandatory, unchanged.** See "why Check 5 survives every category" below.
 
 ### Category C checks — cropped / partial UI captures
@@ -233,6 +235,7 @@ is correct.
 4. **Integer-scale grid** — same carve-out as Category A/B: world layer only. Most UI crops
    have no world-layer content at all (this project renders UI text in an antialiased Chinese
    font, not a pixel font); state that explicitly rather than silently skipping the check.
+   📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
 5. 🔴 **Human review — mandatory, and carries more weight here than in the other two
    categories**, because checks 2 and 3 are, by construction, the most structurally weakened
    of the three categories here — see below.
@@ -283,6 +286,52 @@ PIPELINE PROBE -- Check 4 (corrected single-count algorithm) on REAL SubViewport
 
 以上兩項皆為紀律記載,**沒有任何 lint 或自動檢查會攔** —— 與本節其餘規則一樣,遵守與否目前
 不可觀測,唯一的防線是下一個人讀到這裡並照做。
+
+### Check 4「僅量世界層」豁免的前提查證(2026-09-23):世界層本身已驗證含有反鋸齒文字
+
+Category A、B、C 三個章節各自的 Check 4 都寫「Measure the world layer only」/
+「same carve-out ... world layer only」(現場定位用 `grep -n "world layer only"
+.claude/docs/coding-standards.md`,不查行號 —— 行號會漂,見 `.claude/rules/design-docs.md`
+的「No line-number self-references」),理由是**反鋸齒中文字只在介面層,世界層沒有**
+—— 這是三處共用的同一條前提。**該前提已用下列可重跑的 grep 逐條驗證為假**
+(非手抄數字,指令與輸出皆可重現):
+
+```
+$ grep -n "SubViewport\|BoardView" src/ui/battle/BattleScreen.tscn
+12:[node name="WorldViewportContainer" type="SubViewportContainer" parent="."]
+17:[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer"]
+19:[node name="BoardView" parent="WorldViewportContainer/WorldViewport" instance=ExtResource("2_board_view")]
+```
+→ `BoardView` 掛在 `WorldViewport` 底下 —— 它就是世界層,不是介面層。
+
+```
+$ grep -n "Label.new" src/ui/battle/board_view.gd
+```
+→ 命中 `_build_hp_text()` 函式內建立的那個 `Label`(單位頭上的血量讀數,見該函式上方文件
+註解)。**行號故意不寫在這裡**——該檔另有工作線正在改血量襯底顏色,行號會位移;要行號現場
+重跑上面這條指令,勿依賴任何寫死的數字。
+
+```
+$ grep -c "add_theme_font_override" src/ui/battle/board_view.gd
+0
+$ grep -c "add_theme_font_override" src/ui/battle/hand_bar.gd
+2
+```
+→ 世界層那個 `Label` **零字型覆寫**,吃引擎預設(反鋸齒)字型;對照組 `hand_bar.gd`
+(介面層,手牌列)有 2 處明確覆寫成 `HUD_FONT` 點陣字(`grep -n` 可查行號)。
+**世界層裡確實有反鋸齒文字 —— 三處豁免共用的前提不成立。**
+
+🔴 **前提不成立不等於「世界層量出來的違規數字就是這個原因造成的」。** 有一支 2026-09-23
+的探針(`godot-specialist` 執行)在世界層量到整數縮放違規 `1071 / 112490`(已扣除 3 個真實
+`HudLayout` 矩形),執行者誠實答「不知道成因」、也沒有讀過 `board_view.gd`。上面的 grep 讓
+「1071 是血量 Label 造成的」成為**有根據的假說**——但**沒有人驗證過這個因果關係**,本條目
+也未重跑引擎去驗證(不在本次任務範圍內)。**下一個引用這個數字的人,不得把因果關係當既定
+事實寫,只能寫「有一個未驗證的假說」。**
+
+⚠️ **本條目不修改 Check 4 的判準,也不改動 A/B/C 三處「world layer only」豁免的原文一字。**
+要不要把血量 Label(或其他世界層文字)排除在 Check 4 之外、還是反過來收緊豁免的適用範圍,
+是下一次的管理者裁決,不是本條目的職權。**本條目只登記缺口**:三處豁免共用的前提已驗證為假,
+下一個要動 Check 4 判準、或要引用「世界層乾淨」這個假設的人,必須先讀到這裡。
 
 ### Why Check 5 is not replaced by anything above, in any category
 
