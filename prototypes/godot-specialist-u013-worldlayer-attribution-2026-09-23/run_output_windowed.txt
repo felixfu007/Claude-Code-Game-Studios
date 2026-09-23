@@ -1,0 +1,32 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+=== PROBE START (windowed) DisplayServer.get_name()=Windows ===
+LOAD: load() returned null? false
+LOAD: instantiate() returned null? false
+ERROR: Parent node is busy setting up children, `add_child()` failed. Consider using `add_child.call_deferred(child)` instead.
+   at: add_child (scene/main/node.cpp:1721)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-u013-worldlayer-attribution-2026-09-23/probe_worldlayer_attribution.gd:69)
+LOAD: direct add_child() rejected as expected -- retrying via call_deferred (known trap, see prior probe)
+LOAD: battle.is_inside_tree()=true
+SANITY: StatusLabel text='第 1 回合．我方行動'
+SANITY: battle.get("_load_failed") = false
+SANITY: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+SANITY: WorldViewport.size = (480, 270) (WorldLayout.BASE_WIDTH/HEIGHT=480x270)
+STATE: _cursor_active=false _cursor_cell=(0, 2)
+CAPTURE: root image size=(960, 540)
+CAPTURE: window_size=(960, 540) observed scale=2 world_container.position=(0.0, 0.0)
+NEW: HandBar.slot_bar_rect(window_size, CardDeck.HAND_SIZE_LIMIT=5) = [P: (348, 392), S: (264, 66)]
+BONUS: WorldViewport native image size=(480, 270)
+BONUS: nearest-upscaled to (960, 540) (should equal window size (960, 540))
+CHECK4 [BONUS-SUBVIEWPORT-NATIVE-nearest-upscaled (pure world-layer content, isolates measurement-method vs content-problem)] = 0 / 129600
+CHECK4 [BASELINE-whole-window] = 4601 / 129600
+CHECK4-EXCL [EXCL-3-HUD-rects (reproduces prior probe's 1071/112490)] excluded_blocks=17110 violations=1109 / 112490
+CHECK4-EXCL [EXCL-4-rects (3 HUD + HandBar)] excluded_blocks=21466 violations=478 / 108134
+CHECK4-EXCL [EXCL-5-rects (3 HUD + HandBar + HP-text band) -- if this is ~0, all violations are accounted for] excluded_blocks=21466 violations=478 / 108134
+WITHIN [WITHIN HandBar.slot_bar_rect] rect=[P: (348, 392), S: (264, 66)] violations=631 / 4356 blocks
+WITHIN [WITHIN hud3[0]] rect=[P: (48, 27), S: (259, 33)] violations=620 / 2210 blocks
+WITHIN [WITHIN hud3[1]] rect=[P: (329, 27), S: (582, 33)] violations=0 / 4964 blocks
+WITHIN [WITHIN hud3[2]] rect=[P: (48, 469), S: (864, 44)] violations=2872 / 9936 blocks
+=== PROBE END ===
