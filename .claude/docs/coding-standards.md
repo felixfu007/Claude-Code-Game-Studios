@@ -167,6 +167,8 @@ fully-specified checks.
    wrong inference — that A is exempt from disclosure rather than merely exempt, so far, from
    ever triggering it.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
+   📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
+   「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
 5. 🔴 **A human opens the image and confirms it shows what it claims.** The checks above are
    a filter, not a substitute. Every visual defect found on this project so far was found by
    a person opening the file; the automated suite has never caught one.
@@ -197,6 +199,8 @@ does not detect a defect; it detects the design.
    no world layer at all, say so explicitly; do not silently omit the check without a stated
    reason.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
+   📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
+   「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
 5. 🔴 **Human review — mandatory, unchanged.** See "why Check 5 survives every category" below.
 
 ### Category C checks — cropped / partial UI captures
@@ -236,6 +240,8 @@ is correct.
    have no world-layer content at all (this project renders UI text in an antialiased Chinese
    font, not a pixel font); state that explicitly rather than silently skipping the check.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
+   📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
+   「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
 5. 🔴 **Human review — mandatory, and carries more weight here than in the other two
    categories**, because checks 2 and 3 are, by construction, the most structurally weakened
    of the three categories here — see below.
@@ -332,6 +338,77 @@ $ grep -c "add_theme_font_override" src/ui/battle/hand_bar.gd
 要不要把血量 Label(或其他世界層文字)排除在 Check 4 之外、還是反過來收緊豁免的適用範圍,
 是下一次的管理者裁決,不是本條目的職權。**本條目只登記缺口**:三處豁免共用的前提已驗證為假,
 下一個要動 Check 4 判準、或要引用「世界層乾淨」這個假設的人,必須先讀到這裡。
+
+### Check 4「僅量世界層」豁免的前提查證(續,2026-09-23):前提為假不影響 Check 4 的結果 —— 另外找到兩個更大的洞
+
+上一條登記留了一句「沒有人驗證過這個因果關係」,管理者裁決先派 `godot-specialist` 依上一條第 5 點
+的規則寫探針實跑查證,再談要不要動判準。探針結果見
+`prototypes/godot-specialist-u013-worldlayer-attribution-2026-09-23/run_output_windowed.txt`
+(windowed 執行,以下逐字引用):
+
+```
+SANITY: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+SANITY: WorldViewport.size = (480, 270) (WorldLayout.BASE_WIDTH/HEIGHT=480x270)
+STATE: _cursor_active=false _cursor_cell=(0, 2)
+CHECK4 [BONUS-SUBVIEWPORT-NATIVE-nearest-upscaled (pure world-layer content, isolates measurement-method vs content-problem)] = 0 / 129600
+CHECK4 [BASELINE-whole-window] = 4601 / 129600
+CHECK4-EXCL [EXCL-3-HUD-rects (reproduces prior probe's 1071/112490)] excluded_blocks=17110 violations=1109 / 112490
+CHECK4-EXCL [EXCL-4-rects (3 HUD + HandBar)] excluded_blocks=21466 violations=478 / 108134
+CHECK4-EXCL [EXCL-5-rects (3 HUD + HandBar + HP-text band) -- if this is ~0, all violations are accounted for] excluded_blocks=21466 violations=478 / 108134
+WITHIN [WITHIN HandBar.slot_bar_rect] rect=[P: (348, 392), S: (264, 66)] violations=631 / 4356 blocks
+```
+
+🔴 **結論一(改變上一條登記的推論方向,不是撤回它):前提確實為假,但這個假前提從頭到尾不影響
+Check 4 對真世界層內容的判定 —— Check 4 結構上量不到 `SubViewport` 內部畫了什麼。**
+`BONUS-SUBVIEWPORT-NATIVE` 那行直接讀 `WorldViewport.get_texture().get_image()`
+(480×270 原生緩衝區,完全在 UI `CanvasLayer` 疊上去之前),照真實倍率用 nearest 放大回 960×540
+再跑同一套 Check 4 → **`0 / 129600`**。這不是「這次剛好乾淨」,而是結構性保證:nearest 放大的定義
+就是把每一個來源像素複製成一個 N×N 同色方塊,**不論來源像素本身是否來自反鋸齒渲染,複製出來的
+方塊必定同色**。真實管線同樣走 nearest —— `src/ui/battle/BattleScreen.tscn` 的
+`WorldViewportContainer` 節點 `texture_filter = 1`,本條目另以
+`grep -n "texture_filter\|SubViewport" src/ui/battle/BattleScreen.tscn` 獨立覆核,結果一致:
+
+```
+12:[node name="WorldViewportContainer" type="SubViewportContainer" parent="."]
+13:texture_filter = 1
+17:[node name="WorldViewport" type="SubViewport" parent="WorldViewportContainer"]
+```
+
+**所以:世界層裡有沒有反鋸齒文字,不會讓 Check 4 量出違規。** 這與 Category A 原文本來就有的
+證據方向一致(「限縮到棋盤區域訊號是乾淨的:真實畫面 0 of 66300」),本條目是第一次把它講清楚是
+**結構性保證**,不是「今天剛好如此」。**上一條登記的前提查證本身沒有錯 —— 錯的是把「前提為假」
+自然讀成「所以這個豁免不可靠」的方向,實測指向相反。**
+
+**結論二:先前量到的 1071/1109,從頭到尾都不是世界層內容 —— 是介面層疊上去之後被一起算了進去。**
+`WorldViewportContainer` 在這個解析度下 `position=(0,0) size=(960,540)`,與整個視窗完全重疊。
+「裁到世界層矩形」在這個畫面等於「裁到整個視窗」,於是疊在世界層之上的 `CanvasLayer` 介面內容
+(HUD 文字、手牌列數字)被一起算了進去 —— `EXCL-3`(僅排除 3 個 HUD 矩形)量到 `1109 / 112490`
+(與上一條登記引用的 1071 同量級,差 38,見下方未解項);再排除 `HandBar.slot_bar_rect` 一項
+(`EXCL-4`)就降到 `478 / 108134`,而 `WITHIN HandBar.slot_bar_rect` 單獨量測顯示該矩形內部就有
+`631 / 4356` 個方塊違規。**「world layer only」這行指令,在這個專案目前的畫面配置下,「裁到世界層
+容器的矩形」與「只量到世界層真正畫出的像素」是兩件不同的事**——因為容器滿版、介面疊在上面。
+
+⚠️ **結論三:上一條登記的「HP Label 造成殘留違規」假說,以這次測到的這一幀而言已被否證,
+不應再被當成支持證據引用。** `STATE: _cursor_active=false` —— 血量文字只在游標啟用時畫出
+(`board_view.gd` 的 `_build_hp_text()`)。`EXCL-5`(在 `EXCL-4` 之外再排除血量文字帶)與
+`EXCL-4` **逐字相同 `478 / 108134`** —— 多排除的是空集合,代表這一幀裡血量文字沒有貢獻任何違規。
+上一條登記寫的是「有根據的假說,但沒有人驗證過」;現在驗證了,至少對這一幀是否定的。這不代表
+血量 Label 在游標啟用、血量文字確實畫出的其他幀裡一定無罪 —— 那個情境本次探針沒有測,不得
+外推成「血量 Label 全面無關」。
+
+📌 **兩項誠實登記的未解項,不代填成因**:
+1. **排除 4 個已知真實矩形(3 個 HUD + `HandBar`)後仍剩 `478 / 108134` 無法歸因。**
+   `godot-specialist` 原猜測是 `WorldViewportContainer` 走了 Linear 濾波 —— 本條目已用上方
+   `texture_filter = 1` 的獨立覆核否定這個猜測。**478 目前無人能解釋成因。**
+2. **兩支探針的 baseline 相差 38**:2026-09-22 那支量到 `1071`,本次量到 `1109`;差額不落在
+   那 3 個已知 HUD 矩形之內。**成因同樣無人知道。**
+
+⚠️ **本條目不改動上一條登記的任何一字,也不修改 Check 4 的判準,不改動 A/B/C 三處
+「world layer only」豁免的原文一字** —— 立場與上一條登記相同,理由也相同:要不要把「世界層」的
+操作型定義從「容器矩形」改成「容器實際渲染輸出」(例如改讀 `SubViewport.get_texture()`,而不是
+裁切合成後的整個視窗畫面),是下一次的管理者裁決,不是本條目的職權。**本條目只登記事實:
+「前提為假」這件事本身對 Check 4 無害,真正的洞在別處 —— 「world layer only」這行指令目前實際
+測到的,不是世界層。**
 
 ### Why Check 5 is not replaced by anything above, in any category
 
