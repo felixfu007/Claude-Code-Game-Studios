@@ -1,0 +1,50 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+=== PROBE START mode=windowed DisplayServer.get_name()=Windows ===
+Q1: CursorStateHost autoload present at /root? true
+Q1: calling load("res://src/ui/battle/BattleScreen.tscn")
+Q1: load() returned null? false
+Q1: calling packed.instantiate()
+Q1: instantiate() returned null? false
+Q1: instantiated node class=Node name=BattleScreen script=(res://src/ui/battle/battle_screen.gd):<GDScript#-9223371998200068611>
+Q1: calling get_tree().root.add_child(battle) -- this is where _init()/_ready() run
+ERROR: Parent node is busy setting up children, `add_child()` failed. Consider using `add_child.call_deferred(child)` instead.
+   at: add_child (scene/main/node.cpp:1721)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/probe_load_real_scene.gd:52)
+Q1: add_child() returned. battle.is_inside_tree()=false
+Q1: direct add_child() was rejected by the engine (see error above) -- retrying via call_deferred
+Q1: after call_deferred + 2 frames, battle.is_inside_tree()=true
+Q1: root's children after add: 
+  - CursorStateHost (Node)
+  - ProbeLoadRealScene (Node)
+  - BattleScreen (Node)
+Q3: UILayer/LoadErrorLabel found? true visible=false
+Q3: UILayer/StatusLabel found? true text='第 1 回合．我方行動'
+Q3: battle.get("_load_failed") = false
+Q3: battle.get("_state") is null? false
+Q3: battle.get("_controller") is null? false
+Q1/Q3: WorldViewportContainer found? true
+Q1/Q3: WorldViewport (SubViewport) found? true
+Q1/Q3: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+Q1/Q3: WorldViewport.size (should be 480x270 per WorldLayout.BASE_WIDTH/HEIGHT) = (480, 270)
+Q2/ROOT: root viewport size = (960, 540)
+Q2/ROOT: root_vp.get_texture() is null? false
+Q2/ROOT: root_tex.get_image() is null? false
+Q2/ROOT: image size=(960, 540) format=4 is_empty()=false
+Q2: [ROOT-windowed] sampled 1680 points on a step-24x13 grid, distinct colors = 36
+Q2: [ROOT-windowed] histogram (top entries) = { "4c4c4c": 520, "2d0f37": 48, "4a3820": 634, "33cc33": 12, "4f8f52": 76, "3c6edc": 14, "3b4652": 60, "111f3d": 1, "e68c28": 11, "e6c828": 9, "40270b": 3, "40380b": 1, "9646c8": 12, "2a1338": 1, "1e160d": 100, "203921": 24, "120616": 20, "aeacaf": 1, "286e46": 16, "145214": 3, "e8e7e6": 3, "e7e6e7": 1, "453e37": 2, "1b1b1b": 83, "b4b4b4": 9, "282828": 1, "595959": 1, "828282": 1, "4d4d4d": 1, "cdcdcd": 1, "9a9a9a": 1, "5c5c5c": 2, "d8d8d8": 3, "424242": 3, "3b3b3b": 1, "ffffff": 1 }
+Q2/ROOT: save_png(res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/root_windowed.png) err=0 (0=OK)
+Q5: world-layer rect in window space = [P: (0, 0), S: (960, 540)] clamped to image bounds = [P: (0, 0), S: (960, 540)]
+Q5/CHECK4: [WORLD-LAYER-CROP-windowed] crop size=(960, 540) WorldLayout.BASE_WIDTH=480 scale_guess=2
+Q5/CHECK4: [WORLD-LAYER-CROP-windowed] integer-scale grid violations (whole-crop, NOT excluding antialiased UI text since this crop is world-layer only) = 4563 / 129600
+Q5/FOLLOWUP: HUD exclude rects (real HudLayout.*_rect() calls, visible elements only) = [[P: (48, 27), S: (259, 33)], [P: (329, 27), S: (582, 33)], [P: (48, 469), S: (864, 44)]]
+Q5/CHECK4-EXCL: [WORLD-LAYER-CROP-MINUS-HUD-windowed] integer-scale grid violations excluding 3 HUD rects (17110 blocks skipped) = 1071 / 112490
+Q2/SUBVIEWPORT: world_viewport.get_texture() is null? false
+Q2/SUBVIEWPORT: sub_tex.get_image() is null? false
+Q2/SUBVIEWPORT: image size=(480, 270) format=4 is_empty()=false
+Q2: [SUBVIEWPORT-windowed] sampled 1800 points on a step-12x6 grid, distinct colors = 15
+Q2: [SUBVIEWPORT-windowed] histogram (top entries) = { "4c4c4c": 678, "2d0f37": 87, "4a3820": 780, "33cc33": 5, "4f8f52": 112, "3c6edc": 16, "3b4652": 60, "111f3d": 2, "e68c28": 11, "40270b": 4, "e6c828": 9, "40380b": 1, "9646c8": 12, "2a1338": 2, "286e46": 21 }
+Q2/SUBVIEWPORT: save_png(res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/subviewport_windowed.png) err=0 (0=OK)
+=== PROBE END mode=windowed ===

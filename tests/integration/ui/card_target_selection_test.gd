@@ -48,6 +48,78 @@
 #
 # 命名慣例依 tests/unit/ui/battle_screen_cursor_test.gd 先例：
 # test_[scenario]_[expected]，extends GdUnitTestSuite。
+#
+# ============================================================================
+# 敏感度證明涵蓋盤點（2026-09-23）
+# ============================================================================
+# 依 .claude/rules/test-standards.md 第 113 行起門檻：「每條測試要嘛有敏感度
+# 證明，要嘛有寫下來、可查證的『為什麼證明不了』」。本表逐條盤點本檔 25 條
+# test_ 函式，判定屬「可證明」或五類（A/A′/B/C/D）之一，並在下方逐條給出可
+# 查證的依據。骨架先行寫入，逐條查核後於本區塊內填入，不待全部查完才寫。
+#
+# 判定代碼：可證明 / A（static 純函式）/ A′（真實資料檔內容）/
+#           B（RNG 決定性契約）/ C（進樹後換腳本才能注入）/ D（唯一注入點在受限範圍外）
+#
+# | # | 測試函式名 | 判定 | 依據 |
+# |---|---|------|------|
+# |  1 | test_card_target_highlight_layer_node_resolves_with_correct_type | 可證明 | BoardView 有 class_name（board_view.gd:59-60，已讀本體確認）；_fresh_board_view()（本檔:134-137）在 instantiate() 後、add_child() 前有 Case A 可注入空檔（test-standards.md 2026-09-17 已驗證安全）。注入：子類別 _MutantBoardViewNoHighlightLayer extends BoardView，覆寫 _ready()：呼叫 super._ready() 後用 get_node_or_null("CardTargetHighlightLayer") 取得節點並 remove_child()+queue_free()。test_sensitivity_proof_... 斷言 mutant 上 get_node_or_null("CardTargetHighlightLayer") 為 null，證明 is_not_null()/is Node2D 斷言會抓到節點被移除。⚠️ 未讀 board_view.gd 的 _ready() 本體，但注入方案刻意設計成在 super 呼叫之後才動作，不依賴其內部實作。 |
+# |  2 | test_card_target_highlight_layer_draws_above_pieces_and_below_stats | 可證明 | 同 Row1 的 Case A 空檔。子類別 _MutantBoardViewWrongLayerOrder extends BoardView，覆寫 _ready()：呼叫 super._ready() 後對 CardTargetHighlightLayer 呼叫 move_child(that_node, 0) 強制移到最前（疊在 PiecesLayer 之下）。test_sensitivity_proof_... 斷言 mutant 上 CardTargetHighlightLayer.get_index() < PiecesLayer.get_index()，證明 is_greater(pieces_index) 斷言會抓到疊層順序被改壞。⚠️ 同上未讀 _ready() 本體，注入不依賴其內部實作。 |
+# |  3 | test_set_card_target_highlights_draws_one_outline_root_per_legal_cell | 可證明 | set_card_target_highlights() 為 BoardView 一般 instance method、非 static（已讀簽章，board_view.gd:369）。子類別 _MutantHighlightsDrawsNothingForLegal extends BoardView，直接覆寫 set_card_target_highlights(legal, illegal) 為刻意錯誤實作（合法格清單完全不畫）。經 Case A 建構後呼叫 mutant.set_card_target_highlights([Vector2i(1,1), Vector2i(3,2)], [])，test_sensitivity_proof_... 斷言 layer.get_child_count() 不等於 2，證明 is_equal(2) 斷言會抓到合法格漏畫。 |
+# |  4 | test_set_card_target_highlights_illegal_cells_get_outline_plus_x_mark | 可證明 | 同 Row3 機制。子類別覆寫 set_card_target_highlights()，對不合法格只畫外框、省略 X 記號（跳過 Line2D 繪製那段）。test_sensitivity_proof_... 斷言 mutant 呼叫 set_card_target_highlights([], [Vector2i(2,2)]) 後 line_count 為 0（非預期 2），證明 Line2D 數量斷言 is_equal(2) 會抓到不合法格漏畫 X。 |
+# |  5 | test_set_card_target_highlights_with_two_empty_arrays_clears_the_layer | 可證明 | 同組機制。子類別覆寫 set_card_target_highlights()：當 legal 與 illegal 皆空時直接 return，不清空既有子節點。test_sensitivity_proof_... 先用 mutant 畫一些高亮，再呼叫 set_card_target_highlights([], [])，斷言 layer.get_child_count() 仍大於 0，證明 is_equal(0) 斷言會抓到清空失敗留下殘影。 |
+# |  6 | test_sort_targets_by_position_orders_row_major_regardless_of_input_order | A | sort_targets_by_position 確認為 static func（已讀本體，battle_screen.gd:947），呼叫端皆為 BattleScreen.sort_targets_by_position(...) 直接對類別呼叫，無實例、無繼承鏈可覆寫，無法用子類別/間諜手法注入突變。本檔既有「敏感度證明」區塊（現行第 960-971 行）已涵蓋此組（與 next_target_id 共用一段論述），但其論述方式（手動改壞、觀察、改回）是 test-standards.md 2026-09-16 裁決明文淘汰的手動注入格式，不是常駐的 test_sensitivity_proof_*——格式與新裁決有落差，但 A 類本身（無法建常駐證明）的判定不受此影響。 |
+# |  7 | test_sort_targets_by_position_identical_across_repeated_runs_with_different_input_order | A | 同第 6 列依據（同一個 static 函式，同一段既有揭露涵蓋）。 |
+# |  8 | test_sort_targets_by_position_of_empty_array_is_empty | A | 同第 6 列依據。 |
+# |  9 | test_sort_targets_by_position_breaks_position_ties_by_ascending_id | A | 同第 6 列依據——本測試額外針對「座標相同時以 id 為第三決定鍵」分支，但受測函式仍是同一個 static sort_targets_by_position()，可覆寫性判定不變。 |
+# | 10 | test_jump_to_next_legal_target_cycles_in_row_major_order | A | next_target_id 確認為 static func（已讀本體，battle_screen.gd:975），呼叫端皆為 BattleScreen.next_target_id(...) 直接對類別呼叫，無實例、無繼承鏈可覆寫。本檔既有「敏感度證明」區塊（現行第 960-971 行）已涵蓋此組，格式落差說明同第 6 列。 |
+# | 11 | test_jump_cycle_wraps_from_last_to_first | A | 同第 10 列依據。 |
+# | 12 | test_jump_cycle_wraps_backward_from_first_to_last | A | 同第 10 列依據。 |
+# | 13 | test_jump_order_identical_across_repeated_runs | A | 同第 10 列依據。 |
+# | 14 | test_jump_with_current_id_not_in_set_starts_from_first_going_forward | A | 同第 10 列依據。 |
+# | 15 | test_jump_with_current_id_not_in_set_starts_from_last_going_backward | A | 同第 10 列依據。 |
+# | 16 | test_jump_on_empty_set_returns_negative_one | A | 同第 10 列依據（空集合邊界情境，受測函式仍是同一個 static next_target_id()）。 |
+# | 17 | test_cancel_from_s2q_returns_to_s2p_not_s1 | 可證明 | _handle_target_selection_cancel_transition() 確認為 BattleScreen 一般 instance method、非 static（已讀本體，battle_screen.gd:1702）。_fresh_instance()（本檔:140-143）同樣有 Case A 可注入空檔。注入：子類別 _MutantAlwaysCancelToS1 extends BattleScreen，覆寫 _handle_target_selection_cancel_transition()，忽略 _controller.legal_targets() 的真實回傳值，無條件執行「回 S1」那支（_card_selecting_from_hand=true、_card_selecting_target=false）。經 Case A 建構後複製本測試既有 Arrange（CardDeck/AffinityLink/CardPlaySession 換掉 _card_play_session，open_hand()/select_card()/select_target(3) 走到 S2q），呼叫真正的 _controller.cancel()（未覆寫），再呼叫 mutant 版本的轉場方法。test_sensitivity_proof_... 斷言 _card_selecting_from_hand==true，證明真測試 is_false() 斷言會抓到 S2q 取消誤退回 S1。⚠️ BattleController 六個轉發方法各自的閘門（_phase!=PLAYER_INPUT、has_pending_discard()）採用協調者本輪提供之摘錄，惟與我自己先前讀過的 battle_controller.gd 第 363-479 行結論一致（本檔第三批更正註解第 458-476 行亦同），視為已核實而非單憑摘錄。 |
+# | 18 | test_target_retarget_actor_priority_falls_inside_the_mandated_open_interval | 可證明 | _target_retarget_actor 為 BattleScreen 實例欄位，真測試本身即直接讀取 instance._target_retarget_actor（已讀本體，本檔:588），可推斷子類別內同樣可存取。注入：子類別 _MutantWrongRetargetPriority extends BattleScreen，覆寫 _ready()：呼叫 super._ready() 後直接賦值 _target_retarget_actor.process_priority=-10（落在 (-100,-25) 開區間之外）。test_sensitivity_proof_... 斷言 mutant 的 process_priority 不滿足 >-100 and <-25，證明真測試兩條開區間斷言會抓到優先序被改到區間外。⚠️ 未讀 _ready() 內建構該欄位/賦值 -60 的實際行數（本輪依協調者指示不讀 battle_screen.gd），但注入方案設計成在 super._ready() 執行完後才覆寫欄位，不依賴原始賦值寫在哪一行。 |
+# | 19 | test_cursor_navigate_moves_within_bounds_returns_encoded_tile_id | 可證明 | cursor_navigate() 確認為 BattleScreen 一般 instance method、非 static（已讀本體，battle_screen.gd:1545，函式體僅呼叫 CursorTypes.decode_tile()/BoardCoords.is_in_bounds()/CursorTypes.encode_tile()，無場景狀態依賴）。_fresh_instance() 同樣有 Case A 空檔。本條驗證「合法移動應得到正確編碼」這條 happy path，注入：子類別 _MutantCursorNavigateWrongEncode extends BattleScreen，覆寫 cursor_navigate()，故意把 encode 時的欄位互換或加減 1 造成錯誤編碼。test_sensitivity_proof_... 呼叫 mutant.cursor_navigate() 走一步合法移動，斷言回傳值不等於正確編碼，證明本測試 is_equal(expected_id) 斷言會抓到編碼邏輯被改壞。 |
+# | 20 | test_cursor_navigate_off_left_edge_returns_null | 可證明 | 同 Row19 的 Case A 空檔與非 static 事實。本條與 21-23 皆為邊界情境，四條共用同一個 mutant：子類別 _MutantCursorNavigateOffByOne extends BattleScreen，覆寫 cursor_navigate()，故意放寬邊界檢查（例如允許多一格，或省略 is_in_bounds 檢查直接回傳編碼）。test_sensitivity_proof_cursor_navigate_bounds_regression_detected 呼叫 mutant 版本、餵入本條的越界情境（最左欄再往左），斷言回傳值不是 null，證明本測試 is_null() 斷言會抓到邊界檢查被繞過。 |
+# | 21 | test_cursor_navigate_off_right_edge_returns_null | 可證明 | 同 Row20 的共用 mutant 與敏感度證明，餵入的情境改為最右欄再往右（越界方向不同，注入與證明機制相同）。 |
+# | 22 | test_cursor_navigate_off_top_edge_returns_null | 可證明 | 同 Row20 的共用 mutant 與敏感度證明，情境改為最上列再往上。 |
+# | 23 | test_cursor_navigate_off_bottom_edge_returns_null | 可證明 | 同 Row20 的共用 mutant 與敏感度證明，情境改為最下列再往下。 |
+# | 24 | test_reading_cursor_arbitrated_target_happens_in_process_not_input | D | 已直接讀過本測試本體（本檔:735-829）。斷言對象是原始碼文字本身：測試用 FileAccess.open("res://src/ui/battle/battle_screen.gd") 逐行讀取，搭配測試內部自訂的字串/RegEx 比對邏輯（非呼叫任何 production 類別方法），判斷兩個呼叫出現在哪個頂層函式體內。要證明這個掃描器抓得到違規，唯一有意義的做法是真的把該呼叫模式寫進 _input()/_unhandled_input()——但那正是修改 src/ui/battle/battle_screen.gd 這份正式程式碼本體，不在本測試檔案受限範圍內的合法注入手段（本輪任務本身亦明文禁止修改 src/）。屬「唯一有意義的注入點在受限範圍外」（D 類）。測試本體自己的 docstring（本檔:692-705）已自陳這是 test-standards.md 登記的乙類（唯讀原始碼文字斷言紀律）例外並列出兩項揭露義務——但乙類是檔案存取的許可證，不等於敏感度可證性的答案，兩者是分開的兩件事。 |
+# | 25 | test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected | 可證明 | 已直接讀過 _apply_target_confirm_from_cursor_state() 本體（battle_screen.gd:1634-1650）：它讀游標目前目標格、解出站立單位，呼叫 _controller.select_target(unit.id)，失敗才試 select_second_target(unit.id)——本身不判斷該單位是否為合法目標，合法性判斷必然在更下層。已讀 CardPlaySession 類別宣告（card_play_session.gd:61-62，class_name CardPlaySession extends RefCounted，select_target/select_second_target/confirm 為一般 instance method、非 static）。本測試自己已示範「換掉 instance._controller._card_play_session 欄位」這個注入手法（與 Row17 相同技巧，RefCounted 直接欄位替換，不涉及 Node/_ready() 時機，連 Case A 疑慮都不適用）。注入：子類別 _MutantCardPlaySessionSkipsLegalityCheck extends CardPlaySession，覆寫 select_target(unit_id)，不檢查 legal_targets().has(unit_id) 就直接推進步驟。用這個 mutant session 取代 _card_play_session，重複本測試既有 Arrange（甲類卡、open_hand()/select_card()），呼叫 _apply_target_confirm_from_cursor_state() 對準敵方單位。test_sensitivity_proof_... 斷言 mutant session 的 step() 已前進（不再停在 SELECTING_TARGET），證明真測試 is_equal(SELECTING_TARGET) 斷言會抓到合法性檢查被繞過。⚠️ 未讀 CardPlaySession.select_target() 本體（card_play_session.gd:211 起，只讀了簽章與類別宣告），覆寫方案是整個蓋掉此方法、不依賴知道原始檢查寫在第幾行，但若該方法內部另肩負其他外部不可見的副作用，完全覆寫可能連帶蓋掉——此點未查證，留待下一步核實。 |
+#
+# 分佈統計（2026-09-23 盤點完成）：
+#   可證明 13 條（#1-5、#17-23、#25）
+#   A 類（static 純函式，無繼承鏈可覆寫）11 條（#6-16）
+#   D 類（唯一有意義的注入點在受限範圍外——需修改 src/ 本身）1 條（#24）
+#   A′ / B / C 類：0 條
+#
+# 本輪未查項目（逐項揭露，不因報告好看而省略）：
+#   1. 未讀 board_view.gd 的 _ready() 本體（#1、#2 的注入方案刻意設計成不依賴其
+#      內部實作，但沒有實際驗證過 CardTargetHighlightLayer 的節點樹是靜態定義在
+#      .tscn 還是動態建構）。
+#   2. 未讀 battle_screen.gd 中實際建構 _target_retarget_actor 並賦值
+#      process_priority=-60 的那幾行（#18）——本輪依協調者指示不讀 battle_screen.gd。
+#   3. 未讀 card_play_session.gd 的 select_target()/select_second_target()/
+#      confirm() 本體邏輯（#25）——只讀了簽章與類別宣告（第 61-62、211、227、271
+#      行），不知道合法性檢查具體寫在哪一行，也不知道這些方法是否有其他外部不可見
+#      的副作用。
+#   4. battle_controller.gd 六個轉發方法的閘門邏輯（#17 依據引用）本輪採用協調者
+#      提供之摘錄，惟本任務更早回合已由本 agent 獨立讀過本體並核實一致（見 #17
+#      依據欄的具體行號），不算純憑摘錄——列在此處是為了交代來源,不是保留疑慮。
+#   5. 🔴 未實際跑過任何一個上表提議的 test_sensitivity_proof_*（本輪硬性禁止跑
+#      引擎）——上述 13 條「可證明」判定全部是紙面設計，尚未經引擎驗證過 mutant
+#      能否安全通過既有 _ready()、覆寫是否真的觸發預期行為。這是本次分類與實際
+#      落地之間唯一保留的落差，下一棒落地時必須先跑一次確認,不能假設紙面設計一次
+#      就對。
+#   6. 未重新核對本檔既有「敏感度證明」區塊（現行第 960-971 行,涵蓋 #6-16）裡
+#      「已手動核對(改壞、觀察斷言訊息、改回)」這句話本身是否真的做過——本輪只
+#      指出它的格式已被 test-standards.md 2026-09-16 裁決明文淘汰(手動注入不留
+#      版控痕跡),沒有查證那次手動核對是否確實發生過。
+#
+# 判不出來項目：無。25 條全部給出明確判定（13 可證明、11 類 A、1 類 D），沒有
+# 需要留白或勉強塞類別的項目。
+# ============================================================================
 extends GdUnitTestSuite
 
 
@@ -897,3 +969,14 @@ func test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected(
 # test_sort_targets_by_position_identical_across_repeated_runs_with_different_input_order
 # 兩條同時變紅）——這是本檔對「哪一條測試會因為我改錯而變紅」的具體回答，
 # 已手動核對（改壞、觀察斷言訊息、改回），不是宣稱。
+#
+# 🔴 2026-09-23 協調者更正(記帳,非新裁決):上面最後一句的【格式】已於
+# 2026-09-16 管理者裁決明文淘汰。該裁決逐字:「手動注入(改壞 → 跑 → 改回)
+# 已淘汰,理由是它在版本庫裡不留任何痕跡。」——亦即「不是宣稱」這個自我聲明,
+# 正好就是該裁決說的「無法查證,只能選擇相信」。
+#
+# ⚠️ 被淘汰的是【那句話的形式】,不是上面的 A 類判定。A 類(static 純函式、
+# 無繼承鏈可覆寫)本身正確,且經 2026-09-23 逐條盤點覆核維持不變
+# (battle_screen.gd:947 / :975 兩者皆為 static func,已實查)。
+#
+# 📌 原文保留不刪,因為刪掉會讓下一個人看不出這裡曾經有過一個已作廢的宣稱。

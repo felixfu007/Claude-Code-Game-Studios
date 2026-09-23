@@ -286,6 +286,46 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 ## exactly as it already is for [BoardView]/[method line_tone_for].
 @onready var _hand_bar: HandBar = $UILayer/HandBar
 
+## Injectable override for [constant TERRAIN_PATH]. Empty string (the
+## default) means "no override — read [constant TERRAIN_PATH] exactly as
+## before"; this screen's default-path behavior for every existing caller
+## (production, and any prior test/tool that never sets this) is unchanged.
+## Exists purely so a test can point this screen at a different terrain
+## fixture without hand-rebuilding the node subtree [method _ready] already
+## builds — see 2026-09-23 task note (Story evidence gap): a scene-load probe
+## found no injection point here and had to reconstruct a partial [BoardView]
+## subtree by hand instead, which is exactly the "measurement script silently
+## re-implements behavior instead of exercising the real one" failure mode
+## [code].claude/docs/technical-preferences.md[/code]'s "(A) 的精確定義"
+## section names.
+## [b]Timing contract:[/b] must be set after [method PackedScene.instantiate]
+## and before [method Node.add_child] — [method _ready] reads this exactly
+## once, and [method Node._ready] does not run until this node enters the
+## tree via [method Node.add_child].
+var terrain_path_override: String = ""
+
+## Injectable override for [constant ROSTER_PATH]. Same contract as
+## [member terrain_path_override] — see its doc comment.
+var roster_path_override: String = ""
+
+## Injectable override for [constant AFFINITY_PATH]. Same contract as
+## [member terrain_path_override] — see its doc comment. 2026-09-23 manager
+## ruling ("五個一次做完"): added alongside the other four data-path
+## overrides in the same pass rather than deferred, after this implementer
+## flagged that this table's MISSING/UNREADABLE/PARSE_ERROR gating is
+## unaffected by which path string it runs against — the override only
+## changes WHICH file is opened, never the classify_affinity_parse() /
+## legal-empty-links judgment applied to what comes back.
+var affinity_path_override: String = ""
+
+## Injectable override for [constant CARDS_PATH]. Same contract as
+## [member terrain_path_override] — see its doc comment.
+var cards_path_override: String = ""
+
+## Injectable override for [constant CARD_TEXT_PATH]. Same contract as
+## [member terrain_path_override] — see its doc comment.
+var card_text_path_override: String = ""
+
 var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
@@ -605,17 +645,19 @@ func _ready() -> void:
 
 	var terrain_text: String = ""
 	var terrain_rows: PackedStringArray = PackedStringArray()
-	var terrain_failure: LoadFailure = classify_file_access(TERRAIN_PATH)
+	var terrain_path: String = TERRAIN_PATH if terrain_path_override.is_empty() else terrain_path_override
+	var terrain_failure: LoadFailure = classify_file_access(terrain_path)
 	if terrain_failure == LoadFailure.NONE:
-		terrain_text = FileAccess.get_file_as_string(TERRAIN_PATH)
+		terrain_text = FileAccess.get_file_as_string(terrain_path)
 		terrain_rows = _parse_terrain_rows(terrain_text)
 		terrain_failure = classify_content(terrain_text, terrain_rows.size())
 
 	var roster_text: String = ""
 	var roster_units: Array[Unit] = []
-	var roster_failure: LoadFailure = classify_file_access(ROSTER_PATH)
+	var roster_path: String = ROSTER_PATH if roster_path_override.is_empty() else roster_path_override
+	var roster_failure: LoadFailure = classify_file_access(roster_path)
 	if roster_failure == LoadFailure.NONE:
-		roster_text = FileAccess.get_file_as_string(ROSTER_PATH)
+		roster_text = FileAccess.get_file_as_string(roster_path)
 		roster_units = Unit.roster_from_text(roster_text)
 		roster_failure = classify_content(roster_text, roster_units.size())
 
@@ -648,9 +690,10 @@ func _ready() -> void:
 	# diagnostic-only for this path).
 	var affinity_text: String = ""
 	var links: Array[AffinityLink] = []
-	var affinity_failure: LoadFailure = classify_file_access(AFFINITY_PATH)
+	var affinity_path: String = AFFINITY_PATH if affinity_path_override.is_empty() else affinity_path_override
+	var affinity_failure: LoadFailure = classify_file_access(affinity_path)
 	if affinity_failure == LoadFailure.NONE:
-		affinity_text = FileAccess.get_file_as_string(AFFINITY_PATH)
+		affinity_text = FileAccess.get_file_as_string(affinity_path)
 		var parsed_links: Variant = AffinityLink.links_from_text(affinity_text)
 		affinity_failure = classify_affinity_parse(parsed_links)
 		if affinity_failure == LoadFailure.NONE:
@@ -658,7 +701,7 @@ func _ready() -> void:
 			if links.is_empty():
 				var diagnostic: LoadFailure = classify_content(affinity_text, links.size())
 				push_warning(
-					_LOG_AFFINITY_ZERO_LINKS_FORMAT % [AFFINITY_PATH, LoadFailure.find_key(diagnostic)]
+					_LOG_AFFINITY_ZERO_LINKS_FORMAT % [affinity_path, LoadFailure.find_key(diagnostic)]
 				)
 
 	# Card mechanics table load (Story U-003) — same MISSING/UNREADABLE
@@ -670,15 +713,16 @@ func _ready() -> void:
 	# 少於開局手牌數" is an existing, documented CardDeck edge case) and only
 	# ever produces a push_warning(), never reaching _fail_load().
 	var cards: Array[Card] = []
-	var cards_failure: LoadFailure = classify_file_access(CARDS_PATH)
+	var cards_path: String = CARDS_PATH if cards_path_override.is_empty() else cards_path_override
+	var cards_failure: LoadFailure = classify_file_access(cards_path)
 	if cards_failure == LoadFailure.NONE:
-		var cards_text: String = FileAccess.get_file_as_string(CARDS_PATH)
+		var cards_text: String = FileAccess.get_file_as_string(cards_path)
 		var parsed_cards: Variant = Card.cards_from_text(cards_text)
 		cards_failure = classify_card_parse(parsed_cards)
 		if cards_failure == LoadFailure.NONE:
 			cards = parsed_cards
 			if cards.is_empty():
-				push_warning(_LOG_CARDS_ZERO_PARSED_FORMAT % CARDS_PATH)
+				push_warning(_LOG_CARDS_ZERO_PARSED_FORMAT % cards_path)
 
 	# Card flavor-text table load (Story U-003) — file-access gating only;
 	# CardText.flavor_texts_from_text() has no null/failure return path (see
@@ -686,9 +730,10 @@ func _ready() -> void:
 	# classify here. Parsed purely to prove the table loads cleanly — no
 	# screen in this slice consumes flavor text yet (U-009+, out of scope for
 	# this story), so the result is not retained past this call.
-	var card_text_failure: LoadFailure = classify_file_access(CARD_TEXT_PATH)
+	var card_text_path: String = CARD_TEXT_PATH if card_text_path_override.is_empty() else card_text_path_override
+	var card_text_failure: LoadFailure = classify_file_access(card_text_path)
 	if card_text_failure == LoadFailure.NONE:
-		var card_text_text: String = FileAccess.get_file_as_string(CARD_TEXT_PATH)
+		var card_text_text: String = FileAccess.get_file_as_string(card_text_path)
 		CardText.flavor_texts_from_text(card_text_text)
 
 	if (
@@ -699,11 +744,11 @@ func _ready() -> void:
 		or card_text_failure != LoadFailure.NONE
 	):
 		_fail_load({
-			TERRAIN_PATH: terrain_failure,
-			ROSTER_PATH: roster_failure,
-			AFFINITY_PATH: affinity_failure,
-			CARDS_PATH: cards_failure,
-			CARD_TEXT_PATH: card_text_failure,
+			terrain_path: terrain_failure,
+			roster_path: roster_failure,
+			affinity_path: affinity_failure,
+			cards_path: cards_failure,
+			card_text_path: card_text_failure,
 		})
 		return
 

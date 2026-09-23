@@ -1,0 +1,8 @@
+# test_fixture_roster.txt — 測試專用合成夾具,刻意跟 vs01_roster.txt 不同
+# （2 個單位而非 10 個、hp_max 999 而非 22-41、code_name 不存在於真實名冊）。
+# 供 tests/unit/ui/battle_screen_data_path_override_test.gd 的
+# roster_path_override 正面路徑測試使用；非遊戲正式資料，不被任何場景載入。
+# 欄位順序同 vs01_roster.txt：
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTFIX,PLAYER,999,1,1,1,1,1,0,0
+2,TESTENEMY,ENEMY,999,1,1,1,1,1,12,5

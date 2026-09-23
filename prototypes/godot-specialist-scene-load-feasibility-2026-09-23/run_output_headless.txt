@@ -1,0 +1,44 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== PROBE START mode=headless DisplayServer.get_name()=headless ===
+Q1: CursorStateHost autoload present at /root? true
+Q1: calling load("res://src/ui/battle/BattleScreen.tscn")
+Q1: load() returned null? false
+Q1: calling packed.instantiate()
+Q1: instantiate() returned null? false
+Q1: instantiated node class=Node name=BattleScreen script=(res://src/ui/battle/battle_screen.gd):<GDScript#-9223372005850479115>
+Q1: calling get_tree().root.add_child(battle) -- this is where _init()/_ready() run
+ERROR: Parent node is busy setting up children, `add_child()` failed. Consider using `add_child.call_deferred(child)` instead.
+   at: add_child (scene/main/node.cpp:1721)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/probe_load_real_scene.gd:52)
+Q1: add_child() returned. battle.is_inside_tree()=false
+Q1: direct add_child() was rejected by the engine (see error above) -- retrying via call_deferred
+Q1: after call_deferred + 2 frames, battle.is_inside_tree()=true
+Q1: root's children after add: 
+  - CursorStateHost (Node)
+  - ProbeLoadRealScene (Node)
+  - BattleScreen (Node)
+Q3: UILayer/LoadErrorLabel found? true visible=false
+Q3: UILayer/StatusLabel found? true text='第 1 回合．我方行動'
+Q3: battle.get("_load_failed") = false
+Q3: battle.get("_state") is null? false
+Q3: battle.get("_controller") is null? false
+Q1/Q3: WorldViewportContainer found? true
+Q1/Q3: WorldViewport (SubViewport) found? true
+Q1/Q3: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+Q1/Q3: WorldViewport.size (should be 480x270 per WorldLayout.BASE_WIDTH/HEIGHT) = (480, 270)
+Q2/ROOT: root viewport size = (960, 540)
+Q2/ROOT: root_vp.get_texture() is null? false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/probe_load_real_scene.gd:105)
+Q2/ROOT: root_tex.get_image() is null? true
+Q2/SUBVIEWPORT: world_viewport.get_texture() is null? false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-scene-load-feasibility-2026-09-23/probe_load_real_scene.gd:129)
+Q2/SUBVIEWPORT: sub_tex.get_image() is null? true
+=== PROBE END mode=headless ===
