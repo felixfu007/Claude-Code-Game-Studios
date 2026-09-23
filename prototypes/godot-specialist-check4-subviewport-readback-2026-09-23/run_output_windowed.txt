@@ -1,0 +1,31 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+=== PROBE START (windowed) DisplayServer.get_name()=Windows ===
+LOAD: load() returned null? false
+LOAD: instantiate() returned null? false
+ERROR: Parent node is busy setting up children, `add_child()` failed. Consider using `add_child.call_deferred(child)` instead.
+   at: add_child (scene/main/node.cpp:1721)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://prototypes/godot-specialist-check4-subviewport-readback-2026-09-23/probe_check4_subviewport_readback.gd:64)
+LOAD: direct add_child() rejected as expected -- retrying via call_deferred (known trap)
+LOAD: battle.is_inside_tree()=true
+Q4: WorldViewportContainer node = WorldViewportContainer:<SubViewportContainer#51472500218> get_class()=SubViewportContainer
+Q4: WorldViewport node = WorldViewport:<SubViewport#51506054653> get_class()=SubViewport
+SANITY: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+SANITY: WorldViewport.size=(480, 270)
+Q2: frame 1 get_image() null? false size=(480, 270)
+Q2: frame 2 get_image() null? false size=(480, 270)
+Q2: frame 5 get_image() null? false size=(480, 270)
+Q2: frame 10 get_image() null? false size=(480, 270)
+Q2: frame 15 get_image() null? false size=(480, 270)
+Q2: frame 1 byte-identical to frame 15? true
+Q2: frame 2 byte-identical to frame 15? true
+Q2: frame 5 byte-identical to frame 15? true
+Q2: frame 10 byte-identical to frame 15? true
+Q2: frame 15 byte-identical to frame 15? true
+CHECK4 [Q3A-native-scale1 (structural tautology check, expect 0 by construction)] = 0 / 129600
+Q3B: native_with_synthetic size=(480, 270)
+CHECK4-REGION [Q3B-GOOD-integer-scale-3.0-aligned] = 0 / 16
+CHECK4-REGION [Q3B-BAD-nonint-scale-3.3-aligned] = 21 / 25
+=== PROBE END ===

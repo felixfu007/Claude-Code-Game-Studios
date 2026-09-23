@@ -1,0 +1,52 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== PROBE START (headless, structural/state only) ===
+LOAD: load() returned null? false
+LOAD: instantiate() returned null? false
+LOAD: battle.is_inside_tree()=true
+Q4-CARRY: WorldViewportContainer=WorldViewportContainer:<SubViewportContainer#44174411251> WorldViewport=WorldViewport:<SubViewport#44207965686> BoardView=BoardView:<Node2D#44258297339>
+SANITY: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2
+SANITY: WorldViewport.size=(480, 270)
+CONTENT-CHECK: TerrainLayer children=78
+CONTENT-CHECK: PiecesLayer children=10
+CONTENT-CHECK: StatsLayer children=10
+CONTENT-CHECK: CursorSprite visible=false
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@98/@Node2D@97 (Node2D) position=(48.0, 130.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@98/@Node2D@97/@ColorRect@95 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@98/@Node2D@97/@ColorRect@96 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@103/@Node2D@102 (Node2D) position=(48.0, 162.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@103/@Node2D@102/@ColorRect@100 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@103/@Node2D@102/@ColorRect@101 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@108/@Node2D@107 (Node2D) position=(80.0, 162.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@108/@Node2D@107/@ColorRect@105 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@108/@Node2D@107/@ColorRect@106 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@113/@Node2D@112 (Node2D) position=(48.0, 194.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@113/@Node2D@112/@ColorRect@110 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@113/@Node2D@112/@ColorRect@111 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@118/@Node2D@117 (Node2D) position=(48.0, 226.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@118/@Node2D@117/@ColorRect@115 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@118/@Node2D@117/@ColorRect@116 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@123/@Node2D@122 (Node2D) position=(368.0, 66.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@123/@Node2D@122/@ColorRect@120 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@123/@Node2D@122/@ColorRect@121 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@128/@Node2D@127 (Node2D) position=(400.0, 98.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@128/@Node2D@127/@ColorRect@125 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@128/@Node2D@127/@ColorRect@126 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@133/@Node2D@132 (Node2D) position=(336.0, 194.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@133/@Node2D@132/@ColorRect@130 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@133/@Node2D@132/@ColorRect@131 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@138/@Node2D@137 (Node2D) position=(272.0, 226.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@138/@Node2D@137/@ColorRect@135 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@138/@Node2D@137/@ColorRect@136 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@143/@Node2D@142 (Node2D) position=(400.0, 226.5) scale=(1.0, 1.0) <-- FRACTIONAL POSITION (informational only -- irrelevant to Check4 at scale=1, see structural-tautology note)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@143/@Node2D@142/@ColorRect@140 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q2-EVIDENCE: /root/BattleScreen/WorldViewportContainer/WorldViewport/BoardView/StatsLayer/@Node2D@143/@Node2D@142/@ColorRect@141 (ColorRect) is a Control inside the world layer -- position=(-10.0, -1.5) size=(20.0, 3.0) (Controls have no .scale property the same way Node2D does; recorded for completeness)
+Q1: distinct node types found under WorldViewport, with counts:
+  Node2D x29
+  Sprite2D x89
+  Line2D x4
+  ColorRect x20
+Q2: total descendant nodes under WorldViewport = 142
+Q2: nodes with .scale != Vector2(1,1) = 0
+Q2: ==> if this is 0, no real world-layer content sets an internal scale at all, so 'alignment to the content's own intended scale' is trivially satisfied (there is nothing but scale=1, and Check4's block-grid check at block-size=1 is a structural tautology per the prior probe's Q3A finding -- it can never fail regardless of position).
+=== PROBE END ===

@@ -158,8 +158,15 @@ fully-specified checks.
    judge backwards: the project deliberately renders body text in a normal Chinese font
    rather than a pixel font (`design/art/art-direction.md`), and that antialiased text
    produces more grid violations in a real frame (3.157%) than the splash logo does (1.748%).
-   Restricted to the board region the signal is clean: real frame 0 of 66300 blocks,
-   splash 2265. **If the screen has no world layer at all, say so explicitly; do not silently
+   🔴 **How "world layer only" is operationally measured changed on 2026-09-23 (manager
+   ruling) — see "Check 4 世界層量法變更(2026-09-23 管理者裁決)" below for the full method,
+   three implementation constraints, and a new N/A rule. Not restated here to avoid drift
+   between two copies of the same procedure.**
+   ⚠️ **The "restricted to the board region" demonstration numbers below were measured with the
+   OLD method** (cropping the composited screenshot to the world-layer container's rect) **and
+   have not been re-measured with the new method — do not cite them as current evidence**:
+   real frame 0 of 66300 blocks, splash 2265.
+   **If the screen has no world layer at all, say so explicitly; do not silently
    omit the check without a stated reason** — this is the same disclosure obligation Category
    B and C's Check 4 state below; Category A never needed it in practice (a full gameplay/world
    frame has a world layer by definition), but the obligation itself applies uniformly to every
@@ -169,6 +176,9 @@ fully-specified checks.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
    📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
    「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
+   📌 2026-09-23 再續:**那兩則登記各自「不修改 Check 4 判準」的結論,已被同日稍晚一次獨立的
+   管理者裁決取代** —— 新判準寫在本節下方「Check 4 世界層量法變更(2026-09-23 管理者裁決)」,
+   兩則登記原文本身不動。
 5. 🔴 **A human opens the image and confirms it shows what it claims.** The checks above are
    a filter, not a substitute. Every visual defect found on this project so far was found by
    a person opening the file; the automated suite has never caught one.
@@ -195,12 +205,16 @@ does not detect a defect; it detects the design.
    at the window edge (the risk `design/art/screen-architecture.md` names for non-16:9
    windows) — instead of testing for a property (low dominant-colour share) the design
    deliberately does not have.
-4. **Integer-scale grid** — same carve-out as Category A: world layer only. If the screen has
+4. **Integer-scale grid** — same carve-out as Category A: world layer only.
+   🔴 **量法定義已於 2026-09-23 變更(管理者裁決)——見 Category A Check 4 與本節下方
+   「Check 4 世界層量法變更(2026-09-23 管理者裁決)」,此處不複述。** If the screen has
    no world layer at all, say so explicitly; do not silently omit the check without a stated
    reason.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
    📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
    「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
+   📌 2026-09-23 再續:**那兩則登記各自「不修改 Check 4 判準」的結論,已被同日稍晚一次獨立的
+   管理者裁決取代** —— 新判準見 Category A Check 4 與「Check 4 世界層量法變更」段落。
 5. 🔴 **Human review — mandatory, unchanged.** See "why Check 5 survives every category" below.
 
 ### Category C checks — cropped / partial UI captures
@@ -236,12 +250,16 @@ is correct.
      difference is not just a uniform brightness/contrast shift across the whole crop.
    - **(b) Positive-presence check**, when there is no second crop to diff against: a named
      region must be measurably brighter or darker than a named reference background point.
-4. **Integer-scale grid** — same carve-out as Category A/B: world layer only. Most UI crops
+4. **Integer-scale grid** — same carve-out as Category A/B: world layer only.
+   🔴 **量法定義已於 2026-09-23 變更(管理者裁決)——見 Category A Check 4 與本節下方
+   「Check 4 世界層量法變更(2026-09-23 管理者裁決)」,此處不複述。** Most UI crops
    have no world-layer content at all (this project renders UI text in an antialiased Chinese
    font, not a pixel font); state that explicitly rather than silently skipping the check.
    📌 See "Check 4「僅量世界層」豁免的前提查證" below — read it before relying on this carve-out.
    📌 2026-09-23 續:上面那則查證後來同一天由實機複驗補正,結論方向不同 —— 見緊接其後的
    「(續,2026-09-23)」小節,勿只讀到「前提為假」就下結論。
+   📌 2026-09-23 再續:**那兩則登記各自「不修改 Check 4 判準」的結論,已被同日稍晚一次獨立的
+   管理者裁決取代** —— 新判準見 Category A Check 4 與「Check 4 世界層量法變更」段落。
 5. 🔴 **Human review — mandatory, and carries more weight here than in the other two
    categories**, because checks 2 and 3 are, by construction, the most structurally weakened
    of the three categories here — see below.
@@ -409,6 +427,84 @@ Check 4 對真世界層內容的判定 —— Check 4 結構上量不到 `SubVie
 裁切合成後的整個視窗畫面),是下一次的管理者裁決,不是本條目的職權。**本條目只登記事實:
 「前提為假」這件事本身對 Check 4 無害,真正的洞在別處 —— 「world layer only」這行指令目前實際
 測到的,不是世界層。**
+
+### Check 4 世界層量法變更(2026-09-23 管理者裁決,取代上兩則登記各自的「不修改 Check 4 判準」結論)
+
+**背景**:上兩則登記(本節上方的「前提查證」與其「續」)各自明文寫著「本條目不修改 Check 4
+的判準」「不改動 A/B/C 三處『world layer only』豁免的原文一字」,把要不要動判準留給下一次
+管理者裁決。協調者隨後就此提出兩份意見書 ——`lead-programmer` 建議「不改判準,只加警語誠實
+揭露 478 目前無法歸因」(`docs/reviews/check4-recommendation-lead-programmer-2026-09-23.md`),
+`qa-lead` 建議「先把世界層 Check 4 標成『現在用不到』,等程式寫出來再談」
+(`docs/reviews/check4-recommendation-qa-lead-2026-09-23.md`),另有代價評估
+(`docs/reviews/check4-world-layer-paths-cost-2026-09-23.md`)。**管理者選的是第三案 ——
+兩個都做,同一天一次寫清楚 —— 不是這兩份意見書裡的任何一個。** 以下是裁決後的新判準,
+取代上兩則登記各自的「不修改 Check 4 判準」結論;**兩則登記本身的文字不動,決策紀錄保留。**
+
+#### 新判準一:世界層的操作型定義,從「裁切合成後畫面裡容器矩形所在的區域」改為
+「直接讀 `SubViewport` 內部的原生緩衝區」
+
+理由(見上方兩則登記的結論二):本專案 `WorldViewportContainer` 在多數解析度下滿版覆蓋整個
+視窗,「裁容器矩形」在這種佈局下等於「裁整張合成畫面」——疊在世界層上方的介面層內容(HUD
+文字、手牌列數字)會被一起算進「世界層」的違規數,產生無人能解釋的殘值(排除已知 HUD 矩形後
+仍剩 `478 / 108134` 無法歸因)。改讀 `WorldViewport.get_texture().get_image()`——即引擎把
+UI `CanvasLayer` 疊上去之前的 480×270 原生緩衝區——結構上排除這個污染源,因為介面層的畫面
+根本不存在於這個緩衝區裡。
+
+實作時必須遵守以下三項約束,皆為 2026-09-23 引擎實測所得:
+
+1. 🔴 **`_scale` 絕不可不假思索地預設為 1,也絕不可想當然直接取世界層容器的縮放倍率
+   (本專案常見值依解析度為 4/5/8)。** 原生緩衝區上容器倍率沒有意義——要取的是**被測內容
+   自己應有的整數倍率**。`_scale=1` 在結構上永遠回報 0 違規,這不是「通過」,是重言式,
+   不論被測內容實際狀況如何都會得到同一個答案:
+   ```
+   CHECK4 [Q3A-native-scale1 (structural tautology check, expect 0 by construction)] = 0 / 129600
+   ```
+   來源:`prototypes/godot-specialist-check4-subviewport-readback-2026-09-23/run_output_windowed.txt`
+2. 🔴 **方塊格線是從影像原點 `(0,0)` 起算的絕對格線,不是相對於被測物件本身。**
+   同一份 log 顯示:一個縮放完全乾淨的精靈,只因位置沒對齊到所選倍率的倍數,被判
+   `16/16` 全部違規;對齊後才正確判 `0/16`;真正做壞的(3.3 倍縮放)在同樣對齊紀律下正確
+   被抓到 `21/25`。**所以:量測世界層內部任一元素前,必須先確認它的位置對齊到所選倍率的
+   倍數**,否則無法分辨「量法本身沒對齊」與「內容真的縮放錯誤」。
+   來源:同上,`prototypes/godot-specialist-check4-subviewport-readback-2026-09-23/run_output_windowed.txt`
+3. **headless 仍然拿不到像素,這條路不改變這一點。** 像素量測只能開窗執行。
+   來源:`prototypes/godot-specialist-scene-load-feasibility-2026-09-23/run_output_headless.txt`
+   (逐字:`Q2/SUBVIEWPORT: sub_tex.get_image() is null? true`)
+
+#### 新判準二:「沒有東西可測」不得寫成「通過」
+
+執行 Check 4(任一類別、任何被判定要量測世界層的畫面)之前,必須先確認被測範圍內**是否存在
+任何被縮放/被重新取樣過的內容**。若不存在,證據上必須寫**「沒有可測對象(N/A)」**,
+**不得**寫「0 個違規 / 通過」——兩者字面上數字可能相同,但前者是「這次沒驗證到任何東西」,
+後者暗示「驗證了,而且乾淨」,對讀證據的人而言無法區分。這與本節開頭「boot splash 顏色數
+比真實畫面多」那類指標會被誤讀的方向是同一個形狀:**看起來合理的數字,不等於它在回答
+你以為它在回答的問題。**
+
+📌 **以今天(2026-09-23)這份畫面內容為例,這條規則不是空規則,現在就會生效**:世界層真實
+內容共 142 個節點,`.scale != (1,1)` 的有 **0** 個:
+```
+Q2: total descendant nodes under WorldViewport = 142
+Q2: nodes with .scale != Vector2(1,1) = 0
+```
+來源:`prototypes/godot-specialist-worldlayer-grid-alignment-2026-09-23/run_output_headless.txt`
+
+**亦即:以今天的畫面內容,改完之後每一次 Check 4 世界層量測,正確答案都是「沒有可測對象
+(N/A)」,而不是「通過」。下一個人看到 N/A 不要當成規則沒生效或量測沒做——那就是規則生效
+後,對照今天畫面內容應該得到的正確輸出。**
+
+#### 兩條新判準都沒有自動檢查
+
+⚠️ **與本節其餘規則一樣:沒有任何 lint、hook 或閘門會檢查上述兩條有沒有被遵守。**
+規則寫了不代表有人照做——本專案沒有任何自動機制會確認 Check 4 的執行者真的讀取了
+`SubViewport` 的原生緩衝區(而不是繼續裁切合成畫面)、真的核對了被測物件的位置對齊、或真的
+在無可測對象時寫下 N/A 而不是「通過」。**這是管理者在知情下的選擇**——兩份意見書都明講了
+這一點,協調者轉呈選項時也逐字寫明:「規則寫了不代表有人照做,本專案沒有任何自動機制會檢查
+這件事」。管理者是在看過這句話之後選的「兩個一起做」。寫下這兩條規則買到的是「下一個人有
+明文可查對」,不是「下一個人一定會照做」。
+
+**本段不修改、也不刪除上方兩則「前提查證」登記的任何一字** —— 兩則登記是決策紀錄,記載了
+裁決前的狀態與理由,原文保留。**本段取代的只是它們各自結尾那句「不修改 Check 4 判準」的
+結論性宣告**——那句話在本次裁決發生之前是真的,現在被取代。上方 Category A、B、C 三處
+Check 4 條文已同步加註指向本段。
 
 ### Why Check 5 is not replaced by anything above, in any category
 

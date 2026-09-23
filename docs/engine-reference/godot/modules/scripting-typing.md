@@ -1,6 +1,6 @@
 # Godot GDScript 型別系統邊界 — Quick Reference
 
-Last verified: 2026-08-24 | Engine: Godot 4.7.1
+Last verified: 2026-09-23 | Engine: Godot 4.7.1
 
 > **格式偏離說明(刻意,非疏漏)**:本檔案超出 `docs/engine-reference/README.md` 訂的
 > 150 行 context-budget 建議上限,且每個小節下方帶「**證據**:」引用行——這兩者都是
@@ -15,6 +15,16 @@ Last verified: 2026-08-24 | Engine: Godot 4.7.1
 > 稍晚追加)記載 `class_name` 全域註冊的 headless 雙向陷阱(未匯入時的假否證、
 > 匯入成功時的假確認)——性質上更接近工具鏈/探針方法論而非語言型別行為,是否該
 > 另立模組檔待管理者裁決,目前先留在本檔。三節各自開頭均有範圍說明。
+>
+> **2026-09-23 新增第 9 節,含子節「Process exit code 對此同樣零命中」,檔案於
+> 該次編輯完成後實測 `wc -l` 為 472 行**(本行數為該次編輯完成當下的一次性快照,
+> 不是持續維護的即時值——本專案已有寫死行數快照隨後漂移而無人發現的前例,見
+> `.claude/docs/technical-preferences.md` 記載;要當下的真實行數,執行
+> `wc -l docs/engine-reference/godot/modules/scripting-typing.md` 現場查,不要
+> 信任本行)。記載三元運算式賦值進型別化容器(`Array[T]`/`Dictionary[K,V]`)的
+> 執行期陷阱,起因是一次真實事故(451 個執行期 SCRIPT ERROR)。**本行只記錄行數
+> 變化,不擴大上方例外的適用範圍或理由**——是否需要因為累積行數已遠超 150 行上限
+> 而拆分模組檔,是下一次的管理者裁決,本次新增未自行做這個決定。
 
 ## 1. 巢狀型別容器不支援
 
@@ -338,3 +348,125 @@ log,寫出一句沒有依據的「exit 0」,已修正。詳見該目錄 `README.
 的方式是取 `ResourceLoader.load()` 後 `reload()` 的 `Error` 回傳值——這不代表已經
 窮舉 Godot 所有可能的偵測路徑(例如編輯器 GUI 診斷面板從未測試過),只代表本庫至今
 所有探針一貫且沒有例外地採用這個方法。
+
+## 9. 三元運算式賦值進型別化容器(`Array[T]` / `Dictionary[K,V]`)—— 依「實際選中分支
+   的執行期值」判定,不是整個運算式的靜態型別
+
+**背景**:2026-09-23 本專案一次真實事故,451 個執行期 `SCRIPT ERROR` 全部同一則訊息,
+出自:
+
+```gdscript
+var card_target_legal_ids: Array[int] = (
+    _controller.legal_targets() if _card_selecting_target else []
+)
+```
+
+(`_controller.legal_targets()` 宣告為 `-> Array[int]`,型別化,見
+`src/gameplay/battle/battle_controller.gd:403`。已修法見
+`src/ui/battle/battle_screen.gd` 的 `card_target_legal_ids`。)
+
+**核心發現(已用兩種對照 shape 逐項實測釘死,修正了「整個運算式靜態退化」的推測)**:
+賦值失敗與否**不是**因為整個三元運算式的推論型別在編譯期退化成裸 `Array`,而是引擎在
+**執行期**依「這一次實際選中的那個分支,其執行期值本身是否已帶有型別化容器標籤」逐次
+判定——兩個分支各自獨立算帳,不互相影響:
+
+| Shape | true 分支來源 | false 分支 | cond=true | cond=false |
+|---|---|---|---|---|
+| **A**(兩側皆未型別化) | 呼叫回傳裸 `Array` 的函式 | `[]` | 🔴 中止 | 🔴 中止 |
+| **B**(逐字比照正式事故) | 呼叫回傳 `Array[int]` 的函式 | `[]` | ✅ 成功 | 🔴 中止 |
+
+Shape A 兩分支都中止,乍看像是「這行程式碼只要被執行就必炸,與 cond 無關」;但 Shape B
+把 true 分支換成一個真正宣告為 `-> Array[int]` 的來源後,**cond=true 完全不炸**,只有
+選中 `else []` 分支時才炸。Shape A 兩側都中止只是因為它兩個分支的執行期值剛好都是未
+型別化的——**不是三元運算式本身有「整體退化」這件事**。對正式事故而言:
+`_card_selecting_target` 為 false(常見/預設狀態)時每次執行都炸,為 true 時完全正常
+——是**藏在冷分支裡的地雷**,不是「這行程式碼必炸」。
+
+逐字錯誤(兩種 shape 訊息格式相同,只替換型別名稱):
+```
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[int]".
+```
+
+**證據**:`prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd`
+案例 `q1_true`/`q1_false`(Shape A)、`q5_typed_source_true`/`q5_typed_source_false`
+(Shape B,逐字比照正式事故的來源簽章);原始輸出 `run_output.txt`(Shape A 等)、
+`run_output_q5.txt`(Shape B + `--check-only`)。
+
+### 三種可行的修法,已逐一實測 —— 但只保護「有標註的那一個分支」
+
+1. **`([] as Array[int])`** —— 對空陣列字面量做 `as` 轉型,實測 `is_typed()` 為
+   `true`,成功。
+2. **先宣告型別化的變數再放進分支**(`var empty_typed: Array[int] = []`,分支寫
+   `empty_typed`)—— 同樣成功。這是正式事故實際採用修法的精神,實際程式碼進一步不用
+   三元運算式,改成先宣告後用 `if` 賦值。
+3. **`Array([], TYPE_INT, "", null)` 建構子明寫型別參數** —— 同樣成功,但可讀性最差,
+   不建議常規使用。
+
+🔴 **三種修法都只保護「被標註的那一個分支」,不會讓另一側免疫。** 實測:把 `as` 轉型
+套在 false 分支,但 cond=true 選中的是另一個未型別化的 true 分支(Shape A 的來源)——
+依然中止。與上方核心發現一致:失敗與否逐分支獨立判定,修好一側不會連帶修好另一側;
+每一個可能被選中、且來源未型別化的分支都必須各自標註,或乾脆不要用三元運算式賦值進
+型別化容器變數。
+
+### 適用範圍:`Array[String]`、`Array[Vector2i]`、`Dictionary[K,V]` 皆同一失敗形狀
+
+實測 `Array[String]`、`Array[Vector2i]`、**型別化 `Dictionary[String, int]`** 三者在
+「兩分支皆未型別化」的 Shape A 下,錯誤訊息格式完全比照(只替換型別名稱),`Dictionary`
+版本逐字:
+```
+SCRIPT ERROR: Trying to assign a dictionary of type "Dictionary" to a variable of type "Dictionary[String, int]".
+```
+**這條陷阱不是 `Array[int]` 專屬,是 `Array[T]`、`Dictionary[K,V]` 共通的邊界行為。**
+⚠️ 未測 `Array[String]`/`Array[Vector2i]` 的 Shape B 對照版本(true 分支換成真正型別化
+來源)——基於上方機制已經確立,判斷會與 `Array[int]` 一致,但這是外推,非直接量測。
+
+### 反向對照:賦值目標若是「未型別化」的 `Array`/`Dictionary`,同一寫法完全安全
+
+賦值目標宣告為裸 `Array`(或裸 `Dictionary`)時,同樣的三元運算式寫法在任何分支組合下
+都**不會中止**——`Array`/`Dictionary` 本身不要求元素型別一致,執行期直接接受任何陣列/
+字典值。**這條陷阱的必要條件是賦值目標本身宣告了型別化容器**,不是三元運算式本身有
+問題。
+
+### 靜態訊號:`--check-only` 對此完全零命中
+
+`godot --headless --path . --check-only -s <含上述所有中止案例的腳本>` **`EXIT_CODE=0`,
+無任何輸出**(連一行警告都沒有)。此陷阱從編譯期/靜態分析角度完全不可見,唯一能抓到
+它的方式是實際執行到那一行——與 `.claude/docs/coding-standards.md` 記載的 `assert()`
+陷阱屬同一類「parse 得過、執行期才爆」的形狀。⚠️ 編輯器 GUI 的即時診斷面板未測試
+(本檔方法論一貫只用 headless/`ResourceLoader.load()`+`reload()` 或 `--check-only`,
+未觸及 GUI 診斷路徑,比照本檔第 8 節已登記的同類限制,非本節新增缺口)。
+
+**證據**:`prototypes/godot-specialist-ternary-typed-array-2026-09-23/run_output_q5.txt`
+「`--check-only`」段,`EXIT_CODE=0`、無任何 SCRIPT ERROR 或 Parse Error 輸出。
+
+### ⚠️ Process exit code 對此同樣零命中——只驗證了這一種錯誤
+
+除了靜態訊號為零之外,**行程本身的 exit code 也不會反映這個錯誤**。實測 9 次觸發這個
+特定型別化容器賦值 `SCRIPT ERROR` 的執行,**每一次 `EXIT_CODE` 都是 `0`**——與零錯誤
+的乾淨執行完全無法用 exit code 區分:
+
+| Case | Log 檔 |
+|---|---|
+| `q1_true` | `run_output.txt` |
+| `q1_false` | `run_output.txt` |
+| `q2_as_cast_true` | `run_output.txt` |
+| `q3_string_false` | `run_output.txt` |
+| `q3_string_true` | `run_output.txt` |
+| `q3_vector2i_false` | `run_output.txt` |
+| `q3_typed_dict_false` | `run_output.txt` |
+| `q3_typed_dict_true` | `run_output.txt` |
+| `q5_typed_source_false` | `run_output_q5.txt` |
+
+**若有任何腳本或 CI 步驟只檢查 headless `godot -s` 呼叫的 exit code 來判斷「有沒有出
+錯」,這個特定陷阱一次都攔不到。** 與 `.claude/docs/coding-standards.md` 記載的
+GdUnit4 呼叫方式那組「假綠燈」問題(filter 打錯字 exit 0、PATH 沒解析到空結果)屬同一
+形狀,但這是**不同的呼叫路徑**(直接 `-s` 執行腳本,不經過 GdUnit4),兩者是否同一
+根因未查證。
+
+🔴 **本節只驗證了「這個特定的型別化容器賦值失敗」這一種錯誤的 exit code 行為**——
+**不得外推**成「所有執行期 `SCRIPT ERROR` 都不影響 exit code」,那超出本次量測範圍,
+其他種類的執行期錯誤是否也是 exit 0 從未測過。
+
+**證據**:`prototypes/godot-specialist-ternary-typed-array-2026-09-23/run_output.txt`
+與 `run_output_q5.txt`——上表 9 個 case 各自的 `EXIT_CODE=0` 行,與其正上方的
+`SCRIPT ERROR` 輸出成對出現,可逐一核對。

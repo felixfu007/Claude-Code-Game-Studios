@@ -1,0 +1,158 @@
+=================== RUN case=q1_true ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q1_true"]
+CASE q1_true: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[int]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:33)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:33)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q1_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q1_false"]
+CASE q1_false: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[int]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:38)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:38)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q2_as_cast_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q2_as_cast_false"]
+CASE q2_as_cast_false: BEGIN
+CASE q2_as_cast_false: END a=[] is_typed=true
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q2_as_cast_true ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q2_as_cast_true"]
+CASE q2_as_cast_true: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[int]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:50)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:50)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q2_pretyped_var_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q2_pretyped_var_false"]
+CASE q2_pretyped_var_false: BEGIN
+CASE q2_pretyped_var_false: END a=[] is_typed=true
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q2_typed_array_constructor_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q2_typed_array_constructor_false"]
+CASE q2_typed_array_constructor_false: BEGIN
+CASE q2_typed_array_constructor_false: END a=[] is_typed=true
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_string_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_string_false"]
+CASE q3_string_false: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[String]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:68)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:68)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_string_true ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_string_true"]
+CASE q3_string_true: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[String]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:73)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:73)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_vector2i_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_vector2i_false"]
+CASE q3_vector2i_false: BEGIN
+SCRIPT ERROR: Trying to assign an array of type "Array" to a variable of type "Array[Vector2i]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:78)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:78)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_typed_dict_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_typed_dict_false"]
+CASE q3_typed_dict_false: BEGIN
+SCRIPT ERROR: Trying to assign a dictionary of type "Dictionary" to a variable of type "Dictionary[String, int]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:83)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:83)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_typed_dict_true ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_typed_dict_true"]
+CASE q3_typed_dict_true: BEGIN
+SCRIPT ERROR: Trying to assign a dictionary of type "Dictionary" to a variable of type "Dictionary[String, int]".
+   at: _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:88)
+   GDScript backtrace (most recent call first):
+       [0] _run_case (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:88)
+       [1] _init (res://prototypes/godot-specialist-ternary-typed-array-2026-09-23/probe_ternary_typed_array.gd:122)
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q3_plain_dict_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q3_plain_dict_false"]
+CASE q3_plain_dict_false: BEGIN
+CASE q3_plain_dict_false: END d={  }
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q4_untyped_target_false ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q4_untyped_target_false"]
+CASE q4_untyped_target_false: BEGIN
+CASE q4_untyped_target_false: END a=[]
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
+=================== RUN case=q4_untyped_target_true ===================
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE ARGS = ["--case=q4_untyped_target_true"]
+CASE q4_untyped_target_true: BEGIN
+CASE q4_untyped_target_true: END a=[1, 2, 3]
+PROBE REACHED END OF _init() (script did not hard-abort)
+EXIT_CODE=0
+
