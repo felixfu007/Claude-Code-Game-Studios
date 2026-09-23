@@ -1,15 +1,41 @@
 # Story U-013（選作用對象 S2/S2p/S2q + 合法目標高亮 + 跳轉鍵）的測試 ——
 # production/epics/card-play-interface/story-u013-target-selection-and-highlight.md。
 #
-# 🔴 本檔目前只涵蓋 AC-U3 的兩個純靜態函式（BattleScreen.sort_targets_by_position()
-# / BattleScreen.next_target_id()）。故事文件列的其餘測試——
-#   - test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected
+# 🔴 2026-09-23 更正:本段原文寫著本檔只涵蓋 AC-U3 的兩個純靜態函式,其餘三支
+# 測試「尚未寫入,卡在一個未決的架構問題——BattleScreen 要不要真正掛上
+# CursorStateHost」。這句話現在是假的:battle_screen.gd 已經真的呼叫
+# CursorStateHost.register_surface()/unregister_surface()(見該檔
+# _confirm_selected_card() / _after_target_selection_advanced() /
+# _handle_target_selection_cancel_transition() 三處的真實呼叫),架構問題已經
+# 關閉,不再是任何一支測試寫不出來的理由。
+#
+# 現況(逐支交代,不用「全部完成」這種會蓋住缺口的總結語,2026-09-23 第三批更新):
+#   - test_target_retarget_actor_priority_falls_inside_the_mandated_open_interval
+#     —— 已寫入(本批)。釘 ADR-0005 R5-2 的開區間,不只是 -60 這個當下值。
+#   - test_cursor_navigate_*(5 支)—— 已寫入(本批)。純函式邊界,一次合法移動 +
+#     四個方向各自越界。
 #   - test_reading_cursor_arbitrated_target_happens_in_process_not_input
-#   - test_cancel_from_s2q_returns_to_s2p_not_s1
-# ——尚未寫入：S2/S2p/S2q 的目標游標移動、跳轉鍵最終接線、與
-# _process(priority=100) 的讀取管道，全部卡在一個未決的架構問題——
-# BattleScreen 要不要（透過 src/ui/cursor/cursor_state_host.gd 新增的轉發方法）
-# 真正掛上 CursorStateHost，這件事已交給 godot-specialist 裁決,不由本批自行決定。
+#     —— 已寫入(本批)。見本檔「_input()/_process() 讀取時機」一節開頭的乙類
+#     揭露段。
+#   - test_cancel_from_s2q_returns_to_s2p_not_s1 —— 已寫入(前一批)。見本檔
+#     「cancel() 從 S2q 退回 S2p」一節,以及該測試自己的 doc comment——為什麼
+#     不能用 _fresh_instance() 真實走「開手牌 -> 選卡」UI 流程(隨機手牌不滿足
+#     Determinism),改用哪個既有工廠函式繞開。
+#   - test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected
+#     —— 尚未寫入。設計已確認(甲類卡,敵方單位天生不合法;CursorStateHost.set_target()
+#     要求 BOARD_TILE 先註冊,Arrange 階段需手動呼叫 register_surface()),尚未落地。
+#   - register/unregister 成對發生(尚無正式函式名,前一位設計的原始構想已被本批
+#     推翻——見下方)—— 尚未寫入。**前一位原設計(直接呼叫 _controller.select_card()
+#     驅動)行不通**:CursorStateHost.register_surface() 只寫在 battle_screen.gd 的
+#     UI 層方法 _confirm_selected_card()/_after_target_selection_advanced()/
+#     _handle_target_selection_cancel_transition() 裡(2026-09-23 協調者以
+#     `awk '/^func /{fn=$0} /register_surface\(CursorTypes.SurfaceType.BOARD_TILE/
+#     {print NR": "fn}' src/ui/battle/battle_screen.gd` 覆核確認,CardPlaySession/
+#     BattleController 一處都沒有),只換掉 _card_play_session 不會觸發這個副作用。
+#     改良路線:呼叫 instance._state.attach_card_deck(deck)(BattleState 的公開方法)
+#     讓 _state.card_deck() 與換掉的 CardPlaySession 用同一個 deck 物件,再真的呼叫
+#     instance._confirm_selected_card() 這個 UI 層方法本身觸發 register_surface()。
+#     尚未落地,可能還有沒預見的接縫。見任務報告。
 # 見任務報告。
 #
 # 本檔另涵蓋 board_view.gd 的 set_card_target_highlights()（三態高亮圖層，同一張
@@ -27,11 +53,35 @@ extends GdUnitTestSuite
 
 const _BOARD_VIEW_SCENE_PATH: String = "res://src/ui/battle/BoardView.tscn"
 
+## Story U-013 —— test_cancel_from_s2q_returns_to_s2p_not_s1 用的完整
+## BattleScreen 場景路徑,同 tests/integration/ui/battle/battle_screen_card_play_wiring_test.gd
+## 的既有慣例(真正 load()/instantiate() 並 add_child(),觸發真實 _ready())。
+const _BATTLE_SCREEN_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
+
 
 func _fresh_board_view() -> BoardView:
 	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
 	add_child(instance)
 	return instance
+
+
+func _fresh_instance() -> BattleScreen:
+	var instance: BattleScreen = auto_free(load(_BATTLE_SCREEN_SCENE_PATH).instantiate())
+	add_child(instance)
+	return instance
+
+
+## 2026-09-23(第三批)—— 本檔第一支會真的呼叫 CursorStateHost.register_surface()
+## 的測試(test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected)
+## 需要這道清理,沿用 tests/integration/ui/battle/battle_screen_card_play_wiring_test.gd
+## 的既有 after_test() 慣例逐字——不確定呼叫是否成功都無妨,unregister() 對「本來就沒
+## 註冊」是 idempotent 的 UNREGISTERED_NOT_FOUND,不是錯誤。
+func after_test() -> void:
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	if host == null:
+		return
+	var registry: CursorSurfaceRegistry = host.get(&"_registry")
+	registry.unregister(CursorTypes.SurfaceType.BOARD_TILE)
 
 
 # ─── CardTargetHighlightLayer —— 場景節點存在、疊層順序正確 ─────────────────────
@@ -318,6 +368,521 @@ func test_jump_on_empty_set_returns_negative_one() -> void:
 
 	# Assert
 	assert_int(result).is_equal(-1)
+
+
+# ─── cancel() 從 S2q 退回 S2p,不是 S1(既有 cancel() 行為的整合驗證)──────────
+
+
+## Story U-013 Implementation Note #6(逐字):「取消行為:Esc/B...在 S2 呼叫
+## session.cancel() 退回 S1;在 S2q 呼叫 session.cancel() 退回 S2p(重選第二
+## 人),不是直接跳回 S1——這是 card_play_session.gd 既有 cancel() 的既定行為,
+## UI 只需忠實呼叫,不要自己另寫一套『退兩步』的邏輯」。
+##
+## 本測試驗的是 BattleScreen 這一層的分派邏輯
+## (_handle_target_selection_cancel_transition()):它讀 BattleController.cancel()
+## 呼叫之後 legal_targets() 的回傳值決定回到 S2p 還是 S1——不是重新驗證
+## CardPlaySession.cancel() 本身(那是「本 story 必須讀而非重寫的既有邏輯層」,
+## 已交付,見 story 文件該節)。
+##
+## 🔴 [b]為什麼不能用 _fresh_instance() 真實走「開手牌 -> 選卡」UI 流程走到
+## S2q[/b]:battle_screen.gd 的 _ready() 用 CardDeck.new(cards, rng=null)——
+## 真實、未指定種子的 RandomNumberGenerator(見該行自己的 doc comment:「rng=null
+## 這裡意味著生產環境、時間種子洗牌」)——從 vs01_cards.txt 的 8 張卡隨機抽 5 張
+## 開局手牌。其中只有 2 張是 PERMANENT_AFFINITY_WRITE(丙類,card_07/card_08),
+## 兩張都沒被抽進手牌的機率是 C(6,5)/C(8,5) = 6/56 ≈ 10.7%,並非零——這與
+## .claude/rules/test-standards.md 的 Determinism 規則(「必須每次執行結果相同」)
+## 直接牴觸,寫了也只是一支偶爾紅、偶爾綠的測試,而非本測試要證明的行為本身
+## 不成立。
+##
+## 改用一副「刻意只有一張丙類卡」的 CardDeck,取代 _controller 內部
+## BattleController 原本建構的 CardPlaySession——池只有 1 張牌時
+## CardDeck._draw_one_into_hand() 呼叫的 _rng.randi_range(0, 0) 恆為索引 0,
+## 抽到哪張與 RNG 種子無關,不需要固定種子也是決定性的(不是「机率很低所以
+## 可以接受」,是「結構上不存在隨機分支」)。卡片本身用既有工廠函式
+## Card.new_permanent_affinity_write()(in-test 常數,不讀 assets/data/ 任何
+## 檔案)構造;好感度連結同理直接建構 AffinityLink 物件,不讀
+## vs01_affinity_links.txt——PermanentAffinityWriteRules.legal_pairs() 只看
+## AffinityLink.unit_a/unit_b 是否存活,不看 Card 自己的
+## affinity_character_a/b(vs01_cards.txt 檔頭原話:「這兩欄僅供牌面敘事」)。
+## 單位 3/4(丙/丁)直接沿用 _fresh_instance() 建出的真實 _state——這兩個是
+## vs01_roster.txt 真實存在的 PLAYER 單位,開局必然存活,不需要另建一份假的
+## BattleState。
+##
+## 只替換 instance._controller._card_play_session 這一個欄位,不重建整個
+## BattleController。
+##
+## 🔴 2026-09-23 更正(協調者覆核,讀過 battle_controller.gd 本體,不是只 grep
+## 簽章):本段原文寫「open_hand()/select_card()/legal_targets()/select_target()/
+## cancel() 皆只轉發給 _card_play_session」——不精確,這句話本身當時也只是沿用
+## 上一棒沒有附物證的宣稱,轉一手變成「已確認」。實測本體(battle_controller.gd
+## 第 363~479 行):
+## - open_hand()/select_card()/legal_targets():轉發前先擋
+##   `_phase != Phase.PLAYER_INPUT`(legal_targets() 不符時回傳空陣列,其餘回傳
+##   false),沒有 has_pending_discard() 這道閘。
+## - select_target()/select_second_target()/confirm()/cancel():除了同一道
+##   phase 閘,還多擋 `_state.has_pending_discard()`。
+## 「換掉 _card_play_session 就等於換掉這些呼叫的行為」因此只在「真實 _state
+## 當下處於 PLAYER_INPUT 且沒有待棄牌」時成立——這是本測試的隱含前提,不是保證。
+## 本測試能過,代表 _fresh_instance() 剛建好的開局狀態確實滿足這兩個閘門
+## (預設 phase 即 PLAYER_INPUT,開局也不會有待棄牌),但下一個沿用本手法的
+## 測試如果在別的時機點(例如已經推進過回合、或有 forced-discard 情境)做同樣
+## 的替換,兩道閘門有可能擋下轉發呼叫——先用 assert_bool(...).is_true() 的
+## PRECONDITION 斷言確認每一步真的成功(本檔以下正是這樣寫的),不要假設換了
+## _card_play_session 就保證後續呼叫一定通過。
+## 不需要另外重建 _state/_order/TurnOrder/phi 等其餘依賴。
+func test_cancel_from_s2q_returns_to_s2p_not_s1() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+
+	var card: Card = Card.new_permanent_affinity_write("test_card_c3c4", 3, 4, -2)
+	var cards: Array[Card] = [card]
+	var deck: CardDeck = CardDeck.new(cards)
+	deck.deal_opening_hand()
+
+	var link: AffinityLink = AffinityLink.new()
+	link.unit_a = 3
+	link.unit_b = 4
+	link.polarity = AffinityLink.Polarity.NEGATIVE
+	link.amp = 1
+	var links: Array[AffinityLink] = [link]
+
+	var session: CardPlaySession = CardPlaySession.new(
+		deck, instance._state, links, NullAffinityWritePort.new()
+	)
+	instance._controller._card_play_session = session
+
+	assert_bool(instance._controller.open_hand()).append_failure_message(
+		"PRECONDITION: open_hand() 失敗——夾具本身有問題,不是本測試要驗的行為"
+	).is_true()
+	assert_bool(instance._controller.select_card(card)).append_failure_message(
+		"PRECONDITION: select_card() 失敗——夾具的 CardDeck/CardPlaySession 沒接對"
+	).is_true()
+	assert_array(instance._controller.legal_targets()).append_failure_message(
+		"PRECONDITION: S2p 合法目標應為 [3, 4](丙丁配對),實得 %s"
+		% [instance._controller.legal_targets()]
+	).is_equal([3, 4])
+	assert_bool(instance._controller.select_target(3)).append_failure_message(
+		"PRECONDITION: select_target(3) 失敗——無法進入 S2q"
+	).is_true()
+	assert_int(session.step()).append_failure_message(
+		"PRECONDITION: 選完第一個目標後應進入 SELECTING_TARGET_B(S2q = %d),實得 %d"
+		% [CardPlaySession.Step.SELECTING_TARGET_B, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET_B)
+
+	# _confirm_selected_card() 在真實流程裡會把這兩個呈現層欄位擺到這個狀態——
+	# 這裡直接設定,避免重新走一次 hand_bar 游標導覽 UI(與本測試無關)。
+	instance._card_selecting_from_hand = false
+	instance._card_selecting_target = true
+
+	# Act — 複製 _input() 那個分支的真實分派順序(battle_screen.gd 的
+	# _card_selecting_target 分支,battle_cancel 那一支):先呼叫
+	# _controller.cancel(),再呼叫 _handle_target_selection_cancel_transition()
+	# 讀 cancel() 之後的 legal_targets() 決定去處。
+	assert_bool(instance._controller.cancel()).append_failure_message(
+		"PRECONDITION: BattleController.cancel() 本身被閘門擋下(phase 不是 "
+		+ "PLAYER_INPUT,或有待處理的強制棄牌)——與本測試要驗的行為無關"
+	).is_true()
+	instance._handle_target_selection_cancel_transition()
+
+	# Assert
+	assert_int(session.step()).append_failure_message(
+		"cancel() 應該讓 CardPlaySession 退回 SELECTING_TARGET(S2p = %d),實得 %d"
+		% [CardPlaySession.Step.SELECTING_TARGET, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET)
+	assert_bool(instance._card_selecting_target).append_failure_message(
+		"S2q -> S2p 仍在目標選取中,_card_selecting_target 不應該變成 false"
+	).is_true()
+	assert_bool(instance._card_selecting_from_hand).append_failure_message(
+		"S2q -> S2p 不是退回 S1,_card_selecting_from_hand 不應該變成 true——"
+		+ "這正是本測試名字要釘死的那個區別(不是 S1)"
+	).is_false()
+	assert_array(instance._controller.legal_targets()).append_failure_message(
+		"退回 S2p 後合法目標應重新是 [3, 4](丙丁重選第二人),實得 %s"
+		% [instance._controller.legal_targets()]
+	).is_equal([3, 4])
+
+
+# ─── _TargetRetargetActor.process_priority —— ADR-0005 機制六②的開區間義務 ──────
+#
+# battle_screen.gd 的 doc comment 自己寫明:角色② 需要 process_priority 嚴格大於 -100、
+# 嚴格小於 -25,而角色⑥ 需要正好 100 —— 單一節點無法同時滿足,故拆出這顆薄子節點。
+# 本測試釘死的是那個「開區間」契約,不只是 -60 這個當下值:日後有人把 -60 改成 -10
+# 或 -200,這裡要變紅。
+
+
+func test_target_retarget_actor_priority_falls_inside_the_mandated_open_interval() -> void:
+	# Arrange / Act
+	var instance: BattleScreen = _fresh_instance()
+	var actor: Node = instance._target_retarget_actor
+
+	# Assert
+	assert_object(actor).append_failure_message(
+		"BattleScreen._ready() 應該已經建構並掛上 _target_retarget_actor"
+	).is_not_null()
+	var priority: int = actor.process_priority
+	assert_int(priority).append_failure_message(
+		"角色②的 process_priority 必須嚴格大於 -100(ADR-0005 R5-2 開區間),實得 %d"
+		% priority
+	).is_greater(-100)
+	assert_int(priority).append_failure_message(
+		(
+			"角色②的 process_priority 必須嚴格小於 -25(ADR-0005 R5-2 開區間,避免撞進角色⑥"
+			+ "的 100 或其他保留區間),實得 %d"
+		) % priority
+	).is_less(-25)
+
+
+# ─── cursor_navigate() —— 純函式邊界行為(只查 BoardCoords.is_in_bounds()）───────
+#
+# 不需要場景狀態、不需要 CursorStateHost 註冊——cursor_navigate() 本身只用
+# CursorTypes.decode_tile() 解出來源格、加上方向、再用 BoardCoords.is_in_bounds()
+# 判斷落點是否還在棋盤內。board_coords.gd 明文:BOARD_COLS=13、BOARD_ROWS=6。
+
+
+func test_cursor_navigate_moves_within_bounds_returns_encoded_tile_id() -> void:
+	# Arrange — 從 (5, 2) 往右移一格,落點 (6, 2) 仍在棋盤內
+	var instance: BattleScreen = _fresh_instance()
+	var from_id: int = CursorTypes.encode_tile(Vector2i(5, 2), BoardCoords.BOARD_COLS)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(1, 0))
+
+	# Assert
+	var expected_id: int = CursorTypes.encode_tile(Vector2i(6, 2), BoardCoords.BOARD_COLS)
+	assert_int(result).append_failure_message(
+		"從 (5,2) 往右一格應落在 (6,2),編碼後應為 %d,實得 %s" % [expected_id, result]
+	).is_equal(expected_id)
+
+
+func test_cursor_navigate_off_left_edge_returns_null() -> void:
+	# Arrange — 從最左欄 (0, 0) 往左移一格,x 會變成 -1,越界
+	var instance: BattleScreen = _fresh_instance()
+	var from_id: int = CursorTypes.encode_tile(Vector2i(0, 0), BoardCoords.BOARD_COLS)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(-1, 0))
+
+	# Assert
+	assert_object(result).append_failure_message(
+		"從最左欄再往左應該越界,cursor_navigate() 應回傳 null,實得 %s" % [result]
+	).is_null()
+
+
+func test_cursor_navigate_off_right_edge_returns_null() -> void:
+	# Arrange — 從最右欄 (BOARD_COLS-1, 0) 往右移一格,x 會等於 BOARD_COLS,越界
+	var instance: BattleScreen = _fresh_instance()
+	var from_id: int = CursorTypes.encode_tile(
+		Vector2i(BoardCoords.BOARD_COLS - 1, 0), BoardCoords.BOARD_COLS
+	)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(1, 0))
+
+	# Assert
+	assert_object(result).append_failure_message(
+		"從最右欄再往右應該越界,cursor_navigate() 應回傳 null,實得 %s" % [result]
+	).is_null()
+
+
+func test_cursor_navigate_off_top_edge_returns_null() -> void:
+	# Arrange — 從最上列 (0, 0) 往上移一格,y 會變成 -1,越界
+	var instance: BattleScreen = _fresh_instance()
+	var from_id: int = CursorTypes.encode_tile(Vector2i(0, 0), BoardCoords.BOARD_COLS)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(0, -1))
+
+	# Assert
+	assert_object(result).append_failure_message(
+		"從最上列再往上應該越界,cursor_navigate() 應回傳 null,實得 %s" % [result]
+	).is_null()
+
+
+func test_cursor_navigate_off_bottom_edge_returns_null() -> void:
+	# Arrange — 從最下列 (0, BOARD_ROWS-1) 往下移一格,y 會等於 BOARD_ROWS,越界
+	var instance: BattleScreen = _fresh_instance()
+	var from_id: int = CursorTypes.encode_tile(
+		Vector2i(0, BoardCoords.BOARD_ROWS - 1), BoardCoords.BOARD_COLS
+	)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(0, 1))
+
+	# Assert
+	assert_object(result).append_failure_message(
+		"從最下列再往下應該越界,cursor_navigate() 應回傳 null,實得 %s" % [result]
+	).is_null()
+
+
+# ─── _input()/_process() 讀取時機 —— Implementation Note #1 的原始碼紀律掃描 ────
+#
+# Story U-013 Implementation Note #1 逐字:「打牌確認若要讀『游標系統裁定後的狀態』
+# (當前選了哪張卡、哪個目標、哪個裝置持權威),該讀取不得放在按鍵處理(_input /
+# _unhandled_input)裡,必須放在 _process(priority=100)」。
+#
+# 本測試是 .claude/rules/test-standards.md 登記的兩個唯讀例外之【乙類】
+# (唯讀 src/**/*.gd 的文字,斷言原始碼紀律)——依該規則附帶的兩項義務逐條交代:
+#
+# 1. 為什麼不能用依賴注入/執行期檢查取代:這個義務本身就是「某段呼叫寫在哪個
+#    函式體內」這種文字層級的事實,不是任何物件的執行期行為——CursorStateHost
+#    的 get_current_target()/is_current_target_valid() 兩個方法本身完全正確
+#    (有自己的單元測試),要防的是「呼叫它們的那一行,錯誤地被寫進 _input()」
+#    這種撰寫錯誤,只有掃描原始碼文字能斷言「這個模式不存在於這裡」,執行期
+#    測試斷言不出「這行程式碼寫在哪個函式體內」。
+# 2. 掃描範圍不等於窮盡性(逐條揭露,見下方 docstring)。
+#
+# 只掃 res://src/ui/battle/battle_screen.gd 這一個檔案,刻意比
+# affinity_link_no_direct_return_test.gd 的全庫兩根目錄掃描窄——因為 Implementation
+# Note #1 這條義務是這一個檔案自己的內部呼叫時機紀律(quoted verbatim,只針對這個
+# 檔案的 _input()/_process() 邊界),不是像「某個 parser 不能被錯誤呼叫」那樣可能
+# 出現在全專案任何呼叫端的通用反模式——沒有理由掃到這個檔案以外。
+
+
+## 追蹤「目前在哪個頂層 func 定義內」的逐行掃描,同
+## tests/unit/gameplay/affinity/affinity_link_no_direct_return_test.gd 的既有慣例,
+## 但這裡追蹤的是函式【名稱】而非回傳型別。
+##
+## [b]已知盲點(揭露而非默默略過)[/b]:
+## - 只認column 0(完全沒有縮排)的 `^func ` 開頭當作「頂層函式」邊界——這正是
+##   用來排除 battle_screen.gd 內巢狀 `class _TargetRetargetActor` 的
+##   `func _process(_delta: float) -> void:`(該行縮排一個 tab,不會被這個
+##   pattern 命中,不會被誤判成頂層 `_process()`)。前提是本檔案內所有頂層函式
+##   簽章皆為單行、無縮排——本檔實測確認battle_screen.gd 的 _input()/_process()/
+##   _apply_target_confirm_from_cursor_state() 三者皆符合這個前提
+##   (`^func _input|^func _unhandled_input|^func _process|
+##   ^func _apply_target_confirm_from_cursor_state` 逐行 grep 只各命中一次,行號見
+##   本測試自己的失敗訊息)。
+## - 若函式體內含有巢狀 lambda(`func(...):`),lambda 內容仍會被算進外層函式,
+##   而非獨立追蹤——本檔案這三個函式目前皆無巢狀 lambda,但掃描器本身不驗證這一點。
+## - 字串常值/註解內若恰好出現這些呼叫的文字(例如描述這個規則的註解本身),
+##   已用「trimmed 開頭是 # 就整行跳過」擋掉——但同一行程式碼後面接的行內
+##   `#` 註解不會被剝離,理論上可能誤判,本檔尚未實際遇過這個情況。
+## - 這是文字掃描,不執行、不進場景樹——它只能證明「這個文字模式今天不在這裡」,
+##   不能證明 CursorStateHost 兩個方法「不可能」被繞道呼叫(例如透過
+##   Callable/字串方法名/反射),這些管道完全在掃描視野之外。
+func test_reading_cursor_arbitrated_target_happens_in_process_not_input() -> void:
+	# Arrange
+	const _SCAN_PATH: String = "res://src/ui/battle/battle_screen.gd"
+	const _FORBIDDEN_READ_SUBSTRINGS: Array[String] = [
+		"CursorStateHost.get_current_target(",
+		"CursorStateHost.is_current_target_valid(",
+	]
+	const _APPLY_CONFIRM_CALL_SUBSTRING: String = "_apply_target_confirm_from_cursor_state("
+	const _FORBIDDEN_FUNCS: Array[String] = ["_input", "_unhandled_input"]
+	const _REQUIRED_READ_FUNC: String = "_apply_target_confirm_from_cursor_state"
+	const _REQUIRED_CALL_SITE_FUNC: String = "_process"
+
+	var signature_regex := RegEx.new()
+	var compile_error: Error = signature_regex.compile("^func\\s+(\\w+)\\s*\\(")
+	assert_int(compile_error).append_failure_message(
+		"本測試自己的函式簽章 RegEx 編譯失敗(error %s)——掃描本身壞了,與受測程式碼無關,先修 pattern。"
+		% error_string(compile_error)
+	).is_equal(OK)
+
+	var f: FileAccess = FileAccess.open(_SCAN_PATH, FileAccess.READ)
+	assert_object(f).append_failure_message(
+		"無法開啟 %s——檔案路徑是否變動了?" % _SCAN_PATH
+	).is_not_null()
+
+	# Act
+	var read_in_forbidden_func_violations: Array = []
+	var call_site_in_forbidden_func_violations: Array = []
+	var found_read_in_required_func: bool = false
+	var found_call_site_in_process: bool = false
+	var current_func: String = ""
+	var line_number: int = 0
+	while not f.eof_reached():
+		var raw_line: String = f.get_line()
+		line_number += 1
+		var trimmed: String = raw_line.strip_edges()
+		if trimmed.begins_with("#"):
+			continue
+
+		var signature_match: RegExMatch = signature_regex.search(raw_line)
+		if signature_match != null:
+			current_func = signature_match.get_string(1)
+			continue
+
+		if current_func.is_empty():
+			continue
+
+		var has_forbidden_read: bool = false
+		for banned: String in _FORBIDDEN_READ_SUBSTRINGS:
+			if trimmed.contains(banned):
+				has_forbidden_read = true
+				break
+		var has_apply_confirm_call: bool = trimmed.contains(_APPLY_CONFIRM_CALL_SUBSTRING)
+
+		if _FORBIDDEN_FUNCS.has(current_func):
+			if has_forbidden_read:
+				read_in_forbidden_func_violations.append(
+					"%s:%d (func %s): %s" % [_SCAN_PATH, line_number, current_func, trimmed]
+				)
+			if has_apply_confirm_call:
+				call_site_in_forbidden_func_violations.append(
+					"%s:%d (func %s): %s" % [_SCAN_PATH, line_number, current_func, trimmed]
+				)
+		if current_func == _REQUIRED_READ_FUNC and has_forbidden_read:
+			found_read_in_required_func = true
+		if current_func == _REQUIRED_CALL_SITE_FUNC and has_apply_confirm_call:
+			found_call_site_in_process = true
+
+	# Assert
+	assert_int(read_in_forbidden_func_violations.size()).append_failure_message(
+		(
+			"Implementation Note #1 違反:_input()/_unhandled_input() 內不得直接讀取 "
+			+ "CursorStateHost.get_current_target()/is_current_target_valid()——那是上一幀的值。"
+			+ "命中:\n%s"
+		) % "\n".join(read_in_forbidden_func_violations)
+	).is_equal(0)
+	assert_int(call_site_in_forbidden_func_violations.size()).append_failure_message(
+		(
+			"_apply_target_confirm_from_cursor_state() 不應該被 _input()/_unhandled_input() "
+			+ "直接呼叫——它必須只被 _process() 呼叫,讀取才會落在 priority=100 那一幀。命中:\n%s"
+		) % "\n".join(call_site_in_forbidden_func_violations)
+	).is_equal(0)
+	assert_bool(found_read_in_required_func).append_failure_message(
+		(
+			"_apply_target_confirm_from_cursor_state() 內應該要讀取 "
+			+ "CursorStateHost.get_current_target()/is_current_target_valid()"
+			+ "——一次都沒掃到,表示這段讀取邏輯被搬走了或函式被改名/刪除,"
+			+ "本測試的正向斷言就是為了在那種情況下當場變紅,而不是只在「多了違規」時變紅。"
+		)
+	).is_true()
+	assert_bool(found_call_site_in_process).append_failure_message(
+		(
+			"_process() 內應該要呼叫 _apply_target_confirm_from_cursor_state()"
+			+ "——一次都沒掃到,表示讀取時機的呼叫路徑被改掉了。"
+		)
+	).is_true()
+
+
+# ─── 不合法格可達,但確認被拒(Implementation Note #3)──────────────────────────
+#
+# Story U-013 Implementation Note #3 逐字:「不合法的格子仍然走得進去,方向鍵/十字鍵
+# 的逐格導覽不因為某格不合法就跳過它;只有確認會被拒絕」。
+#
+# 用甲類卡(Card.new_temporary_stat_modifier)而非前一位原設計的丙類配對卡——甲類的
+# legal_targets() 就是「全體存活我方單位」(card_play_session.gd:196-197),敵方單位
+# 天生不合法,不需要另外構造「兩個丙類單位以外」的敵方情境,場景更直接。
+#
+# 🔴 CursorStateHost.set_target() 要求目標的 surface 必須已經被註冊
+# (cursor_state.gd _validate_target_writable():`_registry.get_surface(target.surface)
+# == null` 時回傳 SURFACE_NOT_REGISTERED,寫入不生效)——這一步前一位的原始設計沒提到,
+# 是讀碼後補上的:必須在 Arrange 階段手動呼叫
+# CursorStateHost.register_surface(BOARD_TILE, instance),不能只靠換掉
+# _card_play_session。清理見上方 after_test()。
+
+
+func test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+
+	var card: Card = Card.new_temporary_stat_modifier("test_card_atk_buff", 1, 0, 1)
+	var cards: Array[Card] = [card]
+	var deck: CardDeck = CardDeck.new(cards)
+	deck.deal_opening_hand()
+
+	var links: Array[AffinityLink] = []
+	var session: CardPlaySession = CardPlaySession.new(
+		deck, instance._state, links, NullAffinityWritePort.new()
+	)
+	instance._controller._card_play_session = session
+
+	assert_bool(instance._controller.open_hand()).append_failure_message(
+		"PRECONDITION: open_hand() 失敗——夾具本身有問題,不是本測試要驗的行為"
+	).is_true()
+	assert_bool(instance._controller.select_card(card)).append_failure_message(
+		"PRECONDITION: select_card() 失敗——夾具的 CardDeck/CardPlaySession 沒接對"
+	).is_true()
+	assert_int(session.step()).append_failure_message(
+		"PRECONDITION: 選完甲類卡後應進入 SELECTING_TARGET(S2 = %d),實得 %d"
+		% [CardPlaySession.Step.SELECTING_TARGET, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET)
+
+	var enemy_units: Array[Unit] = instance._state.units_of(Unit.Faction.ENEMY)
+	assert_int(enemy_units.size()).append_failure_message(
+		"PRECONDITION: vs01_roster.txt 應該至少有 1 個敵方單位,實得 0——資料檔變動了?"
+	).is_greater(0)
+	var enemy_unit: Unit = enemy_units[0]
+	var enemy_cell: Vector2i = instance._state.position_of(enemy_unit.id)
+	var legal_targets_before: Array[int] = instance._controller.legal_targets()
+	assert_bool(legal_targets_before.has(enemy_unit.id)).append_failure_message(
+		(
+			"PRECONDITION: 敵方單位 id=%d 不應該出現在甲類卡的合法目標集合 %s 裡——"
+			+ "若出現,代表這個情境本來就不是『不合法目標』,後面的拒絕斷言就測不到東西"
+		) % [enemy_unit.id, legal_targets_before]
+	).is_false()
+
+	# _confirm_selected_card() 在真實流程裡會把這兩個呈現層欄位擺到這個狀態——
+	# 這裡直接設定,避免重新走一次 hand_bar 游標導覽 UI(與本測試無關)。
+	instance._card_selecting_from_hand = false
+	instance._card_selecting_target = true
+
+	# 找敵方單位格左右任一側的合法鄰格,證明「方向鍵逐格導覽走得到不合法格」
+	# (Implementation Note #3 的前半句)——cursor_navigate() 只查 BoardCoords.is_in_bounds(),
+	# 不查目標格站的單位是否合法。
+	var neighbor_cell: Vector2i = enemy_cell + Vector2i(-1, 0)
+	var direction: Vector2i = Vector2i(1, 0)
+	if not BoardCoords.is_in_bounds(neighbor_cell):
+		neighbor_cell = enemy_cell + Vector2i(1, 0)
+		direction = Vector2i(-1, 0)
+	assert_bool(BoardCoords.is_in_bounds(neighbor_cell)).append_failure_message(
+		"PRECONDITION: 敵方單位格 %s 左右兩側都不在棋盤內——棋盤是否只有 1 欄寬?"
+		% [enemy_cell]
+	).is_true()
+
+	var from_id: int = CursorTypes.encode_tile(neighbor_cell, BoardCoords.BOARD_COLS)
+	var navigate_result: Variant = instance.cursor_navigate(from_id, direction)
+	var enemy_tile_id: int = CursorTypes.encode_tile(enemy_cell, BoardCoords.BOARD_COLS)
+	assert_int(navigate_result).append_failure_message(
+		(
+			"cursor_navigate() 應該能移動到敵方單位所在格 %s(不合法格仍然走得到,"
+			+ "Implementation Note #3),實得 %s,預期 %d"
+		) % [enemy_cell, navigate_result, enemy_tile_id]
+	).is_equal(enemy_tile_id)
+
+	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(
+		CursorTypes.SurfaceType.BOARD_TILE, instance
+	)
+	assert_int(register_result).append_failure_message(
+		(
+			"PRECONDITION: CursorStateHost.register_surface(BOARD_TILE) 沒有回傳 REGISTERED"
+			+ "(實得 %s)——是不是上一支測試沒清乾淨,或本次呼叫本身有誤?"
+		) % register_result
+	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+	var set_result: CursorState.SetTargetResult = CursorStateHost.set_target(
+		CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, enemy_tile_id)
+	)
+	assert_int(set_result).append_failure_message(
+		(
+			"PRECONDITION: CursorStateHost.set_target() 沒有回傳 APPLIED(實得 %s)——"
+			+ "surface 是否真的註冊成功?"
+		) % set_result
+	).is_equal(CursorState.SetTargetResult.APPLIED)
+
+	# Act — 複製 _process() 那個分支的真實呼叫(battle_confirm 按下時排入的
+	# pending flag,由 _process() 消費——見 Implementation Note #1)。這裡直接呼叫
+	# 被消費的那個方法本身,略過 _pending_target_confirm_press 這層佇列(佇列本身
+	# 已由 test_reading_cursor_arbitrated_target_happens_in_process_not_input
+	# 驗過只被 _process() 呼叫,不是本測試要重驗的行為)。
+	instance._apply_target_confirm_from_cursor_state()
+
+	# Assert — 確認被拒絕,session 停在原地,沒有前進
+	assert_int(session.step()).append_failure_message(
+		(
+			"敵方單位是甲類卡的不合法目標,確認應該被拒絕、session 停在 SELECTING_TARGET"
+			+ "(S2 = %d),實得 %d——是不是合法性檢查被繞過了?"
+		) % [CardPlaySession.Step.SELECTING_TARGET, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET)
+	assert_bool(instance._card_selecting_target).append_failure_message(
+		"確認被拒絕後仍應停留在目標選取中,_card_selecting_target 不應該變成 false"
+	).is_true()
+	assert_array(instance._controller.legal_targets()).append_failure_message(
+		"確認被拒絕不應該改變合法目標集合,實得 %s,預期與拒絕前相同 %s"
+		% [instance._controller.legal_targets(), legal_targets_before]
+	).is_equal(legal_targets_before)
 
 
 # ─── 敏感度證明 ────────────────────────────────────────────────────────────────

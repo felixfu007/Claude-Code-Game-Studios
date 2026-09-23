@@ -58,6 +58,46 @@
 ⚠️ 若日後想改為全面像素化,**必須先用一整段真實支援對話文字**(不是短測試句)實際排版檢視,
 不合格就退回本策略。測試成本很低,漏掉的代價很高。
 
+### ⚠️ 已知缺口:兩處 `Label` 建立時漏掉 Cubic 11 覆寫(2026-09-23 查證,管理者裁決:登記追蹤,今天不動)
+
+依本節「介面短標籤/HUD 數字用 Cubic 11」的規定,以下兩處建立 `Label` 時**沒有呼叫
+`add_theme_font_override` 套用 `Cubic_11.ttf`**,會落回引擎預設字型:
+
+- `src/ui/battle/board_view.gd`(`_build_hp_text()` 建立的血量數字 `Label`,約第 471 行)
+- `src/ui/battle/hand_bar.gd`(`_ensure_detail_panel()` 建立的 Z3 詳情面板兩個 `Label`——
+  `text_label`〔約第 945 行〕與 `effect_label`〔約第 952 行〕)
+
+**逐字證據**:
+
+```
+$ grep -c "Cubic\|add_theme_font_override\|HUD_FONT" src/ui/battle/board_view.gd
+0
+$ grep -n "Cubic\|add_theme_font_override" src/ui/battle/hand_bar.gd
+75:const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
+832:	_count_label.add_theme_font_override(&"font", HUD_FONT)
+846:	_unavailable_label.add_theme_font_override(&"font", HUD_FONT)
+```
+
+（832/846 兩行是 `_count_label`/`_unavailable_label`——這兩個**有**套用;本節登記的
+`text_label`/`effect_label` 是同一檔案裡**另外兩個、沒有套用**的 `Label`,已用
+`grep -n "_detail_text_label\|_detail_effect_label" src/ui/battle/hand_bar.gd` 逐行核對
+過全檔沒有任何一行對它們呼叫 `add_theme_font_override`。）
+
+**已排除的假警報**(登記於此,避免下一個人重踩):`BattleScreen.tscn` 的
+`StatusLabel`/`InfoLabel`/`ResultLabel`/`ControlsHintLabel`/`LoadErrorLabel` 五個 `Label`
+乍看也像同一個缺口(`battle_screen.gd` 本身確實零命中字型覆寫關鍵字),**但實際由另一支
+掛載腳本 `src/ui/battle/hud_layout_scaler.gd`(掛在 `UILayer` 節點,`BattleScreen.tscn`
+第 22 行)在 `_apply_layout()` 統一套用**——這五個沒有問題。**查證範圍**:已對
+`src/ui/` 下每一個 `Label.new()` 呼叫與每一個 `.tscn` 裡的 `type="Label"` 節點逐一核對
+是否有對應的字型覆寫(直接呼叫或透過掛載腳本),範圍是整個 `src/ui/`,非抽樣。
+
+⚠️ **我沒查證的部分**:只確認「沒有呼叫 `add_theme_font_override`」,**沒有確認這兩處
+實際降級成哪個字型、該字型是否抗鋸齒**——這是間接證據(呼叫不存在),不是直接觀察
+渲染結果。
+
+**與血量對比度修復的相依**:見 `design/art/hp-readout-contrast-fix.md` 第三節——該次
+數值推導與字型無關,但若這個字型缺口日後被修掉,該檔第四節的灰階複驗必須重跑。
+
 ## 六、畫面架構:世界層與介面層分離
 
 `godot-specialist` 於 2026-08-25 實機驗證確立(細節與來源等級見 `.claude/docs/technical-preferences.md`):
