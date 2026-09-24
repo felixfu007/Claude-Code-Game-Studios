@@ -10,21 +10,24 @@ SANITY: BoardView.global_transform = [X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0
 REAL DATA: unit 5 (戊) real cell from vs01_roster.txt = (0, 5)
 --- STATE A: legal (card_target_illegal = false) ---
   (highlight layer child count = 1, Line2D count = 0)
+  (frame_post_draw did not fire within 10 extra frames after the base 2 -- proceeding anyway. Expected under --headless per this round's ruling; if this prints during a WINDOWED run, that is new information and should be reported.)
 ERROR: Parameter "t" is null.
    at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
    GDScript backtrace (most recent call first):
-       [0] _attempt_capture (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:237)
-       [1] _ready (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:109)
+       [0] _attempt_capture (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:288)
+       [1] _await_render_settle (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:266)
   CAPTURE[legal]: get_image() is null (expected under --headless, per 2026-09-23 finding -- not executed further, per this round's 'no window' ruling)
 --- STATE B: illegal (card_target_illegal = true) ---
   MARK_LINE points (real, engine-computed) = [(39.0, 206.0), (57.0, 224.0)]
   MARK_LINE points (real, engine-computed) = [(57.0, 206.0), (39.0, 224.0)]
   (highlight layer child count = 2, Line2D count = 2)
+  (frame_post_draw did not fire within 10 extra frames after the base 2 -- proceeding anyway. Expected under --headless per this round's ruling; if this prints during a WINDOWED run, that is new information and should be reported.)
 ERROR: Parameter "t" is null.
    at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
    GDScript backtrace (most recent call first):
-       [0] _attempt_capture (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:237)
-       [1] _ready (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:114)
+       [0] _attempt_capture (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:288)
+       [1] _await_render_settle (res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd:266)
   CAPTURE[illegal]: get_image() is null (expected under --headless, per 2026-09-23 finding -- not executed further, per this round's 'no window' ruling)
 WROTE: res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/real_geometry.json
 === done ===
+EXIT=0

@@ -57,10 +57,30 @@
 ## get_image() 為 null(已知的 headless 限制,見
 ## prototypes/godot-specialist-scene-load-feasibility-2026-09-23/run_output_headless.txt),
 ## 印出來即可,不強求非 null。
+##
+## 🔴 第六十三批缺陷一修正(2026-09-24):畫完(_render_state)與拍照
+## (_attempt_capture)之間原本完全沒有等待,直接同一個 call stack 內連續執行。
+## 依本專案唯一成功從視窗拍到真實像素的前例
+## (prototypes/godot-specialist-hidden-window-feasibility-2026-09-24/probe_main.gd:40-42,91)
+## 補上「兩個 process_frame + 一個 RenderingServer.frame_post_draw」。
+## ⚠️ 但那支前例只在 windowed 執行過,本輪不准開窗，「frame_post_draw 在
+## --headless 的 dummy rendering driver 下是否保證觸發」沒有查證過——若答案是
+## 「不保證」，無條件 await 這個訊號會讓本檔重新變回本檔頭上一段記載過的那種
+## 「quit() 永遠不會被呼叫、行程卡住」問題,只是換一個位置發作。因此改成
+## _await_render_settle() 這個【有上限】的等待:先固定等 2 個 process_frame，
+## 再連上 frame_post_draw 訊號、但最多再等 10 個 frame 就放棄繼續往下走，不會
+## 無限期卡住。這是本輪的工程判斷，不是對前例的否定——若前例在 windowed 下
+## 訊號準時觸發，這裡的行為與前例完全等價（提早跳出迴圈）；若訊號沒觸發，本檔
+## 至少保證會印出一行提示並繼續往下執行、正常呼叫 quit()，不會懸掛。
+## 本檔已在 headless 下重跑驗證：加了這段等待之後仍然 EXIT=0（見更新後的
+## run_output_headless.txt）——這證明「不會懸掛」，不證明「windowed 下真的等到了
+## 有效畫面」，那一項本輪無法驗證，留給開窗那次確認。
 extends Node
 
 const SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const TARGET_UNIT_ID: int = 5  # 戊 —— vs01_affinity_links.txt 裡唯一沒有任何配對的單位
+
+var _frame_rendered: bool = false  # 供 _await_render_settle() 的有上限等待使用
 
 
 func _ready() -> void:
@@ -106,12 +126,12 @@ func _ready() -> void:
 	print("--- STATE A: legal (card_target_illegal = false) ---")
 	_render_state(board_view, state, target_cell, false)
 	var legal_lines: Array[PackedVector2Array] = _log_highlight_children(board_view)
-	_attempt_capture(world_viewport, "legal")
+	await _attempt_capture(world_viewport, "legal")
 
 	print("--- STATE B: illegal (card_target_illegal = true) ---")
 	_render_state(board_view, state, target_cell, true)
 	var illegal_lines: Array[PackedVector2Array] = _log_highlight_children(board_view)
-	_attempt_capture(world_viewport, "illegal")
+	await _attempt_capture(world_viewport, "illegal")
 
 	# 把真實引擎算出來的對角線端點連同宿主鏈物證一併存成 JSON——(三) 的
 	# 灰階比對腳本要讀這份檔案取樣座標,不得自己重算幾何。
@@ -227,9 +247,40 @@ func _log_highlight_children(board_view: BoardView) -> Array[PackedVector2Array]
 	return collected
 
 
+## 缺陷一修正:在「畫完」與「拍照」之間插入有上限的等待,讓 GPU/合成器有機會
+## 真的把上一步 render_pieces()/set_card_target_highlights() 畫出來的內容送進
+## world_viewport 的原生緩衝區。有上限（最多再等 10 個 frame）是刻意的——見檔頭
+## 說明,目的是即使 frame_post_draw 在 headless 下從不觸發，本函式也保證會繼續
+## 往下走，不會讓呼叫端永遠掛在這個 await 上。
+func _await_render_settle() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_frame_rendered = false
+	if not RenderingServer.frame_post_draw.is_connected(_on_frame_post_draw):
+		RenderingServer.frame_post_draw.connect(_on_frame_post_draw)
+	var waited_frames: int = 0
+	while not _frame_rendered and waited_frames < 10:
+		await get_tree().process_frame
+		waited_frames += 1
+	if not _frame_rendered:
+		print(
+			(
+				"  (frame_post_draw did not fire within 10 extra frames after the base 2 -- " +
+				"proceeding anyway. Expected under --headless per this round's ruling; if this " +
+				"prints during a WINDOWED run, that is new information and should be reported.)"
+			)
+		)
+
+
+func _on_frame_post_draw() -> void:
+	_frame_rendered = true
+
+
 ## 嘗試讀取 WorldViewport 的原生緩衝區像素——依 2026-09-23 已驗證的限制,
 ## headless 下這裡預期 get_image() 為 null。不強行處理成 error,只誠實印出來。
 func _attempt_capture(world_viewport: SubViewport, label: String) -> void:
+	await _await_render_settle()
+
 	var texture: ViewportTexture = world_viewport.get_texture()
 	if texture == null:
 		print("  CAPTURE[%s]: get_texture() itself returned null" % label)

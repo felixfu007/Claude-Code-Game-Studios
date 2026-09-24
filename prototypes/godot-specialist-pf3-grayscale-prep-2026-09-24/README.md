@@ -7,15 +7,51 @@
 現況——**這份文件曾經有一版寫著「(二)(三) 未動筆,零行程式碼」,那一版已經過時,
 被本次改寫取代,不要沿用那個說法。**
 
+## 🔴 第六十三批更新(2026-09-24):修了開窗前置查核抓到的三個缺陷
+
+管理者裁決「三項都先修再開窗」。三個缺陷、修法、與驗證狀態:
+
+1. **缺陷一(拍照前沒等畫面畫出來)** —— `extract_pf3_states.gd` 的 `_render_state()`
+   與 `_attempt_capture()` 之間原本零等待。已依本專案唯一成功從視窗拍到真實像素的前例
+   (`prototypes/godot-specialist-hidden-window-feasibility-2026-09-24/probe_main.gd:40-42,91`)
+   加上等待,但改成【有上限】的版本(見 `_await_render_settle()`):固定等 2 個
+   `process_frame`,再連上 `RenderingServer.frame_post_draw` 訊號、最多再等 10 個
+   frame 就放棄。**這是刻意偏離前例的工程判斷,不是否定前例**——原因見下方「已知未驗證
+   事項」。已 headless 重跑確認 `EXIT=0` 不受影響(見更新後的 `run_output_headless.txt`),
+   但**這只證明不會懸掛,不證明開窗時真的等到了有效畫面**。
+2. **缺陷二(取樣座標算錯,全部落在圖片外)** —— 選了「比對那一側改」,不改擷取那一側。
+   `diff_pf3_grayscale.gd` 原本把擷取到的原生 480×270 圖當成合成後的 960×540 視窗,多乘了
+   一個不該乘的 2 倍,導致取樣 y 座標(206~224 → 412~448)全部超出圖高 270,每一點都被
+   `push_error` + `continue` 跳過,最終印出看似正常的 `0 ok, 0 flagged`。修法是拿掉那個
+   乘法,並新增一道尺寸防呆(PNG 尺寸與 `world_viewport_size` 對不上就 `push_error` +
+   `quit(1)`),避免同類漂移再次靜默發生。詳見該檔「座標系轉換」段落。
+3. **缺陷三(灰階腳本沒有掛載場景,跑不起來)** —— 新增 `DiffPf3Grayscale.tscn`。
+
+**自測(硬性交件要求)已完成**:新增 `self_test_diff_pf3_grayscale.gd` +
+`SelfTestDiffPf3Grayscale.tscn`,用合成假影像(檔名 `self_test_synthetic_*`,刻意不叫
+`legal_state.png` / `illegal_state.png`)把 `diff_pf3_grayscale.gd` 完整跑過一次,headless
+`EXIT=0`,`8 ok, 4 flagged` —— pass 分支與 fail 分支都真的被觸發到,不是只證明沒當掉。
+原始輸出見 `run_output_self_test_SYNTHETIC_IMAGES_NOT_GAMEPLAY.txt`。
+⚠️ **這支自測本身第一次執行時因為兩個 typo(`_write_synthetic_geometry()` /
+`_write_synthetic_image()` 宣告 `-> bool` 但函式本體沒有在每條路徑都 `return` 一個
+布林值)導致 GDScript 解析失敗,而解析失敗的那次執行卡在主迴圈裡沒有呼叫任何
+`quit()`,行程懸掛,由協調者事後用 `tasklist` 發現兩個殘留的 `Godot_v4.7.1-stable_win64`
+行程並手動 `taskkill //F //T` 清掉。** 修好 typo 之後重跑,乾淨結束。這與 (二) 檔頭記載的
+「`-s` 寫法導致 `CursorStateHost` 編譯期失敗、行程懸掛」是同一種失效模式的第三次重演
+(壞掉的地方不同,共同點是「腳本在 `quit()` 之前就出錯,而出錯路徑沒有人替它呼叫
+`quit()`」)——記在這裡供下一個人參考,不是自我批評用的裝飾。
+
 ## 狀態總覽
 
 - [x] (一) 可行性查證 —— 結論「可行」。**混合等級**:單位 5(戊)無配對這件事有
       讀碼推論、有已讀取的真實資料檔內容、也有既有引擎測試(未在本輪重跑);
       `vs01_cards.txt` 的 8 張卡類別分佈已親自 `cat` 核實。逐條標明見下方。
 - [x] (二) 擷取腳本 —— **已寫、已跑,headless `EXIT=0`。** 選路 B(不是路 A),
-      證明範圍已縮小,見該節。
-- [x] (三) 灰階比對腳本 —— **已寫,但一次都沒執行過,連語法都沒驗過。** 通過門檻是
-      自己編的佔位數字。
+      證明範圍已縮小,見該節。**第六十三批已修缺陷一(拍照前等待),見上方更新節。**
+- [x] (三) 灰階比對腳本 —— **已寫,且已用合成假影像 headless 完整跑過一次
+      (`8 ok, 4 flagged`)。仍未對真的兩張 legal_state.png / illegal_state.png 執行過**
+      ——那兩個檔案只有開窗才會產生。通過門檻(`diff < 0.08`)仍是自己編的佔位數字,
+      未經真實畫面驗證。**第六十三批已修缺陷二(座標乘錯倍率)與缺陷三(缺場景檔)。**
 - [x] 給管理者 —— 可以給出完整指令;時間只有「確定小於 60 秒」這個粗略上界,
       沒有精確量測。
 
@@ -166,31 +202,43 @@ prototypes/.../ExtractPf3States.tscn`,不是 `-s`),`CursorStateHost` 正常解�
 
 ## (三) 灰階比對腳本
 
-**已寫,但一次都沒執行過,連語法都沒驗過。** 檔案:`diff_pf3_grayscale.gd`。
+**已寫,且已用合成假影像 headless 完整跑過一次。** 檔案:`diff_pf3_grayscale.gd` +
+`DiffPf3Grayscale.tscn`(第六十三批新增,修缺陷三)。**對真的兩張
+legal_state.png / illegal_state.png 仍未執行過**——那兩個檔案只有開窗才會產生。
 
 - 讀 `real_geometry.json` 取得 `illegal_mark_local_points`(真實對角線端點),在
   `y_local ∈ [206, 224]`(對應設計文件的格內相對 y ∈ [7, 25))這段範圍內用線性內插
-  取 6 個樣本點,轉換成 `legal_state.png` / `illegal_state.png` 的像素座標
-  (乘上 `world_container_size / world_viewport_size` 這個從 JSON 讀出來的真實比例,
-  不是寫死的倍率)。
+  取 6 個樣本點,轉換成 `legal_state.png` / `illegal_state.png` 的像素座標。
+  🔴 **第六十三批修缺陷二**:原本這裡還乘了 `world_container_size / world_viewport_size`
+  (=2),把擷取腳本拍到的原生 480×270 圖誤當成合成後的 960×540 視窗,y 座標算出
+  412~448、全部超出圖高 270,每個樣本都被跳過,最終印出看似正常的 `0 ok, 0 flagged`。
+  現在已拿掉那個乘法(`pixel_point = board_offset + local_point`),並在讀完兩張 PNG
+  後新增尺寸防呆:PNG 尺寸與 JSON 記的 `world_viewport_size` 對不上就 `push_error` +
+  `quit(1)`,不會再靜默印出「看起來沒事」的空結果。詳見檔案開頭「座標系轉換」段落。
 - 轉灰階(`Image.convert(Image.FORMAT_L8)`)後逐點比較兩張圖的灰階差,依設計文件
   (`design/art/hp-readout-contrast-fix.md` 第四節)分區:格內相對 y < 11 為
   「預期內差異小,可接受」,y ≥ 11 為「必須清楚可辨」。
 - 🔴 **`diff < 0.08` 這個通過門檻是我自己編的佔位數字,不是從設計文件或任何量測來的。**
   設計文件只說「清楚可辨」/「幾乎看不見」這種質性描述,沒有給浮點數門檻。腳本自己的
   註解已寫明「第一次真的跑出兩張 PNG 之後必須人眼核對這個門檻抓不抓得到真實邊界,
-  不能盲目相信這個數字」。
-- ⚠️ **本輪完全沒有執行過這支腳本一次**——不是「等 PNG 產生」這種被動阻塞,是連
-  `godot --headless --path . -s diff_pf3_grayscale.gd`(或包成 `.tscn`,依上面的執行
-  安全性教訓,應該也包成 `.tscn`)這種語法檢查層級的執行都沒有做過。腳本裡用到的
-  `Image.load_from_file()`、`JSON.parse_string()`、`Image.FORMAT_L8`、
-  `img.get_pixel(px,py).r` 這幾個 API 名稱與用法,**沒有對照
-  `docs/engine-reference/godot/deprecated-apis.md` 或 `breaking-changes.md` 核對過
-  4.7.1 是否有變動**——這是版本查證流程沒有走完的一個待辦,列為明確缺口,不是已完成項。
-- 依同一個「執行安全性」教訓推斷(未實測,只是類推):這支腳本如果不需要
-  `CursorStateHost`(它只讀 PNG/JSON,不 load BattleScreen.tscn),用 `-s` 直接跑
-  應該不會撞到同一個 `Identifier not found` 問題——**但這只是推斷,沒有實際跑過驗證**,
-  第一次執行前應該當成未知,照 (二) 的教訓先假設可能需要包成 `.tscn`。
+  不能盲目相信這個數字」。**合成假影像的自測無法驗證這個門檻對不對**——它只能證明
+  「diff 很大時判 ok、diff 接近 0 時判 flagged」這條邏輯有在執行,不能證明 0.08 這個
+  數字在真實遊戲灰階值上抓得準不準。
+- ✅ **第六十三批已用合成假影像完整跑過一次**(`self_test_diff_pf3_grayscale.gd` +
+  `SelfTestDiffPf3Grayscale.tscn`,headless,`EXIT=0`)。透過 (三) 新增的三個
+  `@export ..._override` 欄位把讀取路徑指向合成的 `self_test_synthetic_*.json/png`
+  ——**刻意不使用 `legal_state.png` / `illegal_state.png` 這兩個保留檔名**,那兩個
+  只留給開窗那次的真實證據。合成影像設計成兩條線各自的 CLEAR 區一大一小差異,結果
+  `8 ok, 4 flagged`——證明 pass 分支與 fail 分支都真的被執行到,不是只證明「沒當掉」。
+  原始輸出見同目錄 `run_output_self_test_SYNTHETIC_IMAGES_NOT_GAMEPLAY.txt`。
+  ⚠️ 腳本裡用到的 `Image.load_from_file()`、`JSON.parse_string()`、`Image.FORMAT_L8`、
+  `Image.create()`、`Image.fill_rect()`、`img.get_pixel(px,py).r`、
+  `RenderingServer.frame_post_draw` 這幾個 API,**沒有對照
+  `docs/engine-reference/godot/deprecated-apis.md` 或 `breaking-changes.md` 逐條核對過
+  4.7.1 是否有變動**(已用 grep 確認這些字串未出現在該兩份文件裡,亦即沒有被列為
+  已知變更項,但這不等於逐條核對過官方文件)——列為明確缺口,不是已完成項。這些都是
+  自測與 headless 重跑實際執行成功的 API,行為已透過執行本身間接驗證,只是版本文件
+  比對這一步沒有另外走一遍。
 
 ## 給管理者
 
@@ -217,3 +265,16 @@ prototypes/.../ExtractPf3States.tscn`,不是 `-s`),`CursorStateHost` 正常解�
   `.claude/docs/coding-standards.md` Check 5)——尤其是「整條 X 是否仍讀得出是一個
   完整的叉」與「壓暗會不會被誤讀成其他狀態」這兩點,協調者與 `art-director` 的
   分歧就是留給這一步人眼判斷的。
+  🔴 **`legal_state.png` / `illegal_state.png` 是原生 480×270 的小圖,一般看圖軟體
+  用預設縮放開起來會很小、看不清楚。** `diff_pf3_grayscale.gd` 執行時會印一行
+  `HUMAN REVIEW HINT`,給出建議的放大檢視像素範圍(依真實對角線端點算出的
+  bounding box + 10px 邊界)——**開圖時請放大到 400% 以上,對準那個範圍看**,
+  不要用預設縮放掃過整張小圖。
+- ⚠️ **若開窗執行 (二) 時,log 印出
+  `frame_post_draw did not fire within 10 extra frames after the base 2 -- proceeding
+  anyway`,這行本身就是警訊,應該回報,不要略過。** 本輪 headless 重跑已確認這行
+  在 headless 下必然出現(dummy rendering driver 不觸發這個訊號),但開窗執行走的是
+  真實 GPU 路徑,理論上訊號應該準時觸發、這行不該出現。若開窗時仍然印出這行,代表
+  「等 10 個 frame 都等不到一次真實渲染完成訊號」這件事在真實 GPU 環境下也發生了,
+  意味著拍到的 PNG 有更高機率是「畫一半」或「上一態殘留」的畫面,不能直接信任——
+  應該連同這行一起回報,而不是只看有沒有 EXIT=0。

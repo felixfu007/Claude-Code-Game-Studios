@@ -1,0 +1,21 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== P-F3 grayscale diff ===
+  paths: geometry=res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/real_geometry.json legal=res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/legal_state.png illegal=res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/illegal_state.png
+  NOTE: world_container_size=(960.0, 540.0) world_viewport_size=(480.0, 270.0) (ratio=(2.0, 2.0)) -- this ratio is the nearest-integer upscale factor used when compositing the world layer into the full window. It is NOT applied below: legal/illegal PNGs are the native SubViewport buffer (world_viewport_size), not the composited window. See file header, batch-63 defect-2 note.
+  HUMAN REVIEW HINT: legal_state.png / illegal_state.png are the native 480x270 SubViewport buffer -- too small to judge at 1:1 in a normal image viewer. Open both at >=400% zoom and focus on pixel rect roughly x=[29,67] y=[196,234] (the illegal-mark bounding box plus 10px padding) -- confirm the X still reads as a complete X and the HP-backing colour difference is legible, not just the diff numbers printed below.
+  sample cell_y=7.0 px=(39,206) zone=OVERLAP(可接受幾乎看不見) legal_gray=0.102 illegal_gray=0.094 diff=0.008
+  sample cell_y=10.6 px=(43,210) zone=OVERLAP(可接受幾乎看不見) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+  sample cell_y=14.2 px=(46,213) zone=CLEAR(必須清楚可辨) legal_gray=0.678 illegal_gray=0.965 diff=0.286
+  sample cell_y=17.8 px=(50,217) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+  sample cell_y=21.4 px=(53,220) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+  sample cell_y=25.0 px=(57,224) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.361 diff=0.000
+  sample cell_y=7.0 px=(57,206) zone=OVERLAP(可接受幾乎看不見) legal_gray=0.102 illegal_gray=0.035 diff=0.067
+  sample cell_y=10.6 px=(53,210) zone=OVERLAP(可接受幾乎看不見) legal_gray=0.365 illegal_gray=0.933 diff=0.569
+  sample cell_y=14.2 px=(50,213) zone=CLEAR(必須清楚可辨) legal_gray=0.918 illegal_gray=0.992 diff=0.075
+  sample cell_y=17.8 px=(46,217) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+  sample cell_y=21.4 px=(43,220) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+  sample cell_y=25.0 px=(39,224) zone=CLEAR(必須清楚可辨) legal_gray=0.361 illegal_gray=0.933 diff=0.573
+=== summary: 10 ok, 2 flagged (see zone/diff above) ===
+🔴 REMINDER: per coding-standards.md Check 5 and this design doc's own step 4, a human opening both PNGs and confirming the X still reads as a complete X is MANDATORY and NOT replaced by this script's pass/fail count.
+EXIT=0

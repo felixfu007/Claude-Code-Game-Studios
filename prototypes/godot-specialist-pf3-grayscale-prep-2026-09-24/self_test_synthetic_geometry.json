@@ -1,0 +1,46 @@
+{
+  "board_view_global_position": [
+    0.0,
+    0.0
+  ],
+  "illegal_mark_local_points": [
+    [
+      [
+        10.0,
+        50.0
+      ],
+      [
+        10.0,
+        68.0
+      ]
+    ],
+    [
+      [
+        30.0,
+        50.0
+      ],
+      [
+        30.0,
+        68.0
+      ]
+    ]
+  ],
+  "note": "SYNTHETIC self-test fixture -- NOT real engine output. Written by self_test_diff_pf3_grayscale.gd (batch 63). Two vertical line-pairs at x=10 and x=30, both spanning local y 50..68, chosen to exercise both the pass branch and the fail branch of diff_pf3_grayscale.gd's CLEAR-zone check.",
+  "target_cell": [
+    0,
+    5
+  ],
+  "world_container_position": [
+    0.0,
+    0.0
+  ],
+  "world_container_size": [
+    960.0,
+    540.0
+  ],
+  "world_container_stretch_shrink": 2,
+  "world_viewport_size": [
+    480,
+    270
+  ]
+}

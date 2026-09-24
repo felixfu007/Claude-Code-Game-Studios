@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/self_test_diff_pf3_grayscale.gd" id="1_selftest"]
+
+[node name="SelfTestDiffPf3Grayscale" type="Node"]
+script = ExtResource("1_selftest")
