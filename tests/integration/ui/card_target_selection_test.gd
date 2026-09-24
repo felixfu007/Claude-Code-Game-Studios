@@ -192,6 +192,72 @@ func test_card_target_highlight_layer_draws_above_pieces_and_below_stats() -> vo
 	).is_less(stats_index)
 
 
+## 敏感度證明用的間諜子類別 —— 覆寫 _ready()，把
+## $CardTargetHighlightLayer（已由 @onready 解析完畢，見 board_view.gd 該欄位
+## 宣告，已實讀本體確認 CardTargetHighlightLayer 是 .tscn 內靜態節點、非動態
+## 建構）整個移除，模擬「場景檔被改壞、圖層消失」這個回歸。set_script() 在
+## add_child() 之前呼叫 —— Case A（test-standards.md 已驗證安全）。
+## 🔴 紙面設計原寫「覆寫 _ready() 時先呼叫 super._ready()」——engine 實測推翻:
+## BoardView 本身沒有定義 _ready()（直接 extends Node2D），Godot 4.7.1 對此報
+## Parse Error:「Cannot call the parent class' virtual function "_ready()"
+## because it hasn't been defined.」（本檔案曾在此處實際觸發過，已移除該呼叫
+## 更正)。@onready 欄位的初始化是引擎在呼叫使用者 _ready() 之前完成的，不需要
+## 呼叫 super 才會生效，故省略 super._ready() 不影響本注入手法的正確性。
+class _MutantBoardViewNoHighlightLayer extends BoardView:
+	func _ready() -> void:
+		var layer: Node = get_node_or_null("CardTargetHighlightLayer")
+		if layer != null:
+			remove_child(layer)
+			layer.queue_free()
+
+
+func test_sensitivity_proof_card_target_highlight_layer_missing_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantBoardViewNoHighlightLayer)
+	add_child(instance)
+
+	# Act
+	var node: Node = instance.get_node_or_null("CardTargetHighlightLayer")
+
+	# Assert —— mutant 移除了節點，證明
+	# test_card_target_highlight_layer_node_resolves_with_correct_type() 的
+	# is_not_null() 斷言會抓到節點消失
+	assert_object(node).append_failure_message(
+		"mutant 應該已經移除 CardTargetHighlightLayer 節點——若這裡量到非 null，"
+		+ "代表本注入手法本身有問題，不是在證明想證明的事"
+	).is_null()
+
+
+## 同上 Case A 時機，同上 super._ready() 更正（BoardView 未定義 _ready()，不可
+## 呼叫 super._ready()）。覆寫 _ready()，把 CardTargetHighlightLayer 強制移到
+## 最前面（index 0，疊在 PiecesLayer 之下），模擬「疊層順序被改壞」這個回歸。
+class _MutantBoardViewWrongLayerOrder extends BoardView:
+	func _ready() -> void:
+		var layer: Node = get_node_or_null("CardTargetHighlightLayer")
+		if layer != null:
+			move_child(layer, 0)
+
+
+func test_sensitivity_proof_card_target_highlight_layer_wrong_order_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantBoardViewWrongLayerOrder)
+	add_child(instance)
+
+	# Act
+	var pieces_index: int = instance.get_node("PiecesLayer").get_index()
+	var card_target_index: int = instance.get_node("CardTargetHighlightLayer").get_index()
+
+	# Assert —— mutant 把圖層移到最前面（index 0），index 必然小於 PiecesLayer，
+	# 證明 test_card_target_highlight_layer_draws_above_pieces_and_below_stats() 的
+	# is_greater(pieces_index) 斷言會抓到疊層順序被改壞
+	assert_int(card_target_index).append_failure_message(
+		"mutant 應該已經把 CardTargetHighlightLayer 移到最前面（index 0），index 應" +
+		"小於 PiecesLayer，若這裡量到相反，代表本注入手法本身有問題"
+	).is_less(pieces_index)
+
+
 # ─── set_card_target_highlights() —— 合法/不合法/清空 ──────────────────────────
 
 
@@ -255,6 +321,114 @@ func _count_line2d_descendants(node: Node) -> int:
 	for child: Node in node.get_children():
 		count += _count_line2d_descendants(child)
 	return count
+
+
+## 三支 set_card_target_highlights() 敏感度證明用的間諜子類別。set_card_target_highlights
+## 是一般 instance method（已讀簽章與本體，board_view.gd:399-407），覆寫不涉及
+## _ready() 時機，直接呼叫真實私有 helper（_clear_children()/_build_card_target_outline()/
+## _build_card_target_illegal_mark()，已讀本體確認存在且無底線前綴以外的存取限制）
+## 只是刻意省略/跳過其中一部分呼叫，模擬對應的回歸。
+
+
+## 刻意的回歸：完全略過 legal_cells，只處理 illegal_cells。
+class _MutantHighlightsDrawsNothingForLegal extends BoardView:
+	func set_card_target_highlights(
+		_legal_cells: Array[Vector2i], illegal_cells: Array[Vector2i]
+	) -> void:
+		_clear_children(_card_target_highlight_layer)
+		for cell: Vector2i in illegal_cells:
+			_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+			_card_target_highlight_layer.add_child(_build_card_target_illegal_mark(cell))
+
+
+func test_sensitivity_proof_set_card_target_highlights_legal_cells_skipped_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantHighlightsDrawsNothingForLegal)
+	add_child(instance)
+	var layer: Node2D = instance.get_node("CardTargetHighlightLayer")
+
+	# Act
+	instance.set_card_target_highlights([Vector2i(1, 1), Vector2i(3, 2)], [])
+
+	# Assert —— mutant 完全略過 legal_cells，子節點數應為 0（非預期 2），證明
+	# test_set_card_target_highlights_draws_one_outline_root_per_legal_cell() 的
+	# is_equal(2) 斷言會抓到合法格漏畫
+	assert_int(layer.get_child_count()).append_failure_message(
+		"mutant 應該完全不畫 legal_cells，子節點數應為 0，若這裡量到 2，代表本注入" +
+		"手法本身有問題，不是在證明想證明的事"
+	).is_equal(0)
+
+
+## 刻意的回歸：不合法格只畫外框，省略 X 記號那一支呼叫。
+class _MutantHighlightsIllegalMissingXMark extends BoardView:
+	func set_card_target_highlights(
+		legal_cells: Array[Vector2i], illegal_cells: Array[Vector2i]
+	) -> void:
+		_clear_children(_card_target_highlight_layer)
+		for cell: Vector2i in legal_cells:
+			_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+		for cell: Vector2i in illegal_cells:
+			_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+
+
+func test_sensitivity_proof_set_card_target_highlights_illegal_x_mark_missing_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantHighlightsIllegalMissingXMark)
+	add_child(instance)
+	var layer: Node2D = instance.get_node("CardTargetHighlightLayer")
+
+	# Act
+	instance.set_card_target_highlights([], [Vector2i(2, 2)])
+
+	# Assert —— mutant 省略 X 記號那支呼叫，Line2D 數量應為 0（非預期 2），證明
+	# test_set_card_target_highlights_illegal_cells_get_outline_plus_x_mark() 的
+	# is_equal(2) 斷言會抓到 X 記號漏畫
+	var line_count: int = 0
+	for child: Node in layer.get_children():
+		line_count += _count_line2d_descendants(child)
+	assert_int(line_count).append_failure_message(
+		"mutant 應該省略 X 記號，Line2D 數量應為 0，若這裡量到 2，代表本注入手法" +
+		"本身有問題"
+	).is_equal(0)
+
+
+## 刻意的回歸：legal_cells 與 illegal_cells 皆空時直接 return，不清空既有子節點。
+class _MutantHighlightsClearSkippedWhenBothEmpty extends BoardView:
+	func set_card_target_highlights(
+		legal_cells: Array[Vector2i], illegal_cells: Array[Vector2i]
+	) -> void:
+		if legal_cells.is_empty() and illegal_cells.is_empty():
+			return
+		_clear_children(_card_target_highlight_layer)
+		for cell: Vector2i in legal_cells:
+			_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+		for cell: Vector2i in illegal_cells:
+			_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+			_card_target_highlight_layer.add_child(_build_card_target_illegal_mark(cell))
+
+
+func test_sensitivity_proof_set_card_target_highlights_clear_skipped_when_both_empty_regression_detected() -> void:
+	# Arrange
+	var instance: BoardView = auto_free(load(_BOARD_VIEW_SCENE_PATH).instantiate())
+	instance.set_script(_MutantHighlightsClearSkippedWhenBothEmpty)
+	add_child(instance)
+	var layer: Node2D = instance.get_node("CardTargetHighlightLayer")
+	instance.set_card_target_highlights([Vector2i(0, 0)], [Vector2i(1, 1)])
+	assert_int(layer.get_child_count()).append_failure_message(
+		"PRECONDITION: mutant 建構初始高亮失敗——夾具本身有問題，不是在驗證回歸"
+	).is_greater(0)
+
+	# Act
+	instance.set_card_target_highlights([], [])
+
+	# Assert —— mutant 遇兩者皆空時直接 return（不清空），殘留節點應仍大於 0，證明
+	# test_set_card_target_highlights_with_two_empty_arrays_clears_the_layer() 的
+	# is_equal(0) 斷言會抓到清空失敗
+	assert_int(layer.get_child_count()).append_failure_message(
+		"mutant 應該保留殘影（不清空），若這裡量到 0，代表本注入手法本身有問題"
+	).is_greater(0)
 
 
 # ─── render_pieces() —— HP 讀出對比度修復(design/art/hp-readout-contrast-fix.md
@@ -717,6 +891,77 @@ func test_cancel_from_s2q_returns_to_s2p_not_s1() -> void:
 	).is_equal([3, 4])
 
 
+## 敏感度證明用的間諜子類別 —— _handle_target_selection_cancel_transition() 為
+## 一般 instance method(已讀簽章,battle_screen.gd:1747),覆寫不涉及 _ready() 時機。
+## 刻意的回歸:忽略 _controller.legal_targets() 的真實回傳值,無條件執行「回 S1」
+## 那組欄位賦值,模擬「S2q 取消誤退回 S1」這個回歸。
+class _MutantAlwaysCancelToS1 extends BattleScreen:
+	func _handle_target_selection_cancel_transition() -> void:
+		_card_selecting_from_hand = true
+		_card_selecting_target = false
+
+
+func test_sensitivity_proof_cancel_from_s2q_wrong_transition_regression_detected() -> void:
+	# Arrange —— 複製真測試的完整 Arrange(丙類卡、開手牌、選兩個目標走到 S2q),
+	# 唯一差異是把腳本換成 mutant
+	var instance: BattleScreen = auto_free(load(_BATTLE_SCREEN_SCENE_PATH).instantiate())
+	instance.set_script(_MutantAlwaysCancelToS1)
+	add_child(instance)
+
+	var card: Card = Card.new_permanent_affinity_write("test_card_c3c4", 3, 4, -2)
+	var cards: Array[Card] = [card]
+	var deck: CardDeck = CardDeck.new(cards)
+	deck.deal_opening_hand()
+
+	var link: AffinityLink = AffinityLink.new()
+	link.unit_a = 3
+	link.unit_b = 4
+	link.polarity = AffinityLink.Polarity.NEGATIVE
+	link.amp = 1
+	var links: Array[AffinityLink] = [link]
+
+	var session: CardPlaySession = CardPlaySession.new(
+		deck, instance._state, links, NullAffinityWritePort.new()
+	)
+	instance._controller._card_play_session = session
+
+	assert_bool(instance._controller.open_hand()).append_failure_message(
+		"PRECONDITION: open_hand() 失敗——夾具本身有問題,不是本測試要驗的行為"
+	).is_true()
+	assert_bool(instance._controller.select_card(card)).append_failure_message(
+		"PRECONDITION: select_card() 失敗——夾具的 CardDeck/CardPlaySession 沒接對"
+	).is_true()
+	assert_bool(instance._controller.select_target(3)).append_failure_message(
+		"PRECONDITION: select_target(3) 失敗——無法進入 S2q"
+	).is_true()
+	assert_int(session.step()).append_failure_message(
+		"PRECONDITION: 選完第一個目標後應進入 SELECTING_TARGET_B(S2q = %d),實得 %d"
+		% [CardPlaySession.Step.SELECTING_TARGET_B, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET_B)
+
+	instance._card_selecting_from_hand = false
+	instance._card_selecting_target = true
+
+	# Act
+	assert_bool(instance._controller.cancel()).append_failure_message(
+		"PRECONDITION: BattleController.cancel() 本身被閘門擋下——與本測試要驗的" +
+		"行為無關"
+	).is_true()
+	instance._handle_target_selection_cancel_transition()
+
+	# Assert —— mutant 無條件執行「回 S1」那組賦值，證明真測試
+	# assert_bool(instance._card_selecting_from_hand).is_false() 這條斷言會抓到
+	# S2q 取消誤退回 S1
+	assert_bool(instance._card_selecting_from_hand).append_failure_message(
+		"mutant 應該無條件把 _card_selecting_from_hand 設成 true（模擬誤退回 S1），" +
+		"若這裡量到 false，代表本注入手法本身有問題"
+	).is_true()
+	assert_bool(instance._card_selecting_target).append_failure_message(
+		"mutant 應該無條件把 _card_selecting_target 設成 false，若這裡量到 true，" +
+		"代表本注入手法本身有問題"
+	).is_false()
+
+
 # ─── _TargetRetargetActor.process_priority —— ADR-0005 機制六②的開區間義務 ──────
 #
 # battle_screen.gd 的 doc comment 自己寫明:角色② 需要 process_priority 嚴格大於 -100、
@@ -745,6 +990,42 @@ func test_target_retarget_actor_priority_falls_inside_the_mandated_open_interval
 			+ "的 100 或其他保留區間),實得 %d"
 		) % priority
 	).is_less(-25)
+
+
+## 敏感度證明用的間諜子類別 —— BattleScreen 自己定義了 _ready()(已讀本體,
+## battle_screen.gd:643),與 BoardView 不同,故此處 super._ready() 呼叫合法
+## (上面 #1/#2 兩個 BoardView mutant 已實測 super._ready() 在「基底類別未定義
+## _ready()」時會是 Parse Error,此處不適用,因為 BattleScreen 確實定義了)。
+## 覆寫 _ready():呼叫 super._ready() 讓真實建構流程（含 _target_retarget_actor
+## 本身)先跑完,再把 process_priority 覆寫成落在開區間外的值,模擬「優先序被
+## 改到區間外」這個回歸。
+class _MutantWrongRetargetPriority extends BattleScreen:
+	func _ready() -> void:
+		super._ready()
+		_target_retarget_actor.process_priority = -10
+
+
+func test_sensitivity_proof_target_retarget_actor_priority_out_of_interval_regression_detected() -> void:
+	# Arrange
+	var instance: BattleScreen = auto_free(load(_BATTLE_SCREEN_SCENE_PATH).instantiate())
+	instance.set_script(_MutantWrongRetargetPriority)
+	add_child(instance)
+	var actor: Node = instance._target_retarget_actor
+
+	# Act
+	assert_object(actor).append_failure_message(
+		"PRECONDITION: mutant 的 _ready() 應該仍然建構出 _target_retarget_actor" +
+		"（super._ready() 呼叫失敗?)"
+	).is_not_null()
+	var priority: int = actor.process_priority
+
+	# Assert —— mutant 把 process_priority 改到 -10（落在 (-100,-25) 開區間之外），
+	# 證明 test_target_retarget_actor_priority_falls_inside_the_mandated_open_interval()
+	# 的 is_less(-25) 斷言會抓到優先序被改到區間外
+	assert_int(priority).append_failure_message(
+		"mutant 應該把 process_priority 改成 -10（落在合法開區間之外），若這裡量到" +
+		"仍在 (-100,-25) 開區間內，代表本注入手法本身有問題"
+	).is_greater_equal(-25)
 
 
 # ─── cursor_navigate() —— 純函式邊界行為(只查 BoardCoords.is_in_bounds()）───────
@@ -827,6 +1108,100 @@ func test_cursor_navigate_off_bottom_edge_returns_null() -> void:
 	assert_object(result).append_failure_message(
 		"從最下列再往下應該越界,cursor_navigate() 應回傳 null,實得 %s" % [result]
 	).is_null()
+
+
+## #19 敏感度證明用的間諜子類別 —— cursor_navigate() 為一般 instance method
+## （已讀本體,battle_screen.gd:1590-1594）,覆寫不涉及 _ready() 時機。刻意的回歸：
+## 合法移動仍檢查邊界,但編碼前把 x/y 對調。
+class _MutantCursorNavigateWrongEncode extends BattleScreen:
+	func cursor_navigate(from_id: int, direction: Vector2i) -> Variant:
+		var from_cell: Vector2i = CursorTypes.decode_tile(from_id, BoardCoords.BOARD_COLS)
+		var to_cell: Vector2i = from_cell + direction
+		if not BoardCoords.is_in_bounds(to_cell):
+			return null
+		return CursorTypes.encode_tile(Vector2i(to_cell.y, to_cell.x), BoardCoords.BOARD_COLS)
+
+
+func test_sensitivity_proof_cursor_navigate_wrong_encode_regression_detected() -> void:
+	# Arrange
+	var instance: BattleScreen = auto_free(load(_BATTLE_SCREEN_SCENE_PATH).instantiate())
+	instance.set_script(_MutantCursorNavigateWrongEncode)
+	add_child(instance)
+	var from_id: int = CursorTypes.encode_tile(Vector2i(5, 2), BoardCoords.BOARD_COLS)
+
+	# Act
+	var result: Variant = instance.cursor_navigate(from_id, Vector2i(1, 0))
+
+	# Assert —— mutant 把落點座標對調後才編碼，結果應不等於正確編碼，證明
+	# test_cursor_navigate_moves_within_bounds_returns_encoded_tile_id() 的
+	# is_equal(expected_id) 斷言會抓到編碼邏輯被改壞
+	var expected_id: int = CursorTypes.encode_tile(Vector2i(6, 2), BoardCoords.BOARD_COLS)
+	assert_int(result).append_failure_message(
+		(
+			"mutant 應該把座標對調後才編碼、得到與正確編碼 %d 不同的值，若這裡量到" +
+			"相同，代表本注入手法本身有問題"
+		) % expected_id
+	).is_not_equal(expected_id)
+
+
+## #20-23 共用的間諜子類別 —— 刻意的回歸：省略 BoardCoords.is_in_bounds() 檢查，
+## 改用 clampi() 把落點夾回合法範圍內再編碼。不直接把越界座標餵給
+## CursorTypes.encode_tile()（該函式自己的 assert() 前置條件在斷言失敗時會讓函式
+## 回傳 0——見 .claude/docs/coding-standards.md 對 assert() 失敗行為的記載——那樣
+## 反而會讓 mutant 在某些情境下「看起來」還是回傳了一個值，機制上仍成立，但為免
+## 混淆改用 clamp，同樣達到「邊界檢查被繞過、恆不回傳 null」的效果）。
+class _MutantCursorNavigateOffByOne extends BattleScreen:
+	func cursor_navigate(from_id: int, direction: Vector2i) -> Variant:
+		var from_cell: Vector2i = CursorTypes.decode_tile(from_id, BoardCoords.BOARD_COLS)
+		var to_cell: Vector2i = from_cell + direction
+		var clamped: Vector2i = Vector2i(
+			clampi(to_cell.x, 0, BoardCoords.BOARD_COLS - 1),
+			clampi(to_cell.y, 0, BoardCoords.BOARD_ROWS - 1)
+		)
+		return CursorTypes.encode_tile(clamped, BoardCoords.BOARD_COLS)
+
+
+func test_sensitivity_proof_cursor_navigate_bounds_regression_detected() -> void:
+	# Arrange
+	var instance: BattleScreen = auto_free(load(_BATTLE_SCREEN_SCENE_PATH).instantiate())
+	instance.set_script(_MutantCursorNavigateOffByOne)
+	add_child(instance)
+
+	# Act / Assert —— 四個方向各自越界，逐一證明對應真測試的 is_null() 斷言會抓到
+	# 邊界檢查被繞過(#20 左、#21 右、#22 上、#23 下)。
+	# 🔴 紙面設計原用 assert_object(...).is_not_null() —— engine 實測推翻:mutant
+	# 繞過邊界後回傳的是 int（編碼後的 tile id），不是 Object，GdUnit4 的
+	# assert_object() 對原生型別直接報「inital error, unexpected type <int>」，
+	# 與斷言方向無關就先紅了（已實際觸發過，見任務報告）。改用 assert_bool() 比較
+	# 是否等於 null，對任何 Variant 型別都成立。
+	var left_id: int = CursorTypes.encode_tile(Vector2i(0, 0), BoardCoords.BOARD_COLS)
+	var left_result: Variant = instance.cursor_navigate(left_id, Vector2i(-1, 0))
+	assert_bool(left_result != null).append_failure_message(
+		"mutant 應該繞過左邊界檢查、回傳非 null，若這裡量到 null，代表本注入手法" +
+		"本身有問題——證明 #20 的 is_null() 斷言會抓到邊界檢查被繞過"
+	).is_true()
+
+	var right_id: int = CursorTypes.encode_tile(
+		Vector2i(BoardCoords.BOARD_COLS - 1, 0), BoardCoords.BOARD_COLS
+	)
+	var right_result: Variant = instance.cursor_navigate(right_id, Vector2i(1, 0))
+	assert_bool(right_result != null).append_failure_message(
+		"mutant 應該繞過右邊界檢查、回傳非 null——證明 #21 的 is_null() 斷言會抓到"
+	).is_true()
+
+	var top_id: int = CursorTypes.encode_tile(Vector2i(0, 0), BoardCoords.BOARD_COLS)
+	var top_result: Variant = instance.cursor_navigate(top_id, Vector2i(0, -1))
+	assert_bool(top_result != null).append_failure_message(
+		"mutant 應該繞過上邊界檢查、回傳非 null——證明 #22 的 is_null() 斷言會抓到"
+	).is_true()
+
+	var bottom_id: int = CursorTypes.encode_tile(
+		Vector2i(0, BoardCoords.BOARD_ROWS - 1), BoardCoords.BOARD_COLS
+	)
+	var bottom_result: Variant = instance.cursor_navigate(bottom_id, Vector2i(0, 1))
+	assert_bool(bottom_result != null).append_failure_message(
+		"mutant 應該繞過下邊界檢查、回傳非 null——證明 #23 的 is_null() 斷言會抓到"
+	).is_true()
 
 
 # ─── _input()/_process() 讀取時機 —— Implementation Note #1 的原始碼紀律掃描 ────
@@ -1098,6 +1473,95 @@ func test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected(
 		"確認被拒絕不應該改變合法目標集合,實得 %s,預期與拒絕前相同 %s"
 		% [instance._controller.legal_targets(), legal_targets_before]
 	).is_equal(legal_targets_before)
+
+
+## 敏感度證明用的間諜子類別 —— CardPlaySession 是 RefCounted、非 Node(已讀類別
+## 宣告,card_play_session.gd:61-62),覆寫不涉及 _ready() 時機,連 Case A 疑慮都
+## 不適用(直接欄位替換)。已讀 select_target() 本體(card_play_session.gd:211 起,
+## 見上方文件)確認除了 phase/legality 檢查與三個私有欄位賦值之外沒有其他外部可見
+## 副作用,故完全覆寫是安全的。刻意的回歸:略過 legal_targets().has(unit_id) 這道
+## 合法性檢查。
+class _MutantCardPlaySessionSkipsLegalityCheck extends CardPlaySession:
+	func select_target(unit_id: int) -> bool:
+		if _step != Step.SELECTING_TARGET:
+			return false
+		_selected_target_a = unit_id
+		if _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
+			_step = Step.SELECTING_TARGET_B
+		else:
+			_step = Step.CONFIRMING
+		return true
+
+
+func test_sensitivity_proof_illegal_tile_confirm_legality_check_skipped_regression_detected() -> void:
+	# Arrange —— 複製真測試的 Arrange(甲類卡、開手牌、選卡),換掉 session 為 mutant
+	var instance: BattleScreen = _fresh_instance()
+
+	var card: Card = Card.new_temporary_stat_modifier("test_card_atk_buff", 1, 0, 1)
+	var cards: Array[Card] = [card]
+	var deck: CardDeck = CardDeck.new(cards)
+	deck.deal_opening_hand()
+
+	var links: Array[AffinityLink] = []
+	var session: CardPlaySession = _MutantCardPlaySessionSkipsLegalityCheck.new(
+		deck, instance._state, links, NullAffinityWritePort.new()
+	)
+	instance._controller._card_play_session = session
+
+	assert_bool(instance._controller.open_hand()).append_failure_message(
+		"PRECONDITION: open_hand() 失敗——夾具本身有問題,不是本測試要驗的行為"
+	).is_true()
+	assert_bool(instance._controller.select_card(card)).append_failure_message(
+		"PRECONDITION: select_card() 失敗——夾具的 CardDeck/CardPlaySession 沒接對"
+	).is_true()
+	assert_int(session.step()).append_failure_message(
+		"PRECONDITION: 選完甲類卡後應進入 SELECTING_TARGET(S2 = %d),實得 %d"
+		% [CardPlaySession.Step.SELECTING_TARGET, session.step()]
+	).is_equal(CardPlaySession.Step.SELECTING_TARGET)
+
+	var enemy_units: Array[Unit] = instance._state.units_of(Unit.Faction.ENEMY)
+	assert_int(enemy_units.size()).append_failure_message(
+		"PRECONDITION: vs01_roster.txt 應該至少有 1 個敵方單位,實得 0——資料檔變動了?"
+	).is_greater(0)
+	var enemy_unit: Unit = enemy_units[0]
+	var enemy_cell: Vector2i = instance._state.position_of(enemy_unit.id)
+	var enemy_tile_id: int = CursorTypes.encode_tile(enemy_cell, BoardCoords.BOARD_COLS)
+
+	instance._card_selecting_from_hand = false
+	instance._card_selecting_target = true
+
+	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(
+		CursorTypes.SurfaceType.BOARD_TILE, instance
+	)
+	assert_int(register_result).append_failure_message(
+		(
+			"PRECONDITION: CursorStateHost.register_surface(BOARD_TILE) 沒有回傳 REGISTERED"
+			+ "(實得 %s)——是不是上一支測試沒清乾淨,或本次呼叫本身有誤?"
+		) % register_result
+	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+	var set_result: CursorState.SetTargetResult = CursorStateHost.set_target(
+		CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, enemy_tile_id)
+	)
+	assert_int(set_result).append_failure_message(
+		(
+			"PRECONDITION: CursorStateHost.set_target() 沒有回傳 APPLIED(實得 %s)——"
+			+ "surface 是否真的註冊成功?"
+		) % set_result
+	).is_equal(CursorState.SetTargetResult.APPLIED)
+
+	# Act —— 對準敵方單位（甲類卡的不合法目標）呼叫真正的確認消費方法
+	instance._apply_target_confirm_from_cursor_state()
+
+	# Assert —— mutant 略過合法性檢查，session 應該已經前進到 CONFIRMING（不再停在
+	# SELECTING_TARGET），證明 test_illegal_tile_reachable_by_directional_navigation_
+	# but_confirm_rejected() 的 is_equal(SELECTING_TARGET) 斷言會抓到合法性檢查被繞過
+	assert_int(session.step()).append_failure_message(
+		(
+			"mutant 應該已經略過合法性檢查、前進到 CONFIRMING(%d)，若這裡量到仍是" +
+			" SELECTING_TARGET(%d)，代表本注入手法本身有問題"
+		) % [CardPlaySession.Step.CONFIRMING, CardPlaySession.Step.SELECTING_TARGET]
+	).is_not_equal(CardPlaySession.Step.SELECTING_TARGET)
 
 
 # ─── 敏感度證明 ────────────────────────────────────────────────────────────────

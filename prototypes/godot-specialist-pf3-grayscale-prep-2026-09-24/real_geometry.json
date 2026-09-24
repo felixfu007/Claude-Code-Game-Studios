@@ -1,0 +1,46 @@
+{
+  "board_view_global_position": [
+    0.0,
+    0.0
+  ],
+  "illegal_mark_local_points": [
+    [
+      [
+        39.0,
+        206.0
+      ],
+      [
+        57.0,
+        224.0
+      ]
+    ],
+    [
+      [
+        57.0,
+        206.0
+      ],
+      [
+        39.0,
+        224.0
+      ]
+    ]
+  ],
+  "note": "illegal_mark_local_points 是 _build_card_target_illegal_mark() 真實建出的 Line2D.points,座標系與 board_view.global_transform 一致(這裡是恆等變換，見同一次 log 的 BoardView.global_transform)。要換算成擷取到的 PNG 像素座標，乘上 world_container.size / world_viewport.size 這個真實比例（這裡是整數 stretch_shrink 的倒數），不要另外假設一個縮放倍率。",
+  "target_cell": [
+    0,
+    5
+  ],
+  "world_container_position": [
+    0.0,
+    0.0
+  ],
+  "world_container_size": [
+    960.0,
+    540.0
+  ],
+  "world_container_stretch_shrink": 2,
+  "world_viewport_size": [
+    480,
+    270
+  ]
+}

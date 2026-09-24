@@ -38,6 +38,12 @@
 # 為什麼不能用注入(在記憶體裡塞假的 PackedStringArray/Array[Unit])取代:這兩條要
 # 證明的正是「BattleScreen._ready() 真的從磁碟讀取 override 指定的路徑」這件事本身
 # ——注入內容會繞過 FileAccess 這一步，等於沒有測到它宣稱要測的東西。
+#
+# 2026-09-24 新增第④節(同時注入 terrain 與 roster 兩個 override)——與③同屬
+# 【甲類】,理由相同且更直接:斷言同時綁死在兩個夾具檔【當下的實際內容】(terrain
+# 5 寬 x 3 高、PLAYER 在 (0,0)、ENEMY 在 (4,2))。連帶:test_fixture_roster.txt 的
+# ENEMY 起始座標同日從 (12,5) 改為 (4,2),理由見該檔案內的改動說明——兩份夾具原本
+# 各自單獨注入時互不影響,但「同時」注入要驗證整組合成場景一致時需要彼此相容。
 extends GdUnitTestSuite
 
 const SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
@@ -165,3 +171,64 @@ func test_roster_path_override_with_valid_fixture_reads_fixture_content_not_defa
 	var first_unit: Unit = instance._state.unit_by_id(1)
 	assert_str(first_unit.code_name).is_equal("TESTFIX")
 	assert_int(first_unit.hp_max).is_equal(999)
+
+
+# ---- ④ terrain 與 roster 兩個 override 同時注入 —— 證明「整組合成場景真的載得
+# 起來」這件事本身有被驗證過一次(2026-09-24,ui-programmer 依
+# technical-preferences.md「在它走通之前,遇到需要整組合成資料的量測:停下來問,
+# 不要自行退回組替身節點鏈」一節派工)---------------------------------------------
+#
+# ①②③三節各自只換一個路徑(terrain 或 roster),從未證明兩者「同時」注入還能一致
+# 描述同一個場景。本節連同對 test_fixture_roster.txt 的一次改動(ENEMY 起始座標從
+# (12,5) 改為 (4,2),見該檔案內的改動說明)是本專案第一次讓兩份合成夾具彼此相容,
+# 並同時餵給同一個 BattleScreen 實例。
+#
+# 與③同屬【甲類】(test-standards.md 例外登記),理由相同:斷言直接綁死在兩個夾具檔
+# 【當下的實際內容】(terrain 5 寬 x 3 高、PLAYER 在 (0,0)、ENEMY 在 (4,2))——若
+# 日後有人改動這兩個檔案的內容,這裡的斷言就必須跟著改。
+func test_terrain_and_roster_overrides_set_together_loads_composite_fixture_scene() -> void:
+	# Arrange — 同時注入 terrain 與 roster 兩個 override,依兩者共同的時機合約:
+	# instantiate() 之後、add_child() 之前
+	var instance: BattleScreen = auto_free(load(SCENE_PATH).instantiate())
+	instance.terrain_path_override = _FIXTURE_TERRAIN_PATH
+	instance.roster_path_override = _FIXTURE_ROSTER_PATH
+
+	# Act
+	add_child(instance)
+
+	# Assert — 整組合成場景真的載得起來,不是碰巧兩邊都失敗才「看起來相容」
+	assert_bool(instance._load_failed).is_false()
+
+	# Assert — 地形尺寸真的是 5 寬 x 3 高:直接呼叫 BattleScreen 自己拿去解析
+	# terrain 內容的同一個靜態函式 _parse_terrain_rows(),不重新實作一份規則
+	# (technical-preferences.md「(A) 的精確定義」節:量測要呼叫專案自己的類別/
+	# 函式,不自行重寫規則;呼叫底線加前綴的靜態函式在本檔案的姊妹檔
+	# battle_screen_card_deck_wiring_test.gd 已有先例:BattleScreen._build_card_deck())
+	var terrain_text: String = FileAccess.get_file_as_string(_FIXTURE_TERRAIN_PATH)
+	var terrain_rows: PackedStringArray = BattleScreen._parse_terrain_rows(terrain_text)
+	assert_int(terrain_rows.size()).is_equal(3)
+	for row: String in terrain_rows:
+		assert_int(row.length()).is_equal(5)
+
+	# Assert — 兩個單位都在盤內(Board 固定 13x6 邊界,見 board.gd 的 is_in_bounds();
+	# 這個邊界是固定常數,不受 terrain 內容大小影響——與下一組「落在夾具地形範圍內」
+	# 是兩件不同的事,見③節註解已先點出的區分)
+	var player_unit: Unit = instance._state.unit_by_id(1)
+	var enemy_unit: Unit = instance._state.unit_by_id(2)
+	assert_bool(instance._state.board.is_in_bounds(player_unit.start_pos)).is_true()
+	assert_bool(instance._state.board.is_in_bounds(enemy_unit.start_pos)).is_true()
+
+	# Assert — 兩個單位確實落在 terrain 夾具實際畫出的 5x3 範圍內(x:[0,5)、
+	# y:[0,3)),不只是落在 Board 更大的固定邊界裡卻沒有對應地形資料——這正是本次
+	# 修正 test_fixture_roster.txt ENEMY 起始座標要保證的相容性
+	assert_int(player_unit.start_pos.x).is_greater_equal(0)
+	assert_int(player_unit.start_pos.x).is_less(5)
+	assert_int(player_unit.start_pos.y).is_greater_equal(0)
+	assert_int(player_unit.start_pos.y).is_less(3)
+	assert_int(enemy_unit.start_pos.x).is_greater_equal(0)
+	assert_int(enemy_unit.start_pos.x).is_less(5)
+	assert_int(enemy_unit.start_pos.y).is_greater_equal(0)
+	assert_int(enemy_unit.start_pos.y).is_less(3)
+
+	# Assert — 兩個單位座標不重疊(否則「兩個單位都在盤內」可能只是同一格站兩個)
+	assert_bool(player_unit.start_pos != enemy_unit.start_pos).is_true()

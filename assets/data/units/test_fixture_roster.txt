@@ -2,7 +2,20 @@
 # （2 個單位而非 10 個、hp_max 999 而非 22-41、code_name 不存在於真實名冊）。
 # 供 tests/unit/ui/battle_screen_data_path_override_test.gd 的
 # roster_path_override 正面路徑測試使用；非遊戲正式資料，不被任何場景載入。
+#
+# 2026-09-24（ui-programmer 依 technical-preferences.md「在它走通之前,遇到需要整組
+# 合成資料的量測:停下來問,不要自行退回組替身節點鏈」一節派工,讓兩份夾具彼此相容）：
+# ENEMY 的起始座標原為 (12,5)。那是在 Board 固定的 13x6 邊界內
+# （BOARD_WIDTH=13/BOARD_HEIGHT=6,見 board.gd 的 is_in_bounds()——這個邊界是固定
+# 常數,不受 terrain 內容影響),但落在 test_fixture_terrain.txt(5 寬 x 3 高)實際
+# 畫出的地形範圍之外,只是踩在 Board.get_terrain() 對未設定格子的預設值
+# （TERRAIN_OPEN）上。單獨注入任一份夾具時這不構成問題(既有測試都只換一個路徑),
+# 但兩份夾具「同時」注入、要驗證整組合成場景一致時,兩個單位理應站在 terrain 夾具
+# 實際描述的範圍內,而不是恰好落在 Board 更大的固定邊界裡卻沒有對應的地形資料。
+# 改為 (4,2)——test_fixture_terrain.txt 的右下角,仍是 '.'(平地),與 PLAYER 的
+# (0,0) 不重疊。見 tests/unit/ui/battle_screen_data_path_override_test.gd 第④節
+# 的同時注入測試。
 # 欄位順序同 vs01_roster.txt：
 # id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
 1,TESTFIX,PLAYER,999,1,1,1,1,1,0,0
-2,TESTENEMY,ENEMY,999,1,1,1,1,1,12,5
+2,TESTENEMY,ENEMY,999,1,1,1,1,1,4,2

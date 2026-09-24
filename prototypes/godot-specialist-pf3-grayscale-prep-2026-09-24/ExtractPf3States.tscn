@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/extract_pf3_states.gd" id="1_pf3"]
+
+[node name="ExtractPf3States" type="Node"]
+script = ExtResource("1_pf3")
