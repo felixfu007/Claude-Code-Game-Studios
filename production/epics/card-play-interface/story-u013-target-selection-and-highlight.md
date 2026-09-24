@@ -2,7 +2,13 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 Ready
+> **狀態**:✅ Complete(2026-09-24,管理者裁決。`ui-programmer` 實作;`tests/integration/ui/card_target_selection_test.gd` **39 條全綠**,其中 **11 條常駐 `test_sensitivity_proof_*`,涵蓋敏感度門檻全部 13 列、零改判**。工作單列的 6 條預期測試逐條核對**全部存在**。全套 **939 條、74/74 套件、939/939 全執行、0 errors、0 orphans**,唯一失敗是既有已核准的刻意紅燈(`affinity_phi_provider`),零回歸 —— 協調者於裁決當日自行跑引擎複驗,未採信報告。
+> 🔴 **兩個協調者判定經管理者 2026-09-24 明文維持**:①#20-23 四條共用一條證明函式**不拆**(該函式內部對左/右/上/下各自組情境、各自斷言);②#17 證明強度**足夠**(mutant 無條件執行的正是真實方法 `if legal.is_empty()` 分支的同一組賦值,即「分支條件恆真」這個最可能的真實回歸形狀)。**兩項均可日後推翻。**
+> 🔴 **截圖證據規則第 5 點(人工開圖確認)未由管理者執行 —— 這是與 U-007 / U-011 不同的地方,刻意記下不隱藏。**
+> ・P-F3 灰階兩態圖(`prototypes/godot-specialist-pf3-grayscale-prep-2026-09-24/legal_state.png` / `illegal_state.png`,2026-09-24 開窗擷取):管理者裁決**「不用」**親自開圖,由協調者開圖複核代之。
+> ・`production/qa/evidence/u013-card-target-highlight-*-2026-09-22.png` 兩張:**從未有任何人工開圖紀錄**(該目錄無對應證據 .md)。
+> **後果**:本 story 的視覺證據沒有走完該規則要求的最後一關,而該規則自陳「本專案至今每一個視覺缺陷都是人打開圖檔找到的,自動化從未抓到過一個」。**要補只需管理者開圖看一眼並把逐字回覆轉錄進來**(U-007 / U-011 即是此做法)。
+> ⚠️ **協調者代行的那一次確實有產出**:判定「叉讀得出是完整的叉、襯底變深未蓋住它」,**並翻出一個灰階數字結構上抓不到的問題** —— 好感度關係線與不合法叉使用同一種視覺語言(細的淺色斜線),盤面線一多可能被誤讀。**管理者 2026-09-24 裁決「先不處理」**,登記於 `production/session-state/active.md` 第六十三批。
 > **估時**:M
 > **依賴**:U-012(Z2 展開層 + 選牌導覽)
 > **波次**:波 4(可與 U-009/U-010 平行——寫 `battle_screen.gd` + `board_view.gd`,與選單 `battle_menu.gd` 無交集)
@@ -60,7 +66,11 @@
 
 *以下為 `design/ux/skill-card-play.md` 的條文原文轉錄,未改寫:*
 
-- [ ] **AC-U3**:我方 5 隻存活、選定一張甲類 → 連按「跳下一個合法目標」5 次 → 游標依序停在該 5 隻上,第 6 次回到第 1 個;重跑一次順序完全相同(Logic,BLOCKING)
+- [x] **AC-U3**:我方 5 隻存活、選定一張甲類 → 連按「跳下一個合法目標」5 次 → 游標依序停在該 5 隻上,第 6 次回到第 1 個;重跑一次順序完全相同(Logic,BLOCKING)
+  **滿足依據**(三條測試各自對應 AC 的一個子句,2026-09-24 全綠):
+  `test_jump_to_next_legal_target_cycles_in_row_major_order`(依序停在 5 隻上)、
+  `test_jump_cycle_wraps_from_last_to_first`(第 6 次回到第 1 個)、
+  `test_jump_order_identical_across_repeated_runs`(重跑順序完全相同)。
 
 ## Test Evidence
 
