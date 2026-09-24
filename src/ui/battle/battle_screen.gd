@@ -1861,7 +1861,6 @@ func _after_target_selection_advanced() -> void:
 ## [code]strength_available = false[/code] whenever the Callable is unset,
 ## which is unconditionally true today.
 func _open_card_confirm_panel() -> void:
-	_card_confirming = true
 	var card: Card = _card_confirm_card
 	if card == null:
 		# Defensive, not expected in the real production flow: every real
@@ -1871,6 +1870,19 @@ func _open_card_confirm_panel() -> void:
 		# sensitivity proof) that calls BattleController.select_card()
 		# directly, bypassing this screen's own wrapper — logged loudly
 		# rather than crashing on card.id below.
+		#
+		# 🔴 [member _card_confirming] is deliberately left untouched (still
+		# false) on this early-out — NOT set true first and left stuck there.
+		# Setting it true unconditionally at the top of this function was a
+		# real bug this project caught by independent review: it would have
+		# left this screen believing S3 is open (routing battle_confirm/
+		# battle_cancel to the _card_confirming branch of _input()) with no
+		# card data behind it, and _handle_card_confirm_cancel_transition()
+		# would then dereference this same null _card_confirm_card on
+		# .category. The invariant this function now upholds is "
+		# _card_confirming only ever becomes true once _card_confirm_card is
+		# confirmed non-null" — see that method's own defensive null guard,
+		# which exists as a second line of defense, not as the primary fix.
 		push_error(
 			"BattleScreen: _open_card_confirm_panel() reached CONFIRMING with "
 			+ "_card_confirm_card == null -- the confirm panel cannot be shown. "
@@ -1878,6 +1890,7 @@ func _open_card_confirm_panel() -> void:
 			+ "through this screen's own _confirm_selected_card()."
 		)
 		return
+	_card_confirming = true
 	var flavor_text: String = _card_flavor_texts.get(card.id, "")
 
 	if card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
@@ -1967,7 +1980,26 @@ func _apply_pending_card_confirm() -> void:
 ## itself has for its own, different call site.
 func _handle_card_confirm_cancel_transition() -> void:
 	_card_confirming = false
-	if _card_confirm_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
+	# 🔴 Second line of defense (independent review finding) — this method is
+	# reached only from the _card_confirming branch of _input(), and, per
+	# _open_card_confirm_panel()'s own invariant, _card_confirming only ever
+	# becomes true after _card_confirm_card is confirmed non-null, so
+	# _card_confirm_card == null should be structurally unreachable here
+	# today. Guarded anyway rather than dereferencing .category unconditionally
+	# — the exact same "assume non-null, crash on the caller-bypassed test
+	# path" shape this project already hit once in this same story (see
+	# _open_card_confirm_panel()'s own doc comment). Both target mirrors are
+	# cleared defensively when the category cannot be determined, since a
+	# stale id in either would be worse than clearing one unnecessarily.
+	if _card_confirm_card == null:
+		push_error(
+			"BattleScreen: _handle_card_confirm_cancel_transition() called with "
+			+ "_card_confirm_card == null -- cannot tell which CardPlaySession.cancel() "
+			+ "branch (丙類/甲類) was taken. Clearing both target mirrors defensively."
+		)
+		_card_confirm_target_a = -1
+		_card_confirm_target_b = -1
+	elif _card_confirm_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
 		_card_confirm_target_b = -1
 	else:
 		_card_confirm_target_a = -1

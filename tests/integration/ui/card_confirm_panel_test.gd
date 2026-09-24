@@ -509,3 +509,70 @@ func test_confirm_panel_丙類_strength_field_shows_placeholder_not_zero_when_un
 	assert_bool(instance._card_confirm_panel.diagnostic_permanent_warning_visible()).append_failure_message(
 		"丙類確認面板的「永久」警示必須可見"
 	).is_true()
+
+
+# ─── 回歸測試：_card_confirm_card == null 時的兩個防禦點（獨立覆核抓到的缺陷）──
+#
+# 覆核者指出：_open_card_confirm_panel() 原本把 _card_confirming = true 設在
+# null 檢查之前，導致對 null card 早退時 _card_confirming 殘留 true；而
+# _handle_card_confirm_cancel_transition() 對 _card_confirm_card.category 完全
+# 沒有 null 防護，與本 story 最初撞到的那個崩潰同一個形狀，只是換了呼叫點。
+# 以下兩條測試各自直接對準一個防禦點，已用「暫時還原成 bug 版本 -> 重跑 -> 應
+# 轉紅 -> 還原修正 -> 重跑 -> 應轉綠」的方式驗證過（原始輸出見任務報告，不寫在
+# 這裡——本專案的既有慣例是敏感度證明的紅燈輸出留在報告，不留在版控裡的原始碼）。
+
+
+func test_open_confirm_panel_with_null_card_does_not_leave_card_confirming_stuck_true() -> void:
+	# Arrange —— 模擬「某呼叫端繞過 _confirm_selected_card() 自行推進 session」
+	# 這個既有測試（card_target_selection_test.gd 的 mutant-session 敏感度證明）
+	# 已經在撞的情境：_card_confirm_card 從未被設定，維持 null，但 session 本身
+	# 已經真的推進到 CONFIRMING。
+	var instance: BattleScreen = _fresh_instance()
+	var target: Unit = instance._state.units_of(Unit.Faction.PLAYER)[0]
+	var card: Card = _build_temporary_card("test_null_card_ordering", 1, 0, 1)
+	_install_session(instance, [card], [], NullAffinityWritePort.new())
+	_open_hand_and_select_first_card(instance)
+	var advanced: bool = instance._controller.select_target(target.id)
+	assert_bool(advanced).append_failure_message(
+		"PRECONDITION: select_target() 應該成功"
+	).is_true()
+	instance._card_confirm_card = null  # 模擬繞過 _confirm_selected_card() 的情境
+
+	# Act
+	instance._after_target_selection_advanced()
+
+	# Assert —— 修正前：_card_confirming 在 null 檢查之前就被設 true，早退後殘留
+	# true，這裡會量到 true 而轉紅；修正後：null 檢查通過前不設 true，早退時維持
+	# false
+	assert_bool(instance._card_confirming).append_failure_message(
+		"_open_card_confirm_panel() 對 null card 早退時，_card_confirming 不應該" +
+		"殘留 true——那會讓 _input() 把後續 battle_confirm/battle_cancel 誤導向" +
+		"『S3 進行中』分支，卻沒有任何面板資料可用"
+	).is_false()
+
+
+func test_handle_card_confirm_cancel_transition_with_null_card_does_not_crash() -> void:
+	# Arrange —— 直接重現覆核者描述的狀態組合：_card_confirming 已是 true，但
+	# _card_confirm_card 是 null。這與上一條測試不同：上一條驗的是「不會走到這個
+	# 狀態」，這一條驗的是「萬一走到了，這個函式本身不會崩潰」——雙重防線各自
+	# 有測試。
+	var instance: BattleScreen = _fresh_instance()
+	instance._card_confirming = true
+	instance._card_confirm_card = null
+
+	# Act —— 修正前：_card_confirm_card.category 對 null 解參考，
+	# SCRIPT ERROR「Invalid access to property or key 'category' on a base
+	# object of type 'Nil'」，測試以錯誤中止；修正後：不崩潰，正常完成
+	instance._handle_card_confirm_cancel_transition()
+
+	# Assert
+	assert_bool(instance._card_confirming).append_failure_message(
+		"呼叫後 _card_confirming 應該變 false"
+	).is_false()
+	assert_bool(instance._card_selecting_target).append_failure_message(
+		"防禦分支仍應完成完整的退回流程（回到目標選取），不是卡在半路"
+	).is_true()
+	assert_int(instance._card_confirm_target_a).append_failure_message(
+		"category 未知時應防禦性清空兩個目標鏡像，不留殘值"
+	).is_equal(-1)
+	assert_int(instance._card_confirm_target_b).is_equal(-1)

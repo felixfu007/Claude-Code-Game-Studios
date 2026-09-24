@@ -226,6 +226,9 @@ func hide_panel() -> void:
 	visible = false
 
 
+## Formats [param value] with an explicit leading sign — Implementation Note 1's
+## "帶號,`0` 仍顯示" requirement ([code]0[/code] formats as [code]"+0"[/code],
+## never bare [code]"0"[/code]).
 static func format_signed(value: int) -> String:
 	return "%+d" % value
 
@@ -264,56 +267,96 @@ static func _format_title(card_id: String, flavor_text: String) -> String:
 	return "%s\n%s" % [card_id, flavor_text]
 
 
+## Which category the panel is currently showing ([constant Category.NONE]
+## while hidden) — lets a test assert the panel actually switched to the
+## expected variant, not merely that SOME text is showing.
 func diagnostic_category() -> Category:
 	return _category
 
 
+## Exact text currently shown in the title row (卡名 + 牌面文字, see [method
+## _format_title]) — lets a test assert the specific card's id/flavor text was
+## used, not merely that the row is non-empty.
 func diagnostic_title_text() -> String:
 	return _title_label.text
 
 
+## Exact text currently shown in the「作用對象」row — one target's name for
+## 甲類, or the "A ↔ B" pair for 丙類 (see [method
+## show_temporary_modifier_confirmation] / [method
+## show_permanent_write_confirmation]).
 func diagnostic_target_text() -> String:
 	return _target_label.text
 
 
+## Exact text currently shown in the甲類 ΔATK row — always signed via [method
+## format_signed], including [code]"+0"[/code] (Implementation Note 1: 0 is a
+## legal value, never omitted).
 func diagnostic_delta_atk_text() -> String:
 	return _delta_atk_label.text
 
 
+## Same as [method diagnostic_delta_atk_text] for the ΔDEF row.
 func diagnostic_delta_def_text() -> String:
 	return _delta_def_label.text
 
 
+## Exact text currently shown in the 甲類「存續回合」row.
 func diagnostic_duration_text() -> String:
 	return _duration_label.text
 
 
+## Number of entries in the most recent [method
+## show_temporary_modifier_confirmation]'s [param existing_modifiers] — 0 is a
+## legal, distinct state from "no card shown at all" (see [constant
+## TEXT_NO_EXISTING_MODIFIERS]).
 func diagnostic_existing_modifier_count() -> int:
 	return _existing_modifier_lines.size()
 
 
+## One formatted line from the most recent [method
+## show_temporary_modifier_confirmation]'s existing-modifiers list — lets a
+## test assert a SPECIFIC entry's content (source/delta/remaining turns)
+## rather than parsing [member _existing_modifiers_label]'s joined text.
+## Out-of-range [param index] returns [code]""[/code] rather than crashing.
 func diagnostic_existing_modifier_line(index: int) -> String:
 	if index < 0 or index >= _existing_modifier_lines.size():
 		return ""
 	return _existing_modifier_lines[index]
 
 
+## Exact text currently shown in the 甲類「合併後有效值」row (ATK_eff/DEF_eff) —
+## GDD UI Requirements #7: this row and [method diagnostic_existing_modifier_line]
+## are always both populated, never one in place of the other.
 func diagnostic_effective_text() -> String:
 	return _effective_label.text
 
 
+## True while the 丙類「永久」不可逆警示 row is visible — should be
+## [code]true[/code] whenever [method diagnostic_category] is [constant
+## Category.PERMANENT_WRITE], per Implementation Note 2.
 func diagnostic_permanent_warning_visible() -> bool:
 	return _permanent_warning_label.visible
 
 
+## Exact text currently shown in the 丙類「永久」警示 row.
 func diagnostic_permanent_warning_text() -> String:
 	return _permanent_warning_label.text
 
 
+## Exact text currently shown for 丙類's「好感度」row — either [method
+## format_strength_arrow]'s output or [constant TEXT_STRENGTH_UNAVAILABLE],
+## whichever [method show_permanent_write_confirmation]'s [param
+## strength_available] selected. AC-U14's discriminator ([method
+## text_uses_required_arrow_format]) is meant to be run against exactly this
+## value.
 func diagnostic_strength_text() -> String:
 	return _strength_text
 
 
+## Exact text currently shown in the 丙類「敘事影響」row — always [constant
+## TEXT_NARRATIVE] today (Implementation Note 2: fixed one-line text, zero
+## numbers).
 func diagnostic_narrative_text() -> String:
 	return _narrative_label.text
 
