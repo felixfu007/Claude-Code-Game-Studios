@@ -78,6 +78,29 @@
 
 ## Out of Scope
 
+> 🔴 **2026-09-24 事實更正:下方第一項的兩句事實依據已過期,但該項的結論(本 story 不交付
+> 好感度數值)仍然成立,且已由管理者裁決確認** —— 逐字選項「**維持留白＋提示**」,
+> 裁決紀錄見 `production/session-state/active.md`「🔴 接手第一件事(第六十六批)」節,提交 `a7a8197`。
+> **原文一字未改,保留於下供事後稽核。**
+>
+> **兩句已過期的是**:
+> 1. 「`grep -rn "combat_strength_read" src/` **零命中**」—— 重跑已命中
+>    `src/gameplay/affinity_pool/affinity_data_pool.gd` 的函式本體。
+> 2. 「寫入埠今天接的是 `NullAffinityWritePort`」—— 戰鬥畫面已接真實埠,查法:
+>    `grep -n "_affinity_pool\|AffinityPoolWritePort" src/ui/battle/battle_screen.gd`
+>
+> 🔴 **兩句都是本檔建立當天稍晚被 U-003 接線提交超車的。** 而本檔下方逐字寫著
+> 「**下一個人不需要重新查一次 `grep -rn "combat_strength_read" src/`,結果已經在這裡**」——
+> **那行字本身就是防止它被發現的機制。** 引用既有查證結果時,請一併確認它的日期與其後的提交。
+>
+> **結論為什麼仍成立(理由換成三點,不是原本那個)**:①好感度池每場戰鬥重建、無載入路徑,
+> 現值今天顯示出來恆為 0(既知限制,見 `production/epics/affinity-data-pool/EPIC.md`
+> 「誠實登記的限制」表「好感度不跨存檔保存」一項);②「打完後」需要的公式四
+> `speculative_read()` 無函式本體、亦無對應工作單;③顯示格式從未定義(`float` vs 規格的
+> 整數箭頭範例),已由 `ux-designer` 新登記為 **UX-17**。
+> 三點全文見 `design/ux/skill-card-play.md` 的「確認面板欄位」小節(提交 `8150ac6`)。
+
+
 - 🔴 **丙類確認面板的好感度數值本身(AC-U13/AC-U14「打完後」數值那一半)無法端到端驗證。** 本 story 自己查證的事實:`grep -rn "combat_strength_read" src/` **零命中**——`combat_strength_read`(`design/gdd/affinity-data-pool.md` 公式一,回傳「這一對的帶正負號目前極性與強度」)在 `src/` 完全沒有實作。`skill-card-play.md` 已把這條登記為 **UX-13**,擁有者是 `affinity-data-pool` epic 的 **S-007**。「打完後」值是否需要一個預判版查詢也尚未定案(同一則 UX-13)。**本 story 交付的是箭頭版面本身(空欄位 + 提示文案),不是數值** —— 依 `skill-card-play.md` 的「查無資料時的處理」表:UX-13 未關閉前該欄位**留白 + 同一句提示,不得顯示 `0` 或省略欄位**(省略會讓 #4 的「唯一數值」承諾無從檢查)。**下一個人不需要重新查一次 `grep -rn "combat_strength_read" src/`,結果已經在這裡。**
 - **選作用對象 S2/S2p/S2q、合法目標高亮、跳轉鍵**——屬 U-013(已交付,本 story 從其後接續)。
 - **強制棄牌 S4**——屬 U-015。
