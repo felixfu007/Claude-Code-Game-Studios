@@ -193,9 +193,60 @@ U-016 的依賴欄要求「U-009 必須已把結束回合列接上控制器」,*
 **接手的人第一件事**:用 `ListAgents` 或直接重派一次覆核。
 ⚠️ **U-016 尚未判完成,等覆核結果** —— 不要因為測試綠了就標完成。
 
+### ✅ U-016 獨立覆核結果(2026-09-24 收工前回報,`godot-specialist`,非實作者)
+
+**三個檢查點**:
+
+| # | 結論 |
+|---|---|
+| 一、解綁後「結束回合」玩家是否真的還走得到 | ✅ **鍵盤與手把兩條都在**,以原始碼交叉核對(非只看測試綠燈):`battle_menu` 有 `keycode=77`(M)與 `button_index=6`(Start)兩個綁定;選單內導覽吃引擎預設 `ui_*`(`grep -n '^ui_' project.godot` 零命中 = 未覆寫);`_on_end_phase_row_pressed()` → `end_faction_phase()` → drain loop 必呼叫 `step_enemy_phase()` 至少一次。**推導無斷點** |
+| 二、那個「接線才看得見」的缺陷 | ✅ **修法正確**:`close()` 會呼叫 `resume_arbitration()`,而選單從未 `suspend` 過 —— 直接設 `visible = false` 是最小且正確的修法,**這是 ADR-0005 的真實配對紀律風險,不是過度謹慎** |
+| 三、解綁副作用 | ⚠️ **一項待修**(見下);✅ 生產程式碼已無任何邏輯依賴 `battle_end_phase` 有綁定;✅ **被刪的 2 條過渡態測試,承接者涵蓋範圍不但足夠,而且更完整** —— 新增的行為層測試真的把事件丟進 `_input()`,而舊兩條只比對綁定、從未實際分派過事件 |
+
+🔴 **覆核判 ⬜ 未查的最大缺口,已由協調者當場補查完畢,結果是好的**:
+「同形狀的預設可見性問題還有沒有別處」——
+```
+$ grep -n "^\[node name=\|^visible" src/ui/battle/CardConfirmPanel.tscn
+5:[node name="CardConfirmPanel" type="Control"]
+7:visible = false
+```
+`CardConfirmPanel` **場景檔自己就寫了 `visible = false`**(雙重保險:場景檔 + 程式呼叫 `hide_panel()`);
+`HandBar` 沒有這個問題(**它本來就該顯示**,是常駐 HUD)。**只有選單那一個是缺陷,且已修。**
+
+### ⚠️ U-016 覆核唯一待修項(純文件,不影響行為)
+
+`battle_screen.gd` 的 `_end_faction_phase_pressed()` 上方**還留著一段舊 doc comment**,
+逐字寫「bound to the project-level "battle_end_phase" input action (…keyboard Escape, gamepad …)」
+—— **這句現在是假的**,該 action 已零綁定,這個函式現在由 `BattleMenu.end_faction_phase_confirmed`
+訊號呼叫。U-016 在其**後面**接了正確的新說明,但沒刪掉開頭那段,
+**造成同一段註解前後兩截自相矛盾**。
+定位(不寫行號):`grep -n 'bound to the project-level "battle_end_phase"' src/ui/battle/battle_screen.gd`
+
+📌 **另一處更早的既有陳舊註解(非 U-016 造成,優先度較低)**:
+`src/ui/cursor/cursor_types.gd` 寫「`[input]` 節只自訂 `battle_confirm`/`battle_end_phase`」,
+在 U-005~U-016 陸續加入五個動作後早已不是事實。
+定位:`grep -n "只自訂" src/ui/cursor/cursor_types.gd`
+
+### 📌 覆核對協調者派工單的批評(已接受,寫下來避免重犯)
+
+覆核者指出:派工單宣稱「只有 3 個檢查點」,但**檢查點二把「這個修法對不對」與
+「同形狀還有沒有別處」綁在同一點**,而後者其實是一個獨立的新排查範圍(至少兩個檔案的閱讀量)
+—— 回合吃緊時**必然**被擠掉,而這次真的被擠掉了。
+**下次:一個檢查點只裝一個範圍。**
+
+### 🔴 `CONTROLS_HINT_BG_HEIGHT_MULTIPLIER` 的處置建議(覆核者判斷,未執行)
+
+覆核者判定「沒有測試正面鎖定這個高度值」是**可接受的缺口,不必補單元測試**,理由:
+它影響的是螢幕最下緣一塊背景區塊的高度,不影響任何遊戲邏輯,
+依 `coding-standards.md` 的證據分類屬 **Visual/Feel(ADVISORY)**。
+🔴 **但它建議走截圖驗證,尤其在最小支援解析度下看兩行提示條是否被裁切** ——
+**而不是只信 1920×1080 一個解析度的算術推論。**
+**這正好與下一棒要問管理者的那件事是同一件。**
+
 ### 下一棒
 
-1. 🔴 **接 U-016 的獨立覆核結果**(見上),再決定是否判完成。
+1. ✅ **U-016 獨立覆核已回報**(見上節)。**唯一待修是一段自相矛盾的舊註解,純文件、不影響行為。**
+   🔴 **修掉它之後,U-016 即可請管理者裁決是否判完成** —— 但見第 3 點,判完成前要先問畫面那件事。
 2. **本 epic 17 張已全部實作完畢** —— U-016 是最後一張。
    🔴 **依 EPIC 第一節,B 段(卡牌介面)與 C 段(戰鬥選單)是綁在一起的一批,沒有半批** ——
    **做完 U-016,這批東西才第一次能真的拿去玩。**
