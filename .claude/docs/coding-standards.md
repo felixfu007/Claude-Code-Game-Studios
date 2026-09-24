@@ -656,6 +656,41 @@ written down and checkable by a second reader," not "no one will misclassify a s
       reports `0 failures` can still exit 101 purely because a test leaked nodes.
       **The fix is to stop leaking nodes — never to treat 101 as success, and never to stop
       checking the exit code.** That check is the only place the whole test line is enforced.
+    - 🔴 **Exit code 105 means test discovery itself aborted on a parse error — and it is the
+      one entry in this list where BOTH greps this section already recommends come back
+      empty, not zero.** Verified 2026-09-24: an implementer changed `HandBar.render()`'s
+      public signature (added a defaulted parameter) while `tests/unit/ui/hand_bar_test.gd`
+      still had three spy subclasses overriding `render()` with the old signature. Running
+      the exact command this row documents exited **105**; `grep -c "Overall Summary"` →
+      **0 matches**; `grep -c " FAILED"` → **0 matches**. The log tail read: `Scanning for
+      test suites in: tests/integration`, then `Script errors were detected during test
+      discovery!`, then `Parse Error: The function signature doesn't match the parent. ...`
+      (once per stale override), then `Abnormal exit with 105`.
+      **This is dangerous in the opposite direction from most of this list.** The earlier
+      entries here are mostly quiet false-greens — a run that looks clean but executed less
+      than it claims. This one is loud (a non-standard exit code, an explicit `Abnormal exit`
+      line) — but loud only helps if something reads the exit code. **Reading this test
+      line's output the way this section itself recommends — grep for `Overall Summary` or
+      ` FAILED` — returns two empty results here**, and an absent match from `grep -c` prints
+      `0`, which looks identical to "ran clean, nothing failed." It is also a different scope
+      of damage than "a failing test aborts the rest of its own suite" above: that trap still
+      prints a summary and still runs every *other* suite; this one aborts discovery before
+      any suite runs, so the entire test line — every suite, not just one — executes zero
+      tests. A separate, execution-phase error hit the *already-documented* shape the same
+      day instead (`SCRIPT ERROR: Invalid assignment of property or key ...`): `Overall
+      Summary` printed, other suites ran, and the total test-case count simply came out lower
+      than expected because the tests after the failure in that one suite never ran. **The
+      two are not interchangeable**: a lower-than-expected total means go look at one failing
+      suite; a missing `Overall Summary` entirely means stop grepping the log for results and
+      check the exit code plus the log tail for `Parse Error` / `Abnormal exit` first —
+      grepping for `FAILED` will report nothing to fix even though nothing ran at all.
+      Fixing the three stale overrides restored a normal run the same day (`Overall Summary:
+      956 test cases | 0 errors | 1 failures | ... | Exit code: 100` — a same-day snapshot,
+      not a fixed total to expect on future runs).
+      **Actionable takeaway: check the engine's own exit code before grepping the log for
+      anything.** Any exit code outside {0, 100, 101, 103} means something upstream of test
+      execution failed, and this section's own recommended greps (`Overall Summary`,
+      ` FAILED`) are meaningless until that is ruled out.
     - History, because "never executed" is how it survived: this row's original command used
       `--script` against a runner that called a `run_tests()` method GdUnit4 does not have.
       It was written before GdUnit4 had ever been installed, so it could never have worked,
