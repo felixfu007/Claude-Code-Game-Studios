@@ -287,9 +287,11 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 @onready var _hand_bar: HandBar = $UILayer/HandBar
 
 ## S3 確認面板(Story U-014,`card_confirm_panel.gd`)— fed by [method
-## _open_card_confirm_panel] from data this screen already owns
-## ([member _card_confirm_card]/[member _card_confirm_target_a]/[member
-## _card_confirm_target_b]/[member _card_flavor_texts]). [CardConfirmPanel]
+## _open_card_confirm_panel] from [method BattleController.selected_card]/
+## [method BattleController.selected_target_a]/[method
+## BattleController.selected_target_b] (2026-09-24 "消除重複" ruling — this
+## screen no longer keeps its own copies of that data) and [member
+## _card_flavor_texts]. [CardConfirmPanel]
 ## itself has zero [Card]/[Unit] dependency (see its own class doc comment) —
 ## this screen is the one class allowed to know both sides, exactly as it
 ## already is for [BoardView]/[HandBar].
@@ -515,40 +517,25 @@ var _card_selecting_from_hand: bool = false
 var _card_selecting_target: bool = false
 
 ## Story U-014 (S3 確認面板) — presentation-local mirror of "is CONFIRMING
-## (S3) the step this screen most recently drove [CardPlaySession] into",
-## same "write ONLY from this screen's own successful call return values,
-## never re-derive CardPlaySession's transition table" discipline
-## [member _card_selecting_from_hand]/[member _card_selecting_target] already
-## establish. Gates the [method _input] branch that dispatches
+## (S3) the step this screen most recently drove [CardPlaySession] into".
+## Gates the [method _input] branch that dispatches
 ## [code]battle_confirm[/code]/[code]battle_cancel[/code] to the S3 confirm
 ## panel instead of the S2/S2q target-selection branch.
+##
+## 🔴 2026-09-24 manager ruling ("消除重複") — this field is now the ONLY
+## piece of S3 state this screen still keeps a local copy of. It could not be
+## replaced by a direct [method BattleController.selected_card] read the way
+## [member _card_confirm_card]/[member _card_confirm_target_a]/[member
+## _card_confirm_target_b] were (see this file's own git history for those —
+## removed in this same ruling): [code]selected_card() != null[/code] is true
+## from [constant CardPlaySession.Step.SELECTING_TARGET] onward, not only at
+## CONFIRMING, so it cannot distinguish "still picking a target" from "ready
+## to confirm" the way this flag's OWN name requires. This flag is still
+## written ONLY from this screen's own successful call return values (never
+## re-derived from [CardPlaySession]'s transition table) — same discipline
+## [member _card_selecting_from_hand]/[member _card_selecting_target] already
+## establish for the other two S3-adjacent booleans.
 var _card_confirming: bool = false
-
-## Story U-014 — the [Card] this screen itself passed to a successful
-## [method BattleController.select_card] call, kept only so
-## [method _open_card_confirm_panel] can show the right card's data once
-## CONFIRMING is reached. [CardPlaySession] has no accessor for its own
-## private selection fields (by design — see that class's own doc comment
-## structure), so this mirror exists purely so this screen does not need one.
-## Cleared everywhere [method CardPlaySession.cancel] would have cleared its
-## own internal [code]_selected_card[/code] — see
-## [method _handle_target_selection_cancel_transition]'s "S2/S2p -> S1"
-## branch.
-var _card_confirm_card: Card = null
-
-## Story U-014 — unit id this screen itself passed to a successful [method
-## BattleController.select_target] call (both 甲類's only target and 丙類's
-## S2p first pick land here). Cleared alongside [member _card_confirm_card] —
-## see that field's doc comment.
-var _card_confirm_target_a: int = -1
-
-## Story U-014 — unit id this screen itself passed to a successful [method
-## BattleController.select_second_target] call (丙類's S2q second pick only;
-## stays [code]-1[/code] for 甲類 for the whole session). Cleared on every
-## cancel that leaves CONFIRMING or SELECTING_TARGET_B, mirroring [method
-## CardPlaySession.cancel]'s own SELECTING_TARGET_B branch (which clears its
-## internal [code]_selected_target_b[/code], never [code]_selected_target_a[/code]).
-var _card_confirm_target_b: int = -1
 
 ## Story U-014 (AC-U11) — deferred confirm-press flag, same shape as [member
 ## _pending_target_confirm_press] (see that field's own doc comment for the
@@ -1635,13 +1622,10 @@ func _confirm_selected_card() -> void:
 		return
 	if _controller.select_card(hand[index]):
 		_card_selecting_from_hand = false
-		# Story U-014 — captured here (this screen's own call, own return
-		# value) so _open_card_confirm_panel() has the right Card once
-		# CONFIRMING is reached; see _card_confirm_card's own doc comment for
-		# why this mirror exists instead of a CardPlaySession accessor.
-		_card_confirm_card = hand[index]
-		_card_confirm_target_a = -1
-		_card_confirm_target_b = -1
+		# Story U-014 (2026-09-24 "消除重複" ruling) — no local mirror to
+		# write here anymore; _open_card_confirm_panel() reads
+		# BattleController.selected_card() directly once CONFIRMING is
+		# reached.
 		# Story U-013 (下半) — S1 -> S2/S2p. Registers this screen itself as
 		# the BOARD_TILE CursorSurface (see cursor_navigate() below for the
 		# Option E contract this satisfies) and queues an initial seed onto
@@ -1794,15 +1778,13 @@ func _apply_target_confirm_from_cursor_state() -> void:
 	if unit == null:
 		return
 
+	# Story U-014 (2026-09-24 "消除重複" ruling) — no local target mirrors to
+	# write here anymore; _open_card_confirm_panel() reads
+	# BattleController.selected_target_a()/selected_target_b() directly once
+	# CONFIRMING is reached.
 	var advanced: bool = _controller.select_target(unit.id)
-	if advanced:
-		# Story U-014 — captured from this screen's own successful call; see
-		# _card_confirm_target_a's own doc comment.
-		_card_confirm_target_a = unit.id
-	else:
+	if not advanced:
 		advanced = _controller.select_second_target(unit.id)
-		if advanced:
-			_card_confirm_target_b = unit.id
 	if advanced:
 		_after_target_selection_advanced()
 
@@ -1846,10 +1828,12 @@ func _after_target_selection_advanced() -> void:
 	_refresh_view()
 
 
-## Story U-014 — builds every value the S3 confirm panel needs from data this
-## screen already owns ([member _card_confirm_card], [member
-## _card_confirm_target_a]/[member _card_confirm_target_b], [member _state],
-## [member _card_flavor_texts]) and hands it to [CardConfirmPanel]'s
+## Story U-014 — builds every value the S3 confirm panel needs, reading the
+## selected card/targets straight from [method BattleController.selected_card]/
+## [method BattleController.selected_target_a]/[method
+## BattleController.selected_target_b] (2026-09-24 "消除重複" ruling — no
+## screen-local copy of any of this exists anymore), plus [member _state] and
+## [member _card_flavor_texts], and hands it to [CardConfirmPanel]'s
 ## display-only API. Called exactly once, from [method
 ## _after_target_selection_advanced] the moment [CardPlaySession] reaches
 ## CONFIRMING — see that method's own doc comment.
@@ -1861,40 +1845,49 @@ func _after_target_selection_advanced() -> void:
 ## [code]strength_available = false[/code] whenever the Callable is unset,
 ## which is unconditionally true today.
 func _open_card_confirm_panel() -> void:
-	var card: Card = _card_confirm_card
+	# Story U-014 (2026-09-24 "消除重複" ruling) — reads directly from
+	# BattleController's new read-only forwarders instead of a screen-local
+	# mirror. Structurally, [method BattleController.selected_card] cannot be
+	# null here: this method is only ever reached from
+	# [method _after_target_selection_advanced], which is only ever reached
+	# after a successful [method BattleController.select_target] / [method
+	# BattleController.select_second_target] call — and neither of those can
+	# return [code]true[/code] unless [CardPlaySession] already moved past
+	# [constant CardPlaySession.Step.SELECTING_CARD] (which is the ONLY step
+	# transition that sets [member CardPlaySession._selected_card]).
+	#
+	# 🔴 The null check below is kept anyway as defense in depth, not because
+	# a reachable trigger is known — the trigger this project actually hit
+	# (an existing test calling [method BattleController.select_card] directly,
+	# bypassing this screen's own [method _confirm_selected_card]) no longer
+	# applies: that direct call still sets [CardPlaySession]'s own real
+	# [code]_selected_card[/code], which [method BattleController.selected_card]
+	# now reads straight from — there is no more screen-local copy that call
+	# path could leave out of sync. Verified unreachable through this project's
+	# own state machine (every path to CONFIRMING/SELECTING_TARGET/
+	# SELECTING_TARGET_B requires [CardPlaySession._selected_card] non-null —
+	# see [code]tests/integration/ui/card_confirm_panel_test.gd[/code]'s own
+	# derivation, same file). This guard's only remaining test coverage is a
+	# deliberately adversarial spy [CardPlaySession] subclass that overrides
+	# [method CardPlaySession.selected_card] to lie — see that test file's
+	# [code]_MutantCardPlaySessionLiesAboutSelectedCard[/code] — not a
+	# naturally-reachable production scenario.
+	var card: Card = _controller.selected_card()
 	if card == null:
-		# Defensive, not expected in the real production flow: every real
-		# caller reaches CONFIRMING through _confirm_selected_card(), which
-		# always sets _card_confirm_card first. This DOES happen in at least
-		# one existing test (card_target_selection_test.gd's mutant-session
-		# sensitivity proof) that calls BattleController.select_card()
-		# directly, bypassing this screen's own wrapper — logged loudly
-		# rather than crashing on card.id below.
-		#
-		# 🔴 [member _card_confirming] is deliberately left untouched (still
-		# false) on this early-out — NOT set true first and left stuck there.
-		# Setting it true unconditionally at the top of this function was a
-		# real bug this project caught by independent review: it would have
-		# left this screen believing S3 is open (routing battle_confirm/
-		# battle_cancel to the _card_confirming branch of _input()) with no
-		# card data behind it, and _handle_card_confirm_cancel_transition()
-		# would then dereference this same null _card_confirm_card on
-		# .category. The invariant this function now upholds is "
-		# _card_confirming only ever becomes true once _card_confirm_card is
-		# confirmed non-null" — see that method's own defensive null guard,
-		# which exists as a second line of defense, not as the primary fix.
 		push_error(
 			"BattleScreen: _open_card_confirm_panel() reached CONFIRMING with "
-			+ "_card_confirm_card == null -- the confirm panel cannot be shown. "
-			+ "This means something advanced CardPlaySession without going "
-			+ "through this screen's own _confirm_selected_card()."
+			+ "BattleController.selected_card() == null -- the confirm panel "
+			+ "cannot be shown. This should be structurally unreachable; see "
+			+ "this method's own doc comment."
 		)
 		return
 	_card_confirming = true
 	var flavor_text: String = _card_flavor_texts.get(card.id, "")
+	var target_a_id: int = _controller.selected_target_a()
+	var target_b_id: int = _controller.selected_target_b()
 
 	if card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
-		var target: Unit = _state.unit_by_id(_card_confirm_target_a)
+		var target: Unit = _state.unit_by_id(target_a_id)
 		var existing: Array[Dictionary] = []
 		for modifier: CardModifier in target.active_modifiers():
 			existing.append({
@@ -1924,13 +1917,11 @@ func _open_card_confirm_panel() -> void:
 			existing, preview_atk, preview_def
 		)
 	else:
-		var target_a: Unit = _state.unit_by_id(_card_confirm_target_a)
-		var target_b: Unit = _state.unit_by_id(_card_confirm_target_b)
+		var target_a: Unit = _state.unit_by_id(target_a_id)
+		var target_b: Unit = _state.unit_by_id(target_b_id)
 		var strength_result: Dictionary = {"available": false, "current": 0, "projected": 0}
 		if card_confirm_strength_provider.is_valid():
-			strength_result = card_confirm_strength_provider.call(
-				_card_confirm_target_a, _card_confirm_target_b
-			)
+			strength_result = card_confirm_strength_provider.call(target_a_id, target_b_id)
 		_card_confirm_panel.show_permanent_write_confirmation(
 			card.id, flavor_text, target_a.code_name, target_b.code_name,
 			bool(strength_result.get("available", false)),
@@ -1953,9 +1944,10 @@ func _apply_pending_card_confirm() -> void:
 		return
 	if _controller.confirm():
 		_card_confirming = false
-		_card_confirm_card = null
-		_card_confirm_target_a = -1
-		_card_confirm_target_b = -1
+		# Story U-014 (2026-09-24 "消除重複" ruling) — no local mirrors to
+		# clear here anymore; CardPlaySession's own _reset_to_closed() (called
+		# internally by a successful confirm()) already clears its real
+		# _selected_card/_selected_target_a/_selected_target_b.
 		_card_confirm_panel.hide_panel()
 		# AC-U1 — Implementation Note 5: confirm() already mutated the
 		# target's modifiers (甲類) or wrote to the affinity pool (丙類);
@@ -1971,38 +1963,26 @@ func _apply_pending_card_confirm() -> void:
 ## CONFIRMING must re-register [constant CursorTypes.SurfaceType.BOARD_TILE]
 ## and restore [member _card_selecting_target], mirroring [method
 ## _handle_target_selection_cancel_transition]'s own "S2q -> S2p" branch.
-## [method CardPlaySession.cancel]'s CONFIRMING branch only ever steps back
-## into SELECTING_TARGET_B (丙類, clearing its internal
-## [code]_selected_target_b[/code]) or SELECTING_TARGET (甲類, clearing its
-## internal [code]_selected_target_a[/code]) — never further, and never to
-## SELECTING_CARD — so this call site never needs the "legal_targets() empty
-## -> back to S1" branch [method _handle_target_selection_cancel_transition]
-## itself has for its own, different call site.
+##
+## 🔴 2026-09-24 "消除重複" ruling simplified this method considerably. Before
+## this ruling, this screen kept its own copies of the selected targets
+## ([code]_card_confirm_target_a[/code]/[code]_card_confirm_target_b[/code])
+## and had to branch on the card's category here purely to decide WHICH of
+## its two local copies [method CardPlaySession.cancel] would have cleared —
+## mirroring that method's own CONFIRMING branch (丙類 clears its internal
+## [code]_selected_target_b[/code]; 甲類 clears [code]_selected_target_a[/code]).
+## Now that this screen holds no such copies at all (see [method
+## _open_card_confirm_panel]'s own doc comment), there is nothing left to
+## mirror — [CardPlaySession] already did the real clearing internally the
+## instant [method BattleController.cancel] (below) returned, and the next
+## [method _open_card_confirm_panel] call (if the player re-enters CONFIRMING)
+## will read whatever is left over straight from
+## [method BattleController.selected_target_a]/[method
+## BattleController.selected_target_b]. The category branch, and the null
+## guard an independent review previously required around it, are both gone
+## because there is no longer a local field for either to protect.
 func _handle_card_confirm_cancel_transition() -> void:
 	_card_confirming = false
-	# 🔴 Second line of defense (independent review finding) — this method is
-	# reached only from the _card_confirming branch of _input(), and, per
-	# _open_card_confirm_panel()'s own invariant, _card_confirming only ever
-	# becomes true after _card_confirm_card is confirmed non-null, so
-	# _card_confirm_card == null should be structurally unreachable here
-	# today. Guarded anyway rather than dereferencing .category unconditionally
-	# — the exact same "assume non-null, crash on the caller-bypassed test
-	# path" shape this project already hit once in this same story (see
-	# _open_card_confirm_panel()'s own doc comment). Both target mirrors are
-	# cleared defensively when the category cannot be determined, since a
-	# stale id in either would be worse than clearing one unnecessarily.
-	if _card_confirm_card == null:
-		push_error(
-			"BattleScreen: _handle_card_confirm_cancel_transition() called with "
-			+ "_card_confirm_card == null -- cannot tell which CardPlaySession.cancel() "
-			+ "branch (丙類/甲類) was taken. Clearing both target mirrors defensively."
-		)
-		_card_confirm_target_a = -1
-		_card_confirm_target_b = -1
-	elif _card_confirm_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
-		_card_confirm_target_b = -1
-	else:
-		_card_confirm_target_a = -1
 	_card_confirm_panel.hide_panel()
 	_card_selecting_target = true
 	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
@@ -2032,16 +2012,14 @@ func _handle_card_confirm_cancel_transition() -> void:
 func _handle_target_selection_cancel_transition() -> void:
 	var legal: Array[int] = _controller.legal_targets()
 	if legal.is_empty():
-		# S2/S2p -> S1 (SELECTING_CARD). CardPlaySession.cancel()'s
-		# SELECTING_TARGET branch clears its own _selected_card AND
-		# _selected_target_a (see that method's own code) — Story U-014 keeps
-		# this screen's mirrors of both in sync here, closing the residue gap
-		# AC-U13's second half tests for.
+		# S2/S2p -> S1 (SELECTING_CARD). 2026-09-24 "消除重複" ruling: no
+		# local mirrors left to clear here — CardPlaySession.cancel()'s
+		# SELECTING_TARGET branch already clears its own real _selected_card
+		# AND _selected_target_a internally; the next _confirm_selected_card()
+		# call (S1 -> S2 again) reads whatever is current straight from
+		# BattleController.
 		_card_selecting_target = false
 		_card_selecting_from_hand = true
-		_card_confirm_card = null
-		_card_confirm_target_a = -1
-		_card_confirm_target_b = -1
 		# Kept on ONE line — see _confirm_selected_card()'s matching comment
 		# for why (frame_buffer_ordering_test.gd's scanner is line-based).
 		var unregister_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
@@ -2052,11 +2030,8 @@ func _handle_target_selection_cancel_transition() -> void:
 			)
 	else:
 		# S2q -> S2p (SELECTING_TARGET) — stays registered, reseed onto the
-		# (now S2p) legal set's first entry. CardPlaySession.cancel()'s
-		# SELECTING_TARGET_B branch clears only its own internal
-		# _selected_target_a (not _selected_card) — Story U-014 mirrors that
-		# exactly here.
-		_card_confirm_target_a = -1
+		# (now S2p) legal set's first entry. No local mirror to clear (see
+		# the "legal.is_empty()" branch's own comment above).
 		_target_jump_requested = true
 		_target_jump_forward = true
 

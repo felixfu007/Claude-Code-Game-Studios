@@ -144,6 +144,32 @@ func is_open() -> bool:
 	return _step != Step.CLOSED
 
 
+## Story U-014 連帶(2026-09-24 管理者裁決「消除重複」)—— 讀出目前選定的卡片,
+## [code]null[/code] 表示尚未選定([constant Step.CLOSED] 或
+## [constant Step.SELECTING_CARD])。純新增的唯讀 getter,不改變任何既有行為 ——
+## 在此之前這個類別沒有任何一處記載「刻意不對外公開選取狀態」的設計理由
+## (協調者查證:`grep -n "getter\|encapsul\|deliberately" card_play_session.gd`
+## 零命中此類理由),本 getter 純粹是把已存在的私有欄位開一個讀的窗口。
+## 這是 [code]battle_screen.gd[/code] 的確認面板(U-014)原本自行維護一份鏡像
+## (`_card_confirm_card`)的原因——本 getter 讓那份鏡像變得多餘,呼叫端改讀
+## 這裡,單一資料來源。
+func selected_card() -> Card:
+	return _selected_card
+
+
+## 同 [method selected_card] 的裁決與理由——讀出第一個選定的目標 unit id,
+## [code]-1[/code] 表示尚未選定。甲類唯一的目標、丙類 S2p 選定的第一人都經由
+## [method select_target] 寫入這裡。
+func selected_target_a() -> int:
+	return _selected_target_a
+
+
+## 同上——丙類 S2q 選定的第二人,經由 [method select_second_target] 寫入。
+## 甲類整個 session 期間恆為 [code]-1[/code]。
+func selected_target_b() -> int:
+	return _selected_target_b
+
+
 ## Step 1 (S0 -> S1). Returns [code]false[/code] and leaves [member _step] at
 ## [constant Step.CLOSED] if [param authoritative_write_in_progress_check]
 ## (given at construction) reports [code]true[/code] — checked synchronously

@@ -8,15 +8,20 @@
 # _handle_card_confirm_cancel_transition() / S3 的 _input() 分派 —— 這些是本 story
 # 實際新增的程式碼。
 #
-# 🔴 「從真實游標裁定走到 CONFIRMING」這一段（_apply_target_confirm_from_cursor_state()
-# 呼叫 select_target()/select_second_target() 成功後那兩行新增的
-# _card_confirm_target_a/_b 賦值）本檔【不】透過真實 CursorStateHost 裁定管線驅動 ——
-# 那條管線是 U-013 自己的既有職責與既有測試涵蓋範圍（tests/integration/ui/card_target_selection_test.gd）。
-# 本檔改用「直接呼叫 BattleController.select_target()/select_second_target()（真實呼叫,
-# 非重新實作）+ 手動指派 _card_confirm_target_a/_b（模擬那兩行新增賦值會做的事)」
-# 的方式驅動到 CONFIRMING,把測試焦點放在本 story 真正新增的下游行為上。
-# 這代表：那兩行賦值本身的「有沒有從真實呼叫端接對」不是被本檔獨立驗證的,
-# 是讀過程式碼確認過的（見任務報告)。
+# 🔴 「從真實游標裁定走到 CONFIRMING」這一段本檔【不】透過真實 CursorStateHost
+# 裁定管線驅動 —— 那條管線是 U-013 自己的既有職責與既有測試涵蓋範圍
+# （tests/integration/ui/card_target_selection_test.gd）。本檔改用「直接呼叫
+# BattleController.select_target()/select_second_target()（真實呼叫，非重新
+# 實作）」的方式驅動到 CONFIRMING，把測試焦點放在本 story 真正新增的下游行為
+# （確認面板本體、S3 的 _input() 分派）上。
+#
+# 🔴 2026-09-24「消除重複」裁決後更新：早期版本的本節寫著「手動指派
+# _card_confirm_target_a/_b（模擬 battle_screen.gd 內某兩行新增賦值會做的事)」
+# —— 那兩行賦值與它們所屬的畫面端鏡像欄位已經整批移除（CardPlaySession 直接
+# 開放唯讀 getter，battle_screen.gd 不再自行複製一份）。**本檔現在完全不手動
+# 指派任何鏡像欄位**——BattleController.select_target()/select_second_target()
+# 這兩個真實呼叫本身就會讓 CardPlaySession 記住目標，_open_card_confirm_panel()
+# 直接讀 BattleController 的 getter，兩者之間沒有第三份需要手動同步的副本。
 #
 # 沿用既有慣例：真正 load()/instantiate() BattleScreen.tscn 並 add_child()（觸發真實
 # _ready()),之後用 tests/integration/ui/card_target_selection_test.gd 的
@@ -115,9 +120,8 @@ func _install_session(
 	return deck
 
 
-## 開手牌 -> 選牌（真實呼叫 battle_screen.gd 的 _confirm_selected_card()，這正是
-## 本 story 新增 _card_confirm_card 賦值的地方）。假設 [param cards] 只有一張牌
-## （hand_bar 游標預設在索引 0）。
+## 開手牌 -> 選牌（真實呼叫 battle_screen.gd 的 _confirm_selected_card()）。
+## 假設 [param cards] 只有一張牌（hand_bar 游標預設在索引 0）。
 func _open_hand_and_select_first_card(instance: BattleScreen) -> void:
 	instance._input(_real_pressed_event(&"battle_open_hand"))
 	assert_bool(instance._controller.is_card_play_in_progress()).append_failure_message(
@@ -130,7 +134,13 @@ func _open_hand_and_select_first_card(instance: BattleScreen) -> void:
 
 
 ## 驅動甲類卡片一路到 CONFIRMING（S3），面板應已開啟。見本檔檔頭「涵蓋範圍的
-## 誠實揭露」——target 選取本身用直接呼叫 + 手動指派模擬，不走真實游標管線。
+## 誠實揭露」——target 選取本身用直接呼叫模擬，不走真實游標管線。
+##
+## 🔴 2026-09-24 管理者裁決「消除重複」後更新：不再手動指派任何
+## `_card_confirm_target_*` 鏡像欄位——那些欄位已從 `battle_screen.gd` 移除。
+## `_controller.select_target()` 這個真實呼叫本身就會讓 CardPlaySession 記住
+## 這個目標；`_open_card_confirm_panel()` 現在直接讀
+## `BattleController.selected_target_a()`，不需要任何人手動複製一份。
 func _drive_temporary_modifier_to_confirming(
 	instance: BattleScreen, target: Unit
 ) -> void:
@@ -139,7 +149,6 @@ func _drive_temporary_modifier_to_confirming(
 	assert_bool(advanced).append_failure_message(
 		"PRECONDITION: select_target(%d) 應該成功（甲類合法目標=我方單位）" % target.id
 	).is_true()
-	instance._card_confirm_target_a = target.id
 	instance._after_target_selection_advanced()
 	assert_int(instance._controller._card_play_session.step()).append_failure_message(
 		"PRECONDITION: 甲類只有一個目標，選定後應直接進入 CONFIRMING"
@@ -149,7 +158,8 @@ func _drive_temporary_modifier_to_confirming(
 	).is_true()
 
 
-## 同上，丙類版本——兩個目標都要手動指派 _card_confirm_target_a/_b。
+## 同上，丙類版本。同樣不再手動指派任何鏡像欄位——理由同
+## [method _drive_temporary_modifier_to_confirming] 的 2026-09-24 更新說明。
 func _drive_permanent_write_to_confirming(
 	instance: BattleScreen, target_a: Unit, target_b: Unit
 ) -> void:
@@ -158,7 +168,6 @@ func _drive_permanent_write_to_confirming(
 	assert_bool(advanced_a).append_failure_message(
 		"PRECONDITION: select_target(%d) 應該成功（丙類 S2p 合法首選）" % target_a.id
 	).is_true()
-	instance._card_confirm_target_a = target_a.id
 	instance._after_target_selection_advanced()
 	assert_int(instance._controller._card_play_session.step()).append_failure_message(
 		"PRECONDITION: 丙類選完第一人應進入 S2q（SELECTING_TARGET_B）"
@@ -169,7 +178,6 @@ func _drive_permanent_write_to_confirming(
 		"PRECONDITION: select_second_target(%d) 應該成功（%d 的合法搭檔）"
 		% [target_b.id, target_a.id]
 	).is_true()
-	instance._card_confirm_target_b = target_b.id
 	instance._after_target_selection_advanced()
 	assert_bool(instance._card_confirming).append_failure_message(
 		"PRECONDITION: 兩人皆選定後應進入 CONFIRMING 並開啟確認面板"
@@ -375,17 +383,15 @@ func test_confirm_panel_丙類_pair_updates_after_reselecting_without_residue() 
 	assert_int(instance._controller._card_play_session.step()).is_equal(
 		CardPlaySession.Step.SELECTING_TARGET
 	)
-	assert_int(instance._card_confirm_target_a).append_failure_message(
-		"退回 S2p 後 _card_confirm_target_a 鏡像應清空，不殘留 unit_1"
+	assert_int(instance._controller.selected_target_a()).append_failure_message(
+		"退回 S2p 後 CardPlaySession 自己的 _selected_target_a 應清空，不殘留 unit_1"
 	).is_equal(-1)
 
 	var advanced_a: bool = instance._controller.select_target(unit_3.id)
 	assert_bool(advanced_a).is_true()
-	instance._card_confirm_target_a = unit_3.id
 	instance._after_target_selection_advanced()
 	var advanced_b: bool = instance._controller.select_second_target(unit_4.id)
 	assert_bool(advanced_b).is_true()
-	instance._card_confirm_target_b = unit_4.id
 	instance._after_target_selection_advanced()
 
 	# Assert —— 面板同步顯示丙(unit_3)/丁(unit_4)，不殘留前一對(unit_1/unit_2)
@@ -481,6 +487,40 @@ func test_confirm_panel_arrow_layout_required_two_column_no_arrow_variant_must_f
 	).is_false()
 
 
+## 獨立覆核指出的涵蓋缺口：現有測試只驗過 strength_available=false（佔位提示）
+## 那一支；若有人把元件裡呼叫 format_strength_arrow() 那一行改壞成兩欄無箭頭，
+## 而兩個 static 函式（format_strength_arrow()/text_uses_required_arrow_format()）
+## 本身不變，既有測試抓不到。本測試直接以 strength_available=true 驅動元件本體，
+## 釘住「元件真的會呼叫 format_strength_arrow()」這件事。
+##
+## 🔴 已驗證紅燈：暫時把 card_confirm_panel.gd 裡
+## `format_strength_arrow(current_strength, projected_strength) if strength_available`
+## 改成兩欄無箭頭格式（`"%s\t%s" % [format_signed(current_strength),
+## format_signed(projected_strength)]`），重跑全套，本測試 FAILED（具名輸出見
+## 任務報告），且不影響其他測試；還原後重跑，本測試與全套皆綠。
+func test_confirm_panel_丙類_strength_field_shows_arrow_format_when_available() -> void:
+	# Arrange —— 直接驅動元件本身，不需要走完整個 session 流程
+	var instance: BattleScreen = _fresh_instance()
+	var panel: CardConfirmPanel = instance._card_confirm_panel
+
+	# Act —— strength_available=true 時應該呼叫 format_strength_arrow()，
+	# 而不是顯示佔位提示
+	panel.show_permanent_write_confirmation(
+		"test_strength_available", "", "甲", "乙", true, 3, 4
+	)
+
+	# Assert —— 輸出必須恰好是 format_strength_arrow(3, 4) 的值，且通過箭頭格式判準
+	var strength_text: String = panel.diagnostic_strength_text()
+	assert_str(strength_text).append_failure_message(
+		"strength_available=true 時應該顯示 format_strength_arrow(3, 4) 的輸出，實得「%s」"
+		% strength_text
+	).is_equal(CardConfirmPanel.format_strength_arrow(3, 4))
+	assert_bool(CardConfirmPanel.text_uses_required_arrow_format(strength_text)).append_failure_message(
+		"strength_available=true 時的輸出必須通過箭頭格式判準——若元件呼叫" +
+		"format_strength_arrow() 那一行被改壞成兩欄無箭頭，這裡應該轉紅"
+	).is_true()
+
+
 func test_confirm_panel_丙類_strength_field_shows_placeholder_not_zero_when_unavailable() -> void:
 	# Arrange —— 2026-09-24 管理者裁決「維持留白＋提示」：
 	# card_confirm_strength_provider 未設定是今天唯一存在的狀態
@@ -511,68 +551,97 @@ func test_confirm_panel_丙類_strength_field_shows_placeholder_not_zero_when_un
 	).is_true()
 
 
-# ─── 回歸測試：_card_confirm_card == null 時的兩個防禦點（獨立覆核抓到的缺陷）──
+# ─── 回歸測試：_open_card_confirm_panel() 的 null 防禦分支（獨立覆核抓到的缺陷，
+# 2026-09-24「消除重複」裁決後重新設計）──────────────────────────────────────
 #
-# 覆核者指出：_open_card_confirm_panel() 原本把 _card_confirming = true 設在
-# null 檢查之前，導致對 null card 早退時 _card_confirming 殘留 true；而
-# _handle_card_confirm_cancel_transition() 對 _card_confirm_card.category 完全
-# 沒有 null 防護，與本 story 最初撞到的那個崩潰同一個形狀，只是換了呼叫點。
-# 以下兩條測試各自直接對準一個防禦點，已用「暫時還原成 bug 版本 -> 重跑 -> 應
-# 轉紅 -> 還原修正 -> 重跑 -> 應轉綠」的方式驗證過（原始輸出見任務報告，不寫在
-# 這裡——本專案的既有慣例是敏感度證明的紅燈輸出留在報告，不留在版控裡的原始碼）。
+# 🔴 這一段的歷史，照實記錄（不是為了好看，是因為協調者明文要求「刪測試前先判斷
+# 失效模式是否還可能發生，不能只因為欄位改名了」）：
+#
+# 原本這裡有兩條回歸測試，各自對準一個防禦點：
+#   1. _open_card_confirm_panel() 曾經把 _card_confirming = true 設在 null 檢查
+#      之前，導致對 null card 早退時 _card_confirming 殘留 true。
+#   2. _handle_card_confirm_cancel_transition() 曾經對 _card_confirm_card.category
+#      完全沒有 null 防護。
+# 兩者在「畫面自行維護 _card_confirm_card/_target_a/_target_b 鏡像」的舊架構下
+# 都曾用「暫時還原成 bug 版本 -> 重跑 -> 轉紅 -> 還原修正 -> 重跑 -> 轉綠」驗證過
+# 是真的會崩潰（原始輸出見任務報告）。
+#
+# 「消除重複」裁決之後重新判斷這兩個防禦點：
+#
+# 🔴 **第 2 點的防禦分支已經整段被刪除，不是被繞過。** _handle_card_confirm_cancel_transition()
+# 不再需要判斷卡片 category 才能決定清哪個目標鏡像——因為已經沒有目標鏡像可清了
+# （目標由 BattleController.selected_target_a()/selected_target_b() 直接讀，
+# 不再由這個畫面複製一份）。**沒有程式碼留下，就沒有東西可以測**——對應的回歸測試
+# 已刪除，不是改寫。
+#
+# 🔴 **第 1 點的防禦分支還留著，而且讀過 card_play_session.gd 的完整狀態機後判定
+# 它現在是死碼（結構上不可達），但仍選擇留著、並補一條用間諜 session 才能觸發的
+# 測試**，而不是連防禦分支一起刪。推導鏈（逐步核對過 card_play_session.gd 本體）：
+#   - _open_card_confirm_panel() 只從 _after_target_selection_advanced() 呼叫，
+#     後者只在 _controller.select_target()/select_second_target() 成功時呼叫。
+#   - 這兩個方法要回傳 true，CardPlaySession 內部必須已經在 Step.SELECTING_TARGET
+#     或 Step.SELECTING_TARGET_B——而這兩個方法自己的本體都會解參考
+#     _selected_card.category 才能決定下一步（select_target() 讀
+#     _selected_card.category 來判斷要不要進 SELECTING_TARGET_B；legal_targets()
+#     在 SELECTING_TARGET 時同樣讀 _selected_card.category），若 _selected_card
+#     是 null，這兩個方法自己就會先崩潰，不會讓呼叫端看到「成功」。
+#   - 能讓 _step 走到 SELECTING_TARGET 的唯一路徑是 select_card()（同一次呼叫內
+#     設定 _selected_card 再設 _step），或是從 SELECTING_TARGET_B 的 cancel()
+#     退回（該分支完全不touch _selected_card，只清 _selected_target_a）。
+#   - 逐一核對後：_selected_card 在 SELECTING_TARGET / SELECTING_TARGET_B /
+#     CONFIRMING 這三個 step 下，結構上不可能是 null。
+# 亦即：舊架構下讓這個分支被觸發的成因（畫面自己的鏡像可能跟真實 session 失步）
+# 已經隨鏡像本身被移除而消失，**新架構下不會再有正常呼叫路徑走到這個分支**。
+# 選擇留著它是防禦性判斷（防未來有人不小心破壞 CardPlaySession 自己的不變量），
+# 不是因為找到了新的可達觸發情境。
 
 
-func test_open_confirm_panel_with_null_card_does_not_leave_card_confirming_stuck_true() -> void:
-	# Arrange —— 模擬「某呼叫端繞過 _confirm_selected_card() 自行推進 session」
-	# 這個既有測試（card_target_selection_test.gd 的 mutant-session 敏感度證明）
-	# 已經在撞的情境：_card_confirm_card 從未被設定，維持 null，但 session 本身
-	# 已經真的推進到 CONFIRMING。
+## 敏感度證明/回歸測試用的間諜子類別 —— 覆寫 selected_card() 使其回傳 null，
+## 即使 session 內部真實的 _step 已經推進到 CONFIRMING（其餘方法一律不覆寫，
+## select_card()/select_target() 等的真實行為完全不變）。用來讓
+## _open_card_confirm_panel() 的 null 防禦分支在「BattleController.selected_card()
+## 這個轉發鏈的某一環未來被改壞」這個假設情境下，仍然有一條會真的執行到它的測試
+## ——而不是讓它變成一段沒有人知道還算不算數的死碼。
+##
+## 🔴 這是刻意的、對抗性的注入（覆寫一個單行 getter 說謊），不是重現一個
+## CardPlaySession 狀態機自然會走到的情境——見本節上方的推導，_selected_card 在
+## CONFIRMING 這個 step 下結構上不可能是 null，本測試的「null」完全是 mutant
+## 自己假造的回傳值，不是任何真實呼叫路徑會產生的狀態。
+class _MutantCardPlaySessionLiesAboutSelectedCard extends CardPlaySession:
+	func selected_card() -> Card:
+		return null
+
+
+func test_open_confirm_panel_with_selected_card_lying_null_does_not_leave_card_confirming_stuck_true() -> void:
+	# Arrange —— 換上會說謊的間諜 session：selected_card() 永遠回傳 null，但
+	# session 內部真實的 _step/_selected_card 完全正常，會真的推進到 CONFIRMING
 	var instance: BattleScreen = _fresh_instance()
 	var target: Unit = instance._state.units_of(Unit.Faction.PLAYER)[0]
-	var card: Card = _build_temporary_card("test_null_card_ordering", 1, 0, 1)
-	_install_session(instance, [card], [], NullAffinityWritePort.new())
+	var card: Card = _build_temporary_card("test_lying_selected_card", 1, 0, 1)
+	var deck: CardDeck = CardDeck.new([card])
+	instance._state.attach_card_deck(deck)
+	deck.deal_opening_hand()
+	instance._controller._card_play_session = _MutantCardPlaySessionLiesAboutSelectedCard.new(
+		deck, instance._state, [], NullAffinityWritePort.new()
+	)
 	_open_hand_and_select_first_card(instance)
 	var advanced: bool = instance._controller.select_target(target.id)
 	assert_bool(advanced).append_failure_message(
-		"PRECONDITION: select_target() 應該成功"
+		"PRECONDITION: select_target() 應該成功——mutant 沒有覆寫這個方法，" +
+		"真實邏輯應該照常運作"
 	).is_true()
-	instance._card_confirm_card = null  # 模擬繞過 _confirm_selected_card() 的情境
+	assert_int(instance._controller._card_play_session.step()).append_failure_message(
+		"PRECONDITION: session 內部應該真的推進到 CONFIRMING（mutant 只騙" +
+		" selected_card()，不騙 step()）"
+	).is_equal(CardPlaySession.Step.CONFIRMING)
 
-	# Act
+	# Act —— 此刻 _controller.selected_card() 回傳 null（mutant 說謊），
+	# 觸發 _open_card_confirm_panel() 的防禦分支
 	instance._after_target_selection_advanced()
 
-	# Assert —— 修正前：_card_confirming 在 null 檢查之前就被設 true，早退後殘留
-	# true，這裡會量到 true 而轉紅；修正後：null 檢查通過前不設 true，早退時維持
-	# false
+	# Assert —— _card_confirming 不應該殘留 true
 	assert_bool(instance._card_confirming).append_failure_message(
-		"_open_card_confirm_panel() 對 null card 早退時，_card_confirming 不應該" +
-		"殘留 true——那會讓 _input() 把後續 battle_confirm/battle_cancel 誤導向" +
-		"『S3 進行中』分支，卻沒有任何面板資料可用"
+		"_open_card_confirm_panel() 對 BattleController.selected_card()==null 早退" +
+		"時，_card_confirming 不應該殘留 true——那會讓 _input() 把後續" +
+		"battle_confirm/battle_cancel 誤導向『S3 進行中』分支，卻沒有任何面板資料可用"
 	).is_false()
-
-
-func test_handle_card_confirm_cancel_transition_with_null_card_does_not_crash() -> void:
-	# Arrange —— 直接重現覆核者描述的狀態組合：_card_confirming 已是 true，但
-	# _card_confirm_card 是 null。這與上一條測試不同：上一條驗的是「不會走到這個
-	# 狀態」，這一條驗的是「萬一走到了，這個函式本身不會崩潰」——雙重防線各自
-	# 有測試。
-	var instance: BattleScreen = _fresh_instance()
-	instance._card_confirming = true
-	instance._card_confirm_card = null
-
-	# Act —— 修正前：_card_confirm_card.category 對 null 解參考，
-	# SCRIPT ERROR「Invalid access to property or key 'category' on a base
-	# object of type 'Nil'」，測試以錯誤中止；修正後：不崩潰，正常完成
-	instance._handle_card_confirm_cancel_transition()
-
-	# Assert
-	assert_bool(instance._card_confirming).append_failure_message(
-		"呼叫後 _card_confirming 應該變 false"
-	).is_false()
-	assert_bool(instance._card_selecting_target).append_failure_message(
-		"防禦分支仍應完成完整的退回流程（回到目標選取），不是卡在半路"
-	).is_true()
-	assert_int(instance._card_confirm_target_a).append_failure_message(
-		"category 未知時應防禦性清空兩個目標鏡像，不留殘值"
-	).is_equal(-1)
-	assert_int(instance._card_confirm_target_b).is_equal(-1)

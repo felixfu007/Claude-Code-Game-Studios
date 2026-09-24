@@ -366,6 +366,32 @@ func is_card_play_in_progress() -> bool:
 	return _card_play_session.is_open()
 
 
+## Story U-014 連帶(2026-09-24 管理者裁決「消除重複」)—— 轉發
+## [method CardPlaySession.selected_card],同 [method is_card_play_in_progress]
+## 的形狀:純讀取,不設任何 phase 閘門(這是查詢「目前選了什麼」,不是動作)。
+## 沒有 [CardDeck] 時回傳 [code]null[/code]。
+func selected_card() -> Card:
+	if _card_play_session == null:
+		return null
+	return _card_play_session.selected_card()
+
+
+## 同上,轉發 [method CardPlaySession.selected_target_a]。沒有 [CardDeck] 時
+## 回傳 [code]-1[/code]。
+func selected_target_a() -> int:
+	if _card_play_session == null:
+		return -1
+	return _card_play_session.selected_target_a()
+
+
+## 同上,轉發 [method CardPlaySession.selected_target_b]。沒有 [CardDeck] 時
+## 回傳 [code]-1[/code]。
+func selected_target_b() -> int:
+	if _card_play_session == null:
+		return -1
+	return _card_play_session.selected_target_b()
+
+
 ## story-008-play-session-wiring.md: forwards to [method
 ## CardPlaySession.open_hand]. Returns [code]false[/code] without touching
 ## anything if no [CardDeck] is attached to this battle (AC-P6) or the
