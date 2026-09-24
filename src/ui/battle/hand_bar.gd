@@ -201,6 +201,21 @@ const TEXT_UNAVAILABLE: String = "不可用"
 ## Centralized as a constant for the same reason as [constant TEXT_UNAVAILABLE].
 const TEXT_PERMANENT_MARK: String = "永久"
 
+## Story U-015(強制棄牌 S4)—— reuses [member _unavailable_label] (the same
+## node [constant TEXT_UNAVAILABLE] uses for S5) rather than adding a second
+## caption node, since the two states are mutually exclusive in practice
+## (LOCKED only ever occurs outside PLAYER_INPUT; a forced discard only ever
+## occurs at the start of the player's own turn, squarely inside
+## PLAYER_INPUT — see `design/ux/skill-card-play.md`'s own States & Variants
+## table). Deliberately different wording from both [constant TEXT_UNAVAILABLE]
+## and `battle_menu.gd`'s [constant BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD]
+## ("請先完成棄牌") — this is a DIFFERENT display surface (the hand bar itself,
+## always visible while S4 is active) answering a DIFFERENT question ("why
+## can't I do anything else right now", not "why did the menu refuse to
+## open"), so a verbatim match is not required — see `.claude/docs/ui-code.md`
+## conventions this file already follows for its own [code]TEXT_*[/code] block.
+const TEXT_FORCED_DISCARD: String = "手牌已滿，請選一張棄掉"
+
 @onready var _count_label: Label = $CountLabel
 @onready var _unavailable_label: Label = $UnavailableLabel
 
@@ -230,6 +245,17 @@ var _detail_effect_label: Label = null
 var _slot_kinds: Array[SlotKind] = []
 var _max_slots: int = 0
 var _availability: Availability = Availability.NORMAL
+
+## Story U-015(強制棄牌 S4)—— 骨架欄位,寫下先於讀 story 之前的最佳猜測,
+## 細節待讀完 `story-u015-forced-discard.md` 後修正:
+## `design/ux/skill-card-play.md` S4 列明文「Z2 展開,🔴 無法收起」「只能選一張
+## 棄掉」「取消鍵在此狀態無效」。**「無法收起」由 battle_screen.gd 的輸入分派
+## 保證**(S4 期間不送出會觸發收合的按鍵路徑,同 [enum Availability.LOCKED] 的
+## 既有分工:呼叫端決定「能不能」,本檔只負責「畫出來長怎樣」)——本欄位要解決
+## 的是另一半:**拒絕須可觀測**(`P-F2`)。玩家必須看得出「這不是我可以隨手關掉
+## 的一般選牌畫面」,不能只靠「按了沒反應」讓玩家自己猜。確切呈現方式(文案?
+## 邊框?兩者皆有?)待讀 story 的 Implementation Notes 後決定,不在此假設。
+var _forced_discard: bool = false
 
 ## S1's "游標停在第幾張" — owned entirely by this file (per the work order's
 ## "hand_bar.gd 只負責『游標停在第幾張』"), never reset by [method render]
@@ -313,29 +339,49 @@ func _ready() -> void:
 ## delta_atk/delta_def/duration_rounds keys are ignored regardless of
 ## whether the caller populated them, since 丙類 cards carry no duration
 ## ([code]card.gd[/code]'s own doc comment: "丙類 carries no duration").
+## Story U-015 — [param forced_discard] is a placeholder parameter (骨架,
+## default [code]false[/code] so every existing call site keeps compiling and
+## behaving exactly as before). Intended meaning per
+## `design/ux/skill-card-play.md` S4: this bar is in the mandatory-discard
+## state (Z2 forced open, no collapse, cancel key inert) — see [member
+## _forced_discard]'s own doc comment for what is and is not decided yet.
+## 🔴 Wiring TBD after reading the story — this signature/assignment exists so
+## the call site in [code]battle_screen.gd[/code] has something real to pass
+## once that side is written, not so this file's own S4 visuals are final.
 func render(
 	slot_kinds: Array[SlotKind],
 	max_slots: int,
 	availability: Availability,
 	expanded: bool = false,
-	card_faces: Array[Dictionary] = []
+	card_faces: Array[Dictionary] = [],
+	forced_discard: bool = false
 ) -> void:
 	_slot_kinds = slot_kinds.duplicate()
 	_max_slots = maxi(0, max_slots)
 	_availability = availability
 	_card_faces = card_faces.duplicate()
+	_forced_discard = forced_discard
 	_cursor_index = clampi(_cursor_index, 0, maxi(_slot_kinds.size() - 1, 0))
 
-	if expanded != _expanded:
-		_expanded = expanded
-		if expanded:
+	# Story U-015 — forced_discard structurally implies expanded: Z2 cannot be
+	# collapsed while a discard is owed (`States & Variants` S4: "🔴 無法收起"),
+	# regardless of what the caller passes for [param expanded] itself. The
+	# caller (battle_screen.gd) is expected to never toggle expanded false
+	# while this is true, but this guarantees it structurally rather than
+	# relying purely on caller discipline — same defense-in-depth judgment
+	# this project already applies elsewhere (e.g. registration-result checks
+	# after calls that "should never fail").
+	var effective_expanded: bool = expanded or forced_discard
+	if effective_expanded != _expanded:
+		_expanded = effective_expanded
+		if effective_expanded:
 			_cursor_index = 0
-		_start_expand_tween(1.0 if expanded else 0.0)
+		_start_expand_tween(1.0 if effective_expanded else 0.0)
 
 	_rebuild_slots()
 	_count_label.text = count_text(_slot_kinds.size(), _max_slots)
 	_count_label.add_theme_color_override(&"font_color", Color(1.0, 1.0, 1.0, _current_dim_factor()))
-	_unavailable_label.text = TEXT_UNAVAILABLE
+	_unavailable_label.text = TEXT_FORCED_DISCARD if forced_discard else TEXT_UNAVAILABLE
 	_ensure_lock_glyph()
 
 	_apply_layout()
@@ -416,6 +462,12 @@ func diagnostic_cursor_index() -> int:
 ## True from the [param expanded] transition [method render] most recently
 ## saw flip true, until it flips back — see [member _expanded]'s own doc
 ## comment.
+## Story U-015 — 骨架 getter,見 [member _forced_discard] 的 doc comment。
+## 讀出最近一次 [method render] 呼叫傳入的 [param forced_discard]。
+func diagnostic_is_forced_discard() -> bool:
+	return _forced_discard
+
+
 func diagnostic_is_expanded() -> bool:
 	return _expanded
 
@@ -475,6 +527,14 @@ func diagnostic_lock_glyph_child_count() -> int:
 ## visible.
 func diagnostic_caption_visible() -> bool:
 	return _unavailable_label.visible
+
+
+## Story U-015 — exact text currently shown by [member _unavailable_label].
+## Lets a test assert S4's caption specifically says [constant
+## TEXT_FORCED_DISCARD], not merely that SOME caption is visible (which S5's
+## [constant TEXT_UNAVAILABLE] would also satisfy).
+func diagnostic_caption_text() -> String:
+	return _unavailable_label.text
 
 
 ## Current dim factor (1.0 normal, [constant LOCKED_DIM_FACTOR] when locked)
@@ -714,7 +774,26 @@ func _apply_layout() -> void:
 	# fixed Z1 footprint through every state, expanded or not.
 	var mid_or_fully_expanded: bool = _expand_progress > 0.0
 	_count_label.visible = not mid_or_fully_expanded
-	_unavailable_label.visible = _availability == Availability.LOCKED and not mid_or_fully_expanded
+
+	# Story U-015 (強制棄牌 S4) — the "hide once expanded" simplification above
+	# does NOT apply to forced_discard: S4 is expanded BY DEFINITION (see
+	# render()'s own effective_expanded computation) and this caption's text
+	# IS the "拒絕須可觀測" signal S4 exists to provide
+	# (`design/ux/skill-card-play.md` S4 row) — hiding it here would silently
+	# defeat that requirement.
+	# 🔴 Known placeholder, disclosed rather than fixed: this reuses the
+	# COLLAPSED-width caption geometry computed in
+	# [method _position_caption_and_lock_glyph] even while the bar is
+	# visually at its EXPANDED width — this file has never derived proper
+	# caption geometry for the expanded state (see the comment above this
+	# block), and this story does not add it either. This story's
+	# Integration-type ACs are state/behavior (is the caption visible, does
+	# it say the right thing), not pixel placement, and this batch does not
+	# screenshot-verify (see this story's own QA evidence for why).
+	_unavailable_label.visible = (
+		(_availability == Availability.LOCKED and not mid_or_fully_expanded)
+		or _forced_discard
+	)
 	if _lock_glyph != null:
 		_lock_glyph.visible = _availability == Availability.LOCKED and not mid_or_fully_expanded
 
@@ -863,7 +942,20 @@ func _rebuild_slots() -> void:
 		panel.free()
 	_slot_nodes.clear()
 
-	for i in range(_max_slots):
+	# Story U-015 — GDD Detailed Rules 二's forced-discard trigger is a hand
+	# that just grew PAST _max_slots (`CardDeck.HAND_SIZE_LIMIT`, 5): "回合開始
+	# 補牌後手牌達 6 張". Looping only [member _max_slots] times would leave the
+	# 6th card with no panel at all — invisible and, worse, unselectable via
+	# cursor navigation despite [method move_cursor]'s own clamp already
+	# allowing the cursor to reach it (that clamp uses [member _slot_kinds]'s
+	# size, not [member _max_slots]). [method slot_rect]/[method
+	# expanded_slot_rect] are pure functions of an index with no upper bound
+	# of their own, so extending this loop's bound costs nothing beyond the
+	# extra node — the temporarily-overfull row simply runs one slot further
+	# right than the 5-slot layout was designed for, which is this file's own
+	# disclosed placeholder-geometry judgment (see class doc comment), not a
+	# new one invented for this story.
+	for i in range(maxi(_max_slots, _slot_kinds.size())):
 		var panel: Panel = Panel.new()
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		panel.add_theme_stylebox_override(&"panel", _slot_style(i))

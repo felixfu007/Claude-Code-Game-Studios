@@ -53,9 +53,10 @@ class _SpyHandBarDropsLockVisuals extends HandBar:
 		max_slots: int,
 		availability: Availability,
 		expanded: bool = false,
-		card_faces: Array[Dictionary] = []
+		card_faces: Array[Dictionary] = [],
+		forced_discard: bool = false
 	) -> void:
-		super.render(slot_kinds, max_slots, availability, expanded, card_faces)
+		super.render(slot_kinds, max_slots, availability, expanded, card_faces, forced_discard)
 		_unavailable_label.visible = false
 
 
@@ -68,15 +69,21 @@ class _SpyHandBarDropsLockVisuals extends HandBar:
 # 🔴 U-012 補簽章:HandBar.render() 新增 expanded/card_faces 兩個帶預設值的
 # 參數後,GDScript 要求覆寫方法的簽章(含預設值)必須與父類逐字相同,否則
 # 場景/測試在載入期就是 Parse Error(2026-09-17 U-012 落地時實測踩到)。
+# 🔴 U-015 再次補簽章:HandBar.render() 新增 forced_discard(強制棄牌 S4)
+# 第六個參數後,本檔三個覆寫 render() 的間諜子類別若不同步更新簽章,
+# 會在測試探索階段直接 Parse Error、導致整套測試一條都跑不到(exit 105,
+# 比執行期錯誤更嚴重——2026-09-24 協調者實測攔下)。逐一補上第六個參數並
+# 原樣轉發給 super.render(),不改動各自原本要證明的行為。
 class _SpyHandBarAlwaysAppliesLockedVisuals extends HandBar:
 	func render(
 		slot_kinds: Array[SlotKind],
 		max_slots: int,
 		_availability: Availability,
 		expanded: bool = false,
-		card_faces: Array[Dictionary] = []
+		card_faces: Array[Dictionary] = [],
+		forced_discard: bool = false
 	) -> void:
-		super.render(slot_kinds, max_slots, Availability.LOCKED, expanded, card_faces)
+		super.render(slot_kinds, max_slots, Availability.LOCKED, expanded, card_faces, forced_discard)
 
 
 # 模擬「空槽判斷被誤植為恆真」——即使手牌是空的,diagnostic_slot_is_filled()
@@ -94,9 +101,10 @@ class _SpyHandBarDesyncsCountLabel extends HandBar:
 		max_slots: int,
 		availability: Availability,
 		expanded: bool = false,
-		card_faces: Array[Dictionary] = []
+		card_faces: Array[Dictionary] = [],
+		forced_discard: bool = false
 	) -> void:
-		super.render(slot_kinds, max_slots, availability, expanded, card_faces)
+		super.render(slot_kinds, max_slots, availability, expanded, card_faces, forced_discard)
 		_count_label.text = HandBar.count_text(0, max_slots)
 
 

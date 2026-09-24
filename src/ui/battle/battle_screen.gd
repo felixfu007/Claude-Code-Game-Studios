@@ -638,6 +638,23 @@ func diagnostic_step_enemy_phase_call_count() -> int:
 	return _diagnostic_step_enemy_phase_call_count
 
 
+## story-u015-forced-discard.md, Implementation Note 2 ("拒絕須可觀測") —
+## QA/test-only diagnostic surface, same convention as [member
+## _diagnostic_enemy_acting_process_frame_count]. Counts every
+## [code]battle_cancel[/code] press this screen has specifically intercepted
+## and swallowed while [method BattleController.has_pending_discard] was
+## true — distinct from [HandBar]'s persistent [constant
+## HandBar.TEXT_FORCED_DISCARD] caption (which is visible the whole time S4 is
+## active, regardless of whether cancel was ever pressed): this counter proves
+## the REJECTION BRANCH specifically executed for a given press, not merely
+## that "nothing happened because no other branch matched".
+var _diagnostic_forced_discard_cancel_rejected_count: int = 0
+
+## See [member _diagnostic_forced_discard_cancel_rejected_count].
+func diagnostic_forced_discard_cancel_rejected_count() -> int:
+	return _diagnostic_forced_discard_cancel_rejected_count
+
+
 ## Story U-013 (ADR-0005 機制六⑥, R4-7's own suggested split for a system
 ## that is simultaneously role ② and role ⑥ — see [_TargetRetargetActor]'s
 ## doc comment for role ②'s side of the split) — [b]this node's own
@@ -931,6 +948,20 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		# Story U-015 (強制棄牌 S4) — takes priority over EVERYTHING else in
+		# this dispatch, including battle_open_hand (Z2 is already forced
+		# open by _refresh_view()'s own HandBar.render() call — this key does
+		# nothing) and the normal board move/attack path below (blocked
+		# entirely, matching card-play's own AC-14 precedent: "永遠可以選擇
+		# 不打" vs "強制棄牌是阻塞的" — the player can refuse to PLAY a card,
+		# never to DISCARD one). Polls BattleController.has_pending_discard()
+		# directly rather than a screen-local mirror — per this story's own
+		# explicit instruction not to build a second flag alongside the
+		# existing CardDeck._pending_discard -> BattleController chain.
+		if _controller.has_pending_discard():
+			_handle_forced_discard_input(event)
+			return
+
 		# Story U-013 — `battle_open_hand` (S0<->S1) is checked before anything
 		# else regardless of card-play state, mirroring the Interaction Map's
 		# own framing of it as a toggle rather than a step-scoped action.
@@ -1520,7 +1551,15 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	# only, matching this Interaction Map's own table and U-011/U-012's
 	# precedent — HandBar has zero mouse wiring), so while a session is open
 	# the only correct behavior for a click is to do nothing.
-	if _controller.is_card_play_in_progress():
+	#
+	# story-u015-forced-discard.md — same "do nothing" rule extends to S4:
+	# mouse is not wired for discard either (S4 shares Z2's keyboard/gamepad-
+	# only navigation, see _handle_forced_discard_input()), and the board
+	# itself must not be clickable while a discard is owed (mirrors AC-14's
+	# own reasoning exactly — the S4 branch in _input() already blocks every
+	# keyboard/gamepad path into board interaction; this is the mouse side of
+	# the same guarantee).
+	if _controller.is_card_play_in_progress() or _controller.has_pending_discard():
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
@@ -1603,6 +1642,57 @@ func _handle_open_hand_pressed() -> void:
 		if _controller.cancel():
 			_card_selecting_from_hand = false
 			_refresh_view()
+
+
+## story-u015-forced-discard.md — S4's entire input surface. Called ONLY from
+## [method _input]'s top-priority [code]BattleController.has_pending_discard()[/code]
+## branch (see that call site's own comment for why this pre-empts every
+## other branch, including [code]battle_open_hand[/code]). Reuses [method
+## _handle_hand_navigation] verbatim for browsing — S4 shares Z2's card
+## navigation with ordinary S1 (Implementation Note 1: "與一般的 S1...共用 Z2
+## 的展示邏輯"), the only differences are the entry trigger (system-detected,
+## not a keypress) and what [code]battle_confirm[/code]/[code]battle_cancel[/code]
+## do once inside it.
+func _handle_forced_discard_input(event: InputEvent) -> void:
+	_handle_hand_navigation(event)
+	if event.is_action_pressed(&"battle_confirm"):
+		_device.note_pad_input()
+		_confirm_forced_discard()
+		return
+	if event.is_action_pressed(&"battle_cancel"):
+		# Implementation Note 2 (`skill-card-play.md` quoted verbatim in the
+		# story): "可以拒絕「打出」,不可以拒絕「棄掉」...而它必須讓玩家看得出
+		# 來自己不是按錯(拒絕須可觀測,P-F2)". The press is swallowed here —
+		# CardPlaySession.cancel()/BattleController.cancel() are never called,
+		# there is nothing to step back out of — and its rejection is made
+		# observable two ways: [HandBar]'s persistent [constant
+		# HandBar.TEXT_FORCED_DISCARD] caption is already visible the whole
+		# time S4 is active (not a transient flash a distracted player could
+		# miss — the same "persistent trace beats transient flash" judgment
+		# this project already applied to modifier-expiry feedback), and this
+		# counter proves THIS press specifically hit the rejection branch.
+		_device.note_pad_input()
+		_diagnostic_forced_discard_cancel_rejected_count += 1
+		return
+
+
+## story-u015-forced-discard.md — the ONLY way S4 resolves: maps the hand
+## bar's cursor index to a real [Card] (mirrors [method _confirm_selected_card]'s
+## own index-lookup shape exactly) and calls [method
+## BattleController.resolve_forced_discard] — the existing entry point this
+## story reads rather than rewrites (`card_deck.gd`'s [method
+## CardDeck.discard_card], not [method CardDeck.play_card]: GDD Edge Cases
+## "不得由系統代選" — this method always names the exact card the player's
+## cursor was on, never picks one itself). On success,
+## [method BattleController.has_pending_discard] becomes false and the next
+## [method _refresh_view] call renders [HandBar] back in its normal state.
+func _confirm_forced_discard() -> void:
+	var hand: Array[Card] = _state.card_deck().hand()
+	var index: int = _hand_bar.diagnostic_cursor_index()
+	if index < 0 or index >= hand.size():
+		return
+	if _controller.resolve_forced_discard(hand[index]):
+		_refresh_view()
 
 
 # Story U-013 connective tissue — the S1->S2 handoff the previous batch
@@ -2345,19 +2435,30 @@ func _refresh_view() -> void:
 	# ([method BattleState.has_pending_discard] etc.) rather than assuming it.
 	var hand: Array[Card] = _state.card_deck().hand() if _state.card_deck() != null else []
 	# Story U-013 — `expanded` now reflects S1 (_card_selecting_from_hand, see
-	# that field's own doc comment). `card_faces` is left at its [] default:
-	# Z2/Z3's flavor-text/effect-summary content needs the parsed CardText
-	# table, which _ready() currently parses and discards (see its own
-	# CARD_TEXT_PATH comment, "no screen in this slice consumes flavor text
-	# yet") — wiring that is out of scope for this story's connective-tissue
-	# duty (index -> select_card()), not silently skipped: Z2 will render
-	# correctly-shaped, correctly-selectable slots with blank Z3 text until a
-	# future story supplies card_faces.
+	# that field's own doc comment) OR'd with S4 (Story U-015 — see below).
+	# `card_faces` is left at its [] default: Z2/Z3's flavor-text/effect-summary
+	# content needs the parsed CardText table — U-014 now stores this in
+	# _card_flavor_texts, but wiring it into HandBar's own card_faces shape is
+	# still out of scope for whichever story picks it up next: Z2 will render
+	# correctly-shaped, correctly-selectable slots with blank Z3 text until
+	# that happens.
+	#
+	# Story U-015 — `forced_discard` (the new last param) polls
+	# BattleController.has_pending_discard() directly, the same query
+	# _input()'s top-priority S4 branch and _handle_mouse_button()'s guard
+	# both use — one source of truth, not a fourth screen-local mirror of it.
+	# OR'd into `expanded` too: HandBar.render() would already enforce this
+	# internally (see that method's own "forced_discard structurally implies
+	# expanded" comment), but passing it explicitly here keeps this call site
+	# honest about what state it is actually asking for, rather than relying
+	# on a callee-side correction the reader would have to go find.
 	_hand_bar.render(
 		hand_bar_slot_kinds(hand),
 		CardDeck.HAND_SIZE_LIMIT,
 		availability_for(_controller.phase()),
-		_card_selecting_from_hand
+		_card_selecting_from_hand or _controller.has_pending_discard(),
+		[],
+		_controller.has_pending_discard()
 	)
 
 	_update_status_label()
