@@ -105,6 +105,65 @@ func test_hand_reaching_six_cards_forces_z2_open_and_uncollapsible() -> void:
 	).is_true()
 
 
+## 2026-09-24 管理者裁決「補一條測試」——本 story 順手修掉的
+## HandBar._rebuild_slots() 迴圈邊界 bug（原本 `for i in range(_max_slots)`
+## 只建 5 個 Panel，改成 `for i in range(maxi(_max_slots, _slot_kinds.size()))`）
+## 沒有專屬測試，只被 test_discarding_one_card_... 間接碰到（棄的是索引 0 那張，
+## 從未觸及索引 5）。
+##
+## 🔴 裁決理由（管理者原話摘要，逐字寫進這裡）：**強制棄牌唯一的觸發情境就是
+## 手牌剛好 6 張**——這個 bug 與 S4 不是「剛好相鄰」，是同一個情境的兩面。若
+## 這個迴圈邊界複發，玩家會被迫棄牌、卻有一張（索引 5，第 6 張）選不到，
+## 而 S4 的取消鍵又明文無效——沒有退路，直接卡死整場戰鬥。
+##
+## 🔴 為什麼既有的 diagnostic_slot_is_filled(5) 抓不到這個 bug（讀過
+## hand_bar.gd 本體才知道，不是猜的）：那是純計算式
+## `index < _slot_kinds.size()`，從來不檢查 [member HandBar._slot_nodes]
+## 裡實際有沒有對應的 Panel 節點——即使舊的、有 bug 的迴圈邊界只建了 5 個
+## Panel，對索引 5 呼叫 diagnostic_slot_is_filled(5) 依然會回報 true（純數字
+## 比較，5 < 6）。本測試改用本 story 新增的 diagnostic_slot_node_count()
+## （直接讀 _slot_nodes.size()）來對準這個 bug 真正的所在位置。
+##
+## 🔴 紅燈驗證：已實際執行（暫時把 hand_bar.gd 的 _rebuild_slots() 迴圈邊界
+## 從 maxi(_max_slots, _slot_kinds.size()) 改回 _max_slots，重跑全套，本測試
+## FAILED，具名輸出見任務報告；還原後重跑轉綠）。
+func test_sixth_card_has_a_selectable_slot_during_forced_discard() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+	_install_forced_discard_state(instance)
+	instance._refresh_view()
+
+	# Assert — 第 6 張（索引 5）真的有一個 Panel 節點，不是只有邏輯上「算作
+	# 存在」。這是本測試要釘住的核心斷言——修正前這裡會量到 5，不是 6。
+	assert_int(instance._hand_bar.diagnostic_slot_node_count()).append_failure_message(
+		(
+			"手牌 6 張時應該建出 6 個 Panel 節點，實得 %d——第 6 張若沒有節點，" +
+			"玩家會看不到它、也選不到它，而強制棄牌又不能取消，直接卡死"
+		) % instance._hand_bar.diagnostic_slot_node_count()
+	).is_equal(6)
+
+	# Assert — 游標真的能移動到索引 5（第 6 張），不是卡在最後一個有節點的格子
+	for _i: int in range(5):
+		instance._hand_bar.move_cursor(1)
+	assert_int(instance._hand_bar.diagnostic_cursor_index()).append_failure_message(
+		"游標應該能移動到索引 5（第 6 張），實得 %d"
+		% instance._hand_bar.diagnostic_cursor_index()
+	).is_equal(5)
+
+	# Act — 端到端證明：真的能棄掉第 6 張（索引 5），不是只有游標數字對而已
+	var hand_before: Array[Card] = instance._state.card_deck().hand()
+	var sixth_card: Card = hand_before[5]
+	instance._input(_real_pressed_event(&"battle_confirm"))
+
+	# Assert
+	assert_bool(instance._controller.has_pending_discard()).append_failure_message(
+		"棄掉第 6 張後應該解除強制棄牌態"
+	).is_false()
+	assert_bool(instance._state.card_deck().used().has(sixth_card)).append_failure_message(
+		"游標停在索引 5 時按確認，被棄的應該正是第 6 張卡"
+	).is_true()
+
+
 # ─── 取消鍵在此狀態無效，且拒絕須可觀測 ─────────────────────────────────────
 
 

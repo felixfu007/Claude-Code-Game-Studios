@@ -444,6 +444,23 @@ func diagnostic_slot_count() -> int:
 	return _slot_kinds.size()
 
 
+## Story U-015 — actual number of [Panel] nodes [method _rebuild_slots] built,
+## as opposed to [method diagnostic_slot_count]/[method diagnostic_slot_is_filled]
+## (both PURE computations over [member _slot_kinds]/[member _max_slots] that
+## say nothing about whether a node was actually created for a given index).
+## This is the getter that would have caught the real regression this story
+## fixed: before [method _rebuild_slots]'s loop bound became
+## [code]maxi(_max_slots, _slot_kinds.size())[/code], a temporarily-overfull
+## hand (S4's ONLY trigger condition — GDD Detailed Rules 二: 手牌達 6 張,一律
+## [constant CardDeck.HAND_SIZE_LIMIT] + 1) left the 6th card with no [Panel]
+## at all — invisible and unselectable via cursor navigation, even though
+## [method diagnostic_slot_is_filled(5)] would have (wrongly, for this
+## purpose) reported [code]true[/code] the whole time, since that check never
+## looked at [member _slot_nodes] in the first place.
+func diagnostic_slot_node_count() -> int:
+	return _slot_nodes.size()
+
+
 ## The most recent [method render] call's [param max_slots].
 func diagnostic_max_slots() -> int:
 	return _max_slots
