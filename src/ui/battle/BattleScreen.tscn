@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/ui/battle/battle_screen.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://src/ui/battle/BoardView.tscn" id="2_board_view"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://src/ui/battle/hud_layout_scaler.gd" id="4_hud_layout_scaler"]
 [ext_resource type="PackedScene" path="res://src/ui/battle/HandBar.tscn" id="5_hand_bar"]
 [ext_resource type="PackedScene" path="res://src/ui/battle/CardConfirmPanel.tscn" id="6_card_confirm_panel"]
+[ext_resource type="PackedScene" path="res://src/ui/menu/BattleMenu.tscn" id="7_battle_menu"]
 
 [node name="BattleScreen" type="Node"]
 script = ExtResource("1_script")
@@ -88,3 +89,5 @@ autowrap_mode = 3
 [node name="HandBar" parent="UILayer" instance=ExtResource("5_hand_bar")]
 
 [node name="CardConfirmPanel" parent="UILayer" instance=ExtResource("6_card_confirm_panel")]
+
+[node name="BattleMenu" parent="UILayer" instance=ExtResource("7_battle_menu")]

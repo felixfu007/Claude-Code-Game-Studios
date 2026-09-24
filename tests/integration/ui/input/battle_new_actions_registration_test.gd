@@ -106,8 +106,16 @@ func test_battle_cancel_bindings_match_esc_and_pad_b() -> void:
 	var kb_events: Array[InputEventKey] = _keyboard_events("battle_cancel")
 	var pad_events: Array[InputEventJoypadButton] = _joypad_events("battle_cancel")
 
-	# Assert — 依 U-004 探針結論,鍵盤 Esc / 手把 B(與 battle_end_phase 相同,刻意的
-	# 過渡狀態,見下方 test_battle_cancel_shares_bindings_with_battle_end_phase_during_transition)
+	# Assert — 依 U-004 探針結論,鍵盤 Esc / 手把 B。
+	# 🔴 2026-09-24(Story U-016)更正:這裡原本寫「與 battle_end_phase 相同,刻意的
+	# 過渡狀態,見下方 test_battle_cancel_shares_bindings_with_battle_end_phase_during_transition」
+	# ——那是舊註解,現在是懸空引用(該測試已被 U-016 刪除,見本檔下方
+	# 「2026-09-24(Story U-016)」歷史說明區塊)。**終態,不是過渡狀態**:
+	# battle_end_phase 現在零綁定(project.godot),Esc/手把 B 只觸發這裡驗證的
+	# battle_cancel,不再與任何其他動作共用。承接原本那條過渡態測試涵蓋範圍的是
+	# tests/integration/ui/end_phase_unbind_test.gd 的
+	# test_battle_end_phase_action_has_no_bindings_after_unbind(綁定層級)與
+	# test_pressing_escape_only_triggers_cancel_not_end_turn(行為層級)。
 	assert_int(kb_events.size()).is_equal(1)
 	assert_int(kb_events[0].keycode).is_equal(KEY_ESCAPE)
 	assert_int(pad_events.size()).is_equal(1)
@@ -175,36 +183,26 @@ func test_battle_menu_bindings_match_m_and_pad_start() -> void:
 	assert_int(pad_events[0].button_index).is_equal(JOY_BUTTON_START)
 
 
-func test_battle_cancel_shares_bindings_with_battle_end_phase_during_transition() -> void:
-	# 中間狀態(U-005 到 U-016 之間)刻意接受 Esc/B 同時觸發兩個動作——這支測試鎖定的是
-	# 「兩者綁定相同」這件事本身,不是缺陷。管理者裁決見
-	# production/epics/card-play-interface/EPIC.md 第八節第 2 項、本 story 文件第 2 點。
-	# Arrange / Act
-	var cancel_kb: Array[InputEventKey] = _keyboard_events("battle_cancel")
-	var end_phase_kb: Array[InputEventKey] = _keyboard_events("battle_end_phase")
-	var cancel_pad: Array[InputEventJoypadButton] = _joypad_events("battle_cancel")
-	var end_phase_pad: Array[InputEventJoypadButton] = _joypad_events("battle_end_phase")
-
-	# Assert
-	assert_int(cancel_kb.size()).is_equal(end_phase_kb.size())
-	assert_int(cancel_kb[0].keycode).is_equal(end_phase_kb[0].keycode)
-	assert_int(cancel_pad.size()).is_equal(end_phase_pad.size())
-	assert_int(cancel_pad[0].button_index).is_equal(end_phase_pad[0].button_index)
-
-
-func test_battle_end_phase_bindings_unchanged() -> void:
-	# 鎖定既有 battle_end_phase 的綁定不被本 story 動到——鍵盤僅 Esc、手把僅 B
-	# (button_index=1),各恰好一個事件。這支測試就是 AC「battle_end_phase 現有的
-	# Esc/手把 B 綁定完全不變」的自動化版本。
-	# Arrange / Act
-	var kb_events: Array[InputEventKey] = _keyboard_events("battle_end_phase")
-	var pad_events: Array[InputEventJoypadButton] = _joypad_events("battle_end_phase")
-
-	# Assert
-	assert_int(kb_events.size()).is_equal(1)
-	assert_int(kb_events[0].keycode).is_equal(KEY_ESCAPE)
-	assert_int(pad_events.size()).is_equal(1)
-	assert_int(pad_events[0].button_index).is_equal(JOY_BUTTON_B)
+# 🔴 2026-09-24(Story U-016)——本節原有兩條測試,已移除,歷史記在此不讓它無聲消失:
+#
+# 1. `test_battle_cancel_shares_bindings_with_battle_end_phase_during_transition`——
+#    鎖定 2026-09-15 管理者裁決 F 核准的過渡態(U-005 到 U-016 之間,Esc/手把 B
+#    同時觸發 battle_cancel 與 battle_end_phase 兩個動作,見 EPIC.md 第八節第 2 項)。
+#    U-016 是「由 U-016 一次解決」那句話裡的 U-016——本 story 把 battle_end_phase
+#    的兩個綁定清空,過渡態結構上不再可能發生(battle_end_phase 現在零綁定,
+#    無綁定可與 battle_cancel「共用」)。它原本鎖定的東西不是壞掉,是被本 story
+#    依裁決刻意移除。
+# 2. `test_battle_end_phase_bindings_unchanged`——鎖定「battle_end_phase 的 Esc/手把 B
+#    綁定維持不動」,這正是 U-005 到 U-015 期間應該成立、U-016 應該終結的狀態。
+#
+# 終態(battle_end_phase 綁定歸零、Esc/B 只觸發 battle_cancel)改由
+# tests/integration/ui/end_phase_unbind_test.gd 的
+# test_battle_end_phase_action_has_no_bindings_after_unbind(綁定層級,逐一比對
+# 上面兩條原本比對的兩個陣列,斷言長度為 0,不是只換個名字)與
+# test_pressing_escape_only_triggers_cancel_not_end_turn(行為層級,真實
+# InputEventKey 經 BattleScreen._input() 分派,比綁定比對更直接地證明「Esc 現在
+# 只做取消」)兩條測試承接,涵蓋範圍不只是名字對得上,兩者合起來同時覆蓋了
+# 「boundary 層級」與「行為層級」,比被移除的那兩條原本各自的覆蓋範圍更完整。
 
 
 # ---- 敏感度證明 ---------------------------------------------------------------

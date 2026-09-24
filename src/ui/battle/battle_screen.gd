@@ -210,18 +210,49 @@ const TEXT_LOAD_REASON_PARSE_ERROR: String = "資料檔案內容格式錯誤,其
 ## Always-on control hint, drawn in the bottom margin strip below the board
 ## (board occupies y=[39,231) per [member BoardCoords.BOARD_ORIGIN] and its
 ## 192px height — this strip starts at y=231, so it can never overlap a
-## board tile no matter what the text says). Deliberately one line covering
-## all three input devices rather than a togglable full panel: a toggle
-## would need its own input action bound on both keyboard and gamepad, and
-## a 2026-08-27 [InputMap] probe against this exact project found no
-## built-in action with both bindings that isn't already claimed by
-## [code]battle_confirm[/code]/[code]battle_end_phase[/code] (the only
-## keyboard+gamepad-bound candidate, [code]ui_select[/code], shares its
-## Space keybinding with [code]battle_confirm[/code] — reusing it would fire
-## both actions on the same keypress). Width measured against
-## [code]ThemeDB.fallback_font[/code] at size 16 (452px, see task report) —
-## fits inside the ~464px usable width of the 480px-wide strip with margin.
-const TEXT_CONTROLS_HINT: String = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　結束回合 Esc/B"
+## board tile no matter what the text says). Deliberately a panel covering
+## all input devices rather than a togglable full panel: a toggle would need
+## its own input action bound on both keyboard and gamepad, and a
+## 2026-08-27 [InputMap] probe against this exact project found no built-in
+## action with both bindings that isn't already claimed by
+## [code]battle_confirm[/code] (the only keyboard+gamepad-bound candidate,
+## [code]ui_select[/code], shares its Space keybinding with
+## [code]battle_confirm[/code] — reusing it would fire both actions on the
+## same keypress).
+##
+## 🔴 Story U-016 (2026-09-24) rewrote this from one line to two.
+## `"結束回合 Esc/B"` is removed — ending the turn is no longer any single
+## keypress (AC-U12/AC-M1: it is a menu row now, reached via
+## [code]battle_menu[/code]) — and the epic's other four newly-bound actions
+## (`battle_cancel`/`battle_open_hand`/`battle_next_target`+`battle_prev_target`/
+## `battle_menu`) are added. EPIC.md 陷阱十 measured the OLD one-line string at
+## 452px against a ~464px usable width (12px of margin) BEFORE any of these
+## five actions existed — fitting five more captions on that one line was
+## never going to work, and this story's own Implementation Note 4 names two
+## rejected alternatives before landing on two lines:
+## [br]
+## - A paged/togglable hint panel — needs its own input action bound on both
+##   devices, and (per the paragraph above) no such unclaimed built-in action
+##   exists; inventing a new custom one adds a SIXTH action to memorize.
+## [br]
+## - Shrinking the font size — directly collides with this project's
+##   accessibility commitment (`design/ux/accessibility-requirements.md`,
+##   Standard tier: 字級可調 75%~150%); this HUD text already scales with
+##   [method HudLayout.font_size], and shrinking it further at the SAME N
+##   would be a second, uncoordinated scale factor layered on top of that one.
+## [br]
+## Two lines needs neither: no new input action, no font-size change. 🔴 This
+## split (not a page system, not a smaller font) is this story's own call per
+## its Implementation Note 4 ("未經覆核、可被實作者推翻") — not a design
+## decision handed down by any spec. Both lines' actual rendered width are
+## measured against the REAL engine font in
+## [code]tests/integration/ui/end_phase_unbind_test.gd[/code]'s
+## [code]test_controls_hint_bar_fits_within_available_width_with_all_new_actions[/code]
+## (not eyeballed — this story's own text explicitly forbids that), which is
+## also where a numeric width finding, if any, belongs — not duplicated here
+## to avoid the exact "same number copied in two places, one goes stale"
+## failure this project has hit before.
+const TEXT_CONTROLS_HINT: String = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start"
 
 ## Keyboard/gamepad directional actions this screen listens for, mapped to the
 ## grid delta they apply to the pad-tracked cursor cell. All four are Godot's
@@ -285,6 +316,15 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 ## comment) — this screen is the one class allowed to know both sides,
 ## exactly as it already is for [BoardView]/[method line_tone_for].
 @onready var _hand_bar: HandBar = $UILayer/HandBar
+
+## Story U-016 —— 骨架,寫在讀完工作單細節之前的最佳猜測,待讀完
+## `story-u016-unbind-end-phase-and-hint-bar.md` 後修正。管理者裁決八已把
+## 「把選單接進戰鬥畫面、讓 battle_menu 鍵真的打得開它」併入本 story——
+## U-007~U-010 已交付選單自己的閘控/結束回合列/離開確認,本畫面只負責
+## 「讓它在場景樹裡存在,並在 battle_menu 動作觸發時呼叫它既有的 open()」,
+## 不重寫選單自己的行為。詳細接線方式(node path、Callable 注入時機)待讀完
+## 工作單與 BattleMenu.tscn/battle_menu.gd 的既有公開介面後補上。
+@onready var _battle_menu: BattleMenu = $UILayer/BattleMenu
 
 ## S3 確認面板(Story U-014,`card_confirm_panel.gd`)— fed by [method
 ## _open_card_confirm_panel] from [method BattleController.selected_card]/
@@ -654,6 +694,25 @@ var _diagnostic_forced_discard_cancel_rejected_count: int = 0
 func diagnostic_forced_discard_cancel_rejected_count() -> int:
 	return _diagnostic_forced_discard_cancel_rejected_count
 
+## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — QA/test-only
+## diagnostic surface, same convention as
+## [member _diagnostic_forced_discard_cancel_rejected_count]. Records the
+## most recent [signal BattleMenu.open_rejected] this screen observed (see
+## [method _on_battle_menu_open_rejected]), proving the rejection path
+## (forced discard / authoritative write) actually reaches this screen —
+## 🔴 NOT a claim that the message is displayed anywhere on screen; see this
+## story's task report for that disclosed gap.
+var _diagnostic_last_menu_rejection_result: BattleMenu.OpenResult = BattleMenu.OpenResult.OPENED
+var _diagnostic_last_menu_rejection_message: String = ""
+
+## See [member _diagnostic_last_menu_rejection_result].
+func diagnostic_last_menu_rejection_result() -> BattleMenu.OpenResult:
+	return _diagnostic_last_menu_rejection_result
+
+## See [member _diagnostic_last_menu_rejection_message].
+func diagnostic_last_menu_rejection_message() -> String:
+	return _diagnostic_last_menu_rejection_message
+
 
 ## Story U-013 (ADR-0005 機制六⑥, R4-7's own suggested split for a system
 ## that is simultaneously role ② and role ⑥ — see [_TargetRetargetActor]'s
@@ -896,6 +955,53 @@ func _ready() -> void:
 	_target_retarget_actor = _TargetRetargetActor.new(self)
 	add_child(_target_retarget_actor)
 
+	# Story U-016 — wires the standalone BattleMenu (delivered by U-007~U-010,
+	# never previously instantiated into a live battle — EPIC.md's own gap
+	# finding: `grep -rn "BattleMenu.tscn" src/` hit only the scene file
+	# itself before this story) into this real battle. Both Callables use
+	# this project's established "unset means never blocked" idiom (see
+	# CardPlaySession._authoritative_write_in_progress_check's own doc
+	# comment for the same shape) — here both are always valid, bound
+	# straight to BattleController's own real queries, never a screen-local
+	# mirror of either.
+	# 🔴 A freshly-instantiated BattleMenu defaults to Control.visible == true
+	# (BattleMenu.tscn's root Control never sets visible = false, and this
+	# project's own battle_menu_gating_test.gd hit the identical gotcha —
+	# "it was red until this line was added", fixed there with an explicit
+	# close() before the first open()). Without this line, EVERY real battle
+	# would start with the menu fully visible over the board from frame one.
+	# Deliberately NOT calling BattleMenu.close() here — that method also
+	# calls get_tree().paused = false and CursorStateHost.resume_arbitration(),
+	# and this menu was never actually opened yet (no matching
+	# suspend_arbitration() has ever run for it), so calling its resume half
+	# unpaired would be exactly the kind of un-paired call ADR-0005's own
+	# suspend/resume discipline exists to catch. A direct visibility write is
+	# the minimal, correct fix for what is actually a node-default problem,
+	# not a state-machine one.
+	_battle_menu.visible = false
+	_battle_menu.controller = _controller
+	_battle_menu.authoritative_write_in_progress_check = Callable()
+	_battle_menu.forced_discard_in_progress_check = Callable(_controller, "has_pending_discard")
+	# BattleMenu._on_end_phase_row_pressed() already calls
+	# BattleController.end_faction_phase() itself before emitting this signal
+	# (see that method's own doc comment: "the ONE place that can correctly
+	# pick 'call the SAME driver _end_faction_phase_pressed() already uses'"
+	# — this connection IS that pick). _end_faction_phase_pressed()'s own
+	# 2026-09-24 guard update tolerates being entered with phase() already
+	# ENEMY_ACTING for exactly this caller.
+	_battle_menu.end_faction_phase_confirmed.connect(_end_faction_phase_pressed)
+	# Story U-016 — proves the rejection path this screen's dispatch relies on
+	# (AC-M16: pressing battle_menu during forced discard must NOT silently
+	# do nothing) actually reaches this screen. 🔴 Disclosed gap, not silently
+	# covered: this connection only RECORDS the rejection (see
+	# diagnostic_last_menu_rejection_message() below) — it does not display
+	# REJECTION_MESSAGE_FORCED_DISCARD/REJECTION_MESSAGE_AUTHORITATIVE_WRITE
+	# anywhere on screen. Building a visible rejection banner is new UI
+	# surface this story's four concrete actions do not list; see this
+	# story's task report for why that was left as an explicit open item
+	# rather than self-expanded into scope.
+	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
+
 	_refresh_view()
 
 
@@ -948,6 +1054,26 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		# Story U-016 — battle_menu is checked BEFORE even the S4 (forced
+		# discard) branch below, deliberately: AC-M16 requires that pressing
+		# battle_menu DURING forced discard still produce an OBSERVABLE
+		# rejection ("請先完成棄牌", distinguishable from AC-M8's authoritative-
+		# write rejection) — not silence. That rejection message is
+		# BattleMenu.open()'s OWN responsibility (it checks
+		# forced_discard_in_progress_check/authoritative_write_in_progress_check
+		# internally and emits open_rejected with the right message — wired in
+		# _ready()), so this screen must let the press REACH open() in every
+		# state, rather than the S4 branch below silently swallowing it the
+		# way it already silently swallows battle_open_hand during S4 (that
+		# one IS meant to be a silent no-op — Z2 is already forced open, there
+		# is nothing to reject; battle_menu is different, because opening the
+		# menu is a real, distinct action S4 must explicitly refuse, not just
+		# ignore).
+		if event.is_action_pressed(&"battle_menu"):
+			_device.note_pad_input()
+			_handle_battle_menu_pressed()
+			return
+
 		# Story U-015 (強制棄牌 S4) — takes priority over EVERYTHING else in
 		# this dispatch, including battle_open_hand (Z2 is already forced
 		# open by _refresh_view()'s own HandBar.render() call — this key does
@@ -982,10 +1108,15 @@ func _input(event: InputEvent) -> void:
 				_device.note_pad_input()
 				_confirm_at_cursor()
 				return
-			if event.is_action_pressed(&"battle_end_phase"):
-				_device.note_pad_input()
-				_end_faction_phase_pressed()
-				return
+			# Story U-016 — the battle_end_phase keypress dispatch that used to
+			# live here is removed (project.godot's battle_end_phase action
+			# keeps existing with zero bindings, per Implementation Note 1 —
+			# see [method _handle_open_hand_pressed]'s neighboring [method
+			# _handle_battle_menu_pressed] doc comment for the new path:
+			# ending the turn is now exclusively a menu row, reached via
+			# battle_menu -> BattleMenu.open() -> native row navigation/press
+			# -> [signal BattleMenu.end_faction_phase_confirmed] ->
+			# [method _end_faction_phase_pressed] (connected in [method _ready]).
 			return
 
 		if _card_selecting_from_hand:
@@ -1644,6 +1775,17 @@ func _handle_open_hand_pressed() -> void:
 			_refresh_view()
 
 
+## Story U-016 — 呼叫既有 [method BattleMenu.open](U-007~U-010 已交付,本檔
+## 不重寫其行為/其閘控/其結束回合列/其離開確認)。[member BattleMenu.controller]
+## 與兩個 in_progress_check Callable 皆在 [method _ready] 注入一次,不在這裡
+## 重複設定。Guard 防止對已開啟的選單重複呼叫 open()(該方法本身的雙開行為
+## 未經本 story 驗證,保守起見不去試探它)。
+func _handle_battle_menu_pressed() -> void:
+	if _battle_menu.is_open():
+		return
+	_battle_menu.open()
+
+
 ## story-u015-forced-discard.md — S4's entire input surface. Called ONLY from
 ## [method _input]'s top-priority [code]BattleController.has_pending_discard()[/code]
 ## branch (see that call site's own comment for why this pre-empts every
@@ -2170,14 +2312,16 @@ func _confirm_at_cursor() -> void:
 # builds the real flag does not need to re-derive this — the placement is
 # already on the correct side of it.
 #
-# 🔴 Re-entrancy (AC-E4): the SAME phase-guard below
-# (phase() != PLAYER_INPUT: return) is what keeps this function from
-# double-driving the phase if the player presses battle_end_phase again while
-# a stepped playback is already running. BattleController.phase() stays
+# 🔴 Re-entrancy (AC-E4): the SAME phase-guard below is what keeps this
+# function from double-driving the phase if it is invoked again while a
+# stepped playback is already running. BattleController.phase() stays
 # ENEMY_ACTING for the entire loop below (it only becomes PLAYER_INPUT on the
-# call that finalizes the phase), so a second press arriving mid-playback
-# sees ENEMY_ACTING, not PLAYER_INPUT, and returns immediately. This is
-# proven by a real test, not assumed by inspection — see
+# call that finalizes the phase), so a second invocation arriving mid-playback
+# sees ENEMY_ACTING (not PLAYER_INPUT) and falls straight through to the loop
+# condition below, which is ALSO already false-for-a-second-caller in
+# practice — see this function's 2026-09-24 doc update (Story U-016) for why
+# the only real caller left after that story never fires twice concurrently.
+# This is proven by a real test, not assumed by inspection — see
 # tests/integration/ui/battle/battle_screen_enemy_phase_playback_test.gd
 # (placed alongside this file's other integration tests under
 # tests/integration/ui/battle/, mirroring src/ui/battle/ — this story's own
@@ -2196,12 +2340,30 @@ func _confirm_at_cursor() -> void:
 # is_instance_valid(self) guard before touching any member state, so a screen
 # teardown mid-playback (e.g. returning to a menu) aborts the loop instead of
 # resuming into a freed instance.
+#
+# 🔴 Story U-016 (2026-09-24) — this function's NAME and its PLAYER_INPUT-
+# entry behavior are both kept byte-for-byte unchanged (existing spy
+# subclasses in battle_screen_enemy_phase_playback_test.gd override this
+# exact method name and existing call sites there always invoke it from
+# PLAYER_INPUT — rewriting either would mean rewriting that whole test file,
+# not a change this story's scope calls for). What changed is additive only:
+# the top guard now also tolerates being invoked when phase() is ALREADY
+# ENEMY_ACTING, skipping the (now redundant) end_faction_phase() call and
+# going straight to the drain loop. This is what lets
+# [signal BattleMenu.end_faction_phase_confirmed] connect DIRECTLY to this
+# same method (see _ready()) without a second, duplicate copy of the loop
+# below — BattleMenu._on_end_phase_row_pressed() already calls
+# BattleController.end_faction_phase() itself before emitting that signal
+# (see that method's own doc comment: "the ONE place that can correctly pick
+# 'call the SAME driver _end_faction_phase_pressed() already uses'" — this IS
+# that place). Calling this from any OTHER phase (FINISHED) still no-ops.
 func _end_faction_phase_pressed() -> void:
-	if _controller.phase() != BattleController.Phase.PLAYER_INPUT:
+	if _controller.phase() == BattleController.Phase.PLAYER_INPUT:
+		_controller.end_faction_phase()
+	elif _controller.phase() != BattleController.Phase.ENEMY_ACTING:
 		return
 	_diagnostic_enemy_acting_process_frame_count = 0
 	_diagnostic_step_enemy_phase_call_count = 0
-	_controller.end_faction_phase()
 
 	while _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_controller.step_enemy_phase()
@@ -2513,3 +2675,11 @@ func _update_status_label() -> void:
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
 	_result_label.text = TEXT_RESULT_VICTORY if outcome == BattleState.Outcome.VICTORY else TEXT_RESULT_DEFEAT
+
+
+## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see
+## [member _diagnostic_last_menu_rejection_result]'s own doc comment for what
+## this does and does not prove.
+func _on_battle_menu_open_rejected(result: BattleMenu.OpenResult, message: String) -> void:
+	_diagnostic_last_menu_rejection_result = result
+	_diagnostic_last_menu_rejection_message = message

@@ -60,9 +60,16 @@ const LABEL_HEIGHT_MULTIPLIER: float = 1.5
 const LABEL_GAP_MULTIPLIER: float = 1.0
 
 ## Multiplier on [method font_size] used for [code]ControlsHintBg[/code]'s
-## height — enough for one line of Cubic 11 text (measured ~1.2x font_px)
-## plus padding on both sides.
-const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 2.0
+## height. 🔴 Story U-016 (2026-09-24) changed this from [code]2.0[/code]
+## (one line) to [code]3.2[/code] (two lines) — [code]battle_screen.gd[/code]'s
+## own [constant BattleScreen.TEXT_CONTROLS_HINT] became a 2-line string that
+## story (EPIC.md 陷阱十: the old 1-line string measured 452px against a
+## ~464px usable width with 12px to spare, before 5 new epic actions needed
+## captions added to it). Same per-line measurement basis as before (~1.2x
+## font_px per line): [code]2 * 1.2 + 0.8[/code] (the [code]0.8[/code]
+## padding term is what the old comment's [code]2.0 - 1.2[/code] already
+## implied) [code]= 3.2[/code].
+const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 3.2
 
 ## Multipliers on [method font_size] used for [code]ResultLabel[/code]'s box
 ## — a "victory/defeat" banner sized well beyond the 2-character strings it
