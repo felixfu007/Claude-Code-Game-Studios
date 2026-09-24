@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/battle/card_confirm_panel.gd" id="1_script"]
+
+[node name="CardConfirmPanel" type="Control"]
+mouse_filter = 2
+visible = false
+script = ExtResource("1_script")
