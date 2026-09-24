@@ -1,0 +1,20 @@
+config_version=5
+
+[application]
+
+config/name="probe"
+run/main_scene="res://Probe.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=64
+window/size/viewport_height=64
+window/size/window_width_override=64
+window/size/window_height_override=64
+window/size/borderless=true
+window/size/no_focus=true
+window/size/resizable=false
+window/size/initial_position_type=0
+window/size/initial_position=Vector2i(-5000, -5000)
+window/stretch/mode="disabled"

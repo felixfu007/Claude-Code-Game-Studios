@@ -1,0 +1,109 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== DisplayServer methods matching 'focus' ===
+get_keyboard_focus_screen
+window_is_focused
+accessibility_set_window_focused
+accessibility_update_set_focus
+enable_for_stealing_focus
+=== DisplayServer methods matching 'window' (partial, first 60) ===
+get_window_list
+get_window_at_screen_position
+window_get_native_handle
+window_get_active_popup
+window_set_popup_safe_rect
+window_get_popup_safe_rect
+window_set_title
+window_get_title_size
+window_set_mouse_passthrough
+window_get_current_screen
+window_set_current_screen
+window_get_position
+window_get_position_with_decorations
+window_set_position
+window_get_size
+window_set_size
+window_set_rect_changed_callback
+window_set_window_event_callback
+window_set_input_event_callback
+window_set_input_text_callback
+window_set_drop_files_callback
+window_get_attached_instance_id
+window_get_max_size
+window_set_max_size
+window_get_min_size
+window_set_min_size
+window_get_size_with_decorations
+window_get_mode
+window_set_mode
+window_set_flag
+window_get_flag
+window_set_icon
+window_set_window_buttons_offset
+window_get_safe_title_margins
+window_request_attention
+window_set_taskbar_progress_value
+window_set_taskbar_progress_state
+window_move_to_foreground
+window_is_focused
+window_can_draw
+window_set_transient
+window_set_exclusive
+window_set_ime_active
+window_set_ime_position
+window_set_vsync_mode
+window_get_vsync_mode
+window_is_hdr_output_supported
+window_request_hdr_output
+window_is_hdr_output_requested
+window_is_hdr_output_enabled
+window_set_hdr_output_reference_luminance
+window_get_hdr_output_reference_luminance
+window_get_hdr_output_current_reference_luminance
+window_set_hdr_output_max_luminance
+window_get_hdr_output_max_luminance
+window_get_hdr_output_current_max_luminance
+window_get_output_max_linear_value
+window_is_maximize_allowed
+window_maximize_on_title_dbl_click
+window_minimize_on_title_dbl_click
+=== ProjectSettings display/window/* properties (name, default, has) ===
+display/window/size/viewport_width | has=true | default_or_current=64
+display/window/size/viewport_height | has=true | default_or_current=64
+display/window/size/mode | has=true | default_or_current=0
+display/window/size/initial_position_type | has=true | default_or_current=1
+display/window/size/initial_position | has=true | default_or_current=(0, 0)
+display/window/size/initial_screen | has=true | default_or_current=0
+display/window/size/resizable | has=true | default_or_current=true
+display/window/size/borderless | has=true | default_or_current=false
+display/window/size/always_on_top | has=true | default_or_current=false
+display/window/size/transparent | has=true | default_or_current=false
+display/window/size/extend_to_title | has=true | default_or_current=false
+display/window/size/no_focus | has=true | default_or_current=false
+display/window/size/sharp_corners | has=true | default_or_current=false
+display/window/size/minimize_disabled | has=true | default_or_current=false
+display/window/size/maximize_disabled | has=true | default_or_current=false
+display/window/size/window_width_override | has=true | default_or_current=0
+display/window/size/window_height_override | has=true | default_or_current=0
+display/window/hdr/request_hdr_output | has=true | default_or_current=false
+display/window/energy_saving/keep_screen_on | has=true | default_or_current=true
+display/window/subwindows/embed_subwindows | has=true | default_or_current=true
+display/window/frame_pacing/android/enable_frame_pacing | has=true | default_or_current=true
+display/window/frame_pacing/android/swappy_mode | has=true | default_or_current=2
+display/window/stretch/mode | has=true | default_or_current=disabled
+display/window/stretch/aspect | has=true | default_or_current=keep
+display/window/stretch/scale | has=true | default_or_current=1.0
+display/window/stretch/scale_mode | has=true | default_or_current=fractional
+display/window/dpi/allow_hidpi | has=true | default_or_current=true
+display/window/per_pixel_transparency/allowed | has=true | default_or_current=false
+display/window/handheld/orientation | has=true | default_or_current=0
+display/window/vsync/vsync_mode | has=true | default_or_current=1
+display/window/ios/allow_high_refresh_rate | has=true | default_or_current=true
+display/window/ios/hide_home_indicator | has=true | default_or_current=true
+display/window/ios/hide_status_bar | has=true | default_or_current=true
+display/window/ios/suppress_ui_gesture | has=true | default_or_current=true
+=== hint_string for enum-like display/window/size properties ===
+display/window/size/mode | hint=2 | hint_string=Windowed,Minimized,Maximized,Fullscreen,Exclusive Fullscreen | type=2
+display/window/size/initial_position_type | hint=2 | hint_string=Absolute:0,Center of Primary Screen:1,Center of Other Screen:3,Center of Screen With Mouse Pointer:4,Center of Screen With Keyboard Focus:5 | type=2
+display/window/stretch/mode | hint=2 | hint_string=disabled,canvas_items,viewport | type=4
+=== DONE ===
