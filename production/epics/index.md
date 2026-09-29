@@ -1,6 +1,7 @@
 # Epics 索引
 
-**最後更新**:2026-09-29(管理者四項裁決同批落地:①**建立 #5 好感度—位置連鎖 epic**;②**#4 戰棋 epic 由 `Draft` 改 `Ready` 並首次入表**;③#5 不跑 `PR-EPIC` 閘門,照 2026-09-02 精簡模式預設;④下方「尚未建立 Epic」表**已清空**)
+**最後更新**:2026-09-29(**本地化基礎設施 epic 建立**,`localization-lead`;同批更正下方「排程連帶後果」節的 **M4 → M5**,原文保留)
+**前次更新**:2026-09-29(管理者四項裁決同批落地:①**建立 #5 好感度—位置連鎖 epic**;②**#4 戰棋 epic 由 `Draft` 改 `Ready` 並首次入表**;③#5 不跑 `PR-EPIC` 閘門,照 2026-09-02 精簡模式預設;④下方「尚未建立 Epic」表**已清空**) —— 原文保留供追溯
 **前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
 **前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
 **前次更新**:2026-09-15(建立卡牌介面 epic —— 切片內 16 單元、切片外 6)—— 原文保留供追溯
@@ -89,7 +90,7 @@
 
 | 項目 | 建議擁有者 | 來源 | 狀態 |
 |---|---|---|---|
-| **本地化(i18n)基礎設施** | `localization-lead` | 🔴 **2026-09-29 管理者裁決:「現在就建翻譯機制」** | 📋 **尚未建立 epic —— 這是下一批要做的事** |
+| **本地化(i18n)基礎設施** | `localization-lead` | 🔴 **2026-09-29 管理者裁決:「現在就建翻譯機制」** | ✅ **Epic 已建立**:[localization-infrastructure](localization-infrastructure/EPIC.md)(2026-09-29,241 行,狀態 `Draft`)。**四項待管理者裁決**(locale 目錄位置、是否需要 ADR、`zh_TW` vs `zh_Hant`、Story 001~003 核准),見該檔「需要管理者裁決的事」節 |
 
 **裁決背景**:M1 開工前查證實測,專案**零本地化基礎設施**:
 ```
@@ -111,8 +112,23 @@ src/ui/battle/battle_screen.gd:166:const TEXT_AFFINITY_PREVIEW_FORMAT: String = 
 
 > **本地化基礎設施必須排在「會新增畫面文字的工作單」之前或同批。**
 
-`/create-stories tactical-combat` 的 **M4** 要做**兩個新面板**(格位資訊面板、攻擊二段確認),
+🔴 **本段原寫「M4」,2026-09-29 經 `localization-lead` 查證更正為 M5。原文逐字保留於下方引言。**
+
+`/create-stories tactical-combat` 的 **M5** 要做**兩個新面板**(格位資訊面板、攻擊二段確認面板),
 兩者都有文字。**若本地化晚一步,那些文字會先寫死、再回頭改一次** —— 而那正是這個裁決要避免的事。
+
+> **原文**:「`/create-stories tactical-combat` 的 **M4** 要做**兩個新面板**(格位資訊面板、攻擊二段確認),兩者都有文字。」
+>
+> **錯在哪**:依 `production/epics/tactical-combat/EPIC.md` 的模組節,**M4 是世界層呈現**
+> (`board_view.gd` 的高亮圖層,以 placeholder 圖形驗收),**不含新增玩家可見文字**;
+> **M5 才是介面層兩個面板**,其最小欄位明列地形種類、遮蔽旗標、陣營/HP/行動旗標等文字內容。
+>
+> 🔴 **同一個錯誤同時存在於三處**:本檔、`production/session-state/active.md` 的交接段、
+> 以及協調者據此寫出的派工單。**三處都不會自己發現** —— 是專家讀了 epic 原文才抓到。
+> 📌 這是連續第五次專家更正協調者前提,五次全對。
+>
+> ⚠️ **後果是截止點比原文更早,不是更晚**:執行層序列化為 `M6 → M5 → M4`,**M5 排在 M4 前面**。
+> 原文寫 M4 會讓人以為還有兩個模組的緩衝,實際只有一個。
 
 📌 **本專案已登記「裁決被記錄 ≠ 裁決被排程」**(`screen-scaling` 那次:裁決記在 8 個檔案裡,
 三天內沒有進入任何排程,發現方式純屬巧合)。**本段的存在就是為了不重演那一次。**

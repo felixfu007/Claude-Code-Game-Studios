@@ -1,10 +1,84 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: 🟢 **《盲目於微光》—— 兩個 Gameplay epic 同日就位。** #4 戰棋 **598 行,`Ready`(2026-09-29 管理者核可,可 `/create-stories`)**;#5 好感度—位置連鎖 **620 行,`Draft`,五項待裁決全數裁決完畢、零外部阻塞**。卡牌介面 18/18、技能卡牌 8/8、畫面縮放 2/2、好感度數值池 8+1。游標/高亮 14 張:9 Complete、1 邏輯半部、1 進行中、1 Blocked、2 擱置。測試 **963**(基線見第六十八批,本批與前批皆未動 `src/`)
-Feature: **第七十批:#5 epic 誕生 + #4 判 `Ready` + 管理者七項裁決。🔴 而最該記的是「索引裡沒有 X」不等於「漏更新」—— 協調者據此下結論並寫進派工單,在專家動手前收回。**
-Task: 🔴 **接手第一件事:①`/create-epics` 本地化基礎設施(管理者 2026-09-29 裁決「現在就建」,擁有者 `localization-lead`)—— 🔴 它必須排在會新增畫面文字的工作單之前;②`/create-stories tactical-combat`(M1 前置已完成);③`/create-stories affinity-position-chain`(已 `Ready`,分兩批切);④派人查「哪些 AI 繪圖模型可用於販售的遊戲」(管理者裁決,**不得憑記憶回答,當場查**);⑤為 M0 追溯補登指派擁有者。**
+Epic: 🟢 **《盲目於微光》—— 23 張工作單落地,規劃階段結束。** #4 戰棋 **15 張**(13 `Ready` / 2 `Blocked` 等本地化);#5 好感度—位置連鎖 **8 張**(第一批,不碰畫面);本地化基礎設施 **epic 已建立**(`Draft`,4 項待裁決)。卡牌介面 18/18、技能卡牌 8/8、畫面縮放 2/2、好感度數值池 8+1。游標/高亮 14 張:9 Complete。測試 **963**(本批未動 `src/`,基線未變)
+Feature: **第七十一批:23 張 story + 本地化 epic + AI 授權查證 + M0 追溯補登 + C5 兩項過期義務補完。🔴 而最該記的是「骨架優先」有一類任務結構上做不到 —— 我對它下了那條指令,燒掉 364k tokens 零產出。**
+Task: 🔴 **接手第一件事:①問管理者四項裁決(見下表,四項都有現成選項);②可以直接開始寫程式了 —— `/story-readiness production/epics/tactical-combat/story-001-terrain-passable-flag.md`;③#5 第二批(畫面側)仍等畫面規格,不要自行開切。**
 <!-- /STATUS -->
+
+## 🔴 接手第一件事(2026-09-29 **第七十一批**寫入 —— 位階高於下方所有既有指示)
+
+> ⚠️ **2026-09-15 那節「這一個月的運作方式」仍然有效,🔴 到期日約 2026-10-15,剩約兩週。**
+> 📌 **第七十批以降為歷史批次,其內容仍然有效,請一併讀。**
+
+### 🔴 一、四項待管理者裁決(全部有現成選項與代價,不需再查資料)
+
+| # | 要裁決什麼 | 材料在哪 | 不裁決的後果 |
+|---|---|---|---|
+| 1 | **AI 繪圖走哪一條路** | `design/art/ai-image-licensing-audit-2026-09-29.md`(325 行,11 個模型/服務逐個查證附 URL)+ `design/art/art-production-paths-2026-09-29.md` | 美術仍無人負責。**外包那條路要 2026-12 就接洽,只剩三個月** |
+| 2 | **本地化四項**:locale 檔案放哪、要不要 ADR、`zh_TW` vs `zh_Hant`、Story 001~003 准不准開工 | `production/epics/localization-infrastructure/EPIC.md` 的「需要管理者裁決的事」節 | 🔴 **`tactical-combat` 的 story-012/013 已標 `Blocked`,就是在等這個** |
+| 3 | **兩條登記表提案**(`technical-director` 建議,理由已附) | 見下方「三、專家提案」 | 兩條規則目前只靠「那段程式碼現在不在了」擋著,加回來零警告 |
+| 4 | **`value == 0.0` 但 `n_pair > 0`** 的處置(關係真實存在、淨值剛好抵銷為 0) | `production/epics/affinity-position-chain/story-005-pairing-data-per-query-refetch.md` | 工程師會自己猜;**epic、GDD、決策報告三份都沒處理過這個情況** |
+
+### 二、可以直接開始寫程式了 —— 這是本專案第一次
+
+23 張 story 在磁碟上。**第一張無任何阻擋**:
+```
+/story-readiness production/epics/tactical-combat/story-001-terrain-passable-flag.md
+```
+🔴 **執行層序列化 `M6(008-011) → M5(012-013) → M4(014-015)` 已寫進那 8 張的 Dependencies 節**,不是只寫在 epic 裡。**M3a(003-006)可與 M2(001-002)同日開工**;M3b(007)等 001+002。
+
+⚠️ **#5 的 story-004 第一個動作是讀 `production/epics/affinity-data-pool/story-009-wiring.md`** —— 若它已解決池實例擁有權,004 的範圍要收斂甚至關閉。切 story 的人刻意沒讀它,把指示寫進了 story 本文。
+
+⚠️ **#5 第二批(會動畫面的)不要自行開切** —— 依裁決 6 等 #5 的畫面規格。**M2 與 M3 不可同時派人**(共用 `battle_screen.gd`)。
+
+### 三、專家提案(原樣轉呈,未改寫)
+
+**① R4/R8 合併成一條進 `forbidden_patterns`。** `SUPPRESSED` 列舉值已於 `f8d1241` 刪除,**唯一擋著它回來的東西是「那段程式碼現在不在了」**。先例是 `abstract_func_with_body`(症狀修完仍保留為前瞻性禁令)。成本:登記表兩三行,`adr: none`,不需要 ADR。
+
+**② R7 的 `Φ` 夾限進登記表,`status: active` 而非 `open_gap`,優先序高於 ①。** 夾限 `PHI_MIN=−4` / `PHI_MAX=+12` **不是保險絲** —— 角色一有第 5 條關係線,合法佈局就會踩到,**改夾限值等同改戰力上下限**。登記表對它零命中。用 `active` 的理由:夾限值已經定了,要擋的是「日後有人改它而不知道後果」,不是等待校準(那是鄰居條目 `phi_curve_enemy_advantage_cross_calibration` 用 `open_gap` 的理由)。
+
+### 🔴 四、本批最該傳下去的五件事
+
+**① 「先寫骨架再回填」有一類任務結構上做不到,而我對它下了那條指令。**
+`/create-stories tactical-combat`:**363,667 tokens、46 次工具呼叫,磁碟上零檔案。**
+判準是:**骨架的前提是節結構已知**。切 story 時「有幾張、各叫什麼」本身就是讀檔的產物,**指令自我矛盾,agent 只能忽略它**。
+✅ **替代做法(當場實測有效)**:①第一個 Write 是 `story-index.md` 清單 ②再一張一張寫完整 ③**明文禁止「先全部寫骨架再回填」**。插話後兩位當輪開始產出,最後 15/15 與 8/8 全完成。
+📌 **同批對照組**:另外三張派工單(`localization-lead`/`art-director`/`technical-director`)節結構都在單子裡指定了,**三張全部撞上限、三張全部磁碟上是完整成品**。同一天、同一個協調者、同一套話術,**差別只在骨架寫不寫得出來**。已進長期記憶。
+
+**② 「缺席不說明它的原因」在本 session 最後一次查證救了我一次。**
+`systems-designer` 報 `CombatRules.enemy_stat()` 全庫零呼叫。我複驗後發現更糟:`enemy_advantage_pct` 在 `src/`/`tests/`/`assets/` **三處全部零命中**,而它是 `game-concept.md` 核心幻想的機制錨點。**我正要把它當重大缺口報上去。**
+🔴 **先 grep 了一次「有沒有人規定它該缺席」,查到了**:`design/gdd/vertical-slice-level-01.md:111` 逐字「**敵方數值不寫死**:HP/ATK/DEF 具體數字是未經實證的建議起始值(依 `enemy_advantage_pct=0.20` 推算),**待可玩版本校準**」。**不是疏漏。**
+📌 這條規則是上一批才存進記憶的(`absence_does_not_state_its_cause`),**下一批就兌現了。**
+
+**③ 專家六次更正協調者前提,六次全對。** 本批兩次:
+- **M4/M5 搞反** —— 交接檔與 `production/epics/index.md` 都寫「M4 要做兩個新面板」,**實際是 M5**(M4 是世界層高亮,placeholder 圖形驗收、零玩家文字)。我原封不動抄進派工單。🔴 **後果是截止點比原文更早不是更晚**:序列化 `M6 → M5 → M4`,M5 排在 M4 前。**index.md 已更正並保留原文;本檔上方第七十批那段仍是錯的,不追改,以本段為準。**
+- **存取層早就實作完了** —— 我派工單假設要「補一份沒人做過的規格」,實際 `Unit.effective_atk()`/`effective_def()` 已存在,`skill-card-system.md` 公式一已定義合成算式。**缺的只是 GDD 沒記載。**
+
+**④ `tactical-combat/EPIC.md` 有一處內部矛盾,切 story 的人抓到但無權改。**
+「Open Questions 現況」表寫 `U-T15 → M1 查證 + M3 定案`,**但 M1 查證報告的 8 項(U-T4/5/6/7/8/10/11/12)不含 U-T15,報告也確實沒回答它**。切 story 的人依 epic 明文的「逾時降級」規則把它降為 story-005 的第一步,**沒有假裝有答案**。🔴 **EPIC.md 本文的那句仍是錯的,待擁有者訂正。**
+
+**⑤ C5 兩項擁有者義務的期限「綁 story 不綁日期」,而沒有任何東西會在期限到時提醒。**
+兩項期限都是「對應 story 切出來之前」。**story 今天切出來了,兩項都還沒做** —— 是切 story 的人**當場 grep 才發現期限已過**,不是任何檢查抓到的。
+✅ **本批已當天補派做完**(`technical-director` 修 `TR-tactical-002/-006`、`systems-designer` 補 GDD 存取層節)。
+🔴 **但機制缺口沒補**:下一次再用「綁 story 不綁日期」的期限,一樣不會有人發現它到期了。
+
+### 本批做完什麼
+
+| 檔案 | 誰 | 內容 |
+|---|---|---|
+| `production/epics/tactical-combat/story-001~015` + `story-index.md`(新,16 檔) | `lead-programmer` | 15 張 story。**三項附帶建議全部有結論**:M3 拆 M3a/M3b(理由取自 epic 自身依賴圖)、狀態欄同步做成**可執行 bash 腳本**、M4 截圖批次化寫進 014/015 驗收條件。012/013 標 `Blocked` 等本地化 |
+| `production/epics/affinity-position-chain/story-001~008` + `story-index.md`(新,9 檔) | `lead-programmer` | 第一批 8 張(M1/M2/M5 + M3 本系統側)。M3 切線判斷附理由且誠實標「這是判斷不是保證」。發現 `value==0/n_pair>0` 新邊界 |
+| `production/epics/localization-infrastructure/EPIC.md`(新,269 行) | `localization-lead` + 協調者補更正註 | 本地化 epic。五題全有結論。**更正派工單的 M4→M5**。⚠️ 協調者查出它自己的總數與分項對不上(寫 27,分項加起來 29,實測 30),已改為不寫數字、只貼可重跑指令 |
+| `design/art/ai-image-licensing-audit-2026-09-29.md`(新,325 行) | `art-director` | 11 個模型/服務 × 三層授權,全部附 URL + 查證日。含陷阱條款節與法律狀態三分法(條款原文/實務共識/訴訟中)。**7 項未查證有具體接手指引** |
+| `docs/architecture/tr-registry.yaml` + `traceability-index.md` | `technical-director` | M0:#5 的 R1–R10 補登(`TR-affinity-position-001~010`)。**明文寫「❌ 是已裁決不補 ADR,不是待辦」**。過期的涵蓋率總覽表標為歷史快照而非改寫。另修 `TR-tactical-002/-006` 文字落後、`TR-affinity-020` 的假陳述 |
+| `design/gdd/tactical-combat-system.md`(+25 行) | `systems-designer` | 新增「基準值/有效值存取層」節。**不重複定義公式**,指向 `skill-card-system.md` 公式一 |
+| `production/epics/index.md` | 協調者 | M4→M5 更正(原文保留)、本地化列狀態、檔頭 |
+| `production/PROJECT-STATUS.md` | 協調者 | 重寫(88 行) |
+
+**本批未動 `src/`、未動測試。** 六次派工、六位專家全部撞回合上限、**五位磁碟上有完整成品**。
+🔴 **協調者本批自犯 1 個錯**(M4/M5 抄錯並寫進兩張派工單,專家更正,零重做成本);**差一點自犯第 2 個**(見②)。
+
 
 ## 🔴 接手第一件事(2026-09-29 **第七十批**寫入 —— 位階高於下方所有既有指示)
 

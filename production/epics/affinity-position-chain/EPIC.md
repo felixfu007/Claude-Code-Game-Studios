@@ -292,7 +292,7 @@ $ grep -A0 "TR-affinity-001" docs/architecture/tr-registry.yaml
 
 | 模組 | 一句話範圍 | 碰哪些檔 | 現在能不能開工 |
 |---|---|---|---|
-| **M0** | **治理前置:把 #5 的 R1–R10 補登進追溯體系** | `docs/architecture/tr-registry.yaml`、`traceability-index.md` | ⚠️ **擁有者不是本 epic** —— 正式寫入者是 `/architecture-review` Phase 8(第 5.3 節④)。需管理者指派 |
+| **M0** | **治理前置:把 #5 的 R1–R10 補登進追溯體系** | `docs/architecture/tr-registry.yaml`、`traceability-index.md` | ✅ **已完成 2026-09-29** —— 管理者裁決 3 指派,由窄範圍 `/architecture-review`(Phase 8)執行。R1–R10 已登記為 `TR-affinity-position-001`~`-010`,`traceability-index.md` 已建立本系統的完整矩陣節。🔴 **該節的 ❌ 是「已裁決不補 ADR」的 ❌,不是待辦** —— 不得讀成 10 份待寫 ADR,亦不得列入「需要 ADR 的已知缺口」清單。分佈當場數(指令在該節內),本列不抄數字 |
 | **M1** | **驗收基準對齊**:補上 AC-R1 / AC-R3 / AC-R5 三條沒有具名測試的驗收準則 | **只動 `tests/`**,零 production 變更 | ✅ **可以,而且是唯一零前置的模組** |
 | **M2** | **上游接線**:配對資料由靜態檔一次讀入改為**每次查詢重新取得**(R1 + R9 配對側) | `affinity_phi_provider.gd`、`battle_screen.gd`(接線點)、`affinity_link.gd`(讀檔路徑退場) | 🔴 **被擋** —— 等 #1 的 `combat_strength_read` 可用(見第 8 節) |
 | **M3** | **夾限與逐條貢獻的揭露**:讓呼叫端**知道** `Φ` 被夾限壓回了,而不必自己重算一次總和 | `affinity_rules.gd`(新增查詢面)、`affinity_line_status.gd` | 🟡 **可以動本系統側**;消費端(UI)被 UX 規格擋住 |

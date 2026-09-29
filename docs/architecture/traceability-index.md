@@ -83,11 +83,11 @@
 | TR-ID | 需求 | 領域 | 涵蓋情形 |
 |---|---|---|---|
 | TR-tactical-001 | 棋盤必須是有限邊界的方格網,座標為整數——`Grid \ B` 列舉(AC-13)需要邊界表示法 | 資料 | ⚠️ 部分——ADR-0001 的稀疏佔位表避開了對棋盤尺寸的依賴,但沒有定義邊界結構本身 |
-| TR-tactical-002 | 地形須有兩個正交的逐格屬性(`terrain_cost` ≥1、遮蔽布林值),須各自可查詢/可渲染,並有載入時驗證拒絕 `terrain_cost < 1` | 資料 | ❌ 缺口 |
+| TR-tactical-002 | 地形須有三個正交的逐格屬性(`terrain_cost` ≥1、遮蔽布林值、`passable` 可通行布林旗標),須各自可查詢/可渲染,並有載入時驗證拒絕 `terrain_cost < 1` | 資料 | ❌ 缺口 — **需求文字於 2026-09-29 更正,涵蓋判定未重推**(仍是第七輪的 ❌)。原文寫「兩個」正交屬性,落後於 M2 story 001/002 要實作的 `passable` 第三屬性。🔴 **權威是 GDD 公式三,不是本列文字**;`production/epics/tactical-combat/EPIC.md` 的保險條款刻意保留不刪(現為「兩個來源一致」的佐證,下次落後時仍是安全網)。完整理由與未查證項見 `tr-registry.yaml` 同項 `revised` 欄 |
 | TR-tactical-003 | 逐單位 schema:HP/ATK/DEF/MP/陣營/武器分層/兩個行動旗標/存活狀態 | 資料 | ❌ 缺口 |
 | TR-tactical-004 | `player_baseline_stat`(公式二輸入)全專案無擁有系統(OQ-2) | 資料 | ❌ 缺口 |
 | TR-tactical-005 | 武器資料表需要載入時的結構性 + 組成性驗證(AC-3、AC-23) | 資料 | ❌ 缺口 |
-| TR-tactical-006 | `reachable_set(u, ignore_occupancy)` 須為單一函式;移動合法性只能消費集合 A,不得用 B(AC-14) | 資料 | ❌ 缺口 |
+| TR-tactical-006 | `reachable_set(u, ignore_occupancy, ignore_passability)` 須為單一函式,兩個開關正交且不得合併為單一旗標;移動合法性只能消費集合 A,不得用 B(AC-14) | 資料 | ❌ 缺口 — **需求文字於 2026-09-29 更正,涵蓋判定未重推**(仍是第七輪的 ❌)。原文只寫單一 `ignore_occupancy` 參數。🔴 **「不得合併」依 GDD 公式三**(兩個獨立參數、四種布林組合),非本次新增的推導 —— 與 `story-002-reachable-tiles-bounded-frontier.md` **獨立收斂到同一條**(同日、雙方未看過對方產出)。📌 GDD 未寫的「為什麼」記在 `tr-registry.yaml` 同項 `revised` 欄:佔位是動態的、可通行性是地形靜態屬性,合併會使兩者無法分別關閉 |
 | TR-tactical-007 | 移動展開須為考慮成本的 Dijkstra 類演算法,不可用 BFS(地形成本非均一) | 資料/演算法 | ❌ 缺口 |
 | TR-tactical-008 | `reachable_set` 須為有界前緣展開、在 MP 耗盡時提前終止,不得先展開全盤再過濾 | 效能 | ❌ 缺口 |
 | TR-tactical-009 | 雙 Dijkstra 掃描的移動範圍刷新須壓進 16.6ms 影格預算(尚未驗證的假設) | 效能 | ❌ 缺口 |
@@ -151,7 +151,7 @@
 | TR-affinity-017 | 存檔系統須無損往返 3 份結構(Delta Log、刻度標記、陣亡標記表);儲存型別與增量持久化是兩個正交決策 | 狀態持久化 | ✅ 已涵蓋 — ADR-0002 機制八(export_state/import_state 涵蓋三份結構) |
 | TR-affinity-018 | `Pair` 鍵與 `source_i` 一律以字串名稱持久化,非 enum 序數;退役名稱永久保留、CI 可檢查 | 狀態持久化/schema 演進 | ✅ 已涵蓋 — ADR-0002 機制八(轉換原語)+ ADR-0003 機制五(SaveEnumRegistry 承接退役名稱治理與 CI 檢查義務) |
 | TR-affinity-019 | 本系統是反序列化語意驗證規則的唯一權威(欄位值域 + 5 條跨結構不變量) | 狀態持久化/驗證 | ✅ 已涵蓋 — ADR-0002 機制八 validate_semantics() 純函式(ADR-0003 回填修訂) |
-| TR-affinity-020 | **記憶化是硬性介面契約(非優化建議)**,供每回合假設性 AI 站位評估使用;兩種快取模式不得混用 | 效能/快取 | ⚠️ 部分 — ADR-0002 Key Interfaces 明訂兩種快取鍵形狀且不得混用,但明文「呼叫方義務,本 ADR 不實作快取」;擁有者(好感度—位置連鎖系統 #5)無 GDD 亦無 ADR,硬性契約無人承接 |
+| TR-affinity-020 | **記憶化是硬性介面契約(非優化建議)**,供每回合假設性 AI 站位評估使用;兩種快取模式不得混用 | 效能/快取 | ⚠️ 部分 — ADR-0002 Key Interfaces 明訂兩種快取鍵形狀且不得混用,但明文「呼叫方義務,本 ADR 不實作快取」;擁有者(好感度—位置連鎖系統 #5)側**至今沒有對應的承接點**,硬性契約無人承接。🔴 **判定維持 ⚠️,2026-09-29 更正的是理由**:原寫「#5 **無 GDD 亦無 ADR**」,兩個半句都要修 —— ①「無 GDD」**已查證為假**(`design/gdd/affinity-position-chain.md` 第 3 行:`Status: Approved(2026-08-31 管理者裁決)`,核准已近一個月);②「無 ADR」字面為真但**會誤導**,#5 是**已裁決不補 ADR**(2026-09-29 管理者裁決三,逐字選項「不卡住(建議)」),**不是待辦**。⚠️ **本列的實質問題與 #5 有沒有 GDD/ADR 無關** —— 是記憶化契約在 #5 側沒有對應條目,見本檔 `TR-affinity-position-001`~`-010` 矩陣節 |
 | TR-affinity-021 | 讀取進入點須有依函數性質分流的條件式預設查詢時點(`t_death(p)` vs `t_now`) | 資料/介面 | ✅ 已涵蓋 — ADR-0002 機制五(條件式預設查詢時點依函數性質分流) |
 | TR-affinity-022 | 公式四假設性記錄契約:嚴格遞增的虛擬 `t_new`,是 `t_query ≤ t_now` 規則的唯一合法豁免 | 介面/決定性 | ✅ 已涵蓋 — ADR-0002 機制五(speculative_read 依序指派遞增 t_new) |
 | TR-affinity-023 | 「全作用域封鎖成因登記處」目前僅為文件層表格、無執行期查詢 API——架構階段須決定是否升級 | 資料/流程邊界 | ✅ 已涵蓋 — ADR-0002 機制九(裁決:維持文件層 + 窄範圍 can_write(),不建立跨系統登記處) |
@@ -292,6 +292,157 @@
 | TR-ID | 需求 | 領域 | 涵蓋情形 |
 |---|---|---|---|
 | TR-card-001 | 打出任何卡牌後,畫面上的傷害預覽必須是新值,不得殘留舊值 —— 打牌算改變權威戰鬥狀態,已算好的查詢結果一律作廢重算 | 查詢正確性/跨系統 | ✅ **已涵蓋 — ADR-0001 第一次修訂(2026-09-09)**:打牌第 4 步確認列為機制一遞增清單第 6 條路徑,走 `commit_authoritative_change()`;單位攻防有效值納入 `combat_state_version` 的背書範圍。🔴 **附帶一條實作義務**:打牌確認若讀游標系統裁定後的狀態,不得放在 `_input` 鏈(會讀到上一幀,且不報錯) |
+
+---
+
+## 完整矩陣 — 好感度—位置連鎖系統(affinity-position-chain.md)— Core 層
+
+> 🔴 **本節於 2026-09-29 建立** —— 管理者裁決 3 的 M0,由窄範圍 `/architecture-review`
+> Phase 8 寫入(該 Phase 是本表的正式寫入者,見 `production/epics/affinity-position-chain/EPIC.md`
+> 第 5.3 節④)。**在此之前,追溯體系對本系統零命中**,與 2026-09-09 技能卡牌系統
+> **同形狀**的缺口。
+>
+> **後果是「沉默」而不是「紅燈」**:R1–R10 既不在 ✅ 也不在 ❌ —— 它們不在分母裡。
+> 下一次審查會報出一個看起來完整的涵蓋率,而本系統一條都沒被看過,**報告不會有任何
+> 欄位顯示這件事。**
+
+建立前的實測(指令可自行重跑;下列輸出是 2026-09-29 補登**之前**的值,補登後當然不再為 0):
+
+```
+$ grep -c "affinity-chain\|position-chain" docs/architecture/traceability-index.md
+0
+$ grep -c "affinity-position-chain" docs/architecture/tr-registry.yaml
+0
+$ grep -ln "affinity-position-chain" docs/architecture/adr-*.md
+(無輸出 —— 五份 ADR 沒有任何一份提到本系統的 GDD)
+```
+
+### 🔴 讀這張表之前必讀:本節的 ❌ 是「已裁決不補 ADR」的 ❌,不是待辦的 ❌
+
+**依據:2026-09-29 管理者裁決三,逐字選項「不卡住(建議)」** —— #5 的 story
+**不因缺少 ADR 而被判 Blocked**,沿用 2026-09-01 管理者裁決
+「劑量規則勝過『每個系統都要有 ADR』」的同一處置。
+
+**本系統是刻意不該有 ADR 的**,三條現行規則明文如此:
+
+- `.claude/docs/coding-standards.md`(2026-09-01 管理者裁決):ADR **只為跨系統契約而寫**,
+  單一系統的內部技術細節寫在該系統的設計文件裡。
+- #5 的**兩項跨系統義務**已登記於 `docs/registry/architecture.yaml` 的 `interfaces` 節
+  (`affinity_pairing_data_per_query_refetch`、`phi_curve_enemy_advantage_cross_calibration`),
+  兩者的 `adr:` 欄逐字皆為 `none`,理由逐字:缺的是「a RECORDED OBLIGATION, not a decision
+  between options」。
+- 流程劑量裁決(2026-08-25):剩下 6 個系統合計**只會再產生 0~1 份新 ADR**。
+
+🔴 **因此,本節的 ❌ 不得被列入下方「需要 ADR 的已知缺口」清單,也不得被任何一輪審查
+讀成 10 份待寫的 ADR。** 正確讀法是:**已知、已裁決、由設計文件 + `architecture.yaml`
+登記表承接。** 與 #1/#3 那種「❌ 因為 ADR 還沒寫」是**不同意義的同一個符號**。
+
+⚠️ **這不表示 ❌ 沒有成本。** ❌ 的意思在本表一律是「無任何 ADR 涵蓋」,對本系統而言
+它額外意味著:**該條需求目前只有 GDD 一個承接點,登記表沒有對應條目**,因此沒有任何
+跨文件機制會在有人改動它時發出提醒。要降低這個風險,正確動作是**視需要補 `architecture.yaml`
+的 `interfaces` / `forbidden_patterns` 條目**(單條、低成本),**不是**補 ADR。
+
+### 判定方法與涵蓋標記慣例
+
+逐列標記**獨立重新推導**,不採信 GDD 或 epic 自身的宣稱。本節沿用
+`TR-concept-012`/`-014` 於 2026-09-01 稽核確立的前例:**登記於
+`docs/registry/architecture.yaml` 的架構立場,與 ADR 同等計入涵蓋**(那兩列即因此由 ❌ 改判 ✅)。
+
+| TR-ID | 需求 | 領域 | 涵蓋情形 |
+|---|---|---|---|
+| TR-affinity-position-001 | R1:關係表是資料不是規則;本系統只定義曲線與疊加。配對資料的權威來源是上游即時查詢,靜態關係表檔僅為暫代品 | 資料擁有權/跨系統 | ⚠️ **部分涵蓋** — `affinity_pairing_data_per_query_refetch`(`status: active`,`adr: none`)完整承接「每次查詢重新取得、與位置快照同一鮮度等級」這一半,並具名了 `AffinityDataPool.combat_strength_read()` 簽章與 2026-08-31 實測到的不對稱缺陷。**未涵蓋的一半在同一條目裡逐字自陳**:`OPEN, DELIBERATELY UNDECIDED` —— 池回傳無界實數而 `Φ` 消費整數 `amp`,量化方式(round / bucket / sign-only)未定,擁有者是卡牌系統 #6。今日 `amp` 硬編碼為 1,即 sign-only:強度 0.05 與 500 產生**相同**的 `Φ`(見 GDD OQ-3) |
+| TR-affinity-position-002 | R2:距離一律用曼哈頓距離,與戰鬥射程判定採相同定義;明文允許兩份獨立實作,但必須以測試釘死兩者一致 | 演算法紀律/跨系統 | ❌ **缺口(已裁決不補 ADR 型)** — 登記表零命中(**查證指令 ① 在本表下方**)。**最接近的鄰居是 `TR-tactical-020`,但它管的是戰鬥側**(曼哈頓用於射程/移動、Bresenham 用於視線、絕不混用),**不涵蓋「兩份實作必須測到一致」這條跨系統義務**。GDD 側由 AC-R2 承接;**承接點只有一個** |
+| TR-affinity-position-003 | R3:距離—數值曲線(距離 1 → +3/−1、距離 2 → 0/0 死區、距離 ≥3 → −1/+2);≥3 是一整段不再遞增 | 數值/公式 | ⚠️ **部分涵蓋** — `phi_curve_enemy_advantage_cross_calibration` 登記了「四個 R3 常數與 `enemy_advantage_pct` 不得各自獨立調整」,而該條目**自陳為發現機制而非執行機制**:逐字 `NO equation linking them, no shared source of truth, and no failing test`,且 `status: open_gap`(非 `active`)—— 理由是兩側皆未校準,此刻設為 BLOCKING 會從第一天就紅著而無人該據以行動。**曲線本身的數值(四個常數、死區、≥3 不遞增)無任何登記條目承接** |
+| TR-affinity-position-004 | R4:所有關係線全部生效、逐條加總,不存在任何抑制機制 | 數值/公式 | ❌ **缺口(已裁決不補 ADR 型)** — 無 ADR、`architecture.yaml` 無對應條目。本條**推翻了既有實作行為**(`SUPPRESSED` 列舉值已於 2026-08-31 提交 `f8d1241` 刪除),承接點為 GDD 與 AC-R4a / AC-R4b。⚠️ **值得注意的風險形狀**:R4 是「不得重新引入抑制」這類**前瞻性禁令**,而本專案已有 `forbidden_patterns` 這個正是為此設計的登記機制卻未使用 |
+| TR-affinity-position-005 | R5:「犧牲一人」的取捨必須由 R4 自動長出,不得實作為腳本事件 | 設計不變式 | ❌ **缺口(已裁決不補 ADR 型)** — 無 ADR、無登記條目。本條是**純設計不變式**,不含執行期介面,無跨系統契約;依 2026-09-01 裁決本來就不該有 ADR。承接點為 GDD 本文 |
+| TR-affinity-position-006 | R6:合作(+3)與對立(+2)戰力刻意不對等約 50%;調整 R3 任一數值前必須連同本條重新裁決 | 數值/公式 | ⚠️ **部分涵蓋** — 與 `-003` 同一條目(`phi_curve_enemy_advantage_cross_calibration`)承接「四常數不得獨立調整」這一半;**「50% 差距是明文設計、改動前須連同本條重新裁決」這一半無登記條目**。📌 同條目另登記一項**會改變讀法的範圍限制(已實測)**:`Φ` 只涵蓋輸出通道(敵方 DEF 膨脹,差距 2–3 點),**完全不涵蓋受擊通道**(敵方 ATK 膨脹,差距最高 6 點)—— `Φ` 是攻方單向加成,玩家打得更痛但不會更耐打 |
+| TR-affinity-position-007 | R7:關係線數量不設上限,故 `Φ` 的上下界完全由硬性夾限(`PHI_MIN = −4` / `PHI_MAX = +12`)決定,且會在正常遊玩中真的作用 | 數值/邊界 | ❌ **缺口(已裁決不補 ADR 型)** — 登記表零命中(**查證指令 ② 在本表下方**)。🔴 **這是本節 10 列裡缺口最實質的一條**:夾限**不是保險絲**,一旦有角色擁有第 5 條線,合法佈局就會觸發它,亦即**修改夾限值等同修改戰力上下限本身**,而目前沒有任何跨文件機制會在有人動 `PHI_MIN`/`PHI_MAX` 時提醒。承接點只有 GDD 公式二/三與 `affinity_rules.gd` 的 `clampi()` |
+| TR-affinity-position-008 | R8:每條關係線對其兩端同時生效,雙方看到的狀態必然一致,不得重新引入單邊抑制 | 契約/不變式 | ❌ **缺口(已裁決不補 ADR 型)** — 無 ADR、無登記條目。GDD 自陳本條的存在理由就是「把 R4 取消抑制後數學上已不可能發生的性質**明文化為契約**」,以防日後被重新引入 —— 亦即它本質上是一條**前瞻性禁令**,與 `-004` 同形狀,同樣未使用 `forbidden_patterns` 機制 |
+| TR-affinity-position-009 | R9:陣亡或離場單位連同其所有關係線一併失效(從位置表整條移除,非設旗標);位置快照必須每次重新讀取、不得快取 | 生命週期/跨系統 | ⚠️ **部分涵蓋** — 有**兩條**登記條目從外側圍住本條,但**沒有一條是對 #5 本身下的義務**:① `affinity_death_notification`(`adr: ADR-0002`)明文規定陣亡通知必須由戰棋系統**直接**呼叫 `AffinityDataPool.notify_death()`,**不得經由 `affinity-position-linkage` 轉送**(會造成 Foundation↔Gameplay 循環);同一立場也寫在 `affinity_death_marks` 的 `write_access` 欄。② `query_result_versioning`(`adr: ADR-0001`)把 `affinity-position-linkage` 列為消費者,要求消費者不得依 `is_stale()` 為真的查詢結果接受玩家輸入。**未涵蓋**:「整條移除而非設旗標」的語意、以及「位置快照每次重讀、不得快取」這條義務本身 —— 後者只在 `affinity_pairing_data_per_query_refetch` 裡**被當成鮮度基準引用**(逐字 `same freshness class as the position snapshot`),那是觀察,不是義務 |
+| TR-affinity-position-010 | R10:本系統無狀態、無隨機、不寫入任何資料;純查詢,符合專案級禁令 `rng_in_combat_settlement` | 架構約束/專案級禁令 | ⚠️ **部分涵蓋** — ①「無隨機」由 `forbidden_patterns` 的 `rng_in_combat_settlement`(`status: active`)完整承接,**與 `TR-concept-014` 判 ✅ 的依據是同一條**。②「不寫入」**僅在陣亡這一條路徑上**被承接:`affinity_death_marks` 的 `write_access` 與 `affinity_death_notification` 皆明文禁止寫入經由本系統轉送。**未涵蓋**:「無狀態、不得快取」這一半 —— 而這一半才是本系統最容易被日後修改破壞的部分(**加一個快取即同時違反 R9 與 R10,而不會觸發任何登記條目**) |
+
+
+#### 查證指令(❌ 判定的原始依據 —— 貼指令與原始輸出,不貼結論數字)
+
+🔴 **`docs/registry/architecture.yaml` 的 `last_updated:` 那一條是一則巨大的單行註解**,
+幾乎提到每一個條目名稱,**grep 任何名稱都會命中它並吐出整段**(協調者與 `technical-director`
+各踩過一次,每次吃掉約半個回合)。
+⚠️ **它的大小不要相信任何手抄數字** —— 交接檔一路傳下來的說法是「約 30KB」,
+協調者 2026-09-29 實測為 **9339 bytes**(`sed -n '53p' ... | wc -c`),**差三倍**。要大小就當場量。
+**以下兩條指令都必須排除它。當場定位、不要寫死行號**(本檔禁止行號指路,見 `.claude/rules/design-docs.md`):
+
+```bash
+# 先取得那一行的行號,再把它排除掉 —— 檔案長度變了也不會失效
+NOISE=$(grep -n '^last_updated:' docs/registry/architecture.yaml | cut -d: -f1)
+# 用法:  grep -n "要找的字" docs/registry/architecture.yaml | grep -v "^${NOISE}:"
+```
+
+① R2(`TR-affinity-position-002`)—— 曼哈頓距離紀律在登記表零命中:
+
+```
+$ grep -n "manhattan\|曼哈頓" docs/registry/architecture.yaml | grep -v "^53:"
+$ echo "exit=$?"
+exit=1
+```
+
+② R7(`TR-affinity-position-007`)—— `Φ` 夾限在登記表零命中:
+
+```
+$ grep -n "PHI_MIN\|PHI_MAX\|clamp" docs/registry/architecture.yaml | grep -v "^53:"
+$ echo "exit=$?"
+exit=1
+```
+
+③ 反向確認登記表確實有提到本系統(即上兩條的 `exit=1` 不是因為系統名寫錯):
+
+```
+$ grep -n "affinity-position-linkage" docs/registry/architecture.yaml | grep -v "^53:"
+122:    write_access: affinity-data-pool-only (via notify_death; sole legitimate caller is tactical-combat-system, a reverse Foundation←Gameplay dependency — must NOT be relayed through affinity-position-linkage, see affinity_death_notification below)
+290:      - affinity-position-linkage # reads adjacency/placement queries (system #5, Not Started)
+333:      affinity-position-linkage, which would create a Foundation↔Gameplay cycle (see
+669:      - affinity-position-linkage   # system #5; reads polarity+strength to compute Phi
+702:    producer: affinity-position-linkage      # owns the four R3 curve constants
+```
+
+⚠️ **登記表用的系統名是 `affinity-position-linkage`,不是 GDD 檔名 `affinity-position-chain`。**
+用檔名去查登記表會得到零命中而誤判「完全沒登記」—— 這正是本次補登前 epic 第 5.1 節那三條
+指令看到的假象的鄰居形狀。
+
+### 本節對涵蓋率的影響
+
+🔴 **本表的數字一律當場數,不抄。** 本節 10 列的分佈(⚠️ 判斷順序刻意先驗 ❌ —— 有儲存格同時含兩個符號,例如 `-004` 的本體是 ❌ 但內文另有一段 ⚠️ 風險提示):
+
+```
+awk '/^## 完整矩陣 — 好感度—位置連鎖/{f=1;next} f&&/^## /{f=0} f&&/^\| TR-affinity-position-/{
+  if(/❌/) n++; else if(/⚠️/) w++; else if(/✅/) c++} END{c+=0;w+=0;n+=0; print "OK="c, "PARTIAL="w, "GAP="n}' \
+  docs/architecture/traceability-index.md
+```
+
+⚠️ **本節的 10 項尚未被併入檔頭「涵蓋率總覽」的跨系統總數。** 那張表的權威值見檔頭
+2026-09-01 與 2026-09-03 兩則更正(**不是表格本身,表格是第七輪的歷史快照**)。
+併入是**下一輪完整 `/architecture-review` 的動作** —— 本次是窄範圍補登,授權範圍只到
+📌 **給下一輪的交代**:併入時分母**不是 129 + 10**。🔴 **我自己第一版就寫錯成 139,原因正是
+手抄** —— 129 那個數字是 2026-09-03 更正時的值,**不含 2026-09-09 補登的技能卡牌 1 列**。
+**當場數,不要抄**(下列指令同時給出每個系統的列數與總計;`^\| TR-[a-z]` 的 `[a-z]` 是必要的,
+否則會把每張表自己的 `| TR-ID |` 表頭列也算進去,七個系統各多 1):
+
+```
+awk '/^## 完整矩陣/{s=$0; sub(/^## 完整矩陣 — /,"",s); sub(/\(.*/,"",s)}
+     /^\| TR-[a-z]/{c[s]++; t++}
+     END{for(k in c) printf "%-26s %d\n", k, c[k]; print "TOTAL_ROWS", t}' \
+  docs/architecture/traceability-index.md
+```
+
+扣除已棄用項後的實際分母,從登記表數(唯一權威,本行不抄結果):
+
+```
+grep -o "^  - {id: TR-[a-z-]*-[0-9]*.*status: [a-z-]*" docs/architecture/tr-registry.yaml \
+  | grep -o "status: [a-z-]*$" | sort | uniq -c
+```
+
+🔴 **併入時本節 5 項 ❌ 不得進入「需要 ADR 的已知缺口」清單** —— 理由見本節上方的必讀段。
+「讓 #5 的需求存在於追溯體系內」,**不含重推其他系統的 130 列**,故不代為改寫跨系統總計。
+「需要 ADR 的已知缺口」清單** —— 理由見本節上方的必讀段。
 
 ---
 

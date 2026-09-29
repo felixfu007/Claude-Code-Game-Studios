@@ -25,20 +25,38 @@
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
 version: 1
-last_updated: "2026-08-19"   # 第三輪 /architecture-review 核對:130 項基線不變,無新增/改寫/棄用 TR-ID
+last_updated: "2026-09-29"   # 見下方 2026-09-29 變更註;歷史值 2026-08-19(第三輪)保留於其後
 # 註:本檔共 133 個 `id:` 條目,其中 3 個(TR-combat-001~-003)位於檔頭註解區、為 ID 格式範例,
 #     非真實需求。實際 active 需求數為 130 —— 三輪審查皆以此為基線。
 #     第三輪(2026-08-19)查證:5 份 GDD 自第二輪以來零修改(最新 GDD 提交 08bf6ff 早於第二輪
 #     審查提交 1c3d5d0),故無任何 TR-ID 需要新增、改寫或棄用。涵蓋情形見 traceability-index.md。
+#
+# 🔴 上面那段「本檔共 133 個 `id:` 條目 …… 實際 active 需求數為 130」是 2026-08-19 第三輪的
+#    快照,**自 2026-09-09 起已過期,刻意不改寫成新數字**(它是當輪的歷史紀錄)。
+#    本專案已登記「同一個項數在四個檔案有三個並存的值,而權威來源的檔頭本身是錯的」這個失誤模式
+#    (見 .claude/docs/technical-preferences.md「Architecture Decisions Log」節),故此處不再手抄。
+#    **要數字就當場數**(兩條指令,結果永遠是真的):
+#
+#      grep -c "^  - {id: TR-" docs/architecture/tr-registry.yaml
+#      grep -o "^  - {id: TR-[a-z-]*-[0-9]*.*status: [a-z-]*" docs/architecture/tr-registry.yaml \
+#        | grep -o "status: [a-z-]*$" | sort | uniq -c
+#
+#    ⚠️ 前者會連 deprecated 一起算;要 active 分母用後者。`^  - {` 這個錨點是必要的 ——
+#    不加會把檔尾 EXAMPLE ENTRIES 註解區的 3 個範例 ID 一起算進去(那正是舊註解裡 133 vs 130
+#    那 3 的來源)。
+#
+# 2026-09-29 變更:新增 10 項 TR-affinity-position-*(系統 #5,管理者裁決 3 的 M0);
+#    改寫 TR-tactical-002 / -006 的 requirement 文字(追溯層落後於 M2 story 001/002 的
+#    passable 第三地形屬性與 ignore_passability 雙開關)。兩項皆見各自的 revised 欄。
 
 requirements:
   # ─── 戰棋移動與交戰系統 (tactical-combat-system.md) ──────────────────────────
   - {id: TR-tactical-001, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "棋盤須為有限邊界的方格網、整數座標(Grid\\B 列舉需要邊界表示法)", created: 2026-08-18, revised: "", status: active}
-  - {id: TR-tactical-002, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "地形須有兩個正交逐格屬性(terrain_cost>=1、遮蔽布林值),並有載入時驗證", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-002, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "地形須有三個正交逐格屬性(terrain_cost>=1、遮蔽布林值、passable 可通行布林旗標),並有載入時驗證", created: 2026-08-18, revised: "2026-09-29: 原文寫「兩個正交逐格屬性」,追溯層落後於即將實作的東西。第三個屬性 passable(可通行)由 tactical-combat epic M2 的 story 001/002 實作。此前專案明文記載 board.gd 的 MOVE_COST 表「根本沒有『不可通行』這個概念」(.claude/docs/technical-preferences.md「(A) 的精確定義」節所記 2026-08-31 事故的根因就是這一點),passable 即為補上該缺口,故本次是追溯層補齊、不是新增需求。🔴 權威來源是 GDD 公式三,不是本欄文字 —— production/epics/tactical-combat/EPIC.md 的保險條款(以 GDD 公式三為準,不以 TR-tactical-002/006 現行文字為準)刻意保留不刪:它現在是『兩個來源一致』的佐證而非繞道,但下一次本欄再落後時它仍是唯一的安全網。⚠️ 未查證:本次未重讀 GDD 公式三原文,「三個屬性」與屬性名稱取自 /create-stories 的查證與協調者轉述,下一輪 /architecture-review 須以 GDD 原文複核。", status: active}
   - {id: TR-tactical-003, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "逐單位 schema:HP/ATK/DEF/MP/陣營/武器分層/兩個行動旗標/存活狀態", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-004, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "player_baseline_stat(公式二輸入)全專案無擁有系統(OQ-2)", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-005, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "武器資料表需要載入時的結構性與組成性驗證(AC-3、AC-23)", created: 2026-08-18, revised: "", status: active}
-  - {id: TR-tactical-006, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "reachable_set(u, ignore_occupancy) 須為單一函式;移動合法性只能用集合 A,不得用 B(AC-14)", created: 2026-08-18, revised: "", status: active}
+  - {id: TR-tactical-006, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "reachable_set(u, ignore_occupancy, ignore_passability) 須為單一函式,兩個開關正交且不得合併為單一旗標;移動合法性只能用集合 A,不得用 B(AC-14)", created: 2026-08-18, revised: "2026-09-29: 原文只寫單一 ignore_occupancy 參數,追溯層落後於即將實作的東西。story 001/002 要做的是雙開關(ignore_occupancy / ignore_passability)。🔴 『兩個開關正交且不得合併為單一旗標』有 GDD 撐著:依據是 GDD 公式三原文(兩個獨立參數、四種布林組合),並非本次新增的推導 —— 本項與 production/epics/tactical-combat/story-002-reachable-tiles-bounded-frontier.md 獨立收斂到同一條(該 story 由 lead-programmer 同日撰寫,雙方未看過對方的產出;該 story 另明文『不得以合併為單一趟、放棄成因區分作為最佳化方式』,即使為了有界前緣展開的效能改善也不行)。📌 GDD 沒寫的是『為什麼』,記在這裡:佔位是動態的(某個單位此刻站在那裡),可通行性是地形的靜態屬性,合併會讓『假設性站位評估』與『地形查詢』共用同一個開關而無法分別關閉;此推導另與 TR-tactical-013(occupied(tile) 須為邏輯資料結構,絕不可由節點樹或動畫狀態導出)一致。保險條款的處置同 TR-tactical-002 的 revised 欄,刻意保留不刪。⚠️ 未查證:本次未親自重讀 GDD 公式三與 story 001/002 原文,參數名稱取自協調者轉述與其引用的 story 原始行;下一輪 /architecture-review 仍須以 GDD 原文複核。", status: active}
   - {id: TR-tactical-007, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "移動展開須為考慮成本的 Dijkstra 類演算法,不可用 BFS", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-008, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "reachable_set 須為有界前緣展開、MP 耗盡時提前終止,不得先展開全盤再過濾", created: 2026-08-18, revised: "", status: active}
   - {id: TR-tactical-009, system: tactical-combat, gdd: design/gdd/tactical-combat-system.md, requirement: "雙 Dijkstra 掃描的移動範圍刷新須壓進 16.6ms 影格預算(未驗證假設)", created: 2026-08-18, revised: "", status: active}
@@ -177,6 +195,32 @@ requirements:
   # 需求從未進入任何一次 /architecture-review 的涵蓋率分母,它會安靜地不被統計。
   # 缺口由 ADR-0001 第一次修訂的 TD-ADR 覆核發現。
   - {id: TR-card-001, system: skill-card, gdd: design/gdd/skill-card-system.md, requirement: "打出任何卡牌後畫面上的傷害預覽必須是新值,不得殘留舊值——打牌算改變權威戰鬥狀態,已算好的查詢結果一律作廢重算", created: 2026-09-09, revised: "", status: active}
+
+  # ─── 好感度—位置連鎖系統 (affinity-position-chain.md) ────────────────────────
+  # 本區段於 2026-09-29 建立(管理者裁決 3 的 M0,窄範圍 /architecture-review Phase 8)。
+  # 在此之前整份登記表對本系統零命中 —— 亦即 R1~R10 從未進入任何一次涵蓋率的分母,
+  # 它們不會被判為缺口,而是「安靜地不被統計」。與 skill-card 2026-09-09 同形狀的缺口。
+  #
+  # 🔴 這 10 項的涵蓋情形全部是 ❌,但那是「已裁決不補 ADR」的 ❌,不是待辦的 ❌。
+  #    依據:2026-09-29 管理者裁決三(逐字選項「不卡住(建議)」)—— #5 的 story
+  #    不因缺少 ADR 被判 Blocked,同 2026-09-01「劑量規則勝過『每個系統都要有 ADR』」。
+  #    下一輪審查不得把這 10 列讀成 10 份待寫的 ADR。完整理由見 traceability-index.md
+  #    本系統的「完整矩陣」節。
+  #
+  # ⚠️ ID 前綴與 TR-affinity-*(好感度數值池)會 grep 互相命中。要分別計數請用
+  #    `system:` 欄位,不要用 ID 前綴:
+  #      grep -c "^  - {.*system: affinity-data-pool" docs/architecture/tr-registry.yaml
+  #      grep -c "^  - {.*system: affinity-position-chain" docs/architecture/tr-registry.yaml
+  - {id: TR-affinity-position-001, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R1:關係表是資料不是規則;本系統只定義曲線與疊加。配對資料的權威來源是上游即時查詢(Interactions ①),靜態關係表檔僅為暫代品,衝突時一律以上游為準", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-002, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R2:距離一律用曼哈頓距離,與戰鬥射程判定採相同定義。明文允許 affinity_rules.gd 與 combat_rules.gd 兩份獨立實作(合併的橫向耦合成本高於收益),但必須以測試釘死兩者一致(AC-R2)", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-003, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R3:距離—數值曲線為距離 1 → 正向 +3/負向 −1、距離 2 → 0/0(刻意死區)、距離 ≥3 → −1/+2。≥3 是一整段不再遞增;距離 0 不會發生(禁止同格)", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-004, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R4:一個單位身上每條關係線各自依 R3 算出數值後全部相加,不存在任何抑制機制(推翻既有的 SUPPRESSED 行為,該列舉值已刪除)", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-005, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R5:「犧牲一人」的取捨必須由 R4 自動長出,不得實作為腳本事件", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-006, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R6:合作路線每條 +3、對立路線每條 +2,戰力上限差約 50% 為明文設計而非巧合。調整 R3 任一數值前必須連同本條重新裁決", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-007, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R7:關係線數量不設上限,故 Φ 的上下界完全由硬性夾限 PHI_MIN=−4 / PHI_MAX=+12 決定,且會在正常遊玩中真的作用(第 5 條線即可觸發),不是資料寫錯才生效的保險絲", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-008, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R8:每條關係線對其兩端同時生效,雙方看到的狀態必然一致;本條為明文契約,防止日後以任何形式重新引入單邊抑制", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-009, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R9:陣亡或離場單位須從位置表整條移除(非設旗標),任一端不在場則該線不計。位置快照必須每次重新讀取、不得快取,否則屍體會以生前位置繼續提供加成", created: 2026-09-29, revised: "", status: active}
+  - {id: TR-affinity-position-010, system: affinity-position-chain, gdd: design/gdd/affinity-position-chain.md, requirement: "R10:本系統無狀態、無隨機、不寫入任何資料,是給定「誰在哪裡」回覆一個帶號整數的純查詢;符合專案級禁令 rng_in_combat_settlement", created: 2026-09-29, revised: "", status: active}
 
 # --- EXAMPLE ENTRIES (remove when first real entries are added) ---
 #

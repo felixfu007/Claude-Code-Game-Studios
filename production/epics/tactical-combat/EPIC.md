@@ -12,7 +12,9 @@
 > `src/` 目錄結構自訂,**不要當成有出處的既有模組名去別處對照。**
 > **Status**: ✅ **Ready — 2026-09-29 管理者裁決,可執行 `/create-stories`**(前為 `Draft`)。<br>依據:`docs/reviews/pr-epic-tactical-combat-2026-09-29.md` 判 CONCERNS 並列五項必辦,該報告第六節標題明文「**寫 story 之前**必須調整的事項」——五項擋的是 `/create-stories`,不是本檔狀態,且明文「五項調整全部是**定點修正**,不需要拆 epic、不需要重排」(未要求重跑閘門)。五項現況:**C1/C3 已修**(`technical-director`)、**C2 由 2026-09-29 裁決一關閉**(M6 三份重複實作收斂 ADR-0005)、**C5 擁有者已指派**(期限綁 story 不綁日期)、**C4 由 `production/epics/affinity-position-chain/EPIC.md` 的建立關閉**(2026-09-29 同日)。
 > **Review Mode**: `full`(第六十七批管理者裁決五:本 epic 恢復覆核,理由為 #4 被六個系統依賴)
-> **Stories**: 尚未切分 — 閘門通過後執行 `/create-stories tactical-combat`
+> **Stories**: ✅ **15 張已建立(2026-09-29)** —— M2:2、M3a:4、M3b:1、M6:4、M5:2、M4:2。
+> 清單、施工序、依賴見 `production/epics/tactical-combat/story-index.md`;逐張詳情見
+> `## Next Step` 節下方的 Stories 表。
 
 ## Overview
 
@@ -584,11 +586,66 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 
 ---
 
+## Stories
+
+> 🔴 **本表由 `/create-stories tactical-combat`(2026-09-29)寫入。** 逐張完整內容見
+> `production/epics/tactical-combat/story-[NNN]-*.md`;施工序推導理由與附帶建議處置見
+> `production/epics/tactical-combat/story-index.md`(不重複,只放指標)。
+
+| # | Story | 模組 | 型別 | 狀態 | ADR | 依賴 |
+|---|---|---|---|---|---|---|
+| 001 | 地形 `passable` 布林旗標與未知地形字元明確失敗 | M2 | Logic | Ready | N/A | None |
+| 002 | `reachable_tiles()` 雙開關 + 有界前緣展開 | M2 | Logic | Ready | ADR-0001(下游) | 001 |
+| 003 | 「射程內但視線被擋」查詢 | M3a | Logic | Ready | ADR-0001 | None |
+| 004 | 單位行動四態 getter | M3a | Logic | Ready | ADR-0001 | None |
+| 005 | `threat_targets()` 語意查證與必要時改名 | M3a | Logic | Ready | ADR-0001 | None |
+| 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | Ready | ADR-0001 | None |
+| 007 | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | M3b | Integration | Ready | ADR-0001 | 001, 002 |
+| 008 | 游標導航收斂(`CursorStateHost`) | M6 | Integration | Ready | ADR-0005 | None(先於 009) |
+| 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
+| 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | Ready | ADR-0005 | 建議 008 之後 |
+| 011 | 輸入缺口補強(U-T6/U-T7/U-T8) | M6 | Integration | Ready | ADR-0001, ADR-0005 | 建議 008 之後 |
+| 012 | 格位資訊面板 | M5 | UI | **Blocked**(本地化 Story 001) | ADR-0001, ADR-0005 | 004, 006, 008-011 |
+| 013 | 攻擊確認面板(二段確認) | M5 | UI | **Blocked**(本地化 Story 001) | ADR-0001, ADR-0005 | 006, 008-011 |
+| 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | Ready(執行序見下) | ADR-0001 | 003, 007, 012, 013 |
+| 015 | 行動旗標持久標記 + 不可通行地形呈現 | M4 | Visual/Feel | Ready(執行序見下) | N/A | 001, 004, 012, 013 |
+
+**執行層序列化(不得並行,共用 `src/ui/battle/battle_screen.gd`)**:`M6(008-011) → M5(012-013)
+→ M4(014-015)`。規劃層可並行的只有 M2(001-002)與 M3a(003-006),M3b(007)需等 M2。
+
+**M5 兩張(012/013)目前 `Status: Blocked`**——阻擋條件是 `localization-infrastructure` Story 001
+(核心 key 查找 API)尚未完成,檢查方式見兩張 story 檔各自的「阻擋條件」節
+(`grep -rn "tr(\|TranslationServer" src/` 轉為非零命中即解除)。**規劃本身不受影響,已完成。**
+
+## 附帶建議三項處置(`/create-stories` 執行時逐項回應,見 `story-index.md` 全文)
+
+1. **M3 拆分為 M3a(003-006)/M3b(007)**——理由:EPIC.md 自身依賴圖已標明「只有 M3 切面 1
+   真的等 M2」,拆分對應此既有分析,非新裁決。
+2. **story 狀態欄同步的可執行檢查**——`story-index.md` 附一段可直接執行的 shell 腳本,
+   偵測「測試檔已存在但狀態欄未標 Complete」的落差,取代單純的紀律呼籲。
+3. **M4 截圖驗收批次化**——014/015 兩張 story 的 Test Evidence 節已寫入「不逐 story 開圖,
+   累積至 M4 全部完成後由管理者在家中桌機一次複核」。
+
+## ⚠️ 本批派工的誠實揭露(未查證項與未完成的 C5 義務)
+
+- **C5 兩項擁有者義務(TR registry 更正、GDD 存取層章節)截至本批切 story 時仍未完成**——
+  已於 story-001/002/006/007 的 Context 節逐一記載,並在各自驗收條件套用 EPIC.md 明文的
+  保險條款(以 GDD 原文為準,不以現行 TR/GDD 文字為準)。**這不代表義務已消失**,
+  `technical-director`/`systems-designer` 仍須完成,不因 story 已切出而解除。
+- **U-T15(`threat_targets()` 語意)實際上未被 M1 查證批涵蓋**——EPIC.md「Open Questions
+  現況」表與「M1 範圍」表對此項歸屬互相矛盾(前者寫「M1 查證 + M3 定案」,後者的 8 項清單
+  不含 U-T15,M1 查證報告本身也確實未回答)。已依 EPIC.md 的「逾時降級」規則處置:降級為
+  story-005 的第一步,而非略過不查。
+- **各 story 內多處標記「⚠️ 未查證」**——包含函式現況細節、手把 `echo` 涵蓋範圍等,依派工單
+  指示不回頭讀檔驗證,留給下一個實作者於動工時查證。
+
 ## Next Step
 
-1. **`PR-EPIC` 閘門**(`producer` 執行,覆核模式 `full`,第六十七批管理者裁決五)
-2. 閘門通過 + 管理者核可後,`Status` 改 `Ready`,並更新 `production/epics/index.md`
-3. 執行 `/create-stories tactical-combat`
+1. ✅ **`PR-EPIC` 閘門**與管理者核可已完成(2026-09-29,原始記錄見下方保留段落)。
+2. ✅ **`/create-stories tactical-combat` 已執行**(2026-09-29)—— 15 張 story 檔已寫入
+   `production/epics/tactical-combat/`,見上方 `## Stories` 表。
+3. **下一步建議**:對 story-001(M2 第一張,無阻擋)執行 `/story-readiness`,同時請
+   `technical-director` 處理 C5 的 TR registry 更正(不阻擋 story-001 開工,但應盡快跟上)。
 
 > ✅ **2026-09-29:本條件已滿足,原文保留供追溯。** 原文逐字:「🔴 **在閘門通過之前,本檔 `Status` 維持 `Draft`,`production/epics/index.md` 不更新。**」
 > 閘門已於 2026-09-29 執行(判 CONCERNS,五項必辦全數關閉,詳見本檔開頭的 `Status` 行),管理者同日核可,

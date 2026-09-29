@@ -172,6 +172,31 @@
 
 *`game-designer`/`systems-designer`/`ai-programmer` 未諮詢——Lean 模式。以上「好感度—位置連鎖系統」「技能卡牌系統」兩節的介面描述屬**暫定假設**(該二系統尚未設計),待其 GDD 定案時可能需要回頭修訂本節。*
 
+### 基準值/有效值存取層(#6 技能卡牌系統反向依賴)(2026-09-29 新增,回應 `skill-card-system.md` OQ-3、`EPIC.md` C5、story-006)
+
+**本節存在的理由**:`skill-card-system.md`(#6)OQ-3 裁定「戰棋系統須新增『基準值 vs 有效值』存取層,並在其設計文件補一節」,管理者已裁決允許改動。**存取層本身已於程式面實作完成**(`src/gameplay/units/unit.gd` + `src/gameplay/cards/card_modifier_rules.gd`;合成算式見 `skill-card-system.md` 公式一)——本節是回頭補上文件契約,不是新提案。
+
+**擁有權劃分(硬性)**:
+- **基準值**(`ATK_base`/`DEF_base`/`HP_max`/`MP_base`)由本系統擁有,承載於 `Unit`(本系統的棋盤單位資料結構)的裸欄位,來自 roster 資料表,單場戰鬥內恆定不變(對應 `Unit.atk`/`Unit.def`/`Unit.hp_max`/`Unit.mp`)。
+- **有效值的修正合成算式**由 #6 擁有,定義於 `skill-card-system.md` 公式一,本文件不重複定義(單一事實來源原則)。Core Rules #5 步驟③傷害公式一律讀有效值查詢(`Unit.effective_atk()`/`Unit.effective_def()`),**不得**直接讀基準欄位,以免繞過修正層。
+
+**逐項現況(2026-09-29,`grep -n` 於 `src/gameplay/units/unit.gd` 與 `src/gameplay/combat/combat_rules.gd` 查證)**:
+
+| 數值 | 基準值 | 有效值查詢 | 合成邏輯擁有者 | 現況 |
+|---|---|---|---|---|
+| `ATK` | `Unit.atk` | `Unit.effective_atk()` | `CardModifierRules`(#6) | 已實作 |
+| `DEF` | `Unit.def` | `Unit.effective_def()` | `CardModifierRules`(#6) | 已實作 |
+| `HP` | `Unit.hp_max` | `Unit.hp`(當前值,由 `take_damage()` 遞減) | 本系統,無修正堆疊機制 | 部分——HP 是單調遞減狀態,非「基準+修正」合成,`hp` 本身已是當前有效值 |
+| `MP` | `Unit.mp` | 無獨立查詢 | 無 | ⚠️ **未實作,未查證是否需要**——現階段無任何效果會修改 MP |
+
+⚠️ **HP/MP 不與 ATK/DEF 同構,不得類推套用**:ATK/DEF 是「基準恆定、有效值由修正堆疊逐次重算」模型;HP 是已結算的當前狀態(`hp_max` 才是其基準對照),`mp` 目前無任何來源會改變它。這是待補的空白,本節不代為決定其資料形狀,交由需要它的 story 依現有 `Unit` 結構自行設計(見 story-006 Implementation Notes #2)。
+
+**與公式二(敵方數值縮放)的交界,刻意不解**:`CombatRules.enemy_stat()` 定義敵方基準值如何由玩家同階基準縮放而來,但**該函式目前未被任何呼叫端使用**(`grep -n "enemy_stat("` 全庫僅命中定義本身);敵方 roster 資料是否已於資料層預先套用縮放,未查證。`skill-card-system.md` 已界定範圍:甲類卡牌修正**僅適用於我方 5 名具名角色**,不作用於敵方單位,故「縮放與修正堆疊的套用順序」現階段無交集,非本節待解問題——**若未來合法作用對象擴大到敵方單位,套用順序(縮放前/縮放後,兩者實測相差可達 3 點防禦力,見 `skill-card-system.md` 公式一備註)須先補一條新裁決,不得沿用本節的無序假設。**
+
+**`Φ` 不屬本存取層**:好感度—位置連鎖修正 `Φ` 是公式一的獨立加法項,沒有「基準值」概念,不經由本節機制合成。已知缺口:`Φ` 上游數值池回傳無界實數,量化為整數的方式(四捨五入/分桶/僅取正負號)登記為 `OPEN, DELIBERATELY UNDECIDED`(`design/registry/entities.yaml` `amp` 條目),擁有者為 #6——本節不代為決定,僅記錄交界:此欄位經 `_phi.phi()` 取得,量化邏輯不在本節範圍。
+
+**既有義務自動涵蓋,不新增條款**:本節定義的每一個有效值查詢,自動落入 Core Rules #10「對外查詢介面的共用義務」總則(即時性、單一快照原子性),無需另立條款——查詢本身純讀、零寫入。零隨機承諾(Core Rules #7、專案級 `rng_in_combat_settlement` 禁令)同樣適用:修正合成為確定性算式,現行 `CardModifierRules` 未引入且不得引入任何隨機性。
+
 ## Formulas
 
 ### 公式一:傷害計算公式(`damage_formula`)
