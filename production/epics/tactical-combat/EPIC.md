@@ -10,7 +10,7 @@
 > `docs/architecture/architecture.md` 取模組歸屬,但**該檔不存在** —— 本專案從未跑過
 > `/create-architecture`(與 2026-08-25 流程劑量裁決一致,非疏失)。上面的名稱是依
 > `src/` 目錄結構自訂,**不要當成有出處的既有模組名去別處對照。**
-> **Status**: Draft — pending PR-EPIC gate
+> **Status**: ✅ **Ready — 2026-09-29 管理者裁決,可執行 `/create-stories`**(前為 `Draft`)。<br>依據:`docs/reviews/pr-epic-tactical-combat-2026-09-29.md` 判 CONCERNS 並列五項必辦,該報告第六節標題明文「**寫 story 之前**必須調整的事項」——五項擋的是 `/create-stories`,不是本檔狀態,且明文「五項調整全部是**定點修正**,不需要拆 epic、不需要重排」(未要求重跑閘門)。五項現況:**C1/C3 已修**(`technical-director`)、**C2 由 2026-09-29 裁決一關閉**(M6 三份重複實作收斂 ADR-0005)、**C5 擁有者已指派**(期限綁 story 不綁日期)、**C4 由 `production/epics/affinity-position-chain/EPIC.md` 的建立關閉**(2026-09-29 同日)。
 > **Review Mode**: `full`(第六十七批管理者裁決五:本 epic 恢復覆核,理由為 #4 被六個系統依賴)
 > **Stories**: 尚未切分 — 閘門通過後執行 `/create-stories tactical-combat`
 
@@ -590,4 +590,9 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 2. 閘門通過 + 管理者核可後,`Status` 改 `Ready`,並更新 `production/epics/index.md`
 3. 執行 `/create-stories tactical-combat`
 
-🔴 **在閘門通過之前,本檔 `Status` 維持 `Draft`,`production/epics/index.md` 不更新。**
+> ✅ **2026-09-29:本條件已滿足,原文保留供追溯。** 原文逐字:「🔴 **在閘門通過之前,本檔 `Status` 維持 `Draft`,`production/epics/index.md` 不更新。**」
+> 閘門已於 2026-09-29 執行(判 CONCERNS,五項必辦全數關閉,詳見本檔開頭的 `Status` 行),管理者同日核可,
+> 故 `Status` 已改 `Ready`、`production/epics/index.md` 已補上本 epic 那一列。
+> 📌 **這條規則曾造成一次可預見的誤讀**:索引裡沒有 `tactical-combat` 一列,看起來像「漏更新」,
+> 實際是本行刻意規定的。協調者 2026-09-29 就這樣誤判過一次並寫進了派工單,在專家動手前收回。
+> **下一個 epic 若沿用本規則,請把這句話一併帶過去。**

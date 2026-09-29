@@ -1,6 +1,8 @@
 # Epics 索引
 
-**最後更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)
+**最後更新**:2026-09-29(管理者四項裁決同批落地:①**建立 #5 好感度—位置連鎖 epic**;②**#4 戰棋 epic 由 `Draft` 改 `Ready` 並首次入表**;③#5 不跑 `PR-EPIC` 閘門,照 2026-09-02 精簡模式預設;④下方「尚未建立 Epic」表**已清空**)
+**前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
+**前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
 **前次更新**:2026-09-15(建立卡牌介面 epic —— 切片內 16 單元、切片外 6)—— 原文保留供追溯
 
 > 🔴 **本檔檔頭曾停在 2026-09-15 整整 14 天,而期間兩個 epic 都動過,這是下方兩列同時寫錯的共同成因。**
@@ -16,6 +18,8 @@
 | [skill-card-system](skill-card-system/EPIC.md) | Gameplay | 技能卡牌系統(僅好感度對話卡牌) | `design/gdd/skill-card-system.md` + `design/ux/skill-card-play.md` | **8 張**(邏輯層 5 + 接線 3,**全部完成**;介面層未建立) | 🟡 進行中(邏輯層完成;**介面層已由 [card-play-interface](card-play-interface/EPIC.md) 接手,不要再開第三份**) |
 | [affinity-data-pool](affinity-data-pool/EPIC.md) | Core | 好感度數值池(Delta Log) | `design/gdd/affinity-data-pool.md` + ADR-0002(**Accepted**) | **9 張 story 檔**(原規劃 16 個單元:切片內 9 + 切片外 7。⚠️ **「16」是規劃單元數,不是 story 檔數** —— 切片外 7 單元至今未建 story 檔,**不是有 7 個檔案不見了**) | 🔴 **2026-09-29 事實更正,原文保留供追溯** —— 本列原寫「**16 張**(切片內 9 / 切片外 7,全部尚未建立 story 檔)｜📋 **未開工**(2026-09-15 建立 epic)」,**自 story 檔建立起即為假**;與上一列同一成因(檔頭停在 2026-09-15)。<br>**現況(只陳述事實,本次不判定本 epic 完成與否)**:9 張 story 檔存在;其中 **8 張 `Complete`**;第 9 張 `story-009-wiring.md` 狀態為「**不單獨執行 —— 已併入卡牌介面**」。**實測依據**:`ls production/epics/affinity-data-pool/story-*.md` 計 **9** 張;狀態列統計為 8 × `Complete` + 1 × `不單獨執行` |
 | [card-play-interface](card-play-interface/EPIC.md) | Presentation | 卡牌介面 + 戰鬥選單 + 取消鍵重綁 | `design/ux/skill-card-play.md` + `design/ux/battle-menu.md`(**非 GDD**) | **18 張 story 檔**(原規劃 22 個單元:切片內 16 + 切片外 6;實作期另立 U-017、U-018,切片外 6 單元至今未建 story 檔) | ✅ **Complete(2026-09-29 收尾,18/18)**<br>🔴 **2026-09-29 事實更正,原文保留供追溯** —— 本列原寫「**22 個單元**(切片內 16 / 切片外 6,全部尚未建立 story 檔)｜📋 **未開工**(2026-09-15 建立 epic)」,**自 story 檔建立起即為假**;成因是本檔檔頭停在 2026-09-15 未更新。**實測依據**:`ls production/epics/card-play-interface/story-*.md` 計 **18** 張;18 條狀態列**全部** `✅ Complete`;收尾提交 `6c92014`(2026-09-29) |
+| [tactical-combat](tactical-combat/EPIC.md) | Gameplay | 戰棋移動與交戰系統(含武器射程分層) | `design/gdd/tactical-combat-system.md` + `design/ux/tactical-combat-screen.md` + ADR-0001(**Accepted**) | 尚未建立(規劃為 M2~M6 五模組 + M1 限時查證批) | ✅ **Ready(2026-09-29 管理者核可)** —— 可執行 `/create-stories`。<br>🔴 **本列 2026-09-29 首次入表,而 epic 檔案自當日稍早即存在(598 行)** —— 不是漏更新:該檔原第 593 行明文規定「閘門通過之前……`production/epics/index.md` 不更新」。閘門(`docs/reviews/pr-epic-tactical-combat-2026-09-29.md`,判 CONCERNS)五項必辦全數關閉後才入表。<br>⚠️ **執行層必須序列化 `M6 → M5 → M4`**(三者共用 `src/ui/battle/battle_screen.gd`);規劃層 M4/M5 互不依賴但**不可並行執行** |
+| [affinity-position-chain](affinity-position-chain/EPIC.md) | Gameplay | 好感度—位置連鎖系統(含陣亡處理) | `design/gdd/affinity-position-chain.md`(**Approved** 2026-08-31) | 尚未建立(規劃為 5 模組 + 1 治理前置) | 📝 **Draft(2026-09-29 建立)** —— 🔴 **2026-09-29 管理者裁決:不跑 `PR-EPIC` 閘門**,照 2026-09-02 精簡模式預設(不跑覆核但留紀錄)。**本列原寫「pending `PR-EPIC` gate」,該前提已由裁決移除。**<br>⚠️ **`Draft` 的理由改為「尚有 5 項待裁決」**(見該檔第 9 節),其中 3 項已於 2026-09-29 裁決(不 Blocked / 不跑閘門 / #4 那列不單獨動),**第 4 項「資料池讀取被拒時 `Φ` 回什麼」已派 `systems-designer` 查證中**,第 2 項(UX Flag 未滿足)未裁決 |
 
 ⚠️ **第三欄原名「GDD」,2026-09-04 改為「權威文件」** —— `screen-scaling` 是呈現層基礎設施,
 不是遊戲系統,沒有 GDD 也不會有。硬塞一個 GDD 欄位會讓下一個人去找一份不存在的文件。
@@ -47,10 +51,36 @@
 > 📌 而 #1 的結局正好證實了它:#1 當時被寫成「擋著卡牌系統」,實際只是沒排到 ——
 > 一旦排了,當天就開了 epic。
 
-| 系統 | 層 | 卡在什麼 |
-|---|---|---|
-| 戰棋移動與交戰(#4) | Gameplay | 🔴 **本列 2026-09-10 更正 —— 原寫「OQ-2 我方基準數值表尚未產出,仍然阻擋」,而那是錯的。** 該表自 **2026-08-31** 起即有擁有者並已產出:`design/quick-specs/unit-stats-provisional.md`(第 1 節資料、第 7-4 節給 #6 的尺度錨點)。上游 OQ 沒跟上那次指派,本索引照抄,於是 2026-09-02 又重複指派了一次。**未建立 epic 的實際理由是尚未排程,不是被擋。** 教訓見 `docs/consistency-failures.md`:**看到「已指派、等交件」,先 grep 產出物是否已存在** |
-| 好感度—位置連鎖(#5) | Gameplay | 依賴 #4 的輸出 |
+> 🔴 **2026-09-29:本表已清空 —— 所有已核准且在 12 個月範圍內的系統都已建立 epic。**
+> 原表最後一列是 #4 戰棋(#5 已於同日稍早移出),隨 #4 的 epic 判 `Ready` 一併移入上方表格。
+>
+> **清空是實測結論,不是宣告。** 當場可重跑:
+> ```
+> awk -F'|' '/^\| *[0-9]+ *\|/ { n=$2; nm=$3; st=$6; gsub(/^ +| +$/,"",n); gsub(/\*|✅| /,"",st); \
+>   if (st ~ /^Approved/) printf "#%s %s\n", n, nm }' design/gdd/systems-index.md
+> ```
+> 2026-09-29 實測輸出為 **#1 #2 #3 #4 #5** 五項(#6 技能卡牌狀態為 `Revised` 非 `Approved`,但它**已有 epic**)。
+> 五項中 **#1 #3 #4 #5 皆已有 epic**;**唯一沒有的是 #2 存檔系統**,而它的處置寫在下一段 ——
+> 依一年計畫第七節明確不在 12 個月範圍內。**亦即本表為空不代表有東西被遺漏,#2 是刻意的。**
+>
+> ⚠️ **本表不該被刪掉。** 未來 #7~#14 任一系統核准後、建 epic 前,它就會重新有內容。
+> 🔴 **而它為空的時候最危險** —— 一張空表看起來像「沒事」,但它真正的意思是
+> 「**現在所有的進度都壓在已建立的 epic 上,沒有任何東西在排隊**」。
+
+> 🔴 **2026-09-29:#5 那一列已移出本表**(epic 已建立,見上方表格)。**移出時一併更正了它的「卡在什麼」欄** ——
+> 原寫「**依賴 #4 的輸出**」,那是錯的。依據 `design/gdd/systems-index.md` 第 189–194 行逐字:
+> #4 與 #5 是**窄介面的雙向關係**(#5 提供 `Φ`、#4 提供站位與陣亡事件),
+> 「**不需要兩個系統同時完成**」,且「#4 與 #5 的先後**不能單看依賴箭頭決定**,因為箭頭是雙向的」。
+> 📌 **這不是紙上更正**:#5 的 `Φ` 早已接進 `src/ui/battle/battle_screen.gd` 在垂直切片中運作
+> (`grep -n "AffinityRules\.\|AffinityPhiProvider" src/ui/battle/battle_screen.gd` → **9 行命中,其中 6 個是呼叫點**、1 個變數宣告、2 個文件註解。⚠️ **本行原寫「→ 6 處」,與它自己貼的指令輸出對不上** —— 協調者複驗時發現並更正;本專案已登記「貼數字而非貼原始輸出」是重複失誤模式),
+> 而 #4 的 story 一張都還沒有。**若 #5 真的依賴 #4 的輸出,今天的畫面不可能跑得出好感度預覽。**
+>
+> ⚠️ **本表現在只剩一列(#4)。** 而 #4 的 epic 檔案**其實已經存在**
+> (`production/epics/tactical-combat/EPIC.md`,592 行),只是依該檔第 593 行自訂規則
+> 「在閘門通過之前……`production/epics/index.md` 不更新」而尚未入表。
+> 🔴 **本表標題是「尚未建立 Epic」,對 #4 而言字面上已不準確** —— 已登記為待裁決項
+> (`production/epics/affinity-position-chain/EPIC.md` 第 9 節第 5 項),
+> **本批刻意不自行更動 #4 那一列**,因為那會推翻 #4 epic 自己的規則。
 
 **存檔系統**:ADR-0004(原子寫入與遷移)仍為 `Proposed`,且依一年計畫第七節**明確不在
 12 個月範圍內**(「不在最短路徑上,維持 `Proposed` 即可,不要再投入」)。
