@@ -1,7 +1,7 @@
 # Story U-008: 選單開關閘控 —— suspend/resume 成對、`paused`、三種拒絕開啟
 
 > **Epic**: 卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
-> **狀態**: 📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「四張一次判完成」)** —— 對帳依據 `docs/reviews/story-status-reconciliation-2026-09-29.md`。交付物在 `src/ui/menu/battle_menu.gd`(`open() -> OpenResult` / `open_rejected` 訊號);測試 `tests/integration/ui/menu/battle_menu_gating_test.gd`(9 條)與 `tests/integration/cursor/focus_pause_gating_test.gd`(15 條)皆存在。AC-M3/M5/M8/M9/M16/AC-60 在 `tests/` 皆有引用。⚠️ **本張自建立日起,實作它的提交 `8cdc926` 從未碰過本檔** —— 狀態欄停在 Ready 12 天無人發現(實作提交 `8cdc926` 日期 2026-09-17,本次對帳 2026-09-29),是本次對帳的發動原因之一。
 > **層**: Presentation(戰鬥選單,與游標系統機制九的第一個呼叫方)
 > **型別**: Integration
 > **估時**: M

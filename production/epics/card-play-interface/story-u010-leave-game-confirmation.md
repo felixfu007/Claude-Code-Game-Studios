@@ -2,7 +2,7 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:UI
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「四張一次判完成」)** —— 對帳依據 `docs/reviews/story-status-reconciliation-2026-09-29.md`。交付物在 `src/ui/menu/battle_menu.gd`(`open_leave_confirm()` / `close_leave_confirm()` / `diagnostic_would_call_real_quit()`);測試 17 條。AC-M6/M7 皆有測試引用。⚠️ **本檔內文原先把測試路徑寫成 `tests/integration/ui/battle_menu_leave_confirmation_test.gd`,實際在 `tests/integration/ui/menu/battle_menu_leave_confirmation_test.gd`(少一層 `menu/`)** —— 純路徑筆誤,測試本體一直都在,對帳時發現。
 > **估時**:S
 > **依賴**:U-007(選單畫面 M0~M2 版面、原生 focus,另一半交付)
 > **波次**:波 4(與 U-009 同檔 `battle_menu.gd`,不可平行,但兩者順序可互換)

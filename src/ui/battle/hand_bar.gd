@@ -246,15 +246,17 @@ var _slot_kinds: Array[SlotKind] = []
 var _max_slots: int = 0
 var _availability: Availability = Availability.NORMAL
 
-## Story U-015(強制棄牌 S4)—— 骨架欄位,寫下先於讀 story 之前的最佳猜測,
-## 細節待讀完 `story-u015-forced-discard.md` 後修正:
-## `design/ux/skill-card-play.md` S4 列明文「Z2 展開,🔴 無法收起」「只能選一張
-## 棄掉」「取消鍵在此狀態無效」。**「無法收起」由 battle_screen.gd 的輸入分派
-## 保證**(S4 期間不送出會觸發收合的按鍵路徑,同 [enum Availability.LOCKED] 的
-## 既有分工:呼叫端決定「能不能」,本檔只負責「畫出來長怎樣」)——本欄位要解決
-## 的是另一半:**拒絕須可觀測**(`P-F2`)。玩家必須看得出「這不是我可以隨手關掉
-## 的一般選牌畫面」,不能只靠「按了沒反應」讓玩家自己猜。確切呈現方式(文案?
-## 邊框?兩者皆有?)待讀 story 的 Implementation Notes 後決定,不在此假設。
+## Story U-015(強制棄牌 S4,Complete)—— set by [method render]'s [param
+## forced_discard] argument. `design/ux/skill-card-play.md` S4 列明文「Z2
+## 展開,🔴 無法收起」「只能選一張棄掉」「取消鍵在此狀態無效」。「無法收起」
+## 由 [method render] 本身結構性保證(見該方法內
+## [code]effective_expanded[/code] 的計算:[code]expanded or forced_discard[/code],
+## 不只是呼叫端紀律)。**拒絕須可觀測**(`P-F2`)這一半的最終呈現方式:
+## [method _apply_layout] 把 [member _unavailable_label] 的文字換成 [constant
+## TEXT_FORCED_DISCARD](見該常數自己的 doc comment,說明為何文案刻意不同於
+## [constant TEXT_UNAVAILABLE] 與 [constant BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD]),
+## 並在 [code]_forced_discard == true[/code] 時強制把該 label 設為可見 ——
+## 未另外加邊框。
 var _forced_discard: bool = false
 
 ## S1's "游標停在第幾張" — owned entirely by this file (per the work order's
@@ -339,15 +341,16 @@ func _ready() -> void:
 ## delta_atk/delta_def/duration_rounds keys are ignored regardless of
 ## whether the caller populated them, since 丙類 cards carry no duration
 ## ([code]card.gd[/code]'s own doc comment: "丙類 carries no duration").
-## Story U-015 — [param forced_discard] is a placeholder parameter (骨架,
-## default [code]false[/code] so every existing call site keeps compiling and
-## behaving exactly as before). Intended meaning per
+## Story U-015 — [param forced_discard], wired from
+## [code]battle_screen.gd[/code]'s [code]_refresh_view()[/code], which passes
+## [method BattleController.has_pending_discard] directly (one source of
+## truth, not a screen-local mirror — see that call site's own comment).
+## Default [code]false[/code] so call sites that don't pass it (e.g. existing
+## tests) keep compiling and behaving exactly as before.
 ## `design/ux/skill-card-play.md` S4: this bar is in the mandatory-discard
 ## state (Z2 forced open, no collapse, cancel key inert) — see [member
-## _forced_discard]'s own doc comment for what is and is not decided yet.
-## 🔴 Wiring TBD after reading the story — this signature/assignment exists so
-## the call site in [code]battle_screen.gd[/code] has something real to pass
-## once that side is written, not so this file's own S4 visuals are final.
+## _forced_discard]'s own doc comment for how "無法收起" and "拒絕須可觀測"
+## are each resolved.
 func render(
 	slot_kinds: Array[SlotKind],
 	max_slots: int,
@@ -479,8 +482,10 @@ func diagnostic_cursor_index() -> int:
 ## True from the [param expanded] transition [method render] most recently
 ## saw flip true, until it flips back — see [member _expanded]'s own doc
 ## comment.
-## Story U-015 — 骨架 getter,見 [member _forced_discard] 的 doc comment。
-## 讀出最近一次 [method render] 呼叫傳入的 [param forced_discard]。
+## Story U-015 — exercised by
+## [code]tests/integration/ui/forced_discard_test.gd[/code]. 讀出最近一次
+## [method render] 呼叫傳入的 [param forced_discard] —— 見 [member
+## _forced_discard] 的 doc comment 說明該值代表什麼、如何在畫面上呈現。
 func diagnostic_is_forced_discard() -> bool:
 	return _forced_discard
 

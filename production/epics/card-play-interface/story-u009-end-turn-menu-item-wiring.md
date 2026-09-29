@@ -2,7 +2,7 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「四張一次判完成」)** —— 對帳依據 `docs/reviews/story-status-reconciliation-2026-09-29.md`。交付物在 `src/ui/menu/battle_menu.gd`(`_on_end_phase_row_pressed()` / `end_faction_phase_confirmed` 訊號)與 `src/ui/battle/battle_screen.gd`(`_ready()` 的接線);測試 `tests/integration/ui/menu/battle_menu_end_turn_wiring_test.gd`(14 條)。AC-M2/M4/M5/M12 皆有測試引用。🔴 **但要連帶讀 2026-09-24 第六十六批的教訓**:本張「完成」當時保證的是**零件做好了**,不是**零件接進玩家碰得到的路徑** —— 選單接進戰鬥畫面那段是 U-016 才補上的,兩者之間差了一整段沒有人擁有的接線。
 > **估時**:S
 > **依賴**:U-008(選單開關閘控,另一半交付)
 > **波次**:波 4(與 U-010 同檔 `battle_menu.gd`,不可平行,但兩者順序可互換;U-013 可與兩者平行)

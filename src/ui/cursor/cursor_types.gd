@@ -68,15 +68,26 @@ const CONFIRM_ACTIONS: Array[StringName] = [
 ## in [constant NAVIGATION_ACTIONS] or [constant CONFIRM_ACTIONS]).
 ## [br]
 ## ADR-0005 明文警告這份清單「值為參考起點,實作時須以實際 InputMap 內容補齊」——
-## 本專案 [code]project.godot[/code] 的 [code][input][/code] 節只自訂
-## [code]battle_confirm[/code]/[code]battle_end_phase[/code](非 [code]ui_*[/code]),
-## 故全部 [code]ui_*[/code] action 皆來自 Godot 4.7.1 引擎內建預設,已用
+## 本專案 [code]project.godot[/code] 的 [code][input][/code] 節目前自訂了
+## [code]battle_confirm[/code]/[code]battle_end_phase[/code]/[code]battle_cancel[/code]/
+## [code]battle_open_hand[/code]/[code]battle_next_target[/code]/
+## [code]battle_prev_target[/code]/[code]battle_menu[/code](共 7 個,皆非
+## [code]ui_*[/code] 命名;這份清單會隨後續 story 增長,現況請現場查
+## [code]project.godot[/code] 的 [code][input][/code] 節,不要依賴這裡的枚舉),
+## 故全部 [code]ui_*[/code] action 仍皆來自 Godot 4.7.1 引擎內建預設,已用
 ## [code]prototypes/story-004-ui-action-probe-2026-09-03/[/code] 的 headless
 ## 探針對本專案實際載入的 InputMap 逐一核對過(而非憑訓練資料印象列出)。
 ## 探針輸出:[code]prototypes/story-004-ui-action-probe-2026-09-03/logs/probe_output.txt[/code]。
 ## Probe-confirmed 2026-09-03: this engine registers 91 total [code]ui_*[/code]
-## actions (built-in defaults; this project's [code]project.godot[/code] only
-## customizes [code]battle_confirm[/code]/[code]battle_end_phase[/code]).
+## actions (built-in defaults). At probe time this project's
+## [code]project.godot[/code] only customized [code]battle_confirm[/code]/
+## [code]battle_end_phase[/code]; five more [code]battle_*[/code] actions
+## ([code]battle_cancel[/code]/[code]battle_open_hand[/code]/
+## [code]battle_next_target[/code]/[code]battle_prev_target[/code]/
+## [code]battle_menu[/code]) were added by later stories and were never
+## re-probed — but since none of them are [code]ui_*[/code]-prefixed, they
+## don't change which actions are engine-default [code]ui_*[/code] ones, so
+## the probe's conclusion below still holds.
 ## These 8 plus [constant NAVIGATION_ACTIONS]' 4 plus [constant
 ## CONFIRM_ACTIONS]' 2 (14 total) are the ones this project has actually
 ## hand-reviewed against real InputMap contents. The remaining 77 — almost

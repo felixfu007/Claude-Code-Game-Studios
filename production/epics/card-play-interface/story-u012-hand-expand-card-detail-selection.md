@@ -2,7 +2,17 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:UI
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「兩條 AC 移交給真正的主人,U-012 判完成」)**
+>
+> 對帳依據 `docs/reviews/story-status-reconciliation-2026-09-29.md`。交付物在 `src/ui/battle/hand_bar.gd`(展開補間、卡牌細節面板、選牌導覽);測試 `tests/integration/ui/hand_bar_expand_selection_test.gd`(25 條)。
+>
+> 🔴 **兩條 BLOCKING AC 已移交,不是被降標準**(登記全文在 `design/ux/skill-card-play.md`,查法 `grep -n "2026-09-29" design/ux/skill-card-play.md`):
+> - **AC-U8 拆為前後半**:前半(閘門)留本張、已完成,測試是 `tests/integration/gameplay/cards/card_play_session_test.gd` 的 `test_ac14_authoritative_write_in_progress_blocks_open_hand_synchronously` —— ⚠️ **它掛在 `ac14` 編號下,用 `AC-U8` 搜尋搜不到它**。後半(兩種拒絕外觀要不同)獨立為 **AC-U15**,擁有者 #4 戰棋系統,阻擋於 `authoritative_write_in_progress` 成為真正欄位之前。
+> - **AC-U10 整條移交**給字級可調功能(`design/ux/accessibility-requirements.md`,登記 `Not Started`)。12 組裡的 4 組(100% 那一檔)今天已由 `test_expanded_slot_bar_rect_*_at_every_resolution` 驗過,其餘 8 組隨字級功能移交。
+>
+> ⚠️ **本檔內文列的 3 條預期測試,名稱與實際測試一條都對不上**(對帳報告有逐條對照表)。測試本體存在、行為等價,但**工作單與測試之間沒有任何機械可查的對應關係** —— 第三方無法拿本檔去核對測試。這是本專案反覆登記的形狀,登記在案。
+>
+> 📌 `ux-designer` 移交時另發現一個陷阱:`tests/integration/ui/menu/battle_menu_gating_test.gd` 有一條 `test_rejection_appearance_differs_between_authoritative_write_and_forced_discard` —— **光看名字會以為 AC-U15 已經有人驗了**,實際上它只證明兩種拒絕產生的**資料**(enum 值 + 訊息字串)可區分,畫面上什麼都沒畫。
 > **估時**:M
 > **依賴**:U-011(Z1 手牌縮圖帶)
 > **波次**:波 3(與 U-008 真平行——`hand_bar.gd` vs `battle_menu.gd` 各自往下長)

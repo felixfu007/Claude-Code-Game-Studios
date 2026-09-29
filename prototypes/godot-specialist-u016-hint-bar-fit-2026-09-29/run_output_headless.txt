@@ -1,0 +1,52 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== U-016 hint bar fit probe RUN 2 (headless, structural only, reproducibility re-test) ===
+[iter=1][1366x768] 🔴 READBACK MISMATCH: SET root.size=(1366, 768) -> READBACK root.size=(64, 64) -- continuing anyway, downstream numbers in this iteration are measuring the READBACK size, not the target
+[iter=1][1366x768] instance.is_inside_tree()=true
+[iter=1][1366x768] ITEM1 HudLayout.controls_hint_bg_rect pos=(3.2, 25.6) size=(57.6, 35.2) end=(60.8, 60.8) window=(64, 64) fits_within_window=true
+[iter=1][1366x768] ITEM1b actual node ControlsHintBg.position=(48.0, 442.6) size=(864.0, 70.39999) (post _apply_layout)
+[iter=1][1366x768] ITEM2 label.size=(856.0, 66.39999) label.position=(4.0, 2.0) get_line_count()=2
+[iter=1][1366x768] ITEM2 HudLayout.font_size()=11 label.get_theme_font_size(font_size) readback=22
+[iter=1][1366x768] ITEM2 per_line_widths(font.get_string_size)=[638.0, 495.0]
+[iter=1][1366x768] ITEM2 font.get_multiline_string_size(text,width=-1)=(638.0, 54.0) cross_check(font.get_height*line_count)=54.0
+[iter=1][1366x768] ITEM3 content_height=54.0 bg_rect.height=35.2000007629395 diff(bg-content)=-18.7999992370605 overflow=true
+[iter=1][1366x768] ITEM4 max_line_width=638.0 bg_rect.width=57.5999984741211 diff(bg-line)=-580.400001525879 window_width=64.0 diff(window-line)=-574.0 overflow_bg=true overflow_window=true
+[iter=1][1366x768] ITEM5 label.clip_text=false label.autowrap_mode=0 label.text_overrun_behavior=0
+[iter=1][1366x768] --- done ---
+[iter=2][960x540] SET root.size=(960, 540) -> READBACK root.size=(960, 540) (match)
+[iter=2][960x540] instance.is_inside_tree()=true
+[iter=2][960x540] ITEM1 HudLayout.controls_hint_bg_rect pos=(48.0, 442.6) size=(864.0, 70.4) end=(912.0, 513.0) window=(960, 540) fits_within_window=true
+[iter=2][960x540] ITEM1b actual node ControlsHintBg.position=(48.0, 442.6) size=(864.0, 70.39999) (post _apply_layout)
+[iter=2][960x540] ITEM2 label.size=(856.0, 66.39999) label.position=(4.0, 2.0) get_line_count()=2
+[iter=2][960x540] ITEM2 HudLayout.font_size()=22 label.get_theme_font_size(font_size) readback=22
+[iter=2][960x540] ITEM2 per_line_widths(font.get_string_size)=[638.0, 495.0]
+[iter=2][960x540] ITEM2 font.get_multiline_string_size(text,width=-1)=(638.0, 54.0) cross_check(font.get_height*line_count)=54.0
+[iter=2][960x540] ITEM3 content_height=54.0 bg_rect.height=70.4000015258789 diff(bg-content)=16.4000015258789 overflow=false
+[iter=2][960x540] ITEM4 max_line_width=638.0 bg_rect.width=864.0 diff(bg-line)=226.0 window_width=960.0 diff(window-line)=322.0 overflow_bg=false overflow_window=false
+[iter=2][960x540] ITEM5 label.clip_text=false label.autowrap_mode=0 label.text_overrun_behavior=0
+[iter=2][960x540] --- done ---
+[iter=3][1920x1080] SET root.size=(1920, 1080) -> READBACK root.size=(1920, 1080) (match)
+[iter=3][1920x1080] instance.is_inside_tree()=true
+[iter=3][1920x1080] ITEM1 HudLayout.controls_hint_bg_rect pos=(96.0, 885.2) size=(1728.0, 140.8) end=(1824.0, 1026.0) window=(1920, 1080) fits_within_window=true
+[iter=3][1920x1080] ITEM1b actual node ControlsHintBg.position=(96.0, 885.2) size=(1728.0, 140.8) (post _apply_layout)
+[iter=3][1920x1080] ITEM2 label.size=(1720.0, 136.8) label.position=(4.0, 2.0) get_line_count()=2
+[iter=3][1920x1080] ITEM2 HudLayout.font_size()=44 label.get_theme_font_size(font_size) readback=44
+[iter=3][1920x1080] ITEM2 per_line_widths(font.get_string_size)=[1280.0, 996.0]
+[iter=3][1920x1080] ITEM2 font.get_multiline_string_size(text,width=-1)=(1280.0, 104.0) cross_check(font.get_height*line_count)=104.0
+[iter=3][1920x1080] ITEM3 content_height=104.0 bg_rect.height=140.800003051758 diff(bg-content)=36.8000030517578 overflow=false
+[iter=3][1920x1080] ITEM4 max_line_width=1280.0 bg_rect.width=1728.0 diff(bg-line)=448.0 window_width=1920.0 diff(window-line)=640.0 overflow_bg=false overflow_window=false
+[iter=3][1920x1080] ITEM5 label.clip_text=false label.autowrap_mode=0 label.text_overrun_behavior=0
+[iter=3][1920x1080] --- done ---
+[iter=4][960x540] SET root.size=(960, 540) -> READBACK root.size=(960, 540) (match)
+[iter=4][960x540] instance.is_inside_tree()=true
+[iter=4][960x540] ITEM1 HudLayout.controls_hint_bg_rect pos=(48.0, 442.6) size=(864.0, 70.4) end=(912.0, 513.0) window=(960, 540) fits_within_window=true
+[iter=4][960x540] ITEM1b actual node ControlsHintBg.position=(48.0, 442.6) size=(864.0, 70.39999) (post _apply_layout)
+[iter=4][960x540] ITEM2 label.size=(856.0, 66.39999) label.position=(4.0, 2.0) get_line_count()=2
+[iter=4][960x540] ITEM2 HudLayout.font_size()=22 label.get_theme_font_size(font_size) readback=22
+[iter=4][960x540] ITEM2 per_line_widths(font.get_string_size)=[638.0, 495.0]
+[iter=4][960x540] ITEM2 font.get_multiline_string_size(text,width=-1)=(638.0, 54.0) cross_check(font.get_height*line_count)=54.0
+[iter=4][960x540] ITEM3 content_height=54.0 bg_rect.height=70.4000015258789 diff(bg-content)=16.4000015258789 overflow=false
+[iter=4][960x540] ITEM4 max_line_width=638.0 bg_rect.width=864.0 diff(bg-line)=226.0 window_width=960.0 diff(window-line)=322.0 overflow_bg=false overflow_window=false
+[iter=4][960x540] ITEM5 label.clip_text=false label.autowrap_mode=0 label.text_overrun_behavior=0
+[iter=4][960x540] --- done ---
+=== PROBE END ===

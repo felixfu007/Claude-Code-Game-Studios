@@ -769,13 +769,14 @@ GDD States and Transitions 已明文:介面狀態與資料狀態不得混成一�
 | **AC-U5** | **全程不接滑鼠、只用手把** → 完成「開手牌 → 選牌 → 選對象 → 確認」與「開手牌 → 取消」兩條完整路徑 | UI | **BLOCKING**(`P-I2` 無例外) |
 | **AC-U6** | 把三組狀態區分的截圖**轉為灰階** → 甲類 vs 丙類、剩 1 vs 剩 2、可用 vs 不可用 **三組皆仍可區分** | UI | **BLOCKING**(`P-F3` 無例外) |
 | **AC-U7** | 選定丙類 → 選定配對 → **在確認前取消** → 好感度記錄筆數不變、無任何甲類修正產生 | Integration | **BLOCKING** |
-| **AC-U8** | 權威寫入進行中按 `開手牌` → 手牌**未開啟**,且出現的拒絕回饋與「目標不合法」的拒絕回饋**外觀不同** | Integration | **BLOCKING** |
+| **AC-U8** | 權威寫入進行中按 `開手牌` → 手牌**未開啟**,且出現的拒絕回饋與「目標不合法」的拒絕回饋**外觀不同** | Integration | **BLOCKING** —— 見下(已拆分,見下方登記) |
 | **AC-U9** | 一個 `r=1` 修正到期的那個回合開始 → 棋子標記消失、**逐條明細出現「本回合已到期」一列且在下個回合開始前消失**;同瞬間新牌進入 Z1,**兩者畫面位置不重疊** | UI | ADVISORY |
-| **AC-U10** | 四種螢幕 × 字級 75% / 100% / 150% **共 12 組** → Z2 五張卡完整落在安全區內,無裁切、無溢出 | UI | **BLOCKING** |
+| **AC-U10** | 四種螢幕 × 字級 75% / 100% / 150% **共 12 組** → Z2 五張卡完整落在安全區內,無裁切、無溢出 | UI | **BLOCKING** —— 見下(已移交,見下方登記) |
 | **AC-U11** | 同一幀鍵盤 `Enter` 與手把 `A` 各送一次確認 → **只提交一次**(好感度記錄 `+1` 而非 `+2`) | Integration | **BLOCKING** |
 | **AC-U12** | 取消鍵已重綁為 `battle_cancel` 之後 → **仍存在一條可完成「結束回合」的路徑**(選單),鍵盤與手把各一 | Integration | **BLOCKING** —— 見下 |
 | **AC-U13** | 選定一張丙類 → 於棋盤上選定甲、乙兩個特定棋子 → 確認面板顯示的兩個姓名與甲、乙**一致**;**取消後改選另一對**(丙、丁)→ 面板同步顯示丙、丁,**不殘留前一對**(後半句防止靠寫死值通過) | Integration | **BLOCKING** —— 驗的是「配對回顯」這個新欄位,見「確認面板欄位」小節 |
 | **AC-U14** | 丙類確認面板開啟 → 該配對的好感度數值**恰好出現一次**,以「現值 → 打完後」箭頭呈現(例:`+3 → +4`);**把面板改成兩欄並排、無箭頭關聯的版本 → 本測試必須轉紅** | UI | **BLOCKING** —— 驗的是上一輪 BLOCKING 合規落點(UI Requirements #4),後半句是為了讓它有鑑別力 |
+| **AC-U15** | 拆分自 AC-U8 後半(原文一字不改,見上):權威寫入進行中按 `開手牌` 遭拒 → 該次拒絕的**視覺呈現**與「目標不合法」的拒絕呈現**外觀不同** | UI | **BLOCKING** —— 阻擋於 `authoritative_write_in_progress` 成為 `src/` 真正欄位之前,擁有者 **#4 戰棋系統**(`tactical-combat-system.md`),見下方登記 |
 
 🔴 **AC-U12 是本規格唯一一條「防止交付到一半就上線」的驗收條件。**
 它驗的不是新功能好不好用,而是**舊功能還在不在** —— 若只做前半(Esc/B 改成取消)
@@ -795,6 +796,45 @@ GDD States and Transitions 已明文:介面狀態與資料狀態不得混成一�
 缺件、顯示格式未定義)。兩條依然皆無法端到端驗證,現階段先核准為規格層驗收條件。**補這條的
 理由不是它今天能跑,是退回違規形狀(兩欄並排、無箭頭)這件事不能只靠審查文字擋,必須有一條
 測試在實作完成後接手擋。**
+
+🔴 **2026-09-29 管理者裁決(逐字):「兩條 AC 移交給真正的主人,U-012 判完成」——AC-U8 拆分。**
+背景與完整對帳見 `docs/reviews/story-status-reconciliation-2026-09-29.md`。**AC-U8 原文一字
+不刪**,現場拆成兩件事:
+
+- **前半(閘門,留在本檔,已完成)**:測試是
+  `tests/integration/gameplay/cards/card_play_session_test.gd` 的
+  `test_ac14_authoritative_write_in_progress_blocks_open_hand_synchronously`。
+  ⚠️ **搜尋陷阱,明文記下**:這條測試掛在 `ac14` 這個編號下,**用「AC-U8」搜尋搜不到它**——
+  下一個人若只 grep `AC-U8` 會誤判前半沒有測試覆蓋。
+- **後半(外觀,移交,獨立為 AC-U15)**:`grep -rn "reject" --include=*.gd src/ui/` 命中的
+  全部是 `_diagnostic_*` 診斷計數器與 getter;`_on_battle_menu_open_rejected()`
+  (`src/ui/battle/battle_screen.gd`)只把結果寫進變數,**畫面上沒有任何東西被畫出來**——
+  「兩種拒絕回饋外觀不同」在視覺層今天結構上無法成立。
+  📌 **不要與 `test_rejection_appearance_differs_between_authoritative_write_and_forced_discard`
+  (`tests/integration/ui/menu/battle_menu_gating_test.gd`)搞混**——那條測試驗的是
+  `BattleMenu.OpenResult` 列舉值與訊息字串在**資料層**可區分(`REJECTED_AUTHORITATIVE_WRITE`
+  vs `REJECTED_FORCED_DISCARD`,各自訊息常數字串不同),**不是**畫面上真的畫出兩種不同外觀——
+  後者今天完全不存在,前者的存在不能拿來當後者的證據。
+  觸發它的旗標本身零實作:`authoritative_write_in_progress` 在 `src/` 裡不是欄位,只出現在
+  doc comment 與一個預設為空的注入 `Callable`
+  (`grep -rn "authoritative_write_in_progress" src/ --include=*.gd` 只命中註解與
+  `authoritative_write_in_progress_check: Callable = Callable()`)。擁有者是
+  **#4 戰棋系統**(`tactical-combat-system.md`,ADR-0001 機制一;登記見
+  `production/epics/card-play-interface/EPIC.md` 誠實限制第 1 條)。今天做這個畫面,
+  是為一個**在真實遊戲裡觸發不到的情況**做畫面。
+
+⚠️ **這是「誰擁有什麼」的更正,不是降標準。** AC-U8 與新增的 AC-U15 兩條驗收條件
+一個字都沒被刪除,只是外觀那一半改掛在 AC-U15 名下、標明真正擁有者與阻擋條件。
+
+🔴 **2026-09-29 管理者裁決(同批):AC-U10 整條移交,原文不動。**
+規格自己在 **UX-5** 已登記「字級可調 75%~150% 的功能尚未實作」,而 AC-U10 自己明文
+「12 組不得抽樣」(見上方 ⚠️)——今天只驗得到 100% 那一檔的 4 組(四種螢幕 × 100%),
+規格本身禁止拿這 4 組當 12 組的通過證據。
+📌 **誠實現況:12 組裡的 4 組今天已驗,其餘 8 組隨字級功能移交,不要讀成「整條都沒驗」**——
+`tests/integration/ui/hand_bar_expand_selection_test.gd` 有四條
+`test_expanded_slot_bar_rect_*_at_every_resolution` 測試,涵蓋四種螢幕 × 100% 字級,
+Z2 五張卡完整落在安全區內。其餘 8 組(75%/150% × 四種螢幕)移交給字級可調功能本身,
+擁有者見 **UX-5**(`design/ux/accessibility-requirements.md`,現況 `Not Started`)。
 
 ---
 
@@ -824,3 +864,23 @@ GDD States and Transitions 已明文:介面狀態與資料狀態不得混成一�
 GDD OQ-9 的後半(「手牌一場戰鬥抽換 9~11 次,每次是否需要對應的登記/取消登記呼叫」)
 **已因「手牌常駐」的裁決而消失** —— 手牌表面**登記一次即長期存在**,不隨開合抽換。
 **這是那個裁決順帶解決的一件事,不是它的目的。**
+
+📌 **驗收條件擁有權移交登記(2026-09-29)**
+
+管理者裁決逐字:「兩條 AC 移交給真正的主人,U-012 判完成」。發動原因:Story U-012
+(手牌展開＋卡牌細節)的程式已全部交付,但 AC-U8 與 AC-U10 兩條 **BLOCKING** 驗收條件
+**今天結構上不可能滿足,而且擋住它們的東西都不在這個 epic 裡** —— 管理者裁決把它們移交給
+真正擁有它們的地方,U-012 依它實際交付的東西結案。完整對帳依據見
+`docs/reviews/story-status-reconciliation-2026-09-29.md`。
+
+| 原 AC | 移交範圍 | 新擁有者 | 卡在什麼上 |
+|---|---|---|---|
+| AC-U8(後半,獨立為 **AC-U15**;前半閘門仍留 U-012,已完成) | 「拒絕回饋外觀不同」 | **#4 戰棋系統**(`tactical-combat-system.md`,ADR-0001 機制一) | `authoritative_write_in_progress` 尚未成為 `src/` 真正欄位(目前僅為 doc comment 與一個預設為空的注入 `Callable`) |
+| AC-U10(整條;100% 的 4/12 組已驗,留在冊上) | 12 組裡的 8 組(75%/150% × 四種螢幕) | 字級可調功能(`design/ux/accessibility-requirements.md`,現況 `Not Started`,見 UX-5) | `HudLayout.font_size()` 目前無玩家可調係數,功能本身尚未存在 |
+
+🔴 **這是「誰擁有什麼」的更正,不是降標準 —— 兩條 AC 的原文一個字都沒有被刪除或改寫,
+這次移交只改變它們掛在誰名下,不改變驗收條件的內容本身。** 它們依然是本檔的驗收條件、
+依然 BLOCKING;移交只解除它們對 **U-012 這張 story 結案**的阻擋,不解除它們對
+**規格本身**的阻擋 —— 下一個要關閉它們的人,必須先關閉右欄「卡在什麼上」那一格,
+而不是重新論證要不要做這兩個畫面。詳細拆分理由、grep 證據與搜尋陷阱見 Acceptance Criteria
+節 AC-U8/AC-U10 表格下方對應的 🔴 註記。

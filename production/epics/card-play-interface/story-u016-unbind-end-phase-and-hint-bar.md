@@ -2,7 +2,15 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「先做 headless 結構量測再判」—— 量測已完成且乾淨)**
+>
+> **獨立覆核**(`godot-specialist`,2026-09-24,非實作者):三個檢查點全過。唯一待修項(`_end_faction_phase_pressed()` 上方自相矛盾的舊 doc comment)已於 2026-09-29 由 `godot-gdscript-specialist` 修畢,零程式碼行變更。
+>
+> **提示橫條量測**(`prototypes/godot-specialist-u016-hint-bar-fit-2026-09-29/`,headless 結構量測,載入真實 `BattleScreen.tscn`):五種解析度皆 `overflow=false`。最小視窗 960×540:文字高 `54.0` vs 框高 `70.4`(餘裕 +16.4px)、最長行 `638.0` vs 框寬 `864.0`(餘裕 +226px)、對視窗 960 餘裕 +322px;`iter=2`/`iter=4` 兩次逐字相同。原始 log 在該目錄的 `run_output_headless.txt`。
+>
+> 🔴 **明文登記的缺口:仍然沒有任何人看過這個畫面。** 本次量測是**結構量測**(矩形與字型度量),它證明「文字不會溢出或被切掉」,**不證明「好看」** —— 兩行擠不擠、對比夠不夠、在最小視窗下讀不讀得清楚,全部未知。`coding-standards.md` 截圖規則第 5 點(人工開圖確認)本張**未執行**,理由是管理者 2026-09-24 的曝光約束(座位旁有人經過)。**這是連續第四張。**
+>
+> 📌 `CONTROLS_HINT_BG_HEIGHT_MULTIPLIER = 3.2` 仍無測試正面鎖定(實作者誠實登記,覆核者判為可接受的 Visual/Feel ADVISORY 缺口)。本次量測**不等於**補上那條測試 —— 量測是一次性的,測試是常駐的。
 > **估時**:M
 > **依賴**:U-009(結束回合列已接上控制器)**與** U-015(強制棄牌已能擋住選單)——兩者都要在,見下方為什麼。
 > **波次**:波 6(單獨一波,本 epic 最後一個單元,最短路徑第 7 波)

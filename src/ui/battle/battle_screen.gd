@@ -317,13 +317,19 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 ## exactly as it already is for [BoardView]/[method line_tone_for].
 @onready var _hand_bar: HandBar = $UILayer/HandBar
 
-## Story U-016 —— 骨架,寫在讀完工作單細節之前的最佳猜測,待讀完
-## `story-u016-unbind-end-phase-and-hint-bar.md` 後修正。管理者裁決八已把
-## 「把選單接進戰鬥畫面、讓 battle_menu 鍵真的打得開它」併入本 story——
-## U-007~U-010 已交付選單自己的閘控/結束回合列/離開確認,本畫面只負責
-## 「讓它在場景樹裡存在,並在 battle_menu 動作觸發時呼叫它既有的 open()」,
-## 不重寫選單自己的行為。詳細接線方式(node path、Callable 注入時機)待讀完
-## 工作單與 BattleMenu.tscn/battle_menu.gd 的既有公開介面後補上。
+## Story U-016 — [BattleMenu] 實例,node path [code]$UILayer/BattleMenu[/code]
+## (見 [code]BattleScreen.tscn[/code] 的 [code]BattleMenu[/code] 節點,
+## instance 自 [code]res://src/ui/menu/BattleMenu.tscn[/code])。本畫面只負責
+## 「讓它在場景樹裡存在,並在 battle_menu 動作觸發時呼叫它既有的 open()」——
+## U-007~U-010 已交付選單自己的閘控/結束回合列/離開確認,本畫面不重寫選單
+## 自己的行為。
+## [br]
+## 接線全在 [method _ready] 完成,只設定/連接一次:[member BattleMenu.controller]
+## 與兩個 in_progress_check [Callable] 於此賦值;[signal
+## BattleMenu.end_faction_phase_confirmed] 連到 [method
+## _end_faction_phase_pressed],[signal BattleMenu.open_rejected] 連到 [method
+## _on_battle_menu_open_rejected]。觸發路徑(何時呼叫 [method BattleMenu.open])
+## 見 [method _handle_battle_menu_pressed] 自己的 doc comment。
 @onready var _battle_menu: BattleMenu = $UILayer/BattleMenu
 
 ## S3 確認面板(Story U-014,`card_confirm_panel.gd`)— fed by [method
@@ -2282,12 +2288,23 @@ func _confirm_at_cursor() -> void:
 	_controller.click_tile(_cursor_cell)
 
 
-# "End my faction phase", bound to the project-level "battle_end_phase"
-# input action (project.godot [input]: keyboard Escape, gamepad Right Action
-# button — Xbox B / Sony Circle / Switch A). Added 2026-08-27 alongside
-# battle_confirm: the built-in ui_cancel this used to be bound to has no
-# default gamepad binding, which would otherwise leave a gamepad-only player
-# unable to ever hand the turn to the enemy.
+# "End my faction phase" — invoked via
+# [signal BattleMenu.end_faction_phase_confirmed], connected in _ready() (see
+# that connection, and _handle_battle_menu_pressed()'s neighboring doc
+# comment for the full menu -> signal -> here path). This function is no
+# longer reached by a direct keypress.
+#
+# History: originally (2026-08-27) bound directly to the project-level
+# "battle_end_phase" input action (project.godot [input]: keyboard Escape,
+# gamepad Right Action button — Xbox B / Sony Circle / Switch A), added
+# alongside battle_confirm because the built-in ui_cancel this used to be
+# bound to has no default gamepad binding, which would otherwise have left a
+# gamepad-only player unable to ever hand the turn to the enemy. Story U-016
+# (2026-09-24) removed that keypress dispatch in favor of the menu row above
+# — the battle_end_phase action itself still exists in project.godot but now
+# keeps zero bindings (see the "Story U-016" comment near
+# _unhandled_input()'s battle_confirm handling, where the removed dispatch
+# used to live).
 #
 # story-018-enemy-phase-stepped-playback.md: REWRITTEN from a single
 # synchronous run_enemy_phase() call into a cross-frame loop over

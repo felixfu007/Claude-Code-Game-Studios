@@ -2,7 +2,7 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 Ready
+> **狀態**:✅ **Complete(2026-09-29,管理者裁決逐字「四張一次判完成」)** —— 對帳依據 `docs/reviews/story-status-reconciliation-2026-09-29.md`。交付物在 `src/gameplay/battle/battle_controller.gd` 的 `step_enemy_phase()`;測試 `tests/unit/gameplay/battle/battle_controller_step_enemy_phase_test.gd`(11 條)。AC-E1~E4 皆有測試引用。🔴 **明文登記的缺口:AC-E5(UI,ADVISORY)從未滿足** —— 它要求「敵方階段進行中的實機截圖,手牌帶呈現 S5『不可用』外觀」,`production/qa/evidence/` 無對應檔案。**這與本專案「連續四張沒人看過畫面」是同一件事的另一個出口,不是獨立問題。**
 > **估時**:M
 > **依賴**:無(`battle_controller.gd` / `battle_screen.gd` 均已存在)
 > **波次**:波 3(與 U-008 ∥ U-012 真平行 —— 三張各自動不同檔案,零交集)
