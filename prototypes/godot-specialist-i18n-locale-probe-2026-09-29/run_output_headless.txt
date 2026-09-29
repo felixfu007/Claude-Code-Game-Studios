@@ -1,0 +1,192 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+################################################################
+# Q1: ProjectSettings internationalization/* -- real property list
+################################################################
+PROP name=internationalization/rendering/force_right_to_left_layout_direction type=1 hint=0 hint_string= usage=2054
+  get_setting() -> false
+PROP name=internationalization/rendering/root_node_layout_direction type=2 hint=2 hint_string=Based on Application Locale,Left-to-Right,Right-to-Left,Based on System Locale usage=134217734
+  get_setting() -> 0
+PROP name=internationalization/rendering/root_node_auto_translate type=1 hint=0 hint_string= usage=134217734
+  get_setting() -> true
+PROP name=internationalization/locale/translation_remaps type=34 hint=0 hint_string= usage=10
+  get_setting() -> []
+PROP name=internationalization/locale/translations type=34 hint=0 hint_string= usage=10
+  get_setting() -> []
+PROP name=internationalization/locale/translations_pot_files type=34 hint=0 hint_string= usage=10
+  get_setting() -> []
+PROP name=internationalization/locale/translation_add_builtin_strings_to_pot type=1 hint=0 hint_string= usage=10
+  get_setting() -> false
+PROP name=internationalization/locale/include_text_server_data type=1 hint=0 hint_string= usage=134217734
+  get_setting() -> false
+PROP name=internationalization/locale/line_breaking_strictness type=2 hint=2 hint_string=Auto,Loose,Normal,Strict usage=134217734
+  get_setting() -> 0
+PROP name=internationalization/locale/test type=4 hint=32 hint_string= usage=6
+  get_setting() ->
+PROP name=internationalization/locale/fallback type=4 hint=32 hint_string= usage=6
+  get_setting() -> en
+PROP name=internationalization/pseudolocalization/use_pseudolocalization type=1 hint=0 hint_string= usage=6
+  get_setting() -> false
+PROP name=internationalization/pseudolocalization/replace_with_accents type=1 hint=0 hint_string= usage=6
+  get_setting() -> true
+PROP name=internationalization/pseudolocalization/double_vowels type=1 hint=0 hint_string= usage=6
+  get_setting() -> false
+PROP name=internationalization/pseudolocalization/fake_bidi type=1 hint=0 hint_string= usage=6
+  get_setting() -> false
+PROP name=internationalization/pseudolocalization/override type=1 hint=0 hint_string= usage=6
+  get_setting() -> false
+PROP name=internationalization/pseudolocalization/expansion_ratio type=3 hint=0 hint_string= usage=6
+  get_setting() -> 0.0
+PROP name=internationalization/pseudolocalization/prefix type=4 hint=0 hint_string= usage=6
+  get_setting() -> [
+PROP name=internationalization/pseudolocalization/suffix type=4 hint=0 hint_string= usage=6
+  get_setting() -> ]
+PROP name=internationalization/pseudolocalization/skip_placeholders type=1 hint=0 hint_string= usage=6
+  get_setting() -> true
+PROP name=internationalization/rendering/text_driver type=4 hint=2 hint_string=ICU / HarfBuzz / Graphite (Built-in) usage=2054
+  get_setting() ->
+
+=== Q1b: has_setting probe for candidate keys ===
+internationalization/locale/translations | has_setting=true | get_setting(default=SENTINEL)=[]
+internationalization/locale/translation_remaps | has_setting=true | get_setting(default=SENTINEL)=[]
+internationalization/locale/fallback | has_setting=true | get_setting(default=SENTINEL)=en
+internationalization/locale/locale_filter_mode | has_setting=false | get_setting(default=SENTINEL)=UNSET_DEFAULT_SENTINEL
+internationalization/locale/locale_filter | has_setting=false | get_setting(default=SENTINEL)=UNSET_DEFAULT_SENTINEL
+internationalization/locale/include_text_server_data | has_setting=true | get_setting(default=SENTINEL)=false
+internationalization/locale/test | has_setting=true | get_setting(default=SENTINEL)=
+internationalization/rendering/root_node_layout_direction | has_setting=true | get_setting(default=SENTINEL)=0
+internationalization/rendering/root_node_auto_translate | has_setting=true | get_setting(default=SENTINEL)=true
+
+################################################################
+# ClassDB introspection -- real API surface, not guessed from memory
+################################################################
+--- TranslationServer methods ---
+TS METHOD set_locale
+TS METHOD get_locale
+TS METHOD get_tool_locale
+TS METHOD compare_locales
+TS METHOD standardize_locale
+TS METHOD get_all_languages
+TS METHOD get_language_name
+TS METHOD get_all_scripts
+TS METHOD get_script_name
+TS METHOD get_all_countries
+TS METHOD get_country_name
+TS METHOD get_locale_name
+TS METHOD get_plural_rules
+TS METHOD translate
+TS METHOD translate_plural
+TS METHOD add_translation
+TS METHOD remove_translation
+TS METHOD get_translation_object
+TS METHOD get_translations
+TS METHOD find_translations
+TS METHOD has_translation_for_locale
+TS METHOD has_translation
+TS METHOD has_domain
+TS METHOD get_or_add_domain
+TS METHOD remove_domain
+TS METHOD clear
+TS METHOD get_loaded_locales
+TS METHOD format_number
+TS METHOD get_percent_sign
+TS METHOD parse_number
+TS METHOD is_pseudolocalization_enabled
+TS METHOD set_pseudolocalization_enabled
+TS METHOD reload_pseudolocalization
+TS METHOD pseudolocalize
+--- Translation resource class properties ---
+TRANSLATION PROP messages type=27
+TRANSLATION PROP locale type=4
+TRANSLATION PROP plural_rules_override type=4
+--- Translation resource class methods ---
+TRANSLATION METHOD _get_plural_message
+TRANSLATION METHOD _get_message
+TRANSLATION METHOD set_locale
+TRANSLATION METHOD get_locale
+TRANSLATION METHOD add_message
+TRANSLATION METHOD add_plural_message
+TRANSLATION METHOD get_message
+TRANSLATION METHOD get_plural_message
+TRANSLATION METHOD erase_message
+TRANSLATION METHOD get_message_list
+TRANSLATION METHOD get_translated_message_list
+TRANSLATION METHOD get_message_count
+TRANSLATION METHOD _set_messages
+TRANSLATION METHOD _get_messages
+TRANSLATION METHOD set_plural_rules_override
+TRANSLATION METHOD get_plural_rules_override
+
+################################################################
+# Q2: zh_TW vs zh_Hant
+################################################################
+--- Q2b: TranslationServer.set_locale() round-trip / normalization ---
+BEFORE any set_locale, get_locale() = zh_TW
+after set_locale(zh_TW)        -> get_locale() = zh_TW
+after set_locale(zh_Hant)      -> get_locale() = zh_Hant
+after set_locale(zh_TW) again  -> get_locale() = zh_TW
+after set_locale(zh_Hant_TW)   -> get_locale() = zh_Hant_TW
+after set_locale(zh_HANT_tw) mixed case -> get_locale() = zh
+
+--- Q2c: TranslationServer.standardize_locale() ---
+standardize_locale(zh_TW)      = zh_TW
+standardize_locale(zh_Hant)    = zh_Hant
+standardize_locale(zh_Hant_TW) = zh_Hant_TW
+standardize_locale(zh_HANT_tw) = zh
+standardize_locale(zh)         = zh
+standardize_locale(zh_CN)      = zh_CN
+standardize_locale(zh_Hans)    = zh_Hans
+
+--- Q2d: TranslationServer.compare_locales() (match/fallback scoring) ---
+compare_locales(zh_TW,zh_Hant)   = 10
+compare_locales(zh_TW,zh_TW)     = 10
+compare_locales(zh_TW,zh_CN)     = 3
+compare_locales(zh_Hant,zh_Hans) = 3
+compare_locales(zh_Hant,zh_TW)   = 10
+
+--- Q2e: TranslationServer.get_locale_name() ---
+get_locale_name(zh_TW)   = Chinese, Taiwan
+get_locale_name(zh_Hant) = Chinese (Traditional Han)
+
+--- Q2f: engine known language/script/country lists ---
+get_all_languages contains zh? true total=616
+get_all_scripts contains Hant? true contains Hans? true total=191
+get_all_countries contains TW? true total=261
+
+################################################################
+# Q2g: REAL CSV-IMPORTED Translation resources -- locale field + fallback
+# loads the actual .translation files the import pipeline produced
+# from test_translations.csv, header row: keys,zh_TW,zh_Hant,en
+################################################################
+loaded zh_TW.translation   -> (res://test_translations.zh_TW.translation):<OptimizedTranslation#-9223372010464213558> class=OptimizedTranslation
+loaded zh_Hant.translation -> (res://test_translations.zh_Hant.translation):<OptimizedTranslation#-9223372010363550261> class=OptimizedTranslation
+loaded en.translation      -> (res://test_translations.en.translation):<OptimizedTranslation#-9223372010262886964> class=OptimizedTranslation
+res_zh_tw.locale (verbatim from CSV header zh_TW) = zh_TW
+res_zh_tw.get_message(test_key) = 測試甲_zhTW
+res_zh_hant.locale (verbatim from CSV header zh_Hant) = zh_Hant
+res_zh_hant.get_message(test_key) = 測試乙_zhHant
+
+--- Case A: ONLY zh_TW translation registered, active locale forced to zh_Hant ---
+get_locale() = zh_Hant
+tr(test_key) = [測試甲_zhTW]  -- empty or literal test_key echoed back means FALLBACK FAILED; seeing the zh_TW string means FALLBACK SUCCEEDED
+
+--- Case B: ONLY zh_Hant translation registered, active locale forced to zh_TW ---
+get_locale() = zh_TW
+tr(test_key) = [測試乙_zhHant]  -- empty or literal test_key echoed back means FALLBACK FAILED; seeing the zh_Hant string means FALLBACK SUCCEEDED
+
+--- Case C control: zh_TW registered, locale = zh_TW exact match ---
+get_locale() = zh_TW
+tr(test_key) = [測試甲_zhTW]  -- sanity check, tr plumbing works at all
+
+--- Case D control: zh_Hant registered, locale = zh_Hant exact match ---
+get_locale() = zh_Hant
+tr(test_key) = [測試乙_zhHant]  -- sanity check, tr plumbing works at all
+
+--- Q2h: get_loaded_locales() with BOTH zh_TW and zh_Hant registered ---
+get_loaded_locales() = ["zh_TW", "zh_Hant", "en"]
+
+--- Case E: both zh_TW and zh_Hant registered, active locale = zh_Hant_TW ---
+get_locale() = zh_Hant_TW
+tr(test_key) = [測試甲_zhTW]  -- which one wins when both loaded and locale is the combined form?
+
+=== DONE ===

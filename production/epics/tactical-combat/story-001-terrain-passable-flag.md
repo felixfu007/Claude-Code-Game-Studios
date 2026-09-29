@@ -1,7 +1,7 @@
 # Story 001: 地形 `passable` 布林旗標與未知地形字元明確失敗
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M2
-> **Status**: Ready
+> **Status**: ✅ **Complete**(2026-09-29 —— 實作 + 6 條測試皆完成,協調者**獨立重跑全套測試驗證**:`969 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans`,exit 100。基線 963 → 969 正好是本 story 新增的 6 條;唯一失敗是既有那條刻意紅且已核准的 `affinity_phi_provider` 測試,非本 story 造成)
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: S(半天內)
@@ -150,7 +150,7 @@ if the tile was never set」),`get_move_cost()` 對未登記地形字元靜默�
 **Story Type**: Logic
 **Required evidence**: `tests/unit/gameplay/board/board_passable_test.gd` —— 必須存在且通過(BLOCKING)
 
-**Status**: [ ] Not yet created
+**Status**: [x] ✅ 已建立並通過 —— `tests/unit/gameplay/board/board_passable_test.gd`(6 條測試,涵蓋 QA Test Cases 全部 4 組 + 2 條額外:`passable(origin)` 不變量、`push_error` 而非 `assert()` 的路徑)。**未改動 `const` 字典**,以測試專用子類別 `_BoardWithImpassableTestTerrain` 注入 `passable=false` 地形,符合測試隔離紀律
 
 ## Dependencies
 

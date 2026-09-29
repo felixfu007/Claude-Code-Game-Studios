@@ -50,7 +50,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: "2026-09-16"  # 技術總監裁決(非 skill、非審查輪):新增 1 項 interface — affinity_calibration_knobs_constructor_injected(好感度池六個校準旋鈕由建構期注入的不可變 AffinityCalibration 持有;adr: none,刻意【不】修訂 ADR-0002 —— 該 ADR 三個讀取函式簽章一字未動,缺的是「旋鈕住哪」而 ADR-0002 兩邊都沒說,且劑量規則 3/4 都指向不開第六次修訂)。零就地修訂、零刪除。🔴 本條目留下兩項【尚無自動檢查】的義務,已寫進 notes: ①沒有任何東西阻止帶佔位校準的建置出貨,需要一條 release gate,未指派;②只讀 ADR-0002 的人會以為 _init() 無參數(該 ADR 介面清單根本沒列建構子,另一處程式碼片段仍寫 func _init() -> void:),緩解方式是 AffinityDataPool._init() 的文件註解必須指向本條目。🔴 另登記一項【會推翻本裁決】的反向指標:若 S-011 發現 3f/3g 需要逐次查詢變動的 Q(例如校準滑桿要即時預覽),建構期不可變注入就是錯的形狀,必須回頭重議 —— 今天兩個方向都沒有證據,S-011 開工前請重新確認。以下為前次紀錄 —— "2026-09-01"  # 全庫文件矛盾稽核(非 skill、非審查輪;報告見 docs/reviews/doc-audit-2026-09-01.md)。本次對本檔為【零條目變更】—— 只修檔頭這一行的計數宣稱。根因:2026-08-31 的 /design-review affinity-position-chain.md 第一輪為本表新增 2 項 interface contracts(affinity_pairing_data_per_query_refetch、phi_curve_enemy_advantage_cross_calibration,兩者 adr: none、referenced_by 只指 design/gdd/,是刻意以登記表兩列取代兩份 ADR 的產物),條目本體寫進去了,**但從未在本行登錄** —— 於是檔頭停在 85,而實測已是 87。🔴 後果比數字本身嚴重:.claude/docs/technical-preferences.md 同時寫著「數字有疑義時一律以本表為準」,亦即當時照那句話做的人會拿到**錯的**數字,而下游摘要反而是對的。🔴 **因此本行自即日起不再宣告總計項數** —— 手抄的計數必然漂移,本表的條目本體才是來源。要數字請當場數:awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decisions:/{s="api"} /^forbidden_patterns:/{s="forbidden"} /^  - /{c[s]++} END{for(k in c) print k, c[k]}' docs/registry/architecture.yaml。以下為前次紀錄 —— "2026-08-25"  # ADR-0002 與 ADR-0003 由 Proposed 進入 Accepted(管理者同批裁決;0003 的核准條件五就是 0002 已核准,故必須同一次動作)。本次為純狀態登錄:零條目新增、零條目就地修訂、零刪除,總計仍為 85 項(10 state / 11 interface / 29 api / 35 forbidden,逐節實測)。連帶更正 .claude/docs/technical-preferences.md 的立場項數(該檔原寫 81 項/31 forbidden,漏掉本表上一輪為 ADR-0003 新增的 4 項)。以下為前次紀錄 —— "2026-08-24"  # /architecture-decision ADR-0003 修訂寫入(6 組必修 + 機制一之二、機制四之二;Step 5.5 引擎專家 CONCERNS→修畢、Step 5.6 TD-ADR 本專案首次執行 CONCERNS→窄範圍複驗 APPROVE):新增 4 項 forbidden(fileaccess_store_var_on_save_path、hash_compare_without_length_check、gate_recursion_calling_walk_body、unowned_save_assembly_layer〔status: open_gap,雙文件 also_affects〕),就地修訂 api save_serialization_format(2026-08-21 的 DELIBERATE DIVERGENCE 警告已 RESOLVED —— ADR 已改正,登記表與 ADR 恢復一致)。總計 85 項(10 state / 11 interface / 29 api / 35 forbidden,逐節實測)。以下為前次紀錄 —— "2026-08-21d"  # 專案效率稽核(非 skill、非審查輪):就地修訂 2 項,零新增,總計仍 81 項(10/11/29/31,逐節實測)。(1) api save_serialization_format —— `api:` 與 `not:` 欄的呼叫形狀由兩參數改單參數(實測 Parse Error;證據 prototypes/xcheck-adr0003-2026-08-21/ 探針 F1),`reason:` 欄補記根因(全域函式與 FileAccess 方法是同一線格式的兩種 API 形狀,且 FileAccess 兩個方法的第二參數連名稱都不同 —— 引 FileAccess 當先例正是陷阱),並明文標示與 ADR-0003 的**刻意分歧**(該 ADR 18 處仍為舊形狀,待 6 組必修修訂;禁止把本條目「對齊」回 ADR)。(2) forbidden resource_based_save_payload —— `why:` 欄的**失敗方向是錯的,且錯在危險的那一邊**:原文寫「would fail to serialize at all」,實測寫入側**不失敗**,plain var_to_bytes() 靜默接受任何 Object/Resource 並編成 EncodedObjectAsID,欄位全部遺失且整個往返無任何錯誤;響亮的拒絕只發生在讀取側、且只對 _with_objects 產生的位元組。原措辭暗示有引擎層安全網會在寫入時攔下,實際沒有 —— 故本禁令比原推理**更強**而非更弱。以下為前次紀錄 —— "2026-08-21c"  # /architecture-decision ADR-0004/0003/0002 事實層修訂(零決策內容;Step 5.5 單軌 godot-specialist 覆核,零 BLOCKING、3 項可行動):就地修訂 1 項(forbidden abstract_func_with_body —— why: 欄型別清單 5 → 8 種、新增「漏實作訊息只指名其中一個」與「字面 ClassName.new() 為編譯期錯誤而間接路徑未查證」兩項實測、ADR-0004 的 5 處由 STILL OPEN 改 CLOSED 並刪去會因刪行而位移的具體行號、verified_by 增列探針 E)。**不新增任何條目** —— 「抽象基底不可實例化」已是編譯期保證,不需要紀律條目。總計仍為 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測、零重複鍵)。連帶關閉範圍外新發現 2 項過度宣稱(ADR-0003:350 為第五處、design/gdd/systems-index.md:4 為第六處)。以下為前次紀錄 —— "2026-08-21b"  # /architecture-decision ADR-0005 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌覆核 2 BLOCKING + 11 非阻塞):新增 3 項(1 api cursor_process_priority_before_add_child、2 forbidden abstract_func_with_body〔專案級,adr: none + verified_by,referenced_by 同時列 ADR-0004/0005〕、silent_freeze_fallback_for_invalid_provider),就地修訂 cursor_target_write(signal_signature 由 5 個公開入口改為 7,私有路徑 FOUR → SIX,handoff_before_unload 刪 surface 參數)。總計 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測);ADR-0005 佔 29 項。以下為前次紀錄 —— "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
+last_updated: "2026-09-29"  # 技術總監執行管理者裁決(非 skill、非審查輪):新增 2 項 forbidden,零就地修訂、零刪除。① phi_clamp_treated_as_a_safety_net —— R7 的 Φ 夾限(PHI_MIN=-4 / PHI_MAX=+12)是唯一擋住數值的東西、會在合法佈局下真的作用,改夾限值等同改戰力上下限而非調安全網;附帶登記「夾限只在 bonus_for_at() 施加一次、不得逐條施加」。adr: none(來源為 design/gdd/affinity-position-chain.md 的 2026-08-31 管理者裁決,不是任一 ADR;依 2026-08-25 劑量規則,單一系統內部公式不開 ADR)。② affinity_line_suppression_or_asymmetric_contribution —— R4/R8 合併為一列的前瞻性禁令:抑制邏輯與 SUPPRESSED 列舉值已於 f8d1241 刪除,唯一擋著它回來的東西是「那段程式碼現在不在了」;先例為本節的 abstract_func_with_body。🔴 本行不宣告總計項數(理由見下方 2026-09-01 紀錄),要數字請當場數。🔴 三項落差誠實登記:①提案原文寫「角色一有第 5 條關係線,合法佈局就會踩到」,經查對 GDD 與程式碼為錯,且兩個方向都不成立 —— AC-F2(第 5 條落在距 2 死區則不觸發、GDD 自己聲明該條不證明第 5 條只能落在死區)與 AC-R7b(單一條線 amp=10 即觸發,夾限與線數無關);已在條目 why: 欄寫下更正紀錄而非照抄提案。②本檔無可用的 YAML 解析器可驗(本機無 ruby/yq/node),本次僅做結構驗證:縮排與鍵層級掃描、四個節界線未動、forbidden 由 35 增為 37、git diff 純 +153 行零刪除。③兩項皆無任何 lint、hook 或閘門會檢查,遵守與否目前不可觀測 —— 買到的是可查對的明文,不是強制力。以下為前次紀錄 —— "2026-09-16"  # 技術總監裁決(非 skill、非審查輪):新增 1 項 interface — affinity_calibration_knobs_constructor_injected(好感度池六個校準旋鈕由建構期注入的不可變 AffinityCalibration 持有;adr: none,刻意【不】修訂 ADR-0002 —— 該 ADR 三個讀取函式簽章一字未動,缺的是「旋鈕住哪」而 ADR-0002 兩邊都沒說,且劑量規則 3/4 都指向不開第六次修訂)。零就地修訂、零刪除。🔴 本條目留下兩項【尚無自動檢查】的義務,已寫進 notes: ①沒有任何東西阻止帶佔位校準的建置出貨,需要一條 release gate,未指派;②只讀 ADR-0002 的人會以為 _init() 無參數(該 ADR 介面清單根本沒列建構子,另一處程式碼片段仍寫 func _init() -> void:),緩解方式是 AffinityDataPool._init() 的文件註解必須指向本條目。🔴 另登記一項【會推翻本裁決】的反向指標:若 S-011 發現 3f/3g 需要逐次查詢變動的 Q(例如校準滑桿要即時預覽),建構期不可變注入就是錯的形狀,必須回頭重議 —— 今天兩個方向都沒有證據,S-011 開工前請重新確認。以下為前次紀錄 —— "2026-09-01"  # 全庫文件矛盾稽核(非 skill、非審查輪;報告見 docs/reviews/doc-audit-2026-09-01.md)。本次對本檔為【零條目變更】—— 只修檔頭這一行的計數宣稱。根因:2026-08-31 的 /design-review affinity-position-chain.md 第一輪為本表新增 2 項 interface contracts(affinity_pairing_data_per_query_refetch、phi_curve_enemy_advantage_cross_calibration,兩者 adr: none、referenced_by 只指 design/gdd/,是刻意以登記表兩列取代兩份 ADR 的產物),條目本體寫進去了,**但從未在本行登錄** —— 於是檔頭停在 85,而實測已是 87。🔴 後果比數字本身嚴重:.claude/docs/technical-preferences.md 同時寫著「數字有疑義時一律以本表為準」,亦即當時照那句話做的人會拿到**錯的**數字,而下游摘要反而是對的。🔴 **因此本行自即日起不再宣告總計項數** —— 手抄的計數必然漂移,本表的條目本體才是來源。要數字請當場數:awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decisions:/{s="api"} /^forbidden_patterns:/{s="forbidden"} /^  - /{c[s]++} END{for(k in c) print k, c[k]}' docs/registry/architecture.yaml。以下為前次紀錄 —— "2026-08-25"  # ADR-0002 與 ADR-0003 由 Proposed 進入 Accepted(管理者同批裁決;0003 的核准條件五就是 0002 已核准,故必須同一次動作)。本次為純狀態登錄:零條目新增、零條目就地修訂、零刪除,總計仍為 85 項(10 state / 11 interface / 29 api / 35 forbidden,逐節實測)。連帶更正 .claude/docs/technical-preferences.md 的立場項數(該檔原寫 81 項/31 forbidden,漏掉本表上一輪為 ADR-0003 新增的 4 項)。以下為前次紀錄 —— "2026-08-24"  # /architecture-decision ADR-0003 修訂寫入(6 組必修 + 機制一之二、機制四之二;Step 5.5 引擎專家 CONCERNS→修畢、Step 5.6 TD-ADR 本專案首次執行 CONCERNS→窄範圍複驗 APPROVE):新增 4 項 forbidden(fileaccess_store_var_on_save_path、hash_compare_without_length_check、gate_recursion_calling_walk_body、unowned_save_assembly_layer〔status: open_gap,雙文件 also_affects〕),就地修訂 api save_serialization_format(2026-08-21 的 DELIBERATE DIVERGENCE 警告已 RESOLVED —— ADR 已改正,登記表與 ADR 恢復一致)。總計 85 項(10 state / 11 interface / 29 api / 35 forbidden,逐節實測)。以下為前次紀錄 —— "2026-08-21d"  # 專案效率稽核(非 skill、非審查輪):就地修訂 2 項,零新增,總計仍 81 項(10/11/29/31,逐節實測)。(1) api save_serialization_format —— `api:` 與 `not:` 欄的呼叫形狀由兩參數改單參數(實測 Parse Error;證據 prototypes/xcheck-adr0003-2026-08-21/ 探針 F1),`reason:` 欄補記根因(全域函式與 FileAccess 方法是同一線格式的兩種 API 形狀,且 FileAccess 兩個方法的第二參數連名稱都不同 —— 引 FileAccess 當先例正是陷阱),並明文標示與 ADR-0003 的**刻意分歧**(該 ADR 18 處仍為舊形狀,待 6 組必修修訂;禁止把本條目「對齊」回 ADR)。(2) forbidden resource_based_save_payload —— `why:` 欄的**失敗方向是錯的,且錯在危險的那一邊**:原文寫「would fail to serialize at all」,實測寫入側**不失敗**,plain var_to_bytes() 靜默接受任何 Object/Resource 並編成 EncodedObjectAsID,欄位全部遺失且整個往返無任何錯誤;響亮的拒絕只發生在讀取側、且只對 _with_objects 產生的位元組。原措辭暗示有引擎層安全網會在寫入時攔下,實際沒有 —— 故本禁令比原推理**更強**而非更弱。以下為前次紀錄 —— "2026-08-21c"  # /architecture-decision ADR-0004/0003/0002 事實層修訂(零決策內容;Step 5.5 單軌 godot-specialist 覆核,零 BLOCKING、3 項可行動):就地修訂 1 項(forbidden abstract_func_with_body —— why: 欄型別清單 5 → 8 種、新增「漏實作訊息只指名其中一個」與「字面 ClassName.new() 為編譯期錯誤而間接路徑未查證」兩項實測、ADR-0004 的 5 處由 STILL OPEN 改 CLOSED 並刪去會因刪行而位移的具體行號、verified_by 增列探針 E)。**不新增任何條目** —— 「抽象基底不可實例化」已是編譯期保證,不需要紀律條目。總計仍為 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測、零重複鍵)。連帶關閉範圍外新發現 2 項過度宣稱(ADR-0003:350 為第五處、design/gdd/systems-index.md:4 為第六處)。以下為前次紀錄 —— "2026-08-21b"  # /architecture-decision ADR-0005 第四次修訂(第六輪 R6-6~R6-13 八項 + 五項事實層;Step 5.5 雙軌覆核 2 BLOCKING + 11 非阻塞):新增 3 項(1 api cursor_process_priority_before_add_child、2 forbidden abstract_func_with_body〔專案級,adr: none + verified_by,referenced_by 同時列 ADR-0004/0005〕、silent_freeze_fallback_for_invalid_provider),就地修訂 cursor_target_write(signal_signature 由 5 個公開入口改為 7,私有路徑 FOUR → SIX,handoff_before_unload 刪 surface 參數)。總計 81 項立場(10 state / 11 interface / 29 api / 31 forbidden,逐節實測);ADR-0005 佔 29 項。以下為前次紀錄 —— "2026-08-21"  # /architecture-decision ADR-0002 第四次修訂(第七輪 17 項 + Step 5.5 雙軌兩輪覆核 20 項修正):新增 9 項(5 api affinity_records_prefilled_all_pairs / affinity_read_rejection_as_result_field / affinity_enum_ordinal_validators_all_entries / affinity_can_write_rejection_query / reclaimed_token_fifo_capacity、4 forbidden death_marks_prefill_or_unguarded_read / raw_enum_name_subscript_from_untrusted_string / wholesale_reassignment_of_affinity_record_list_items / unvalidated_character_into_pair_of),就地修訂 2 項(interface affinity_delta_log、api affinity_pair_key_representation)。總計 78 項立場(10 state / 11 interface / 28 api / 29 forbidden,逐節實測);ADR-0002 佔 22 項。以下為前次紀錄 —— "2026-08-20"  # ADR-0002 引擎行為實機驗證修訂:新增 forbidden pattern raw_variant_subscript_into_typed_container、就地修訂 affinity_delta_log 的 interface 欄。總計 69 項立場(10 state / 11 interface / 23 api / 25 forbidden,第七輪 /architecture-review 逐節實測對帳零落差);ADR-0002 佔 13 項。以下為前次紀錄 —— "2026-08-19c"  # /architecture-decision 第三次修訂 ADR-0005(第五輪審查 R5-1~R5-6 + S-1~S-5,加 Step 5.5 新發現 A/B/2b/D/F/G):新增 3 項(1 interface cursor_native_pointer_exception_registration、2 forbidden external_access_to_cursor_reclaim_instance / independent_ifs_for_cursor_target_reset_policy),並就地修訂既有 8 項(1 state mouse_reclaim_accumulator、3 interface cursor_target_write + cursor_surface_registration + mouse_reclaim_reset_triggered_signal、3 api cursor_actor_process_priority_ladder + cursor_unregistered_surface_hover_visibility + cursor_visual_carrier_split、1 forbidden public_cursor_write_entry_calling_another,皆 revised: 2026-08-19c)。總計 68 項立場(10 state / 11 interface / 23 api / 24 forbidden,逐節實測);ADR-0005 佔 26 項(3/5/7/11)。以下為前次紀錄 —— /architecture-decision 第二次修訂 ADR-0005(第四輪審查 R4-1~R4-7 + TR-cursor-015 兩項落差 + 3 項新事實)並關閉跨 ADR 銜接缺口 C1/C3/C6:新增 4 項(1 api token_timeout_ms_ownership〔ADR-0004〕、3 forbidden public_cursor_write_entry_calling_another / call_deferred_for_cursor_retarget_deferral / single_node_for_nonadjacent_cursor_actor_roles),並就地修訂既有 7 項(1 state mouse_reclaim_accumulator〔第四輪點名未同步〕、2 interface cursor_target_write + mouse_reclaim_reset_triggered_signal、4 api cursor_input_buffering_mount_point + cursor_actor_process_priority_ladder + cursor_visual_carrier_split + cursor_action_class_classification,皆 revised: 2026-08-19b)。總計 65 項立場(10 state / 10 interface / 23 api / 22 forbidden);ADR-0005 佔 23 項(3/4/7/9)。此前 2026-08-19 為 61 項、ADR-0005 佔 20 項(修訂 F1/F5+F2/F3/F4+N1~N4);2026-08-18 登記 ADR-0005 首版 14 項(3/2/5/4);更早為 round-2 /architecture-review 補登 3 項專案級 forbidden pattern
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -2529,6 +2529,159 @@ forbidden_patterns:
     also_affects: docs/architecture/adr-0004-save-system-atomic-write-and-migration-execution-model.md
     verified_by: prototypes/save-format-skeleton-2026-08-21/
     added: "2026-08-24"
+
+  - pattern: phi_clamp_treated_as_a_safety_net
+    status: active
+    description: >
+      AffinityRules.PHI_MIN (-4) and PHI_MAX (+12) are the ONLY thing bounding a unit's
+      summed affinity bonus Phi, and they bite during ordinary legal play. Never retune
+      either value while thinking of it as a defensive guard against malformed data:
+      changing these two numbers IS changing the combat power ceiling and floor.
+      Second clause, same contract: the clamp is applied exactly once, to the summed
+      total, inside AffinityRules.bonus_for_at() — never per line, never a second time
+      at a caller.
+    why: >
+      LOAD-BEARING, NOT A FUSE. The 2026-08-31 manager ruling left per-character link
+      count deliberately unbounded ("不限制敘事" — do not let the numbers constrain the
+      narrative, design/gdd/affinity-position-chain.md R7). With no cap on line count the
+      raw pre-clamp sum is unbounded in BOTH directions, so this clamp is not a backstop
+      behind some other mechanism — it is the only boundary that exists. Anyone who edits
+      these two constants believing they are widening a safety margin is in fact moving
+      the combat power ceiling and floor directly, with no second mechanism to absorb it.
+      SATURATION ARITHMETIC (why the bound has zero headroom in normal play): Manhattan
+      distance 1 has exactly four integer solutions, so at most four links can be adjacent
+      at once. Four adjacent POSITIVE links = 4 x DELTA_POSITIVE_ADJACENT (+3) = +12 =
+      PHI_MAX exactly. Four adjacent NEGATIVE links = 4 x DELTA_NEGATIVE_ADJACENT (-1) =
+      -4 = PHI_MIN exactly. An ordinary, entirely legal board position therefore sits ON
+      the bound with nothing to spare; the GDD's own verified counterexample (公式二) is
+      four positive-adjacent (+12) plus one NEGATIVE link at distance >= 3 (+2) = +14,
+      clamped down to +12.
+      CORRECTION TO THE PROPOSAL THAT CREATED THIS ROW (recorded because the wrong version
+      is the memorable one): the 2026-09-29 proposal text in
+      production/session-state/active.md reads "角色一有第 5 條關係線,合法佈局就會踩到".
+      That is wrong in BOTH directions and was corrected before this row was written.
+      (a) NOT SUFFICIENT — AC-F2 in affinity-position-chain.md: five positive lines where
+      the fifth falls in the distance-2 dead zone still total exactly +12 and never reach
+      the clamp; the GDD itself warns AC-F2 does not prove the fifth line can only land
+      there. (b) NOT NECESSARY — AC-R7b: ONE positive adjacent link with amp = 10 yields a
+      theoretical +30 and is clamped to +12, with a line count of one. The clamp does not
+      depend on line count at all. The correct statement, and the one to carry forward, is
+      the saturation arithmetic above: the clamp fires whenever the raw sum leaves
+      [-4, +12], and four adjacent same-polarity links already put it on the boundary.
+      LIVE RISK PATH, MEASURED 2026-09-29: amp is not a constant. It is parsed straight out
+      of the version-controlled CSV (src/gameplay/affinity/affinity_link.gd:
+      "link.amp = int(fields[3])"), and a value deviating from the documented 1 is only
+      push_warning()-ed, never rejected — affinity_link.gd's own warning string names this
+      clamp as the thing that bounds the damage. A single-digit data-entry typo in
+      assets/data/affinity/vs01_affinity_links.txt therefore drives Phi past the clamp
+      today, with no failing test and no engine error.
+      REVISIT TRIGGER (this row does NOT own it, it only records it): both values assume
+      amp == 1. The dialogue-card amplification system (#6) owns amp's value range; when
+      that lands, PHI_MIN/PHI_MAX must be re-derived, not merely re-checked. See
+      affinity-position-chain.md 公式三's own "本夾限假設 amp = 1" warning.
+      WHY status IS active AND NOT open_gap: the two values are decided and already shipped
+      in code. What needs blocking is a future edit made without knowing the consequence —
+      not a pending calibration. Contrast the neighbouring interfaces row
+      phi_curve_enemy_advantage_cross_calibration, which is open_gap precisely because BOTH
+      of its sides are still uncalibrated. That row covers the four R3 curve constants
+      against enemy_advantage_pct and does not mention the clamp at all; before this row
+      the registry had zero entries touching PHI_MIN/PHI_MAX.
+      WHY adr IS none: R7 originates from a manager ruling recorded in
+      design/gdd/affinity-position-chain.md (2026-08-31), not from any ADR, and the
+      2026-08-25 process-dosage rule restricts ADRs to cross-system contracts. A clamp
+      applied inside one system's own formula is not a cross-system contract, so this is
+      registered here instead — the same shape as abstract_func_with_body in this section.
+      SCOPE NOTE: the manager ruling authorised registering the clamp. The "applied exactly
+      once, never per line" clause in the description was added by the technical-director
+      from verified source (see verified_by) because it is part of the same R7 formula and
+      is unenforced by anything; it is flagged here so a later reader can tell which clause
+      came from the ruling and which did not.
+      NO AUTOMATED CHECK. Nothing in this project prevents anyone from editing the two
+      constants, applying the clamp a second time, or shipping an out-of-range amp. This
+      row buys discoverability, not enforcement — consistent with every other discipline
+      rule in this repository.
+    adr: none
+    verified_by: >
+      Measured 2026-09-29 by technical-director, by reading the shipped source rather than
+      the proposal text. grep -rn "PHI_MIN|PHI_MAX" src/ tests/ ->
+      src/gameplay/affinity/affinity_rules.gd:65 "const PHI_MIN: int = -4" and :71
+      "const PHI_MAX: int = 12". Exactly one clamp site exists in the whole affinity module:
+      grep -rn "clampi|clamp(" src/gameplay/affinity/ returns the single line
+      affinity_rules.gd:133 "return clampi(total, PHI_MIN, PHI_MAX)", inside bonus_for_at();
+      bonus_for() delegates to it and does not clamp again. amp parsing verified at
+      affinity_link.gd:106 "link.amp = int(fields[3])" with the deviation path at :116
+      being push_warning() only. The saturation derivation, AC-F2, AC-R7b and 公式二/公式三
+      were read directly in design/gdd/affinity-position-chain.md, not taken from the
+      proposal.
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - src/gameplay/affinity/affinity_rules.gd
+    added: "2026-09-29"
+
+  - pattern: affinity_line_suppression_or_asymmetric_contribution
+    status: active
+    description: >
+      Never reintroduce any mechanism that lets one affinity link reduce or cancel
+      another's contribution — suppression, "only the closest positive link counts",
+      best-of-N selection per unit, or any other per-line gating — and never let a
+      link's contribution differ between its two endpoints. Every line counts, every
+      line is summed at its full per-distance delta, and the result is symmetric at
+      both ends of the pair.
+    why: >
+      WHAT THIS REPLACED. The prototype (prototypes/affinity-position-concept-v5/
+      prototype.html, activeDeltasAt()) implemented "only the single closest positive
+      link is active". That was an expedient chosen to get the prototype running, never
+      a design decision — and it survived long enough to look like one. R4 in
+      design/gdd/affinity-position-chain.md (2026-08-31 manager ruling) settled the live
+      rule as "every line counts, summed, no suppression of any kind". R8 in the same
+      document — a line's contribution is symmetric at both endpoints — then stops being
+      a requirement needing guard code and becomes a structural property of R4: with
+      nothing selecting between lines, there is nothing left that could be asymmetric.
+      That is why R4 and R8 are ONE row here and not two.
+      THE SYMPTOM IS ALREADY GONE, WHICH IS EXACTLY WHY THIS ROW EXISTS. Commit f8d1241
+      (2026-08-31) deleted active_positive_link() together with its two call sites and
+      removed AffinityLineStatus.State.SUPPRESSED outright rather than leaving it as
+      unreachable API surface. Verified 2026-09-29: grep -rn "active_positive_link"
+      src/ tests/ returns nothing; "SUPPRESSED" survives in exactly one place, an
+      explanatory doc comment in affinity_line_status.gd. THE ONLY THING CURRENTLY
+      PREVENTING THE OLD RULE FROM COMING BACK IS THAT THE CODE IS ABSENT — and absence
+      does not state its own cause. The next person who sees several positive links
+      stacking into a large bonus has no mechanism, test, or error message telling them
+      the stacking is deliberate and that suppression was removed on purpose.
+      DIRECTIONAL WARNING — the re-addition will look like a bug fix, not like a
+      regression. Suppression reads naturally as "capping runaway affinity bonuses", and
+      a cap is a legitimate-sounding thing to want. But the cap already exists and is a
+      different mechanism: see phi_clamp_treated_as_a_safety_net in this same section.
+      Capping via suppression instead of via that clamp would silently break R8, because
+      "which link is closest" is evaluated per unit and is therefore asymmetric across
+      the pair by construction — the two endpoints of one line would start reporting
+      different deltas, and nothing would report an error.
+      PRECEDENT for keeping a row whose symptom is already fixed: abstract_func_with_body
+      in this section, whose occurrences in ADR-0004 and ADR-0005 were both removed on
+      2026-08-21 and which is deliberately retained as a forward-looking ban. Same shape,
+      same reason.
+      WHY adr IS none: the root cause is a prototype simplification that outlived its
+      purpose, not a decision recorded in any ADR; R4/R8 live in a GDD, and under the
+      2026-08-25 process-dosage rule a single system's internal formula does not earn an
+      ADR. Registering the ban here is the cheaper and non-expiring option.
+      NO AUTOMATED CHECK. No lint, test, or gate would catch a reintroduced suppression
+      rule. This row buys discoverability, not enforcement.
+    adr: none
+    verified_by: >
+      Measured 2026-09-29 by technical-director against the repository, not against the
+      proposal text. git show f8d1241 confirms the commit
+      ("feat(affinity): the prototype's simplification finally meets the rule it was
+      standing in for", 2026-08-31) removes "enum State { POSITIVE, NEGATIVE, NEUTRAL,
+      SUPPRESSED }" and the State.SUPPRESSED return, along with the tests that asserted
+      it. Present state: grep -rn "active_positive_link" src/ tests/ -> no matches;
+      grep -rn "SUPPRESSED" src/ tests/ -> one match, the doc comment at
+      src/gameplay/affinity/affinity_line_status.gd, whose enum is now
+      "enum State { POSITIVE, NEGATIVE, NEUTRAL }". R4/R8 wording read directly in
+      design/gdd/affinity-position-chain.md.
+    referenced_by:
+      - design/gdd/affinity-position-chain.md
+      - src/gameplay/affinity/affinity_line_status.gd
+    added: "2026-09-29"
 # Example:
 #
 # forbidden_patterns:

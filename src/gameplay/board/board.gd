@@ -17,19 +17,38 @@ const TERRAIN_OPEN: String = "."
 const TERRAIN_BRUSH: String = ","
 const TERRAIN_FALLEN_LOG: String = "#"
 
-## Cost to enter a tile of a given terrain character. Unknown/unset terrain
-## defaults to TERRAIN_OPEN cost (see get_move_cost()).
-const MOVE_COST: Dictionary = {
-	TERRAIN_OPEN: 1,
-	TERRAIN_BRUSH: 2,
-	TERRAIN_FALLEN_LOG: 3,
+## Per-terrain-character data table: movement cost and passability, as two
+## independent columns of the SAME table
+## (design/gdd/tactical-combat-system.md Tuning Knobs #4 — Story 001). A
+## future impassable terrain (wall/water/cliff) is added as a new row with
+## "passable": false and a legal placeholder "cost" (never leave "cost" out —
+## see passable() doc comment for why); it is NEVER modeled by a fourth
+## terrain tier and NEVER by an oversized "cost" value (both explicitly ruled
+## out by Story 001 Implementation Notes #3).
+##
+## A terrain character with no entry here is NOT covered by a default value —
+## see _terrain_entry() / get_move_cost() / passable() for the
+## explicit-failure behavior this requires (Story 001 R1: an unregistered
+## terrain character must never silently read as "cheap and walkable").
+const TERRAIN_TABLE: Dictionary = {
+	TERRAIN_OPEN: {"cost": 1, "passable": true},
+	TERRAIN_BRUSH: {"cost": 2, "passable": true},
+	TERRAIN_FALLEN_LOG: {"cost": 3, "passable": true},
 }
 
 ## Terrain characters that block line of sight. Only the flag is recorded
-## here — no visibility algorithm lives in this file.
+## here — no visibility algorithm lives in this file. Deliberately its OWN
+## table, not a third column of TERRAIN_TABLE: sight-blocking and passability
+## are two independent terrain properties that must never be merged into one
+## query or one table column (Story 001 Implementation Notes #4).
 const BLOCKS_SIGHT: Dictionary = {
 	TERRAIN_FALLEN_LOG: true,
 }
+
+## Sentinel returned by get_move_cost() when pos's terrain character has no
+## entry in TERRAIN_TABLE. Never a legitimate cost (real costs are always
+## >= 1) — a push_error() is also emitted; see get_move_cost().
+const MOVE_COST_UNKNOWN_TERRAIN: int = -1
 
 ## Sentinel returned by get_occupant() when a tile has no occupant.
 const NO_OCCUPANT: int = -1
@@ -66,9 +85,21 @@ func get_terrain(pos: Vector2i) -> String:
 
 
 ## Returns the movement point cost to enter pos.
+##
+## If pos's terrain character has no entry in TERRAIN_TABLE, this is an
+## explicit failure, not a silent fallback: push_error() is emitted and
+## MOVE_COST_UNKNOWN_TERRAIN (-1) is returned. This never uses assert() to
+## guard the branch — a failed assert() aborts the caller and yields ordinal
+## 0 of the declared return type, which for a plain int would silently read
+## back as "cost 0", an even more dangerous silent success than the fallback
+## this method replaces (see .claude/docs/coding-standards.md, 2026-09-15 entry).
 func get_move_cost(pos: Vector2i) -> int:
 	var terrain: String = get_terrain(pos)
-	return MOVE_COST.get(terrain, MOVE_COST[TERRAIN_OPEN])
+	var entry: Variant = _terrain_entry(terrain)
+	if entry == null:
+		push_error("Board.get_move_cost: unregistered terrain character '%s' at %s" % [terrain, pos])
+		return MOVE_COST_UNKNOWN_TERRAIN
+	return entry["cost"]
 
 
 ## Returns true if pos is marked as sight-blocking terrain. Does not
@@ -76,6 +107,43 @@ func get_move_cost(pos: Vector2i) -> int:
 func blocks_sight(pos: Vector2i) -> bool:
 	var terrain: String = get_terrain(pos)
 	return BLOCKS_SIGHT.get(terrain, false)
+
+
+## Returns true if pos's terrain permits a unit to enter it. Passability is
+## independent of get_move_cost() (design/gdd/tactical-combat-system.md Core
+## Rules #2, Formulas 公式三) — a tile can be expensive AND passable, or
+## cheap AND impassable; neither is derived from the other.
+##
+## If pos's terrain character has no entry in TERRAIN_TABLE, this is an
+## explicit failure, not a silent fallback: push_error() is emitted and
+## false is returned — the conservative direction, since an unregistered
+## terrain character must never silently read as passable (Story 001 R1).
+## This never uses assert() to guard the branch — see get_move_cost() doc
+## comment and .claude/docs/coding-standards.md, 2026-09-15 entry.
+##
+## Design tradeoff (deliberate, see story-001 QA Test Case 3 Edge Cases): AC #1
+## fixes this method's return type at `bool`, so unlike get_move_cost() (whose
+## sentinel -1 can never collide with a legitimate cost), `false` here is
+## reachable by BOTH a legitimate "registered, passable=false" tile AND the
+## unregistered-terrain error path — a bare return-value comparison cannot
+## tell them apart, and (per the coding-standards.md 2026-09-15 entry) neither
+## could a caller that mistakenly used assert() instead, since a failed
+## assert() also yields `false` (ordinal 0 of bool). This method deliberately
+## does NOT carry its own independent error signal in its return value.
+## Callers/tests that must distinguish "false because impassable" from "false
+## because unregistered" have two options, both used in
+## board_passable_test.gd: (1) call get_move_cost() on the same pos and check
+## for MOVE_COST_UNKNOWN_TERRAIN, or (2) assert that push_error() (not a
+## SCRIPT_ERROR from assert()) was actually raised via GdUnit4's
+## `assert_error(<callable>).is_push_error(...)`, which structurally
+## distinguishes the two failure mechanisms regardless of return value.
+func passable(pos: Vector2i) -> bool:
+	var terrain: String = get_terrain(pos)
+	var entry: Variant = _terrain_entry(terrain)
+	if entry == null:
+		push_error("Board.passable: unregistered terrain character '%s' at %s" % [terrain, pos])
+		return false
+	return entry["passable"]
 
 
 ## Marks pos as occupied by unit_id, overwriting any previous occupant.
@@ -164,3 +232,24 @@ func _index_of_cheapest(frontier: Array[Vector2i], best_cost: Dictionary) -> int
 			cheapest_cost = cost
 			cheapest_index = i
 	return cheapest_index
+
+
+# Returns the TERRAIN_TABLE entry ({"cost": int, "passable": bool}) for a
+# terrain character, or null if the character is unregistered. get_move_cost()
+# and passable() both read through this single seam — never TERRAIN_TABLE
+# directly — for two reasons:
+#   1. They must agree on which characters are registered, so an
+#      unregistered character fails the same way (same push_error + sentinel
+#      convention) for both queries instead of each re-implementing its own
+#      null-check.
+#   2. It gives tests a seam to exercise a "registered but passable=false"
+#      terrain character without ever mutating TERRAIN_TABLE itself — a
+#      GDScript `const Dictionary` is read-only at runtime (see
+#      docs/engine-reference/godot/modules/scripting-typing.md, "const
+#      Dictionary 是唯讀") — and without adding fixture-only terrain to the
+#      production table (see tests/unit/gameplay/board/board_passable_test.gd,
+#      _BoardWithImpassableTestTerrain).
+# Not "private" in an enforced sense — GDScript has no access control — but
+# by convention: overridable only for the test-only subclass described above.
+func _terrain_entry(terrain: String) -> Variant:
+	return TERRAIN_TABLE.get(terrain)

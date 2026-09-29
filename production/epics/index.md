@@ -1,6 +1,6 @@
 # Epics 索引
 
-**最後更新**:2026-09-29(**本地化基礎設施 epic 建立**,`localization-lead`;同批更正下方「排程連帶後果」節的 **M4 → M5**,原文保留)
+**最後更新**:2026-09-29(**本地化基礎設施 epic 建立**,`localization-lead`;同批更正下方「排程連帶後果」節的 **M4 → M5**,原文保留。**同日稍後**:管理者對本地化四項全數裁決,該 epic 轉 `Ready`;美術路線裁決「AI 自建」;兩條登記表提案核准;#5 抵銷為 0 的處置裁決 —— 四項紀錄各在其擁有者檔案內)
 **前次更新**:2026-09-29(管理者四項裁決同批落地:①**建立 #5 好感度—位置連鎖 epic**;②**#4 戰棋 epic 由 `Draft` 改 `Ready` 並首次入表**;③#5 不跑 `PR-EPIC` 閘門,照 2026-09-02 精簡模式預設;④下方「尚未建立 Epic」表**已清空**) —— 原文保留供追溯
 **前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
 **前次更新**:2026-09-29(事實同步:`card-play-interface` 與 `affinity-data-pool` 兩列的 Stories / 狀態欄。依據 `docs/reviews/tactical-combat-readiness-production-2026-09-29.md` 表 B)—— 原文保留供追溯
@@ -90,7 +90,7 @@
 
 | 項目 | 建議擁有者 | 來源 | 狀態 |
 |---|---|---|---|
-| **本地化(i18n)基礎設施** | `localization-lead` | 🔴 **2026-09-29 管理者裁決:「現在就建翻譯機制」** | ✅ **Epic 已建立**:[localization-infrastructure](localization-infrastructure/EPIC.md)(2026-09-29,241 行,狀態 `Draft`)。**四項待管理者裁決**(locale 目錄位置、是否需要 ADR、`zh_TW` vs `zh_Hant`、Story 001~003 核准),見該檔「需要管理者裁決的事」節 |
+| **本地化(i18n)基礎設施** | `localization-lead` | 🔴 **2026-09-29 管理者裁決:「現在就建翻譯機制」** | 🟢 **Ready**(2026-09-29 管理者對四項全數裁決,逐項紀錄見 [EPIC.md](localization-infrastructure/EPIC.md) 的「✅ 管理者裁決紀錄」節):locale 檔放 `assets/data/locales/`、**不寫 ADR**、`zh_TW` vs `zh_Hant` 先實機探針再由 `technical-director` 拍板、Story 001~003 **准予開工**。⏳ 待切 story 檔 |
 
 **裁決背景**:M1 開工前查證實測,專案**零本地化基礎設施**:
 ```

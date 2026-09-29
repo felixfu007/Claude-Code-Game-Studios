@@ -1,10 +1,138 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: 🟢 **《盲目於微光》—— 23 張工作單落地,規劃階段結束。** #4 戰棋 **15 張**(13 `Ready` / 2 `Blocked` 等本地化);#5 好感度—位置連鎖 **8 張**(第一批,不碰畫面);本地化基礎設施 **epic 已建立**(`Draft`,4 項待裁決)。卡牌介面 18/18、技能卡牌 8/8、畫面縮放 2/2、好感度數值池 8+1。游標/高亮 14 張:9 Complete。測試 **963**(本批未動 `src/`,基線未變)
-Feature: **第七十一批:23 張 story + 本地化 epic + AI 授權查證 + M0 追溯補登 + C5 兩項過期義務補完。🔴 而最該記的是「骨架優先」有一類任務結構上做不到 —— 我對它下了那條指令,燒掉 364k tokens 零產出。**
-Task: 🔴 **接手第一件事:①問管理者四項裁決(見下表,四項都有現成選項);②可以直接開始寫程式了 —— `/story-readiness production/epics/tactical-combat/story-001-terrain-passable-flag.md`;③#5 第二批(畫面側)仍等畫面規格,不要自行開切。**
+Epic: 🟢 **《盲目於微光》—— 開始寫程式了。** #4 戰棋 15 張:**1 `Complete`**(story-001,本專案第一張完成的正式程式碼工作單)/ 12 `Ready` / 2 `Blocked`(等本地化)。#5 好感度—位置連鎖 8 張。本地化基礎設施 **epic 轉 🟢 `Ready`**(管理者四項全數裁決),story 待切。卡牌介面 18/18、技能卡牌 8/8、畫面縮放 2/2、好感度數值池 8+1、游標/高亮 9/14。測試 **969**(963 → 969,新增 6 條全綠;唯一紅燈是既有那條已核准的)
+Feature: **第七十二批:管理者四項裁決全數落檔 + story-001 完成 + i18n 實機探針 + 登記表 +2。🔴 而最該記的是「撞回合上限」今天四次,而「先查磁碟」給出了三種不同答案 —— 照同一種處理會做錯兩次。**
+Task: 🔴 **接手第一件事:①`technical-director` 拍板 `zh_TW` vs `zh_Hant`(探針已完成,材料齊,只要拍板);②`localization-lead` 切 Story 001~003 → 完成後回去解鎖戰棋 story-012/013;③戰棋可續開 story-002(已解鎖)與 003~006(M3a 無依賴);④美術 1 位角色驗證只有管理者本人在家跑得了。**
 <!-- /STATUS -->
+
+## 🔴 接手第一件事(2026-09-29 **第七十二批**寫入 —— 位階高於下方所有既有指示)
+
+> ⚠️ **2026-09-15 那節「這一個月的運作方式」仍然有效,🔴 到期日約 2026-10-15,剩約兩週。**
+> 📌 **第七十一批以降為歷史批次,其內容仍然有效,請一併讀。**
+
+### ✅ 一、本批最大的一件事:專案寫出了第一張完成的正式遊戲程式碼工作單
+
+`production/epics/tactical-combat/story-001-terrain-passable-flag.md` **狀態已 `Complete`**。
+
+🔴 **協調者獨立重跑全套測試驗證,不是採信專家回報**:
+```
+Overall Summary: 969 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans |
+Executed test suites: (78/78)
+Exit code: 100
+```
+基線 963 → 969,**正好是本 story 新增的 6 條**;唯一失敗是既有那條刻意紅且已核准的
+`affinity_phi_provider_test.gd > test_phi_reflects_a_pairing_polarity_flip_made_after_construction`。
+
+**下一張立刻可開工**:`story-002`(依賴 001,現已解鎖)。`story-003~006`(M3a)本來就無依賴。
+⚠️ **002 與 001 動同一個檔案**(`src/gameplay/board/board.gd`),003 動 `battle_controller.gd` ——
+**兩者可並行,但不要把 002 和任何也動 `board.gd` 的工作單同時派人。**
+
+### 🔴 二、四項管理者裁決全部落檔(各在擁有者檔案,不在本檔)
+
+| # | 裁決 | 紀錄在哪 |
+|---|---|---|
+| 1 | **美術走「AI 自建」路線**,先只做 1 位角色驗證 | `design/art/art-direction.md` 第一節新增的「🔴 2026-09-29 修訂」小節(**原文保留不刪**);驗證協議全文在新檔 `design/art/ai-art-validation-protocol-2026-09-29.md` |
+| 2 | **本地化四項全數核准** | `production/epics/localization-infrastructure/EPIC.md` 的「✅ 管理者裁決紀錄」節(逐項四列表格);epic 狀態已 `Draft` → 🟢 `Ready` |
+| 3 | **兩條登記表提案都加** | `docs/registry/architecture.yaml` 的 `forbidden_patterns` 節,`phi_clamp_treated_as_a_safety_net` 與 `affinity_line_suppression_or_asymmetric_contribution` |
+| 4 | **抵銷為 0 → 畫中性線** | `production/epics/affinity-position-chain/EPIC.md` 的「✅ 第 6 項裁決」節 |
+
+🔴 **裁決 1 只推翻三個分句中的中間那句。** 「像素風」與「不外包、不用素材庫」**管理者沒有推翻**,
+`art-direction.md` 全部硬參數(480×270、128×128 立繪、32×32 棋盤格、64 色、1px 描邊)一併不動。
+
+🔴 **裁決 2 解鎖的下游是實的**:`tactical-combat` 的 **story-012 / story-013** 兩張標 `Blocked`,
+Dependencies 節明文列著 `localization Story 001`(協調者已 grep 複驗)。**本地化 Story 001 一完成
+就要回去把那兩張解鎖。**
+
+### 🔴 三、本批最該傳下去的四件事
+
+#### ① 「撞回合上限」今天發生 4 次,而「先查磁碟再判斷」這條規則給出了**三種不同答案**
+
+本專案記憶裡登記的規則是「『工作沒做完』與『報告沒送出』是兩件事」。**今天證明它其實是三件事**,
+而三者的處置完全不同 —— 照同一種處理會做錯兩次:
+
+| 專家 | 磁碟實況 | 真正的病因 | 正確處置 |
+|---|---|---|---|
+| `art-director` | 兩份產出**完整**(27811 bytes 新檔 + 修訂) | **只缺報告** | 再問一次就拿到,**叫它不要再改檔** |
+| `gameplay-programmer`(第 1 次) | `board.gd` 已改,但 `_terrain_entry()` **被呼叫兩次卻從未定義** —— 程式是壞的 | **真的沒做完,而且留下半成品** | 把實測缺口逐條貼回去讓它接續 |
+| `godot-specialist`(第 1 次) | 產出目錄 **零檔案**(23 次工具呼叫之後) | 🔴 **協調者診斷錯了一半,專家事後更正** —— 我判定為「全部蒸發」,實際是**引擎已經跑完、輸出還在它手上沒存檔**。**磁碟看得到「沒有檔案」,看不到「有沒有做事」** | 🔴 下「**第一個動作必須是 Write,不是 Read**」。**這個處置對兩種病因都對**:真的沒做 → 逼它落地現況;做了沒存 → 逼它立刻存檔 |
+
+**查法**:`git status --short` + 對著 story 的 `Test Evidence` 路徑 `ls` 一次 + 對新增符號
+`grep` 一次(`grep -n "func _terrain_entry"` 就是這樣抓到的)。**三條都便宜,而且今天各抓到一種不同的病。**
+
+#### ② 「第一個動作必須是 Write」對**唯讀查證任務**同樣有效 —— 這補上了上一批那條的另一半
+
+上一批登記的是:**「先寫骨架再回填」有一類任務結構上做不到**(切 story 時「有幾張、各叫什麼」
+本身就是讀檔的產物)。本批發現的是**它的反面**:
+
+`godot-specialist` 探針第一輪 23 次工具呼叫、磁碟零產出。協調者中途插話,指令逐字是
+「**停止查證,現在立刻寫檔。第一個動作必須是 Write,不是 Read、不是 Bash。把你現在手上已經有的
+東西寫下來,包含你還沒查完的部分**」,並要求逐條標「實測 / 未查證 / 推論」三選一。
+**下一輪它產出 5 個檔案並跑完全部探針。**
+
+📌 **兩條合起來的判準**:骨架**寫不寫得出來**要看節結構已不已知;但**「把手上有的先落地」永遠寫得出來**,
+因為它的內容就是當下狀態,不需要任何前置查證。**卡住時下的不是「寫骨架」,是「寫現況」。**
+
+#### ③ 專家更正前提,本批 3 次,3 次全對(累計第七~九次)
+
+- 🔴 **`technical-director` 推翻的是「自己上一批的提案」** —— 提案原文寫「夾限 `PHI_MIN=−4`/`PHI_MAX=+12`
+  …… 角色一有**第 5 條關係線**,合法佈局就會踩到」。它拿 GDD 與原始碼重算後發現**兩個方向都不成立**:
+  **(a) 不充分** —— `AC-F2`:5 條正向線、第 5 條落在距 2 死區,總和仍是 +12,夾限根本沒作用;
+  **(b) 不必要** —— `AC-R7b`:**單一**條正向距 1 線、`amp=10` 理論和 +30 就被壓回 +12,GDD 逐字寫著
+  「證明夾限**不依賴線數多寡**即可生效」。
+  ✅ **正確說法已寫進登記表**:曼哈頓距離 1 只有 4 個整數解,4 條正向緊鄰 = 4×(+3) = **+12 恰好等於上界**,
+  4 條負向緊鄰 = 4×(−1) = **−4 恰好等於下界** —— **一個完全合法的普通佈局就已經坐在邊界上、零餘裕。**
+  ⚠️ **結論沒變,而且比提案說的更強;變的是判準。** 若照抄提案,登記表的 `why:` 欄(唯一正本)
+  就會寫下一條**可被 AC-F2 一驗就推翻的判準**,連帶讓人不信任它正確的那部分。
+- **`art-director` 更正協調者派工單的引用編號** —— 我寫「授權報告第八節第 4 項是風格一致性」,
+  實際該項是「16GB VRAM 訓練 LoRA 的可行性」,風格一致性那句在**選項書第十節第 4 項**。
+  🔴 **這是協調者本批自犯的第 1 個錯**(不影響裁決,只是引用錯位)。
+- **`godot-specialist` 更正協調者的診斷** —— 我看到探針目錄零檔案,判定「23 次工具呼叫全部蒸發」。
+  實際是**引擎已經跑完、輸出還在它手上沒存檔**。🔴 **這是協調者本批自犯的第 2 個錯,而它的教訓是
+  「先查磁碟」這條規則自己的邊界**:磁碟能告訴你「有沒有檔案」,**不能告訴你「有沒有做事」**。
+  ✅ **但下的處置碰巧對兩種病因都對**(逼它先落地現況),所以沒有造成損失 —— 這是運氣不是流程。
+- **`gameplay-programmer` 指出 story-001 自己內部矛盾** —— `AC #1` 把 `passable()` 回傳型別
+  **釘死成 `bool`**,而 `QA Test Case 3` 的 Edge Cases 卻**建議改用具名 enum 避開 `bool`**。
+  兩者互斥。實作者依 AC 為準(AC 是驗收依據),並在 `board.gd` 的 `passable()` 文件註解裡
+  完整寫下取捨與兩種區分方法。**協調者的派工單當時是站在 QA 那一側的,專家是對的。**
+
+#### ④ 兩個 `technical-director` 提出、本批**未裁決**的事
+
+1. **兩條新禁令都沒有任何自動檢查**(條目本身已明文寫死這一點)。它建議最便宜的執行力形狀是
+   一條 GdUnit4 測試,斷言 `AffinityRules` 只有一處 `clampi` 且常數為 −4/+12 —— 屬
+   `.claude/rules/test-standards.md` 已登記的第二種例外(讀 `src/**/*.gd` 原始碼文字斷言靜態紀律)。
+   **需要動 `tests/`,不在該次授權內,未做。**
+2. **要不要把兩條新禁令列進 `.claude/docs/technical-preferences.md` 的「Forbidden Patterns」節?**
+   ✅ **協調者判定:不列,而且這不是新裁決,是套用該節自己已明文的規則** ——
+   該節逐字寫著「本節不複述 …… 複述只會製造漂移面」,並已因散文複本脫節被刪過一張表。
+   `technical-director` 的傾向相同。**登記在此,若有人日後認為該列,那才是新裁決。**
+
+### 四、本批做完什麼
+
+| 檔案 | 誰 | 內容 |
+|---|---|---|
+| `src/gameplay/board/board.gd` + `tests/unit/gameplay/board/board_passable_test.gd`(新) | `gameplay-programmer` | story-001 全部 5 條 AC。`MOVE_COST` → `TERRAIN_TABLE` 巢狀表(AC 明文「同一張表的第二欄」);未登記地形字元 `push_error()` + 哨兵 `-1`,**不用 `assert()`**;新增私有接縫 `_terrain_entry()` 讓測試用子類別注入假地形,**不動 `const`**;測試用 `assert_error(...).is_push_error(...)`,**本專案第一次用到這個 API** |
+| `docs/registry/architecture.yaml`(+153 行) | `technical-director` | 兩條 `forbidden_patterns`。**提案②的推導被自己推翻並改寫**(見③)。另撈到兩項提案沒提的事實寫進 `why:`:① `amp` 由版控 CSV 解析、偏離 1 只 `push_warning()` **不拒絕**,一個手誤數字今天就能把 Φ 推爆夾限且沒有測試會紅;② 夾限值假設 `amp == 1`,而 `amp` 值域由 #6 卡牌系統擁有,**已登記回訪觸發條件** |
+| `design/art/art-direction.md`(修訂)+ `design/art/ai-art-validation-protocol-2026-09-29.md`(新) | `art-director` | 裁決落地 + 1 位角色驗證協議。過關判準分**機械式**(尺寸精確相等、**零離盤色像素**、色數建議 ≤24、描邊非純黑且至少 2 種色)與**人工**(5 項特徵並排比對)。🔴 **誠實登記一項結構限制:1 位角色結構上答不了「5 位像不像同一批人」**,只能做「同一角色 10 張圖自我一致性」的代理測試 —— 就算 PASS 也只代表「還沒被證偽」 |
+| `prototypes/godot-specialist-i18n-locale-probe-2026-09-29/`(新,5 檔) | `godot-specialist` | `zh_TW` vs `zh_Hant` 實機探針,含 `probe.gd` + **原始 log** `run_output_headless.txt` |
+| `production/epics/localization-infrastructure/EPIC.md` | 協調者 | 裁決紀錄 + 狀態轉 `Ready` |
+| `production/epics/affinity-position-chain/EPIC.md` | 協調者 | 第 6 項裁決紀錄 |
+| `production/epics/index.md` | 協調者 | 本地化列轉 `Ready`、檔頭 |
+
+### 🔴 五、下一棒(已排序)
+
+| # | 做什麼 | 為什麼是這個順序 |
+| 1 | **`technical-director` 拍板 `zh_TW` vs `zh_Hant`** | 探針**已完成**,材料齊,**下一位只要拍板不必再查**。管理者裁決逐字是「先實機探針,再由技術總監拍板」。<br>🔴 **探針執行者的建議:用 `zh_TW`。** 理由**不是** `zh_Hant` 有缺陷 —— 實測兩者在引擎眼中完全等價:`compare_locales(zh_TW, zh_Hant) = 10`,與 `compare_locales(zh_TW, zh_TW) = 10` **同分**;用真實 CSV 匯入的 `.translation` 資源實測**雙向 fallback 都成功**(標頭寫 `zh_TW`、系統 locale 設 `zh_Hant`,以及反過來,`tr()` 兩次都抓到字串)。選 `zh_TW` 純粹因為 `get_locale_name(zh_TW) = "Chinese, Taiwan"` **帶地區資訊**,而 `zh_Hant` 是 `"Chinese (Traditional Han)"` 只有文字系統。**這是命名慣例的選擇,不是功能的選擇。**<br>⚠️ **探針另發現一個會痛的東西**:`set_locale()` 對大小寫不規範的字串會**靜默降級**(`zh_HANT_tw` 讀回只剩 `zh`,地區資訊消失)。**沒有驗證真實 Windows/Steam 系統 locale 會不會送進這種格式** —— 已誠實標為未查證,是下一步該補的。<br>原始 log:`prototypes/godot-specialist-i18n-locale-probe-2026-09-29/run_output_headless.txt` |
+| 1 | **`technical-director` 拍板 `zh_TW` vs `zh_Hant`** | 探針**已完成**,材料齊。管理者裁決逐字是「先實機探針,再由技術總監拍板」。🔴 **關鍵實測:雙向 fallback 都成功**,`compare_locales(zh_TW, zh_Hant) = 10` 與 `compare_locales(zh_TW, zh_TW) = 10` **同分** —— 亦即引擎把兩者視為等價,選哪個都不會 fallback 失敗。**所以這是命名慣例的選擇,不是功能的選擇**,原始輸出在 `run_output_headless.txt` |
+| 2 | **`localization-lead` 切 Story 001~003** | 已核准開工。story-001 要建 `assets/data/locales/` 並把真的 locale 檔放進去。⚠️ **順序不可顛倒:先建目錄與檔案,然後才更新 `.claude/docs/directory-structure.md`** —— 那張圖自己的規則是「只畫實際存在的東西」 |
+| 3 | **回去解鎖 `tactical-combat` story-012/013** | 本地化 Story 001 一可用就要做,**不會自己發生** |
+| 4 | **繼續戰棋:story-002(已解鎖)、story-003~006(M3a,無依賴)** | 本專案現在真的在寫程式了。⚠️ **002 動 `board.gd`,003 動 `battle_controller.gd`,可並行** |
+| 5 | **管理者在家跑 1 位角色的 AI 美術驗證** | 🔴 **只有他能做** —— Claude Code 跑在公司筆電上,碰不到家中那台 RTX 5070 Ti。`art-director` 建議先用 **SDXL**(理由 0% 實測、100% 推論:LoRA 工具鏈成熟度、既有像素風微調案例落在 SDXL 系),過不了才換 SD 3.5。建議完成日 **2026-11-30**(推算,非裁決) |
+| 6 | **兩項 `technical-director` 提出的待裁決**(見③④) | 不擋任何 story |
+
+⚠️ **`art-director` 另提三項本批未處理的**:①後製工具與生圖有雞生蛋相依(工具要真圖才驗得了自己,
+驗證要工具才跑得了機械式檢查)—— 建議兩軌並行;②AI 路線**完全沒有工時估算**(手繪路線有 150~265 工時);
+③**Steam 的 AI 內容揭露義務 2026-01-17 起生效**,不擋驗證但上架前必須處理。
 
 ## 🔴 接手第一件事(2026-09-29 **第七十一批**寫入 —— 位階高於下方所有既有指示)
 

@@ -2,7 +2,7 @@
 
 > **層**:Cross-cutting Infrastructure
 > **權威文件**:無 GDD(基礎設施,非遊戲系統 —— 先例 `screen-scaling`)
-> **狀態**:Draft(骨架完成,待管理者裁決本檔「需要管理者裁決的事」節後可過 Ready)
+> **狀態**:🟢 **Ready**(2026-09-29 管理者裁決四項全數表態,見下方「需要管理者裁決的事」節的裁決紀錄。原狀態行為 `Draft(骨架完成,待管理者裁決本檔「需要管理者裁決的事」節後可過 Ready)`,條件已成立)
 > **Stories**:待切分(草案見下方「Stories」節,本批不建立 story 檔)
 > **建立日期**:2026-09-29
 
@@ -235,6 +235,26 @@ $ grep -rn "^const TEXT_" src/ --include=*.gd
 3. 繁體中文對應的 Godot locale 代碼該選 `zh_TW` 或 `zh_Hant`(Q1)。
 4. Godot 官方文件的即時查證 —— 本次沒有網路擷取工具可用,完全依賴專案內
    `docs/engine-reference/godot/` 現有文件,未做外部交叉核對。
+
+## ✅ 管理者裁決紀錄(2026-09-29,協調者當日呈報並記錄)
+
+**管理者逐字選項**:**「照建議全部開工(建議)」** —— 下方四項一次全數表態。
+
+| # | 原問題 | 裁決 | 執行狀態 |
+|---|---|---|---|
+| 1 | locale 檔案放哪個目錄 | **`assets/data/locales/`** —— 採本檔原提案的第一候選,理由亦採原文:`assets/data/` 現有定義就是「資料驅動的設定檔」 | ⏳ 待建立。🔴 **`.claude/docs/directory-structure.md` 是逐條稽核過的圖,明文「需要新目錄時先建立再畫」—— 目錄實際建立之後才更新那張圖,不得預先畫上去** |
+| 2 | 要不要寫一份架構決策文件(ADR) | **不寫** —— 採本檔自己的傾向。依據是 `.claude/docs/coding-standards.md` 2026-09-01 管理者裁決:架構文件只在**跨系統契約**時才寫,且流程劑量規則預期剩下六個系統只再產生 0~1 份 | ✅ 已裁決,無待辦 |
+| 3 | `zh_TW` vs `zh_Hant` | **先實機探針,再由 `technical-director` 依探針結果拍板** —— 管理者不憑感覺選字串 | ⏳ 探針已於同日派工 `godot-specialist`,產出路徑 `prototypes/godot-specialist-i18n-locale-probe-2026-09-29/` |
+| 4 | Story 001~003 准不准開工 | **准** | ⏳ 待 `localization-lead` 切 story 檔 |
+
+🔴 **本裁決解鎖的下游**:`production/epics/tactical-combat/` 的 **story-012 / story-013**
+(格位資訊面板、攻擊二段確認面板)兩張標 `Blocked`,等的就是本 epic 的 Story 001。
+**那兩張的 Dependencies 節明文列著 `localization Story 001`** —— 本 epic 的 Story 001 一完成就要回去解鎖它們。
+
+⚠️ **裁決 1 有一個順序不可顛倒的地方,寫在這裡以免被跳過**:目錄圖(`directory-structure.md`)
+是一份 2026-09-01 全庫稽核重畫過的文件,它自己的檔頭逐字寫著舊版「畫著 `src/networking/` ——
+但 `networking_features` 是本專案的**專案級禁令**」,並因此立下規則:**只畫實際存在的東西**。
+所以是「先建目錄、放進真的檔案,然後才更新那張圖」,不是「先改圖再建」。
 
 ## 需要管理者裁決的事
 
