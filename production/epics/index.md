@@ -19,7 +19,7 @@
 | [affinity-data-pool](affinity-data-pool/EPIC.md) | Core | 好感度數值池(Delta Log) | `design/gdd/affinity-data-pool.md` + ADR-0002(**Accepted**) | **9 張 story 檔**(原規劃 16 個單元:切片內 9 + 切片外 7。⚠️ **「16」是規劃單元數,不是 story 檔數** —— 切片外 7 單元至今未建 story 檔,**不是有 7 個檔案不見了**) | 🔴 **2026-09-29 事實更正,原文保留供追溯** —— 本列原寫「**16 張**(切片內 9 / 切片外 7,全部尚未建立 story 檔)｜📋 **未開工**(2026-09-15 建立 epic)」,**自 story 檔建立起即為假**;與上一列同一成因(檔頭停在 2026-09-15)。<br>**現況(只陳述事實,本次不判定本 epic 完成與否)**:9 張 story 檔存在;其中 **8 張 `Complete`**;第 9 張 `story-009-wiring.md` 狀態為「**不單獨執行 —— 已併入卡牌介面**」。**實測依據**:`ls production/epics/affinity-data-pool/story-*.md` 計 **9** 張;狀態列統計為 8 × `Complete` + 1 × `不單獨執行` |
 | [card-play-interface](card-play-interface/EPIC.md) | Presentation | 卡牌介面 + 戰鬥選單 + 取消鍵重綁 | `design/ux/skill-card-play.md` + `design/ux/battle-menu.md`(**非 GDD**) | **18 張 story 檔**(原規劃 22 個單元:切片內 16 + 切片外 6;實作期另立 U-017、U-018,切片外 6 單元至今未建 story 檔) | ✅ **Complete(2026-09-29 收尾,18/18)**<br>🔴 **2026-09-29 事實更正,原文保留供追溯** —— 本列原寫「**22 個單元**(切片內 16 / 切片外 6,全部尚未建立 story 檔)｜📋 **未開工**(2026-09-15 建立 epic)」,**自 story 檔建立起即為假**;成因是本檔檔頭停在 2026-09-15 未更新。**實測依據**:`ls production/epics/card-play-interface/story-*.md` 計 **18** 張;18 條狀態列**全部** `✅ Complete`;收尾提交 `6c92014`(2026-09-29) |
 | [tactical-combat](tactical-combat/EPIC.md) | Gameplay | 戰棋移動與交戰系統(含武器射程分層) | `design/gdd/tactical-combat-system.md` + `design/ux/tactical-combat-screen.md` + ADR-0001(**Accepted**) | 尚未建立(規劃為 M2~M6 五模組 + M1 限時查證批) | ✅ **Ready(2026-09-29 管理者核可)** —— 可執行 `/create-stories`。<br>🔴 **本列 2026-09-29 首次入表,而 epic 檔案自當日稍早即存在(598 行)** —— 不是漏更新:該檔原第 593 行明文規定「閘門通過之前……`production/epics/index.md` 不更新」。閘門(`docs/reviews/pr-epic-tactical-combat-2026-09-29.md`,判 CONCERNS)五項必辦全數關閉後才入表。<br>⚠️ **執行層必須序列化 `M6 → M5 → M4`**(三者共用 `src/ui/battle/battle_screen.gd`);規劃層 M4/M5 互不依賴但**不可並行執行** |
-| [affinity-position-chain](affinity-position-chain/EPIC.md) | Gameplay | 好感度—位置連鎖系統(含陣亡處理) | `design/gdd/affinity-position-chain.md`(**Approved** 2026-08-31) | 尚未建立(規劃為 5 模組 + 1 治理前置) | 📝 **Draft(2026-09-29 建立)** —— 🔴 **2026-09-29 管理者裁決:不跑 `PR-EPIC` 閘門**,照 2026-09-02 精簡模式預設(不跑覆核但留紀錄)。**本列原寫「pending `PR-EPIC` gate」,該前提已由裁決移除。**<br>⚠️ **`Draft` 的理由改為「尚有 5 項待裁決」**(見該檔第 9 節),其中 3 項已於 2026-09-29 裁決(不 Blocked / 不跑閘門 / #4 那列不單獨動),**第 4 項「資料池讀取被拒時 `Φ` 回什麼」已派 `systems-designer` 查證中**,第 2 項(UX Flag 未滿足)未裁決 |
+| [affinity-position-chain](affinity-position-chain/EPIC.md) | Gameplay | 好感度—位置連鎖系統(含陣亡處理) | `design/gdd/affinity-position-chain.md`(**Approved** 2026-08-31) | 尚未建立(規劃為 5 模組 + M0 治理前置) | ✅ **Ready(2026-09-29 管理者核可)** —— 可執行 `/create-stories`。<br>**不跑 `PR-EPIC` 閘門**(同日裁決,照 2026-09-02 精簡模式預設)。**本列原寫「pending `PR-EPIC` gate」,該前提已被裁決移除。**<br>🔴 **切 story 分兩批**:不產生畫面的現在切(M1/M2/M5 + M3 本系統側);會動畫面的等 #5 的畫面規格。⚠️ **M2 與 M3 不可同時派人**(共用 `battle_screen.gd`) |
 
 ⚠️ **第三欄原名「GDD」,2026-09-04 改為「權威文件」** —— `screen-scaling` 是呈現層基礎設施,
 不是遊戲系統,沒有 GDD 也不會有。硬塞一個 GDD 欄位會讓下一個人去找一份不存在的文件。
@@ -81,6 +81,43 @@
 > 🔴 **本表標題是「尚未建立 Epic」,對 #4 而言字面上已不準確** —— 已登記為待裁決項
 > (`production/epics/affinity-position-chain/EPIC.md` 第 9 節第 5 項),
 > **本批刻意不自行更動 #4 那一列**,因為那會推翻 #4 epic 自己的規則。
+
+## 🔴 尚未建立 Epic 的跨切面基礎設施
+
+上一張表只收**遊戲系統**(有 GDD 的那些)。**本段收沒有 GDD、也永遠不會有的基礎設施** ——
+先例是 `screen-scaling`(呈現層基礎設施,2026-09-04 建 epic,現已 Complete)。
+
+| 項目 | 建議擁有者 | 來源 | 狀態 |
+|---|---|---|---|
+| **本地化(i18n)基礎設施** | `localization-lead` | 🔴 **2026-09-29 管理者裁決:「現在就建翻譯機制」** | 📋 **尚未建立 epic —— 這是下一批要做的事** |
+
+**裁決背景**:M1 開工前查證實測,專案**零本地化基礎設施**:
+```
+$ grep -rn "\btr(\|TranslationServer\|translations" src/ --include=*.gd
+(零命中)
+$ grep -n "locale\|translation" project.godot
+(零命中)
+$ grep -rn "^const TEXT_" src/ --include=*.gd | head -3
+src/ui/battle/battle_screen.gd:153:const TEXT_STATUS_FORMAT: String = "第 %d 回合．%s"
+src/ui/battle/battle_screen.gd:154:const TEXT_FACTION_PLAYER: String = "我方行動"
+src/ui/battle/battle_screen.gd:166:const TEXT_AFFINITY_PREVIEW_FORMAT: String = "好感度 %+d→%+d"
+```
+全文見 `docs/reviews/tactical-combat-m1-current-state-audit-2026-09-29.md` 的 U-T11 節。
+
+🔴 **管理者選的是非建議選項** —— 協調者建議「明文決定只出繁中、現在不建」,管理者選「現在就建」。
+**理由在 #4 epic 自己的原文**:這一項「**做完再改成本高**」。
+
+### ⚠️ 這個裁決有一條排程上的連帶後果,不要漏掉
+
+> **本地化基礎設施必須排在「會新增畫面文字的工作單」之前或同批。**
+
+`/create-stories tactical-combat` 的 **M4** 要做**兩個新面板**(格位資訊面板、攻擊二段確認),
+兩者都有文字。**若本地化晚一步,那些文字會先寫死、再回頭改一次** —— 而那正是這個裁決要避免的事。
+
+📌 **本專案已登記「裁決被記錄 ≠ 裁決被排程」**(`screen-scaling` 那次:裁決記在 8 個檔案裡,
+三天內沒有進入任何排程,發現方式純屬巧合)。**本段的存在就是為了不重演那一次。**
+
+---
 
 **存檔系統**:ADR-0004(原子寫入與遷移)仍為 `Proposed`,且依一年計畫第七節**明確不在
 12 個月範圍內**(「不在最短路徑上,維持 `Proposed` 即可,不要再投入」)。
