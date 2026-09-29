@@ -3,3 +3,4 @@
 - [HUD glyphs are code, not images](project_hud_glyphs_are_code_not_images.md) — lock icon etc. are Panel/StyleBoxFlat/ColorRect primitives in .gd files, not PNGs; recompose primitives before proposing a new image asset
 - [Layout authority files](reference_layout_authority_files.md) — art-direction.md vs screen-architecture.md ownership split, compute_scale() single source, read exact accessibility clause wording before deciding a fix
 - [Formula must match worked example](feedback_formula_must_match_worked_example.md) — before finalizing, substitute the formula's symbols with the worked example's numbers and confirm they land on the same result; don't trust prose reasoning alone
+- [Art production path undecided](project_art_production_path_undecided.md) — "developer draws it themselves" premise failed 2026-09-29; options book written, no route chosen yet
