@@ -286,13 +286,18 @@ formulas:
       - terrain_cost
       - occupied
       - ignore_occupancy
+      - passable
+      - ignore_passability
     output_range: [1, grid_tile_count]   # 集合基數;恆非空(至少含 origin)
-    expression: "{ t ∈ Grid : accumulated_cost(origin,t) ≤ MP(u) ∧ occupied(t) = false }"
+    expression: "{ t ∈ Grid : accumulated_cost(origin,t) ≤ MP(u) ∧ occupied(t) = false ∧ passable(t) = true }"
     notes: "定義見 tactical-combat-system.md Formulas 公式三。occupied() 不含查詢
       單位自身。ignore_occupancy=true 僅供 UI 標示不可達成因,不得作為移動合法性
-      依據(見該 GDD AC-14)。"
+      依據(見該 GDD AC-14)。2026-09-29 新增 passable(tile)/ignore_passability
+      (回應該 GDD OQ-10 關閉)——同構的獨立忽略旗標,僅供 UI 標示『地形不可通行』
+      成因,同樣不得作為移動合法性依據。舊版 expression 未含 passable 合取項,
+      已一併更正。"
     added: 2026-08-17
-    revised: ""
+    revised: "2026-09-29"
 
   - name: threat_range_formula
     status: active
@@ -383,10 +388,28 @@ constants:
       - design/gdd/living-board-terrain.md  # #14 — 地形演變須產出符合本階層的資料
     value: "平地 1 / 森林 2 / 山地 3"
     unit: mp_per_tile
-    notes: "三階,硬性下限 ≥1(資料寫入時驗證)。目前無「不可通行」層級 — 見
-      tactical-combat-system.md OQ-10(此為阻擋關卡設計的待決項)。定義見該 GDD
-      Tuning Knobs #4。"
+    notes: "三階,硬性下限 ≥1(資料寫入時驗證)。~~目前無「不可通行」層級 — 見
+      tactical-combat-system.md OQ-10(此為阻擋關卡設計的待決項)~~ ✅ 2026-09-29
+      已解決:OQ-10 已關閉,見新增條目 passable(獨立布林旗標,與本階層正交)。
+      定義見該 GDD Tuning Knobs #4。"
     added: 2026-08-17
+    revised: "2026-09-29"
+
+  - name: passable
+    status: active
+    source: design/gdd/tactical-combat-system.md
+    referenced_by:
+      - design/gdd/tactical-combat-system.md
+      - design/gdd/living-board-terrain.md  # #14 尚未設計 — 地形演變若涉及戰鬥中途改變,須確認 origin 恆可通行的不變量
+    value: "預設 true(起始三個地形種類——平地/森林/山地——皆為 true;目前關卡資料無任何 false 項)"
+    unit: bool
+    notes: "每格地形獨立的可否通行旗標,與 terrain_cost 正交(2026-09-29 新增,
+      回應 OQ-10 關閉——管理者裁決:加一個獨立的可否通行開關,而非以
+      terrain_cost=∞ 模擬或新增第四地形階層)。false 時無論 MP 多寡皆不可進入,
+      不歸類為移動力不足。定義見 tactical-combat-system.md Formulas 公式三、
+      Tuning Knobs #4、AC-2/AC-13/AC-14。隱性不變量:passable(origin) 恆為
+      true,見該 GDD 公式三變數表。"
+    added: 2026-09-29
     revised: ""
 
   - name: max_occlusion_ratio
