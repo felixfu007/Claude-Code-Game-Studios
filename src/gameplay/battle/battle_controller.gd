@@ -261,6 +261,37 @@ func attack_targets() -> Array[Vector2i]:
 	return _attack_targets_for(_selected_unit_id)
 
 
+## story-003-los-blocked-in-range-query.md: returns every in-bounds board
+## cell whose distance from the currently selected unit's CURRENT position
+## falls within its [member Unit.min_range]/[member Unit.max_range] band but
+## whose line of sight is blocked by terrain — GDD Visual/Audio §1.3's third
+## attack-overlay layer ("範圍內但不可攻擊"), exposed here as the third
+## overlay-source query alongside [method attack_targets] ("合法可攻擊") and
+## the implicit "no overlay" state (everything neither method returns).
+## Ordered ascending by (y, x), same convention as every other method in this
+## class. Empty if nothing is selected, the selection cannot attack this
+## phase, or the controller is outside PLAYER_INPUT — the same gating
+## [method attack_targets] applies.
+##
+## 🔴 Deliberately uses ONLY the selected unit's actual current tile as the
+## query origin — never a hypothetical post-move tile the way [method
+## threat_targets] does. This is load-bearing, not an oversight: this method
+## and [method attack_targets] must partition the SAME set of cells into
+## mutually exclusive states for a single origin (AC "三者互斥"), and [method
+## attack_targets] itself only ever evaluates the unit's actual current
+## position (via [method BattleState.can_attack] -> [method
+## BattleState.position_of]) — using a different origin set here would break
+## that partition, not extend it.
+##
+## Every cell this method returns is unoccupied-agnostic by construction: it
+## answers a purely geometric question (distance + line of sight), the same
+## way [method BattleState.is_attack_range_blocked_by_los] does — whether an
+## enemy, ally, or nothing at all currently stands on a given cell has no
+## bearing on whether that cell belongs in this overlay layer.
+func attack_targets_blocked_by_los() -> Array[Vector2i]:
+	return _attack_targets_blocked_by_los_for(_selected_unit_id)
+
+
 ## Returns every in-bounds board cell the currently selected unit could
 ## legally attack this turn, counting both "attack from where I stand" and
 ## "move first, then attack" — the union, over the unit's current tile plus
@@ -917,6 +948,37 @@ func _attack_targets_for(unit_id: int) -> Array[Vector2i]:
 	for enemy: Unit in _state.units_of(opposing):
 		if _state.can_attack(unit_id, enemy.id):
 			result.append(_state.position_of(enemy.id))
+	result.sort_custom(_tile_less)
+	return result
+
+
+# story-003-los-blocked-in-range-query.md: shared computation for
+# attack_targets_blocked_by_los(). Same gating as _attack_targets_for()
+# (phase, selection, TurnOrder.can_attack()) — a unit that has already
+# attacked has nothing to overlay a "blocked" state onto either. Iterates
+# every in-bounds board cell exactly like _threat_targets_for() does (not
+# _attack_targets_for()'s "only cells with a living enemy on them" shape),
+# because this is a purely geometric overlay layer, not a per-enemy legality
+# list — see this method's own doc comment for why the origin is ALWAYS the
+# unit's actual current tile, unlike _threat_targets_for()'s multi-origin
+# union. The unit's own current tile is excluded from the result for the
+# same reason attack_targets()/threat_targets() both exclude self-targeting:
+# a unit is never "in range but LOS-blocked" against its own square.
+func _attack_targets_blocked_by_los_for(unit_id: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	if _phase != Phase.PLAYER_INPUT or unit_id == -1:
+		return result
+	if not _order.can_attack(unit_id):
+		return result
+
+	var current_pos: Vector2i = _state.position_of(unit_id)
+	for y: int in range(Board.BOARD_HEIGHT):
+		for x: int in range(Board.BOARD_WIDTH):
+			var cell: Vector2i = Vector2i(x, y)
+			if cell == current_pos:
+				continue
+			if _state.is_attack_range_blocked_by_los(unit_id, current_pos, cell):
+				result.append(cell)
 	result.sort_custom(_tile_less)
 	return result
 

@@ -3,6 +3,24 @@
 > 本檔是寫作進度的落地清單,先於逐張 story 內容寫出,供任何一次寫作中斷後的接手依據。
 > 完成後仍保留(不刪除)作為 story 檔全集的目錄,但 EPIC.md 的「## Stories」表才是正式狀態欄。
 
+## 🔴 story-003b 插隊說明(2026-09-30 管理者裁決)
+
+`story-003` 完成時誠實登記了一個阻擋項:ADR-0001 要求的「版本號 + 寫入守衛」機制
+(機制一/機制二五條硬性義務)在全專案一行都沒有,story-003 只做了自己那一個查詢
+用得到的最小一塊(`combat_state_version` 本體 + `move_unit()`/`resolve_attack()`
+兩處遞增)。而 004~007 四張 story 全部標「受 ADR-0001 管轄」,卻沒有任何一張負責
+把機制本身做出來——每張都只寫「遵守 ADR-0001」。
+
+**管理者裁決**:插入 `story-003b`,由 `gameplay-programmer` 把三個類別(`BattleState`/
+`TurnOrder`/`Board`)八個以上方法的遞增、寫入守衛、佔位改動收進單一入口一次做齊,
+**排在 004~007 之前**。代價是知情接受的:多一張工作單的時間,且會動到
+`board.gd`/`turn_order.gd`/`battle_state.gd`(**`lead-programmer` 切 story 時
+grep 查證發現實際還會動到 `battle_controller.gd`/`battle_loop.gd`,見該 story 檔
+「與管理者裁決的落差」節,已在該 story 內明確標註,非本索引擅自擴大範圍**),
+期間不能並行其他戰棋工作單。
+
+詳見 `story-003b-atomicity-write-guard-consolidation.md`。
+
 ## M3 拆分說明(附帶建議 1 的結論)
 
 M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開工)與 **M3b**(切面 1,
@@ -17,10 +35,11 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 001 | story-001-terrain-passable-flag.md | M2 | Logic | 地形 `passable` 布林旗標 + 未知地形字元明確失敗(R1 緩解) | 無(⚠️ C5 擁有者義務未完成,見下) |
 | 002 | story-002-reachable-tiles-bounded-frontier.md | M2 | Logic | `reachable_tiles()` 改 `ignore_occupancy`/`ignore_passability` 雙開關 + 有界前緣展開 | 001 |
 | 003 | story-003-los-blocked-in-range-query.md | M3a | Logic | 「射程內但視線被擋」查詢(攻擊疊加圖第三層資料源) | 無 |
-| 004 | story-004-unit-action-four-state-getter.md | M3a | Logic | 單位行動四態 getter(不選取也能查任一單位) | 無 |
-| 005 | story-005-threat-targets-semantic-clarification.md | M3a | Logic | `threat_targets()` 語意查證與必要時改名/擴充(U-T15) | 無 |
-| 006 | story-006-atk-def-phi-breakdown-query.md | M3a | Logic | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層(#6 反向依賴) | 無(⚠️ C5 擁有者義務未完成,見下) |
-| 007 | story-007-movement-range-four-state-query.md | M3b | Integration | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | 001, 002 |
+| 003b | story-003b-atomicity-write-guard-consolidation.md | M3a | Logic | ADR-0001 原子性機制收斂(版本號遞增、寫入守衛、`Board` mutator 封裝,三個類別一次做齊) | 003(承接其部分實作) |
+| 004 | story-004-unit-action-four-state-getter.md | M3a | Logic | 單位行動四態 getter(不選取也能查任一單位) | **003b**(2026-09-30 管理者裁決,見下) |
+| 005 | story-005-threat-targets-semantic-clarification.md | M3a | Logic | `threat_targets()` 語意查證與必要時改名/擴充(U-T15) | **003b**(同上) |
+| 006 | story-006-atk-def-phi-breakdown-query.md | M3a | Logic | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層(#6 反向依賴) | **003b**(同上);⚠️ C5 擁有者義務未完成,見下 |
+| 007 | story-007-movement-range-four-state-query.md | M3b | Integration | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | 001, 002, **003b**(2026-09-30 管理者裁決,見下) |
 | 008 | story-008-cursor-navigation-convergence.md | M6 | Integration | 一般移動/攻擊路徑接入 `CursorStateHost`(BOARD_TILE surface) | 無(需先於 009) |
 | 009 | story-009-device-authority-convergence.md | M6 | Integration | 退役 `device_authority.gd`,改走 `CursorState.arbitrate_device_authority()` | 008 |
 | 010 | story-010-direction-key-debounce-convergence.md | M6 | Logic | 方向鍵去抖收斂至 `InputEventKey.echo` 過濾(先驗證手把類比涵蓋) | 008 |

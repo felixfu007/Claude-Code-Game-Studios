@@ -13,6 +13,8 @@
 > **Status**: ✅ **Ready — 2026-09-29 管理者裁決,可執行 `/create-stories`**(前為 `Draft`)。<br>依據:`docs/reviews/pr-epic-tactical-combat-2026-09-29.md` 判 CONCERNS 並列五項必辦,該報告第六節標題明文「**寫 story 之前**必須調整的事項」——五項擋的是 `/create-stories`,不是本檔狀態,且明文「五項調整全部是**定點修正**,不需要拆 epic、不需要重排」(未要求重跑閘門)。五項現況:**C1/C3 已修**(`technical-director`)、**C2 由 2026-09-29 裁決一關閉**(M6 三份重複實作收斂 ADR-0005)、**C5 擁有者已指派**(期限綁 story 不綁日期)、**C4 由 `production/epics/affinity-position-chain/EPIC.md` 的建立關閉**(2026-09-29 同日)。
 > **Review Mode**: `full`(第六十七批管理者裁決五:本 epic 恢復覆核,理由為 #4 被六個系統依賴)
 > **Stories**: ✅ **15 張已建立(2026-09-29)** —— M2:2、M3a:4、M3b:1、M6:4、M5:2、M4:2。
+> 🔴 **2026-09-30 追加 story-003b**(管理者裁決插隊,見 `story-index.md`「story-003b
+> 插隊說明」節)——現為 **16 張**,M3a 改為 5(含 003b)。
 > 清單、施工序、依賴見 `production/epics/tactical-combat/story-index.md`;逐張詳情見
 > `## Next Step` 節下方的 Stories 表。
 
@@ -594,13 +596,14 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 
 | # | Story | 模組 | 型別 | 狀態 | ADR | 依賴 |
 |---|---|---|---|---|---|---|
-| 001 | 地形 `passable` 布林旗標與未知地形字元明確失敗 | M2 | Logic | Ready | N/A | None |
-| 002 | `reachable_tiles()` 雙開關 + 有界前緣展開 | M2 | Logic | Ready | ADR-0001(下游) | 001 |
-| 003 | 「射程內但視線被擋」查詢 | M3a | Logic | Ready | ADR-0001 | None |
-| 004 | 單位行動四態 getter | M3a | Logic | Ready | ADR-0001 | None |
-| 005 | `threat_targets()` 語意查證與必要時改名 | M3a | Logic | Ready | ADR-0001 | None |
-| 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | Ready | ADR-0001 | None |
-| 007 | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | M3b | Integration | Ready | ADR-0001 | 001, 002 |
+| 001 | 地形 `passable` 布林旗標與未知地形字元明確失敗 | M2 | Logic | ✅ Done(2026-09-29) | N/A | None |
+| 002 | `reachable_tiles()` 雙開關 + 有界前緣展開 | M2 | Logic | ✅ Done(2026-09-30) | ADR-0001(下游) | 001 |
+| 003 | 「射程內但視線被擋」查詢 | M3a | Logic | ✅ Done(2026-09-30) | ADR-0001 | None |
+| 003b | ADR-0001 原子性機制收斂(版本號/寫入守衛/`Board` mutator 封裝) | M3a | Logic | Ready(2026-09-30 管理者裁決插隊,見 `story-index.md`) | ADR-0001 | 003 |
+| 004 | 單位行動四態 getter | M3a | Logic | Ready | ADR-0001 | **003b**(2026-09-30 管理者裁決) |
+| 005 | `threat_targets()` 語意查證與必要時改名 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |
+| 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |
+| 007 | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | M3b | Integration | Ready | ADR-0001 | 001, 002, **003b**(同上) |
 | 008 | 游標導航收斂(`CursorStateHost`) | M6 | Integration | Ready | ADR-0005 | None(先於 009) |
 | 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
 | 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | Ready | ADR-0005 | 建議 008 之後 |
@@ -612,6 +615,9 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 
 **執行層序列化(不得並行,共用 `src/ui/battle/battle_screen.gd`)**:`M6(008-011) → M5(012-013)
 → M4(014-015)`。規劃層可並行的只有 M2(001-002)與 M3a(003-006),M3b(007)需等 M2。
+🔴 **2026-09-30 追加**:M3a 內部新增依賴——003b 排在 004/005/006 之前(管理者裁決,
+見 `story-index.md`),且動工期間**不得並行其他戰棋工作單**(003b 會同時修改
+`battle_controller.gd`/`battle_loop.gd`,與其他 story 可能改動的檔案重疊)。
 
 **M5 兩張(012/013)目前 `Status: Blocked`**——阻擋條件是 `localization-infrastructure` Story 001
 (核心 key 查找 API)尚未完成,檢查方式見兩張 story 檔各自的「阻擋條件」節

@@ -57,6 +57,46 @@ static func is_attack_legal(
 	return true
 
 
+## story-003-los-blocked-in-range-query.md: returns [code]true[/code] if an
+## attack from [param from] to [param to] falls within [param min_range]/
+## [param max_range] but is blocked by an occluding cell along the way —
+## GDD Visual/Audio §1.3's third overlay layer ("範圍內但不可攻擊"), checked
+## via [param is_occluding] delegated to [method LineOfSight.is_clear] exactly
+## as [method is_attack_legal] already does. This is the complement half of
+## that method, not a new algorithm: for any given
+## [code]from[/code]/[code]to[/code]/[code]min_range[/code]/[code]max_range[/code]/
+## [code]is_occluding[/code], exactly one of the following holds —
+## [br]
+## 1. Out of range -> [method is_in_range] false, both this method and
+##    [method is_attack_legal] false ("無疊加").
+## [br]
+## 2. In range, LOS clear (or melee distance 1, which never checks LOS) ->
+##    [method is_attack_legal] true, this method false ("合法可攻擊").
+## [br]
+## 3. In range, LOS blocked -> [method is_attack_legal] false, this method
+##    true ("範圍內但不可攻擊").
+## [br]
+## Melee weapons (whose [param max_range] is 1) structurally can never reach
+## state 3: exactly like [method is_attack_legal], the line-of-sight check
+## below only runs when the Manhattan distance is 2 or greater, and the only
+## distance a [code]max_range = 1[/code] weapon can be in range at is 1 — so
+## this method returns [code]false[/code] for every input a melee weapon can
+## produce, with no special-case branch (GDD Visual/Audio §1.3: "近戰不受
+## 視線檢查……不需實作第三態").
+static func is_attack_blocked_by_los(
+	from: Vector2i,
+	to: Vector2i,
+	min_range: int,
+	max_range: int,
+	is_occluding: Callable
+) -> bool:
+	if not is_in_range(from, to, min_range, max_range):
+		return false
+	if _manhattan_distance(from, to) < 2:
+		return false
+	return not LineOfSight.is_clear(from, to, is_occluding)
+
+
 ## Manhattan distance shared by [method is_in_range] and
 ## [method is_attack_legal].
 static func _manhattan_distance(from: Vector2i, to: Vector2i) -> int:

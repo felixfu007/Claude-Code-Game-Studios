@@ -3,7 +3,7 @@
 > **層**:Cross-cutting Infrastructure
 > **權威文件**:無 GDD(基礎設施,非遊戲系統 —— 先例 `screen-scaling`)
 > **狀態**:🟢 **Ready**(2026-09-29 管理者裁決四項全數表態,見下方「需要管理者裁決的事」節的裁決紀錄。原狀態行為 `Draft(骨架完成,待管理者裁決本檔「需要管理者裁決的事」節後可過 Ready)`,條件已成立)
-> **Stories**:待切分(草案見下方「Stories」節,本批不建立 story 檔)
+> **Stories**:~~待切分(草案見下方「Stories」節,本批不建立 story 檔)~~ → ✅ **2026-09-30 已切分完成**(`localization-lead`):`story-index.md` + `story-001`~`story-003` 三張完整 story 檔,**權威清單是 [story-index.md](story-index.md)，下方「Stories」節是切分前的草案，逐字保留供追溯、不再是正本**。
 > **建立日期**:2026-09-29
 
 ## 為什麼這個 epic 存在
@@ -222,6 +222,8 @@ $ grep -rn "^const TEXT_" src/ --include=*.gd
 
 ## Stories(草案,本批不建立 story 檔)
 
+> 🔴 **2026-09-30:本節已被 `story-index.md` 取代,不再是正本。** 下表是 2026-09-29 切分前的草案,**逐字保留供追溯**。實際切出來的三張 story 檔、依賴關係與 gating 判定以 `story-index.md` 為準;本表與它若有出入,以 `story-index.md` 為準。
+
 | # | 暫定名稱 | 範圍 | 是否為 Q4 的 gating 模組 |
 |---|---|---|---|
 | 001 | 核心 key 查找 API + locale 檔案結構(骨架) | Q1 未查證項的實機驗證、`project.godot` 設定、至少一個 key 端到端可用 | ✅ 是 —— M5 story 開工前必須完成 |
@@ -233,8 +235,23 @@ $ grep -rn "^const TEXT_" src/ --include=*.gd
 1. `project.godot` `[internationalization]` 區塊具體鍵名與 CSV 欄位格式(Q1)。
 2. `tr()` key 是否可直接用階層式 dot-notation 字串,實機是否有限制(Q1)。
 3. 繁體中文對應的 Godot locale 代碼該選 `zh_TW` 或 `zh_Hant`(Q1)。
+   ✅ **2026-09-30 已關閉** —— 2026-09-29 探針實測 + `technical-director` 拍板 `zh_TW`,
+   見下方「🔴 技術總監裁決:繁體中文 locale 代碼(2026-09-30)」節。
 4. Godot 官方文件的即時查證 —— 本次沒有網路擷取工具可用,完全依賴專案內
    `docs/engine-reference/godot/` 現有文件,未做外部交叉核對。
+5. 🔴 **(2026-09-30 新增,由上述 locale 裁決登記)真實 Windows/Steam 平台回報的系統 locale
+   字串格式**,以及**萬一被 `set_locale()` 靜默降級成裸 `zh` 之後 `tr()` 還找不找得到
+   `zh_TW` 那份翻譯** —— 後半是本專案覆核時新發現的,探針 log 裡一行都沒量過。
+   **仍然開著。** 關閉者 `godot-specialist`、時機為 **Story 001 驗收之前**、要量什麼與
+   證據等級要求,全部寫在該裁決節的第五節 (c) 表。
+   ⚠️ **這一項不阻擋 locale 代碼的選擇**(理由見該節第五節 (a):它與欄位命名正交),
+   但**它阻擋「本地化管線在玩家機器上會正確啟動」這個宣稱** —— 兩者不要混為一談。
+
+> 📌 **上方第 1、2 項本節不動。** 同一支探針其實也量了第 1 項(`project.godot`
+> `[internationalization]` 真實鍵名與預設值,見該探針 README 的 Q1 表),但**要不要據此關閉它,
+> 是 `localization-lead` 與 Story 001 的事,不是本次 locale 裁決的職權** ——
+> `technical-director` 在此只登記「材料已存在」,不代為關閉。第 2 項(dot-notation key)
+> 該探針未測,仍完全開著。
 
 ## ✅ 管理者裁決紀錄(2026-09-29,協調者當日呈報並記錄)
 
@@ -244,7 +261,7 @@ $ grep -rn "^const TEXT_" src/ --include=*.gd
 |---|---|---|---|
 | 1 | locale 檔案放哪個目錄 | **`assets/data/locales/`** —— 採本檔原提案的第一候選,理由亦採原文:`assets/data/` 現有定義就是「資料驅動的設定檔」 | ⏳ 待建立。🔴 **`.claude/docs/directory-structure.md` 是逐條稽核過的圖,明文「需要新目錄時先建立再畫」—— 目錄實際建立之後才更新那張圖,不得預先畫上去** |
 | 2 | 要不要寫一份架構決策文件(ADR) | **不寫** —— 採本檔自己的傾向。依據是 `.claude/docs/coding-standards.md` 2026-09-01 管理者裁決:架構文件只在**跨系統契約**時才寫,且流程劑量規則預期剩下六個系統只再產生 0~1 份 | ✅ 已裁決,無待辦 |
-| 3 | `zh_TW` vs `zh_Hant` | **先實機探針,再由 `technical-director` 依探針結果拍板** —— 管理者不憑感覺選字串 | ⏳ 探針已於同日派工 `godot-specialist`,產出路徑 `prototypes/godot-specialist-i18n-locale-probe-2026-09-29/` |
+| 3 | `zh_TW` vs `zh_Hant` | **先實機探針,再由 `technical-director` 依探針結果拍板** —— 管理者不憑感覺選字串 | ✅ **已拍板(2026-09-30,`technical-director`):採用 `zh_TW`,CSV 只設一個繁體欄位、標頭逐字 `zh_TW`。** 全文、原始輸出行依據、不涵蓋範圍、以及一項仍然開著的未查證遺留,見下方「🔴 技術總監裁決:繁體中文 locale 代碼(2026-09-30)」節。原狀態行逐字保留:「⏳ 探針已於同日派工 `godot-specialist`,產出路徑 `prototypes/godot-specialist-i18n-locale-probe-2026-09-29/`」——探針已完成,條件已成立 |
 | 4 | Story 001~003 准不准開工 | **准** | ⏳ 待 `localization-lead` 切 story 檔 |
 
 🔴 **本裁決解鎖的下游**:`production/epics/tactical-combat/` 的 **story-012 / story-013**
@@ -255,6 +272,210 @@ $ grep -rn "^const TEXT_" src/ --include=*.gd
 是一份 2026-09-01 全庫稽核重畫過的文件,它自己的檔頭逐字寫著舊版「畫著 `src/networking/` ——
 但 `networking_features` 是本專案的**專案級禁令**」,並因此立下規則:**只畫實際存在的東西**。
 所以是「先建目錄、放進真的檔案,然後才更新那張圖」,不是「先改圖再建」。
+
+## 🔴 技術總監裁決:繁體中文 locale 代碼(2026-09-30)
+
+**授權依據**:上方「管理者裁決紀錄」表第 3 列逐字 ——「先實機探針,再由 `technical-director`
+依探針結果拍板」。探針已於 2026-09-29 完成,證據目錄
+`prototypes/godot-specialist-i18n-locale-probe-2026-09-29/`。**本節未重跑探針,亦未開新探針。**
+
+### 一、裁決
+
+**採用 `zh_TW`。** 連帶兩項可直接執行的具體化:
+
+1. **CSV 只設一個繁體欄位,標頭逐字寫 `zh_TW`**(大小寫照這樣寫,理由見第五節的降級陷阱)。
+   **不同時提供 `zh_Hant` 欄位** —— 這一併避開探針自陳未查證的「兩份同時註冊時誰勝出」
+   的註冊順序相依性(見第四節第 4 點)。
+2. `.translation` 檔名與 `Translation.locale` 屬性會逐字沿用該標頭字串,故本裁決實際落在
+   **CSV 標頭那一格**,不需要另外在程式碼裡寫死 locale 字串。
+
+**一句話理由**:目標平台的引擎自己解析出來的 locale 就是 `zh_TW` —— 選它等於執行期字串
+**完全相等**,不依賴任何 fallback 比對邏輯。
+
+### 二、依據 —— 原始輸出行(整行貼上,不寫行號)
+
+證據檔:`prototypes/godot-specialist-i18n-locale-probe-2026-09-29/run_output_headless.txt`。
+**本節刻意不引用行號**(依 `.claude/rules/design-docs.md`「No line-number self-references」
+的同一理由:行號會漂)。每一段都附當場可重跑的 `grep` 定位指令。
+
+#### (1) 決定性的那一行 —— 也是探針自己的建議理由裡沒有用到的一行
+
+```
+BEFORE any set_locale, get_locale() = zh_TW
+```
+定位:`grep -n "BEFORE any set_locale" prototypes/godot-specialist-i18n-locale-probe-2026-09-29/run_output_headless.txt`
+
+**這一行為什麼是決定性的**:它是 `probe.gd` 第一次讀 `TranslationServer.get_locale()`,
+在此之前腳本沒有呼叫過 `set_locale()`,探針專案也沒有 `[internationalization]` 區塊、
+沒有設 `internationalization/locale/test`。**亦即這個值是引擎自己從本機 Windows 系統
+locale 解析出來的,不是腳本餵進去的。** 本技術總監獨立覆核兩點:
+
+```
+$ grep -n "OS\." prototypes/godot-specialist-i18n-locale-probe-2026-09-29/probe.gd
+(零命中,exit 1)
+```
+→ 探針全程沒有呼叫 `OS.get_locale()` 之類的方法,那個 `zh_TW` 不可能是腳本自己組出來的。
+
+```
+$ grep -n "BEFORE any set_locale" -B 20 probe.gd
+...
+64-	print("--- Q2b: TranslationServer.set_locale() round-trip / normalization ---")
+65:	print("BEFORE any set_locale, get_locale() = ", TranslationServer.get_locale())
+```
+→ 其上 20 行全是 `ClassDB` 內省與列印,沒有任何 `set_locale()`。
+
+🔴 **這條依據比探針 README 列的四條都強,而 README 一條都沒提到它。** README 的四條理由
+談的是「哪個名字語意比較貼切」與「兩個都不會壞」;這一行談的是**在目標平台上,哪一個字串
+會與執行期實際值完全相等**。前者是偏好,後者是事實。
+
+#### (2) 兩者的顯示名稱差異(支持,但只是次要)
+
+```
+get_locale_name(zh_TW)   = Chinese, Taiwan
+get_locale_name(zh_Hant) = Chinese (Traditional Han)
+```
+定位:`grep -n "get_locale_name" ... run_output_headless.txt`
+
+#### (3) 證明「選錯也不會壞」的三組量測 —— 這降低本決定的風險,但不構成選擇依據
+
+```
+compare_locales(zh_TW,zh_Hant)   = 10
+compare_locales(zh_TW,zh_TW)     = 10
+compare_locales(zh_Hant,zh_TW)   = 10
+```
+
+```
+--- Case A: ONLY zh_TW translation registered, active locale forced to zh_Hant ---
+get_locale() = zh_Hant
+tr(test_key) = [測試甲_zhTW]  -- empty or literal test_key echoed back means FALLBACK FAILED; seeing the zh_TW string means FALLBACK SUCCEEDED
+```
+
+```
+--- Case B: ONLY zh_Hant translation registered, active locale forced to zh_TW ---
+get_locale() = zh_TW
+tr(test_key) = [測試乙_zhHant]  -- empty or literal test_key echoed back means FALLBACK FAILED; seeing the zh_Hant string means FALLBACK SUCCEEDED
+```
+定位:`grep -n "compare_locales\|Case A:\|Case B:" ... run_output_headless.txt`
+
+#### (4) 本裁決實際落在哪一格 —— CSV 標頭字串
+
+```
+res_zh_tw.locale (verbatim from CSV header zh_TW) = zh_TW
+res_zh_hant.locale (verbatim from CSV header zh_Hant) = zh_Hant
+```
+定位:`grep -n "verbatim from CSV header" ... run_output_headless.txt`
+
+### 三、對探針執行者「建議 `zh_TW`」的表態
+
+**採納它的結論,但不採納它的主要理由。** 逐項:
+
+| 探針 README 的理由 | 本技術總監的判定 |
+|---|---|
+| 理由 1:`get_locale_name()` 顯示「Chinese, Taiwan」語意更精確 | **降為次要。** 那是**給人看的顯示字串**差異,實測不影響任何執行期行為。以它當主要依據,等於用偏好拍板 —— 而管理者裁決表第 3 列逐字要求的正是「不憑感覺選字串」 |
+| 理由 2:`compare_locales` 同分、雙向 fallback 皆成功 | **複核無誤,但它證明的是「兩個都可以」,不是「該選哪個」。** 它的正確用途是說明**本決定可逆性高、風險低**(決策框架第 6 條),不是選擇依據 |
+| 理由 3:`standardize_locale()` 不會互相正規化 | **複核無誤。** 同上,是「兩者並非別名」的事實,不偏向任一方 |
+| 理由 4:`zh` / `Hant` / `TW` 三個組成部分在引擎資料庫皆存在 | **複核無誤。** 同上,排除了「一個合法一個不合法」,不構成選擇依據 |
+| **(README 沒有列)** `BEFORE any set_locale, get_locale() = zh_TW` | 🔴 **本裁決的主要依據。** 見第二節(1) |
+
+**結論方向與探針相同,推導路徑不同。** 記在這裡是因為下一個人若要推翻本裁決,
+**要推翻的是第二節(1),不是 README 那四條** —— 推翻那四條不會動搖本裁決。
+
+### 四、本裁決**不涵蓋**什麼
+
+1. 🔴 **這是命名慣例的選擇,不是功能的選擇。** 第二節(3)的三組量測已實測排除功能差異:
+   `compare_locales` 兩個方向都是 10(與完全相同字串同分),Case A/B 雙向 fallback 皆成功。
+   **沒有任何功能是選 `zh_TW` 才有、選 `zh_Hant` 就沒有的。** 不要把本裁決引用成技術能力的依據。
+2. **不涵蓋未來加簡體 `zh_CN` 時會發生什麼 —— 但可以說它不會比另一個選項更擋路。**
+   ```
+   compare_locales(zh_TW,zh_CN)     = 3
+   compare_locales(zh_Hant,zh_Hans) = 3
+   ```
+   兩個候選對各自的簡體對立面**都是 3 分**,對稱。
+   ⚠️ **但 log 沒有量過「`zh_TW` 與 `zh_CN` 兩份同時註冊、系統 locale 是 `zh_CN` 時誰勝出」。**
+   故「將來加得進去」是**推論,不是實測**。真要加簡體時,必須另跑一次探針,不得引用本節當依據。
+3. **不涵蓋 `internationalization/locale/fallback` 該設什麼。**
+   ```
+   PROP name=internationalization/locale/fallback type=4 hint=32 hint_string= usage=6
+     get_setting() -> en
+   ```
+   實測預設是 `en`(不是空字串)。本專案不出英文版,**這個預設值指向一份不存在的翻譯**——
+   它與 Q3「缺 key 時絕不對玩家顯示裸 key」是同一件事的兩半,**由 Story 001 決定,本裁決不代它決定。**
+4. **不涵蓋合併形式 `zh_Hant_TW`,也不涵蓋兩份同時註冊時的勝出順序。**
+   探針 Case E 實測「兩者同時註冊、locale = `zh_Hant_TW` 時 `zh_TW` 勝出」,
+   但它**自陳只測了一種註冊順序**。第一節第 1 點(只設一欄)使這個相依性**現在咬不到**;
+   **若將來有人加第二個繁體欄位,這一項會立刻回來。**
+5. **不涵蓋 locale 檔案放哪個目錄**(已由上方管理者裁決 1 決定為 `assets/data/locales/`)、
+   **不涵蓋 key 命名慣例**(Q1 未查證項 2,仍開著)、**不涵蓋字型**(Q3 明文不做)。
+6. **不涵蓋「要不要為本地化寫一份 ADR」** —— 上方管理者裁決 2 已裁定不寫,本裁決不推翻它。
+   本節本身即是「一次跨系統技術選擇記在擁有它的 epic 檔裡」的實例,與該裁決一致。
+
+### 五、🔴 仍然開著的未查證項(逐字登記,不得在本裁決裡消失)
+
+探針執行者誠實標記的一項,**逐字轉錄自
+`prototypes/godot-specialist-i18n-locale-probe-2026-09-29/README.md` 的「未查證(Q2)」節**:
+
+> - **實際 Windows/Steam 平台回報的系統 locale 字串格式**(`OS.get_locale()` /
+>   `OS.get_locale_language()`)——**本次探針完全沒有測試這兩個方法**,只測了
+>   `TranslationServer` 這一側。**若系統回報的字串本身就帶著奇怪的大小寫或格式,第 1 點
+>   發現的「大小寫陷阱」可能在真實裝置上發生,而本次探針無法確認 Windows/Steam 實際會回報
+>   什麼字串** —— 這是下一步若要收斂到「production 環境會不會踩到這個陷阱」需要另外驗證的項目。
+
+對應的陷阱原始輸出行:
+```
+after set_locale(zh_HANT_tw) mixed case -> get_locale() = zh
+```
+定位:`grep -n "mixed case" ... run_output_headless.txt`
+
+#### (a) 判定:**不阻擋本次拍板**,理由是結構性的
+
+這個陷阱與「我們把 CSV 欄位命名成什麼」**正交**:不論標頭寫 `zh_TW` 或 `zh_Hant`,只要
+系統送進來的字串大小寫不規範,`set_locale()` 都會同樣降級。
+**它不是兩個選項之間的鑑別因子,因此結構上不可能改變本裁決的方向。**
+
+#### (b) 🔴 但本次覆核發現這個洞比 README 寫的更大一塊
+
+README 說的是「不知道系統會送什麼字串進來」。本技術總監另外查了**降級之後會怎樣**,
+結果是 log 裡**一行都沒量過**:
+
+```
+$ grep -nE "compare_locales\((zh,|.*,zh\))" run_output_headless.txt
+(零命中,exit 1)
+```
+→ 全份 log 的 5 條 `compare_locales` 量測(`zh_TW`/`zh_Hant`/`zh_CN`/`zh_Hans` 之間)
+**沒有任何一條的任一側是裸 `zh`**。
+
+```
+$ grep -n "get_locale() = zh$" run_output_headless.txt
+129:after set_locale(zh_HANT_tw) mixed case -> get_locale() = zh
+```
+→ 全份 log 中 active locale 變成裸 `zh` 只出現這一次,**而其後沒有任何一次 `tr()` 量測**。
+
+**亦即:萬一降級真的在玩家機器上發生,`tr()` 還找不找得到 `zh_TW` 那份翻譯,目前無人知道。**
+Case A/B 證明的是 `zh_TW` ↔ `zh_Hant` 之間互相 fallback 成功,**不能外推到 `zh` → `zh_TW`。**
+⚠️ **下一個人不得把 Case A/B 當成「降級也沒關係」的證據。**
+
+#### (c) 誰在什麼時候關掉它
+
+| | 內容 |
+|---|---|
+| **關閉者** | `godot-specialist`(平台/引擎行為,依 `.claude/docs/technical-preferences.md` 路由表) |
+| **時機** | **Story 001 驗收之前**,不是之後 —— Story 001 是 `tactical-combat` story-012/013 的解鎖前提,這項若留到驗收後才查,發現問題時下游已經在跑 |
+| **要量什麼** | 在**匯出建置**(不是編輯器、不是暫存空專案)上讀出並留 log:①`OS.get_locale()` ②`OS.get_locale_language()` ③`TranslationServer.get_locale()` 三者的**原始字串**;④在該 locale 下對一個已知 key 做一次 `tr()`,確認命中的是 `zh_TW` 那份 |
+| **證據要求** | 依 `.claude/docs/technical-preferences.md`「(A) 級必須附它實際執行的那支檔案的路徑」與「留 log,不要只留結論」。**沒有附檔案路徑與原始 log 的結論一律降為 (C) 級,不得據以關閉本項。** |
+| **量到的若不是 `zh_TW` 怎麼辦** | **不回頭改本裁決**(欄位名不是問題所在,見上方 (a))。處置是「啟動期要不要顯式呼叫 `TranslationServer.set_locale()`」——**那是 Story 001 的設計決定,本裁決刻意不代它決定。** |
+| **Steam 那一半** | Steam 客戶端語言與 OS locale 是兩件事,本機無 Steam 環境。**這一半留在 Story 001 之外**,由未來的 Steam 整合工作單承接;現在只登記它存在,不假裝 Story 001 能關掉它。 |
+
+⚠️ **沒有任何 skill、lint 或閘門會檢查上表有沒有被執行** —— 與本專案其餘同類規則一樣,
+遵守與否目前不可觀測。寫在這裡買到的是「下一個人有明文可查對」,不是「一定會有人做」。
+
+### 六、我們怎麼知道這個裁決是對的(驗證條件)
+
+- ✅ **成立的樣子**:Story 001 完成後,在匯出建置上 `TranslationServer.get_locale()` 讀回
+  `zh_TW`,且 `tr()` 命中的是 `zh_TW` 那份翻譯 —— **完全相等命中,沒有經過 fallback**。
+- ❌ **不成立的樣子**:任一台目標機器讀回的不是 `zh_TW`。那表示第二節(1)的依據**只在
+  這一台開發機上成立**,本裁決的主要理由被抽掉。
+  🔴 **但即使如此,正確反應多半不是改 locale 字串,而是在啟動期顯式 `set_locale()`** ——
+  因為第二節(3)已實測 `zh_TW` ↔ `zh_Hant` 雙向 fallback 皆成功,改字串換不到東西。
 
 ## 需要管理者裁決的事
 

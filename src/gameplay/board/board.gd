@@ -168,10 +168,58 @@ func get_occupant(pos: Vector2i) -> int:
 
 ## Returns every tile reachable from origin with at most mp movement points,
 ## using Dijkstra's algorithm over 4-directional (orthogonal) moves. The
-## origin tile itself is never included in the result. Tiles occupied by a
-## unit (other than the search having started there) cannot be entered or
-## passed through. Out-of-bounds tiles are never reachable.
-func reachable_tiles(origin: Vector2i, mp: int) -> Array[Vector2i]:
+## origin tile itself is never included in the result. Out-of-bounds tiles
+## are never reachable.
+##
+## Two independent boolean switches (design/gdd/tactical-combat-system.md
+## Formulas 公式三, Story 002 — `reachable_set(u, ignore_occupancy=false,
+## ignore_passability=false)`) select which of four collectively-exhaustive,
+## pairwise-disjoint sets this describes (GDD AC-13: `A ⊆ B ⊆ C`, and
+## `A ∪ (B\A) ∪ (C\B) ∪ (Grid\C) = Grid` with no tile in more than one of the
+## four). Callers that do not pass either switch (both default false) get
+## byte-for-byte the same output as before this story existed — this is the
+## sole meaning of "reachable" this method uses when acting as a movement
+## legality check:
+##   - ignore_occupancy=false, ignore_passability=false -> `A` (the only set
+##     that is ever a legal movement target set)
+##   - ignore_occupancy=true,  ignore_passability=false -> `B` (`A` plus every
+##     tile whose only obstruction is occupancy)
+##   - ignore_occupancy=true,  ignore_passability=true  -> `C` (`B` plus every
+##     tile whose only remaining obstruction is impassable terrain)
+##   - `Grid \ C` is never returned by this method under any parameter
+##     combination — every tile in it is unreachable regardless of which
+##     switches are set, because it takes more than `mp` accumulated cost to
+##     reach even with both switches ignoring their respective obstruction
+##
+## 🔴 `ignore_occupancy=true`/`ignore_passability=true` outputs exist ONLY so a
+## caller (story-007's move-range query interface) can label WHY a tile is
+## unreachable (blocked by occupancy vs. terrain vs. insufficient MP) for UI
+## display. This method itself never treats a `B`- or `C`-only result as a
+## legal move target, and deliberately has no method name, parameter name, or
+## return value that implies "legal move set" when either switch is true —
+## that judgment is the caller's responsibility (GDD Formulas 公式三: 「此參數
+## 僅供 UI Requirements 標示不可達成因使用……不得作為移動合法性判定依據」).
+##
+## Occupied tiles are excluded as both path-through tiles AND as the
+## destination itself (unless ignore_occupancy=true); impassable
+## (`passable()=false`) tiles are likewise excluded both as path-through
+## tiles and as the destination itself (unless ignore_passability=true) —
+## reaching a tile requires every tile ALONG the path, not just the
+## destination, to clear whichever of these two checks is currently active
+## (GDD AC-2, Story 002 Implementation Notes #2/#3: passability must gate
+## traversal independently of and prior to cost accumulation, never be
+## expressed by an inflated cost value).
+##
+## Regardless of which combination is requested, the underlying search is a
+## bounded frontier expansion: it early-exits once a candidate's accumulated
+## cost exceeds mp and never floods every board tile before filtering
+## (TR-tactical-008, GDD Open Questions OQ-16).
+func reachable_tiles(
+	origin: Vector2i,
+	mp: int,
+	ignore_occupancy: bool = false,
+	ignore_passability: bool = false
+) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	if not is_in_bounds(origin):
 		return result
@@ -189,11 +237,14 @@ func reachable_tiles(origin: Vector2i, mp: int) -> Array[Vector2i]:
 		if visited.has(current):
 			continue
 		visited[current] = true
+		_on_tile_visited(current)
 
 		for neighbor: Vector2i in _get_orthogonal_neighbors(current):
 			if not is_in_bounds(neighbor):
 				continue
-			if has_occupant(neighbor):
+			if not ignore_occupancy and has_occupant(neighbor):
+				continue
+			if not ignore_passability and not passable(neighbor):
 				continue
 
 			var candidate_cost: int = best_cost[current] + get_move_cost(neighbor)
@@ -219,6 +270,18 @@ func _get_orthogonal_neighbors(pos: Vector2i) -> Array[Vector2i]:
 		pos + Vector2i.RIGHT,
 	]
 	return neighbors
+
+
+# QA-only instrumentation seam (Story 002, TR-tactical-008/OQ-16 "bounded
+# frontier expansion" characteristic) — a no-op in production, called exactly
+# once per tile popped from reachable_tiles()'s frontier and marked visited.
+# Overridable only by a test-only subclass (same pattern as _terrain_entry()
+# above — see its doc comment for the precedent), which counts invocations so
+# a test can assert the algorithm visits fewer tiles than the full board for
+# a small mp, and more tiles as mp grows — proving early termination rather
+# than "flood-fill the whole board, then filter afterward".
+func _on_tile_visited(_pos: Vector2i) -> void:
+	pass
 
 
 # Returns the index within frontier whose best_cost entry is smallest.

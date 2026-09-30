@@ -1,7 +1,11 @@
 # Story 002: `reachable_tiles()` 雙開關(`ignore_occupancy`/`ignore_passability`)+ 有界前緣展開
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M2
-> **Status**: Ready
+> **Status**: ✅ **Complete**(2026-09-30 —— 實作 + 9 條測試皆完成,`gameplay-programmer` 本機
+> 跑全套測試:`978 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans`,
+> exit 100。基線 969 → 978 正好是本 story 新增的 9 條;唯一失敗是既有那條刻意紅且已核准的
+> `affinity_phi_provider` 測試,非本 story 造成。既有 `board_test.gd` 四條 `reachable_tiles`
+> 測試以及 `board_passable_test.gd` 全數維持通過,驗證新簽章向下相容)
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M(1 個完整 session)
@@ -157,7 +161,22 @@ for neighbor: Vector2i in _get_orthogonal_neighbors(current):
 **Story Type**: Logic
 **Required evidence**: `tests/unit/gameplay/board/board_reachable_tiles_test.gd` —— BLOCKING
 
-**Status**: [ ] Not yet created
+**Status**: ✅ **Created**(2026-09-30)—— 9 條測試,對應 AC #1/#3/#4/#5/#6/#2/#7(見下方逐條
+AC 對應表)。AC #8(介面契約,禁止把 `ignore_occupancy`/`ignore_passability` 輸出當合法移動集合)
+不透過自動化測試驗收,以 `reachable_tiles()` 文件註解明文聲明契約邊界替代(詳見下方對應說明)。
+
+**逐條 AC 對應**:
+
+| AC | 驗收方式 | 對應測試 |
+|---|---|---|
+| #1 新簽章向下相容 | 自動化 | `test_reachable_tiles_default_args_match_pre_story_two_arg_call_signature`,並以既有 `board_test.gd` 四條 `reachable_tiles` 測試 + `board_passable_test.gd` 全數維持通過佐證 |
+| #2 四布林組合良定義、`A⊆B⊆C`、四集合窮盡不相交 | 自動化 | `test_reachable_tiles_four_way_partition_is_exhaustive_and_disjoint`(逐格掃描全盤 78 格,並在掃描中直接斷言子集關係) |
+| #3 `passable=false` 路徑/終點恆排除,除非 `ignore_passability=true` | 自動化 | `test_reachable_tiles_ignore_passability_recovers_impassable_destination`(終點向量)、`test_reachable_tiles_impassable_terrain_blocks_pass_through_even_when_destination_itself_is_passable`(中繼向量)、`test_reachable_tiles_impassable_destination_excluded_regardless_of_mp_size`(MP 任意大向量) |
+| #4 已佔位路徑/終點恆排除,除非 `ignore_occupancy=true` | 自動化 | `test_reachable_tiles_ignore_occupancy_recovers_tile_blocked_by_sole_occupied_path` |
+| #5 `origin` 恆屬於 `A` | 自動化 | `test_reachable_tiles_origin_always_conceptually_in_a_even_when_origin_tile_itself_is_occupied`(邊界情境)+ 隱含於四集合分類測試(origin 恆計入 `A`) |
+| #6 `MP=0` 時 `A={origin}` | 自動化 | `test_reachable_tiles_mp_zero_returns_empty_array_under_all_flag_combinations` |
+| #7 有界前緣展開 | 自動化 | `test_reachable_tiles_bounded_frontier_expansion_visits_more_tiles_as_mp_grows`(新增 `_on_tile_visited()` QA-only 診斷接縫,仿 `_terrain_entry()` 既有覆寫接縫慣例) |
+| #8 `ignore_*` 輸出僅供成因標示,不得為移動合法性判定 | **不適用於自動化單元測試**(這是介面契約/命名約束,不是可斷言的執行期行為——`Board` 本身從不對外提供任何暗示「合法移動集合」的別名或方法) | 以 `reachable_tiles()` 文件註解明文聲明(見 `src/gameplay/board/board.gd` 該方法 doc comment 的 🔴 段落) |
 
 ## Dependencies
 

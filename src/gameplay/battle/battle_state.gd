@@ -70,6 +70,44 @@ var _turn_order: TurnOrder = null
 # a no-op when it does (AC-W6).
 var _card_deck: CardDeck = null
 
+## story-003-los-blocked-in-range-query.md: monotonically increasing counter,
+## incremented whenever a committed write changes any data a version-stamped
+## query reads (currently: unit position via [method move_unit], HP/occupancy
+## via [method resolve_attack]). Read-only from outside this class — an
+## external write is rejected with [method push_error] and the field's value
+## is left unchanged, matching [code]docs/architecture/adr-0001-tactical-query-atomicity-contract.md[/code]'s
+## exact prescribed shape for this field.
+##
+## 🔴 **This is a deliberately partial slice of ADR-0001's Mechanism One, not
+## full compliance** — see this story's own "實作進度" section in
+## [code]production/epics/tactical-combat/story-003-los-blocked-in-range-query.md[/code]
+## for the full reasoning. What is NOT built here: [code]authoritative_write_in_progress[/code]
+## (Mechanism Two's re-entrancy guard), [code]commit_authoritative_change()[/code]
+## (the single entry point the ADR specifies every mutator should route
+## through), and — critically — this counter is NOT incremented by any of
+## [TurnOrder]'s five mutators ([code]use_move[/code]/[code]use_attack[/code]/
+## [code]end_unit_turn[/code]/[code]advance_faction[/code]/[code]remove_unit[/code])
+## or by [Board]'s [code]set_occupant[/code]/[code]clear_occupant[/code] called
+## from anywhere other than this class's own two mutators below. This is
+## sufficient for [method is_attack_range_blocked_by_los] (the only
+## version-stamped query this story adds — its inputs are exactly a unit's
+## current position and its static [member Unit.min_range]/[member Unit.max_range],
+## neither of which any [TurnOrder] mutator or [CardModifier] ever changes:
+## verified 2026-09-30, [code]grep -rln "min_range\|max_range" src/gameplay/cards/[/code]
+## returns no hits). Full ADR-0001 compliance (all six mutator paths, the
+## write guard, [Unit] field setters) spans [code]board.gd[/code] and
+## [code]turn_order.gd[/code] and is flagged as a cross-story architecture
+## decision for [code]lead-programmer[/code]/[code]technical-director[/code],
+## not something this single-query story builds.
+var _combat_state_version: int = 0
+var combat_state_version: int:
+	get:
+		return _combat_state_version
+	set(value):
+		push_error(
+			"combat_state_version is read-only outside BattleState; rejected external write of %d" % value
+		)
+
 
 ## Builds a [BattleState] from a terrain grid and a roster text blob: parses
 ## both, then places every unit on the board at its [member Unit.start_pos].
@@ -194,7 +232,9 @@ func legal_moves(id: int) -> Array[Vector2i]:
 ## Attempts to move the unit to dest. Returns [code]false[/code] and leaves
 ## every piece of state untouched if dest is not in [method legal_moves].
 ## On success, updates board occupancy and [member _positions] together in
-## the same call so they never drift out of sync.
+## the same call so they never drift out of sync, then increments
+## [member combat_state_version] (story-003-los-blocked-in-range-query.md —
+## see that field's doc comment for the current scope of this counter).
 func move_unit(id: int, dest: Vector2i) -> bool:
 	if not legal_moves(id).has(dest):
 		return false
@@ -202,6 +242,7 @@ func move_unit(id: int, dest: Vector2i) -> bool:
 	board.clear_occupant(origin)
 	board.set_occupant(dest, id)
 	_positions[id] = dest
+	_combat_state_version += 1
 	return true
 
 
@@ -259,6 +300,32 @@ func is_attack_reachable(attacker_id: int, from: Vector2i, to: Vector2i) -> bool
 	)
 
 
+## story-003-los-blocked-in-range-query.md: returns [code]true[/code] if
+## attacker_id, hypothetically standing at [param from], would have
+## [param to] within its [member Unit.min_range]/[member Unit.max_range] band
+## but blocked by an occluding cell along the way — GDD Visual/Audio §1.3's
+## third overlay layer ("範圍內但不可攻擊"). This is the exact complement of
+## [method is_attack_reachable] (see [method CombatRules.is_attack_blocked_by_los]
+## for the three-way partition proof): for the same [param attacker_id]/
+## [param from]/[param to], exactly one of [method is_attack_reachable] or
+## this method can ever be true, never both, never neither, unless [param to]
+## is out of range entirely (in which case both are false).
+##
+## Same "pure predicate, occupancy-agnostic, terrain-only occlusion" shape as
+## [method is_attack_reachable] — see that method's own doc comment for why
+## [param from] need not equal [method position_of](attacker_id), and why
+## only [method Board.blocks_sight] ever occludes (units never do).
+func is_attack_range_blocked_by_los(attacker_id: int, from: Vector2i, to: Vector2i) -> bool:
+	var attacker: Unit = unit_by_id(attacker_id)
+	var is_occluding: Callable = func(cell: Vector2i) -> bool:
+		return board.blocks_sight(cell)
+	return CombatRules.is_attack_blocked_by_los(
+		from, to,
+		attacker.min_range, attacker.max_range,
+		is_occluding
+	)
+
+
 ## Resolves an attack and returns the damage actually dealt. [param phi] is
 ## only ever honored for a PLAYER attacker — if attacker_id belongs to an
 ## ENEMY unit, phi is forced to 0 before it reaches [method CombatRules.damage],
@@ -278,6 +345,7 @@ func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 	if not target.is_alive():
 		board.clear_occupant(position_of(target_id))
 		_positions.erase(target_id)
+	_combat_state_version += 1
 	return dealt
 
 
