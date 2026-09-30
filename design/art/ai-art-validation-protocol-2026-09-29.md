@@ -52,6 +52,17 @@
 3. **16GB VRAM 下的可行性,間接證據較多**——SDXL LoRA 訓練在 8~12GB 社群配置下已是
    常見設定(授權報告 3.2 節),16GB 有餘裕的可信度較高;SD 3.5 因模型版本(Large/Medium/
    Turbo)參數量差異大,16GB 能舒適訓練哪個版本,授權報告標記為「未查證」。
+
+   > 🔴 **2026-09-30 更正(`technical-director` WebSearch 查證,`art-director` 落筆)**:
+   > 上面「8~12GB 常見設定」低估了門檻。查證後的數字是 **12GB 最低 / 16GB 尚可
+   > (comfortable)/ 24GB 建議(recommended)**——8GB 是重度優化下的特例,不是常見設定。
+   > 原文可查:`docs/ai-art-pipeline/architecture-and-risks.md`
+   > (`grep -n "24GB\|comfortable" docs/ai-art-pipeline/architecture-and-risks.md`)。
+   > **裁決方向不變**:16GB 落在「尚可」這一檔,可行性結論仍成立,但語氣要從
+   > 「16GB 有餘裕」改為「16GB 剛好夠、且有前提」——前提是**須開啟 Kohya v0.9.0 的
+   > fused backward pass + bf16**(把約 24GB 的需求壓到約 10GB);沒開這個優化就不夠。
+   > 另有一條容易反著想:**VRAM 需求是按訓練解析度 1024 估算,不是按成品 128×128
+   > 估算**,兩者不要混用。
 4. **授權條款穩定性的軟訊號**——SD 3.5 系授權曾在初版引發社群反彈、一度被 Civitai 下架
    (授權報告 3.3 節),雖已修正,但代表 Stability AI 對這個系列的條款仍在調整;SDXL 的
    OpenRAIL++ 條款自 2023 年至今未見同等爭議。**這不影響今天能不能合法使用,只是一個
