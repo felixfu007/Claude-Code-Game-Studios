@@ -1,642 +1,260 @@
 # AI 繪圖服務:部署與傳輸架構
 
-> 🔴 **2026-09-30 協調者加註:本文的 CUDA / 驅動版本號不可照抄,已被同批另一份文件推翻。**
+> **狀態**:2026-09-30 管理者裁決落檔、版本號已更正、方案單一化為乙案(git 輪詢)。
 >
-> 本文多處寫 `cuda-12.1` / `nvidia-driver-550`(標記為 (C) 推測)。
-> 同日 `technical-director` 以 WebSearch 查證後寫進
-> `docs/ai-art-pipeline/architecture-and-risks.md` §1 的結論是:
-> **RTX 5070 Ti(Blackwell,sm_120)需要 CUDA 12.8 以上,PyTorch 需 2.7.0 以上。**
->
-> **兩者衝突,依證據等級以 §1 為準** —— §1 有查證來源,本文此處標的是推測。
-> 🔴 **照本文的版本號安裝,顯示卡會不能用**,而且它的錯誤訊息
->(`sm_120 is not compatible`)會讓人誤以為是硬體不支援,實際成因是裝錯版本。
->
-> **本文其餘內容(服務常駐、狀態設計、問題清單)不受此更正影響,原文一字未改。**
-
-> ⚠️ **本文 623 行,超過派工時設定的 200 行上限 3.1 倍,協調者知情保留。**
-> 原因:它把**甲、乙兩案的完整安裝腳本都寫完了**,而架構尚未裁決 —— 其中一半注定丟棄。
-> 依 `technical-preferences.md` 的流程劑量上限精神,這是過度生產。
-> **保留而不退回重寫的理由**:內容本身沒有錯,且裁決後刪掉一半即可,重寫的成本高於刪除。
-> 🔴 **裁決甲或乙之後,必須回來刪掉另一半,否則這份文件會同時描述兩個互斥的系統。**
-
-**本文件記述家中 RTX 5070 Ti 工作站與公司筆電之間的服務部署與通訊方案。**
-
-> 🔴 **驗證狀態**: 本文件為推測架構,尚未在實機執行。標記規則:
-> - **(A) 實機驗證** —— 在專案現有環境上執行過
-> - **(B) 專案文件明文** —— 已確認記載於既有文件
-> - **(C) 推測未驗證** —— 理論上可行,未經測試
+> **建議讀者**:工作在「實作 AI 繪圖自動化」的工程師。參考文件見各節引用。
 
 ---
 
-## 第一部分:家中工作站部署清單
+## 〇、架構概覽 —— 乙案(git 輪詢)
 
-### 環境假設 (待確認 §待管理者回答)
+**前置**:家中 RTX 5070 Ti(Blackwell) Windows 工作站與公司 GitHub 帳號已能通訊。Tailscale 已安裝於家機與個人手機,不在公司筆電上。
 
-| 項目 | 現況 | 待確認 |
-|------|------|--------|
-| 家中桌機 OS | 未知 | ✓ 需確認(Windows / Linux / macOS) |
-| GPU 驅動 | 未知 | ✓ 需確認(NVIDIA 驅動版本) |
-| 網路型態 | 完全未知 | ✓ 需確認(見後續各架構) |
-| 24 小時開機 | 未知 | ✓ 需確認 |
-| 公司筆電安裝權限 | 受限 | ✓ 需確認(IT 政策) |
+**流程**:
 
-### 部署步驟 (方案骨架,待 OS 確定後分岔展開)
+1. 公司筆電上的工具生成工單 JSON + PNG 組(見 `job-contract-and-checks.md`),寫入本地目錄
+2. 公司筆電執行 `git commit && git push` 到 GitHub (推送工單分支,如 `jobs/pending/`)
+3. 家中工作站上定時執行輪詢腳本(見下方【輪詢規則】),拉取新工單
+4. 工作站執行生成 → 後製 → 檢查(見 `ai-art-validation-protocol-2026-09-29.md`),產出 Result JSON + PNG
+5. 工作站執行 `git commit && git push` (推送結果分支,如 `jobs/completed/` 或 `jobs/failed/`)
+6. 公司筆電定時拉取(`git pull`),讀取結果
+7. 前端工具解析 Result,標記工單已完成或失敗;若失敗,可選擇調整參數後重試(入佇列數上限見下方【重試上限】)
 
-#### 方案 A: Windows 作為宿主
+**為什麼是這個方案?** — 見 `SPEC.md` 第二節。甲案(家裡開 REST 服務)被公司網路/資安政策一票否決(`technical-director` / `security-engineer` 評估);乙案避免新增網路相依,只用既有 GitHub 帳號。
 
-**(C) 假設家中為 Windows 11 或 Windows Server:**
-
-1. **AI 繪圖引擎安裝** (假設採 Stable Diffusion WebUI 或 Comfy UI)
-   - 下載並安裝至固定路徑,例: `D:\ai-art-service\`
-   - GPU: CUDA 12.1 + cuDNN 9.x (RTX 5070 Ti 對應版本)
-   - 驗證: `nvidia-smi` 顯示 GPU 與可用顯存
-
-2. **Windows 服務啟動** (使用 NSSM 或 WinSW)
-   - 工具: `Non-Sucking Service Manager` (NSSM) 下載 32/64 位版本
-   - 步驟:
-     ```
-     nssm install "AIArtService" "path\to\webui.bat"
-     nssm set "AIArtService" AppDirectory "D:\ai-art-service"
-     nssm set "AIArtService" Start "SERVICE_AUTO_START"
-     nssm start "AIArtService"
-     ```
-   - 驗證: 服務管理器 → 檢查 "AIArtService" 運行狀態
-
-3. **無使用者登入時啟動** (Windows 10+)
-   - 服務預設在無登入時執行 ✓ (C)
-   - 但若涉及 GPU 計算,可能需要禁用 TDR (Timeout Detection Recovery):
-     ```
-     REG ADD "HKLM\System\CurrentControlSet\Control\GraphicsDrivers" /v TdrDelay /t REG_DWORD /d 0
-     ```
-
-#### 方案 B: Linux 作為宿主 (若家中為 Ubuntu/Debian)
-
-**(C) 假設採用 Ubuntu 22.04 LTS:**
-
-1. **NVIDIA 驅動 + CUDA 安裝**
-   ```bash
-   sudo apt update && sudo apt install -y nvidia-driver-550 cuda-12.1
-   ```
-   驗證: `nvidia-smi`
-
-2. **AI 繪圖服務啟動 (systemd)**
-   - 建立服務檔 `/etc/systemd/system/ai-art-service.service`:
-     ```ini
-     [Unit]
-     Description=AI Art Generation Service
-     After=network-online.target
-     
-     [Service]
-     Type=simple
-     User=ai-service
-     ExecStart=/home/ai-service/ai-art-service/start.sh
-     Restart=always
-     RestartSec=10
-     Environment="CUDA_VISIBLE_DEVICES=0"
-     
-     [Install]
-     WantedBy=multi-user.target
-     ```
-   - 啟動:
-     ```bash
-     sudo systemctl daemon-reload
-     sudo systemctl enable ai-art-service
-     sudo systemctl start ai-art-service
-     ```
-   - 驗證: `systemctl status ai-art-service`
-
-3. **機器離線後自動重啟** (若有 UPS 或自動電源恢復)
-   - 檢查 BIOS 設定: `Power After AC Loss` → `Turn On`
+**關鍵保證**:工單與結果的「JSON + PNG」必須原子送達(見 `job-contract-and-checks.md` 第一節)——單一 `git commit` 包含兩者,確保消費端不會讀到斷裂狀態。
 
 ---
 
-## 第二部分:傳輸架構部署比較
+## 一、家中工作站部署清單(Windows)
 
-### 架構甲:家中 REST 服務對外 + 公司筆電主動連接
+### 環境確認(B:管理者自述)
 
-**通訊流向:** 公司筆電 → 家中桌機 (pull 模式)
+| 項目 | 確定值 |
+|---|---|
+| **OS** | **Windows** (確認) |
+| **24 小時開機** | **幾乎都開著**(確認) |
+| **網路** | **沒有固定 IP**;**已裝 Tailscale**(確認) |
 
-#### 網路拓撲與前置條件
+**注**:Tailscale 用途見下方【Tailscale 角色說明】;**不在公司筆電上安裝**。
 
-| 條件 | 狀態 | 備註 |
-|------|------|------|
-| 家中網路有公有 IP | (C) 未知 | 若 CGNAT,需隧道方案 |
-| 家中可開放 port | (C) 未知 | 路由器配置權限 |
-| TLS 憑證獲取 | (C) 推測可行 | 自簽 / Let's Encrypt |
-| 公司筆電可安裝軟體 | (C) 未知 | IT 政策影響 |
+### 步驟 1:NVIDIA 驅動與 CUDA 工具鏈(C:待實機驗證)
 
-#### 部署步驟
+```batch
+:: RTX 5070 Ti(sm_120) 需 CUDA 12.8+;以下寫 12.8 為最小值
+:: 實機驗證尚未進行,故標 (C)
 
-**Step 1: 家中服務暴露**
+:: 1. 安裝 NVIDIA 驅動(最新穩定版)
+::    來源:official NVIDIA,當前 2026-09 > 12.8 支援的最低驅動號 
+::    驅動版本號未查證(待實機確認),故此行 (C)
 
-1a. **若家中有公有 IP (非 CGNAT)**
-   - 在路由器設定 port forwarding:
-     ```
-     WAN:18888 → LAN:8888 (家中桌機內部服務埠)
-     ```
-   - TLS 設定:
-     - 自簽憑證 (測試): `openssl req -x509 -newkey rsa:4096 -out cert.pem -keyout key.pem -days 365`
-     - Let's Encrypt (生產): 申請一個動態 DNS 域名(如 noip.com),配合 certbot
-   - 驗證: `curl https://your-home-domain:18888/health` (從公司筆電)
+:: 2. 安裝 CUDA Toolkit 12.8+ (建議 12.8 / 12.9 / 最新穩定)
+::    下載: https://developer.nvidia.com/cuda-downloads
+::    驗證方式: nvcc --version 應報 release 12.8
 
-1b. **若家中是 CGNAT (無公有 IP)**
-   - 使用隧道服務(三選一):
-   
-   **(方案 i) Cloudflare Tunnel (推薦,無需公司筆電設定)**
-   - 家中:
-     ```bash
-     cloudflared tunnel create ai-art-tunnel
-     cloudflared tunnel route dns ai-art-tunnel ai-art.example.com
-     cloudflared tunnel run --url http://localhost:8888 ai-art-tunnel
-     ```
-   - 公司筆電: 直接 `https://ai-art.example.com` (無需額外軟體)
-   
-   **(方案 ii) Tailscale VPN (需公司筆電安裝)**
-   - 家中: 安裝 Tailscale,啟動即可
-   - 公司筆電: 安裝 Tailscale,加入同一網路
-   - 通訊: `https://home-machine.tailscale.io:8888`
-   - 風險: 公司筆電需安裝軟體(待 IT 批准)
-   
-   **(方案 iii) WireGuard (手動管理密鑰)**
-   - 複雜度最高,跳過
-
-**Step 2: 公司筆電客戶端**
-
-- 編寫定時任務(Windows Task Scheduler):
-  ```
-  觸發: 每小時執行一次
-  動作: 執行 PowerShell 腳本 render-request.ps1
-  ```
-- 腳本功能:
-  ```powershell
-  $request = @{prompt = "..."; ...}
-  $response = Invoke-WebRequest -Uri "https://home-ai-service:18888/render" `
-    -Method POST `
-    -Body ($request | ConvertTo-Json) `
-    -ContentType "application/json" `
-    -SkipCertificateCheck  # 若用自簽憑證
-  
-  # 結果存放
-  $response.Content | Out-File -Path "D:\ai-output\result.png"
-  ```
-
-#### 部署複雜度與代價
-
-| 項 | 無 CGNAT | CGNAT+Cloudflare | CGNAT+Tailscale |
-|----|----------|------------------|-----------------|
-| 家中配置 | 高(路由器) | 低 | 低 |
-| 公司筆電改動 | 無 | 無 | ⚠️ 需裝軟體 |
-| 隱私風險 | 中(外網可見) | 低(Cloudflare 代理) | 低(VPN) |
-| 成本 | 免費 | 免費 tier | Tailscale 免費 tier |
-| 故障排查難度 | 低 | 中 | 中 |
-
----
-
-### 架構乙:家中主動輪詢 git repo + push 成品
-
-**通訊流向:** 家中桌機定期拉工單 → 執行 → push 結果 (push 模式)
-
-#### 核心概念
-
-- 家中桌機每 N 分鐘掃一次 GitHub repo 的特定分支/標籤
-- 若發現新工單,執行並 push 成品 + 執行紀錄回 repo
-- 公司筆電從 repo 拉結果
-
-#### 部署步驟
-
-**Step 1: 工單/成品結構設計**
-
-```
-repo 根目錄結構:
-  /ai-workload/
-    /pending/         # 待執行工單 (公司筆電 push 入)
-      - job-001.json
-      - job-002.json
-    /processing/      # 執行中標記 (家中鎖檔)
-      - job-001.lock
-    /completed/       # 完成品 (家中 push 出)
-      - job-001-output.png
-      - job-001-manifest.json (包含執行時間/參數/狀態)
+:: 3. 驗證:
+nvidia-smi
+::    輸出應包含 CUDA Capability 12.0
 ```
 
-**Step 2: 工單格式**
+### 步驟 2:Python 與 PyTorch(C:待實機驗證)
 
-```json
+```batch
+:: Python 3.11 or 3.12 (SDXL 標準環境)
+python --version
+
+:: PyTorch 2.7.0 以上,需明確安裝 cu128 wheel
+:: 2.7.0 為第一個原生支援 sm_120 的穩定版;建議用 2.10(2026-01 的穩定線)
+:: 切勿用預設 wheel(可能是 CPU 版或舊 CUDA 版)
+:: 來源:PyTorch 官方 issue #164342;實測 2.7.0 cu128 wheel 存在
+
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+::    預期輸出:True + RTX 5070 Ti
+```
+
+🔴 **常見陷阱**(C:參考 `architecture-and-risks.md` §1.4):
+- 若 `is_available()` 為 False 且錯誤訊息說「sm_120 is not compatible」,多數情況是**安裝到了舊 CUDA 版 wheel**,不是卡不支援。改用 cu128 wheel。
+- 勿自行修改 CUDA 路徑或環境變數以「繞過」版本檢查,會產生靜默失敗。
+
+### 步驟 3:ComfyUI 安裝(C:社群參考,待實機驗證)
+
+```batch
+:: 建議採 ComfyUI(見 architecture-and-risks.md §3 評估)
+:: Windows 安裝:下載官方預編包或 git clone
+
+:: A. 官方預編(最簡單,推薦新手)
+::    見 https://github.com/comfyanonymous/ComfyUI
+
+:: B. 自行打包(進階,便於客製化節點)
+cd D:\ai-art-service\
+git clone https://github.com/comfyanonymous/ComfyUI.git
+cd ComfyUI
+python -m pip install -r requirements.txt
+
+:: 驗證:
+python main.py
+::    預期在 http://127.0.0.1:8188 (或指定埠)啟動 Web UI
+```
+
+### 步驟 4:ComfyUI 模型與工作流版本釘死(B:policy from `job-contract-and-checks.md`
+
+以下檔案進版控,確保可重現性:
+
+| 項目 | 位置 | 版本釘死方式 |
+|---|---|---|
+| **SDXL base model** | `models/checkpoints/` | SHA256 hash 存檔案頂(見 `job-contract-and-checks.md` 二.1) |
+| **角色 LoRA** | `models/loras/` | 同上:檔名 + SHA256 |
+| **ComfyUI workflow JSON** | `workflows/` | 整個 JSON commit 進 git |
+| **ComfyUI 版本** | `.env` 或 `version_lock.txt` | 記錄安裝日期 + git commit hash |
+
+**理由**(B:from `architecture-and-risks.md` §3):ComfyUI 的 API 是「整個 workflow JSON」,workflow 改一個節點就等於改 API 契約。沒有版本控制,換日期可能拿到不同結果。
+
+### 步驟 5:輪詢腳本(C:架構提案,待實作驗證)
+
+Windows Task Scheduler 或等價服務定期執行(建議 10~30 分鐘):
+1. `git fetch origin`
+2. 掃描新工單,執行 ComfyUI generation + post-process
+3. 若通過檢查:commit result JSON + final_image PNG,push
+4. 若失敗:commit failure report + heartbeat,push
+
+**前提變更**(B):原文在「可能沒開機」假設下提議 Wake-on-LAN。因為「幾乎都開著」(確認),WoL 可擱置;輪詢簡化為純粹的定時拉取。
+
+---
+
+## 二、Generation 與 Post-Process
+
+### ComfyUI 生成與後製(C:規範來源見 `job-contract-and-checks.md` + `ai-art-validation-protocol-2026-09-29.md` §5)
+
+實作流程:
+1. 讀工單 JSON,根據 `generation_params` 構建 ComfyUI workflow JSON(見步驟四:版本釘死)
+2. POST `/prompt` 到本地 ComfyUI server(http://127.0.0.1:8188),回 `prompt_id`
+3. 輪詢 `/history/{prompt_id}` 等候完成,讀出 native PNG(通常 1024×1024)
+4. 降採樣 + 量化至 64 色 + 加 1px 描邊(見 `art-direction.md`),產出 final image
+5. 回傳 Result JSON(見下方【Result JSON 與回傳】)
+
+細節(演算法、工具選型、resampling 方式)見驗證協議第五節及 `art-direction.md`;實裝者決定。
+
+---
+
+## 三、檢查與結果回報
+
+### 機械檢查(B:規範 from `ai-art-validation-protocol-2026-09-29.md` §3.1)
+
+家中工作站必須對每張圖進行:
+
+1. **尺寸驗證**:最終圖應為 `job.target_size`
+2. **色盤驗證**:顏色數 ≤ 64(或適用上限)
+3. **描邊驗證**:1px 黑線完整無缺
+4. **格線對齊**:像素網格整數倍(細節見 `coding-standards.md` Check 4)
+
+各項失敗時,不推送,改寫失敗報告(見下方),並允許重試(見【重試上限】)。
+
+### Result JSON 與回傳(B:規範 from `job-contract-and-checks.md` §三)
+
+包含:`job_id`、`status`(passed/failed)、四項檢查結果(dimension/palette/border/grid_alignment)、final_image PNG 路徑與 SHA256、失敗原因碼。
+
+每個 Result 與其 final_image PNG 必須同時 commit(原子性,見第〇節)。
+
+### 心跳檔與狀態回報(C:架構提案)
+
+**解決乙案的「安靜壞掉」問題**(見 `SPEC.md` §二)。家中工作站每次輪詢都寫:
+
+```
+results/worker_heartbeat_20260930_120000.json
 {
-  "id": "job-001",
-  "timestamp": "2026-09-30T10:00:00Z",
-  "prompt": "a fantasy warrior",
-  "model": "sd-v1-5",
-  "steps": 20,
-  "cfg_scale": 7.5,
-  "requested_by": "art-director"
+  "worker_id": "home-rtx5070ti-01",
+  "last_poll_at": "2026-09-30T12:00:00+08:00",
+  "status": "idle|processing|error",
+  "error": null | "DISK_FULL" | "GPU_OOM" | "CONNECTION_FAILED" | ...
 }
 ```
 
-**Step 3: 家中輪詢腳本 (Windows PowerShell 或 Linux Bash)**
+定時推送此檔案。失敗報告同樣推送(含詳細錯誤訊息)。
 
-**(C) 假設用 PowerShell:**
-
-```powershell
-# run-workload-loop.ps1
-$REPO_PATH = "D:\repo\game-studio"
-$POLL_INTERVAL = 300  # 5 分鐘
-
-while ($true) {
-    # 拉最新
-    Push-Location $REPO_PATH
-    git fetch origin
-    git pull origin main
-    Pop-Location
-    
-    # 掃 pending 目錄
-    $pending = Get-ChildItem "$REPO_PATH\ai-workload\pending\*.json"
-    foreach ($job in $pending) {
-        $jobId = $job.BaseName
-        
-        # 鎖檔 (避免重複執行)
-        if (Test-Path "$REPO_PATH\ai-workload\processing\$jobId.lock") {
-            continue  # 已有在跑
-        }
-        
-        New-Item -Path "$REPO_PATH\ai-workload\processing\$jobId.lock" -ItemType File -Force
-        
-        # 執行繪圖
-        try {
-            $jobParams = Get-Content $job.FullName | ConvertFrom-Json
-            $output = & "D:\ai-art-service\generate.exe" @jobParams
-            
-            # 輸出結果
-            Copy-Item $output -Destination "$REPO_PATH\ai-workload\completed\$jobId-output.png"
-            
-            # 記錄執行結果
-            @{
-                status = "success"
-                completed_at = (Get-Date).ToUniversalTime()
-                execution_time_seconds = 45
-            } | ConvertTo-Json | Out-File "$REPO_PATH\ai-workload\completed\$jobId-manifest.json"
-            
-            # commit & push
-            Push-Location $REPO_PATH
-            git add "ai-workload/completed/*"
-            git commit -m "feat(ai-art): completed $jobId"
-            git push origin main
-            Pop-Location
-            
-        } catch {
-            # 失敗時: 寫入失敗記錄 (重點:不刪 lock,不 push,讓公司端看得到失敗)
-            @{
-                status = "failed"
-                error = $_.Exception.Message
-                failed_at = (Get-Date).ToUniversalTime()
-            } | ConvertTo-Json | Out-File "$REPO_PATH\ai-workload\failed\$jobId-error.json"
-        } finally {
-            Remove-Item "$REPO_PATH\ai-workload\processing\$jobId.lock" -Force -ErrorAction SilentlyContinue
-        }
-    }
-    
-    Start-Sleep -Seconds $POLL_INTERVAL
-}
-```
-
-**Step 4: 公司筆電客戶端**
-
-```powershell
-# submit-render-job.ps1
-param(
-    [string]$Prompt,
-    [string]$OutputDir = "D:\ai-output"
-)
-
-$jobId = "job-$(Get-Date -Format 'yyyyMMddHHmmss')"
-$jobFile = ".\ai-workload\pending\$jobId.json"
-
-@{
-    id = $jobId
-    timestamp = (Get-Date).ToUniversalTime()
-    prompt = $Prompt
-    model = "sd-v1-5"
-    steps = 20
-    cfg_scale = 7.5
-    requested_by = "art-director"
-} | ConvertTo-Json | Out-File $jobFile
-
-git add $jobFile
-git commit -m "feat(ai-art): submitted $jobId"
-git push origin main
-
-# 輪詢檢查完成
-$maxWait = 3600  # 1 小時超時
-$waited = 0
-while ($waited -lt $maxWait) {
-    git pull origin main
-    if (Test-Path ".\ai-workload\completed\$jobId-output.png") {
-        Copy-Item ".\ai-workload\completed\$jobId-output.png" -Destination $OutputDir
-        Write-Host "✓ Job $jobId completed"
-        exit 0
-    }
-    if (Test-Path ".\ai-workload\failed\$jobId-error.json") {
-        $error = Get-Content ".\ai-workload\failed\$jobId-error.json" | ConvertFrom-Json
-        Write-Host "✗ Job $jobId failed: $($error.error)"
-        exit 1
-    }
-    Start-Sleep -Seconds 10
-    $waited += 10
-}
-Write-Host "✗ Job $jobId timeout"
-exit 1
-```
-
-#### 故障排查與監視
-
-| 故障情境 | 表現 | 排查方式 |
-|---------|------|--------|
-| 家中機器離線 | pending 堆積不動 | 檢查 `processing/*.lock` 歲數 |
-| 執行緩慢 | 任務卡在 processing | 檢查 gpu 狀態 & 磁碟空間 |
-| git 衝突 | push 失敗,錯誤留在 failed/ | git log 查衝突紀錄 |
-| 公司端看不到成品 | completed/ 有檔但公司 pull 不到 | git status 檢查遠端同步 |
-
-#### 代價與侷限
-
-| 項 | 評估 |
-|----|------|
-| 實裝複雜度 | 高(需設計檔案協議、鎖機制、輪詢邏輯) |
-| 網路依賴 | 低(只需 git push/pull,已驗證可行) |
-| 公司筆電改動 | 低(只需 git + PowerShell,無新軟體) |
-| 延遲 | 中(取決於輪詢間隔,典型 5~10 分鐘) |
-| 故障偵測 | 中(需要解析檔案狀態,非即時反饋) |
-| **致命缺陷** | ⚠️ 見下方「架構乙的陷阱」|
-
-#### 🔴 架構乙的陷阱(致命缺陷評估)
-
-1. **git 歷史膨脹**
-   - 問題: 每次成品 PNG (~10MB) push,git log 累積
-   - 解決: 用 Git LFS (Large File Storage)
-     ```
-     git lfs install
-     git lfs track "ai-workload/completed/*.png"
-     ```
-   - 但 LFS 也要付費維護,成本上升
-
-2. **並行工單衝突**
-   - 問題: 公司筆電同時 submit 兩個工單,家中同時執行會互相干擾 GPU
-   - 解決: 在 lock 機制上加隊列編號,家中一次只取一個
-   - 代價: 輪詢邏輯更複雜
-
-3. **無法中止或優先級控制**
-   - 問題: 工單一旦提交,無法取消或改優先級
-   - 解決: 在 job manifest 加 `status: "cancelled"` 欄,家中跳過
-   - 缺點: 已執行的無法中止,浪費 GPU 時間
-
-4. **成品命名衝突**
-   - 問題: 若公司同時 submit job-001 和 job-001(重複 ID)
-   - 解決: 用時間戳替代序號,確保全局唯一
-   - 驗證: `$jobId = "job-$(New-Guid)"`
+**為什麼需要?** —— 公司端看到「沒有新圖」時,心跳檔讓它判斷是「機器沒開」還是「沒有新工單」還是「無聲掛機」。心跳檔不取代人工監控;只是讓自動化能判斷是否該告警。
 
 ---
 
-## 第三部分:機器離線處理
+## 四、公司筆電工具流程
 
-### Wake-on-LAN (WoL) 可行性
+### 公司端流程(C:架構,待 tools-programmer 實作)
 
-| 環境 | 可行性 | 前置條件 | 備註 |
-|------|--------|---------|------|
-| 家中桌機+乙太網 | ✓ (C) 推測可行 | 主板支援,BIOS 啟用,乙太網卡待機供電 | 需知道 MAC 地址 |
-| 家中桌機+Wi-Fi | ✗ | Wi-Fi 睡眠時關閉,WoL 包無法送達 | 不實用 |
-| 公司筆電喚醒家中 | ✓ (C) 可行,但複雜 | VPN 或公網隧道,WoL 廣播轉發 | Tailscale 原生不支援 WoL |
+**工單生成**:美術工具生成提示詞 + 參數(見 `job-contract-and-checks.md` 二),本地 `jobs/pending/[job_id].json` + `_preview.png`,commit & push。
 
-### 部署方案
-
-**方案一:手動啟動 (最簡單)**
-- 前提: 家中機器 24 小時開機
-- 優點: 無故障點
-- 缺點: 浪費電力,若不開機工單卡住
-
-**方案二:排程啟動 (機器端)**
-- 在家中桌機 BIOS 設定: `Power On at 08:00 AM` 每天
-- 優點: 預測性,無需遠端介入
-- 缺點: 僅限固定時間
-
-**方案三:WoL 遠端喚醒 (架構甲適用)**
-- 前提: 家中網路有公有 IP + 路由器支援 WoL 轉發
-- 步驟:
-  1. 家中桌機 BIOS: 啟用 `Wake on LAN`
-  2. 路由器: 啟用 WoL 轉發 (某些機型支援)
-  3. 公司筆電: 發送 WoL 魔包
-     ```powershell
-     function Send-WoL {
-         param([string]$MacAddress, [string]$BroadcastAddress)
-         $packet = [byte[]](,0xFF * 6) + ([convert]::FromHexString($MacAddress -replace '-|:','')) * 16
-         $socket = New-Object Net.Sockets.UdpClient
-         $socket.Send($packet, $packet.Length, $BroadcastAddress, 9)
-         $socket.Close()
-     }
-     Send-WoL -MacAddress "AA:BB:CC:DD:EE:FF" -BroadcastAddress "192.168.1.255"
-     ```
-- 風險: 路由器通常不支援外網 WoL 轉發,此路多數不通
-
-**方案四:架構乙中的處理**
-- 若家中機器離線: pending 工單無人處理
-- 解決: 在 submit 腳本中加超時檢測
-  ```powershell
-  # 若 30 分鐘仍未出現在 processing/,判定機器離線
-  if (!(Test-Path ".\ai-workload\processing\$jobId.lock") -and $waited -gt 1800) {
-      Write-Host "⚠️  Home machine appears offline, retrying WoL..."
-      Send-WoL  # 嘗試喚醒
-  }
-  ```
+**結果消費**:定時 `git pull origin`。掃描 `jobs/completed/` 和 `jobs/failed/`:
+- 若檢查全過(dimension/palette/border/grid),移至 `review/` 待人工簽核(見 `SPEC.md` 〇)
+- 若檢查未過:判斷是否自動重試(見下方【重試上限】),否則通知失敗,建議檢查心跳檔和家機狀態
 
 ---
 
-## 第四部分:可觀測性與故障偵測
+## 五、重試上限與自動恢復(B:政策 from `job-contract-and-checks.md`)
 
-🔴 **本項對應**.claude/docs/coding-standards.md` 的教訓:** 
-- 「exit code 0 但一條測試都沒跑」
-- 「看起來成功的空結果與真正的成功無法區分」
+| 項目 | 規則 |
+|---|---|
+| **重試上限** | **3 次**(含初次) |
+| **自動重試** | ✅ 支援(家中工作站自動判斷) |
+| **人工介入** | 第 3 次失敗後,必須由人工審查失敗原因,調整參數後重新提交 |
 
-### 三層狀態判定
-
-#### 層一: 工單狀態 (檔案系統)
-
-```
-pending/job-001.json    → 待執行
-processing/job-001.lock → 執行中 (lock 檔建立時間 < 5 分鐘)
-                        → 執行卡住 (lock 檔建立時間 > 30 分鐘,舊)
-completed/job-001-*     → 執行成功
-failed/job-001-error    → 執行失敗
-```
-
-**公司筆電檢查邏輯**
-
-```powershell
-function Check-JobStatus {
-    param([string]$JobId)
-    
-    if (Test-Path ".\ai-workload\pending\$JobId.json") {
-        return "PENDING"
-    }
-    
-    if (Test-Path ".\ai-workload\processing\$JobId.lock") {
-        $lockAge = (Get-Date) - (Get-Item ".\ai-workload\processing\$JobId.lock").LastWriteTime
-        if ($lockAge.TotalMinutes -gt 30) {
-            return "STALLED"  # 🔴 卡住! 不是「還在跑」
-        }
-        return "PROCESSING"
-    }
-    
-    if (Test-Path ".\ai-workload\completed\$JobId-output.png") {
-        return "SUCCESS"
-    }
-    
-    if (Test-Path ".\ai-workload\failed\$JobId-error.json") {
-        $error = Get-Content ".\ai-workload\failed\$JobId-error.json" | ConvertFrom-Json
-        return "FAILED:$($error.error)"
-    }
-    
-    return "NOT_FOUND"  # 工單不存在 (非「還沒送」)
-}
-```
-
-#### 層二: 機器健康狀態
-
-**架構甲(REST):**
-```powershell
-try {
-    $health = Invoke-WebRequest "https://home-ai-service:18888/health" -TimeoutSec 5
-    if ($health.StatusCode -eq 200) {
-        $uptime = ($health.Content | ConvertFrom-Json).uptime_seconds
-        Write-Host "✓ Home service OK (uptime: $uptime s)"
-    }
-} catch {
-    Write-Host "✗ Home service unreachable"
-}
-```
-
-**架構乙(git):**
-```powershell
-# 檢查最後推送時間
-$lastCommit = git log -1 --format="%ct" origin/main -- ai-workload/completed/
-$lastPush = [datetime]::FromFileTime($lastCommit * 10000000 + 116444736000000000)
-$minutesSinceLastPush = ((Get-Date) - $lastPush).TotalMinutes
-
-if ($minutesSinceLastPush -gt 60) {
-    Write-Host "⚠️  Home machine has not pushed in $minutesSinceLastPush minutes (possible offline)"
-}
-```
-
-#### 層三: 故障日誌
-
-**架構甲(REST):** 服務端日誌
-```
-/home/service/logs/render-2026-09-30.log
-ERROR [10:15:23] GPU out of memory
-ERROR [10:20:05] Model load failed
-```
-
-**架構乙(git):** repo 內失敗紀錄
-```
-failed/job-001-error.json:
-{
-  "status": "failed",
-  "error": "CUDA out of memory",
-  "stack_trace": "..."
-}
-```
-
-### 監視儀表板 (推薦實現)
-
-```powershell
-# dashboard.ps1 — 定時執行,輸出狀態摘要
-
-function Get-AIServiceStatus {
-    $pending = (Get-ChildItem ".\ai-workload\pending\*.json" -ErrorAction SilentlyContinue).Count
-    $processing = (Get-ChildItem ".\ai-workload\processing\*.lock" -ErrorAction SilentlyContinue).Count
-    $completed = (Get-ChildItem ".\ai-workload\completed\*-output.png" -ErrorAction SilentlyContinue).Count
-    $failed = (Get-ChildItem ".\ai-workload\failed\*.json" -ErrorAction SilentlyContinue).Count
-    
-    @{
-        pending = $pending
-        processing = $processing
-        completed = $completed
-        failed = $failed
-        homeServiceReachable = (Test-NetConnection home-ai-service -Port 18888 -InformationLevel Quiet)
-    }
-}
-
-$status = Get-AIServiceStatus
-Write-Host @"
-=== AI Art Service Status ===
-Pending:  $($status.pending) jobs
-Running:  $($status.processing) jobs
-Done:     $($status.completed) jobs
-Failed:   $($status.failed) jobs
-Home OK:  $($status.homeServiceReachable)
-Updated:  $(Get-Date)
-"@
-```
+工單中自動跟蹤 `retry.attempt_number` 與 `retry.previous_failure`,見 `job-contract-and-checks.md` 二.60-66。
 
 ---
 
-## 第五部分:待管理者回答的問題
+## 六、Tailscale 角色說明(B:管理者自述 2026-09-30)
 
-| # | 問題 | 用途 | 優先級 |
-|---|------|------|--------|
-| Q1 | 家中桌機的作業系統是什麼?(Windows / Linux / macOS) | 決定部署工具與啟動機制 | 🔴 高(必須) |
-| Q2 | 家中機器是否 24 小時開機?還是有定期關機? | 決定是否需要 WoL / 排程啟動 | 🟡 中 |
-| Q3 | 家中網路環境是什麼?有公有 IP 嗎?還是 CGNAT? | 決定架構甲是否可行,或必須用隧道 | 🔴 高(影響架構選擇) |
-| Q4 | 家中路由器型號/品牌是什麼? | 確認是否支援 port forwarding / WoL 轉發 | 🟡 中(涉及架構甲) |
-| Q5 | 公司 IT 政策允許在筆電上安裝新軟體嗎? | 如用 Tailscale/WireGuard,需事先取得許可 | 🟡 中(影響具體部署細節) |
-| Q6 | 公司筆電可以開放外網 HTTPS 連線嗎? | 決定 REST 服務連線是否被防火牆阻擋 | 🔴 高(影響架構甲可行性) |
-| Q7 | 成品 PNG 預期多大?每月產出多少張? | 影響 git LFS 成本與 repo 磁碟用量 | 🟡 中(涉及長期維運) |
-| Q8 | 家中桌機的 NVIDIA 驅動版本是什麼?或需要從零安裝? | 部署 CUDA 工具鏈時需確認相容性 | 🔴 高(影響 GPU 初始化) |
+### ✅ Tailscale 用途:家機遠端管理
 
----
+- **安裝位置**:家中 RTX 5070 Ti Windows 工作站 ✅ 已裝
+- **安裝位置**:管理者個人手機 ✅ 已裝
+- **目的**:管理者用手機遠端查看家機狀態(服務活著沒、看失敗報告、必要時重啟)
+- **完全不碰**:公司筆電 —— 不在公司筆電上裝 Tailscale
 
-## 架構選擇決策樹
+### ❌ Tailscale 不是什麼
 
-```
-START
-  │
-  ├─→ 家中有公有 IP?
-  │    │
-  │    ├─→ 否 (CGNAT)
-  │    │    └─→ 用 Cloudflare Tunnel (無需公司改動)
-  │    │
-  │    └─→ 是
-  │         ├─→ 公司筆電能出 HTTPS?
-  │         │    │
-  │         │    ├─→ 否
-  │         │    │    └─→ 用架構乙(git push)
-  │         │    │
-  │         │    └─→ 是
-  │         │         └─→ 用架構甲(REST) — 最低延遲
-  │
-  └─→ 若不確定 → 預設架構乙(git),成本最低,對公司筆電改動最小
-```
+- **不是**:在公司筆電上裝 Tailscale,遠連家機服務 —— 那正是主管說「盡量不要」的事(見 SPEC.md §二,資安政策問題)
+- **不是**:取代心跳檔的自動監控 —— 手機是「人去查」,心跳檔是「自動化能讀」,兩者互補
+
+### 與本架構的整合
+
+Tailscale 不屬於工單/結果的傳輸層(那是 GitHub);它只是**運維窗口**,讓管理者有辦法在自己手機上看到家機是不是卡住。
 
 ---
 
-## 附錄:部署檢查清單
+## 七、環境管理與監控(C:架構框架,細節待實作)
 
-### 家中桌機初始檢查
-
-- [ ] GPU 驅動已安裝,`nvidia-smi` 輸出正常
-- [ ] AI 繪圖引擎(WebUI/Comfy)能獨立啟動
-- [ ] 成功生成至少 1 張圖片,輸出路徑確認
-- [ ] 啟動腳本 (`.bat` / `.sh`) 已測試
-- [ ] 服務/systemd 已註冊,重啟後自動啟動
-- [ ] 磁碟空間充足 (預留 50GB+ 給模型與成品)
-
-### 公司筆電初始檢查
-
-- [ ] git 倉庫 clone 完整
-- [ ] 網路連線測試 (ping github.com)
-- [ ] 若架構甲: 確認 TLS 證書信任(自簽則 skip cert check)
-- [ ] 若架構乙: PowerShell 執行政策允許腳本運行
-- [ ] 監視儀表板腳本能執行無誤
+| 工具/檔案 | 用途 | 位置 |
+|---|---|---|
+| **ComfyUI 日誌** | 單次生成的詳細診斷 | 工作站本地,需要時讀取 |
+| **heartbeat.json** | 輪詢狀態與無聲故障偵測 | `results/worker_heartbeat_*.json` |
+| **failure report** | 上次失敗的原因碼與量測值 | `jobs/failed/*.json` |
+| **.env 或 config.toml** | 模型路徑、ComfyUI 埠、輪詢間隔等 | 工作站版控(與 code 同層) |
 
 ---
 
-**本文件更新日期:** 2026-09-30
-**驗證狀態:** 全部推測 (C),待實機測試
+## 八、已知限制與擱置項(C:架構層級)
 
+**不阻擋:**
+
+- [ ] 後製工具的具體演算法(見二.【post-process】):Pillow vs ImageMagick vs 自寫 CUDA —— 由 tools-programmer 決定
+- [ ] ComfyUI workflow JSON 的精確格式:由 tools-programmer 測試後版控
+- [ ] 輪詢間隔的精確值(10 vs 20 vs 30 分鐘):由實裝者測試調整,上限需與 GitHub API rate limit 相容
+
+**擱置(甲案與 Linux 方案):**
+
+見附錄【已擱置的架構方案】。
+
+---
+
+## 附錄:已擱置的方案
+
+🔴 **甲案(REST 直連)** — 2026-09-30 擱置。🔴 **不是禁令** —— 管理者主管表示「盡量不要」,非「禁止」。核心:家機開 ComfyUI REST 服務(`--listen 0.0.0.0`),公司筆電主動 POST 工單。擱置理由:無固定 IP,且管理者主管對「在公司筆電主動連自家自架服務」表示「盡量不要」(`technical-director`/`security-engineer` 評估,兩位都表示「不判定」因只有管理者問得到)。若政策變,甲乙都用同一份 JSON 格式,切換成本不高。
+
+🔴 **Linux/macOS 方案** — 環境確認為 Windows,暫未考慮。主要差異:驅動(apt/yum 替代 MSI)、排程(cron/systemd 替代 Task Scheduler),core 邏輯不變。
+
+---
+
+**檔案版本**:1.0(2026-09-30,乙案單一化版本)  
+**證據等級**:
+- (A) 實機驗證:無(待實作)
+- (B) 專案文件明文:環境確認(管理者自述,2026-09-30)、工單/結果格式(from `job-contract-and-checks.md`)、驗證規範(from `ai-art-validation-protocol-2026-09-29.md`)
+- (C) 推測未驗證:CUDA/PyTorch 版本(from `architecture-and-risks.md`,有查證來源)、輪詢邏輯、ComfyUI 細節
