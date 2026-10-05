@@ -4,6 +4,38 @@
 > **Status**: 🟢 **核准開工**(2026-09-29 管理者裁決「Story 001~003 是否核准開工」→「准」,
 > 見 `EPIC.md`「✅ 管理者裁決紀錄」表第 4 列。本檔為 2026-09-30 由 `localization-lead` 切出)
 > **Layer**: Infrastructure(跨切面,非 `tactical-combat` 的 Core/Presentation 分層 —— 本 epic
+
+> ✅ **2026-10-05:A~E 五節全部完成,本 story 標記 `Complete`。** 逐節證據:
+> - **A/B/C**(`godot-specialist`):`assets/data/locales/strings.csv`(標頭 `keys,zh_TW`,2 筆真實 key)、
+>   匯入器產出 `strings.zh_TW.translation`、`project.godot` 新增 `[internationalization]`
+>   (`locale/fallback="zh_TW"`,非預設 `en`)。
+> - **D**(`godot-gdscript-specialist`):`src/core/i18n/loc.gd`(106 行,對外 API `Loc.localize(key)`)
+>   + `tests/unit/core/i18n/loc_localize_test.gd`(136 行 / 8 條)。
+>   🔴 **對外方法不叫 `tr`** —— `Object` 原生有 `tr()`,覆寫是**編譯期錯誤**;物證是兩份對照探針
+>   (exit 1 vs exit 0)在 `prototypes/godot-gdscript-specialist-i18n-story001-d-probe-2026-10-05/shadow_check/`。
+>   dot-notation 實機驗證通過(句點不截斷),缺字時 `tr()` 原樣回傳裸 key(已由薄殼攔截)。
+> - **E**(`godot-specialist`,BLOCKING 項):**在 production 本體的正式匯出建置上量測**,
+>   原始 log `prototypes/godot-specialist-i18n-story001-e-formal-2026-10-05/run_output.txt`:
+>   ```
+>   E_SECTION_PROBE OS.get_locale() = zh_TW
+>   E_SECTION_PROBE OS.get_locale_language() = zh
+>   E_SECTION_PROBE TranslationServer.get_locale() = zh_TW
+>   E_SECTION_PROBE Loc.localize(battle.hud.status_format) = 第 %d 回合．%s
+>   ```
+>   **量到的就是 `zh_TW`,故不需要在啟動期顯式呼叫 `TranslationServer.set_locale()`** ——
+>   E 節那個「若不是 zh_TW 怎麼辦」的設計決定因此不必做。
+>   🔴 **零畫面曝光**:`window_poll_output.txt` 逐字 `SawMainWindowHandleNonZero=False`、
+>   `IterationsPolled=7`、`ExitCode=0`。
+> - **協調者獨立重跑全套測試**(不是採信回報):`1014 test cases | 0 errors | 1 failures |
+>   0 flaky | 0 skipped | 0 orphans`,`Executed test suites: (82/82)`,唯一具名 ` FAILED` 是既有
+>   那條已核准的刻意紅測試。
+>
+> ⚠️ **誠實揭露:本次沒有跑正式的 `/story-done` 逐條 AC 覆核關卡。** 上述是協調者依各專家
+> 回報 + 自行複驗檔案與 log 做的驗收,**不是該 skill 的產出**。
+> ⚠️ **Steam 客戶端語言那一半明文不在本 story 範圍**,留給未來的 Steam 整合工作單,
+> **不得視為已關閉**。
+> ⚠️ **匯出時引擎印出的 ICU 警告照錄在探針 README** —— 本次中文顯示正常,但日後若匯出建置
+> 中文異常,那是第一個該查的方向。
 > 沒有 GDD,見 `EPIC.md` 開頭「🔴 這個 epic 沒有 GDD,也不會有」節)
 > **Type**: Logic + 一項無法自動化的平台驗證(見下方 Test Evidence 節,已明文標出為何不是
 > 純 Logic 型)
@@ -200,7 +232,7 @@
    Complete」),即使它不完全符合測試證據表既有的分類形狀 —— **本 story 明確記錄這個
    偏離**:技術總監的明文裁決優先於證據表的既有分類框架。
 
-**Status**: [ ] Not yet created
+**Status**: ✅ **已完成**(A~D 的 GdUnit4 測試 8 條全過;E 節匯出建置量測完成,原始 log 見上方完成註記)
 
 ## Dependencies
 

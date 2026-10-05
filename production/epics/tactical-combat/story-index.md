@@ -21,6 +21,90 @@ grep 查證發現實際還會動到 `battle_controller.gd`/`battle_loop.gd`,見�
 
 詳見 `story-003b-atomicity-write-guard-consolidation.md`。
 
+
+## 🔴 story-016 切出說明(2026-10-05 管理者裁決)
+
+**為什麼現在切**:`docs/architecture/tr-registry.yaml` 的 `TR-tactical-002` requirement 逐字含
+「**並有載入時驗證**」,而此前 16 張工作單無一涵蓋它 —— `docs/architecture/traceability-index.md`
+上該條目前標 `❌ 缺口`。當場查:
+
+```bash
+grep -rn "載入時驗證" production/epics/tactical-combat/   # 切出前:唯一命中是 story-001 內引述舊版需求文字
+```
+
+**實測到的具體後果**(協調者 2026-10-05 自跑,非轉述):`src/gameplay/board/board.gd` 的
+`get_move_cost()` 查到未登記地形字元時回傳哨兵 `MOVE_COST_UNKNOWN_TERRAIN = -1`,而
+**全專案零個檢查點** —— 唯一真正的呼叫端把它直接加進 `candidate_cost`。在
+`ignore_passability=true` 的路徑下(story-002 新增的開關),`passable()` 閘門被短路跳過,
+走過一格未登記地形的移動成本**不減反增**。現在不會真的發生,因為地形檔都在版控、內容可控。
+
+🔴 **範圍只涵蓋地形那一半。** 武器資料表(`TR-tactical-005`)**刻意排除**,理由已實測:
+`grep -rln "weapon" src/ --include=*.gd` 只命中 `combat_rules.gd` 的文件註解、
+`find assets/data -iname "*weapon*"` 零輸出 —— **武器尚未成為被載入的資料檔**,現在為它寫驗證
+是對不存在的東西立法。`traceability-index.md` 的 `TR-tactical-005` ❌ 缺口**不會**因本 story 關閉。
+
+🔴 **排程阻擋(尚未裁決)**:本 story 與 `story-003b` **同時修改 `src/gameplay/board/board.gd`**
+(兩者改的函式不同、邏輯無關,純粹是同檔案衝突)。繼承 003b 既有的「動工期間不得並行其他
+戰棋工作單」限制。**先後順序由排程擁有者裁決,`lead-programmer` 明文未代為決定。**
+
+📌 **兩項本 story 未代為宣告的下游動作**:①`TR-tactical-002` 能否轉綠由 `technical-director`
+判定(EPIC.md C5 既有指派);②`story-007` 是否正式依賴本 story —— 兩者技術上確實關聯
+(007 用 `ignore_passability=true` 算 `C` 集合,正是本 story 要修的那條路徑),但排程裁決屬
+`producer`/`technical-director`。
+
+## 🔴 story-003c / story-017 拆分說明(2026-10-05 管理者裁決)
+
+### 為什麼拆
+
+`story-003b` 當天從 **348 行 / 9 條 AC / 5 條寫入路徑**長到 **564 行 / 12 條 AC / 8 條路徑**
+(`technical-director` 裁決巢狀語意時撞到第七條;`lead-programmer` 併入時再找到第八條)。
+交接檔早已登記它「實質工作量明顯大於前三張、**沒有人估過工時**、要不要再拆是一次尚未進行的判斷」。
+
+**管理者看到的選項描述逐字如下,他是照這個選的**:
+
+> 這是唯一真的切得開的地方 —— 核心半(計數器 + 守衛 + 15 個呼叫點改道)必須同一次落地,
+> 否則守衛一掛上去沒改道的呼叫點全部被擋;而⑥⑦ 是純追加的包裝、不動守衛。
+> **缺點(他知情)**:多一張工作單要管;而且⑥(回合轉換)今天就會真的改到攻防值,
+> 拆出去就是多一段「機制做好了但這條路徑還漏著」的時間窗。
+
+`story-017`(`Unit` setter)則是 ADR-0001 **硬性義務第 2 條**,`story-003b` 刻意排除並寫
+「建議下一次 `technical-director` 裁決」,而 `technical-director` 2026-10-05 自己回報
+**「兩輪下來都沒排進我的交付物,這是目前唯一還掛在我名下、沒有人接手的項目」**。管理者裁決另切一張。
+
+### ⚠️ 拆分的代價:`story-003b` 這個**檔案**沒有變小,變小的是它的**範圍**
+
+依本專案「原文一個字都不要刪」的紀律,搬走的段落**原處全部保留並逐段加註**,所以該檔
+從 564 行變成 **633 行**。**實作者讀到的是一份 633 行、其中數段標著「已搬至」的文件。**
+當場查加註位置(**用實體名搜,不要用想像的措辭** —— 協調者本批就因此誤判過一次):
+
+```bash
+grep -n "003c" production/epics/tactical-combat/story-003b-atomicity-write-guard-consolidation.md
+```
+
+### AC11 的歸屬:留在 `story-003b`,**這是 `lead-programmer` 的裁決,未經管理者覆核**
+
+管理者對此明文「兩邊都說得通,我不代為決定」。`lead-programmer` 裁定留在 003b,理由是
+AC11 解答的是 **003b 原始範圍(路徑⑤)就已存在**的開放問題(「未決的實作細節」第 3 項),
+路徑⑥⑦ 只是讓它順便有了更清楚的解法。分工是「**003b 負責讓它存在且正確(包住整個函式本體),
+003c 負責多驗一條本來不在 003b 驗收範圍內的斷言**」,不是各包一半。
+
+### 🔴 施工序:`016 → 003b → {003c, 017}`
+
+- `016` 與 `003b` **皆動 `board.gd`,不得並行**;管理者裁決 016 先。
+- `003c` 與 `017` **皆硬性依賴 003b 先 Done**(需要 `commit_authoritative_change()` /
+  守衛介面 / `_finalize_enemy_phase()` 既有包裝實際存在)。
+- `003c` 與 `017` **互不依賴,003b 完工後可並行派給兩個人**。
+- `004`~`007` 的依賴欄**不需要改** —— 它們依賴的是 003b 交付的核心機制,不依賴 003c/017。
+
+### 📌 `lead-programmer` 誠實登記的三個未決項
+
+1. **`story-003c` 的 `battle_loop.gd` 實際改動形狀未知** —— 取決於 003b 完工時 119 行附近的
+   實際寫法。`battle_controller.gd` 側預期只需補測試,**`battle_loop.gd` 側預期需要改程式碼**
+   (沒有輔助函式可以自然共用一次包裝)。**這個不對稱是 003c 動工第一步要查證的事。**
+2. **`story-017` 的 `take_damage()` 相容性處理是二選一未決項**(受守衛約束 / 比照
+   `Board.set_occupant()` 繞過守衛)。`lead-programmer` 傾向後者並寫明理由,**未代為裁決**。
+3. **`unit.gd` 之外的讀取面未逐一覆核**(`CombatRules` / `CardModifierRules` 對 `atk`/`def`
+   的讀取)。理論上 getter 回傳值不變、不受影響,**但未實測**。
 ## M3 拆分說明(附帶建議 1 的結論)
 
 M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開工)與 **M3b**(切面 1,
@@ -48,6 +132,9 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 013 | story-013-attack-confirm-panel.md | M5 | UI | 攻擊確認面板(二段確認,`_confirm_at_cursor()` 拆段) | 006, 008-011, localization Story 001 |
 | 014 | story-014-movement-attack-range-overlay-layers.md | M4 | Visual/Feel | 移動範圍三態+第四態、攻擊範圍三層疊加圖 | 003, 007, 012, 013(執行序) |
 | 015 | story-015-action-flag-marker-impassable-terrain-render.md | M4 | Visual/Feel | 單位行動旗標持久非色彩標記 + 不可通行地形呈現 | 001, 004, 014(執行序) |
+| 016 | story-016-terrain-load-time-validation.md | M2 | Logic | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查)+ `reachable_tiles()` 哨兵 `-1` 防護 | 001, 002 |
+| 003c | story-003c-player-turn-start-commit-wrapping.md | M3a | Logic | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()` / `tick_all_modifiers()`,路徑⑥⑦) | 003b |
+| 017 | story-017-unit-combat-field-setters.md | M3a | Logic | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | 003b |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)
 

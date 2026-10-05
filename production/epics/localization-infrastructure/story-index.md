@@ -12,6 +12,29 @@
 | 002 | story-002-migrate-existing-hardcoded-strings.md | Integration | 既有 4 個 `.gd` + 2 個 `.tscn` 裸字串遷移至 key 系統 | 001 | 否 —— 建議盡快做,不阻擋 M5 |
 | 003 | story-003-fallback-missing-key-regression-tests.md | Logic | Fallback 行為 + 缺字偵測的管線測試與靜態紀律回歸測試 | 001(建議同批) | 否,但「缺 key 不顯示裸 key」本身是 001 骨架行為的一部分 |
 
+## ✅ Story 001 已完成(2026-10-05)
+
+A~E 五節全部落地:locale 目錄與 CSV(`godot-specialist`)、`project.godot` 的
+`[internationalization]` 設定、核心查找 API `Loc.localize()` 與 8 條 GdUnit4 測試
+(`godot-gdscript-specialist`)、以及 E 節在 **production 本體匯出建置**上的實機量測
+(`godot-specialist`,BLOCKING 項已關閉)。
+
+**協調者獨立重跑全套測試**:`1014 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped |
+0 orphans`,`Executed test suites: (82/82)`;唯一具名 ` FAILED` 是既有那條已核准的刻意紅測試。
+
+🔴 **連帶效果已執行**:`production/epics/tactical-combat/` 的 **story-012 與 story-013 已解除封鎖**
+(`Blocked` → `Ready`),兩檔的 Status 行各自加註了解除依據與原文。
+
+⚠️ **誠實揭露**:本次沒有跑正式的 `/story-done` 逐條 AC 覆核關卡,上述是協調者依專家回報
+加上自行複驗檔案與原始 log 做的驗收。
+⚠️ **Steam 客戶端語言那一半不在 Story 001 範圍**,留給未來的 Steam 整合工作單,**未關閉**。
+
+🔴 **story-002 的範圍因 Story 001 的一項發現而需要注意**:對外方法**不能**命名為 `tr`
+(`Object` 原生有 `tr()`,覆寫是編譯期錯誤),本專案的查找入口是 **`Loc.localize(key)`**。
+遷移既有字串時請呼叫它,不要自行再包一層叫 `tr` 的東西。
+物證:`prototypes/godot-gdscript-specialist-i18n-story001-d-probe-2026-10-05/shadow_check/`
+(兩份對照探針,exit 1 vs exit 0)。
+
 ## 三件實質約束各自落在哪裡(供覆核者快速核對,不重複全文)
 
 1. **目錄先建立、locale 檔案先落地,之後才更新 `.claude/docs/directory-structure.md`** ——

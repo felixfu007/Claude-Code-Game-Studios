@@ -1,0 +1,21 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Story 001 D 節探針 ===
+Q_setup: TranslationServer.get_locale() = zh_TW
+Q_setup: TranslationServer.get_loaded_locales() = ["zh_TW"]
+Q_setup: OS.is_debug_build() = true
+Q1a: tr(&"battle.hud.status_format") = [第 %d 回合．%s]
+Q1a: matches CSV value verbatim? = true
+Q1b: tr(&"battle.menu.leave_confirm_title") = [離開遊戲?]
+Q1b: matches CSV value verbatim? = true
+Q2: tr(&"this.key.does.not.exist.anywhere") = [this.key.does.not.exist.anywhere]
+Q2: result == key string itself (bare-key echo)? = true
+Q2: result.is_empty() = false
+Q3: tr(&"nonexistentkeynodot") = [nonexistentkeynodot]
+Q3: result == key string itself (bare-key echo)? = true
+Q4: TranslationServer.has_method("translate") = true
+Q4: TranslationServer.translate(&"battle.hud.status_format") = [第 %d 回合．%s]
+Q4: typeof result = 21
+Q5: TranslationServer.translate(&"this.key.does.not.exist.anywhere") = [this.key.does.not.exist.anywhere]
+Q5: result == key string itself (bare-key echo)? = true
+=== 探針結束 ===

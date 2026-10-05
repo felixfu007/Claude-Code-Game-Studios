@@ -29,6 +29,7 @@
 │   ├── art/
 │   ├── fonts/                   # 進版控的字型檔 + 授權全文(見該目錄 README)
 │   └── data/                    # 資料驅動的設定檔(關卡地形、名冊等)
+│       └── locales/             # 本地化字串 CSV 來源(story-001;.translation 為匯入產物,依 .gitignore 不進版控)
 │
 ├── design/                      # 設計文件
 │   ├── art/                     # 美術方向

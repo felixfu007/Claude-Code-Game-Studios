@@ -1,0 +1,3 @@
+ExitCode=0
+SawMainWindowHandleNonZero=False
+IterationsPolled=7

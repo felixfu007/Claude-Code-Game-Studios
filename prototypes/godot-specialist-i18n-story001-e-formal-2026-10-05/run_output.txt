@@ -1,0 +1,7 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+E_SECTION_PROBE OS.get_locale() = zh_TW
+E_SECTION_PROBE OS.get_locale_language() = zh
+E_SECTION_PROBE TranslationServer.get_locale() = zh_TW
+E_SECTION_PROBE Loc.localize(battle.hud.status_format) = 第 %d 回合．%s
+E_SECTION_PROBE DONE

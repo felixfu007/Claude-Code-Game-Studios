@@ -1,7 +1,17 @@
 # Story 013: 攻擊確認面板(二段確認,`_confirm_at_cursor()` 拆段)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M5
-> **Status**: Blocked(見下方「阻擋條件」——本地化 Story 001 尚未完成)
+> **Status**: Ready(2026-10-05 解除封鎖 —— 本地化 Story 001 已 Complete,見下方註)
+> ✅ **2026-10-05 解除封鎖。** 本行原文逐字為:
+> `> **Status**: Blocked(見下方「阻擋條件」——本地化 Story 001 尚未完成)`
+> **解除依據**:本地化 Story 001 的 A~E 五節全部完成並標 `Complete`
+> (`production/epics/localization-infrastructure/story-001-core-lookup-api-and-locale-structure.md`
+> 的檔頭完成註記),含 E 節在 production 匯出建置上的實機量測(`zh_TW` 四項全中)。
+> 🔴 **注意本檔下方「阻擋條件」節的檢查方式是單向的** —— 它逐字寫「**若仍為零命中**,
+> 本地化 Story 001 尚未完成」。零命中代表沒完成,**非零命中不代表完成**。
+> 本次解除**不是**只憑那條 grep(現為 12 命中),而是憑 E 節 BLOCKING 項已關閉。
+> ⚠️ **本 story 的 Dependencies 節所列的其他前置(004/006/008-011)仍未完成** ——
+> 與本專案慣例一致:依賴未滿足標 `Ready` 不標 `Blocked`,但**實際動工前仍須確認那些已 Done**。
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M

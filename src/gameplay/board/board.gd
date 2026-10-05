@@ -63,13 +63,51 @@ var _occupants: Dictionary = {}
 
 ## Builds a Board from an ASCII grid. `rows[y]` is the row for that y
 ## coordinate, and each character in the row is the terrain for that x.
+##
+## Performs load-time validation as two independent, additive diagnostic
+## checks on top of the existing storage/parse behavior (defense-in-depth
+## alongside get_move_cost()/passable()'s query-time checks below — Story
+## 016, TR-tactical-002 "並有載入時驗證"):
+##   1. Structural: rows.size() must equal BOARD_HEIGHT; each row's length()
+##      must equal BOARD_WIDTH.
+##   2. Compositional: every cell's character must have an entry in
+##      TERRAIN_TABLE, checked through the same _terrain_entry() seam
+##      get_move_cost()/passable() use (see that method's doc comment).
+## Every violation triggers its own push_error() call and the scan never
+## stops at the first one — a hand-edited ASCII level file's mistakes tend
+## to repeat (a whole mistyped row, a copy-paste error), and one load that
+## reports every problem at once is more useful than a fix-one/reload loop
+## for this data's hand-authored, occasionally-wrong usage pattern.
+##
+## Deliberately does NOT use assert() to guard any of this: a failed
+## assert() aborts the caller and yields ordinal 0 of the declared return
+## type, which here would silently produce a seemingly-valid empty Board —
+## see .claude/docs/coding-standards.md, 2026-09-15 entry, and the same
+## reasoning already documented on get_move_cost()/passable() below.
+##
+## Deliberately does NOT reject construction, return null, or throw on
+## failure: this project has no "construction can fail" convention
+## anywhere (Board/TurnOrder/Unit are all build-always-succeeds,
+## query-time-explicit-failure, exactly like get_move_cost()/passable()
+## below). Storage/parse behavior is completely unchanged by any of these
+## checks — a too-short/too-long row's existing characters are still
+## stored exactly as before, and an unregistered character is still stored
+## as-is (get_move_cost()/passable() already handle it at query time, same
+## as before this validation existed).
 static func from_ascii(rows: PackedStringArray) -> Board:
 	var board: Board = Board.new()
+	if rows.size() != BOARD_HEIGHT:
+		push_error("Board.from_ascii: expected %d rows, got %d" % [BOARD_HEIGHT, rows.size()])
 	for y: int in range(rows.size()):
 		var row: String = rows[y]
+		if row.length() != BOARD_WIDTH:
+			push_error("Board.from_ascii: row %d has length %d, expected %d" % [y, row.length(), BOARD_WIDTH])
 		for x: int in range(row.length()):
 			var pos: Vector2i = Vector2i(x, y)
-			board._terrain[pos] = row.substr(x, 1)
+			var terrain: String = row.substr(x, 1)
+			if board._terrain_entry(terrain) == null:
+				push_error("Board.from_ascii: unregistered terrain character '%s' at %s" % [terrain, pos])
+			board._terrain[pos] = terrain
 	return board
 
 
@@ -247,7 +285,18 @@ func reachable_tiles(
 			if not ignore_passability and not passable(neighbor):
 				continue
 
-			var candidate_cost: int = best_cost[current] + get_move_cost(neighbor)
+			# Story 016 AC6: an unregistered-terrain cost sentinel must never
+			# be folded into the cost sum — treat it as if passable()==false
+			# for this neighbor, independent of whether ignore_passability
+			# already filtered it (it does not when true, which is exactly
+			# the case story-007's `C` set computation relies on; see
+			# board.gd Story 016 doc comment on from_ascii() and the
+			# story-016 design doc "決策三" for the full history of this gap).
+			var move_cost: int = get_move_cost(neighbor)
+			if not _is_move_cost_usable(move_cost):
+				continue
+
+			var candidate_cost: int = best_cost[current] + move_cost
 			if candidate_cost > mp:
 				continue
 			if not best_cost.has(neighbor) or candidate_cost < best_cost[neighbor]:
@@ -295,6 +344,20 @@ func _index_of_cheapest(frontier: Array[Vector2i], best_cost: Dictionary) -> int
 			cheapest_cost = cost
 			cheapest_index = i
 	return cheapest_index
+
+
+# Returns true if move_cost (as returned by get_move_cost()) is safe to fold
+# into reachable_tiles()'s running cost sum (Story 016, AC6). The production
+# body IS the AC6 protection itself — not a pass-through to be deleted —
+# rejecting MOVE_COST_UNKNOWN_TERRAIN exactly as if the neighbor had failed
+# passable(). Overridable only by a test-only mutant subclass (same pattern
+# as _terrain_entry() and _on_tile_visited() below/above — see their doc
+# comments for the precedent): a sensitivity-proof test overrides this to
+# always return true, reproducing — without editing this file — exactly
+# what reachable_tiles() does if AC6's protection were removed, so the test
+# can prove the regression it guards against actually turns the test red.
+func _is_move_cost_usable(move_cost: int) -> bool:
+	return move_cost != MOVE_COST_UNKNOWN_TERRAIN
 
 
 # Returns the TERRAIN_TABLE entry ({"cost": int, "passable": bool}) for a

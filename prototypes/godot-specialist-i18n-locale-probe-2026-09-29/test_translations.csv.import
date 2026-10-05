@@ -6,10 +6,10 @@ uid="uid://dm284geyhgsn5"
 
 [deps]
 
-files=["res://test_translations.zh_TW.translation", "res://test_translations.zh_Hant.translation", "res://test_translations.en.translation"]
+files=["res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.zh_TW.translation", "res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.zh_Hant.translation", "res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.en.translation"]
 
-source_file="res://test_translations.csv"
-dest_files=["res://test_translations.zh_TW.translation", "res://test_translations.zh_Hant.translation", "res://test_translations.en.translation"]
+source_file="res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.csv"
+dest_files=["res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.zh_TW.translation", "res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.zh_Hant.translation", "res://prototypes/godot-specialist-i18n-locale-probe-2026-09-29/test_translations.en.translation"]
 
 [params]
 

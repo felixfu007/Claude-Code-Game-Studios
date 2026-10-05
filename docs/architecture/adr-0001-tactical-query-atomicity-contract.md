@@ -81,6 +81,15 @@
 > 攻擊/移動解算是否已構成本 ADR 定義的結算邊界(無人評估);`class_name Board` 命名衝突的處置;
 > release 建置下的屬性攔截行為(本機無 export template)。
 
+
+> 🔴 **第二次修訂 2026-10-05(`technical-director` 裁決)—— 巢狀提交語意。**
+> 原文對「一條寫入路徑在另一條尚未結束時開始」沒有答案,而現有呼叫圖**今天就會巢狀**
+> (`_apply_attack()` → `BattleState.resolve_attack()`;`run_enemy_phase()` 的整批提交包住
+> 其內每一次 `move_unit()` / `resolve_attack()`)。裁決:`authoritative_write_in_progress`
+> 內部改為**深度計數器**,對外仍是布林;版本號只在深度歸零時 +1。**另含兩項連帶裁決**
+> (守衛必須選擇性掛載;`create()` 的初始站位不走提交入口、版本號維持 0)。
+> 全文見機制二末段的「第二次修訂」三節。**五個核准條件不受影響,Status 維持 `Accepted`。**
+
 ## Date
 
 2026-08-18
@@ -341,6 +350,128 @@
 - **卡死偵測(2026-08-18 `godot-specialist` 驗證發現的一個比重入更嚴重的失效模式)**:`authoritative_write_in_progress` **不得跨越兩個連續的 `_process` 幀仍為 `true`**;若偵測到,須以 `push_error()` 明確曝光。理由:旗標的防禦性推理隱含假設「意外引入的 `await` 終將恢復」。但若該 `await` 永遠不恢復(等待一個不再發出的訊號、或等待的節點被釋放導致協程掛死),旗標會永遠停在 `true`,後果不是「一次可觀測的拒絕」而是**整場戰鬥輸入永久鎖死且無任何錯誤訊息**——比本旗標原本要防的情境更糟。此斷言可直接寫成自動化測試(見 Validation Criteria)。
 
 > **為何仍需要這個旗標,即使結算是單幀的**:防禦性。GDScript 的呼叫鏈中若有任何一處意外引入讓出點(顯性的 `await`,或上述隱性的 deferred 路徑),旗標會讓該情形**變成一個可觀測的拒絕或一個明確的錯誤**,而不是一個靜默的重入 bug。這是本專案「錯誤不得靜默」既有慣例的延伸。
+
+
+#### 🔴 第二次修訂(2026-10-05 `technical-director` 裁決):巢狀提交下 `authoritative_write_in_progress` 的語意 —— 內部改為深度計數器,對外仍是布林
+
+> ⚠️ **這是本 ADR 的第二次修訂。** 依 `.claude/docs/technical-preferences.md`「流程劑量上限」
+> 規則 4(同一份文件不做第三次以上修訂),**下一次要再改這份文件時,正確動作是重寫或擱置,
+> 不是再補一次修訂。** 寫在這裡是因為計數本身沒有任何自動檢查。
+
+**本 ADR 原文對巢狀沒有答案 —— 這是語意空缺,不是風格選擇。** 查證方式是讀原文而非關鍵字搜尋
+(語意約束的同義詞空間是開放的):逐節讀過 `Decision` 的核心洞見、機制一全文(含遞增時機逐條
+清單與五條硬性義務)、機制二全文、Architecture Diagram 的寫入路徑圖、Key Interfaces 中
+`commit_authoritative_change()` / `write_window_is_open()` 的註解、Alternatives、Risks、
+Validation Criteria 第 4 項全表與第 7 項。全文只說「任一寫入路徑開始時設為 `true`,完成
+(含所有跨系統呼叫回傳)後設為 `false`,並於此時遞增 `combat_state_version`」——
+**從未說明「一條寫入路徑在另一條尚未結束時開始」會發生什麼。**
+
+**裁決:`authoritative_write_in_progress` 的內部表示改為非負整數深度計數器。**
+
+- 進入 `commit_authoritative_change()`:深度 `+1`。
+- 離開:先等 mutator 完整回傳,再深度 `-1`;**僅當深度由 1 歸 0 時** `_combat_state_version += 1`。
+  **巢狀的內層提交不遞增版本號。**
+- `write_window_is_open() -> bool` 回傳「深度 > 0」。**簽章與回傳型別不變。**
+- 對外唯讀屬性 `authoritative_write_in_progress: bool` **形狀完全不變**,getter 回傳「深度 > 0」,
+  外部賦值仍 `push_error()` 且值不變 —— Validation Criteria 第 9 項不受影響。
+- 機制二的卡死偵測判準改讀「深度 > 0」:**跨越兩個連續 `_process` 幀仍 > 0 即 `push_error()`**。
+  語意與原文逐字相同,只是旗標換成計數。
+
+🔴 **為什麼不能是布林 —— 這不是偏好,是布林在本 ADR 自己的驗收條件下無解。推導可當場查證。**
+
+本 ADR 的 Validation Criteria 第 4 項同時要求三件事:**4b/4c**(單次已確認指令 / 移動邏輯完成
+→ 恰好 +1)、**4d**(敵方回合整批結算完成 → 恰好 +1)、**4k**(窗口未開時三個零件的任一
+mutator 被拒且值不變)。對照 2026-10-05 實測的現有呼叫圖,布林方案只能把提交邊界放在兩個
+位置之一,**而兩種放法各自違反上列其中一條**:
+
+| 提交邊界放在 | 4b/4c | 4d(整批 +1) | 4k(守衛) | 實際後果 |
+|---|---|---|---|---|
+| `BattleState.move_unit()` / `resolve_attack()` | ✅ | ❌ 變成 +N(每個敵方動作各一次) | ❌ `_order.use_attack()` / `remove_unit()` 落在窗口外,被守衛拒絕 | `_apply_attack()` 做到一半被自己的守衛擋住 |
+| 驅動層(`_apply_attack()` / `_apply_move()` / `run_enemy_phase()`) | ❌ 直接呼叫 `state.move_unit()` 時窗口未開 | ✅ | ⚠️ **部分寫入**:`resolve_attack()` 內 `target.take_damage()` 先生效(`Unit` 無守衛 —— 硬性義務第 2 條已被 story-003b 明文排除),隨後 `board.clear_occupant()` 被拒 → **HP 已扣、佔位沒清** | 兩條既有綠燈測試轉紅,且權威狀態可被寫成不一致 |
+
+**第二列的「兩條既有綠燈測試」是物證,不是推論** ——
+`tests/unit/gameplay/battle/attack_los_blocked_query_test.gd` 的
+`test_combat_state_version_increments_exactly_once_on_successful_move` 與
+`test_combat_state_version_increments_exactly_once_on_resolve_attack`
+**直接呼叫 `state.move_unit()` / `state.resolve_attack()`、完全不經驅動**,並斷言恰好 +1。
+當場查:`grep -n "combat_state_version" tests/unit/gameplay/battle/attack_los_blocked_query_test.gd`
+
+**計數器同時滿足三者,且不需要同一支函式因為誰呼叫它而改變語意**:
+`_apply_attack()` 開外層(0→1),其內 `resolve_attack()` 開內層(1→2→1,不遞增),
+`_order.use_attack()` / `remove_unit()` 在窗口仍開時執行(守衛放行),外層歸零 → **恰好 +1**;
+`run_enemy_phase()` 的整個 `while` 迴圈包一次 → 迴圈內全部巢狀 → **整批恰好 +1**(4d);
+測試直接呼叫 `state.move_unit()` → 0→1→0 → **恰好 +1**(4b/4c)。
+
+🔴 **本裁決付出的代價,明寫三項:**
+
+1. **「提交是否完成」不再是一個可單點讀出的旗標,而是一個不變式(深度必須回到 0)。**
+   GDScript 沒有 try/finally,因此 `commit_authoritative_change()` 必須是**唯一**碰到該計數器的
+   地方,且 `mutator.call()` 之後的減量不得被任何提早 `return` 跳過。
+   ⚠️ **「GDScript 執行期錯誤會中止該函式並退回呼叫端,因此減量仍會執行」這句本 ADR 尚未實機
+   驗證,屬 (C) 級推測,不得當既定事實引用。** 落地時以一支拋棄式探針確認;在它被確認之前,
+   卡死偵測(機制二)是這條路徑唯一的安全網。
+2. **漏掉外層包裝仍然是靜默的 +N。** 計數器不會替你補上整批邊界 —— 4d 仍是唯一攔得住它的東西,
+   而它是測試不是結構。
+3. **本 ADR 不為巢狀深度設上限。** 設上限等於為假想情況立法;真正的保護是卡死偵測。
+
+**隨本裁決新增一條驗收向量(接在 Validation Criteria 第 4 項表格之後)**:
+
+| # | 向量 | 斷言 |
+|---|---|---|
+| 4l | 🔴 **巢狀提交**:一次外層 `commit_authoritative_change()` 內再開一次(例:`_apply_attack()` → `resolve_attack()`) | 版本號**恰好 +1**(不是 +2);**內層結束後 `write_window_is_open()` 仍為 `true`,外層結束後才為 `false`**;且外層結束後深度確實歸零 |
+
+✅ **與既有 `Callable` 佔位形狀相容,一個字都不必改。**
+`src/gameplay/cards/card_play_session.gd` 的 `_is_authoritative_write_in_progress()` 與
+`src/ui/menu/battle_menu.gd` 的 `open()` 兩處都是 `bool(check.call())`,而本裁決讓
+`write_window_is_open()` 的回傳型別維持 `bool`。查證:
+`grep -rn "authoritative_write_in_progress_check" src/ --include=*.gd`
+
+#### 🔴 連帶裁決一:守衛必須是「選擇性掛載」,這是契約的一部分,不是實作便利
+
+(2026-10-05 同批裁決。story-003b 把它寫成設計約束,本節把它升格為本 ADR 的契約。)
+
+**`Board` 與 `TurnOrder` 在未被指定守衛來源時,行為必須與今日完全相同**(mutator 直接執行,
+不檢查任何東西);只有被 `BattleState` 掛載時才連上真正的守衛。**理由不是向後相容的方便,
+而是本 ADR 自己的分層立場**:三個零件「都不持有版本號」,故它們也不得預設持有「必須有人替我開窗」
+這個假設 —— 一個 `RefCounted` 的幾何零件在沒有戰鬥的情況下必須仍然可用。本 ADR 第一次修訂
+已經為 `TurnOrder` 寫過這句話(「`TurnOrder` 仍是獨立可 `new()` 的 `RefCounted`」),本節把
+同一句話同樣適用到 `Board`。
+
+**現況規模當場數,本節刻意不寫死數字**:
+```bash
+grep -rn "set_occupant(\|clear_occupant(" tests --include="*.gd" | wc -l    # Board 佔位 mutator
+grep -rn "TurnOrder\.new(" tests --include="*.gd" | wc -l                   # TurnOrder 直接建構
+grep -rn "Board\.from_ascii(" tests --include="*.gd" | wc -l                # 不經 BattleState 的 Board
+```
+⚠️ **story-003b 現況節寫的「26 處 … 全部在建立測試夾具時直接呼叫 `set_occupant()`/`clear_occupant()`」
+已於 2026-10-05 複驗為誤**:該 26 是把 `Board.from_ascii(` 與 `Board.new()` 一起算進去的結果,
+其中 `from_ascii` 佔絕大多數;真正的佔位 mutator 呼叫點是個位數。**結論(必須選擇性掛載)不受影響,
+錯的是數字。** 這正是本專案登記過的形狀:指令的定義域比它上方那句散文宣稱的範圍大。
+
+#### 🔴 連帶裁決二:`BattleState.create()` 的初始站位放置不走提交入口,版本號維持 0
+
+(story-003b「未決的實作細節」第 1 項的選項 A/B 裁決。版本號語意屬本 ADR 契約面,故在此裁決而非
+由實作者決定。)
+
+**採選項 B 的語意(「版本號 0 = 全新、未變動的戰鬥」),但不採它描述的實作。**
+選項 B 原本要付的代價是「多一條繞過守衛的路徑」—— **那條代價可以不付**:
+
+> **守衛在 `create()` 的放置迴圈完成之後才掛載。**
+> 放置期間 `Board` 尚未被指定守衛來源,依上方「連帶裁決一」的選擇性掛載語意,行為與今日完全相同。
+> **因此不需要任何繞過守衛的私有方法,也不存在第二條寫入路徑。**
+
+**論證**:守衛保護的不變式是「兩次已提交寫入之間,權威狀態不可變」。在 `create()` 回傳之前,
+沒有任何人持有這個 `BattleState`、沒有任何查詢結果存在、沒有任何版本戳記被發出過 ——
+**該不變式在第一次提交之前是空真的。** 放置不是「改變一場戰鬥」,它是「這場戰鬥的初始值」。
+
+🔴 **落地時的硬性順序(寫下來是因為做反了不會報錯,只會讓 `create()` 整支失敗)**:
+`Board.from_ascii()` → 放置迴圈 → **最後**才把守衛來源接上 `self.write_window_is_open` → `return state`。
+`attach_turn_order()` 同理:在掛載該 `TurnOrder` 的那一刻接上,不在更早。
+
+⚠️ **這個論證有一個前提,請連同裁決一起傳下去**:它成立是因為 `create()` 是唯一的建構入口,
+且在它回傳前沒有外部參照。**日後若新增任何「對一個已經掛好守衛的 `BattleState` 批次放置單位」的
+路徑(關卡重載、增援、讀檔還原),本段的空真論證就地失效,那條路徑必須走
+`commit_authoritative_change()`。**
 
 ### 機制三:邏輯佔位表
 

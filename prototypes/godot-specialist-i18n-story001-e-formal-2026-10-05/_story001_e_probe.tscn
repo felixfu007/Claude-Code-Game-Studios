@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/core/i18n/_story001_e_probe.gd" id="1_probe"]
+
+[node name="E_SECTION_PROBE" type="Node"]
+script = ExtResource("1_probe")

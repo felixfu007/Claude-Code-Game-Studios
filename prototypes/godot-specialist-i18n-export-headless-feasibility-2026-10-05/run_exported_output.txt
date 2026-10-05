@@ -1,0 +1,7 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+FEASIBILITY OS.get_locale() = zh_TW
+FEASIBILITY OS.get_locale_language() = zh
+FEASIBILITY TranslationServer.get_locale() = zh_TW
+FEASIBILITY tr(test_key) = 測試_zhTW_export
+FEASIBILITY DONE
