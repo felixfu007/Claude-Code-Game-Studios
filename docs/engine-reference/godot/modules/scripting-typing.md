@@ -25,6 +25,14 @@ Last verified: 2026-09-23 | Engine: Godot 4.7.1
 > 執行期陷阱,起因是一次真實事故(451 個執行期 SCRIPT ERROR)。**本行只記錄行數
 > 變化,不擴大上方例外的適用範圍或理由**——是否需要因為累積行數已遠超 150 行上限
 > 而拆分模組檔,是下一次的管理者裁決,本次新增未自行做這個決定。
+>
+> **2026-10-06 新增第 10 節**(方法名稱撞到 `Object` 原生方法 —— `tr()` 是 parse error
+> 而非執行期風險)。**來源不是本次新跑的探針**:該事實於 2026-10-05 做本地化 Story 001
+> 時已實機驗證,但當時只寫在 `src/core/i18n/loc.gd` 的檔頭與探針 README 裡,
+> **沒有進參考庫** —— 亦即下一個「查參考庫看有沒有這個坑」的人會查不到。
+> 本次是管理者核准後的補登,物證沿用當日那兩支對照探針(exit 1 / exit 0)。
+> ⚠️ **本檔頭的 `Last verified: 2026-09-23` 未更動** —— 第 10 節有自己的驗證日期與證據
+> 路徑,寫在該節內。改檔頭日期會讓人以為第 1~9 節也在 2026-10-06 重驗過,那不是事實。
 
 ## 1. 巢狀型別容器不支援
 
@@ -470,3 +478,75 @@ GdUnit4 呼叫方式那組「假綠燈」問題(filter 打錯字 exit 0、PATH �
 **證據**:`prototypes/godot-specialist-ternary-typed-array-2026-09-23/run_output.txt`
 與 `run_output_q5.txt`——上表 9 個 case 各自的 `EXIT_CODE=0` 行,與其正上方的
 `SCRIPT ERROR` 輸出成對出現,可逐一核對。
+
+---
+
+## 10. 方法名稱撞到 `Object` 原生方法(實例:`tr()`)—— 是 **parse error**,不是執行期遞迴風險
+
+**2026-10-05 實機驗證(Godot 4.7.1,本專案根目錄),2026-10-06 補進本檔。**
+
+本專案做本地化時,原本打算把查找 API 命名為 `Loc.tr(key)`(直覺上與 Godot 的
+`tr()` 同名最好記)。**實測:這個類別根本載入不了。** 不是「可能遞迴」「可能行為怪異」
+這類執行期風險,而是**腳本在 parse 階段就失敗、整個檔案載入不了**。
+
+```gdscript
+# 🔴 失敗案例原文(逐字,見下方證據路徑)
+class_name ShadowProbeLocFailed
+extends RefCounted
+
+static func tr(key: StringName) -> String:
+	return String(TranslationServer.translate(key))
+```
+
+引擎輸出(逐字,`EXIT=1`):
+
+```
+SCRIPT ERROR: Parse Error: The function signature doesn't match the parent. Parent signature is "tr(StringName, StringName = <default>) -> String".
+SCRIPT ERROR: Parse Error: The method "tr()" overrides a method from native class "Object". This won't be called by the engine and may not work as expected. (Warning treated as error.)
+ERROR: Failed to load script "res://.../shadow_probe_FAILED_named_tr.gd" with error "Parse error".
+```
+
+對照組(只改名字,其餘完全相同)`EXIT=0`:
+
+```gdscript
+static func localize(key: StringName) -> String:
+	return String(TranslationServer.translate(key))
+```
+
+### 🔴 兩個錯誤的性質不同,照抄結論會抄錯
+
+上面是**兩個獨立的錯誤**,不是同一件事講兩次:
+
+| | 訊息 | 性質 | 觸發條件 |
+|---|---|---|---|
+| ① | `The function signature doesn't match the parent` | **硬性 parse error**,與警告設定無關 | 只在你的簽章與 `tr(StringName, StringName = <default>) -> String` 不同時觸發 |
+| ② | `The method "tr()" overrides a method from native class "Object"` | **警告被升級成錯誤**(訊息自己寫著 `(Warning treated as error.)`) | 任何對 `Object` 原生方法的覆寫 |
+
+**②之所以在本專案是錯誤而非警告,是因為引擎預設如此,不是專案設定。** 實測
+`grep -n "warning\|native_method" project.godot` **零命中** —— 本專案沒有任何警告等級設定,
+探針跑的就是 Godot 4.7.1 的出廠預設。
+⚠️ **連帶後果**:若日後有人調整 GDScript 警告等級把 `native_method_override` 降級,
+②會退回警告、不再擋住載入 —— 那時這個命名就會變成「能載入但引擎不會呼叫它」的
+靜默錯誤。**①仍然會擋,但只在簽章不同時。**
+
+### ⚠️ 本次【沒有】測到的(不得外推)
+
+- **簽章完全相同的覆寫**(非 static、兩個參數、第二個有預設值)會不會只剩②而仍然失敗
+  —— **沒測**。探針用的是 `static func tr(key: StringName) -> String`,**同時**踩到①②。
+- **`static` 與實例方法的差別**有沒有影響 —— **沒測**。
+- **其他 `Object` 原生方法名**(`get` / `set` / `call` / `connect` / `free` / `notification` …)
+  是否同一形狀 —— **沒測**。②的訊息措辭是通用的(`a method from native class "Object"`),
+  **看起來**會一體適用,但本節只量了 `tr` 這一個。
+
+### 可執行的規則
+
+**替 `extends RefCounted`(或任何繼承自 `Object` 的類別)命名對外方法時,先確認名字沒有撞到
+`Object` 的原生方法。** 撞到的代價不是「風格不佳」,是**檔案載入不了**,而且它表現成
+parse error —— 依 `.claude/docs/coding-standards.md` 記載,parse 階段失敗會讓
+GdUnit4 以 **exit 105** 中止整條測試線、`Overall Summary` 與 ` FAILED` **兩個 grep 都回空**,
+看起來跟「乾淨通過」一模一樣。
+
+**證據**:`prototypes/godot-gdscript-specialist-i18n-story001-d-probe-2026-10-05/shadow_check/`
+—— `run_output_FAILED_named_tr.txt`(`EXIT=1`)與 `run_output_PASSED_named_localize.txt`
+(`EXIT=0`)兩份原始輸出,連同產生它們的兩支 `.gd` 原始檔,可逐字核對。
+本專案的實際處置寫在 `src/core/i18n/loc.gd` 的檔頭(對外 API 定為 `Loc.localize()`)。
