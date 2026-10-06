@@ -87,7 +87,9 @@ var _card_deck: CardDeck = null
 ## through), and — critically — this counter is NOT incremented by any of
 ## [TurnOrder]'s five mutators ([code]use_move[/code]/[code]use_attack[/code]/
 ## [code]end_unit_turn[/code]/[code]advance_faction[/code]/[code]remove_unit[/code])
-## or by [Board]'s [code]set_occupant[/code]/[code]clear_occupant[/code] called
+## or by [Board]'s [code]_set_occupant[/code]/[code]_clear_occupant[/code] (renamed by
+## story-003b-atomicity-write-guard-consolidation.md; this sentence otherwise
+## describes story-003's original, now-superseded state) called
 ## from anywhere other than this class's own two mutators below. This is
 ## sufficient for [method is_attack_range_blocked_by_los] (the only
 ## version-stamped query this story adds — its inputs are exactly a unit's
@@ -108,9 +110,81 @@ var combat_state_version: int:
 			"combat_state_version is read-only outside BattleState; rejected external write of %d" % value
 		)
 
+## story-003b-atomicity-write-guard-consolidation.md / ADR-0001 (2026-10-05
+## revision, nested-commit semantics): depth counter for the authoritative
+## write window, NOT a boolean. [method commit_authoritative_change]
+## increments this on entry and decrements it on exit; [member
+## combat_state_version] above is only bumped when the depth returns to 0
+## from 1 — a nested inner commit does NOT bump it. See
+## [code]docs/architecture/adr-0001-tactical-query-atomicity-contract.md[/code]'s
+## "第二次修訂" section for the full derivation of why a boolean cannot
+## satisfy all of the ADR's Validation Criteria simultaneously.
+var _authoritative_write_depth: int = 0
+
+## True while any [method commit_authoritative_change] call (nested or not)
+## is in progress — [code]_authoritative_write_depth > 0[/code]. Read-only
+## from outside this class, matching [member combat_state_version]'s own
+## rejection shape: an external write is rejected via [method push_error]
+## and silently left unchanged. This is the re-entrancy guard ADR-0001
+## Mechanism Two specifies; external callers (e.g.
+## [code]card_play_session.gd[/code]'s [code]authoritative_write_in_progress_check[/code]
+## callable) only ever read this property, never set it.
+var authoritative_write_in_progress: bool:
+	get:
+		return _authoritative_write_depth > 0
+	set(value):
+		push_error(
+			"authoritative_write_in_progress is read-only outside BattleState; rejected external write of %s" % value
+		)
+
+
+## ADR-0001's single entry point every authoritative mutation must route
+## through. Increments [member _authoritative_write_depth] on entry, invokes
+## [param mutator], then decrements the depth on exit — [member
+## combat_state_version] is incremented exactly once per OUTERMOST call
+## (depth 1 -> 0), never for a nested inner call (e.g. [BattleController]'s
+## batch enemy-phase settlement, which must bump the version exactly once
+## for the whole batch, not once per unit — ADR-0001 Validation Criteria 4d).
+func commit_authoritative_change(mutator: Callable) -> void:
+	_authoritative_write_depth += 1
+	mutator.call()
+	_authoritative_write_depth -= 1
+	if _authoritative_write_depth == 0:
+		_combat_state_version += 1
+
+
+## True while this battle is inside an authoritative write window (depth > 0)
+## — the read-only predicate write guards (e.g. [TurnOrder], [Board]) check
+## before allowing a mutation to proceed. Equivalent to [member
+## authoritative_write_in_progress]; exists as its own method because ADR-0001
+## specifies [code]write_window_is_open() -> bool[/code] as the call shape
+## guard callables are wired against (see the ADR's Mechanism Two and the
+## "連帶裁決一" selective-mount guidance: a guard that is never wired to a
+## callable defaults to permissive, not to calling this method with a null
+## receiver).
+func write_window_is_open() -> bool:
+	return _authoritative_write_depth > 0
+
 
 ## Builds a [BattleState] from a terrain grid and a roster text blob: parses
 ## both, then places every unit on the board at its [member Unit.start_pos].
+##
+## 🔴 ADR-0001 (2026-10-05 revision, "連帶裁決二"): initial placement does
+## NOT route through [method commit_authoritative_change], and
+## [member combat_state_version] is left at its default (0) when this
+## returns — "0 = a fresh, unchanged battle". This is NOT a bypass of the
+## write guard: [member board]'s guard is only attached AFTER the placement
+## loop below completes, so during placement [Board] has no guard source at
+## all yet, and [method Board._set_occupant] runs exactly as it always has
+## (selective-mount default — see [method Board.attach_write_guard]). The
+## invariant the guard protects ("authoritative state cannot change between
+## two committed writes") is vacuously true before the first commit, because
+## no caller holds this [BattleState] and no query result has ever been
+## issued yet. See the ADR section for the full argument and its one
+## carried-forward precondition: any FUTURE path that bulk-places units onto
+## an ALREADY-guarded [BattleState] (level reload, reinforcements, save
+## restore) must route through [method commit_authoritative_change] — this
+## vacuous-truth argument does not extend to that case.
 static func create(terrain_rows: PackedStringArray, roster_text: String) -> BattleState:
 	var state: BattleState = BattleState.new()
 	state.board = Board.from_ascii(terrain_rows)
@@ -118,7 +192,8 @@ static func create(terrain_rows: PackedStringArray, roster_text: String) -> Batt
 	for unit: Unit in roster:
 		state._units[unit.id] = unit
 		state._positions[unit.id] = unit.start_pos
-		state.board.set_occupant(unit.start_pos, unit.id)
+		state.board._set_occupant(unit.start_pos, unit.id)
+	state.board.attach_write_guard(Callable(state, "write_window_is_open"))
 	return state
 
 
@@ -138,13 +213,20 @@ func turn_order() -> TurnOrder:
 ## it only records the reference.
 ##
 ## ⚠️ Overwrites any previously attached [TurnOrder] without warning. This
-## class does not yet guard against two drivers attaching different
-## instances to the same state; that guard belongs to the write-window
-## mechanism ADR-0001 defines (`authoritative_write_in_progress` +
-## `commit_authoritative_change()`), which is out of scope for this change —
-## see the ADR's five hard obligations under Mechanism One.
+## class does not guard against two drivers attaching different instances to
+## the same state.
+##
+## story-003b-atomicity-write-guard-consolidation.md: also attaches this
+## [BattleState]'s write-window guard ([method write_window_is_open]) onto
+## [param order], at the moment of mounting — not earlier (ADR-0001's
+## "連帶裁決二" applies the same "attach at the moment of mounting" rule to
+## [TurnOrder] that [method create] applies to [member board]). This is what
+## was previously out of scope for this method (the superseded wording this
+## doc comment used to carry, from before ADR-0001's write-guard mechanism
+## existed as a buildable contract) — it is in scope as of this story.
 func attach_turn_order(order: TurnOrder) -> void:
 	_turn_order = order
+	_turn_order.attach_write_guard(Callable(self, "write_window_is_open"))
 
 
 ## Returns the [CardDeck] attached to this battle, or [code]null[/code] if
@@ -230,19 +312,26 @@ func legal_moves(id: int) -> Array[Vector2i]:
 
 
 ## Attempts to move the unit to dest. Returns [code]false[/code] and leaves
-## every piece of state untouched if dest is not in [method legal_moves].
-## On success, updates board occupancy and [member _positions] together in
-## the same call so they never drift out of sync, then increments
-## [member combat_state_version] (story-003-los-blocked-in-range-query.md —
-## see that field's doc comment for the current scope of this counter).
+## every piece of state untouched if dest is not in [method legal_moves] —
+## the illegality check runs BEFORE [method commit_authoritative_change] is
+## ever called, so a rejected move never opens a write window and never
+## bumps [member combat_state_version]. On success, updates board occupancy
+## and [member _positions] together in the same
+## [method commit_authoritative_change] call so they never drift out of
+## sync, which is what increments [member combat_state_version]
+## (story-003-los-blocked-in-range-query.md — see that field's doc comment
+## for the counter's scope; story-003b-atomicity-write-guard-consolidation.md
+## routed this through the single commit entry point instead of a manual
+## [code]+= 1[/code]).
 func move_unit(id: int, dest: Vector2i) -> bool:
 	if not legal_moves(id).has(dest):
 		return false
 	var origin: Vector2i = position_of(id)
-	board.clear_occupant(origin)
-	board.set_occupant(dest, id)
-	_positions[id] = dest
-	_combat_state_version += 1
+	commit_authoritative_change(func() -> void:
+		board._clear_occupant(origin)
+		board._set_occupant(dest, id)
+		_positions[id] = dest
+	)
 	return true
 
 
@@ -338,14 +427,21 @@ func is_attack_range_blocked_by_los(attacker_id: int, from: Vector2i, to: Vector
 ## the same private helper [method preview_damage] calls — so a UI preview
 ## and the real settlement can never drift apart on ATK/DEF/phi: there is
 ## exactly one formula, not two that currently happen to agree.
+##
+## story-003b-atomicity-write-guard-consolidation.md: HP damage and the
+## death-triggered occupancy cleanup are a single
+## [method commit_authoritative_change] call, so [member combat_state_version]
+## is incremented exactly once per resolved attack regardless of whether the
+## target died — replacing the previous manual [code]+= 1[/code].
 func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 	var dealt: int = _compute_attack_damage(attacker_id, target_id, phi)
 	var target: Unit = unit_by_id(target_id)
-	target.take_damage(dealt)
-	if not target.is_alive():
-		board.clear_occupant(position_of(target_id))
-		_positions.erase(target_id)
-	_combat_state_version += 1
+	commit_authoritative_change(func() -> void:
+		target.take_damage(dealt)
+		if not target.is_alive():
+			board._clear_occupant(position_of(target_id))
+			_positions.erase(target_id)
+	)
 	return dealt
 
 

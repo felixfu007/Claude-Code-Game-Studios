@@ -49,6 +49,31 @@ var _enemy_ids: Array[int] = []
 var _current_side: TurnOrder.Side = TurnOrder.Side.PLAYER
 var _round_number: int = 1
 
+## story-003b-atomicity-write-guard-consolidation.md / ADR-0001 "連帶裁決一":
+## optional write-window guard, same selective-mount contract as
+## [method Board.attach_write_guard] — unset by default (invalid [Callable]),
+## in which case every mutator below behaves exactly as it did before this
+## guard existed. [TurnOrder] remains a fully standalone, directly-
+## constructible [RefCounted] for every existing [code]TurnOrder.new()[/code]
+## test fixture that never goes through [BattleState].
+var _write_guard: Callable = Callable()
+
+
+## Attaches [param checker] (signature [code]func() -> bool[/code]) as this
+## turn order's write-window guard — see [method Board.attach_write_guard]'s
+## doc comment for the full reasoning (Callable injection, not a BattleState
+## type reference; selective mount). [method BattleState.attach_turn_order]
+## is the only production caller.
+func attach_write_guard(checker: Callable) -> void:
+	_write_guard = checker
+
+
+# Shared by every mutator below: true if this mutation may proceed — no
+# guard attached (selective mount) or the attached guard reports the write
+# window open.
+func _write_allowed() -> bool:
+	return not _write_guard.is_valid() or bool(_write_guard.call())
+
 
 ## Builds a fresh turn order. Player faction acts first, round_number
 ## starts at 1, and every listed unit starts with both flags unspent.
@@ -88,9 +113,13 @@ func can_attack(id: int) -> bool:
 
 ## Spends [param id]'s move flag. Returns false and changes no state if
 ## [method can_move] would be false for this id (wrong faction, already
-## done, already spent, or removed). If this also exhausts the attack
-## flag, the unit becomes done automatically.
+## done, already spent, or removed) — or if a write guard is attached and
+## reports the write window closed (story-003b; see [member _write_guard]).
+## If this also exhausts the attack flag, the unit becomes done automatically.
 func use_move(id: int) -> bool:
+	if not _write_allowed():
+		push_error("TurnOrder.use_move: rejected for id %d — write window is not open" % id)
+		return false
 	if not can_move(id):
 		return false
 	_move_used[id] = true
@@ -100,9 +129,13 @@ func use_move(id: int) -> bool:
 
 ## Spends [param id]'s attack flag. Returns false and changes no state if
 ## [method can_attack] would be false for this id (wrong faction, already
-## done, already spent, or removed). If this also exhausts the move flag,
-## the unit becomes done automatically.
+## done, already spent, or removed) — or if a write guard is attached and
+## reports the write window closed (story-003b; see [member _write_guard]).
+## If this also exhausts the move flag, the unit becomes done automatically.
 func use_attack(id: int) -> bool:
+	if not _write_allowed():
+		push_error("TurnOrder.use_attack: rejected for id %d — write window is not open" % id)
+		return false
 	if not can_attack(id):
 		return false
 	_attack_used[id] = true
@@ -113,8 +146,12 @@ func use_attack(id: int) -> bool:
 ## Actively ends [param id]'s turn. Valid for any unit that is still
 ## actionable (current faction, not already done, not removed) — neither
 ## flag needs to have been spent. Returns false and changes no state if
-## the unit is not actionable.
+## the unit is not actionable, or if a write guard is attached and reports
+## the write window closed (story-003b; see [member _write_guard]).
 func end_unit_turn(id: int) -> bool:
+	if not _write_allowed():
+		push_error("TurnOrder.end_unit_turn: rejected for id %d — write window is not open" % id)
+		return false
 	if not _is_actionable(id):
 		return false
 	_done[id] = true
@@ -149,7 +186,13 @@ func units_with_flags_remaining() -> Array[int]:
 ## explicitly ended, spent only one flag, or spent none at all. Then the
 ## active faction switches; when the enemy faction hands back to the
 ## player faction, round_number increments.
+##
+## No-op (pushes an error, changes nothing) if a write guard is attached and
+## reports the write window closed (story-003b; see [member _write_guard]).
 func advance_faction() -> void:
+	if not _write_allowed():
+		push_error("TurnOrder.advance_faction: rejected — write window is not open")
+		return
 	var ending_side: TurnOrder.Side = _current_side
 	var ending_ids: Array[int] = _player_ids if ending_side == TurnOrder.Side.PLAYER else _enemy_ids
 	for id: int in ending_ids:
@@ -166,7 +209,13 @@ func advance_faction() -> void:
 
 ## Removes [param id] (permadeath) so it no longer participates in any
 ## query or phase-advancement decision.
+##
+## No-op (pushes an error, changes nothing) if a write guard is attached and
+## reports the write window closed (story-003b; see [member _write_guard]).
 func remove_unit(id: int) -> void:
+	if not _write_allowed():
+		push_error("TurnOrder.remove_unit: rejected for id %d — write window is not open" % id)
+		return
 	_unit_side.erase(id)
 	_move_used.erase(id)
 	_attack_used.erase(id)

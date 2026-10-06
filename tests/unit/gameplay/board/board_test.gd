@@ -90,12 +90,12 @@ func test_occupant_set_clear_and_query_round_trip() -> void:
 	assert_int(board.get_occupant(pos)).is_equal(Board.NO_OCCUPANT)
 
 	# Act & Assert — 設定佔位
-	board.set_occupant(pos, 7)
+	board._set_occupant(pos, 7)
 	assert_bool(board.has_occupant(pos)).is_true()
 	assert_int(board.get_occupant(pos)).is_equal(7)
 
 	# Act & Assert — 清除佔位
-	board.clear_occupant(pos)
+	board._clear_occupant(pos)
 	assert_bool(board.has_occupant(pos)).is_false()
 	assert_int(board.get_occupant(pos)).is_equal(Board.NO_OCCUPANT)
 
@@ -147,7 +147,7 @@ func test_reachable_tiles_occupied_tile_blocks_only_path() -> void:
 	# (0,1)；把 (0,1) 佔位後，(0,1) 與 (0,2) 都應從可達集合消失
 	var board: Board = Board.from_ascii(_build_open_rows())
 	var origin: Vector2i = Vector2i(0, 0)
-	board.set_occupant(Vector2i(0, 1), 42)
+	board._set_occupant(Vector2i(0, 1), 42)
 
 	# Act
 	var reachable: Array[Vector2i] = board.reachable_tiles(origin, 2)

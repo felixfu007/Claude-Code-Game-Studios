@@ -610,7 +610,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 001 | 地形 `passable` 布林旗標與未知地形字元明確失敗 | M2 | Logic | ✅ Done(2026-09-29) | N/A | None |
 | 002 | `reachable_tiles()` 雙開關 + 有界前緣展開 | M2 | Logic | ✅ Done(2026-09-30) | ADR-0001(下游) | 001 |
 | 003 | 「射程內但視線被擋」查詢 | M3a | Logic | ✅ Done(2026-09-30) | ADR-0001 | None |
-| 003b | ADR-0001 原子性機制收斂(版本號/寫入守衛/`Board` mutator 封裝) | M3a | Logic | Ready(2026-09-30 管理者裁決插隊,見 `story-index.md`) | ADR-0001 | 003 |
+| 003b | ADR-0001 原子性機制收斂(版本號/寫入守衛/`Board` mutator 封裝) | M3a | Logic | 🟡 In Progress(2026-10-06 產品碼完成,AC8/AC9 驗收測試未寫 —— 見該 story 檔頭) | ADR-0001 | 003 |
 | 004 | 單位行動四態 getter | M3a | Logic | Ready | ADR-0001 | **003b**(2026-09-30 管理者裁決) |
 | 005 | `threat_targets()` 語意查證與必要時改名 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |
 | 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |

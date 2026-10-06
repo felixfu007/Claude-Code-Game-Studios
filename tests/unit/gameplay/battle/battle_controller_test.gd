@@ -145,7 +145,14 @@ func test_select_unit_rejects_done_unit_and_state_unchanged() -> void:
 	var bundle: Dictionary = _build(roster, [1], [2])
 	var order: TurnOrder = bundle["order"]
 	var controller: BattleController = bundle["controller"]
-	order.end_unit_turn(1)
+	# story-003b:`order` 掛在 BattleState 上(守衛已啟用),白箱佈置改走唯一提交入口。
+	# 本處不需要回傳值,故不必用 Dictionary 承接 —— 需要回傳值時為什麼必須用 Dictionary,
+	# 理由見 attack_los_blocked_query_test.gd 同型改動處的註解(GDScript lambda 對區域
+	# 變數是傳值捕捉,已實測)。
+	var state: BattleState = bundle["state"]
+	state.commit_authoritative_change(func() -> void:
+		order.end_unit_turn(1)
+	)
 
 	# Act
 	var selected: bool = controller.select_unit(1)

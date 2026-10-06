@@ -84,7 +84,7 @@ func test_reachable_tiles_ignore_occupancy_recovers_tile_blocked_by_sole_occupie
 	# (0,1)（無等成本繞路，QA Test Case「佔位擋死無繞路」向量）；(0,1) 佔位
 	var board: Board = Board.from_ascii(_build_open_rows())
 	var origin: Vector2i = Vector2i(0, 0)
-	board.set_occupant(Vector2i(0, 1), 42)
+	board._set_occupant(Vector2i(0, 1), 42)
 
 	# Act
 	var default_result: Array[Vector2i] = board.reachable_tiles(origin, 2)
@@ -170,7 +170,7 @@ func test_reachable_tiles_origin_always_conceptually_in_a_even_when_origin_tile_
 	# 正常可達）
 	var board: Board = Board.from_ascii(_build_open_rows())
 	var origin: Vector2i = Vector2i(6, 3)
-	board.set_occupant(origin, 1)
+	board._set_occupant(origin, 1)
 
 	# Act
 	var default_result: Array[Vector2i] = board.reachable_tiles(origin, 2, false, false)
@@ -211,7 +211,7 @@ func test_reachable_tiles_four_way_partition_is_exhaustive_and_disjoint() -> voi
 	var board: _BoardWithImpassableTestTerrain = _BoardWithImpassableTestTerrain.new()
 	var origin: Vector2i = Vector2i(0, 0)
 	var mp: int = 2
-	board.set_occupant(Vector2i(0, 1), 99)
+	board._set_occupant(Vector2i(0, 1), 99)
 	board._terrain[Vector2i(2, 0)] = _BoardWithImpassableTestTerrain.IMPASSABLE_CHAR
 
 	# Act

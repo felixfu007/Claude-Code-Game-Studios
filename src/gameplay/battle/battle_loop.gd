@@ -116,7 +116,15 @@ func run(max_rounds: int) -> Dictionary:
 
 		var acting_ids: Array[int] = _order.units_with_flags_remaining()
 		if acting_ids.is_empty():
-			_order.advance_faction()
+			# story-003b-atomicity-write-guard-consolidation.md (ADR-0001
+			# path ⑤, named explicitly in the story's own path table as
+			# "battle_loop.gd:119"): TurnOrder.advance_faction() is a
+			# guarded mutator — its own single commit, mirroring
+			# BattleController.end_faction_phase()'s wrapping of the same
+			# call.
+			_state.commit_authoritative_change(func() -> void:
+				_order.advance_faction()
+			)
 			# story-002-modifier-lifecycle.md: this branch fires for BOTH
 			# faction transitions (PLAYER -> ENEMY and ENEMY -> PLAYER) — the
 			# tick only ever belongs to the latter, since GDD Formula 二's
@@ -148,6 +156,13 @@ func run(max_rounds: int) -> Dictionary:
 			# only on the very first — a battle that resolves a discard and
 			# later fills its hand again a second time must be caught here
 			# again, not assumed already handled.
+			#
+			# 🔴 story-003b: begin_player_turn() below deliberately stays
+			# OUTSIDE any commit window — path ⑥ (wrapping this exact call)
+			# was split out to story-003c-player-turn-start-commit-wrapping.md
+			# (see that story for why). This is safe today because neither
+			# tick_all_modifiers() nor CardDeck.draw_for_turn() touches any
+			# guarded Board/TurnOrder mutator.
 			if _order.current_faction() == TurnOrder.Side.PLAYER:
 				_state.begin_player_turn()
 				if _state.has_pending_discard():
@@ -158,25 +173,59 @@ func run(max_rounds: int) -> Dictionary:
 						)
 			continue
 
-		for id: int in acting_ids:
-			if _order.is_done(id):
-				continue
-			_process_unit(id, log)
-
-			var outcome: BattleState.Outcome = _state.outcome()
-			if outcome != BattleState.Outcome.ONGOING:
-				# AC-11a (story-002-modifier-lifecycle.md): see
-				# BattleController._check_outcome_and_finish()'s matching
-				# comment — cleared before the result is handed back so no
-				# caller can observe a modifier that should not survive past
-				# this battle.
-				_state.clear_all_modifiers()
-				# AC-W4 (story-006-battle-loop-wiring.md): every card still
-				# in hand or the used pile returns to the pool at the same
-				# battle-end moment, if a CardDeck is attached — no-op
-				# otherwise (AC-W6).
-				_state.return_cards_to_pool()
-				return _build_result(outcome, log, false, _order.round_number())
+		# story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ③,
+		# named in the story's own path table as "battle_loop.gd:run()(110-)/
+		# _process_unit()(211-)的等效整批範圍"): mirrors
+		# BattleController.run_enemy_phase()'s own wrapping — the ENTIRE
+		# current faction's phase, across however many re-fetched passes of
+		# units_with_flags_remaining() it takes to drain (a unit that spends
+		# only one of its two flags this pass stays in later passes' snapshots
+		# until it is done), is ONE outer commit, so
+		# BattleState.combat_state_version increments exactly once per whole
+		# phase, not once per individual unit action or once per pass.
+		# 🔴 This is a restructuring of the original flat
+		# "while true: ... if acting_ids.is_empty(): ... else: for id in
+		# acting_ids: ..." body into an outer while(true) that now only
+		# alternates between the advance_faction() branch above and this
+		# commit call, with the multi-pass re-fetch loop moved INSIDE this
+		# commit's mutator Callable — not a small, line-local change like the
+		# other four paths. The restructuring is believed behavior-preserving
+		# (the max_rounds check above can only ever matter right after an
+		# advance_faction() call completes a round, since round_number()
+		# never changes mid-phase either before or after this change), and
+		# the existing battle_loop test suite is the evidence for that claim,
+		# not a re-reading of this comment — see this story's own "本次範圍"
+		# notes on test evidence. Flagging the size of this change explicitly
+		# rather than understating it as a one-line edit.
+		var batch_result: Dictionary = {}
+		_state.commit_authoritative_change(func() -> void:
+			var ids: Array[int] = acting_ids
+			while true:
+				for id: int in ids:
+					if _order.is_done(id):
+						continue
+					_process_unit(id, log)
+					var outcome: BattleState.Outcome = _state.outcome()
+					if outcome != BattleState.Outcome.ONGOING:
+						batch_result["outcome"] = outcome
+						return
+				ids = _order.units_with_flags_remaining()
+				if ids.is_empty():
+					return
+		)
+		if batch_result.has("outcome"):
+			# AC-11a (story-002-modifier-lifecycle.md): see
+			# BattleController._check_outcome_and_finish()'s matching
+			# comment — cleared before the result is handed back so no
+			# caller can observe a modifier that should not survive past
+			# this battle.
+			_state.clear_all_modifiers()
+			# AC-W4 (story-006-battle-loop-wiring.md): every card still
+			# in hand or the used pile returns to the pool at the same
+			# battle-end moment, if a CardDeck is attached — no-op
+			# otherwise (AC-W6).
+			_state.return_cards_to_pool()
+			return _build_result(batch_result["outcome"], log, false, _order.round_number())
 
 	# Unreachable — the while(true) above only exits through a return above.
 	return _build_result(_state.outcome(), log, false, _order.round_number())

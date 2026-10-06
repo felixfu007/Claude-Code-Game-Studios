@@ -60,6 +60,38 @@ var _terrain: Dictionary = {}
 # Vector2i -> int (unit id). Tiles not present have no occupant.
 var _occupants: Dictionary = {}
 
+## story-003b-atomicity-write-guard-consolidation.md / ADR-0001 "連帶裁決一":
+## optional write-window guard. Unset by default ([code]Callable()[/code], an
+## invalid Callable) — in that state every occupancy mutator below behaves
+## EXACTLY as it did before this guard existed, unconditionally. This is a
+## deliberate selective-mount contract, not an implementation convenience:
+## [Board] remains a fully standalone, directly-constructible [RefCounted]
+## for every existing [code]Board.from_ascii()[/code] / [code]Board.new()[/code]
+## test fixture that never goes through [BattleState] at all — see
+## [method attach_write_guard].
+var _write_guard: Callable = Callable()
+
+
+## Attaches [param checker] (signature [code]func() -> bool[/code]) as this
+## board's write-window guard — called by [method set_occupant]/[method
+## clear_occupant] before mutating, rejecting the call if it returns
+## [code]false[/code]. [method BattleState.create] is the only production
+## caller, passing [code]Callable(state, "write_window_is_open")[/code] —
+## a [Callable] injection, deliberately NOT a reference to [BattleState]
+## itself, so [Board] never gains a dependency on the class that composes it
+## (ADR-0001's layering: [Board] "does not hold the flag"). Passing an
+## unset/invalid [Callable] restores the pre-guard default (always permitted)
+## — this is a legitimate, supported call, not an edge case to avoid.
+func attach_write_guard(checker: Callable) -> void:
+	_write_guard = checker
+
+
+# Shared by set_occupant()/clear_occupant(): true if this mutation may
+# proceed — no guard attached (selective mount) or the attached guard
+# reports the write window open.
+func _write_allowed() -> bool:
+	return not _write_guard.is_valid() or bool(_write_guard.call())
+
 
 ## Builds a Board from an ASCII grid. `rows[y]` is the row for that y
 ## coordinate, and each character in the row is the terrain for that x.
@@ -185,12 +217,32 @@ func passable(pos: Vector2i) -> bool:
 
 
 ## Marks pos as occupied by unit_id, overwriting any previous occupant.
-func set_occupant(pos: Vector2i, unit_id: int) -> void:
+##
+## 🔴 story-003b (ADR-0001 硬性義務第 4 條): renamed with a leading
+## underscore — no longer public API, same "not enforced by the language,
+## enforced by convention" status as [method _terrain_entry] below. Intended
+## callers are [BattleState]'s own mutators running inside a
+## [method BattleState.commit_authoritative_change] window. This board's own
+## test fixtures (constructed without a guard attached, never going through
+## [BattleState]) call this directly too — that is expected and unaffected
+## by the rename or by the guard: both are orthogonal, selective-mount
+## mechanisms (see [member _write_guard]) that leave a directly-constructed
+## [Board] behaving exactly as it did before this story.
+## Rejected (via [method push_error], state left unchanged) if a guard IS
+## attached and reports the write window closed.
+func _set_occupant(pos: Vector2i, unit_id: int) -> void:
+	if not _write_allowed():
+		push_error("Board._set_occupant: rejected at %s — write window is not open" % pos)
+		return
 	_occupants[pos] = unit_id
 
 
 ## Removes any occupant recorded at pos. No-op if pos was already empty.
-func clear_occupant(pos: Vector2i) -> void:
+## Same gated-mutator contract as [method _set_occupant] — see its doc comment.
+func _clear_occupant(pos: Vector2i) -> void:
+	if not _write_allowed():
+		push_error("Board._clear_occupant: rejected at %s — write window is not open" % pos)
+		return
 	_occupants.erase(pos)
 
 

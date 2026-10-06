@@ -138,7 +138,15 @@ func test_threat_targets_empty_when_attack_flag_already_consumed() -> void:
 	var order: TurnOrder = bundle["order"]
 	var controller: BattleController = bundle["controller"]
 	assert_bool(controller.select_unit(1)).is_true()
-	assert_bool(order.use_attack(1)).is_true()
+	# story-003b:`order` 掛在 BattleState 上(守衛已啟用),白箱佈置改走唯一提交入口。
+	# 用 Dictionary 承接回傳值的理由見 attack_los_blocked_query_test.gd 同型改動處的
+	# 註解(GDScript lambda 對區域變數是傳值捕捉,已實測)。
+	var state: BattleState = bundle["state"]
+	var consumed: Dictionary = {}
+	state.commit_authoritative_change(func() -> void:
+		consumed["ok"] = order.use_attack(1)
+	)
+	assert_bool(bool(consumed["ok"])).is_true()
 
 	# Act / Assert
 	assert_array(controller.threat_targets()).is_empty()

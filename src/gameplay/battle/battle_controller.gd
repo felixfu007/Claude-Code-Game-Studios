@@ -603,12 +603,23 @@ func click_tile(pos: Vector2i) -> Dictionary:
 ## PLAYER_INPUT, or a forced discard is owed (story-007-forced-discard-
 ## gate.md AC-D2 — see [method has_pending_discard]). Clears the selection if
 ## [param id] was selected.
+##
+## story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ④):
+## [method TurnOrder.end_unit_turn] is a guarded mutator, not a commit entry
+## point, so it must run inside a [method BattleState.commit_authoritative_change]
+## window. Same known edge case as [method _apply_move]'s doc comment: if it
+## rejects (believed unreachable here — the phase/discard guards above
+## already ran), the commit still bumps [member BattleState.combat_state_version].
 func end_unit_turn(id: int) -> bool:
 	if _phase != Phase.PLAYER_INPUT:
 		return false
 	if _state.has_pending_discard():
 		return false
-	if not _order.end_unit_turn(id):
+	var out: Dictionary = {}
+	_state.commit_authoritative_change(func() -> void:
+		out["ended"] = _order.end_unit_turn(id)
+	)
+	if not out["ended"]:
 		return false
 	if _selected_unit_id == id:
 		_clear_selection_internal()
@@ -630,6 +641,8 @@ func end_unit_turn(id: int) -> bool:
 ## BattleState.begin_player_turn] can never be reached — for a
 ## human-driven battle — while an earlier discard is still unresolved; see
 ## that method's own doc comment for the full argument.
+## story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ⑤):
+## [method TurnOrder.advance_faction] is a guarded mutator — single commit.
 func end_faction_phase() -> void:
 	if _phase != Phase.PLAYER_INPUT:
 		return
@@ -637,7 +650,9 @@ func end_faction_phase() -> void:
 		return
 	if _selected_unit_id != -1:
 		_clear_selection_internal()
-	_order.advance_faction()
+	_state.commit_authoritative_change(func() -> void:
+		_order.advance_faction()
+	)
 	_set_phase(Phase.ENEMY_ACTING)
 
 
@@ -654,23 +669,39 @@ func end_faction_phase() -> void:
 ## handing the round back to the player, incrementing
 ## [method TurnOrder.round_number]) and returns to PLAYER_INPUT. Returns a
 ## human-readable log, one line per action taken.
+## story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ③ + AC11):
+## the entire while loop below — EVERY re-fetched batch of acting ids, across
+## however many passes it takes to drain the whole enemy phase — AND the
+## trailing [method _finalize_enemy_phase] call are wrapped in ONE outer
+## [method BattleState.commit_authoritative_change] call, so
+## [member BattleState.combat_state_version] increments exactly once for the
+## WHOLE enemy phase (Validation Criteria 4d), never once per individual
+## unit action. Every per-unit write inside [method _process_enemy_unit]
+## (BattleState.move_unit()/resolve_attack(), TurnOrder.use_move()/
+## use_attack()/remove_unit()) runs nested inside this one open window — the
+## nested-depth-counter mechanism collapses all of it to the single outer
+## +1. [method _finalize_enemy_phase]'s own internal commit (needed so it
+## also works correctly when called standalone from [method step_enemy_phase]
+## — see that method's own comment) nests here too, contributing nothing
+## extra to the count.
 func run_enemy_phase() -> Array[String]:
 	var log: Array[String] = []
 	if _phase != Phase.ENEMY_ACTING:
 		return log
 
-	while true:
-		var acting_ids: Array[int] = _order.units_with_flags_remaining()
-		if acting_ids.is_empty():
-			break
-		for id: int in acting_ids:
-			if _order.is_done(id):
-				continue
-			_process_enemy_unit(id, log)
-			if _phase == Phase.FINISHED:
-				return log
-
-	_finalize_enemy_phase()
+	_state.commit_authoritative_change(func() -> void:
+		while true:
+			var acting_ids: Array[int] = _order.units_with_flags_remaining()
+			if acting_ids.is_empty():
+				break
+			for id: int in acting_ids:
+				if _order.is_done(id):
+					continue
+				_process_enemy_unit(id, log)
+				if _phase == Phase.FINISHED:
+					return
+		_finalize_enemy_phase()
+	)
 	return log
 
 
@@ -699,9 +730,27 @@ func run_enemy_phase() -> Array[String]:
 # order, for exactly the reason its own doc comment gives: drawing before
 # ticking could let a forced-discard decision reach the player while a
 # modifier that should already be expired is still showing as active.
+## story-003b-atomicity-write-guard-consolidation.md AC11: this method's own
+## body (both lines — [method TurnOrder.advance_faction] and
+## [method BattleState.begin_player_turn]) is wrapped in its own
+## [method BattleState.commit_authoritative_change] call. This is what makes
+## both of this method's call sites correct simultaneously, via the
+## nested-depth-counter mechanism, without either one needing a different
+## wrapping: called from [method run_enemy_phase] (which already holds an
+## open outer window), this nests and contributes nothing extra to that
+## outer +1; called from [method step_enemy_phase] (production's only call
+## path — no outer window there), this is the only commit and independently
+## produces its own +1. 🔴 This story only guarantees the WRAPPING is
+## correct — whether [method BattleState.begin_player_turn]'s own write
+## (`begin_player_turn()` -> card draw / modifier ticking) is itself asserted
+## as falling inside this window is story-003c's test to add, not this
+## story's (see that story's doc for why: AC11 covers advance_faction(),
+## story-003c covers the begin_player_turn() line specifically).
 func _finalize_enemy_phase() -> void:
-	_order.advance_faction()
-	_state.begin_player_turn()
+	_state.commit_authoritative_change(func() -> void:
+		_order.advance_faction()
+		_state.begin_player_turn()
+	)
 	_set_phase(Phase.PLAYER_INPUT)
 
 
@@ -799,7 +848,23 @@ func step_enemy_phase() -> Dictionary:
 		_finalize_enemy_phase()
 		return {"log": log, "has_next": false}
 
-	_process_enemy_unit(id, log)
+	# story-003b-atomicity-write-guard-consolidation.md: this is production's
+	# ONLY call path into _process_enemy_unit() (see this method's own doc
+	# comment above) — _process_enemy_unit() calls guarded TurnOrder/Board
+	# mutators directly, with no commit of its own, so SOMETHING at a call
+	# site must open the write window or every write inside it would be
+	# rejected the moment the guard mechanism is attached. This single step
+	# (one unit's one action) is its own commit, matching the "single
+	# confirmed command -> +1" granularity of _apply_attack()/_apply_move()
+	# rather than run_enemy_phase()'s whole-phase batching — each call to
+	# THIS method processes exactly one unit, so there is no larger batch to
+	# collapse into. Not named in this story's original path③ table (which
+	# only names run_enemy_phase()'s equivalent range); added because leaving
+	# it unwrapped would silently break this method once the guards reject
+	# un-windowed writes, and this is production's only enemy-phase driver.
+	_state.commit_authoritative_change(func() -> void:
+		_process_enemy_unit(id, log)
+	)
 
 	if _phase == Phase.FINISHED:
 		_enemy_step_snapshot = []
@@ -1041,17 +1106,36 @@ static func _tile_less(a: Vector2i, b: Vector2i) -> bool:
 # "always ask right before settling" discipline BattleLoop already applies,
 # per the project rule that resolve_attack() performs no legality check of
 # its own by design.
+#
+# story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ①):
+# BattleState.resolve_attack()'s HP/occupancy write, TurnOrder.use_attack(),
+# and (on a kill) TurnOrder.remove_unit() are a single commit — resolve_attack()
+# opens its OWN nested commit internally, which collapses into this one (the
+# nested-depth-counter mechanism — see BattleState.commit_authoritative_change()'s
+# doc comment); use_attack()/remove_unit() must run INSIDE this commit's
+# window or TurnOrder's write guard rejects them (they are not wrapped in
+# their own commit — they are guarded mutators, not commit entry points).
+# An "out" Dictionary carries the two results back out of the mutator
+# Callable's own local scope — GDScript lambdas do not write back to a
+# captured outer `int`/`bool` local, but a captured Dictionary/Array is a
+# shared reference, so mutating its entries is visible after the call
+# returns.
 func _apply_attack(attacker_id: int, target_id: int) -> Dictionary:
 	if not _order.can_attack(attacker_id) or not _state.can_attack(attacker_id, target_id):
 		return {"action": &"none"}
 
 	var phi: int = _compute_phi(attacker_id, target_id)
-	var damage: int = _state.resolve_attack(attacker_id, target_id, phi)
-	_order.use_attack(attacker_id)
-	var target: Unit = _state.unit_by_id(target_id)
-	var target_died: bool = not target.is_alive()
-	if target_died:
-		_order.remove_unit(target_id)
+	var out: Dictionary = {}
+	_state.commit_authoritative_change(func() -> void:
+		out["damage"] = _state.resolve_attack(attacker_id, target_id, phi)
+		_order.use_attack(attacker_id)
+		var target: Unit = _state.unit_by_id(target_id)
+		out["target_died"] = not target.is_alive()
+		if out["target_died"]:
+			_order.remove_unit(target_id)
+	)
+	var damage: int = out["damage"]
+	var target_died: bool = out["target_died"]
 	attack_resolved.emit(attacker_id, target_id, damage, target_died)
 	_check_outcome_and_finish()
 	return {
@@ -1065,13 +1149,33 @@ func _apply_attack(attacker_id: int, target_id: int) -> Dictionary:
 # Resolves a player-initiated move for click_tile(). Re-checks
 # TurnOrder.can_move() immediately before applying, same defense-in-depth
 # reasoning as _apply_attack().
+#
+# story-003b-atomicity-write-guard-consolidation.md (ADR-0001 path ②):
+# BattleState.move_unit() and TurnOrder.use_move() are a single commit, same
+# shape and same "out" Dictionary reasoning as _apply_attack() above.
+# 🔴 Known narrow edge case, not resolved by this design and not covered by
+# any Acceptance Criterion in this story: if move_unit()'s own internal
+# legality re-check rejects (dest no longer in legal_moves() — believed
+# unreachable in practice, since nothing can run between
+# _move_targets_for()'s computation and this call in this single-threaded,
+# synchronous call chain), the commit above still closes and still
+# increments combat_state_version, even though no board/position mutation
+# happened. commit_authoritative_change() has no mechanism to abort a commit
+# without bumping the version once opened — this is an inherent property of
+# the depth-counter design (ADR-0001 2026-10-05 revision), not something
+# this method works around.
 func _apply_move(unit_id: int, dest: Vector2i) -> Dictionary:
 	if not _order.can_move(unit_id):
 		return {"action": &"none"}
 	var origin: Vector2i = _state.position_of(unit_id)
-	if not _state.move_unit(unit_id, dest):
+	var out: Dictionary = {}
+	_state.commit_authoritative_change(func() -> void:
+		out["moved"] = _state.move_unit(unit_id, dest)
+		if out["moved"]:
+			_order.use_move(unit_id)
+	)
+	if not out["moved"]:
 		return {"action": &"none"}
-	_order.use_move(unit_id)
 	unit_moved.emit(unit_id, origin, dest)
 	return {"action": &"moved", "unit_id": unit_id, "from": origin, "to": dest}
 

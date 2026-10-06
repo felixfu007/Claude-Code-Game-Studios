@@ -245,7 +245,19 @@ func test_empty_when_attack_flag_already_consumed() -> void:
 	var order: TurnOrder = bundle["order"]
 	var controller: BattleController = bundle["controller"]
 	assert_bool(controller.select_unit(1)).is_true()
-	assert_bool(order.use_attack(1)).is_true()
+	# story-003b:`order` 掛在 BattleState 上(守衛已啟用),在提交窗口外直接呼叫
+	# mutator 會被拒絕,白箱佈置因此改走 ADR-0001 的唯一提交入口。
+	# 🔴 回傳值必須用 Dictionary 承接,不能用 bool 區域變數 —— GDScript 的 lambda
+	# 對區域變數是**傳值捕捉**,在 lambda 內賦值傳不出來。2026-10-06 實測
+	# (Godot 4.7.1 headless 拋棄式探針):bool 區域變數在 lambda 內設為 true,
+	# 外面讀回仍是 false;同一支探針的 Dictionary 則正確讀到 true。
+	# 產品碼 src/gameplay/battle/battle_loop.gd 的 batch_result 是同一個慣用寫法。
+	var state: BattleState = bundle["state"]
+	var consumed: Dictionary = {}
+	state.commit_authoritative_change(func() -> void:
+		consumed["ok"] = order.use_attack(1)
+	)
+	assert_bool(bool(consumed["ok"])).is_true()
 
 	# Act / Assert
 	assert_array(controller.attack_targets_blocked_by_los()).is_empty()

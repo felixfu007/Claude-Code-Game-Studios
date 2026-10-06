@@ -1,7 +1,27 @@
 # Story 003b: ADR-0001 原子性機制收斂 —— 版本號、寫入守衛、Board mutator 封裝
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready
+> **Status**: 🟡 **In Progress —— 產品程式碼完成,驗收測試(AC8/AC9)尚未撰寫**
+>
+> 🔴 **2026-10-06 落地狀況(協調者獨立驗收,不是採信專家回報)**:
+> **已完成**:AC1(深度計數器 + 三個對外成員)、AC2(七個 mutator 選擇性守衛)、
+> AC3(`create()`/`attach_turn_order()` 接線,放置迴圈之後才掛守衛)、AC4(佔位方法
+> 改 `_set_occupant`/`_clear_occupant`,10 個呼叫點全改)、AC5(兩處手動遞增移除)、
+> AC6/AC7(驅動層 15 處改道;兩條驅動路徑的整批提交窗口已逐行複核)、AC11
+> (`_finalize_enemy_phase()` 兩行包在同一次提交內)。
+> **未完成**:AC8/AC9 —— Validation Criteria 4d/4e/4f/4i/4j/4k/4l 的斷言測試檔
+> **一條都還沒寫**(4a/4b/4c 由既有 `attack_los_blocked_query_test.gd` 涵蓋)。
+> 🔴 **因此 004~007 仍不得開工** —— 本 story 未 Done。
+>
+> ⚠️ **本次發現工作單漏算的一類呼叫點**:它數過「89 處直接呼叫」,但那是指
+> `TurnOrder.new()` 自建(無守衛)的測試夾具。**從 `BattleState`/`BattleController`
+> 取得的 `TurnOrder` 不在其中,而那種是有守衛的** —— 實測有 3 處白箱佈置因此變紅
+> (`attack_los_blocked_query_test.gd`、`battle_controller_test.gd`、
+> `battle_controller_threat_test.gd` 各一處),已改走 `commit_authoritative_change()`。
+> 📌 連帶實測到一條會害人的語言行為並寫進那三處註解:**GDScript 的 lambda 對區域
+> 變數是傳值捕捉** —— 在 lambda 內對 bool 區域變數賦值傳不出來(拋棄式探針實測:
+> 設 true 後外面讀回仍是 false;同一支探針的 Dictionary 則正確)。不知道這件事的人
+> 會寫出「看起來對、但斷言永遠讀到舊值」的測試。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M(單日以上,見下方「與管理者裁決的落差」)
