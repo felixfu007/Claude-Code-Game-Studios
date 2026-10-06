@@ -266,7 +266,7 @@ func test_battle_menu_during_forced_discard_reaches_rejection_path() -> void:
 	).is_equal(BattleMenu.OpenResult.REJECTED_FORCED_DISCARD)
 	assert_str(instance.diagnostic_last_menu_rejection_message()).append_failure_message(
 		"拒絕訊息應該與 BattleMenu 既有常數一致(AC-M16:須明說原因)"
-	).is_equal(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD)
+	).is_equal(Loc.localize(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD))
 
 
 # ─── 操作提示橫條:實際渲染寬度必須放得下(陷阱十,不得只靠目測) ──────────────
@@ -282,7 +282,7 @@ func test_controls_hint_bar_fits_within_available_width_with_all_new_actions() -
 	# (BattleScreen.tscn 既有 offset_left=4.0/offset_right=-4.0,不重新假設別的值)
 	var available_width: float = bg_rect.size.x - 8.0
 
-	var lines: PackedStringArray = BattleScreen.TEXT_CONTROLS_HINT.split("\n")
+	var lines: PackedStringArray = Loc.localize(BattleScreen.TEXT_CONTROLS_HINT).split("\n")
 	assert_int(lines.size()).append_failure_message(
 		"提示橫條文字應該是兩行(本 story 的判斷:改兩行而非分頁系統或縮小字級," +
 		"理由見 TEXT_CONTROLS_HINT 自己的 doc comment)"

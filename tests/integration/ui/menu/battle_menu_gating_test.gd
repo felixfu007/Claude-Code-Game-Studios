@@ -373,7 +373,7 @@ func test_menu_key_rejected_while_authoritative_write_flag_true() -> void:
 	await assert_signal(instance).is_emitted(
 		"open_rejected",
 		BattleMenu.OpenResult.REJECTED_AUTHORITATIVE_WRITE,
-		BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE
+		Loc.localize(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE)
 	)
 
 
@@ -414,20 +414,20 @@ func test_rejection_appearance_differs_between_authoritative_write_and_forced_di
 
 	# ...and by message text (`design/ux/battle-menu.md` N5: "兩種原因的拒絕
 	# 回饋外觀須可區分").
-	assert_str(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE).append_failure_message(
+	assert_str(Loc.localize(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE)).append_failure_message(
 		"the two rejection causes must have DIFFERENT message text — a shared " +
 		"string would violate N5's distinguishability requirement."
-	).is_not_equal(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD)
+	).is_not_equal(Loc.localize(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD))
 
 	await assert_signal(authoritative_instance).is_emitted(
 		"open_rejected",
 		BattleMenu.OpenResult.REJECTED_AUTHORITATIVE_WRITE,
-		BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE
+		Loc.localize(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE)
 	)
 	await assert_signal(discard_instance).is_emitted(
 		"open_rejected",
 		BattleMenu.OpenResult.REJECTED_FORCED_DISCARD,
-		BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD
+		Loc.localize(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD)
 	)
 
 

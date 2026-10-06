@@ -98,7 +98,7 @@ func test_terrain_path_override_set_before_add_child_is_used_over_default() -> v
 	assert_bool(instance._load_failed).is_true()
 	var load_error_label: Label = instance.get_node("UILayer/LoadErrorLabel")
 	assert_bool(load_error_label.visible).is_true()
-	assert_str(load_error_label.text).contains(BattleScreen.TEXT_LOAD_REASON_MISSING)
+	assert_str(load_error_label.text).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_MISSING))
 	assert_str(load_error_label.text).contains(_MISSING_TERRAIN_PATH)
 	assert_str(load_error_label.text).not_contains(BattleScreen.TERRAIN_PATH)
 
@@ -115,7 +115,7 @@ func test_roster_path_override_set_before_add_child_is_used_over_default() -> vo
 	assert_bool(instance._load_failed).is_true()
 	var load_error_label: Label = instance.get_node("UILayer/LoadErrorLabel")
 	assert_bool(load_error_label.visible).is_true()
-	assert_str(load_error_label.text).contains(BattleScreen.TEXT_LOAD_REASON_MISSING)
+	assert_str(load_error_label.text).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_MISSING))
 	assert_str(load_error_label.text).contains(_MISSING_ROSTER_PATH)
 	assert_str(load_error_label.text).not_contains(BattleScreen.ROSTER_PATH)
 

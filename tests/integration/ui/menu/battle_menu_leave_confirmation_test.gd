@@ -592,7 +592,7 @@ func test_leave_confirm_body_states_progress_will_be_lost() -> void:
 	var instance: BattleMenu = _instantiate()
 	add_child(instance)
 
-	assert_str(BattleMenu.LEAVE_CONFIRM_BODY).append_failure_message(
+	assert_str(Loc.localize(BattleMenu.LEAVE_CONFIRM_BODY)).append_failure_message(
 		"AC-M7: M4's body text must literally state the consequence " +
 		"('進度會消失'), not a generic '確定要離開嗎?'."
 	).contains("進度會消失")
@@ -602,7 +602,7 @@ func test_leave_confirm_body_states_progress_will_be_lost() -> void:
 	).text).append_failure_message(
 		"the BodyLabel actually displayed must be set from LEAVE_CONFIRM_BODY, " +
 		"not a separate, potentially-drifted copy."
-	).is_equal(BattleMenu.LEAVE_CONFIRM_BODY)
+	).is_equal(Loc.localize(BattleMenu.LEAVE_CONFIRM_BODY))
 
 
 # ═══════════════════════════════════════════════════════════════════════════

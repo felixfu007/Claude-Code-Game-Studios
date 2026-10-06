@@ -160,14 +160,26 @@ const LEAVE_CONFIRM_WIDTH_FPX_MULTIPLIER: float = 14.0
 ## M4 height — SIZE ONLY, see above.
 const LEAVE_CONFIRM_HEIGHT_FPX_MULTIPLIER: float = 7.0
 
+## 🔴 Story-002 migration
+## (`production/epics/localization-infrastructure/story-002-migrate-existing-hardcoded-strings.md`)
+## — every constant in this file (this block plus [constant
+## REJECTION_MESSAGE_AUTHORITATIVE_WRITE] / [constant REJECTION_MESSAGE_FORCED_DISCARD]
+## / [constant REASON_CARD_PLAY_IN_PROGRESS] / [constant REASON_NOT_PLAYER_TURN]
+## further below — this file does NOT use the other three files' `TEXT_*`
+## naming convention, a pre-existing inconsistency the migration work order
+## explicitly flagged and carried over unchanged, not fixed) is now a
+## [StringName] KEY into `assets/data/locales/strings.csv`, not the literal
+## display text itself. Every read site wraps the constant in [method
+## Loc.localize] to get the actual text.
+##
 ## Story U-010 — M4 title, `design/ux/battle-menu.md`'s own wireframe wording,
 ## verbatim (not this file's invention).
-const LEAVE_CONFIRM_TITLE: String = "離開遊戲?"
+const LEAVE_CONFIRM_TITLE: StringName = &"battle.menu.leave_confirm_title"
 
 ## Story U-010 — M4 body, `design/ux/battle-menu.md` Implementation Notes #3's
 ## own literal wording, verbatim: AC-M7 requires the consequence be spelled
 ## out ("進度會消失"), not a generic "確定要離開嗎?".
-const LEAVE_CONFIRM_BODY: String = "目前沒有存檔功能,離開後這場\n戰鬥的進度會消失。"
+const LEAVE_CONFIRM_BODY: StringName = &"battle.menu.leave_confirm_body"
 
 ## Placeholder internal spacing (this file's own judgement call, not a spec
 ## number — see class doc comment). Outer margin on all four sides of the
@@ -230,7 +242,7 @@ enum OpenResult {
 ## from [constant REJECTION_MESSAGE_FORCED_DISCARD] today (see
 ## [code]test_rejection_appearance_differs_between_authoritative_write_and_forced_discard[/code]),
 ## not a copy decision.
-const REJECTION_MESSAGE_AUTHORITATIVE_WRITE: String = "（權威寫入進行中，暫時無法開啟選單）"
+const REJECTION_MESSAGE_AUTHORITATIVE_WRITE: StringName = &"battle.menu.rejection_authoritative_write"
 
 ## Placeholder N5 rejection copy for the forced-discard cause (U-015's future
 ## real trigger — see [member forced_discard_in_progress_check]).
@@ -238,7 +250,7 @@ const REJECTION_MESSAGE_AUTHORITATIVE_WRITE: String = "（權威寫入進行中�
 ## with text along the lines of "請先完成棄牌" — used verbatim here as the
 ## design doc's own example text, not this file's invention. Same
 ## BM-7-pending caveat as the constant above.
-const REJECTION_MESSAGE_FORCED_DISCARD: String = "請先完成棄牌"
+const REJECTION_MESSAGE_FORCED_DISCARD: StringName = &"battle.menu.rejection_forced_discard"
 
 ## Emitted whenever [method open] is rejected (N5) — never emitted on a
 ## successful open. Two separate payloads on purpose, mirroring this
@@ -348,13 +360,13 @@ const REASON_FONT_FPX_MULTIPLIER: float = 0.7
 ## card-play-in-progress cause (N2): the literal string drawn in the "打牌流程
 ## 進行中開啟" ASCII mockup ("結束回合 ✕ 請先完成或取消打牌"). Used verbatim,
 ## not this file's invention.
-const REASON_CARD_PLAY_IN_PROGRESS: String = "請先完成或取消打牌"
+const REASON_CARD_PLAY_IN_PROGRESS: StringName = &"battle.menu.reason_card_play_in_progress"
 
 ## N3's cause has no wireframe wording in `battle-menu.md` (BM-3: this state's
 ## very existence is unmeasured — "N3 的存在與否尚未量測"), so this is a
 ## reasonable interim placeholder in the same category as [constant
 ## REJECTION_MESSAGE_AUTHORITATIVE_WRITE] above, not a design-authored string.
-const REASON_NOT_PLAYER_TURN: String = "現在不是你的回合"
+const REASON_NOT_PLAYER_TURN: StringName = &"battle.menu.reason_not_player_turn"
 
 ## Reuses [constant REJECTION_MESSAGE_FORCED_DISCARD] verbatim rather than
 ## declaring a second string for the same underlying cause (`design/ux/battle-menu.md`'s
@@ -364,6 +376,14 @@ const REASON_NOT_PLAYER_TURN: String = "現在不是你的回合"
 ## [member forced_discard_in_progress_check]), so this row-level branch should
 ## be structurally unreachable in practice, same status as the third conjunct
 ## in [method can_end_faction_phase]'s own doc comment below.
+
+## 🔴 Story-002 追加(優先序 2)——原本內嵌於 [method _refresh_end_phase_row] 函式
+## 本體內的前綴符號字面量(與 [code]reason[/code] 字串串接成「✕ 原因文字」),不在
+## 原始 6 個常數清單裡,也因此沒有被「零殘留」grep 抓到過。與
+## [code]card_confirm_panel.gd[/code] 的 [constant CardConfirmPanel.ARROW_GLYPH]
+## 同一類判斷:雖是符號而非句子,但會出現在玩家畫面上,`.claude/rules/ui-code.md`
+## 的規則沒有替符號開例外,故納入遷移。本檔沿用既有命名慣例(不加 TEXT_ 前綴)。
+const DISABLED_ROW_PREFIX_GLYPH: StringName = &"battle.menu.disabled_row_prefix_glyph"
 
 @onready var _mask: ColorRect = $Mask
 @onready var _panel: PanelContainer = $Panel
@@ -494,8 +514,8 @@ func _ready() -> void:
 	# ReturnToBattleRow.pressed -> close() above.
 	_quit_row.pressed.connect(open_leave_confirm)
 
-	_leave_confirm_title_label.text = LEAVE_CONFIRM_TITLE
-	_leave_confirm_body_label.text = LEAVE_CONFIRM_BODY
+	_leave_confirm_title_label.text = Loc.localize(LEAVE_CONFIRM_TITLE)
+	_leave_confirm_body_label.text = Loc.localize(LEAVE_CONFIRM_BODY)
 
 	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
 		m4_button.focus_mode = Control.FOCUS_ALL
@@ -553,10 +573,10 @@ func _ready() -> void:
 ## the next opening).
 func open() -> OpenResult:
 	if authoritative_write_in_progress_check.is_valid() and bool(authoritative_write_in_progress_check.call()):
-		open_rejected.emit(OpenResult.REJECTED_AUTHORITATIVE_WRITE, REJECTION_MESSAGE_AUTHORITATIVE_WRITE)
+		open_rejected.emit(OpenResult.REJECTED_AUTHORITATIVE_WRITE, Loc.localize(REJECTION_MESSAGE_AUTHORITATIVE_WRITE))
 		return OpenResult.REJECTED_AUTHORITATIVE_WRITE
 	if forced_discard_in_progress_check.is_valid() and bool(forced_discard_in_progress_check.call()):
-		open_rejected.emit(OpenResult.REJECTED_FORCED_DISCARD, REJECTION_MESSAGE_FORCED_DISCARD)
+		open_rejected.emit(OpenResult.REJECTED_FORCED_DISCARD, Loc.localize(REJECTION_MESSAGE_FORCED_DISCARD))
 		return OpenResult.REJECTED_FORCED_DISCARD
 
 	visible = true
@@ -710,7 +730,7 @@ func _refresh_end_phase_row() -> void:
 		# Accessibility table's explicit two-channel requirement ("不可選用
 		# ✕ + 原因文字", not color/graying alone) — the ✕ glyph plus the
 		# reason string, verbatim from the wireframe's own formatting.
-		_end_phase_reason_label.text = "✕ " + reason
+		_end_phase_reason_label.text = Loc.localize(DISABLED_ROW_PREFIX_GLYPH) + reason
 
 	if can_end:
 		_return_row.focus_neighbor_bottom = _return_row.get_path_to(_end_phase_row)
@@ -782,11 +802,11 @@ static func end_faction_phase_disabled_reason(controller: BattleController) -> S
 	if controller == null:
 		return ""
 	if controller.is_card_play_in_progress():
-		return REASON_CARD_PLAY_IN_PROGRESS
+		return Loc.localize(REASON_CARD_PLAY_IN_PROGRESS)
 	if controller.has_pending_discard():
-		return REJECTION_MESSAGE_FORCED_DISCARD
+		return Loc.localize(REJECTION_MESSAGE_FORCED_DISCARD)
 	if controller.phase() != BattleController.Phase.PLAYER_INPUT:
-		return REASON_NOT_PLAYER_TURN
+		return Loc.localize(REASON_NOT_PLAYER_TURN)
 	return ""
 
 

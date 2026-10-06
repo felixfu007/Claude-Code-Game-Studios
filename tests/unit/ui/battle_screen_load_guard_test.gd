@@ -272,7 +272,7 @@ func test_load_failure_message_missing_contains_reason_and_path() -> void:
 	var message: String = BattleScreen.load_failure_message(failure, path)
 
 	# Assert
-	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_MISSING)
+	assert_str(message).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_MISSING))
 	assert_str(message).contains(path)
 
 
@@ -285,12 +285,12 @@ func test_load_failure_message_empty_content_contains_matching_reason() -> void:
 	var message: String = BattleScreen.load_failure_message(failure, path)
 
 	# Assert
-	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_EMPTY_CONTENT)
+	assert_str(message).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_EMPTY_CONTENT))
 	assert_str(message).contains(path)
 	# 不該混進其他三種理由文字
-	assert_str(message).not_contains(BattleScreen.TEXT_LOAD_REASON_MISSING)
-	assert_str(message).not_contains(BattleScreen.TEXT_LOAD_REASON_UNREADABLE)
-	assert_str(message).not_contains(BattleScreen.TEXT_LOAD_REASON_PARSED_EMPTY)
+	assert_str(message).not_contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_MISSING))
+	assert_str(message).not_contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_UNREADABLE))
+	assert_str(message).not_contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_PARSED_EMPTY))
 
 
 func test_load_failure_message_parsed_empty_contains_matching_reason() -> void:
@@ -302,7 +302,7 @@ func test_load_failure_message_parsed_empty_contains_matching_reason() -> void:
 	var message: String = BattleScreen.load_failure_message(failure, path)
 
 	# Assert
-	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_PARSED_EMPTY)
+	assert_str(message).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_PARSED_EMPTY))
 	assert_str(message).contains(path)
 
 
@@ -315,7 +315,7 @@ func test_load_failure_message_unreadable_contains_matching_reason() -> void:
 	var message: String = BattleScreen.load_failure_message(failure, path)
 
 	# Assert
-	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_UNREADABLE)
+	assert_str(message).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_UNREADABLE))
 	assert_str(message).contains(path)
 
 
@@ -328,5 +328,5 @@ func test_load_failure_message_parse_error_contains_matching_reason() -> void:
 	var message: String = BattleScreen.load_failure_message(failure, path)
 
 	# Assert
-	assert_str(message).contains(BattleScreen.TEXT_LOAD_REASON_PARSE_ERROR)
+	assert_str(message).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_PARSE_ERROR))
 	assert_str(message).contains(path)

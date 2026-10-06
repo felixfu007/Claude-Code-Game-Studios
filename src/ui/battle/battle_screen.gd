@@ -142,19 +142,23 @@ const _LOG_AFFINITY_ZERO_LINKS_FORMAT: String = "BattleScreen: %s parsed to zero
 # never-a-failure discipline.
 const _LOG_CARDS_ZERO_PARSED_FORMAT: String = "BattleScreen: %s parsed to zero cards — proceeding with an empty CardDeck"
 
-## UI-facing display strings, centralized here as the single point a future
-## localization pass has to touch. Per [code].claude/rules/ui-code.md[/code]
-## ("all UI text must go through the localization system — no hardcoded
-## user-facing strings") this project does not yet have one (task brief,
-## 2026-08-27) — building one is explicitly out of scope for this change.
-## Every read site below uses one of these constants instead of a literal;
-## when a localization system exists, each constant becomes a
-## [method tr] call and this is the only block that has to change.
-const TEXT_STATUS_FORMAT: String = "第 %d 回合．%s"
-const TEXT_FACTION_PLAYER: String = "我方行動"
-const TEXT_FACTION_ENEMY: String = "敵方行動"
-const TEXT_RESULT_VICTORY: String = "勝利"
-const TEXT_RESULT_DEFEAT: String = "戰敗"
+## UI-facing display string KEYS (not literal text) — Story-002 migration
+## (`production/epics/localization-infrastructure/story-002-migrate-existing-hardcoded-strings.md`).
+## This block used to hold the literal Traditional Chinese strings directly;
+## per this comment's own prior wording ("when a localization system exists,
+## each constant becomes a [method tr] call and this is the only block that
+## has to change") — that system now exists ([Loc], Story-001) and this is
+## that change. Every constant below is a [StringName] key into
+## `assets/data/locales/strings.csv`, never a display string itself; every
+## read site wraps the constant in [method Loc.localize] to get the actual
+## text — matching [code].claude/rules/ui-code.md[/code]'s "all UI text must
+## go through the localization system" rule, now enforced rather than
+## deferred.
+const TEXT_STATUS_FORMAT: StringName = &"battle.hud.status_format"
+const TEXT_FACTION_PLAYER: StringName = &"battle.hud.faction_player"
+const TEXT_FACTION_ENEMY: StringName = &"battle.hud.faction_enemy"
+const TEXT_RESULT_VICTORY: StringName = &"battle.hud.result_victory"
+const TEXT_RESULT_DEFEAT: StringName = &"battle.hud.result_defeat"
 
 ## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
 ## Mode A/B/C). [constant TEXT_AFFINITY_PREVIEW_FORMAT] is Mode A ("if I move
@@ -162,10 +166,17 @@ const TEXT_RESULT_DEFEAT: String = "戰敗"
 ## a linked unit, no move in progress); [constant TEXT_DAMAGE_PREVIEW_FORMAT] is
 ## Mode C (cursor on an attackable enemy). Measured against [member _info_label]'s
 ## 288px width at font size 16 — see the task report for the longest formatted
-## string's measured pixel width.
-const TEXT_AFFINITY_PREVIEW_FORMAT: String = "好感度 %+d→%+d"
-const TEXT_AFFINITY_CURRENT_FORMAT: String = "好感度 %+d"
-const TEXT_DAMAGE_PREVIEW_FORMAT: String = "打擊 %d　血量 %d→%d"
+## string's measured pixel width. 🔴 Story-002: these three are now
+## [StringName] keys (see the TEXT_* block's own doc comment above) — [method
+## format_affinity_preview] / [method format_affinity_current] / [method
+## format_damage_preview] each resolve their own via [method Loc.localize]
+## before applying [code]%[/code] formatting; the measured pixel width above
+## was measured against the Traditional Chinese value these keys resolve to
+## today (`assets/data/locales/strings.csv`), not re-measured against the key
+## strings themselves.
+const TEXT_AFFINITY_PREVIEW_FORMAT: StringName = &"battle.hud.affinity_preview_format"
+const TEXT_AFFINITY_CURRENT_FORMAT: StringName = &"battle.hud.affinity_current_format"
+const TEXT_DAMAGE_PREVIEW_FORMAT: StringName = &"battle.hud.damage_preview_format"
 
 ## Message template shown on [member _load_error_label] when terrain or
 ## roster data fails to load. Slot 1 is one of the TEXT_LOAD_REASON_*
@@ -195,17 +206,26 @@ const TEXT_DAMAGE_PREVIEW_FORMAT: String = "打擊 %d　血量 %d→%d"
 ## lose) ended up covered by ControlsHintBg. See [method _fail_load] for the
 ## rest of that fix — enlarging the control alone was not enough; hiding
 ## ControlsHintBg was the other half.
-const TEXT_LOAD_FAILURE_FORMAT: String = "遊戲資料載入失敗,無法開始戰鬥。\n\n%s\n檔案:%s\n\n請重新下載完整的安裝檔案。\n回報問題時請附上這個畫面。"
+##
+## 🔴 Story-002: this and the five TEXT_LOAD_REASON_* constants below are now
+## [StringName] keys (see the TEXT_* block's own doc comment above), resolved
+## via [method Loc.localize] in [method load_failure_message]. The pixel
+## measurements above were taken against the literal Traditional Chinese text
+## these keys resolve to today (`assets/data/locales/strings.csv`) — verified
+## byte-for-byte identical post-migration (commas and embedded [code]\n[/code]
+## line breaks survive the CSV round-trip; see this story's own CSV-import
+## probe) — not re-measured against the key strings themselves.
+const TEXT_LOAD_FAILURE_FORMAT: StringName = &"battle.load_error.failure_format"
 ## Reason text for [constant LoadFailure.MISSING].
-const TEXT_LOAD_REASON_MISSING: String = "找不到必要的資料檔案。"
+const TEXT_LOAD_REASON_MISSING: StringName = &"battle.load_error.reason_missing"
 ## Reason text for [constant LoadFailure.UNREADABLE].
-const TEXT_LOAD_REASON_UNREADABLE: String = "資料檔案存在,但無法讀取。"
+const TEXT_LOAD_REASON_UNREADABLE: StringName = &"battle.load_error.reason_unreadable"
 ## Reason text for [constant LoadFailure.EMPTY_CONTENT].
-const TEXT_LOAD_REASON_EMPTY_CONTENT: String = "資料檔案是空的。"
+const TEXT_LOAD_REASON_EMPTY_CONTENT: StringName = &"battle.load_error.reason_empty_content"
 ## Reason text for [constant LoadFailure.PARSED_EMPTY].
-const TEXT_LOAD_REASON_PARSED_EMPTY: String = "資料檔案沒有可用的內容。"
+const TEXT_LOAD_REASON_PARSED_EMPTY: StringName = &"battle.load_error.reason_parsed_empty"
 ## Reason text for [constant LoadFailure.PARSE_ERROR].
-const TEXT_LOAD_REASON_PARSE_ERROR: String = "資料檔案內容格式錯誤,其中一列資料無法辨識。"
+const TEXT_LOAD_REASON_PARSE_ERROR: StringName = &"battle.load_error.reason_parse_error"
 
 ## Always-on control hint, drawn in the bottom margin strip below the board
 ## (board occupies y=[39,231) per [member BoardCoords.BOARD_ORIGIN] and its
@@ -252,7 +272,14 @@ const TEXT_LOAD_REASON_PARSE_ERROR: String = "資料檔案內容格式錯誤,其
 ## also where a numeric width finding, if any, belongs — not duplicated here
 ## to avoid the exact "same number copied in two places, one goes stale"
 ## failure this project has hit before.
-const TEXT_CONTROLS_HINT: String = "移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start"
+##
+## 🔴 Story-002: now a [StringName] key (see the TEXT_* block's own doc
+## comment above), resolved via [method Loc.localize] at its one read site
+## ([method _ready]). The width measurement this comment references above was
+## taken against the literal text this key resolves to today — verified
+## byte-for-byte identical post-migration, including the embedded [code]\n[/code]
+## line break, via this story's own CSV-import probe.
+const TEXT_CONTROLS_HINT: StringName = &"battle.hud.controls_hint"
 
 ## Keyboard/gamepad directional actions this screen listens for, mapped to the
 ## grid delta they apply to the pad-tracked cursor cell. All four are Godot's
@@ -791,7 +818,7 @@ class _TargetRetargetActor extends Node:
 
 
 func _ready() -> void:
-	_controls_hint_label.text = TEXT_CONTROLS_HINT
+	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
 
 	var terrain_text: String = ""
 	var terrain_rows: PackedStringArray = PackedStringArray()
@@ -1466,20 +1493,20 @@ static func projected_hp(current_hp: int, damage: int) -> int:
 ## Formats [constant TEXT_AFFINITY_PREVIEW_FORMAT] for Mode A of
 ## [method _refresh_view] — "if I move here, my bonus changes from X to Y".
 static func format_affinity_preview(current_bonus: int, preview_bonus: int) -> String:
-	return TEXT_AFFINITY_PREVIEW_FORMAT % [current_bonus, preview_bonus]
+	return Loc.localize(TEXT_AFFINITY_PREVIEW_FORMAT) % [current_bonus, preview_bonus]
 
 
 ## Formats [constant TEXT_AFFINITY_CURRENT_FORMAT] for Mode B of
 ## [method _refresh_view] — cursor resting on a linked unit, no move in
 ## progress.
 static func format_affinity_current(bonus: int) -> String:
-	return TEXT_AFFINITY_CURRENT_FORMAT % bonus
+	return Loc.localize(TEXT_AFFINITY_CURRENT_FORMAT) % bonus
 
 
 ## Formats [constant TEXT_DAMAGE_PREVIEW_FORMAT] for Mode C of
 ## [method _refresh_view] — cursor on an attackable enemy.
 static func format_damage_preview(damage: int, target_hp: int, target_hp_after: int) -> String:
-	return TEXT_DAMAGE_PREVIEW_FORMAT % [damage, target_hp, target_hp_after]
+	return Loc.localize(TEXT_DAMAGE_PREVIEW_FORMAT) % [damage, target_hp, target_hp_after]
 
 
 ## Classifies whether [param path] can even be opened, independent of its
@@ -1581,16 +1608,16 @@ static func load_failure_message(failure: LoadFailure, path: String) -> String:
 	var reason: String = ""
 	match failure:
 		LoadFailure.MISSING:
-			reason = TEXT_LOAD_REASON_MISSING
+			reason = Loc.localize(TEXT_LOAD_REASON_MISSING)
 		LoadFailure.UNREADABLE:
-			reason = TEXT_LOAD_REASON_UNREADABLE
+			reason = Loc.localize(TEXT_LOAD_REASON_UNREADABLE)
 		LoadFailure.EMPTY_CONTENT:
-			reason = TEXT_LOAD_REASON_EMPTY_CONTENT
+			reason = Loc.localize(TEXT_LOAD_REASON_EMPTY_CONTENT)
 		LoadFailure.PARSED_EMPTY:
-			reason = TEXT_LOAD_REASON_PARSED_EMPTY
+			reason = Loc.localize(TEXT_LOAD_REASON_PARSED_EMPTY)
 		LoadFailure.PARSE_ERROR:
-			reason = TEXT_LOAD_REASON_PARSE_ERROR
-	return TEXT_LOAD_FAILURE_FORMAT % [reason, path]
+			reason = Loc.localize(TEXT_LOAD_REASON_PARSE_ERROR)
+	return Loc.localize(TEXT_LOAD_FAILURE_FORMAT) % [reason, path]
 
 
 # Parses already-read terrain text into the PackedStringArray Board.from_ascii()
@@ -2685,13 +2712,13 @@ static func _unit_has_link(unit_id: int, links: Array[AffinityLink]) -> bool:
 
 
 func _update_status_label() -> void:
-	var faction_text: String = TEXT_FACTION_PLAYER if _order.current_faction() == TurnOrder.Side.PLAYER else TEXT_FACTION_ENEMY
-	_status_label.text = TEXT_STATUS_FORMAT % [_order.round_number(), faction_text]
+	var faction_text: String = Loc.localize(TEXT_FACTION_PLAYER) if _order.current_faction() == TurnOrder.Side.PLAYER else Loc.localize(TEXT_FACTION_ENEMY)
+	_status_label.text = Loc.localize(TEXT_STATUS_FORMAT) % [_order.round_number(), faction_text]
 
 
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
-	_result_label.text = TEXT_RESULT_VICTORY if outcome == BattleState.Outcome.VICTORY else TEXT_RESULT_DEFEAT
+	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else Loc.localize(TEXT_RESULT_DEFEAT)
 
 
 ## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see

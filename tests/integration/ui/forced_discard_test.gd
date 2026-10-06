@@ -193,7 +193,7 @@ func test_cancel_key_rejected_during_forced_discard_with_observable_feedback() -
 	).is_true()
 	assert_str(instance._hand_bar.diagnostic_caption_text()).append_failure_message(
 		"提示文字應該是強制棄牌專用的文案，不是 S5 的「不可用」"
-	).is_equal(HandBar.TEXT_FORCED_DISCARD)
+	).is_equal(Loc.localize(HandBar.TEXT_FORCED_DISCARD))
 
 
 # ─── 棄掉一張後解除強制棄牌態、回到一般流程 ─────────────────────────────────
@@ -300,6 +300,6 @@ func test_forced_discard_rejection_appearance_distinguishable_from_authoritative
 	assert_int(discard_result).append_failure_message(
 		"強制棄牌與權威寫入兩種拒絕必須是不同的 enum 值"
 	).is_not_equal(authoritative_result)
-	assert_str(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD).append_failure_message(
+	assert_str(Loc.localize(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD)).append_failure_message(
 		"兩種拒絕的訊息文字必須不同——共用同一段文字會違反 AC-M16「須可區分」的要求"
-	).is_not_equal(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE)
+	).is_not_equal(Loc.localize(BattleMenu.REJECTION_MESSAGE_AUTHORITATIVE_WRITE))

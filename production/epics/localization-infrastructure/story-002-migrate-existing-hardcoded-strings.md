@@ -1,7 +1,35 @@
 # Story 002: 既有裸字串遷移至 key 系統
 
 > **Epic**: 本地化(i18n)基礎設施 —— `production/epics/localization-infrastructure/EPIC.md`
-> **Status**: 🟡 **核准開工,但依賴 story-001 完成**(見 `EPIC.md`「✅ 管理者裁決紀錄」表第 4 列)
+> **Status**: 🟡 **In Progress —— 四個 `.gd` 檔全數遷移完成,兩個 `.tscn` 尚未開始**
+>
+> 🔴 **2026-10-06 落地狀況(協調者獨立驗收)**:
+> **已完成**:四個 `.gd` 檔共 **40 個字串**進 key 系統(`strings.csv` 40 筆);
+> 9 個因此連帶變紅的既有測試檔已修復;新增端到端測試
+> `tests/unit/core/i18n/i18n_migrated_strings_test.gd`(逐 key 斷言查出的內容與遷移前
+> 字面值逐字相同)。全套測試 **1022 條、僅 1 條既有刻意紅**、exit 100、零 Parse Error。
+> **未完成**:`src/ui/battle/BattleScreen.tscn` 與 `src/ui/menu/BattleMenu.tscn`
+> (本 story 的 AC 明文列入,擁有者 `godot-specialist`)。
+>
+> 🔴 **本 story 的驗收條件有一個結構性盲點,已實測,下一個引用它的人必須知道**:
+> AC 第一條指定的 grep 樣式是 `^const [A-Z_]+: String = "`,**它在結構上看不見
+> 函式本體裡的行內字面值**。照它做會得到「零殘留」,而實際上還有 **10 處玩家可見的
+> 中文**寫死在程式中間(全部直接寫進 Label 的 `.text`)。
+> **2026-10-06 管理者裁決當場補完這 10 處**,並把驗收改用定義域更寬的指令:
+> ```bash
+> for f in src/ui/battle/battle_screen.gd src/ui/battle/hand_bar.gd \
+>          src/ui/battle/card_confirm_panel.gd src/ui/menu/battle_menu.gd; do
+>     echo "--- $(basename $f) ---"
+>     LC_ALL=C grep -n '"[^"]*[^ -~][^"]*"' "$f" | LC_ALL=C grep -v ':[[:space:]]*#'
+> done
+> ```
+> ⚠️ **這條會同時命中開發者訊息(`_LOG_*`、`push_error`),那是刻意的** ——
+> 逐條肉眼分類比一條「剛好全過」的 grep 可信。現況應只剩 `battle_screen.gd` 的 3 處
+> 開發者訊息。
+>
+> 📌 **視覺無回歸(ADVISORY)未執行,替代方案已說明**:開發者在公司,遊戲畫面
+> 不能出現在螢幕上(零畫面曝光紀律)。協調者指派以上述端到端測試替代 ——
+> 它比肉眼嚴格(逐位元組),但**驗不到版面**。版面複核仍是待辦。
 > **Layer**: Infrastructure / Presentation(橫跨 4 個 `.gd` + 2 個 `.tscn`,分屬不同擁有者)
 > **Type**: Integration(單一批次遷移,跨 6 個檔案、2 位不同擁有者,需協調但不改變任何
 > 系統行為契約)

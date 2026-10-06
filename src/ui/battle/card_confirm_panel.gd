@@ -66,25 +66,65 @@ const MASK_COLOR: Color = Color(0.0, 0.0, 0.0, 0.6)
 const TEXT_COLOR: Color = Color(1.0, 1.0, 1.0, 0.95)
 const WARNING_COLOR: Color = Color(1.0, 0.75, 0.3, 1.0)
 
+## 🔴 Story-002 migration
+## (`production/epics/localization-infrastructure/story-002-migrate-existing-hardcoded-strings.md`)
+## — every constant in this block is now a [StringName] KEY into
+## `assets/data/locales/strings.csv`, not the literal display text itself.
+## Every read site wraps the constant in [method Loc.localize] to get the
+## actual text.
+##
 ## Implementation Note 2 — 「永久」不可逆警示文字+圖示(圖示以既有字符表示,
 ## 同 [HandBar] 的既有作法:組合既有字元/圖元,不新增 PNG 資產 — UX-3 卡面
 ## 美術未定前的既有慣例)。
-const TEXT_PERMANENT_WARNING: String = "⚠ 永久效果，無法復原"
+const TEXT_PERMANENT_WARNING: StringName = &"battle.card_confirm.permanent_warning"
 
 ## Implementation Note 2 — 「敘事影響」固定為一句定性文字,沿用 Z3 既有文案
 ## (`skill-card-play.md` Component Inventory「定性提示(Z3)」列)。
-const TEXT_NARRATIVE: String = "敘事影響小於戰場影響"
+const TEXT_NARRATIVE: StringName = &"battle.card_confirm.narrative"
 
 ## UX-13 / 2026-09-24 管理者裁決「維持留白＋提示」——`skill-card-play.md`
 ## 「查無資料時的處理」表:「留白 + 同一句提示,不得顯示 0 或省略欄位」。
-const TEXT_STRENGTH_UNAVAILABLE: String = "（好感度數值尚未提供 — 見 UX-13）"
+const TEXT_STRENGTH_UNAVAILABLE: StringName = &"battle.card_confirm.strength_unavailable"
 
-const TEXT_NO_EXISTING_MODIFIERS: String = "（此對象目前無生效中修正）"
+const TEXT_NO_EXISTING_MODIFIERS: StringName = &"battle.card_confirm.no_existing_modifiers"
 
 ## AC-U14 的箭頭字面量——「現值 → 打完後」的分隔符。[method format_strength_arrow]
 ## 是本檔唯一產生它的地方,[method text_uses_required_arrow_format] 是唯一
 ## 檢查它的地方,兩者共用同一個常數,不各自寫一份字面量。
-const ARROW_GLYPH: String = " → "
+##
+## 🔴 Story-002 決定:**納入遷移範圍**(工作單 AC 第二條明文把決定權交給實作者,
+## 並要求記錄理由)。判斷依據:雖然它在排版上接近「箭頭符號」而非一句話,但
+## (1) `.claude/rules/ui-code.md` 的規則本身沒有替「符號」開一個不算 UI 文字的
+## 例外 ——「no hardcoded user-facing strings」逐字涵蓋任何會出現在玩家畫面上的
+## 字元;(2) 這個字串同時是解析用的分隔符(見 [method text_uses_required_arrow_format]
+## 的 [method String.split] 呼叫),保持它是「單一常數、單一出處」比起分裂成
+## 「顯示用 key + 解析用常數」兩份更安全 —— 納入 key 系統後兩邊仍然共用同一個
+## 常數,只是常數現在存的是 key 而非字面值,原本的「不各自寫一份字面量」保證
+## 不受影響;(3) 若未來語言的排版慣例需要不同的符號或間距(例如某些語言偏好
+## 全形箭頭,或排版方向需要調整間距),key 系統讓翻譯者能直接調整,不必改程式碼。
+const ARROW_GLYPH: StringName = &"battle.card_confirm.arrow_glyph"
+
+## 🔴 Story-002 追加(優先序 2,管理者裁決「現在就補完」)—— 下列 8 個常數是
+## [method show_temporary_modifier_confirmation] / [method show_permanent_write_confirmation]
+## 函式本體內原本直接內嵌(非 `const` 宣告)的繁體中文格式化字串,不在原始 30 個
+## 常數清單裡,也因此沒有被「零殘留」grep(只抓 `^const [A-Z_]+: String = "`)
+## 抓到過。性質與上面 5 個常數相同:玩家看得到、該走 key 系統。
+const TEXT_TARGET_FORMAT_SINGLE: StringName = &"battle.card_confirm.target_format_single"
+const TEXT_DELTA_ATK_FORMAT: StringName = &"battle.card_confirm.delta_atk_format"
+const TEXT_DELTA_DEF_FORMAT: StringName = &"battle.card_confirm.delta_def_format"
+const TEXT_DURATION_FORMAT: StringName = &"battle.card_confirm.duration_format"
+## 丙類「作用對象」雙目標格式(「A ↔ B」)——與 [constant TEXT_TARGET_FORMAT_SINGLE]
+## 分開宣告,不共用一個 key:前者只有一個 [code]%s[/code],本常數有兩個
+## ([code]%s ↔ %s[/code]),合併會讓其中一種呼叫方式格式化出錯。
+const TEXT_TARGET_FORMAT_PAIR: StringName = &"battle.card_confirm.target_format_pair"
+## [method show_temporary_modifier_confirmation] 逐條既有修正的單行格式——
+## 「來源：ATK ±n／DEF ±n，剩 n 回合」。
+const TEXT_EXISTING_MODIFIER_LINE_FORMAT: StringName = &"battle.card_confirm.existing_modifier_line_format"
+const TEXT_EFFECTIVE_FORMAT: StringName = &"battle.card_confirm.effective_format"
+## 丙類「好感度」欄位的外層標籤格式——包住 [method format_strength_arrow] 的輸出
+## 或 [constant TEXT_STRENGTH_UNAVAILABLE] 佔位提示,兩者皆可代入同一個
+## [code]%s[/code]。
+const TEXT_STRENGTH_LABEL_FORMAT: StringName = &"battle.card_confirm.strength_label_format"
 
 var _category: Category = Category.NONE
 
@@ -152,15 +192,16 @@ func show_temporary_modifier_confirmation(
 ) -> void:
 	_category = Category.TEMPORARY_MODIFIER
 	_title_label.text = _format_title(card_id, flavor_text)
-	_target_label.text = "作用對象：%s" % target_name
-	_delta_atk_label.text = "ΔATK：%s" % format_signed(delta_atk)
-	_delta_def_label.text = "ΔDEF：%s" % format_signed(delta_def)
-	_duration_label.text = "存續回合：%d" % duration_rounds
+	_target_label.text = Loc.localize(TEXT_TARGET_FORMAT_SINGLE) % target_name
+	_delta_atk_label.text = Loc.localize(TEXT_DELTA_ATK_FORMAT) % format_signed(delta_atk)
+	_delta_def_label.text = Loc.localize(TEXT_DELTA_DEF_FORMAT) % format_signed(delta_def)
+	_duration_label.text = Loc.localize(TEXT_DURATION_FORMAT) % duration_rounds
 
 	_existing_modifier_lines = []
+	var existing_modifier_line_format: String = Loc.localize(TEXT_EXISTING_MODIFIER_LINE_FORMAT)
 	for entry: Dictionary in existing_modifiers:
 		_existing_modifier_lines.append(
-			"%s：ATK %s／DEF %s，剩 %d 回合" % [
+			existing_modifier_line_format % [
 				entry.get("source_name", ""),
 				format_signed(int(entry.get("atk_delta", 0))),
 				format_signed(int(entry.get("def_delta", 0))),
@@ -168,10 +209,10 @@ func show_temporary_modifier_confirmation(
 			]
 		)
 	_existing_modifiers_label.text = (
-		TEXT_NO_EXISTING_MODIFIERS if _existing_modifier_lines.is_empty()
+		Loc.localize(TEXT_NO_EXISTING_MODIFIERS) if _existing_modifier_lines.is_empty()
 		else "\n".join(PackedStringArray(_existing_modifier_lines))
 	)
-	_effective_label.text = "合併後：ATK_eff %d／DEF_eff %d" % [effective_atk, effective_def]
+	_effective_label.text = Loc.localize(TEXT_EFFECTIVE_FORMAT) % [effective_atk, effective_def]
 
 	_set_row_visibility(true)
 
@@ -202,14 +243,14 @@ func show_permanent_write_confirmation(
 ) -> void:
 	_category = Category.PERMANENT_WRITE
 	_title_label.text = _format_title(card_id, flavor_text)
-	_target_label.text = "作用對象：%s ↔ %s" % [target_a_name, target_b_name]
-	_permanent_warning_label.text = TEXT_PERMANENT_WARNING
+	_target_label.text = Loc.localize(TEXT_TARGET_FORMAT_PAIR) % [target_a_name, target_b_name]
+	_permanent_warning_label.text = Loc.localize(TEXT_PERMANENT_WARNING)
 	_strength_text = (
 		format_strength_arrow(current_strength, projected_strength) if strength_available
-		else TEXT_STRENGTH_UNAVAILABLE
+		else Loc.localize(TEXT_STRENGTH_UNAVAILABLE)
 	)
-	_strength_label.text = "好感度：%s" % _strength_text
-	_narrative_label.text = TEXT_NARRATIVE
+	_strength_label.text = Loc.localize(TEXT_STRENGTH_LABEL_FORMAT) % _strength_text
+	_narrative_label.text = Loc.localize(TEXT_NARRATIVE)
 
 	_set_row_visibility(false)
 
@@ -233,9 +274,61 @@ static func format_signed(value: int) -> String:
 	return "%+d" % value
 
 
+## 🔴 2026-10-06 補強(協調者 review 抓到,Story-002 遷移的連帶後果)——
+## [constant ARROW_GLYPH] 現在是 key,而 [method Loc.localize] 在 key 查無翻譯時
+## 依 build 型態回傳不對稱的值(`src/core/i18n/loc.gd`:debug 回傳可辨識佔位符
+## [code]⟦MISSING:...⟧[/code],**release 回傳空字串**)。[constant ARROW_GLYPH]
+## 同時是顯示分隔符與(見 [method text_uses_required_arrow_format])解析分隔符,
+## 而「查無翻譯時安靜回傳空字串」這個設計決定是 story-001 針對純顯示字串訂的,
+## 從未考慮過「查找結果被拿去當解析分隔符」這種用法。
+##
+## **已實機驗證**(拋棄式探針,Godot 4.7.1 headless,
+## `scratchpad/probe_empty_separator.gd`,不在版控內):
+## [code]"+3+4".count("") == 0[/code](對任何輸入恆為 0,非當掉也非無限迴圈)、
+## [code]"+3+4".split("", true, 1) == ["+", "3+4"][/code]。**但後者從未被執行到**——
+## [method text_uses_required_arrow_format] 第一行就是 [code]count() != 1[/code]
+## 守衛,空字串必定 [code]0 != 1[/code] 為真,函式在觸及 [method String.split] 之前
+## 就已經結構性安全地回傳 [code]false[/code]。**真正沒有防護的是 [method
+## format_strength_arrow]**:它會靜默把兩個數字直接串接成 [code]"+3+4"[/code]
+## (無分隔符、容易誤讀成單一數字),而這條路徑只在 release 建置發生,玩家端
+## 看不到任何提示([method Loc.localize] 內部的 [method push_error] 只有
+## 開著主控台才看得到)。
+##
+## 下面這個共用解析函式是本次補強的核心:**顯示端與解析端永遠呼叫同一個函式
+## 取得分隔符**,包含退化情境——這與 [constant ARROW_GLYPH] 自己的 doc comment
+## 當初決定納入 key 系統的理由一致(「單一常數、單一出處」,顯示與解析不得分裂
+## 成兩份各自為政,否則會漂移)。**選的是兩個選項之外的第三案**:不是「只在
+## 解析端加守衛」(那樣治不到 [method format_strength_arrow] 真正會顯示給玩家
+## 看的缺陷),也不是「解析端改用不可本地化的內部常數」(那樣顯示端與解析端
+## 變成兩份獨立來源,違反納入 key 系統時的初衷)。退回的保底分隔符選半形空格
+## [code]" "[/code]而非維持空字串:這樣退化後的顯示從「+3+4」(無法判讀斷點)
+## 變成「+3 +4」(至少可讀),而且因為兩個函式共用同一個解析結果,[method
+## text_uses_required_arrow_format] 對這個退化後的文字一樣能正確判斷為「是」
+## (見下方實作;[code]"+3 +4".count(" ") == 1[/code],可以正常 split)。
+static func _resolved_arrow_glyph() -> String:
+	return _apply_arrow_glyph_fallback(Loc.localize(ARROW_GLYPH))
+
+
+## 拆成接受明確字串參數的純函式,不在內部直接呼叫 [method Loc.localize]——與
+## `loc.gd` 自己的 [method Loc._missing_key_fallback] 同一個理由(該函式自己的
+## doc comment已說明):讓這個分岔邏輯可以直接單元測試,不必真的讓
+## [method Loc.localize] 在測試環境下回傳空字串(它不會——本機 headless 測試下
+## 永遠是 debug build,見 `loc.gd` 的既有測試)。[method _resolved_arrow_glyph]
+## 是唯一的正式呼叫端,傳入真正的 [method Loc.localize] 結果。
+static func _apply_arrow_glyph_fallback(raw_glyph: String) -> String:
+	if raw_glyph.is_empty():
+		push_error(
+			"CardConfirmPanel: ARROW_GLYPH (battle.card_confirm.arrow_glyph) resolved to an " +
+			"empty string -- locale data is missing this key. Falling back to a plain space " +
+			"so the two numbers are never displayed concatenated with no separator at all."
+		)
+		return " "
+	return raw_glyph
+
+
 ## AC-U14 — 「現值 → 打完後」箭頭格式,本檔產生這個字串的唯一函式。
 static func format_strength_arrow(current: int, projected: int) -> String:
-	return "%s%s%s" % [format_signed(current), ARROW_GLYPH, format_signed(projected)]
+	return "%s%s%s" % [format_signed(current), _resolved_arrow_glyph(), format_signed(projected)]
 
 
 ## AC-U14 鑑別力測試用的判準函式——判斷 [param text] 是否符合「恰好一組
@@ -244,9 +337,10 @@ static func format_strength_arrow(current: int, projected: int) -> String:
 ## 分隔兩個數字,不含 [constant ARROW_GLYPH])必須讓這個函式回傳
 ## [code]false[/code]——這正是 AC-U14 後半句要求的鑑別力來源。
 static func text_uses_required_arrow_format(text: String) -> bool:
-	if text.count(ARROW_GLYPH) != 1:
+	var arrow_glyph: String = _resolved_arrow_glyph()
+	if text.count(arrow_glyph) != 1:
 		return false
-	var parts: PackedStringArray = text.split(ARROW_GLYPH, true, 1)
+	var parts: PackedStringArray = text.split(arrow_glyph, true, 1)
 	if parts.size() != 2:
 		return false
 	return _looks_like_signed_int(parts[0]) and _looks_like_signed_int(parts[1])

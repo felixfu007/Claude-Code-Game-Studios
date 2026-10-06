@@ -188,18 +188,23 @@ const HAND_BAR_BACKING_PADDING_FPX_MULTIPLIER: float = 0.25
 ## interface's own backing, not the board" visual vocabulary in both places.
 const HAND_BAR_BACKING_COLOR: Color = Color(0.0, 0.0, 0.0, 0.6)
 
-const TEXT_COUNT_FORMAT: String = "%d/%d"
+## 🔴 Story-002 migration
+## (`production/epics/localization-infrastructure/story-002-migrate-existing-hardcoded-strings.md`)
+## — every constant in this block is now a [StringName] KEY into
+## `assets/data/locales/strings.csv`, not the literal display text itself
+## (this project's doc comment below used to say "this project has no
+## localization system yet"; it now does — [Loc], Story-001 — and this is
+## that system's first real caller for this file). Every read site wraps the
+## constant in [method Loc.localize] to get the actual text.
+const TEXT_COUNT_FORMAT: StringName = &"battle.hand_bar.count_format"
 ## S5 caption text — one of its three non-color channels. Centralized as a
 ## constant per [code].claude/rules/ui-code.md[/code]'s "all UI text must go
 ## through the localization system, no hardcoded strings" rule, matching
-## [code]battle_screen.gd[/code]'s existing [code]TEXT_*[/code] convention
-## (this project has no localization system yet — building one is out of
-## scope here, exactly as that file's own doc comment already states for its
-## own [code]TEXT_*[/code] block).
-const TEXT_UNAVAILABLE: String = "不可用"
+## [code]battle_screen.gd[/code]'s existing [code]TEXT_*[/code] convention.
+const TEXT_UNAVAILABLE: StringName = &"battle.hand_bar.unavailable"
 ## Z3's 丙類 marker text (`Component Inventory`: "「永久」標示...丙類專用").
 ## Centralized as a constant for the same reason as [constant TEXT_UNAVAILABLE].
-const TEXT_PERMANENT_MARK: String = "永久"
+const TEXT_PERMANENT_MARK: StringName = &"battle.hand_bar.permanent_mark"
 
 ## Story U-015(強制棄牌 S4)—— reuses [member _unavailable_label] (the same
 ## node [constant TEXT_UNAVAILABLE] uses for S5) rather than adding a second
@@ -214,7 +219,12 @@ const TEXT_PERMANENT_MARK: String = "永久"
 ## can't I do anything else right now", not "why did the menu refuse to
 ## open"), so a verbatim match is not required — see `.claude/docs/ui-code.md`
 ## conventions this file already follows for its own [code]TEXT_*[/code] block.
-const TEXT_FORCED_DISCARD: String = "手牌已滿，請選一張棄掉"
+const TEXT_FORCED_DISCARD: StringName = &"battle.hand_bar.forced_discard"
+
+## 🔴 Story-002 追加(優先序 2)——原本內嵌於 [method _format_temporary_effect_summary]
+## 函式本體內的格式化字串("ATK+3 · DEF+0 · 剩2回合"),不在原始 4 個常數清單裡,
+## 也因此沒有被「零殘留」grep 抓到過。見該函式自己的 doc comment 了解格式意義。
+const TEXT_TEMPORARY_EFFECT_SUMMARY_FORMAT: StringName = &"battle.hand_bar.temporary_effect_summary_format"
 
 @onready var _count_label: Label = $CountLabel
 @onready var _unavailable_label: Label = $UnavailableLabel
@@ -384,7 +394,7 @@ func render(
 	_rebuild_slots()
 	_count_label.text = count_text(_slot_kinds.size(), _max_slots)
 	_count_label.add_theme_color_override(&"font_color", Color(1.0, 1.0, 1.0, _current_dim_factor()))
-	_unavailable_label.text = TEXT_FORCED_DISCARD if forced_discard else TEXT_UNAVAILABLE
+	_unavailable_label.text = Loc.localize(TEXT_FORCED_DISCARD) if forced_discard else Loc.localize(TEXT_UNAVAILABLE)
 	_ensure_lock_glyph()
 
 	_apply_layout()
@@ -591,7 +601,7 @@ static func icon_shape_for(kind: SlotKind) -> IconShape:
 
 ## Formats the [constant TEXT_COUNT_FORMAT] "n/max" readout.
 static func count_text(count: int, max_slots: int) -> String:
-	return TEXT_COUNT_FORMAT % [count, max_slots]
+	return Loc.localize(TEXT_COUNT_FORMAT) % [count, max_slots]
 
 
 ## Z1's card-slot rect for [param window_size] at [param max_slots] slots —
@@ -868,7 +878,7 @@ func _update_detail_panel_content() -> void:
 
 	_detail_text_label.text = String(face.get("flavor_text", ""))
 	if is_permanent:
-		_detail_effect_label.text = TEXT_PERMANENT_MARK
+		_detail_effect_label.text = Loc.localize(TEXT_PERMANENT_MARK)
 	else:
 		_detail_effect_label.text = _format_temporary_effect_summary(
 			int(face.get("delta_atk", 0)),
@@ -884,7 +894,7 @@ func _update_detail_panel_content() -> void:
 static func _format_temporary_effect_summary(
 	delta_atk: int, delta_def: int, duration_rounds: int
 ) -> String:
-	return "ATK%s · DEF%s · 剩%d回合" % [
+	return Loc.localize(TEXT_TEMPORARY_EFFECT_SUMMARY_FORMAT) % [
 		_signed_int_text(delta_atk), _signed_int_text(delta_def), duration_rounds
 	]
 

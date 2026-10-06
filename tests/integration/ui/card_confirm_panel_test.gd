@@ -542,7 +542,7 @@ func test_confirm_panel_丙類_strength_field_shows_placeholder_not_zero_when_un
 	var strength_text: String = instance._card_confirm_panel.diagnostic_strength_text()
 	assert_str(strength_text).append_failure_message(
 		"UX-13 未關閉前，好感度數值欄位應顯示佔位提示，實得「%s」" % strength_text
-	).is_equal(CardConfirmPanel.TEXT_STRENGTH_UNAVAILABLE)
+	).is_equal(Loc.localize(CardConfirmPanel.TEXT_STRENGTH_UNAVAILABLE))
 	assert_bool(CardConfirmPanel.text_uses_required_arrow_format(strength_text)).append_failure_message(
 		"佔位提示不應該被誤判成一組合法的箭頭格式"
 	).is_false()

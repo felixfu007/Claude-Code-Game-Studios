@@ -1,3 +1,49 @@
 keys,zh_TW
 battle.hud.status_format,第 %d 回合．%s
 battle.menu.leave_confirm_title,離開遊戲?
+battle.hud.faction_player,我方行動
+battle.hud.faction_enemy,敵方行動
+battle.hud.result_victory,勝利
+battle.hud.result_defeat,戰敗
+battle.hud.affinity_preview_format,好感度 %+d→%+d
+battle.hud.affinity_current_format,好感度 %+d
+battle.hud.damage_preview_format,打擊 %d　血量 %d→%d
+battle.load_error.failure_format,"遊戲資料載入失敗,無法開始戰鬥。
+
+%s
+檔案:%s
+
+請重新下載完整的安裝檔案。
+回報問題時請附上這個畫面。"
+battle.load_error.reason_missing,找不到必要的資料檔案。
+battle.load_error.reason_unreadable,"資料檔案存在,但無法讀取。"
+battle.load_error.reason_empty_content,資料檔案是空的。
+battle.load_error.reason_parsed_empty,資料檔案沒有可用的內容。
+battle.load_error.reason_parse_error,"資料檔案內容格式錯誤,其中一列資料無法辨識。"
+battle.hud.controls_hint,"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B
+開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start"
+battle.hand_bar.count_format,%d/%d
+battle.hand_bar.unavailable,不可用
+battle.hand_bar.permanent_mark,永久
+battle.hand_bar.forced_discard,手牌已滿，請選一張棄掉
+battle.card_confirm.permanent_warning,⚠ 永久效果，無法復原
+battle.card_confirm.narrative,敘事影響小於戰場影響
+battle.card_confirm.strength_unavailable,（好感度數值尚未提供 — 見 UX-13）
+battle.card_confirm.no_existing_modifiers,（此對象目前無生效中修正）
+battle.card_confirm.arrow_glyph," → "
+battle.menu.leave_confirm_body,"目前沒有存檔功能,離開後這場
+戰鬥的進度會消失。"
+battle.menu.rejection_authoritative_write,（權威寫入進行中，暫時無法開啟選單）
+battle.menu.rejection_forced_discard,請先完成棄牌
+battle.menu.reason_card_play_in_progress,請先完成或取消打牌
+battle.menu.reason_not_player_turn,現在不是你的回合
+battle.card_confirm.target_format_single,作用對象：%s
+battle.card_confirm.delta_atk_format,ΔATK：%s
+battle.card_confirm.delta_def_format,ΔDEF：%s
+battle.card_confirm.duration_format,存續回合：%d
+battle.card_confirm.existing_modifier_line_format,%s：ATK %s／DEF %s，剩 %d 回合
+battle.card_confirm.effective_format,合併後：ATK_eff %d／DEF_eff %d
+battle.card_confirm.target_format_pair,作用對象：%s ↔ %s
+battle.card_confirm.strength_label_format,好感度：%s
+battle.hand_bar.temporary_effect_summary_format,ATK%s · DEF%s · 剩%d回合
+battle.menu.disabled_row_prefix_glyph,"✕ "

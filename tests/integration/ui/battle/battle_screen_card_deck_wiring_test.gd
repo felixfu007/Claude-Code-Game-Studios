@@ -206,7 +206,7 @@ func test_fail_load_dictionary_signature_sets_error_label_when_any_entry_fails()
 	# Assert — 顯示了失敗訊息（CARDS_PATH 那一項），且畫面進入失敗模式
 	var load_error_label: Label = instance.get_node("UILayer/LoadErrorLabel")
 	assert_bool(load_error_label.visible).is_true()
-	assert_str(load_error_label.text).contains(BattleScreen.TEXT_LOAD_REASON_MISSING)
+	assert_str(load_error_label.text).contains(Loc.localize(BattleScreen.TEXT_LOAD_REASON_MISSING))
 	assert_str(load_error_label.text).contains(BattleScreen.CARDS_PATH)
 	assert_bool(instance._load_failed).is_true()
 

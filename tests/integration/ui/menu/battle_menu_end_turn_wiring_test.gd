@@ -183,7 +183,7 @@ func test_end_turn_item_disabled_when_phase_is_not_player_input() -> void:
 	assert_bool(_reason_label(instance).visible).is_true()
 	assert_str(_reason_label(instance).text).append_failure_message(
 		"AC-M4: reason text must be player-readable plain language, not a field/error code."
-	).is_equal("✕ " + BattleMenu.REASON_NOT_PLAYER_TURN)
+	).is_equal(Loc.localize(BattleMenu.DISABLED_ROW_PREFIX_GLYPH) + Loc.localize(BattleMenu.REASON_NOT_PLAYER_TURN))
 
 
 ## AC-M5's core claim, half two — the one `design/ux/battle-menu.md` itself
@@ -298,7 +298,7 @@ func test_end_turn_item_disabled_when_card_play_in_progress() -> void:
 	assert_bool(_reason_label(instance).visible).is_true()
 	assert_str(_reason_label(instance).text).append_failure_message(
 		"AC-M4 wireframe wording (`design/ux/battle-menu.md`'s N2 mockup)."
-	).is_equal("✕ " + BattleMenu.REASON_CARD_PLAY_IN_PROGRESS)
+	).is_equal(Loc.localize(BattleMenu.DISABLED_ROW_PREFIX_GLYPH) + Loc.localize(BattleMenu.REASON_CARD_PLAY_IN_PROGRESS))
 
 
 ## Reflection write on [CardDeck]'s private [code]_pending_discard[/code]
@@ -331,7 +331,7 @@ func test_end_turn_item_disabled_when_pending_discard() -> void:
 		"on why this branch should be structurally unreachable in practice)."
 	).is_true()
 	assert_str(_reason_label(instance).text).is_equal(
-		"✕ " + BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD
+		Loc.localize(BattleMenu.DISABLED_ROW_PREFIX_GLYPH) + Loc.localize(BattleMenu.REJECTION_MESSAGE_FORCED_DISCARD)
 	)
 
 
@@ -371,7 +371,7 @@ func test_reason_text_persists_when_focus_moves_off_end_turn_row() -> void:
 		"off EndPhaseRow onto QuitRow — this is the 常駐不隨焦點 requirement, " +
 		"not \"only shown while the disabled row itself is focused\"."
 	).is_true()
-	assert_str(_reason_label(instance).text).is_equal("✕ " + BattleMenu.REASON_CARD_PLAY_IN_PROGRESS)
+	assert_str(_reason_label(instance).text).is_equal(Loc.localize(BattleMenu.DISABLED_ROW_PREFIX_GLYPH) + Loc.localize(BattleMenu.REASON_CARD_PLAY_IN_PROGRESS))
 
 
 ## Companion to the test above, using ReturnToBattleRow instead of QuitRow —
