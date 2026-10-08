@@ -1,7 +1,36 @@
 # Story 003b: ADR-0001 原子性機制收斂 —— 版本號、寫入守衛、Board mutator 封裝
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: 🟡 **In Progress —— 產品程式碼完成,驗收測試(AC8/AC9)尚未撰寫**
+> **Status**: ✅ **Done(2026-10-08 管理者裁決)—— 004~007 已解除封鎖**
+>
+> 🔴 **2026-10-08 收尾(協調者獨立重跑驗收,不是採信專家回報)**:
+> **AC8 完成**:14 條新測試落地並全綠,涵蓋 4d/4e/4f/4i/4j/4k/4l。
+> 分兩個檔(`tests/unit/gameplay/battle/commit_authoritative_change_version_test.gd` 7 條、
+> `mutator_guard_rejection_test.gd` 7 條),分檔理由寫在各自檔頭 —— 同套件內任一測試失敗
+> 會中止其後全部,版本號語意與守衛拒絕不放同一檔。
+> 協調者獨立重跑原始輸出:
+> ```
+> Overall Summary: 1036 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans |
+> ENGINE EXIT CODE = 100 · Parse Error / Abnormal exit = 0
+> ```
+> 算術 **1022(基線)+ 14 = 1036**,與實測相符 —— **沒有測試偷偷沒跑**。
+> 具名 ` FAILED` 只有既有那條刻意紅且已核准的 `affinity_phi_provider_test.gd`。
+>
+> 🔴 **AC9 只做到 1/14,而且用的方法是本專案已淘汰的那種 —— 這是知情下標 Done。**
+> 管理者 2026-10-08 裁決:**現在標 Done 解鎖 004~007,敏感度證明另切一張小工單**
+> (`story-003d`)。缺口的精確形狀:
+> - **已獨立證明會紅**:`test_4d_...` 1 條(停用 `commit_authoritative_change()` 的遞增 →
+>   總數掉到 1027、3 failures,且連帶讓既有核准測試正確轉紅)。
+> - **未證明**:其餘 13 條。**不是沒有理由相信它們有效,是沒有針對各自單獨重跑過。**
+> - 🔴 **方法本身不合規**:`.claude/rules/test-standards.md` 明文「手動注入已淘汰」,
+>   正確形式是「間諜子類別 + 一條會通過的常駐 `test_sensitivity_proof_*`」。
+>   **錯在派工單(協調者寫的),不在實作者** —— 它照做之後自己發現並誠實指出。
+> - ⚠️ **環境另有一道結構性阻礙**:實作者嘗試停用 `board.gd` 的守衛以證明 4k,
+>   **被本機安全分類器以「削弱安全機制」為由擋下**。亦即對守衛類程式碼,
+>   手動注入法在這個環境**結構上做不到** —— 這反過來佐證了那條淘汰裁決。
+>
+> ⚠️ **下一個讀到這裡的人:那 13 條目前是「存在且全綠」,不是「已驗證有效」。**
+> 不要把它們當成已經證明過的地基。
 >
 > 🔴 **2026-10-06 落地狀況(協調者獨立驗收,不是採信專家回報)**:
 > **已完成**:AC1(深度計數器 + 三個對外成員)、AC2(七個 mutator 選擇性守衛)、
@@ -12,6 +41,10 @@
 > **未完成**:AC8/AC9 —— Validation Criteria 4d/4e/4f/4i/4j/4k/4l 的斷言測試檔
 > **一條都還沒寫**(4a/4b/4c 由既有 `attack_los_blocked_query_test.gd` 涵蓋)。
 > 🔴 **因此 004~007 仍不得開工** —— 本 story 未 Done。
+>
+> > ✅ **以上三行是 2026-10-06 的狀態,已於 2026-10-08 被本檔開頭的收尾節取代。**
+> > **原文保留為決策紀錄,但不要照它行動** —— AC8 已完成(14 條),
+> > **004~007 已解除封鎖**。AC9 的實際缺口形狀見開頭,不是「一條都還沒寫」。
 >
 > ⚠️ **本次發現工作單漏算的一類呼叫點**:它數過「89 處直接呼叫」,但那是指
 > `TurnOrder.new()` 自建(無守衛)的測試夾具。**從 `BattleState`/`BattleController`
@@ -351,6 +384,21 @@ $ grep -n "_finalize_enemy_phase()" src/gameplay/battle/battle_controller.gd
 | 7 | `run_enemy_phase()`(及 `battle_loop.gd` 對應的整批範圍)的版本遞增為**整批一次**,不是逐單位動作一次 | Validation Criteria 4d(逐字驗收) |
 | 8 | Validation Criteria 4a/4b/4c/4d/4e/4f/4i/4j/4k 各有至少一條對應斷言測試,且與既有 993 條測試共存、不使基線失敗數上升 | 硬性義務第 5 條 |
 | 9 | 全部新測試遵守 `coding-standards.md` 對 GdUnit4 的三項紀律(直接呼叫 `RefCounted` 方法而非模擬按鍵、分散測試檔避免同套件中止污染敏感度證明、故意弄壞產品程式碼逐條證明測試真的會紅) | ADR Validation Criteria 第 4 項附帶紀律 |
+
+> 🔴 **AC9 第三項的措辭已過期(2026-10-08 更正,原文一字不動保留在上表)。**
+> 「**故意弄壞產品程式碼逐條證明測試真的會紅**」= 手動注入法,而
+> `.claude/rules/test-standards.md`(**2026-09-16 裁決,早於本 story 撰寫日**)明文:
+> 「**手動注入(改壞 → 跑 → 改回)已淘汰,理由是它在版本庫裡不留任何痕跡。**」
+> **正確形式**:間諜子類別 + 一條**會通過的**常駐 `test_sensitivity_proof_*`,
+> 判準 `grep '^func test_sensitivity'`,範本在
+> `tests/integration/gameplay/affinity_pool/affinity_pool_wiring_test.gd`。
+>
+> **門檻也不是「全部補齊」** —— 同一份規則逐字:「每條測試要嘛有敏感度證明,
+> 要嘛有**寫下來、可查證的「為什麼證明不了」**」,且管理者當時已明確否決
+> 「全部補齊才算完成」這個門檻(理由:結構上不可能達成,會讓工作單永遠卡住)。
+>
+> ⚠️ **本 story 在 2026-10-08 標 Done 時,那 13 條兩者都沒有。** 這是知情下的決定,
+> 補做移入 `story-003d`。**不要把本 story 的 Done 讀成 AC9 已滿足。**
 | 🔴 10(2026-10-05 新增) | 路徑⑥:`battle_controller.gd:_finalize_enemy_phase()` 的 703/704 兩行(`advance_faction()` + `begin_player_turn()`)、`battle_loop.gd:run()` 的 119/152 兩行,各自落在**同一個** `commit_authoritative_change()` mutator Callable 內(不得其中一行在窗口內、另一行在窗口外) | 機制一(路徑⑥,現況「事實三」判定一) |
 | 🔴 11(2026-10-05 新增) | `_finalize_enemy_phase()` 本身包一層 `commit_authoritative_change()`(涵蓋判定二發現的兩個呼叫者:`run_enemy_phase()` 673 行與 `step_enemy_phase()` 799 行);依 `技術總監` 已裁決的巢狀深度計數器機制(見「未決的實作細節」節的補丁),經 `run_enemy_phase()` 整批外層提交呼叫到時應收斂為同一次 +1,經 `step_enemy_phase()`(生產環境唯一呼叫路徑)單獨呼叫到時應獨立 +1 | 機制一(路徑⑥,現況「事實三」判定二;解決「未決的實作細節」第 3 項,見該節補充註記) |
 | 🔴 12(2026-10-05 新增,**本項為 `lead-programmer` 主動擴大的建議範圍,非今日裁決原始指認,可單獨 descope**) | 路徑⑦:`battle_controller.gd:_init()`(212)、`battle_loop.gd:_init()`(88)的一次性 `tick_all_modifiers()` 呼叫各自包一層 `commit_authoritative_change()` | 機制一(路徑⑦,詳見 Scope 第 5 項路徑表下方的「附加說明」) |
@@ -592,6 +640,12 @@ test_phi_reflects_a_pairing_polarity_flip_made_after_construction`
   故意錯誤實作,重跑對應測試確認會轉紅(不是只跑一次綠燈就結案)
 
 🔴 **2026-10-05 新增(路徑⑥/⑦,對應 AC10/AC11/AC12/Validation Criteria 4l/4m)**:
+
+> 🔴 **`4m` 是筆誤,ADR-0001 裡沒有這一列(2026-10-08 查證)。**
+> `grep -c "4m" docs/architecture/adr-0001-*.md` → **0**。由實作者發現、協調者複驗。
+> **以 `4l` 為準。** 下面那兩條 AC11 專屬向量(`run_enemy_phase()` 巢狀收斂 /
+> `step_enemy_phase()` 獨立 +1)不是某個未登記的 `4m`,它們是 AC11 自己的驗收向量,
+> **2026-10-08 收尾時尚未撰寫**,已移入 `story-003d`。
 - 新增測試檔同時涵蓋 AC10(回合轉換雙行同一次提交)、AC11(`_finalize_enemy_phase()`
   自身巢狀提交,`run_enemy_phase()` 與 `step_enemy_phase()` 兩個呼叫者各驗一次)、
   AC12(若未 descope)
