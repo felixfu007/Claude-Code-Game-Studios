@@ -1,0 +1,125 @@
+# color-palette.csv -- 《盲目於微光》全專案共用色票清單(初版 v0.1)
+#
+# 🔴 狀態:初版草案,非定案。
+#    建立:2026-10-08,art-director,依管理者裁決產出,接續
+#    docs/ai-art-service-handoff/06a-change-request-art-requirements-2026-10-08.md
+#    第七節第 1 項登記的缺口(「色票清單檔尚未建立」)。
+#
+# 🔴 這是對還沒看過的東西下決定 —— 目前沒有任何一張真實角色圖。
+#    管理者裁決時已被明文告知此代價(「很可能第一批圖出來就要改」),知情下仍選擇現在做。
+#    修訂觸發條件見檔尾。
+#
+# 格式權威來源:docs/ai-art-service-handoff/06a-change-request-art-requirements-2026-10-08.md
+#    第 4.2 節 —— 本檔欄位與註解慣例照抄該節範例,不自行發明新欄位,因為該格式已送達
+#    承接 AI 產圖後製工具的團隊(AI_IMG 倉庫 ai_art_service),格式變了他們會解析失敗。
+#
+# ⚠️ 已知的格式歧義(本檔不解決,僅如實標記 —— 修改 06a 不在本次授權範圍):
+#    06a 第 4.2 節寫「`#` 開頭整行視為註解」,但它自己給的範例資料列本身也是
+#    `#FF00FF,reserved,chroma_key_background` —— 同樣以 `#` 開頭。若對方解析器真的
+#    採「看到 # 就整行跳過」,範例裡的資料列會被當成註解一併跳過,等於這個格式字面上
+#    無法解析出任何顏色。本檔假設對方解析器實際採「# 後緊接 6 碼合法 hex 才是資料列,
+#    否則視為整行註解」這個較合理的讀法,並據此寫作:本檔所有敘述性註解行一律在 `#`
+#    後留空格或接非 hex 字元,刻意避免與資料列樣式混淆。**這個歧義建議回報給承接團隊
+#    確認,不應該只靠雙方各自猜測同一份字面規格 —— 本檔無法自行解決,只能標記。**
+#
+# 欄位(嚴格 3 欄,逗號分隔,順序固定 —— 照 06a 4.2 節原文,不自行增減):
+#   hex,category,label
+#   category 可選值(06a 原文固定清單,不可自創新值):skin / cloth / metal / nature / ui / reserved
+#
+# label 慣例(06a 範例本身即是 category_shade_編號 的 snake_case,本檔沿用,
+# 並在需要時插入色相/材質描述詞,例:cloth_warm_shadow_01):
+#   _shadow_ / _base_ / _highlight_ — 明暗三階;_outline_ — 描邊色(依材質分開,非純黑)
+#
+# 總數:本初版用 38 / 64(全專案共用上限,地形+介面+5 位角色共享,非單一角色配額,
+# 出處:design/art/art-direction.md 第二、三節與 06a 第一節)。
+#   skin 7 / cloth 10 / metal 4 / nature 10 / ui 6 / reserved 1 = 38。
+#   剩餘 26 色為刻意保留的頭寸,供後續角色專屬子色盤挑選、地形演變新增地形種類
+#   (design/gdd/living-board-terrain.md)、或既有 UI 色一併納管時使用 —— 不是遺漏。
+#
+# 描邊色(硬性規則出處:art-direction.md 第四節 + 06a 驗收標準表 #4 ——
+#   非純黑,依材質微調色相,不同材質至少 2 種。本檔提供 4 種,逐一對應材質):
+#   skin_outline_01   (深褐紅,皮膚)   metal_outline_01  (深藍灰,金屬)
+#   cloth_outline_01  (深紫灰,布料)   nature_outline_01 (深橄欖黑綠,地形/自然)
+#
+# 色鍵(chroma key)確認(本檔任務核心交付項,06a 第七節第 2 項登記的依賴 —— 現在確認):
+#   沿用 06a 暫定值 #FF00FF(純洋紅,R255 G0 B255),**確認可用,維持此值。**
+#   確認方式:逐一檢視下方全部 37 個非 reserved 色票,沒有任何一個同時具備「R 與 B
+#   皆為高值、G 接近 0」這個特徵 —— 純洋紅在感知上與本檔其餘以中低彩度、大地/中性
+#   色調為主的色票明顯區隔(逐列可自行核對下方 hex 值)。
+#   ⚠️ **此確認只對本檔目前這 37 色成立,日後本檔每新增一色,必須重新過這條檢查,
+#   不會自動延續。**
+#
+# ui 類(6 色)標註「既有」者,是從現行程式碼已經在用的 Color() 常數換算而來,
+# 不是新創 —— 這些值在本檔建立之前就已經在跑,本檔是第一次把它們寫進共用色票。
+# 換算方式:Godot Color 浮點(0-1)× 255 四捨五入。重新核對方式(不附行號,
+# 行號會漂,查符號名):
+#   grep -n "PANEL_BG_COLOR\|FOCUS_BORDER_COLOR\|DIVIDER_COLOR\|AFFINITY_LINE_COLOR_POSITIVE\|AFFINITY_LINE_COLOR_NEGATIVE" src/ui/battle/board_view.gd src/ui/menu/battle_menu.gd
+#   grep -n "WARNING_COLOR" src/ui/battle/card_confirm_panel.gd
+#   🔴 這 6 色不是既有程式碼色的全部 —— 至少還有 HP 血條填色(board_view.gd 的
+#   fill.color,健康 #33CC33 / 危急 #CC3333,與下面 ui_state_positive_01/negative_01
+#   並非同一組數值,未納入)、MASK_COLOR、HP_TEXT_COLOR_PREVIEW 等未納入本檔。
+#   是否要把既有 UI 色全部收斂進本檔是下一次的工作,本初版只納入最常見的 6 個起步,
+#   其餘列為已知缺口,不要誤讀成「UI 色已全部盤點」。
+#
+# nature 類對應 board.gd 現行實際定義的 3 種地形(不是想像的地形種類清單 ——
+# 本檔原稿曾假設存在「石地/水域」,經查 board.gd 後已移除,因為它們不存在):
+#   grep -n "TERRAIN_OPEN\|TERRAIN_BRUSH\|TERRAIN_FALLEN_LOG" src/gameplay/board/board.gd
+#   平地(TERRAIN_OPEN,cost 1)/ 灌木(TERRAIN_BRUSH,cost 2)/ 倒木(TERRAIN_FALLEN_LOG,
+#   cost 3,可通行、只擋視線)。地形演變系統(living-board-terrain.md)若新增地形種類,
+#   屆時需要補 nature 類新色階 —— 本檔尚未涵蓋那個情境。
+#
+# 單一角色 ≤ 24 色是建議值(SHOULD),不是硬性規則(出處:06a 第五節驗收標準表 #3
+# 明文「建議」)。本檔不替任何單一角色預先分配子色盤,子色盤如何從下方色階庫挑選
+# 是後續每位角色各自的工作,不在本初版範圍。
+#
+# 修訂觸發條件:
+#   1. 第一批真實角色/地形素材(AI 產圖或人工試色)出來後,逐色核對是否可用。
+#   2. 角色數由 5 擴充時,重新核算 64 色總配額分配。
+#   3. 地形種類因 living-board-terrain.md 的地形演變系統新增時,補 nature 類新色階。
+#   4. 若色鍵色 #FF00FF 與任何已定色衝突(相同或視覺上難以區分),立即更換色鍵色。
+#   5. 若既有 UI 程式碼色全面收斂進本檔(見上方「已知缺口」),UI 類色數會顯著增加。
+#
+hex,category,label
+#FF00FF,reserved,chroma_key_background
+# ---- skin(2 組明暗三階 + 1 描邊,覆蓋至少 2 種膚色,供 5 位角色初步分流)----
+#3A2A1E,skin,skin_shadow_01
+#C98A5B,skin,skin_base_01
+#E8B899,skin,skin_highlight_01
+#2A1812,skin,skin_shadow_02
+#8A5A3D,skin,skin_base_02
+#BD8963,skin,skin_highlight_02
+#5C2A24,skin,skin_outline_01
+# ---- cloth(3 色相家族:暖色/冷色/中性,各明暗三階 + 1 描邊)----
+#5C1F22,cloth,cloth_warm_shadow_01
+#9C3A3E,cloth,cloth_warm_base_01
+#C97478,cloth,cloth_warm_highlight_01
+#1F3A5C,cloth,cloth_cool_shadow_01
+#3A6B9C,cloth,cloth_cool_base_01
+#74A6C9,cloth,cloth_cool_highlight_01
+#4A443C,cloth,cloth_neutral_shadow_01
+#7D766A,cloth,cloth_neutral_base_01
+#B0A897,cloth,cloth_neutral_highlight_01
+#3B2436,cloth,cloth_outline_01
+# ---- metal(1 組明暗三階 + 1 描邊,銀/鋼色系)----
+#3A3F4A,metal,metal_shadow_01
+#6B7280,metal,metal_base_01
+#A9B2BD,metal,metal_highlight_01
+#26303D,metal,metal_outline_01
+# ---- nature(對應 board.gd 現行 3 種地形:平地/灌木/倒木,各明暗三階 + 1 描邊)----
+#3F4A2E,nature,nature_open_shadow_01
+#6B7A4E,nature,nature_open_base_01
+#9FAF7A,nature,nature_open_highlight_01
+#243318,nature,nature_brush_shadow_01
+#3E5C2A,nature,nature_brush_base_01
+#628A45,nature,nature_brush_highlight_01
+#2F2013,nature,nature_fallenlog_shadow_01
+#6B4A2E,nature,nature_fallenlog_base_01
+#9C7A52,nature,nature_fallenlog_highlight_01
+#2B3327,nature,nature_outline_01
+# ---- ui(既有程式碼萃取值,見上方檔頭說明;非描邊,無材質細分)----
+#1A1A1F,ui,ui_panel_bg_01
+#FFFFFF,ui,ui_text_primary_01
+#808080,ui,ui_divider_01
+#4DE659,ui,ui_state_positive_01
+#FF5252,ui,ui_state_negative_01
+#FFBF4D,ui,ui_state_warning_01
