@@ -6,17 +6,23 @@
 # story-002 實際搬遷的「每一個 key，查出來的內容是不是跟遷移前的字面值逐字一樣」——
 # 兩份檔案驗的是不同的事實，故意不合併。
 #
-# 涵蓋 `assets/data/locales/strings.csv` 目前全部 40 筆 key：
+# 涵蓋 `assets/data/locales/strings.csv` 目前全部 45 筆 key：
 #   - 30 筆：story-002 第一批（battle_screen.gd 15、hand_bar.gd 4、card_confirm_panel.gd 5、
 #     battle_menu.gd 6），含 2 筆 story-001 已先遷移的既有 key。
 #   - 10 筆：story-002 優先序 2 追加（原本內嵌於函式本體、不是 `const` 宣告，因此沒有被
 #     「零殘留」grep 抓到的格式化字串——card_confirm_panel.gd 8 筆、hand_bar.gd 1 筆、
 #     battle_menu.gd 1 筆）。
+#   - 5 筆：story-002 續批（`godot-specialist`，`.tscn` 場景檔裸字串遷移）——原本直接
+#     寫死在 `BattleMenu.tscn` 節點 `text =` 屬性裡的 M1 三列 + M4 兩個按鈕文字，
+#     場景檔本身沒有 key 欄位可查，這批之前完全不在任何「零殘留」grep 的偵測範圍內
+#     （grep 的對象是 `.gd`，這批原本在 `.tscn`）。
 #
 # 本檔正式化自一支拋棄式探針（scratchpad/probe_csv_import.gd，不在版控內，已在同一次任務中
 # 對原始 30 筆逐一 `TranslationServer.translate()` 核對，全數 OK=true）——這 30 筆的期望值
 # 直接複製自該次驗證；新增的 10 筆是本檔第一次透過正式測試驗證（CSV 新增時未另外重跑探針，
-# 見本檔頭「未查證」段落）。
+# 見本檔頭「未查證」段落）。story-002 續批追加的 5 筆（M1/M4 按鈕文字）同樣是本檔第一次
+# 驗證，沒有另外的拋棄式探針——這 5 筆的期望值來自遷移前 `BattleMenu.tscn` 的 `text =`
+# 字面值本身（遷移時逐字複製，見 `production/qa/evidence/loc-story-002-tscn-migration.md`）。
 #
 # 🔴 甲類/乙類例外判斷（.claude/rules/test-standards.md 2026-09-16 裁決）：本檔完全不碰
 # 檔案系統——不讀 strings.csv、不呼叫 FileAccess/DirAccess。期望字面值是 in-test 常數
@@ -107,7 +113,8 @@ func test_card_confirm_panel_migrated_keys_resolve_to_original_literals() -> voi
 	_assert_keys_resolve_to_expected(_EXPECTED_CARD_CONFIRM_PANEL)
 
 
-# ---- battle_menu.gd 的 7 個 key(6 個原始,含 1 個 story-001 既有 key + 1 個優先序 2 追加)--
+# ---- battle_menu.gd 的 12 個 key(7 個原始 — 6 個原始 .gd 常數含 1 個 story-001 既有 key
+#      + 1 個優先序 2 追加 — 加上 5 個 story-002 續批從 BattleMenu.tscn 遷入的按鈕文字)----
 
 const _EXPECTED_BATTLE_MENU: Dictionary[StringName, String] = {
 	&"battle.menu.leave_confirm_title": "離開遊戲?",
@@ -117,15 +124,23 @@ const _EXPECTED_BATTLE_MENU: Dictionary[StringName, String] = {
 	&"battle.menu.reason_card_play_in_progress": "請先完成或取消打牌",
 	&"battle.menu.reason_not_player_turn": "現在不是你的回合",
 	&"battle.menu.disabled_row_prefix_glyph": "✕ ",
+	# 下 5 筆 — story-002 續批(`.tscn` 場景檔裸字串遷移,`godot-specialist`):
+	# 原本直接寫死在 `BattleMenu.tscn` 節點 `text =` 屬性裡的 M1/M4 按鈕文字,
+	# 不是 battle_menu.gd 原本 7 個 key 的一部分。
+	&"battle.menu.return_to_battle_row": "回到遊戲",
+	&"battle.menu.end_phase_row": "結束回合",
+	&"battle.menu.quit_row": "離開遊戲",
+	&"battle.menu.leave_confirm_cancel": "取消",
+	&"battle.menu.leave_confirm_leave": "離開",
 }
 
 func test_battle_menu_migrated_keys_resolve_to_original_literals() -> void:
 	_assert_keys_resolve_to_expected(_EXPECTED_BATTLE_MENU)
 
 
-# ---- 總筆數守衛 —— 證明上面 4 組字典合計真的是 40,不是手滑漏算 --------------------------
+# ---- 總筆數守衛 —— 證明上面 4 組字典合計真的是 45,不是手滑漏算 --------------------------
 
-func test_total_migrated_key_count_is_forty() -> void:
+func test_total_migrated_key_count_is_forty_five() -> void:
 	var total: int = (
 		_EXPECTED_BATTLE_SCREEN.size()
 		+ _EXPECTED_HAND_BAR.size()
@@ -133,6 +148,6 @@ func test_total_migrated_key_count_is_forty() -> void:
 		+ _EXPECTED_BATTLE_MENU.size()
 	)
 	assert_int(total).append_failure_message(
-		"四組字典合計應為 40(15+5+13+7)，實得 %d——若改了任何一組的筆數，這裡要一起改，" % total +
-		"不然這條測試本身的「40」就是一句謊言"
-	).is_equal(40)
+		"四組字典合計應為 45(15+5+13+12)，實得 %d——若改了任何一組的筆數，這裡要一起改，" % total +
+		"不然這條測試本身的「45」就是一句謊言"
+	).is_equal(45)

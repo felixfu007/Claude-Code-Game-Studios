@@ -47,3 +47,8 @@ battle.card_confirm.target_format_pair,作用對象：%s ↔ %s
 battle.card_confirm.strength_label_format,好感度：%s
 battle.hand_bar.temporary_effect_summary_format,ATK%s · DEF%s · 剩%d回合
 battle.menu.disabled_row_prefix_glyph,"✕ "
+battle.menu.return_to_battle_row,回到遊戲
+battle.menu.end_phase_row,結束回合
+battle.menu.quit_row,離開遊戲
+battle.menu.leave_confirm_cancel,取消
+battle.menu.leave_confirm_leave,離開

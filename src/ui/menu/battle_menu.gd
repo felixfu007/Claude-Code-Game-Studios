@@ -181,6 +181,29 @@ const LEAVE_CONFIRM_TITLE: StringName = &"battle.menu.leave_confirm_title"
 ## out ("進度會消失"), not a generic "確定要離開嗎?".
 const LEAVE_CONFIRM_BODY: StringName = &"battle.menu.leave_confirm_body"
 
+## Story-002 續批(`.tscn` 場景檔裸字串遷移,`godot-specialist`,
+## `production/epics/localization-infrastructure/story-002-migrate-existing-hardcoded-strings.md`)
+## — M1 三列按鈕文字。這三個節點的 [code]text[/code] 原本直接寫死在
+## [code]BattleMenu.tscn[/code] 裡,不是像本檔其餘字串一樣只留一個 key 常數——
+## Godot 場景檔沒有「宣告 key、執行期自動翻譯」的欄位(已實機探針驗證:[Button]/
+## [Label] 的 [member Control.text] 屬性值本身不會因為 [member CanvasItem.auto_translate_mode]
+## 而被引擎自動改寫,見該 story 證據檔 `production/qa/evidence/loc-story-002-tscn-migration.md`
+## 第二節的探針輸出)。遷移後場景檔清空這三個節點的 [code]text[/code],改由 [method _ready]
+## 用 [method Loc.localize] 設定一次——與 [member LEAVE_CONFIRM_TITLE] / [member LEAVE_CONFIRM_BODY]
+## 這兩個既有常數完全相同的寫法,不是新模式。
+const RETURN_TO_BATTLE_ROW: StringName = &"battle.menu.return_to_battle_row"
+## Story-002 續批 — 見 [constant RETURN_TO_BATTLE_ROW] 的 doc comment。
+const END_PHASE_ROW: StringName = &"battle.menu.end_phase_row"
+## Story-002 續批 — 見 [constant RETURN_TO_BATTLE_ROW] 的 doc comment。
+const QUIT_ROW: StringName = &"battle.menu.quit_row"
+
+## Story-002 續批 — M4(離開確認)對話框的兩個按鈕文字,同一批遷移,同一理由見
+## [constant RETURN_TO_BATTLE_ROW] 的 doc comment。命名沿用 [constant LEAVE_CONFIRM_TITLE] /
+## [constant LEAVE_CONFIRM_BODY] 既有的 [code]leave_confirm_[/code] 前綴慣例。
+const LEAVE_CONFIRM_CANCEL: StringName = &"battle.menu.leave_confirm_cancel"
+## Story-002 續批 — 見 [constant LEAVE_CONFIRM_CANCEL] 的 doc comment。
+const LEAVE_CONFIRM_LEAVE: StringName = &"battle.menu.leave_confirm_leave"
+
 ## Placeholder internal spacing (this file's own judgement call, not a spec
 ## number — see class doc comment). Outer margin on all four sides of the
 ## panel's content area, in multiples of fpx.
@@ -433,6 +456,13 @@ var _focusable_rows: Array[Button] = []
 func _ready() -> void:
 	_focusable_rows = [_return_row, _end_phase_row, _quit_row]
 
+	# Story-002 續批 — M1 三列按鈕文字,見 RETURN_TO_BATTLE_ROW 的 doc comment。
+	# 設定一次,之後不再改寫(見本檔類別文件註解:"Row TEXT itself is fixed for
+	# life once _ready() returns").
+	_return_row.text = Loc.localize(RETURN_TO_BATTLE_ROW)
+	_end_phase_row.text = Loc.localize(END_PHASE_ROW)
+	_quit_row.text = Loc.localize(QUIT_ROW)
+
 	for row: Button in _focusable_rows:
 		row.focus_mode = Control.FOCUS_ALL
 
@@ -516,6 +546,9 @@ func _ready() -> void:
 
 	_leave_confirm_title_label.text = Loc.localize(LEAVE_CONFIRM_TITLE)
 	_leave_confirm_body_label.text = Loc.localize(LEAVE_CONFIRM_BODY)
+	# Story-002 續批 — M4 兩個按鈕文字,見 LEAVE_CONFIRM_CANCEL 的 doc comment。
+	_leave_cancel_button.text = Loc.localize(LEAVE_CONFIRM_CANCEL)
+	_leave_quit_button.text = Loc.localize(LEAVE_CONFIRM_LEAVE)
 
 	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
 		m4_button.focus_mode = Control.FOCUS_ALL
