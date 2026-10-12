@@ -295,10 +295,31 @@ interfaces:
       combat_state_version it was computed against. Consumers must not accept player input
       based on a result whose is_stale() is true. Result containers are always newly
       allocated — never references into Board's internal storage.
+    scope_boundary: >
+      2026-10-12 MANAGER RULING — SCOPE NARROWED. The "EVERY outbound query" wording in
+      notes: above is the ADR's literal contract and is NOT being deleted; what landed is a
+      subset. In scope: the 5 computed queries read inside battle_screen.gd's _refresh_view()
+      whose results feed _board_view.* render calls (legal_targets, move_targets,
+      attack_targets, threat_targets, preview_damage). Out of scope by deliberate ruling:
+      bare state accessors, flag/enum accessors, and the affinity pool's queries (system #5
+      — registered cross-system gap, NOT ruled on). Disclosed cost, accepted by the manager:
+      versioned and unversioned queries now coexist. Full boundary definition, the per-query
+      in/out lists, the known weakness of the criterion, and the obligation to recompute the
+      set when a second render path is added are in
+      docs/architecture/query-result-scope-boundary-2026-10-12.md.
+      ADR-0001 itself is UNCHANGED (it was fully rewritten 2026-10-12; process-dosage rule 4
+      forbids a further revision) — the divergence is registered here and in that document.
+      2026-10-12 SECOND MANAGER RULING (same day, after the boundary document was written):
+      the two queries that already carried an integer "combat_state_version" dictionary key
+      (move_targets_breakdown, preview_damage_breakdown) ARE to be migrated to QueryResult
+      as well, overruling section 七之三 of the boundary document. Reason: that section's
+      ruling would have left THREE coexisting shapes, while the cost disclosed to the manager
+      at decision time said two. The boundary document's own escalation is what surfaced it.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
+      - docs/architecture/query-result-scope-boundary-2026-10-12.md
     added: 2026-08-18
-    revised: ""
+    revised: "2026-10-12: scope narrowed by manager ruling to the merged-display subset only — see scope_boundary above. Contract itself unchanged; ADR-0001 not revised."
 
   - contract: composite_query_consistency
     status: active

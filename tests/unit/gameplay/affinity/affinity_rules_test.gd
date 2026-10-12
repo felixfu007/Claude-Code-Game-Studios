@@ -95,19 +95,23 @@ func _pair_positions(partner_id: int, distance: int) -> Dictionary[int, Vector2i
 # ---- delta():正關係三種距離 -------------------------------------------
 
 func test_delta_positive_distance_one_returns_plus_three() -> void:
+	# AC-R3
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.POSITIVE, 1, 1)).is_equal(3)
 
 
 func test_delta_positive_distance_two_returns_zero() -> void:
+	# AC-R3
 	# 距離 2 是刻意的死區:靠近才有獎勵,離太遠才有懲罰,中間不動
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.POSITIVE, 2, 1)).is_equal(0)
 
 
 func test_delta_positive_distance_three_returns_minus_one() -> void:
+	# AC-R3
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.POSITIVE, 3, 1)).is_equal(-1)
 
 
 func test_delta_positive_distance_far_beyond_three_stays_minus_one() -> void:
+	# AC-R3
 	# 3 以上是同一段,不隨距離加深
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.POSITIVE, 9, 1)).is_equal(-1)
 
@@ -115,14 +119,17 @@ func test_delta_positive_distance_far_beyond_three_stays_minus_one() -> void:
 # ---- delta():負關係三種距離 -------------------------------------------
 
 func test_delta_negative_distance_one_returns_minus_one() -> void:
+	# AC-R3
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.NEGATIVE, 1, 1)).is_equal(-1)
 
 
 func test_delta_negative_distance_two_returns_zero() -> void:
+	# AC-R3
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.NEGATIVE, 2, 1)).is_equal(0)
 
 
 func test_delta_negative_distance_three_returns_plus_two() -> void:
+	# AC-R3
 	assert_int(AffinityRules.delta(AffinityLink.Polarity.NEGATIVE, 3, 1)).is_equal(2)
 
 
@@ -137,6 +144,53 @@ func test_delta_amp_multiplies_the_base_value() -> void:
 
 
 # ---- bonus_for():整體加成 ----------------------------------------------
+
+# AC-R1:GIVEN 注入兩組強度不同的假資料(程式碼不變),WHEN 查詢 Φ,
+# THEN 輸出隨資料改變——證明極性/強度來自外部資料列而非寫死邏輯。
+# 走完整外部資料路徑(_links() -> AffinityLink.links_from_text() ->
+# AffinityRules.bonus_for()),不是直接呼叫 delta() 跳過解析這一段。
+# 兩條都只斷言「輸出不相等」,不斷言具體數值——具體曲線數值是 AC-R3 的職責,
+# 寫死在這裡會讓這兩條測試在日後調整曲線時無謂地變紅。
+# 兩組資料都選在遠離 PHI_MIN/PHI_MAX 夾限的安全範圍內(見下方各測試的註解),
+# 避免兩組輸出剛好被夾到同一個邊界值而產生假性相等。
+#
+# 敏感度證明:歸為 test-standards.md 登記的 A 類(「斷言對象是 static 純函式」)
+# ——AffinityRules.delta()/bonus_for() 皆為 extends RefCounted 類別上的
+# static func(見 affinity_rules.gd class_name 之後的文件註解:「every function
+# is a static func with no side effects」)。static 呼叫在呼叫端是直接綁死
+# 到該類別,沒有繼承鏈可供間諜子類別覆寫注入,因此做不出可查證的敏感度證明
+# ——比照 affinity_rules_test.gd 其餘現行測試(例如上方 delta() 全系列)一致的
+# 處理方式,此處同樣未另立間諜子類別。
+
+func test_bonus_for_polarity_swap_with_everything_else_held_constant_changes_output() -> void:
+	# Arrange — 唯一變因是極性(POSITIVE vs NEGATIVE),單位 id、站位、amp 全同。
+	# 距離 1(相鄰)落在 +3 / -1 兩端,遠離 PHI_MIN(-4)/PHI_MAX(+12) 夾限。
+	var positions: Dictionary[int, Vector2i] = _pair_positions(2, 1)
+	var links_positive: Array[AffinityLink] = _links(["1,2,POSITIVE,1"])
+	var links_negative: Array[AffinityLink] = _links(["1,2,NEGATIVE,1"])
+
+	# Act
+	var output_positive: int = AffinityRules.bonus_for(1, positions, links_positive)
+	var output_negative: int = AffinityRules.bonus_for(1, positions, links_negative)
+
+	# Assert — 只斷言「資料變了,輸出就不同」,不鎖定具體數值
+	assert_int(output_positive).is_not_equal(output_negative)
+
+
+func test_bonus_for_amp_swap_with_everything_else_held_constant_changes_output() -> void:
+	# Arrange — 唯一變因是 amp(1 vs 2),極性、單位 id、站位全同。
+	# amp=1 在距離 1 時為 +3,amp=2 為 +6,兩者皆遠離 PHI_MAX(+12) 夾限。
+	var positions: Dictionary[int, Vector2i] = _pair_positions(2, 1)
+	var links_amp_one: Array[AffinityLink] = _links(["1,2,POSITIVE,1"])
+	var links_amp_two: Array[AffinityLink] = _links(["1,2,POSITIVE,2"])
+
+	# Act
+	var output_amp_one: int = AffinityRules.bonus_for(1, positions, links_amp_one)
+	var output_amp_two: int = AffinityRules.bonus_for(1, positions, links_amp_two)
+
+	# Assert — 只斷言「資料變了,輸出就不同」,不鎖定具體數值
+	assert_int(output_amp_one).is_not_equal(output_amp_two)
+
 
 func test_bonus_for_positive_pair_adjacent_grants_plus_three() -> void:
 	# AC-F1

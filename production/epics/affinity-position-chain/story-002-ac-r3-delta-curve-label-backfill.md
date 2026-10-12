@@ -1,7 +1,29 @@
 # Story 002: AC-R3 反查與標註 —— 距離—數值曲線四種組合
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12,協調者獨立驗收)** —— AC-R3 落地,**零新增測試**。
+>
+> **反查結論(協調者在派工前執行,原始輸出隨派工單交付):AC-R3 的 5 個斷言全部已有既有測試涵蓋**,
+> 故走「加註代號」路線而非補寫。標註 **7 支**,比照同檔既有 `# AC-F1` 的形狀:
+>
+> | AC-R3 要求 | 標註的既有測試 |
+> |---|---|
+> | ①正向、距離 1 → `+3` | `test_delta_positive_distance_one_returns_plus_three` |
+> | ②正向、距離 ≥3 → `−1` | `test_delta_positive_distance_three_returns_minus_one`、`test_delta_positive_distance_far_beyond_three_stays_minus_one` |
+> | ③負向、距離 1 → `−1` | `test_delta_negative_distance_one_returns_minus_one` |
+> | ④負向、距離 ≥3 → `+2` | `test_delta_negative_distance_three_returns_plus_two` |
+> | ⑤任一極性、距離 2(死區)→ `0` | `test_delta_positive_distance_two_returns_zero`、`test_delta_negative_distance_two_returns_zero` |
+>
+> **刻意不標的一支**:`test_delta_distance_zero_returns_zero_for_both_polarities` —— 它驗的是**距離 0**
+> (同格的邊界防呆),不是 AC-R3 第⑤項的**死區距離 2**。協調者先判定、實作者讀過內容後**獨立同意**。
+> 📌 **「不標」這件事寫下來與「標了哪些」同等重要** —— 本專案已登記多次「只寫做了什麼、沒寫不做什麼,
+> 下一個人無法分辨是刻意還是遺漏」。
+>
+> **協調者獨立複驗**:`grep -c "# AC-R3" affinity_rules_test.gd` → **7**;兩處插在既有說明性註解之前
+> (未取代原註解);`git status --short src/` 零產品碼改動;全套 `1116 | 0 errors | 1 failures`、`EXIT 100`。
+>
+> ⚠️ **實作者誠實揭露的一項限制**:它是依協調者給的對照表核對,**沒有自己從 GDD 原文重新推導 AC-R3 的
+> 完整定義** —— 若 GDD 原文有表格未列到的額外子句,它不會發現。**該對照表是協調者做的,出事找協調者。**
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」涵蓋範圍)
 > **Type**: Logic
 > **Estimate**: XS(< 0.5 session——EPIC.md 已判斷行為本身有測,只差代號)
@@ -47,7 +69,7 @@ EPIC.md 第 4 節已明文指出:AC-R3 對應的**行為本身已經有測試**�
 
 *來源:`design/gdd/affinity-position-chain.md` Acceptance Criteria 節,AC-R3 原文:*
 
-- [ ] **AC-R3**:GIVEN 四種(極性×距離)組合各自單獨存在,WHEN 查詢單線 `Φ`,
+- [x] **AC-R3**:GIVEN 四種(極性×距離)組合各自單獨存在,WHEN 查詢單線 `Φ`,
   THEN 依序回傳 +3/−1(正向距1/距≥3)與 −1/+2(負向距1/距≥3),距離 2 恆為 0。
   - 具體要求:找到(或確認)以下 5 個斷言各自有測試涵蓋,並在對應測試函式加上 `AC-R3`
     代號註解:

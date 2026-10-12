@@ -172,3 +172,141 @@ func test_4k_turn_order_remove_unit_rejected_when_write_window_not_open() -> voi
 	await assert_error(call_remove).is_push_error(any_string())
 	assert_bool(order.can_move(1)).is_true()
 	assert_bool(order.can_attack(1)).is_true()
+
+
+# ---- story-003d: 敏感度證明 —— 證明上方七條守衛拒絕測試的斷言真的會抓到「守衛
+# ---- 被繞過」這類缺陷,而不是巧合綠燈(.claude/rules/test-standards.md「敏感度
+# ---- 證明的完成門檻」節,2026-09-16 管理者裁決)。間諜/突變子類別手法 ——
+# ---- 手動注入(把 board.gd/turn_order.gd 的 _write_allowed() 改成一句恆真的
+# ---- 短路判斷式,使守衛條件實質失效)在這台機器上已實測走不通(被本機安全
+# ---- 分類器以「削弱安全機制」為由拒絕執行後續指令,見 story-003d 文件本身),
+# ---- 子類別覆寫不受影響,因為新增的是測試檔裡的子類別,不是削弱產品碼。
+#
+# 兩個突變子類別,各自覆寫 _write_allowed(),無條件回傳 true —— 完全繞過
+# 「寫入窗口是否開啟」這個判斷,不論附掛的 guard callable 實際回報什麼。
+
+class _BoardBypassesWriteGuard extends Board:
+	func _write_allowed() -> bool:
+		return true
+
+
+class _TurnOrderBypassesWriteGuard extends TurnOrder:
+	func _write_allowed() -> bool:
+		return true
+
+
+# 共用於下方五條 TurnOrder 敏感度證明:建一個已掛載「永遠回報關閉」guard 的
+# 突變 TurnOrder —— 與 _build_guarded_idle() 的「guard 已掛載、窗口未開」場景
+# 同構,只是這裡的 TurnOrder 本身會無條件繞過這個 guard。
+func _mutant_guarded_idle() -> _TurnOrderBypassesWriteGuard:
+	var order: _TurnOrderBypassesWriteGuard = _TurnOrderBypassesWriteGuard.new([1], [2])
+	order.attach_write_guard(func() -> bool: return false)
+	return order
+
+
+# ---- Board._set_occupant 的敏感度證明 -----------------------------------------
+
+func test_sensitivity_proof_board_set_occupant_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	# Arrange — guard 已掛載且回報關閉(模擬寫入窗口未開),(3,3) 目前無人佔據
+	var board: _BoardBypassesWriteGuard = _BoardBypassesWriteGuard.new()
+	board.attach_write_guard(func() -> bool: return false)
+	var target: Vector2i = Vector2i(3, 3)
+	assert_bool(board.has_occupant(target)).is_false()
+
+	# Act
+	board._set_occupant(target, 1)
+
+	# Assert — 與真正版本相反:guard 回報關閉,寫入仍然生效
+	assert_bool(board.has_occupant(target)).is_true()
+	assert_int(board.get_occupant(target)).is_equal(1)
+
+
+# ---- Board._clear_occupant 的敏感度證明 ---------------------------------------
+
+func test_sensitivity_proof_board_clear_occupant_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	# Arrange — 先佔位(此時 _write_allowed() 本就恆真,佔位本身不是受測對象,
+	# 只是佈置前置狀態),再驗證「guard 回報關閉時」_clear_occupant() 是否仍被
+	# 不當放行
+	var board: _BoardBypassesWriteGuard = _BoardBypassesWriteGuard.new()
+	var origin: Vector2i = Vector2i(0, 0)
+	board._set_occupant(origin, 1)
+	board.attach_write_guard(func() -> bool: return false)
+	assert_int(board.get_occupant(origin)).is_equal(1)
+
+	# Act
+	board._clear_occupant(origin)
+
+	# Assert — 與真正版本相反:guard 回報關閉,清除仍然生效
+	assert_int(board.get_occupant(origin)).is_equal(Board.NO_OCCUPANT)
+
+
+# ---- TurnOrder.use_move 的敏感度證明 ------------------------------------------
+
+func test_sensitivity_proof_turn_order_use_move_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	var order: _TurnOrderBypassesWriteGuard = _mutant_guarded_idle()
+	assert_bool(order.can_move(1)).is_true()
+
+	# Act
+	var result: bool = order.use_move(1)
+
+	# Assert — 與真正版本相反:旗標被消耗,儘管 guard 回報關閉
+	assert_bool(result).is_true()
+	assert_bool(order.can_move(1)).is_false()
+
+
+# ---- TurnOrder.use_attack 的敏感度證明 ----------------------------------------
+
+func test_sensitivity_proof_turn_order_use_attack_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	var order: _TurnOrderBypassesWriteGuard = _mutant_guarded_idle()
+	assert_bool(order.can_attack(1)).is_true()
+
+	# Act
+	var result: bool = order.use_attack(1)
+
+	# Assert
+	assert_bool(result).is_true()
+	assert_bool(order.can_attack(1)).is_false()
+
+
+# ---- TurnOrder.end_unit_turn 的敏感度證明 -------------------------------------
+
+func test_sensitivity_proof_turn_order_end_unit_turn_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	var order: _TurnOrderBypassesWriteGuard = _mutant_guarded_idle()
+	assert_bool(order.is_done(1)).is_false()
+
+	# Act
+	var result: bool = order.end_unit_turn(1)
+
+	# Assert
+	assert_bool(result).is_true()
+	assert_bool(order.is_done(1)).is_true()
+
+
+# ---- TurnOrder.advance_faction 的敏感度證明 -----------------------------------
+
+func test_sensitivity_proof_turn_order_advance_faction_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	var order: _TurnOrderBypassesWriteGuard = _mutant_guarded_idle()
+	assert_int(order.current_faction()).is_equal(TurnOrder.Side.PLAYER)
+
+	# Act
+	order.advance_faction()
+
+	# Assert — 與真正版本相反:陣營確實推進,儘管 guard 回報關閉
+	assert_int(order.current_faction()).is_equal(TurnOrder.Side.ENEMY)
+
+
+# ---- TurnOrder.remove_unit 的敏感度證明 ---------------------------------------
+
+func test_sensitivity_proof_turn_order_remove_unit_guard_test_catches_a_mutant_that_bypasses_it() -> void:
+	var order: _TurnOrderBypassesWriteGuard = _mutant_guarded_idle()
+	assert_bool(order.can_move(1)).is_true()
+	assert_bool(order.can_attack(1)).is_true()
+
+	# Act
+	order.remove_unit(1)
+
+	# Assert — 與真正版本相反:移除確實生效(is_done() 對不再追蹤的 id 回報
+	# true,同 TurnOrder.is_done() 自己的文件規則),儘管 guard 回報關閉
+	assert_bool(order.can_move(1)).is_false()
+	assert_bool(order.can_attack(1)).is_false()
+	assert_bool(order.is_done(1)).is_true()

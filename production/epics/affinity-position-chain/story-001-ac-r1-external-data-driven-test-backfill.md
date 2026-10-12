@@ -1,7 +1,33 @@
 # Story 001: AC-R1 反查與補齊 —— 極性/強度來自外部資料而非硬編碼
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12,協調者獨立驗收)** —— AC-R1 落地。
+>
+> 🔴 **本檔要求的「第一個動作是反查,不是補寫」由協調者在派工前執行完畢**,原始輸出連同派工單一併交付,
+> 實作者未重跑。**理由**:唯讀反查型任務是本專案實測最會吃光實作者回合額度的形狀(第七十八批登記:
+> 四位實作者全部因「動工前必讀清單」撞上限)。
+>
+> **反查結論:沒有行為等價的既有測試,走「補寫」路線。** 最接近的兩組都不符合 AC-R1 的受控比較形狀:
+> - `test_delta_amp_multiplies_the_base_value()` —— 只斷言**單一個數值**(`amp=2 → 6`),不是兩組資料的比較
+> - `test_bonus_for_positive_pair_adjacent_*` / `test_bonus_for_negative_pair_adjacent_*` —— 極性不同,
+>   **但單位 id 與站位也同時不同**,不是單一變因
+>
+> **新增 2 條測試**(皆呼叫 `AffinityRules.bonus_for()`,走完 `_links()` → `AffinityLink.links_from_text()`
+> 的真實解析路徑,而非直接呼叫 `delta()`):
+> - `test_bonus_for_polarity_swap_with_everything_else_held_constant_changes_output` —— 唯一變因是極性
+> - `test_bonus_for_amp_swap_with_everything_else_held_constant_changes_output` —— 唯一變因是 `amp`
+>
+> 兩條都斷言 `is_not_equal` **而非具體數值** —— AC-R1 驗的是「資料驅動」這個**性質**,不是曲線數值
+> (那是 AC-R3 的職責)。寫死數值會讓它在日後調整曲線時無謂變紅。
+> 資料選在遠離 `PHI_MIN=-4` / `PHI_MAX=+12` 夾限的安全區,避免兩組都被夾到同一邊界值而假性相等。
+>
+> **敏感度證明:歸為 A 類(static 純函式,無繼承鏈可覆寫),理由逐條寫在測試檔內。**
+> 這是 `.claude/rules/test-standards.md` 明文允許的二選一另一半,不是省略。
+> ⚠️ **實作者誠實揭露:這個 A 類判定沒有第三方覆核**,是它自己依 `affinity_rules.gd` 的 class 宣告
+> 與文件註解讀出來的。協調者複驗該檔確為 `extends RefCounted` + 全 `static func`,判定成立。
+>
+> **協調者獨立複驗**:`grep -c "AC-R1" affinity_rules_test.gd` → 2;新測試位於該檔 `bonus_for()` 區塊;
+> `git status --short src/` 確認**零產品碼改動**;全套 `1116 | 0 errors | 1 failures | 0 orphans`、`EXIT 100`。
 > **Layer**: Gameplay(對照控制清單分層屬「核心層規則(Core)」——適用範圍含「好感度數值池、
 > 核心玩法迴圈」,本系統雖非數值池本體,但同屬核心玩法迴圈的一部分)
 > **Type**: Logic
@@ -57,7 +83,7 @@
 
 *來源:`design/gdd/affinity-position-chain.md` Acceptance Criteria 節,AC-R1 原文:*
 
-- [ ] **AC-R1**:GIVEN 注入兩組強度不同的假資料(程式碼不變),WHEN 查詢 `Φ`,
+- [x] **AC-R1**:GIVEN 注入兩組強度不同的假資料(程式碼不變),WHEN 查詢 `Φ`,
   THEN 輸出隨資料改變——證明極性/強度來自外部而非硬編碼。
   - 具體做法建議(非強制):對 `AffinityRules.delta()` 或 `bonus_for_at()` 傳入兩份不同的
     `Array[AffinityLink]`(例如同一對單位、第一份 `polarity=POSITIVE`,第二份

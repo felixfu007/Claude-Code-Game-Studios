@@ -1,7 +1,37 @@
 # Story 003d: story-003b 的敏感度證明補做 —— 間諜子類別常駐測試
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: 📋 **Ready**
+> **Status**: ✅ **Done(2026-10-12,協調者獨立驗收)** —— AC1~AC5 全過。
+>
+> **13 條缺口全部補上會通過的 `test_sensitivity_proof_*`,零條歸類為「證明不了」。**
+> 門檻本來是二選一(補證明 **或** 寫下可查證的「為什麼證明不了」+ 五類歸類),實作者走完了較難的那一半。
+>
+> | 項目 | 數字 | 協調者獨立複驗指令 |
+> |---|---|---|
+> | 新增 `func test_` | 15(version 檔 8 + guard 檔 7) | `grep -c "^func test_" <各檔>` → 15 / 14(原 7 / 7) |
+> | 新增 `test_sensitivity_proof_` | 13(6 + 7) | `grep -c "^func test_sensitivity" <各檔>` → 6 / 7 |
+> | 該目錄敏感度證明總數 | **27**(今日開工前 14 + 本 story 13) | `grep -rc "^func test_sensitivity" tests/unit/gameplay/battle/*.gd \| awk -F: '{s+=$2} END{print s}'` → 27 |
+> | AC11 兩條專屬向量 | 2 | `grep -c "^func test_ac11" <version 檔>` → 2 |
+> | 產品碼改動 | **0** | `git status --short src/` 只有 story-006 的兩個檔 |
+> | AC5 注入殘留掃描 | **0 命中** | `grep -rn "TEMP INJECTION\|if false and\|if false or" src/ tests/ --include=*.gd` |
+>
+> **手法**:全部採間諜/突變子類別,**零手動注入**。`BattleState.create()` 是靜態工廠、內部硬寫
+> `BattleState.new()`,子類別走這個入口拿不到自己的實例 —— 沿用本專案既有先例
+> (`battle_controller_finalize_enemy_phase_turn_start_commit_test.gd` 的 `_create_spy_state()`)。
+>
+> **全套獨立重跑**:
+> ```
+> Overall Summary: 1116 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+> ENGINE EXIT CODE = 100 · Parse Error / Abnormal exit = 0
+> ```
+>
+> 🔴 **實作者自陳的一項強度較弱處,照實保留**:#3(4i 選取/取消選取版本不變)的斷言用
+> `is_not_equal(before)`,**沒有釘死「恰好 +1」**。理由是該突變注入的是「多呼叫一次 no-op commit」,
+> 精確量化增量不是這個缺陷類別的重點。**量化嚴謹度比其餘 12 條弱一點,登記在案。**
+>
+> 📌 **一個值得記的插曲**:AC5 的收尾掃描第一次跑出假陽性 —— 實作者自己寫的註解裡
+> **逐字包含了被禁字串的字面文字**(在說明「手動注入走不通」時引用了它)。已改寫措辭、重新 grep 零命中。
+> **這與本批另一處發現是同一個形狀**:寫在註解裡的字串會被掃描它的指令算進去。
 > **建立日期**: 2026-10-08(管理者裁決:003b 先標 Done 解鎖 004~007,證明另切)
 > **擁有者**: 未指派 —— 動工前依 `.claude/docs/coordination-rules.md` 路由
 > **不阻擋任何 story。** 004~007 已由 003b 的 Done 解除封鎖,本 story 不是它們的前置。

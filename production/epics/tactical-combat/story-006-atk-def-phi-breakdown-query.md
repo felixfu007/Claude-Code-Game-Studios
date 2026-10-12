@@ -1,7 +1,43 @@
 # Story 006: `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層(#6 反向依賴)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M3a(切面 5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12,協調者獨立驗收)** —— 全部 5 條 AC 落地。
+>
+> **產出**:`BattleState.preview_damage_breakdown(attacker_id, target_id, phi) -> Dictionary`
+> (七鍵:`atk` / `def` / `phi` / `phi_input` / `damage` / `target_hp_after` / `combat_state_version`)
+> 與 `Unit.stat_access_view() -> Dictionary`(基準值/有效值存取層,涵蓋 ATK/DEF/HP/MP)。
+> 新增 18 條測試(拆解查詢 13 + 存取層 5),含 3 條常駐 `test_sensitivity_proof_*`。
+>
+> 🔴 **協調者四條範圍裁決(出事找協調者,不是實作者)**:
+> 1. **本檔 QA Test Cases 第 5 條已被更新的 GDD 條文取代,照它做會要實作者發明不存在的資料。**
+>    該 QA 案例要求「敵方單位的基準值與有效值**兩者不同**」,但當場量測顯示其前提不成立:
+>    `grep -rn "enemy_stat(" src/ --include=*.gd | grep -v ":#"` 只有函式定義本身、**零產品碼呼叫端**;
+>    roster 檔 11 欄(`Unit.FIELD_COUNT` 亦為 11)**沒有任何「縮放前基準值」欄位**。
+>    裁決:以 GDD「基準值/有效值存取層」節的硬性擁有權劃分為準 —— **基準值 = roster 欄位本身**。
+>    今天的敵方單位沒有卡牌修正,故其 base == effective,**這是正確答案不是缺陷**,並已在
+>    `unit.gd` 的文件註解逐條誠實揭露(含「本存取層不代為決定縮放與修正的套用順序」)。
+> 2. **回傳的 `phi` 是實際代入公式的值(ENEMY 攻擊方歸零後)**,理由:AC 要求五欄位自洽
+>    (`damage == max(0, ATK−DEF+Φ)`),回傳歸零前的值會讓面板上的算式對不起來,而那是玩家看得見的錯。
+>    額外提供 `phi_input`(呼叫端傳入的原值),**讓「歸零」這件事可觀測而非隱形行為**。
+> 3. **簽章沿用既有契約**(`phi` 由呼叫端傳入),這同時是 Core Rules #5「`Φ` 取值時點為快照」的
+>    結構性保證 —— 本查詢**不持有** `_phi` 的參照,因此不可能重新查詢 `Φ`。
+> 4. **不建 `QueryResult` 型別**,只帶整數版本號,沿用 story-005/007 既有形狀。
+>    ⚠️ 這一條**已於同日被管理者裁決取代** —— 見 `docs/architecture/query-result-scope-boundary-2026-10-12.md`。
+>
+> **協調者在驗收時當場更正的兩處事實錯誤**(實作者回報裡沒有、是讀 diff 讀出來的):
+> - `unit.gd` 文件註解兩處寫 `verified 2026-09-30`,而那兩條 grep 是 **2026-10-12** 跑的。已改。
+> - 🔴 **一條自我否證的查證指令**:註解原寫「`grep -rn "enemy_stat(" src/` 恰好 1 命中」,
+>   但**註解自己就含有那個字串**,所以寫下去的瞬間就變成 2 命中。改用排除註解行的寫法
+>   (`| grep -v ":#"`),它對自己免疫。**這類錯誤不會報錯,只會讓下一個複驗的人看到一個對不上的數字。**
+>
+> **全套獨立重跑(協調者執行,與 story-003d、好感度兩線同批驗收)**:
+> ```
+> Overall Summary: 1116 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+> Executed test suites: (93/93)    Executed test cases : (1116/1116)
+> ENGINE EXIT CODE = 100 · Parse Error / Abnormal exit = 0
+> ```
+> 算術對帳:`1081(開工基線) + 18(本 story) + 15(story-003d) + 2(好感度 R1) = 1116`,**逐項對得上**。
+> 具名 ` FAILED` 僅既有刻意紅且已核准的 `affinity_phi_provider_test.gd` 那條。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M
@@ -46,19 +82,19 @@ UX 規格 5(a) 節已記載:「`_info_label` 目前只顯示 `format_damage_prev
 
 ## Acceptance Criteria
 
-- [ ] 新增查詢(暫名 `preview_damage_breakdown(attacker_id, target_id)` 或等效簽章)回傳
+- [x] 新增查詢(暫名 `preview_damage_breakdown(attacker_id, target_id)` 或等效簽章)回傳
       `ATK`(攻擊方有效攻擊力)、`DEF`(目標有效防禦力)、`Φ`(帶號整數,`=0` 仍須可讀)、
       結果傷害(`max(0, ATK-DEF+Φ)`)、目標結算後預估 HP 五個欄位(GDD UI Requirements §4)
-- [ ] `Φ` 上界不設任何隱性截斷(GDD 公式一「上界目前無夾限」;#5 好感度—位置連鎖系統尚未
+- [x] `Φ` 上界不設任何隱性截斷(GDD 公式一「上界目前無夾限」;#5 好感度—位置連鎖系統尚未
       定案 `Φ_max`,本 story 不得預先假設任何上限值)
-- [ ] 純函數、零寫入(供預判模式與攻擊確認面板共用底層查詢——但**不得**共用同一個 UI 元件
+- [x] 純函數、零寫入(供預判模式與攻擊確認面板共用底層查詢——但**不得**共用同一個 UI 元件
       或呼叫路徑本身,那是 UI Requirements §5 對呈現層的約束,不是本查詢的約束;本 story
       只需保證查詢本身無副作用)
-- [ ] **新增基準值/有效值存取層**:提供查詢「單位當前有效 `ATK`/`DEF`/`HP`/`MP`」的公開介面,
+- [x] **新增基準值/有效值存取層**:提供查詢「單位當前有效 `ATK`/`DEF`/`HP`/`MP`」的公開介面,
       區分「基準數值」(角色設定值,`player_baseline_stat` 或敵方縮放前的數值)與「有效值」
       (經公式二敵方縮放、或未來卡牌加成後的當前值)——**具體資料形狀由本 story 決定**,
       GDD 第 171 行(待補「存取層」章節前)只給出既有的公式一/二變數定義,無更細節的介面規格
-- [ ] 遵守 Core Rules #5「`Φ` 的取值時點為快照」——本查詢回傳的 `Φ` 若被結算步①使用,結算步③
+- [x] 遵守 Core Rules #5「`Φ` 的取值時點為快照」——本查詢回傳的 `Φ` 若被結算步①使用,結算步③
       不得重新查詢,必須沿用①的快照值(此為既有規則,本 story 的新查詢介面不得破壞它)
 
 ## Implementation Notes

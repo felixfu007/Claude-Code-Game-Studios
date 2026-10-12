@@ -495,19 +495,114 @@ func preview_damage(attacker_id: int, target_id: int, phi: int) -> int:
 	return _compute_attack_damage(attacker_id, target_id, phi)
 
 
-# Shared by resolve_attack() and preview_damage(): computes the damage a
-# hypothetical or actual attack would deal, applying the same enemy-phi-
-# zeroing rule both paths must honor (phi only ever applies for a PLAYER
-# attacker — see resolve_attack()'s own doc comment). Never mutates
-# anything; the mutation itself (take_damage(), occupancy cleanup) is
-# resolve_attack()'s own responsibility, not this helper's.
-func _compute_attack_damage(attacker_id: int, target_id: int, phi: int) -> int:
+## story-006-atk-def-phi-breakdown-query.md (GDD UI Requirements §4): returns
+## every intermediate value a hypothetical attack from attacker_id on
+## target_id would produce for the given [param phi] —
+## [code]"atk"[/code] (attacker's [method Unit.effective_atk]),
+## [code]"def"[/code] (target's [method Unit.effective_def]),
+## [code]"phi"[/code] (the value actually fed into [method CombatRules.damage]
+## — forced to 0 for an ENEMY attacker, same rule [method resolve_attack]/
+## [method preview_damage] already honor), [code]"phi_input"[/code] (the raw
+## [param phi] this call was given, BEFORE any enemy-zeroing — present so the
+## zeroing is observable instead of a silent behavior; equal to
+## [code]"phi"[/code] whenever attacker_id is PLAYER), [code]"damage"[/code]
+## (identical to what [method preview_damage]/[method resolve_attack] would
+## compute for the same inputs — see below), and [code]"target_hp_after"[/code]
+## (see note). Every call returns a freshly built [Dictionary]; no internal
+## state is ever handed out by reference.
+##
+## 🔴 [code]"phi"[/code], not [code]"phi_input"[/code], is the field the AC's
+## "結果傷害 == max(0, ATK − DEF + Φ)" self-consistency requirement is checked
+## against — a damage-breakdown panel showing an ENEMY attack must have its
+## displayed [code]Φ[/code] agree with the displayed arithmetic, which only
+## holds for the already-zeroed value.
+##
+## 🔴 [code]"target_hp_after"[/code] is CLAMPED at 0, not left to go negative.
+## This field is documented as "the target's ESTIMATED HP once this attack is
+## SETTLED" — and [method Unit.take_damage] (what [method resolve_attack]
+## actually calls) always floors at 0 itself, so a raw negative number here
+## would describe a target HP state the real battle can never reach. Clamping
+## makes this query agree with what [method resolve_attack] would really
+## produce, not merely with the unclamped arithmetic.
+##
+## Delegates to [method _attack_damage_breakdown] — the same private helper
+## [method _compute_attack_damage] uses — rather than recomputing
+## [code]max(0, atk - def + phi)[/code] itself: this project has an existing
+## failure mode of "the same formula implemented twice, only coincidentally
+## agreeing today", and a black-box comparison of two outputs can never tell
+## "shares one implementation" apart from "two implementations that currently
+## agree" — so this method is structurally prevented from drifting away from
+## [method preview_damage]/[method resolve_attack] rather than merely tested
+## against them.
+##
+## Returns an EMPTY [Dictionary] — never one populated with zeroed/default
+## fields — if either id does not resolve to a [Unit] (logged via
+## [method @GlobalScope.push_error]). An all-zero Dictionary would be
+## indistinguishable from "a real attack that happens to deal 0 damage"; an
+## empty one cannot be confused with any real result, since every successful
+## call always populates all 7 keys. Per
+## [code].claude/docs/coding-standards.md[/code]'s 2026-09-15 entry, this is
+## deliberately NOT an [code]assert()[/code] guard.
+##
+## Core Rules #5's "Φ 的取值時點為快照" obligation: [param phi] is supplied by
+## the CALLER, never queried by this method itself (it holds no reference to
+## an affinity/Φ provider at all) — a caller that reads Φ once and feeds the
+## same int into both a settlement step① call and this query is structurally
+## guaranteed a stable snapshot, because there is no code path here that could
+## re-derive a different value.
+func preview_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dictionary:
 	var attacker: Unit = unit_by_id(attacker_id)
 	var target: Unit = unit_by_id(target_id)
+	if attacker == null or target == null:
+		push_error(
+			"BattleState.preview_damage_breakdown: unknown unit id (attacker_id=%d, target_id=%d) -- returning an empty Dictionary, not a zeroed breakdown"
+			% [attacker_id, target_id]
+		)
+		return {}
+	var breakdown: Dictionary = _attack_damage_breakdown(attacker_id, target_id, phi)
+	var dealt: int = int(breakdown["damage"])
+	breakdown["target_hp_after"] = maxi(0, target.hp - dealt)
+	breakdown["combat_state_version"] = combat_state_version
+	return breakdown
+
+
+# Shared by resolve_attack(), preview_damage(), and preview_damage_breakdown():
+# computes every intermediate value (ATK/DEF/phi/damage) a hypothetical or
+# actual attack would produce, applying the same enemy-phi-zeroing rule every
+# caller must honor (phi only ever applies for a PLAYER attacker — see
+# resolve_attack()'s own doc comment). Never mutates anything; the mutation
+# itself (take_damage(), occupancy cleanup) is resolve_attack()'s own
+# responsibility, not this helper's.
+#
+# Assumes attacker_id/target_id both resolve to a real Unit. preview_damage_
+# breakdown() is the only caller that cannot guarantee that, and it checks
+# before calling this. _compute_attack_damage()/resolve_attack()/
+# preview_damage() preserve their pre-existing behavior unchanged by this
+# story — an unresolved id crashes here exactly as it always has.
+func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dictionary:
+	var attacker: Unit = unit_by_id(attacker_id)
+	var target: Unit = unit_by_id(target_id)
+	var atk: int = attacker.effective_atk()
+	var def: int = target.effective_def()
 	var effective_phi: int = phi
 	if attacker.faction == Unit.Faction.ENEMY:
 		effective_phi = 0
-	return CombatRules.damage(attacker.effective_atk(), target.effective_def(), effective_phi)
+	return {
+		"atk": atk,
+		"def": def,
+		"phi": effective_phi,
+		"phi_input": phi,
+		"damage": CombatRules.damage(atk, def, effective_phi),
+	}
+
+
+# Shared by resolve_attack() and preview_damage(): computes the damage a
+# hypothetical or actual attack would deal. Thin wrapper over
+# _attack_damage_breakdown() so both paths keep returning a bare int exactly
+# as they did before this story — only preview_damage_breakdown() needs the
+# full Dictionary.
+func _compute_attack_damage(attacker_id: int, target_id: int, phi: int) -> int:
+	return int(_attack_damage_breakdown(attacker_id, target_id, phi)["damage"])
 
 
 ## Story 002's shared "a player turn just started" hook

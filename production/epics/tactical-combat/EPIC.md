@@ -632,7 +632,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 003b | ADR-0001 原子性機制收斂(版本號/寫入守衛/`Board` mutator 封裝) | M3a | Logic | 🟡 In Progress(2026-10-06 產品碼完成,AC8/AC9 驗收測試未寫 —— 見該 story 檔頭) | ADR-0001 | 003 |
 | 004 | 單位行動四態 getter | M3a | Logic | Ready | ADR-0001 | **003b**(2026-09-30 管理者裁決) |
 | 005 | `threat_targets()` 語意查證與必要時改名 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |
-| 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | Ready | ADR-0001 | **003b**(同上) |
+| 006 | `ATK`/`DEF`/`Φ` 拆解查詢 + 基準值/有效值存取層 | M3a | Logic | ✅ **Done(2026-10-12 協調者獨立驗收)** —— 5 條 AC 全過;⚠️ 本檔 QA 案例第 5 條已被 GDD「存取層」節取代,理由見該 story ` **003b**(同上) |
 | 007 | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | M3b | Integration | Ready | ADR-0001 | 001, 002, **003b**(同上) |
 | 008 | 游標導航收斂(`CursorStateHost`) | M6 | Integration | Ready | ADR-0005 | None(先於 009) |
 | 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
@@ -645,6 +645,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 016 | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查 + `reachable_tiles()` 哨兵防護) | M2 | Logic | ✅ **Done(2026-10-12 協調者逐條驗收)** —— AC1~AC7 全過,逐條證據見該 story 檔 `
 | 003c | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()`/`tick_all_modifiers()`,路徑⑥⑦) | M3a | Logic | ✅ **Done(2026-10-12)** —— AC5 已併入「重寫 ADR-0001」,AC4 已 descope,兩者理由見該 story 檔頭 | ADR-0001 | **003b** |
 | 017 | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | M3a | Logic | ✅ **Done(2026-10-12)** —— `take_damage()` 採選項 B(繞過守衛),留下的缺口見該 story 檔頭 | ADR-0001 | **003b** |
+| 003d | `story-003b` 的敏感度證明補做(間諜子類別常駐測試)+ AC11 兩條專屬向量 | M3a | Logic | ✅ **Done(2026-10-12 協調者獨立驗收)** —— 13 條缺口全補上會通過的 `test_sensitivity_proof_*`,零條歸「證明不了」。🔴 **本列於 2026-10-12 補建:該 story 於 2026-10-08 切出,但從未被加進本表(`grep -c "003d" EPIC.md` 曾為 0)** | ADR-0001 | **003b**(已 Done) |
 
 **執行層序列化(不得並行,共用 `src/ui/battle/battle_screen.gd`)**:`M6(008-011) → M5(012-013)
 → M4(014-015)`。規劃層可並行的只有 M2(001-002)與 M3a(003-006),M3b(007)需等 M2。

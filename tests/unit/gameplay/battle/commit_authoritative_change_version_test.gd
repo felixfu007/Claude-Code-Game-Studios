@@ -283,3 +283,278 @@ func test_4l_nested_commit_via_real_apply_attack_and_resolve_attack_increments_v
 	assert_str(String(result["action"])).is_equal("attacked")
 	assert_bool(bool(result["target_died"])).is_false()
 	assert_int(state.combat_state_version).is_equal(before + 1)
+
+
+# ---- story-003d: 敏感度證明 —— 證明上方六條版本遞增測試的斷言真的會抓到對應 ---
+# ---- 缺陷,而不是巧合綠燈(.claude/rules/test-standards.md「敏感度證明的 -------
+# ---- 完成門檻」節,2026-09-16 管理者裁決)。間諜/突變子類別手法,不使用手動 -----
+# ---- 注入(改壞 -> 跑 -> 改回)—— 後者已於同節淘汰,理由是它在版本庫裡不留 -----
+# ---- 任何痕跡。 ------------------------------------------------------------
+#
+# 三個突變子類別對應兩種不同的缺陷形狀:
+#   _MutantSkipsVersionIncrement —— 深度計數器本身正確運作(守衛檢查不受影響),
+#     但永遠不遞增 _combat_state_version。涵蓋「忘記遞增」這一類缺陷,用於 4e、
+#     4f、4j(單次或整批、非巢狀觀點的遞增量)。
+#   _MutantIncrementsVersionOnEveryNestedCommit —— 深度計數器本身正確運作,但
+#     每一次 commit_authoritative_change() 呼叫都無條件遞增,不論巢狀深度是否
+#     真的回到 0。這正是 ADR-0001「第二次修訂」文件明文點名、boolean 版本必然
+#     撞上的那一類缺陷(巢狀內層多算),用於兩條 4l。
+#   _MutantControllerTreatsSelectionAsCommit —— 選取/取消選取被誤當成權威寫入,
+#     用於 4i(4i 的機制不是 commit_authoritative_change() 本身的缺陷,而是
+#     select_unit()/deselect() 不該呼叫它卻呼叫了)。
+
+class _MutantSkipsVersionIncrement extends BattleState:
+	func commit_authoritative_change(mutator: Callable) -> void:
+		_authoritative_write_depth += 1
+		mutator.call()
+		_authoritative_write_depth -= 1
+		# BUG(刻意植入):深度計數器正確增減,守衛判定不受影響,但
+		# _combat_state_version 永遠不遞增。
+
+
+class _MutantIncrementsVersionOnEveryNestedCommit extends BattleState:
+	func commit_authoritative_change(mutator: Callable) -> void:
+		_authoritative_write_depth += 1
+		mutator.call()
+		_authoritative_write_depth -= 1
+		# BUG(刻意植入):不論巢狀深度是否真的歸零,每次呼叫都遞增 —— 正是
+		# ADR-0001「第二次修訂」文件推導「為什麼不能是布林」時點名的那一類缺陷。
+		_combat_state_version += 1
+
+
+class _MutantControllerTreatsSelectionAsCommit extends BattleController:
+	func select_unit(id: int) -> bool:
+		var result: bool = super.select_unit(id)
+		if result:
+			_state.commit_authoritative_change(func() -> void:
+				pass
+			)
+		return result
+
+
+# 共用於下方多條敏感度證明:重建 BattleState.create() 自己的本體(與
+# src/gameplay/battle/battle_state.gd 核對一致),但作用在一個已經 .new() 出來
+# 的突變子類別實例上 —— 因為 create() 是靜態工廠,內部硬寫死 BattleState.new(),
+# 永遠回傳基底類別,不會回傳子類別。同一手法已見於
+# battle_controller_finalize_enemy_phase_turn_start_commit_test.gd 的
+# _create_spy_state()。
+func _populate_mutant_state(mutant_state: BattleState, roster_lines: Array[String]) -> void:
+	mutant_state.board = Board.from_ascii(PackedStringArray())
+	var roster: Array[Unit] = Unit.roster_from_text("\n".join(roster_lines))
+	for unit: Unit in roster:
+		mutant_state._units[unit.id] = unit
+		mutant_state._positions[unit.id] = unit.start_pos
+		mutant_state.board._set_occupant(unit.start_pos, unit.id)
+	mutant_state.board.attach_write_guard(Callable(mutant_state, "write_window_is_open"))
+	for unit: Unit in roster:
+		unit.attach_write_guard(Callable(mutant_state, "write_window_is_open"))
+
+
+# ---- 4e 的敏感度證明 ---------------------------------------------------------
+
+func test_sensitivity_proof_4e_version_increment_test_catches_a_mutant_that_skips_it() -> void:
+	# Arrange — 與 test_4e_player_end_unit_turn_... 相同的名冊/場景,state 換成
+	# _MutantSkipsVersionIncrement。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,0,3,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,3,1,1,10,0",
+	]
+	var mutant_state: _MutantSkipsVersionIncrement = _MutantSkipsVersionIncrement.new()
+	_populate_mutant_state(mutant_state, roster)
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var controller: BattleController = BattleController.new(mutant_state, order)
+	assert_bool(controller.select_unit(1)).is_true()
+	var before: int = mutant_state.combat_state_version
+
+	# Act
+	var ended: bool = controller.end_unit_turn(1)
+
+	# Assert — 與真正版本相反:寫入確實成功(守衛未擋下),但版本沒有遞增
+	assert_bool(ended).is_true()
+	assert_bool(order.is_done(1)).is_true()
+	assert_int(mutant_state.combat_state_version).is_equal(before)
+
+
+# ---- 4f 的敏感度證明 ---------------------------------------------------------
+
+func test_sensitivity_proof_4f_version_increment_test_catches_a_mutant_that_skips_it() -> void:
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,0,3,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,3,1,1,10,0",
+	]
+	var mutant_state: _MutantSkipsVersionIncrement = _MutantSkipsVersionIncrement.new()
+	_populate_mutant_state(mutant_state, roster)
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var controller: BattleController = BattleController.new(mutant_state, order)
+	var before: int = mutant_state.combat_state_version
+
+	# Act
+	controller.end_faction_phase()
+
+	# Assert
+	assert_int(controller.phase()).is_equal(BattleController.Phase.ENEMY_ACTING)
+	assert_int(mutant_state.combat_state_version).is_equal(before)
+
+
+# ---- 4i 的敏感度證明 ---------------------------------------------------------
+
+func test_sensitivity_proof_4i_selection_unchanged_test_catches_a_mutant_that_commits_on_select() -> void:
+	# Arrange — 這裡的缺陷不在 commit_authoritative_change() 本身,而在
+	# select_unit() 誤呼叫了它,所以用真正的 BattleState,突變的是 controller。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,5,0,3,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,3,1,1,10,0",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster))
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var mutant: _MutantControllerTreatsSelectionAsCommit = (
+		_MutantControllerTreatsSelectionAsCommit.new(state, order)
+	)
+	var before: int = state.combat_state_version
+
+	# Act
+	assert_bool(mutant.select_unit(1)).is_true()
+
+	# Assert — 與真正版本相反:選取這個動作讓版本動了
+	assert_int(state.combat_state_version).is_not_equal(before)
+
+
+# ---- 4j 的敏感度證明 ---------------------------------------------------------
+
+func test_sensitivity_proof_4j_battle_loop_version_test_catches_a_mutant_that_skips_increment() -> void:
+	# Arrange — 與 test_4j_battle_loop_driven_round_... 相同的名冊/decide/場景,
+	# state 換成 _MutantSkipsVersionIncrement。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,0,100,0,1,1,0,0",
+		"2,E1,ENEMY,20,5,0,0,1,1,1,0",
+		"3,E2,ENEMY,20,5,0,0,1,1,0,1",
+	]
+	var mutant_state: _MutantSkipsVersionIncrement = _MutantSkipsVersionIncrement.new()
+	_populate_mutant_state(mutant_state, roster)
+	var order: TurnOrder = TurnOrder.new([1], [2, 3])
+	var decide: Callable = func(
+		s: BattleState, unit_id: int, _can_move: bool, can_attack: bool
+	) -> Dictionary:
+		var unit: Unit = s.unit_by_id(unit_id)
+		if unit.faction == Unit.Faction.ENEMY and can_attack:
+			return {"move_to": null, "attack": 1}
+		return {"move_to": null, "attack": -1}
+	var loop: BattleLoop = BattleLoop.new(mutant_state, order, decide)
+	var before: int = mutant_state.combat_state_version
+
+	# Act
+	var result: Dictionary = loop.run(1)
+
+	# Assert — 與真正版本相反:整回合跑完(4 次成功的 commit 呼叫),版本卻
+	# 完全沒動
+	assert_bool(bool(result["aborted"])).is_true()
+	assert_int(order.round_number()).is_equal(2)
+	assert_int(mutant_state.combat_state_version).is_equal(before)
+
+
+# ---- 4l(白箱直測)的敏感度證明 -----------------------------------------------
+
+func test_sensitivity_proof_4l_nested_direct_test_catches_a_mutant_that_double_counts() -> void:
+	# Arrange — 與 test_4l_nested_commit_increments_version_once_... 一樣,這個
+	# 場景完全不碰 board/unit,裸的突變實例即可。
+	var mutant_state: _MutantIncrementsVersionOnEveryNestedCommit = (
+		_MutantIncrementsVersionOnEveryNestedCommit.new()
+	)
+	var before: int = mutant_state.combat_state_version
+
+	# Act
+	mutant_state.commit_authoritative_change(func() -> void:
+		mutant_state.commit_authoritative_change(func() -> void:
+			pass
+		)
+	)
+
+	# Assert — 與真正版本相反:+2,不是 +1
+	assert_int(mutant_state.combat_state_version).is_equal(before + 2)
+
+
+# ---- 4l(經真實 click_tile() 呼叫鏈)的敏感度證明 ------------------------------
+
+func test_sensitivity_proof_4l_nested_real_code_path_test_catches_a_mutant_that_double_counts() -> void:
+	# Arrange — 與 test_4l_nested_commit_via_real_apply_attack_and_resolve_
+	# attack_... 相同的名冊/場景,state 換成
+	# _MutantIncrementsVersionOnEveryNestedCommit:_apply_attack()(外層)呼叫
+	# resolve_attack()(內層)構成的巢狀,在這個突變下應該各自遞增一次。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,10,0,0,1,1,0,0",
+		"2,E1,ENEMY,20,0,0,0,1,1,1,0",
+	]
+	var mutant_state: _MutantIncrementsVersionOnEveryNestedCommit = (
+		_MutantIncrementsVersionOnEveryNestedCommit.new()
+	)
+	_populate_mutant_state(mutant_state, roster)
+	var order: TurnOrder = TurnOrder.new([1], [2])
+	var controller: BattleController = BattleController.new(mutant_state, order)
+	assert_bool(controller.select_unit(1)).is_true()
+	var before: int = mutant_state.combat_state_version
+
+	# Act
+	var result: Dictionary = controller.click_tile(Vector2i(1, 0))
+
+	# Assert — 與真正版本相反:外層 + 內層各自遞增,+2 不是 +1
+	assert_str(String(result["action"])).is_equal("attacked")
+	assert_bool(bool(result["target_died"])).is_false()
+	assert_int(mutant_state.combat_state_version).is_equal(before + 2)
+
+
+# ---- story-003b AC11 的兩條專屬驗收向量(story-003b 收尾時未寫,移入本 story)-
+# ---- 出處:story-003b 的 QA Test Cases 節。step_enemy_phase() 是正式遊戲 -------
+# ---- 唯一在用的生產路徑(battle_screen.gd),run_enemy_phase() 是整批路徑 -----
+# ---- (測試/未來驅動器用)—— 兩條都要驗,只驗一條會讓另一條的繞過不可觀測。 ---
+
+func test_ac11_step_enemy_phase_standalone_finalize_call_increments_version_by_exactly_one() -> void:
+	# Arrange — 一個被動敵人(hp=100/atk=0/def=100/mp=0,位置遠在攻擊範圍外),
+	# 與 battle_controller_step_enemy_phase_test.gd 的 _idle_two_enemy_roster()
+	# 同款手法:恰好兩次 step_enemy_phase() 呼叫即可推進到收尾 —— 第一次推進該
+	# 敵人(它自己的 commit,+1),第二次 _next_enemy_step_id() 回傳 -1、
+	# 獨立觸發 _finalize_enemy_phase()(本測試的量測對象)。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,100,0,100,0,1,1,0,0",
+		"2,E1,ENEMY,100,0,100,0,1,1,12,5",
+	]
+	var bundle: Dictionary = _build(roster, [1], [2])
+	var state: BattleState = bundle["state"]
+	var controller: BattleController = bundle["controller"]
+	controller.end_faction_phase()
+	assert_int(controller.phase()).is_equal(BattleController.Phase.ENEMY_ACTING)
+	var first: Dictionary = controller.step_enemy_phase()
+	assert_bool(bool(first["has_next"])).is_false()
+	assert_int(controller.phase()).is_equal(BattleController.Phase.ENEMY_ACTING)
+	var before: int = state.combat_state_version
+
+	# Act — 這次呼叫只做收尾:_next_enemy_step_id() 回傳 -1 -> _finalize_enemy_phase()
+	var second: Dictionary = controller.step_enemy_phase()
+
+	# Assert
+	assert_array(second["log"]).is_empty()
+	assert_int(controller.phase()).is_equal(BattleController.Phase.PLAYER_INPUT)
+	assert_int(state.combat_state_version).is_equal(before + 1)
+
+
+func test_ac11_run_enemy_phase_nested_finalize_commit_converges_to_exactly_one_total() -> void:
+	# Arrange — 同一份被動敵人名冊,這次整批 run_enemy_phase() 一次跑完:外層
+	# commit 開啟窗口,單一單位的動作與 _finalize_enemy_phase() 自己的 commit
+	# 皆巢狀在這個已開啟的窗口內 —— 驗證兩層巢狀收斂成恰好 +1,不是逐層各自 +1
+	# 的錯誤實作(+2 或更多)。
+	var roster: Array[String] = [
+		"1,P1,PLAYER,100,0,100,0,1,1,0,0",
+		"2,E1,ENEMY,100,0,100,0,1,1,12,5",
+	]
+	var bundle: Dictionary = _build(roster, [1], [2])
+	var state: BattleState = bundle["state"]
+	var controller: BattleController = bundle["controller"]
+	controller.end_faction_phase()
+	var before: int = state.combat_state_version
+
+	# Act
+	var log: Array[String] = controller.run_enemy_phase()
+
+	# Assert
+	assert_bool(log.is_empty()).is_false()
+	assert_int(controller.phase()).is_equal(BattleController.Phase.PLAYER_INPUT)
+	assert_int(state.combat_state_version).is_equal(before + 1)

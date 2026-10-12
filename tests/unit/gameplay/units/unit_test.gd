@@ -261,3 +261,101 @@ func test_effective_def_equals_base_def_with_no_modifier_source() -> void:
 	# Act / Assert
 	assert_int(unit.effective_def()).is_equal(unit.def)
 	assert_int(unit.effective_def()).is_equal(8)
+
+
+# ---- stat_access_view() (story-006-atk-def-phi-breakdown-query.md — #6
+# skill-card-system's registered reverse dependency) -----------------------
+#
+# 🔴 HP/MP 不與 ATK/DEF 同構,不得類推套用(GDD 明文)——以下四組測試刻意
+# 分開驗證,不假設任何一組的通過可以代表其他組也對。
+
+func test_stat_access_view_atk_def_base_equals_effective_with_no_modifier() -> void:
+	# Arrange
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+
+	# Act
+	var view: Dictionary = unit.stat_access_view()
+
+	# Assert
+	assert_int(view["atk"]["base"]).is_equal(16)
+	assert_int(view["atk"]["effective"]).is_equal(unit.effective_atk())
+	assert_int(view["def"]["base"]).is_equal(8)
+	assert_int(view["def"]["effective"]).is_equal(unit.effective_def())
+
+
+func test_stat_access_view_hp_base_is_hp_max_effective_is_current_hp() -> void:
+	# Arrange — hp_max 30,扣 10 點後當前 hp 應為 20,base 仍是 30(不隨 take_damage 改變)
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+	unit.take_damage(10)
+
+	# Act
+	var view: Dictionary = unit.stat_access_view()
+
+	# Assert
+	assert_int(view["hp"]["base"]).is_equal(30)
+	assert_int(view["hp"]["effective"]).is_equal(20)
+	assert_int(view["hp"]["effective"]).is_equal(unit.hp)
+
+
+func test_stat_access_view_mp_base_equals_effective_always() -> void:
+	# Arrange — 今天沒有任何 MP 修正機制(已查證 grep -rn "\.mp\b"
+	# src/gameplay/cards/ 零命中),base 必須恆等於 effective
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+
+	# Act
+	var view: Dictionary = unit.stat_access_view()
+
+	# Assert
+	assert_int(view["mp"]["base"]).is_equal(6)
+	assert_int(view["mp"]["effective"]).is_equal(6)
+
+
+func test_stat_access_view_returns_fresh_dictionary_each_call() -> void:
+	# Arrange — 證明每次呼叫都是新建的 Dictionary,不是同一個內部容器的參照
+	var unit: Unit = Unit.from_csv_line("1,甲,PLAYER,30,16,8,6,1,1,0,2")
+	var first: Dictionary = unit.stat_access_view()
+
+	# Act — 竄改第一次拿到的回傳值
+	first["atk"]["base"] = 999999
+
+	# Assert — 第二次呼叫不受影響
+	var second: Dictionary = unit.stat_access_view()
+	assert_int(second["atk"]["base"]).is_equal(16)
+
+
+# ---- stat_access_view() 敏感度證明 -----------------------------------------
+
+# 間諜子類別 —— 重現本方法文件註解明文警告的錯誤:把 "hp" 的 effective 誤當成
+# 像 "atk"/"def" 一樣永遠等於 base(忽略 take_damage() 已造成的當前損耗)。
+class _MutantTreatsHpLikeAtkDef extends Unit:
+	func stat_access_view() -> Dictionary:
+		return {
+			"atk": {"base": atk, "effective": effective_atk()},
+			"def": {"base": def, "effective": effective_def()},
+			"hp": {"base": hp_max, "effective": hp_max},  # BUG: 應為 hp,不是 hp_max
+			"mp": {"base": mp, "effective": mp},
+		}
+
+
+func test_sensitivity_proof_stat_access_view_hp_effective_tracks_current_hp() -> void:
+	# Arrange
+	var mutant: _MutantTreatsHpLikeAtkDef = _MutantTreatsHpLikeAtkDef.new()
+	mutant.id = 1
+	mutant.code_name = "MutantTest"
+	mutant.faction = Unit.Faction.PLAYER
+	mutant.hp_max = 30
+	mutant.hp = 30
+	mutant.atk = 10
+	mutant.def = 5
+	mutant.mp = 3
+	mutant.take_damage(12)
+
+	# Act
+	var view: Dictionary = mutant.stat_access_view()
+
+	# Assert — 證明若正式程式碼真的犯這個錯,
+	# test_stat_access_view_hp_base_is_hp_max_effective_is_current_hp() 的斷言
+	# (effective 必須等於扣血後的 hp)真的會被踩中:這裡它回報 30(hp_max),
+	# 不是 18(扣 12 點後的當前 hp),不是巧合同值。
+	assert_int(view["hp"]["effective"]).is_equal(30)
+	assert_int(view["hp"]["effective"]).is_not_equal(mutant.hp)

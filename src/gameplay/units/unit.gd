@@ -271,6 +271,78 @@ func effective_def() -> int:
 	return CardModifierRules.effective_def(def, _modifiers)
 
 
+## story-006-atk-def-phi-breakdown-query.md (#6 skill-card-system's registered
+## reverse dependency; GDD "基準值/有效值存取層" — not yet written up by
+## `systems-designer` as of this story, see that story's own Context section):
+## a single read-only query exposing BOTH the baseline and the currently
+## effective value for all four of this unit's roster-parsed stats —
+## [code]"atk"[/code], [code]"def"[/code], [code]"hp"[/code], [code]"mp"[/code]
+## — each as [code]{"base": int, "effective": int}[/code]. Returns a fresh
+## [Dictionary] (and fresh inner Dictionaries) every call; no internal state
+## is ever handed out by reference. This method is the ENTIRE surface of this
+## access layer — it provides no write/mutate counterpart (Implementation
+## Notes #4: reading, never modifying, is this layer's contract).
+##
+## 🔴 The four stats are NOT uniform underneath this common shape — read each
+## note below before assuming one generalizes to another (GDD: "HP/MP 不與
+## ATK/DEF 同構,不得類推套用"):
+## [br]
+## - [code]"atk"[/code]/[code]"def"[/code]: base = [member atk]/[member def]
+##   (the roster-parsed value, constant for this unit's entire battle
+##   lifetime); effective = [method effective_atk]/[method effective_def]
+##   (base plus whatever [CardModifier]s are currently active). This is the
+##   "base + additive modifier stack" composition GDD Formula 一/#6 define.
+## [br]
+## - [code]"hp"[/code]: base = [member hp_max]; effective = [member hp] (the
+##   CURRENT value). This is NOT a "base + modifier" composition — [member hp]
+##   is a monotonically-decreasing battle-state value ([method take_damage]),
+##   never something a [CardModifier] stack layers onto. "base" here only
+##   means "the ceiling this unit started the battle at".
+## [br]
+## - [code]"mp"[/code]: base = effective = [member mp], always, because there
+##   is NO modifier mechanism over movement points anywhere in today's
+##   codebase — verified 2026-10-12,
+##   [code]grep -rn "\.mp\b" src/gameplay/cards/[/code] returns zero hits.
+##   This is reported honestly as "no effective layer exists yet", not
+##   simulated by a fake pass-through that LOOKS like ATK/DEF's shape but
+##   isn't backed by anything.
+## [br]
+## ⚠️ [code]Φ[/code] (the damage formula's flat modifier term) is
+## deliberately NOT one of these four — it is an independent additive term in
+## [method CombatRules.damage] / [method BattleState.preview_damage_breakdown],
+## never composed through this base/effective seam.
+## [br]
+## ⚠️ An ENEMY unit's "pre-scaling baseline" (GDD Formula 二,
+## [method CombatRules.enemy_stat]) has NO representation here or anywhere in
+## today's roster data model — verified 2026-10-12,
+## [code]grep -rn "enemy_stat(" src/ --include=*.gd | grep -v ":#"[/code]
+## returns exactly ONE line — the function's own definition in
+## [code]combat_rules.gd[/code]. Zero production call sites.
+## [br]
+## 🔴 The [code]grep -v ":#"[/code] is load-bearing, not tidiness: without
+## it this very comment is itself a hit, and so is any future comment that
+## quotes the command. A verification command that matches its own
+## documentation reports a number that grows every time someone writes it
+## down — the reader then cannot tell a real new call site from another
+## mention. Filtering comment lines makes the count stable at the thing it
+## is actually measuring. The roster
+## file format ([constant FIELD_COUNT] = 11 columns) carries no "pre-scaling
+## value" column. For every ENEMY [Unit] that exists in this project today,
+## [member atk]/[member def] already ARE whatever value design put in the
+## roster row — this method's [code]"base"[/code] for an ENEMY unit is that
+## stored value, not a reverse-derived pre-scaling number. This story does
+## not decide the application order of scaling vs. card modifiers for a
+## future ENEMY-with-modifiers case — that is GDD's own registered open
+## question, not resolved here.
+func stat_access_view() -> Dictionary:
+	return {
+		"atk": {"base": atk, "effective": effective_atk()},
+		"def": {"base": def, "effective": effective_def()},
+		"hp": {"base": hp_max, "effective": hp},
+		"mp": {"base": mp, "effective": mp},
+	}
+
+
 ## Attaches [param modifier] to this unit — it stacks additively with any
 ## other active modifiers (see [CardModifierRules]) starting from the very
 ## next [method effective_atk]/[method effective_def] call. Does not clone
