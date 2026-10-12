@@ -544,6 +544,25 @@ GDD 實際狀態為 **Approved(2026-08-31 管理者裁決)**(`systems-index.md` 
 
 🔴 **三項都不必在本批修掉,但都必須在對應 story 切出來之前有人動過。**
 
+> ### ✅ C5 三項於 2026-10-12 當場重量 —— **兩項已修、一項仍開**(協調者,`story-006` 開工前查核)
+>
+> **上表三列的現況描述全部寫於 2026-09-29,其中兩列今天已經不成立。** 照上表行動的人會去補兩個已經補好的洞,
+> 同時以為第三個洞也補好了。逐條重量(指令與原始輸出,可重跑):
+>
+> | # | 2026-09-29 記載 | 2026-10-12 實測 | 判定 |
+> |---|---|---|---|
+> | 1 | `grep -c "passable" docs/architecture/tr-registry.yaml` → `0` | → **`2`**。`TR-tactical-002` 已改寫為「地形須有三個正交逐格屬性(`terrain_cost>=1`、遮蔽布林值、`passable` 可通行布林旗標),並有載入時驗證」,`revised:` 欄日期 **2026-09-29** | ✅ **已修** |
+> | 2 | `traceability-index.md` 把本 GDD 標為「未 Approved」 | `sed -n '20p' docs/architecture/traceability-index.md` → `\| tactical-combat-system.md \| Core \| **未 Approved** \| 43 \| 5 \| 13 \| 25 \|`,**一字未改**;而 GDD 第 3 行逐字為 `> **Status**: ✅ **Approved(2026-08-31 管理者裁決)**` | 🔴 **仍開** |
+> | 3 | `grep -c "存取層" design/gdd/tactical-combat-system.md` → `0` | → **`3`**。GDD 已有完整章節「基準值/有效值存取層(#6 技能卡牌系統反向依賴)(2026-09-29 新增)」,含擁有權劃分硬性條款 + 四列現況表 + `Φ` 不屬本層的界定 | ✅ **已修** |
+>
+> **第 3 項的查證**:`git log --oneline -1 -S "基準值/有效值存取層" -- design/gdd/tactical-combat-system.md`
+> → `5142be3`(即切 story 的同一批提交)。**亦即義務在 story 切出的同一天就被履行了,只是沒有人回來改這張表,
+> 也沒有人回來改 `story-006` 檔內那段引用「→ `0`」的原始輸出。**
+>
+> 🔴 **第 2 項已登記為待辦,擁有者仍是 `technical-director`**(`docs/architecture/` 屬其網域,協調者不自行跨域改)。
+> ⚠️ **它的實際風險**:`/story-readiness` 一類關卡若據此判定「GDD 未核准」,會把本 epic 的工作單誤判為 BLOCKED。
+> **今天沒有發生**(004/005/007/016 都順利開工並完成),但那是因為沒有人跑那道關卡,不是因為資料正確。
+
 ⚠️ **更新前的保險(閘門 C5 明文要求,寫進 M2 的 story 驗收條件)**:
 **以 GDD 公式三為準,不以 `TR-tactical-002` / `TR-tactical-006` 的現行文字為準。**
 沒有這一句,照 TR 文字寫的驗收條件會少驗第三個地形屬性與第二個開關,**而且不會有任何東西報錯。**
@@ -623,7 +642,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 013 | 攻擊確認面板(二段確認) | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 006, 008-011 |
 | 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | Ready(執行序見下) | ADR-0001 | 003, 007, 012, 013 |
 | 015 | 行動旗標持久標記 + 不可通行地形呈現 | M4 | Visual/Feel | Ready(執行序見下) | N/A | 001, 004, 012, 013 |
-| 016 | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查 + `reachable_tiles()` 哨兵防護) | M2 | Logic | Ready(2026-10-05 管理者裁決切出) | N/A | 001, 002 |
+| 016 | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查 + `reachable_tiles()` 哨兵防護) | M2 | Logic | ✅ **Done(2026-10-12 協調者逐條驗收)** —— AC1~AC7 全過,逐條證據見該 story 檔 `
 | 003c | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()`/`tick_all_modifiers()`,路徑⑥⑦) | M3a | Logic | ✅ **Done(2026-10-12)** —— AC5 已併入「重寫 ADR-0001」,AC4 已 descope,兩者理由見該 story 檔頭 | ADR-0001 | **003b** |
 | 017 | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | M3a | Logic | ✅ **Done(2026-10-12)** —— `take_damage()` 採選項 B(繞過守衛),留下的缺口見該 story 檔頭 | ADR-0001 | **003b** |
 

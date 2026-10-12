@@ -1,7 +1,43 @@
 # Story 016: 地形載入時驗證(`Board.from_ascii()` 結構性 + 組成性檢查)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready ⚠️ **(2026-10-12 協調者註:這個 Ready 與磁碟上的事實不符,但我沒有自行改判 Done)**
+> **Status**: ✅ **Done(2026-10-12,協調者逐條驗收)** —— AC1~AC7 全數驗證通過。
+>
+> 🔴 **本狀態欄此前停在 `Ready` 達數日,而程式與 13 條測試早已全綠。** 這是本專案第二次
+> 發生同形狀的事(前次見提交 `6c92014` 訊息:「5 張程式做完的工作單狀態欄停了 12 天沒人
+> 發現」)。**兩次都沒有任何自動檢查攔到**,兩次都是人工對帳時撞到的。
+>
+> **驗收方式(協調者獨立執行,不採信任何回報)**:
+>
+> | AC | 驗證指令 / 依據 | 結果 |
+> |---|---|---|
+> | AC1 結構性驗證 | `src/gameplay/board/board.gd` `from_ascii()` 第 132 行(列數不符)、第 136 行(列長不符,訊息含 `row %d`) | ✅ 兩處 `push_error()` 皆在,驗證不中止建構 |
+> | AC2 組成性驗證 | 同檔第 141 行,逐格掃描、`_terrain_entry(terrain) == null` 時各自觸發,不因第一個就停止 | ✅ |
+> | AC3 絕不用 `assert()` | `grep -n "assert(" src/gameplay/board/board.gd` → 僅命中文件註解(第 114/115/161/162/191/200/201/206/207 行解釋「為何刻意不用」),**零個可執行 `assert()`** | ✅ |
+> | AC4 合法棋盤零噪音 | `test_from_ascii_legal_open_board_triggers_zero_push_errors`、`test_from_ascii_legal_mixed_terrain_board_triggers_zero_push_errors` 兩條皆 `PASSED`;全套 1081 條零新增失敗 | ✅ |
+> | AC5 簽章不變、永不回 `null` | `static func from_ascii(rows: PackedStringArray) -> Board` 逐字未變;函式體最後無條件 `return board`;`test_from_ascii_with_both_structural_and_compositional_failures_still_returns_valid_board` 釘死 | ✅ |
+> | AC6 `reachable_tiles()` 哨兵防護 | `_is_move_cost_usable(move_cost)` 在 `get_move_cost()` 之後、`candidate_cost` 加法**之前**無條件執行,**與 `ignore_passability` 無關**(原始碼逐字:`if not _is_move_cost_usable(move_cost): continue`);兩條情境測試 + 1 條敏感度證明 | ✅ |
+> | AC7 既有查詢時行為不變 | `MOVE_COST_UNKNOWN_TERRAIN = -1` 未變;`board_test.gd`(8 條)、`board_passable_test.gd`(6 條)、`board_reachable_tiles_test.gd`(9 條)全綠 | ✅ |
+>
+> **Required evidence 三項逐條**:①`tests/unit/gameplay/board/board_load_validation_test.gd`
+> 存在,**13 條 `func test_`**,全部 `PASSED`;②敏感度證明
+> `test_sensitivity_proof_move_cost_guard_removal_lets_unregistered_terrain_corrupt_reachable_set`
+> 存在,採**間諜子類別覆寫 `_is_move_cost_usable()`** 手法(非手動改壞產品碼一次性驗證),
+> 符合 `.claude/rules/test-standards.md` 2026-09-16 條目;③全套重跑結果如下。
+>
+> ```
+> Overall Summary: 1081 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans
+> Executed test suites: (92/92)    Executed test cases : (1081/1081)
+> ENGINE EXIT CODE = 100 · Parse Error / Abnormal exit = 0
+> ```
+> 具名 ` FAILED` 僅 **1** 條,即既有刻意紅且已核准的
+> `tests/unit/gameplay/affinity/affinity_phi_provider_test.gd > test_phi_reflects_a_pairing_polarity_flip_made_after_construction`。
+>
+> 📌 **一處當場更正(不影響判定)**:本檔 Test Evidence 節寫「24 處既有 `Board.from_ascii()`
+> 呼叫點」。2026-10-12 重新量測為 **42 處**(`grep -ro "from_ascii(" --include=*.gd . | wc -l`
+> → 43,扣定義本身),橫跨 14 個檔案。數字落後是因為 story-002/007 之後又新增了測試呼叫點。
+> **AC4 的保證不受影響** —— 它要求的是「零新增噪音」,由全套 1081 條全綠證明,不是由呼叫點
+> 計數證明。手抄的數字必然漂移,故此處只記更正、不再把新數字抄進條文。
 >
 > 🔴 **實測:本 story 的程式與測試都已經存在而且全綠,狀態欄卻停在 `Ready`。**
 > - 產品碼:`src/gameplay/board/board.gd` 的 `from_ascii()` 已有載入期驗證
@@ -269,27 +305,27 @@ $ sed -n '242,256p' src/gameplay/board/board.gd
 
 ## Acceptance Criteria
 
-- [ ] **AC1**:`Board.from_ascii()` 新增結構性驗證——`rows.size() != BOARD_HEIGHT` 時
+- [x] **AC1**:`Board.from_ascii()` 新增結構性驗證——`rows.size() != BOARD_HEIGHT` 時
       觸發一次 `push_error()`;任一列 `row.length() != BOARD_WIDTH` 時,該列觸發一次
       `push_error()`(訊息含列索引)。驗證不中止建構,既有的逐格儲存邏輯不變。
-- [ ] **AC2**:`Board.from_ascii()` 新增組成性驗證——掃描每一格,字元不存在於
+- [x] **AC2**:`Board.from_ascii()` 新增組成性驗證——掃描每一格,字元不存在於
       `TERRAIN_TABLE` 時,該格觸發一次 `push_error()`(訊息含座標與字元,格式比照
       `get_move_cost()`/`passable()` 既有慣例)。多個未登記字元各自觸發各自的
       `push_error()`,不因第一個就停止掃描。
-- [ ] **AC3**:結構性與組成性驗證均**絕不使用 `assert()`**(`.claude/docs/coding-standards.md`
+- [x] **AC3**:結構性與組成性驗證均**絕不使用 `assert()`**(`.claude/docs/coding-standards.md`
       2026-09-15 條目)。
-- [ ] **AC4**:既有合法棋盤(平地/灌木/倒木三種地形,13×6 完整尺寸)載入時觸發
+- [x] **AC4**:既有合法棋盤(平地/灌木/倒木三種地形,13×6 完整尺寸)載入時觸發
       **零次**新增的 `push_error()`——不得對現有 24 處 `from_ascii()` 呼叫點產生迴歸
       (見下方 Affected Files)。
-- [ ] **AC5**:`from_ascii(rows: PackedStringArray) -> Board` 簽章不變,**永遠**回傳一個
+- [x] **AC5**:`from_ascii(rows: PackedStringArray) -> Board` 簽章不變,**永遠**回傳一個
       有效的 `Board` 物件(不回傳 `null`,不拋例外)——見「決策二」。
-- [ ] **AC6**:`reachable_tiles()` 內 `get_move_cost(neighbor)` 回傳
+- [x] **AC6**:`reachable_tiles()` 內 `get_move_cost(neighbor)` 回傳
       `Board.MOVE_COST_UNKNOWN_TERRAIN` 時,該鄰居視為不可達(等同 `passable=false`
       的效果),不得把哨兵值併入 `candidate_cost` 的加法——見「決策三」。此防護在
       `ignore_passability=true` 與 `ignore_passability=false` 兩種情況下皆須成立
       (後者目前已被 `passable()` 間接擋下,此 AC 要求的是即使該間接防護未來被改動,
       `get_move_cost()` 呼叫端自身也要有獨立防護,不得只依賴上游的 `passable()` 閘門)。
-- [ ] **AC7**:`TERRAIN_TABLE`、`MOVE_COST_UNKNOWN_TERRAIN` 的值、`get_move_cost()`/
+- [x] **AC7**:`TERRAIN_TABLE`、`MOVE_COST_UNKNOWN_TERRAIN` 的值、`get_move_cost()`/
       `passable()` 既有的查詢時顯式失敗行為(story-001 產出)**不變**——本 story 新增的
       是載入時的**額外**檢查層,不是既有查詢時檢查的替代品(兩者併存,defense-in-depth,
       與 `board.gd` 第 300-316 行 `_terrain_entry()` 文件註解記載的既有設計精神一致)。
