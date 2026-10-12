@@ -3,5 +3,6 @@
 - [HUD glyphs are code, not images](project_hud_glyphs_are_code_not_images.md) — lock icon etc. are Panel/StyleBoxFlat/ColorRect primitives in .gd files, not PNGs; recompose primitives before proposing a new image asset
 - [Layout authority files](reference_layout_authority_files.md) — art-direction.md vs screen-architecture.md ownership split, compute_scale() single source, read exact accessibility clause wording before deciding a fix
 - [Formula must match worked example](feedback_formula_must_match_worked_example.md) — before finalizing, substitute the formula's symbols with the worked example's numbers and confirm they land on the same result; don't trust prose reasoning alone
-- [Art production path: AI generation, decided](project_art_production_path_undecided.md) — route picked 2026-09-29 (SDXL/SD3.5 + LoRA); now in execution, not still open
+- [Art production path: AI generation, decided](project_art_production_path_undecided.md) — route 2026-09-29; 2026-10-12 added candidate-image flow + prompt spec v0.1
 - [Color palette v0.1 + 06a format ambiguity](project_color_palette_v0_and_06a_format_ambiguity.md) — color-palette.csv created 2026-10-08 (38/64 colors); 06a §4.2's own CSV example contradicts its stated comment rule
+- [Outline: internal parts ruling](project_outline_internal_parts_ruling.md) — 2026-10-12: outline only on outer silhouette edge, never internal seams; not yet merged into art-direction.md §4

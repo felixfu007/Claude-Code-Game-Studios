@@ -42,3 +42,16 @@ them here, they'll drift; read the file.
 
 See also [[project_art_production_path_undecided]] for the adjacent, still-open question of
 who actually produces art (this memory is about the color-data deliverable, not that decision).
+
+**Update 2026-10-12:** the AI_IMG home-workstation team's reply
+(`docs/ai-art-service-handoff/06-change-request-001-reply-2026-10-10.md`) confirms they
+independently adopted the sane reading ("# + exactly 6 hex chars + comma = data row, else
+comment") as their *tentative* interpretation (their own Q1) — same conclusion I'd already
+reached, reached independently. Whether to formally confirm it is routed to
+`technical-director` (format/field questions, not mine), not resolved by me. Separately, I
+ruled on a different batch of their questions (Q2/Q7/Q8/Q9 — outline drawing-vs-checking,
+internal-part-boundary outlines, hue-separation threshold, aspect-ratio crop-vs-stretch) in
+`docs/ai-art-service-handoff/06a-art-clarifications-2026-10-12.md` — see
+[[project_outline_internal_parts_ruling]] for the one genuinely new design rule that came out
+of that (internal silhouette parts don't get outlined, only the outer edge does) — that rule
+is not yet written into `art-direction.md` itself, only into this clarifications file.
