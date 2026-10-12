@@ -108,14 +108,14 @@ func test_ac5_playing_temporary_stat_modifier_increases_preview_damage_by_card_d
 	var session: CardPlaySession = CardPlaySession.new(
 		deck, state, _default_links(), _FakeAffinityWritePort.new()
 	)
-	var damage_before: int = state.preview_damage(P1, ENEMY, 0)
+	var damage_before: int = state.preview_damage(P1, ENEMY, 0).damage
 
 	# Act — 完整四步流程,中間不插入任何額外操作
 	assert_bool(session.open_hand()).is_true()
 	assert_bool(session.select_card(atk_card)).is_true()
 	assert_bool(session.select_target(P1)).is_true()
 	assert_bool(session.confirm()).is_true()
-	var damage_after: int = state.preview_damage(P1, ENEMY, 0)
+	var damage_after: int = state.preview_damage(P1, ENEMY, 0).damage
 
 	# Assert — 與結算共用同一個私有 helper 的那個查詢,差值逐字為 +3
 	assert_int(damage_after).is_equal(damage_before + 3)

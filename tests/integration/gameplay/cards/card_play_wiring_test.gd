@@ -348,14 +348,14 @@ func test_ac_p8_preview_damage_after_playing_a_card_reflects_new_value_via_state
 	var state: BattleState = built["state"]
 	var controller: BattleController = built["controller"]
 	# 🔴 必須呼叫 BattleState.preview_damage() 本身,不得自行重算 CombatRules.damage()
-	var damage_before: int = state.preview_damage(P1, ENEMY, 0)
+	var damage_before: int = state.preview_damage(P1, ENEMY, 0).damage
 
 	# Act
 	assert_bool(controller.open_hand()).is_true()
 	assert_bool(controller.select_card(atk_card)).is_true()
 	assert_bool(controller.select_target(P1)).is_true()
 	assert_bool(controller.confirm()).is_true()
-	var damage_after: int = state.preview_damage(P1, ENEMY, 0)
+	var damage_after: int = state.preview_damage(P1, ENEMY, 0).damage
 
 	# Assert
 	assert_int(damage_after).is_equal(damage_before + 3)

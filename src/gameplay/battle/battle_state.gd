@@ -498,8 +498,20 @@ func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 ## private helper [method resolve_attack] uses, so the previewed number is
 ## structurally guaranteed to match what resolving the attack would deal,
 ## not merely coincidentally equal to it today.
-func preview_damage(attacker_id: int, target_id: int, phi: int) -> int:
-	return _compute_attack_damage(attacker_id, target_id, phi)
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): this method
+## now returns a [PreviewDamageResult], not a bare [int]. The previewed
+## damage value lives at [member PreviewDamageResult.damage]; the version
+## number ADR-0001 requires is [member QueryResult.version] on the returned
+## object. Unlike [method preview_damage_breakdown], this method does NOT
+## null-check attacker_id/target_id before delegating — that is unchanged
+## from before this migration (an unresolved id crashes inside [method
+## _compute_attack_damage] exactly as it always has). This migration only
+## changes the return type's wrapper, not preview_damage()'s pre-existing
+## error-handling shape.
+func preview_damage(attacker_id: int, target_id: int, phi: int) -> PreviewDamageResult:
+	var dealt: int = _compute_attack_damage(attacker_id, target_id, phi)
+	return PreviewDamageResult.new(self, dealt)
 
 
 ## story-006-atk-def-phi-breakdown-query.md (GDD UI Requirements §4): returns

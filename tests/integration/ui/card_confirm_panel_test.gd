@@ -197,7 +197,7 @@ func test_damage_preview_reflects_new_effective_atk_after_confirm() -> void:
 	var card: Card = _build_temporary_card("test_atk3", 3, 0, 1)
 	_install_session(instance, [card], [], NullAffinityWritePort.new())
 
-	var damage_before: int = instance._state.preview_damage(attacker.id, enemy.id, 0)
+	var damage_before: int = instance._state.preview_damage(attacker.id, enemy.id, 0).damage
 
 	# Act
 	_drive_temporary_modifier_to_confirming(instance, attacker)
@@ -205,7 +205,7 @@ func test_damage_preview_reflects_new_effective_atk_after_confirm() -> void:
 	instance._process(0.0)
 
 	# Assert —— 同一份 preview_damage()，confirm 前後各查一次，不自算傷害公式
-	var damage_after: int = instance._state.preview_damage(attacker.id, enemy.id, 0)
+	var damage_after: int = instance._state.preview_damage(attacker.id, enemy.id, 0).damage
 	assert_int(damage_after).append_failure_message(
 		"ATK +3 之後，preview_damage() 應該剛好增加 3（damage=max(0,atk-def+phi)，" +
 		"phi 兩次皆為 0，def 未變），confirm 前 %d、confirm 後 %d"

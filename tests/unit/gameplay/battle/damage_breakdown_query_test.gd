@@ -197,10 +197,10 @@ func test_damage_matches_preview_damage_same_inputs() -> void:
 
 	# Act
 	var result: DamageBreakdownResult = state.preview_damage_breakdown(1, 2, 7)
-	var legacy_result: int = state.preview_damage(1, 2, 7)
+	var legacy_result: PreviewDamageResult = state.preview_damage(1, 2, 7)
 
 	# Assert
-	assert_int(result.breakdown["damage"]).is_equal(legacy_result)
+	assert_int(result.breakdown["damage"]).is_equal(legacy_result.damage)
 
 
 # =============================================================================
@@ -322,7 +322,7 @@ func test_sensitivity_proof_duplicated_formula_divergence_caught() -> void:
 
 	# Ground truth — 這個 mutant 繼承、未覆寫的真正 preview_damage() 仍會把
 	# ENEMY 攻擊方的 Φ 歸零。
-	var trusted_damage: int = mutant.preview_damage(1, 2, 3)
+	var trusted_damage: int = mutant.preview_damage(1, 2, 3).damage
 	assert_int(trusted_damage).is_equal(4)  # 12 - 8 + 0(歸零後)
 
 	# Act — mutant 自己覆寫的 preview_damage_breakdown() 重新實作了公式,

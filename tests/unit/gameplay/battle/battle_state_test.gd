@@ -168,11 +168,11 @@ func test_preview_damage_matches_resolve_attack_for_same_inputs() -> void:
 	var state_for_resolve: BattleState = _load_state()
 
 	# Act — 兩邊都呼叫真正的生產程式碼，不在此處重算公式
-	var previewed: int = state_for_preview.preview_damage(1, 6, 5)
+	var previewed: PreviewDamageResult = state_for_preview.preview_damage(1, 6, 5)
 	var resolved: int = state_for_resolve.resolve_attack(1, 6, 5)
 
 	# Assert
-	assert_int(previewed).is_equal(resolved)
+	assert_int(previewed.damage).is_equal(resolved)
 
 
 func test_preview_damage_matches_resolve_attack_for_enemy_attacker_phi_zeroing() -> void:
@@ -182,11 +182,11 @@ func test_preview_damage_matches_resolve_attack_for_enemy_attacker_phi_zeroing()
 	var state_for_resolve: BattleState = _load_state()
 
 	# Act — 傳入非零 phi（999），攻擊方是 ENEMY，理應被兩邊一致忽略
-	var previewed: int = state_for_preview.preview_damage(6, 1, 999)
+	var previewed: PreviewDamageResult = state_for_preview.preview_damage(6, 1, 999)
 	var resolved: int = state_for_resolve.resolve_attack(6, 1, 999)
 
 	# Assert
-	assert_int(previewed).is_equal(resolved)
+	assert_int(previewed.damage).is_equal(resolved)
 
 
 func test_preview_damage_does_not_mutate_state() -> void:

@@ -2220,6 +2220,8 @@ func _apply_pending_card_confirm() -> void:
 		# are both live, uncached queries, so the next _refresh_view() call is
 		# what makes the change observable. This story does not compute or
 		# cache the new damage number itself.
+		# 🔴 2026-10-12:preview_damage() 現在回傳 [PreviewDamageResult] —— 上面
+		# 「live, uncached」描述的性質不變,只是傷害數字改讀回傳物件的 .damage 欄位。
 		_refresh_view()
 
 
@@ -2506,7 +2508,18 @@ func _refresh_view() -> void:
 		# 重算一次,只有 Φ 走共用路徑,ATK/DEF 沒有)。
 		var target: Unit = _state.unit_by_id(attack_target_id)
 		var phi: int = _phi.phi(selected, attack_target_id)
-		var damage: int = _state.preview_damage(selected, attack_target_id, phi)
+		# 🔴 2026-10-12:preview_damage() 已遷移為回傳 [PreviewDamageResult]
+		# (ADR-0001 契約型別,見 docs/architecture/query-result-scope-boundary-2026-10-12.md)。
+		# 🔴 本筆【不】併入下方 move/attack/threat 那組 assert_same_version() 合併顯示核對。
+		# 理由(實作者裁決,協調者核可):①assert_same_version() 的契約是「少於 2 筆恆成立」,
+		# 而此處此刻只有這一筆 —— 三支疊圖查詢要等 selected != -1 分支才呼叫;②真要湊出
+		# 可比對的 ≥2 筆,得把那三支的呼叫時機提前到這裡,等於為了一個檢查搬動既有控制流;
+		# ③即使搬了,傷害預覽文字與三層高亮在語意上不是「同一次合併疊圖」—— 後三者疊在
+		# 同一張棋盤上、彼此必須一致,而這筆是獨立產生的 info_text,沒有「彼此」可言。
+		# 本分支內無 await / 權威寫入 / call_deferred,故它與下方三支「同屬這一次
+		# _refresh_view() 執行」仍是結構保證。
+		var damage_result: PreviewDamageResult = _state.preview_damage(selected, attack_target_id, phi)
+		var damage: int = damage_result.damage
 		preview_target_id = attack_target_id
 		preview_target_hp = projected_hp(target.hp, damage)
 		info_text = format_damage_preview(damage, target.hp, preview_target_hp)
