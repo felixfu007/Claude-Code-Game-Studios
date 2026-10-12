@@ -348,7 +348,10 @@ var _source_ordinals: Array
 ## 文字與程式碼多一處不一致」作為緩解條件,不追溯修改 ADR 文件本身。
 ##
 ## 🔴 [b]必須帶預設值 `null`,不得改為必填[/b]——實測
-## `grep -rn "AffinityDataPool.new(" --include=*.gd .` 命中約 54 處,絕大多數在
+## 下面這條指令隨時數得出來(🔴 不要把數字抄進本註解 —— 它會漂,而且每多一處
+## 引用這條指令的註解,未過濾的數字就多一):
+##   grep -rn "AffinityDataPool.new(" --include=*.gd . | grep -v ":#"
+## 絕大多數在
 ## 測試,其中至少 1 處在 `src/ui/battle/battle_screen.gd`(另一位專家維護中的
 ## 正式程式碼)。改成必填會讓這些既有呼叫點當場編譯失敗。省略時以
 ## [method AffinityCalibration.uncalibrated_placeholder] 頂替(見

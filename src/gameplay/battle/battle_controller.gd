@@ -260,8 +260,15 @@ func unit_action_state(id: int) -> TurnOrder.ActionState:
 ## ascending by (y, x). Empty if nothing is selected, the selection cannot
 ## move this phase, or the controller is outside PLAYER_INPUT. Always a
 ## freshly built array — never a reference into any internal container.
-func move_targets() -> Array[Vector2i]:
-	return _move_targets_for(_selected_unit_id)
+##
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): returns a
+## [MoveTargetsResult], not a bare [Array][Vector2i]. The cells described
+## above live at [member MoveTargetsResult.cells]; read [member
+## QueryResult.version] / call [method QueryResult.is_stale] on the returned
+## object for the version check this query's "merged display" use needs.
+func move_targets() -> MoveTargetsResult:
+	return MoveTargetsResult.new(_state, _move_targets_for(_selected_unit_id))
 
 
 ## story-007-movement-range-four-state-query.md / GDD UI Requirements §2 +
@@ -338,8 +345,15 @@ func move_targets_breakdown() -> MoveTargetsBreakdownResult:
 ## selected, the selection cannot attack this phase, or the controller is
 ## outside PLAYER_INPUT. Always a freshly built array — never a reference
 ## into any internal container.
-func attack_targets() -> Array[Vector2i]:
-	return _attack_targets_for(_selected_unit_id)
+##
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): returns an
+## [AttackTargetsResult], not a bare [Array][Vector2i]. The cells described
+## above live at [member AttackTargetsResult.cells]; read [member
+## QueryResult.version] / call [method QueryResult.is_stale] on the returned
+## object for the version check this query's "merged display" use needs.
+func attack_targets() -> AttackTargetsResult:
+	return AttackTargetsResult.new(_state, _attack_targets_for(_selected_unit_id))
 
 
 ## story-003-los-blocked-in-range-query.md: returns every in-bounds board
@@ -393,8 +407,15 @@ func attack_targets_blocked_by_los() -> Array[Vector2i]:
 ## documented exclusion, not an oversight. [method attack_targets] remains
 ## the separate "which enemies can I actually hit right now" query — the
 ## two answer different questions and both stay.
-func threat_targets() -> Array[Vector2i]:
-	return _threat_targets_for(_selected_unit_id)
+##
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): returns a
+## [ThreatTargetsResult], not a bare [Array][Vector2i]. The cells described
+## above live at [member ThreatTargetsResult.cells]; read [member
+## QueryResult.version] / call [method QueryResult.is_stale] on the returned
+## object for the version check this query's "merged display" use needs.
+func threat_targets() -> ThreatTargetsResult:
+	return ThreatTargetsResult.new(_state, _threat_targets_for(_selected_unit_id))
 
 
 ## story-005-threat-targets-semantic-clarification.md / GDD 公式四

@@ -48,10 +48,20 @@
 ## the same call, before flipping [member _step] out of
 ## [constant Step.CLOSED]. GDD Core Rules 四 and ADR-0001's
 ## [code]authoritative_write_in_progress[/code] name the real flag this stands
-## in for; that flag has ZERO implementation anywhere in [code]src/[/code] as
-## of 2026-09-10 (verified:
-## [code]grep -rn "authoritative_write_in_progress" src/ --include=*.gd[/code]
-## returns only a doc-comment mention in [code]battle_state.gd[/code]). This
+## in for.
+##
+## 🔴 [b]CORRECTED 2026-10-12 — the claim that used to sit here is now
+## false.[/b] It read: "that flag has ZERO implementation anywhere in src/ as
+## of 2026-09-10", backed by an embedded grep. Both halves went stale:
+##   1. [b]The flag is real now.[/b] [code]BattleState.authoritative_write_in_progress[/code]
+##      exists as a guarded read-only property, and THIS VERY FILE wires it —
+##      see [member _authoritative_write_in_progress_check] and
+##      [method _is_authoritative_write_in_progress] below.
+##   2. [b]The old grep counted its own documentation.[/b] Run unfiltered today
+##      and 22 of 37 hits are comment lines. Immune form:
+##        grep -rn "authoritative_write_in_progress" src/ --include=*.gd | grep -v ":#"
+##
+## [b]What has NOT changed[/b]: this
 ## class does NOT define that flag — it is ADR-0001 Mechanism One's own
 ## property, owned by the tactical combat system (#4). An unset [Callable]
 ## (the default) means "never blocked", matching this project's established

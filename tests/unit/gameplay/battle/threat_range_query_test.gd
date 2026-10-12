@@ -156,7 +156,7 @@ func test_existing_threat_targets_selected_unit_behavior_unchanged() -> void:
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act
-	var old_result: Array[Vector2i] = controller.threat_targets()
+	var old_result: Array[Vector2i] = controller.threat_targets().cells
 	var new_result: Array[Vector2i] = controller.threat_range_for(1)
 
 	# Assert — 全開闊地（無視線遮蔽）下兩者應描述同一個集合。

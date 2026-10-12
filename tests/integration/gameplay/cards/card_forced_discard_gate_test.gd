@@ -309,9 +309,9 @@ func test_ac_d5_selectable_units_unaffected_by_pending_discard() -> void:
 
 	# 弱訊號但仍記錄：三個依賴選取的查詢在欠棄牌時不崩潰、回傳空陣列（因為選取
 	# 本身在欠棄牌時就不可能發生，這是預期行為，不是本條的重點）
-	assert_array(pending_controller.move_targets()).is_equal([])
-	assert_array(pending_controller.attack_targets()).is_equal([])
-	assert_array(pending_controller.threat_targets()).is_equal([])
+	assert_array(pending_controller.move_targets().cells).is_equal([])
+	assert_array(pending_controller.attack_targets().cells).is_equal([])
+	assert_array(pending_controller.threat_targets().cells).is_equal([])
 
 
 # ---- AC-D6：未附卡池的戰鬥 -> 行為與 Story 006 之後逐字相同（閘門永不觸發） ------

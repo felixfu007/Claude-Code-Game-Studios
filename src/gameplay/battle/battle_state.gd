@@ -43,7 +43,7 @@ var _positions: Dictionary = {}
 # a TurnOrder itself.
 #
 # The reason is call-site compatibility, not a duplication concern — verified
-# 2026-09-09 via `grep -rn "TurnOrder.new(" src/`: production code builds
+# 2026-09-09, re-verified 2026-10-12 — command below: production code builds
 # exactly one TurnOrder (src/ui/battle/battle_screen.gd), and it is the call
 # site that does it, not either driver — BattleController and BattleLoop only
 # ever *receive* an already-built TurnOrder through their constructors, they
@@ -58,6 +58,13 @@ var _positions: Dictionary = {}
 # particular, tests/unit/gameplay/affinity/affinity_phi_provider_test.gd
 # constructs its own TurnOrder this same way and is out of scope to modify in
 # this change; a design that required touching it would not be viable here.
+#
+#   grep -rn "TurnOrder.new(" src/ --include=*.gd | grep -v ":#"
+#
+# 🔴 The `grep -v ":#"` above is load-bearing, not tidiness: without it THIS
+# comment is itself a hit, and so is any future comment quoting the command.
+# Measured 2026-10-12: 4 unfiltered hits, 3 of them comment lines, 1 real
+# call site (src/ui/battle/battle_screen.gd).
 var _turn_order: TurnOrder = null
 
 # This battle's CardDeck, optionally set by whichever driver (BattleController

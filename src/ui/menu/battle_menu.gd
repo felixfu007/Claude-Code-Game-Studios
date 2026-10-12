@@ -290,15 +290,27 @@ signal open_rejected(result: OpenResult, message: String)
 ## progress right now". Mirrors [code]CardPlaySession._authoritative_write_in_progress_check[/code]'s
 ## established idiom exactly (see that class's doc comment,
 ## [code]src/gameplay/cards/card_play_session.gd[/code]): an unset
-## [Callable] (the default) means "never blocked". This project's
-## [code]BattleState.authoritative_write_in_progress[/code] has zero
-## implementation anywhere in [code]src/[/code] as of this writing — verified
-## [code]grep -rn "authoritative_write_in_progress" src/ --include=*.gd[/code]
-## returns only doc-comment mentions (in [code]battle_state.gd[/code] and
-## [code]card_play_session.gd[/code]), never a real field or method. AC-M8 can
-## therefore only prove "the gate is wired and observably rejects", not "the
-## real flag can become true" — see this story's report and EPIC.md's
-## registered Limitation #1.
+## [Callable] (the default) means "never blocked".
+##
+## 🔴 [b]CORRECTED 2026-10-12 — what used to be written here is now false, and
+## one of its CONSEQUENCES no longer holds either.[/b] The old text read:
+## "BattleState.authoritative_write_in_progress has zero implementation
+## anywhere in src/ as of this writing", verified by an embedded grep that
+## "returns only doc-comment mentions ... never a real field or method".
+##   1. [b]The flag is real.[/b] It is a guarded read-only property on
+##      [BattleState] (rejects external writes via push_error), and its
+##      internal representation is a depth counter, not a bool
+##      (ADR-0001, 2026-10-05 ruling on nested commits).
+##   2. [b]The grep counted its own documentation.[/b] Unfiltered today: 22 of
+##      37 hits are comment lines. Immune form:
+##        grep -rn "authoritative_write_in_progress" src/ --include=*.gd | grep -v ":#"
+##   3. 🔴 [b]The consequence drawn from it is therefore stale too.[/b] The old
+##      text concluded AC-M8 "can only prove the gate is wired and observably
+##      rejects, not that the real flag can become true". [b]That limitation is
+##      gone[/b] — the real flag now exists and can be driven, so a test CAN
+##      now exercise the true path. EPIC.md's registered Limitation #1 should
+##      be re-examined against this; [b]this comment does not close it[/b],
+##      it only records that its premise disappeared.
 var authoritative_write_in_progress_check: Callable = Callable()
 
 ## Injected — [code]func() -> bool[/code], "is a forced discard owed right

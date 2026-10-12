@@ -2581,32 +2581,62 @@ func _refresh_view() -> void:
 	_board_view.render_pieces(pieces)
 
 	if selected != -1:
-		var move_cells: Array[Vector2i] = _controller.move_targets()
-		var attack_cells: Array[Vector2i] = _controller.attack_targets()
+		var move_result: MoveTargetsResult = _controller.move_targets()
+		var attack_result: AttackTargetsResult = _controller.attack_targets()
+		var threat_result: ThreatTargetsResult = _controller.threat_targets()
 
-		# 三層高亮刻意互斥,每一格最多只帶一種標記。這是純粹的呈現取捨
-		# (哪一層畫哪些格),不是規則判斷 —— 三個查詢的答案都由
-		# BattleController 決定,這裡只決定畫面怎麼排。
-		#
-		# 威脅範圍要扣掉三種格:
-		#   1. move_cells —— 已經有藍色外框了,再疊黃斜線只會讓兩者都難認。
-		#   2. attack_cells —— 已經有紅色角標了,那是更強的資訊(現在就打得到)。
-		#   3. 我方單位所在格 —— threat_targets() 依設計回傳的是「射程涵蓋範圍」,
-		#      包含友軍站的格;但畫面上在自己人身上標「打得到這裡」會被讀成
-		#      「可以攻擊隊友」。這一格的排除只在呈現層做,查詢本身維持純幾何。
-		var ally_cells: Array[Vector2i] = []
-		for ally: Unit in _state.units_of(Unit.Faction.PLAYER):
-			ally_cells.append(_state.position_of(ally.id))
-		var threat_excluded: Array[Vector2i] = []
-		threat_excluded.append_array(move_cells)
-		threat_excluded.append_array(attack_cells)
-		threat_excluded.append_array(ally_cells)
-
-		_board_view.set_move_highlights(move_cells)
-		_board_view.set_threat_highlights(
-			cells_excluding(_controller.threat_targets(), threat_excluded)
+		# ADR-0001 merged-display 版本核對
+		# (docs/architecture/query-result-scope-boundary-2026-10-12.md):下面三層
+		# 高亮是這三支查詢結果的合併顯示,ADR-0001 要求合併顯示前核對版本號一致。
+		# _refresh_view() 單次執行內沒有 await、沒有權威寫入、也沒有
+		# call_deferred(本檔案體內可 grep 驗證),所以三者「同版本」今天是結構
+		# 保證,下面這個檢查理論上恆為 true —— 它守的是日後有人往這個函式裡加
+		# await 或提交呼叫,而那件事今天沒有任何東西擋著。
+		# 🔴 故意不用 assert() 守衛這個分支 —— coding-standards.md 已記載
+		# assert() 失敗會中止呼叫端;_refresh_view() 雖然不回傳 enum,但中止會
+		# 連帶跳過下面與這三支查詢無關的手牌列/狀態列重繪,所以改用
+		# push_error() + 顯式 if/else,絕不中止函式。
+		var versions_consistent: bool = QueryResult.assert_same_version(
+			[move_result, attack_result, threat_result]
 		)
-		_board_view.set_attack_highlights(attack_cells)
+		var any_stale: bool = (
+			move_result.is_stale() or attack_result.is_stale() or threat_result.is_stale()
+		)
+		if not versions_consistent or any_stale:
+			push_error(
+				"merged-display 查詢結果版本不一致或已過期於 _refresh_view() 執行期間"
+				+ " —— 本格跳過 move/attack/threat 高亮疊圖"
+			)
+			_board_view.set_move_highlights([])
+			_board_view.set_threat_highlights([])
+			_board_view.set_attack_highlights([])
+		else:
+			var move_cells: Array[Vector2i] = move_result.cells
+			var attack_cells: Array[Vector2i] = attack_result.cells
+
+			# 三層高亮刻意互斥,每一格最多只帶一種標記。這是純粹的呈現取捨
+			# (哪一層畫哪些格),不是規則判斷 —— 三個查詢的答案都由
+			# BattleController 決定,這裡只決定畫面怎麼排。
+			#
+			# 威脅範圍要扣掉三種格:
+			#   1. move_cells —— 已經有藍色外框了,再疊黃斜線只會讓兩者都難認。
+			#   2. attack_cells —— 已經有紅色角標了,那是更強的資訊(現在就打得到)。
+			#   3. 我方單位所在格 —— threat_targets() 依設計回傳的是「射程涵蓋範圍」,
+			#      包含友軍站的格;但畫面上在自己人身上標「打得到這裡」會被讀成
+			#      「可以攻擊隊友」。這一格的排除只在呈現層做,查詢本身維持純幾何。
+			var ally_cells: Array[Vector2i] = []
+			for ally: Unit in _state.units_of(Unit.Faction.PLAYER):
+				ally_cells.append(_state.position_of(ally.id))
+			var threat_excluded: Array[Vector2i] = []
+			threat_excluded.append_array(move_cells)
+			threat_excluded.append_array(attack_cells)
+			threat_excluded.append_array(ally_cells)
+
+			_board_view.set_move_highlights(move_cells)
+			_board_view.set_threat_highlights(
+				cells_excluding(threat_result.cells, threat_excluded)
+			)
+			_board_view.set_attack_highlights(attack_cells)
 	else:
 		_board_view.set_move_highlights([])
 		_board_view.set_threat_highlights([])
@@ -2683,7 +2713,7 @@ func _refresh_view() -> void:
 func _is_move_preview_cell(selected: int) -> bool:
 	if _cursor_cell == _state.position_of(selected):
 		return true
-	return _controller.move_targets().has(_cursor_cell)
+	return _controller.move_targets().cells.has(_cursor_cell)
 
 
 # Id of the enemy under the cursor that the selected unit can attack right
@@ -2692,7 +2722,7 @@ func _is_move_preview_cell(selected: int) -> bool:
 # damage projection painted onto an ally would be a serious misread and this
 # costs one comparison.
 func _cursor_attack_target_id() -> int:
-	if not _controller.attack_targets().has(_cursor_cell):
+	if not _controller.attack_targets().cells.has(_cursor_cell):
 		return -1
 	var target: Unit = _state.unit_at(_cursor_cell)
 	if target == null or target.faction != Unit.Faction.ENEMY:

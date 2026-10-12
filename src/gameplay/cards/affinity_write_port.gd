@@ -1,11 +1,27 @@
 ## Narrow write port Story 004 defines and injects in place of
 ## [code]AffinityDataPool.append_record()[/code] (ADR-0002, [b]Accepted[/b] —
-## but, as of 2026-09-10, zero implementation exists anywhere in [code]src/[/code]:
-## [code]grep -rn "append_record\|combat_card\|AffinityPool\|data_pool" src/ --include=*.gd[/code]
-## returns nothing). "The ADR is Accepted" is a design-layer approval, not
-## evidence the code exists — see
+## but, when Story 004 was written on 2026-09-10, zero implementation existed
+## anywhere in [code]src/[/code]). "The ADR is Accepted" is a design-layer
+## approval, not evidence the code exists — see
 ## [code]production/epics/skill-card-system/story-004-permanent-write-port.md[/code]
 ## for the full context this class exists to unblock.
+##
+## 🔴 [b]THAT "zero implementation" CLAIM IS NO LONGER TRUE — corrected
+## 2026-10-12.[/b] The original wording asserted it as a present-tense fact
+## and embedded a verification command; both have since gone stale:
+##   1. The implementation landed. [code]AffinityPoolWritePort[/code]
+##      (src/gameplay/cards/affinity_pool_write_port.gd) implements this
+##      interface in full, [AffinityDataPool] has a real
+##      [code]append_record()[/code], and src/ui/battle/battle_screen.gd wires
+##      the two together. Re-measured 2026-10-12: twelve non-comment hits.
+##   2. The command as originally written counted ITSELF. Run it unfiltered
+##      today and 44 of 56 hits are comment lines, not code. The form that is
+##      structurally immune is:
+##        grep -rn "append_record\|AffinityPool" src/ --include=*.gd | grep -v ":#"
+## [b]The surrounding design rationale below is unaffected[/b] — this class is
+## still a narrow port deliberately NOT mirroring ADR-0002's signature, and
+## that reasoning never depended on the implementation being absent. Only the
+## dated existence claim was wrong, and only after the fact.
 ##
 ## [b]Deliberately NOT a literal copy of ADR-0002's signature.[/b] That
 ## signature is [code]func append_record(pair: AffinityTypes.Pair, m: float,

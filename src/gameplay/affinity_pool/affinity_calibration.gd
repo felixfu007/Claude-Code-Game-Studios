@@ -169,7 +169,11 @@ static func _rejected(rejection: Rejection) -> AffinityCalibration:
 ## 回傳值頂替,並將 [member is_placeholder] 對外暴露為
 ## `diagnostic_calibration_is_placeholder()`,供 QA 判斷目前是否仍在跑佔位數字
 ## (2026-09-16 technical-director 裁決「丙案」——假值集中在一個名字就是警告的
-## 函式裡,`grep -rn uncalibrated_placeholder src/` 隨時列得出來)。
+## 函式裡,下面這條指令隨時列得出來):
+##   grep -rn uncalibrated_placeholder src/ --include=*.gd | grep -v ":#"
+## 🔴 那個 `grep -v ":#"` 不是整潔,是必要 —— 不加的話【這段註解自己】就是一個命中,
+## 而且每多一處引用這條指令的註解,數字就多一。2026-10-12 實測:未過濾 11 命中,
+## 其中 9 行是註解、只有 2 行是真的程式碼。
 ##
 ## 每個數字的出處(GDD `design/gdd/affinity-data-pool.md`「## Tuning Knobs」節,
 ## 依段落名稱指路,不引用行號——見本檔案頭說明):

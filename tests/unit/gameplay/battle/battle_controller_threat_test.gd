@@ -77,12 +77,12 @@ func test_threat_targets_current_tile_already_in_range_without_moving() -> void:
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act
-	var threats: Array[Vector2i] = controller.threat_targets()
+	var threats: Array[Vector2i] = controller.threat_targets().cells
 
 	# Assert — 唯一起點是原地 (0,0)，射程 1 只碰得到四個正交鄰格，
 	# 敵方所在的 (1,0) 必須在裡面
 	assert_array(threats).contains([Vector2i(1, 0)])
-	assert_array(controller.move_targets()).is_empty()  # mp=0，佐證這是「原地」而非「移動後」
+	assert_array(controller.move_targets().cells).is_empty()  # mp=0，佐證這是「原地」而非「移動後」
 
 
 # ---- (2) 只有移動後才打得到 —— 本檔最重要的一支測試 ----------------------------
@@ -99,11 +99,11 @@ func test_threat_targets_includes_cell_only_reachable_after_moving_and_absent_fr
 	var bundle: Dictionary = _build(roster, [1], [2])
 	var controller: BattleController = bundle["controller"]
 	assert_bool(controller.select_unit(1)).is_true()
-	assert_array(controller.move_targets()).contains([Vector2i(3, 0)])
+	assert_array(controller.move_targets().cells).contains([Vector2i(3, 0)])
 
 	# Act
-	var threats: Array[Vector2i] = controller.threat_targets()
-	var attacks: Array[Vector2i] = controller.attack_targets()
+	var threats: Array[Vector2i] = controller.threat_targets().cells
+	var attacks: Array[Vector2i] = controller.attack_targets().cells
 
 	# Assert — 原地打不到（attack_targets 不含敵方格），但 threat_targets 含
 	assert_array(attacks).not_contains([Vector2i(4, 0)])
@@ -122,7 +122,7 @@ func test_threat_targets_empty_when_nothing_selected() -> void:
 	var controller: BattleController = bundle["controller"]
 
 	# Act / Assert
-	assert_array(controller.threat_targets()).is_empty()
+	assert_array(controller.threat_targets().cells).is_empty()
 
 
 func test_threat_targets_empty_when_attack_flag_already_consumed() -> void:
@@ -149,7 +149,7 @@ func test_threat_targets_empty_when_attack_flag_already_consumed() -> void:
 	assert_bool(bool(consumed["ok"])).is_true()
 
 	# Act / Assert
-	assert_array(controller.threat_targets()).is_empty()
+	assert_array(controller.threat_targets().cells).is_empty()
 
 
 func test_threat_targets_empty_when_no_cell_on_board_falls_within_range_of_any_origin() -> void:
@@ -165,7 +165,7 @@ func test_threat_targets_empty_when_no_cell_on_board_falls_within_range_of_any_o
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act / Assert
-	assert_array(controller.threat_targets()).is_empty()
+	assert_array(controller.threat_targets().cells).is_empty()
 
 
 # ---- (4) 中央倒木堆擋住視線（距離 ≥2 的假設查詢）--------------------------------
@@ -188,7 +188,7 @@ func test_threat_targets_excludes_cell_blocked_by_terrain_but_includes_unblocked
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act
-	var threats: Array[Vector2i] = controller.threat_targets()
+	var threats: Array[Vector2i] = controller.threat_targets().cells
 
 	# Assert
 	assert_array(threats).not_contains([Vector2i(4, 0)])
@@ -209,7 +209,7 @@ func test_threat_targets_sorted_ascending_by_y_then_x() -> void:
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act
-	var threats: Array[Vector2i] = controller.threat_targets()
+	var threats: Array[Vector2i] = controller.threat_targets().cells
 
 	# Assert — 升冪 (y, x)：先比 y 再比 x
 	assert_array(threats).is_equal(
@@ -233,10 +233,10 @@ func test_threat_targets_excludes_selected_units_own_current_tile_even_from_a_mo
 	var bundle: Dictionary = _build(roster, [1], [2])
 	var controller: BattleController = bundle["controller"]
 	assert_bool(controller.select_unit(1)).is_true()
-	assert_array(controller.move_targets()).contains([Vector2i(1, 0)])
+	assert_array(controller.move_targets().cells).contains([Vector2i(1, 0)])
 
 	# Act
-	var threats: Array[Vector2i] = controller.threat_targets()
+	var threats: Array[Vector2i] = controller.threat_targets().cells
 
 	# Assert
 	assert_array(threats).not_contains([Vector2i(0, 0)])
@@ -268,7 +268,7 @@ func test_threat_targets_per_move_target_matches_ground_truth_of_actually_moving
 	var controller: BattleController = BattleController.new(state, order)
 	assert_bool(controller.select_unit(1)).is_true()
 
-	var move_target_list: Array[Vector2i] = controller.move_targets()
+	var move_target_list: Array[Vector2i] = controller.move_targets().cells
 	assert_bool(move_target_list.is_empty()).is_false()
 
 	for t: Vector2i in move_target_list:
@@ -286,7 +286,7 @@ func test_threat_targets_per_move_target_matches_ground_truth_of_actually_moving
 		var fresh_controller: BattleController = BattleController.new(fresh_state, fresh_order)
 		assert_bool(fresh_state.move_unit(1, t)).is_true()
 		assert_bool(fresh_controller.select_unit(1)).is_true()
-		var actual_hits: Array[Vector2i] = fresh_controller.attack_targets()
+		var actual_hits: Array[Vector2i] = fresh_controller.attack_targets().cells
 
 		# Assert — 假設值與「真的站上去」的結果必須完全一致
 		assert_array(actual_hits).is_equal(hypothetical_hits)

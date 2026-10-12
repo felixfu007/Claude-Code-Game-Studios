@@ -58,7 +58,7 @@ func test_los_blocked_cell_in_third_layer_clear_cell_in_attack_targets_mutually_
 
 	# Act
 	var blocked: Array[Vector2i] = controller.attack_targets_blocked_by_los()
-	var attackable: Array[Vector2i] = controller.attack_targets()
+	var attackable: Array[Vector2i] = controller.attack_targets().cells
 
 	# Assert
 	assert_array(blocked).contains([Vector2i(4, 0)])
@@ -194,7 +194,7 @@ func test_corner_clip_only_one_flank_blocked_matches_existing_is_attack_reachabl
 	# Assert
 	assert_array(blocked).not_contains([Vector2i(1, 1)])
 	assert_bool(is_reachable).is_true()
-	assert_array(controller.attack_targets()).contains([Vector2i(1, 1)])
+	assert_array(controller.attack_targets().cells).contains([Vector2i(1, 1)])
 
 
 # ---- 排序：升冪 (y, x)（不手算完整期望集合，改比對「輸出 vs. 重新排序後的複本」）----
