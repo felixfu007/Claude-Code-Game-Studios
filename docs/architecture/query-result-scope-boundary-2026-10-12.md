@@ -613,6 +613,49 @@ func _init(source: BattleState, breakdown_payload: Dictionary) -> void:
 | 9 | 「`QueryResult` ↔ `BattleState` 的互參照不會觸發 `Cyclic reference`」 | **未驗證**,且它若發作是 parse error → exit 105 → 本專案已登記「兩個 grep 都回空、看起來像跑乾淨」 | 探針 2 |
 | 10 | 「`Dictionary` 缺鍵時 `[]` 中止、`.get()` 回 `null`」 | **引用**自 `docs/engine-reference/godot/modules/scripting-typing.md` 第 2 節(該檔屬已逐條實機驗證的兩份之一),**我未自行重測** | `grep -n "缺鍵讀取" docs/engine-reference/godot/modules/scripting-typing.md` |
 
+## 八之二、2026-10-12 程式碼覆核的一項發現:**兩條顯示路徑的過期檢查不對稱(已登記,刻意不改)**
+
+**來源**:`docs/reviews/query-result-gdscript-review-2026-10-12.md`(`godot-gdscript-specialist`,
+七項逐條覆核,六項判無缺陷、一項判有缺陷 —— 即本節)。
+
+### 覆核者發現的事(已由協調者逐條複驗屬實)
+
+ADR-0001 的呈現層義務逐字(`adr-0001-tactical-query-atomicity-contract.md`,
+定位用 `grep -n "呈現層的義務" <該檔>`):
+> 「任何一組要合併呈現給玩家的查詢結果,渲染前須通過 `assert_same_version`;
+> **任一結果 `is_stale()` 為真時,不得以該結果接受玩家輸入**(須重算或拒絕該輸入)。」
+
+**實測**:`grep -c "damage_result\.is_stale" src/ui/battle/battle_screen.gd` → **0**。
+而三層高亮那條路徑**有**檢查(`grep -n "is_stale" src/ui/battle/battle_screen.gd` 命中一行,
+`move_result.is_stale() or attack_result.is_stale() or threat_result.is_stale()`)。
+**兩條路徑處理不對稱,這部分覆核者說得對。**
+
+### 🔴 但覆核者給的【理由】站不住 —— 協調者補查後更正
+
+覆核報告推論「三層高亮參與輸入、傷害預覽不參與」,故前者需要檢查。**實測兩者都不參與**:
+
+| 路徑 | 真正接受玩家輸入時,用的是什麼 |
+|---|---|
+| 三層高亮 | `BattleController.click_tile()` **不讀畫面上的高亮陣列** —— 它自己重新呼叫 `_attack_targets_for()` / `_move_targets_for()` 做權威檢查 |
+| 傷害預覽 | `_apply_attack()` **不沿用預覽數字** —— 它自己重新取 `phi` 並呼叫 `BattleState.resolve_attack()` |
+
+**亦即 ADR 那條義務(「不得以過期結果接受玩家輸入」)在兩條路徑上都已由
+「按下去的瞬間重新權威檢查」結構性地滿足。**
+
+🔴 **所以這不是「全庫違反 ADR」,而是「一條路徑加了額外保險,另一條沒加」。**
+**嚴重度因此從『契約違規』降為『一致性瑕疵』** —— 而這個區別會改變下一個人該做什麼。
+
+### 📌 管理者裁決(2026-10-12):**登記不對稱,不動程式**
+
+被跳過的兩個選項:①補上對稱的檢查(**代價:要先決定一件產品的事 —— 過期時傷害數字
+顯示什麼;高亮可以「清空」,單一字串沒有對應概念**);②反過來把高亮那條檢查也拿掉
+(協調者標示不建議 —— 那條檢查今天確實冗餘,但它守的是「日後有人在 `_refresh_view()`
+裡插入 `await`」,而那件事今天沒有任何東西擋著)。
+
+⚠️ **留給下一個人的具體問句**:若日後決定補上對稱檢查,**第一個要答的不是程式怎麼寫,
+是「傷害預覽過期時玩家該看到什麼」** —— 空白?維持上一次的數字?整行不顯示?
+**那是產品決定,不是實作細節。**
+
 ## 九、本文件的衍生動作(兩處既有文件加註)
 
 本文件產生兩處加註,**兩處皆原文零刪除、只新增**:
