@@ -322,6 +322,32 @@ func legal_moves(id: int) -> Array[Vector2i]:
 	return board.reachable_tiles(position_of(id), unit.mp)
 
 
+## story-007-movement-range-four-state-query.md: returns every tile the unit
+## with the given id could move to this turn under the SAME [member Unit.mp]
+## budget [method legal_moves] uses, but exposing the two independent
+## relaxation flags [method Board.reachable_tiles] has carried since
+## story-002 ([param ignore_occupancy], [param ignore_passability]). [method
+## legal_moves] itself is unchanged by this addition and remains exactly the
+## [code]ignore_occupancy=false, ignore_passability=false[/code] case —
+## [BattleController] calls this method with the other two flag combinations
+## to build the `B`/`C` sets of GDD UI Requirements §2's four-state
+## move-range breakdown (`A`/`B\A`/`C\B`/`Grid\C`), instead of reaching into
+## [member board] directly. This keeps [BattleState] the only class that
+## ever touches [member board] — every caller goes through a purpose-built
+## query method, matching every other query already in this file ([method
+## can_attack], [method is_attack_reachable], etc).
+##
+## 🔴 AC-14 (禁止型): this method's relaxed output is for PRESENTATION ONLY —
+## nothing in this class or [BattleController] ever accepts its result as a
+## legal move destination. [method move_unit] remains the sole authority on
+## what is actually legal, and it always re-checks against [method
+## legal_moves] (never against this method), regardless of what any caller
+## passes as [param dest].
+func legal_moves_relaxed(id: int, ignore_occupancy: bool, ignore_passability: bool) -> Array[Vector2i]:
+	var unit: Unit = unit_by_id(id)
+	return board.reachable_tiles(position_of(id), unit.mp, ignore_occupancy, ignore_passability)
+
+
 ## Attempts to move the unit to dest. Returns [code]false[/code] and leaves
 ## every piece of state untouched if dest is not in [method legal_moves] —
 ## the illegality check runs BEFORE [method commit_authoritative_change] is

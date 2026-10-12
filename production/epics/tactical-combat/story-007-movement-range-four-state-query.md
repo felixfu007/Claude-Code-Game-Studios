@@ -1,7 +1,33 @@
 # Story 007: 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M3b(切面 1)
-> **Status**: Ready(⚠️ 依賴 story-001/002 完成)
+> **Status**: ✅ **Done(2026-10-12)** —— 全部 AC 落地並經協調者獨立驗收(依賴的 story-001/002 皆已 Complete)
+>
+> **落地內容**:`battle_controller.gd` 新增 `move_targets_breakdown()`(回傳含四個切面 +
+> `combat_state_version` 的 `Dictionary`)與三個私有 helper;`battle_state.gd` 新增
+> `legal_moves_relaxed(id, ignore_occupancy, ignore_passability)`,讓控制器不必直接伸手進 `board`。
+> 🔴 **既有 `legal_moves()` 一個字元都沒改**(`git diff` 於 `battle_state.gd` 刪除行為 0)。
+>
+> 🔴 **四態互斥且窮盡是【結構保證】,不是測出來的**:分類函式對整張棋盤跑一次
+> `if origin or A / elif B / elif C / else`,每一格必定落入且只落入一個桶,**第五類在數學上不可能存在**;
+> `A ⊆ B ⊆ C` 由 elif 的先後順序保證;`origin` 強制歸入合法集。
+>
+> **協調者的範圍裁示(2026-10-12)**:最後一條 AC「輸出攜帶 `combat_state_version`」
+> **只做到帶一個整數,不建 `QueryResult` 型別**。理由:AC 字面只要求攜帶版本號;
+> `QueryResult`(含 `is_stale()`)是 ADR-0001 的契約型別,建它等於替整個專案的查詢層定形狀,
+> 不該由一張移動範圍 story 順手決定。⚠️ **實測 `QueryResult` 全庫零落地**
+> (`find src -name "query_result*"` 與 `grep "class_name QueryResult|is_stale"` 皆零命中)——
+> **第一張真正需要 `is_stale()` 的工作單會撞上它。**
+>
+> **協調者獨立驗收(非採信回報 —— 實作者撞上回合上限,未交出報告)**:
+> 全套重跑 `Overall Summary: 1081 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped |
+> 0 orphans`、`ENGINE EXIT CODE = 100`、`Parse Error / Abnormal exit = 0`;
+> `1074 → 1081` 正好 **+7**,與新增 `func test_` 數**完全對得上**。注入殘留 **0 命中**;
+> 兩支產品碼檔案刪除行皆為 **0**。
+>
+> **敏感度證明 2 條**(突變子類別 `_MutantCollapsesTerrainIntoOutOfRange`、
+> `_MutantBypassesMoveLegalityCheck`),**正好蓋住派工單點名的兩件事**:四態分割完整性、
+> 以及 AC-14 禁止型的「合法性守門」。
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: M
@@ -91,7 +117,7 @@ story-002 完成後,`Board.reachable_tiles()` 已支援 `ignore_occupancy`/`igno
 **Story Type**: Integration
 **Required evidence**: `tests/integration/gameplay/battle/move_range_four_state_test.gd` —— BLOCKING
 
-**Status**: [ ] Not yet created
+**Status**: [x] ✅ 已建立並通過 —— `tests/unit/gameplay/battle/movement_range_query_test.gd`,7 條(含 2 條常駐敏感度證明)。當場數:`grep -c "^func test_" tests/unit/gameplay/battle/movement_range_query_test.gd`
 
 ## Dependencies
 

@@ -264,6 +264,64 @@ func move_targets() -> Array[Vector2i]:
 	return _move_targets_for(_selected_unit_id)
 
 
+## story-007-movement-range-four-state-query.md / GDD UI Requirements §2 +
+## AC-13 + AC-14: classifies every in-bounds board cell into exactly one of
+## four mutually exclusive, jointly exhaustive states for the currently
+## selected unit's movement-range overlay — "why can't I move there", not
+## just "can/can't". Same gating as [method move_targets] (phase, selection,
+## [method TurnOrder.can_move]): every case that method returns
+## [code][][/code] for, this method returns the all-empty shape below for
+## instead, so a caller never special-cases "nothing selected" apart from
+## "selected, but genuinely nothing left to classify".
+##
+## Returns a [Dictionary] with exactly five keys:
+## [br]
+## - [code]"legal"[/code] ([Array][Vector2i]): `A` — exactly [method
+##   move_targets]'s own set, plus the unit's own current tile (see the
+##   origin note below).
+## [br]
+## - [code]"blocked_by_occupancy"[/code] ([Array][Vector2i]): `B \ A` — would
+##   be reachable if occupancy were ignored, but a standing unit blocks it.
+## [br]
+## - [code]"blocked_by_terrain"[/code] ([Array][Vector2i]): `C \ B` — would be
+##   reachable if occupancy AND passability were both ignored, but impassable
+##   terrain blocks it. 🔴 Structurally always empty today: every terrain
+##   character currently registered in [constant Board.TERRAIN_TABLE] has
+##   [code]"passable": true[/code] (verified 2026-10-12,
+##   [code]src/gameplay/board/board.gd[/code] lines 33-37) — relaxing
+##   passability changes nothing until a future impassable terrain type
+##   exists. The classification itself is still correct and is covered by
+##   [code]tests/unit/gameplay/battle/movement_range_query_test.gd[/code]
+##   against synthetic sets, independent of today's terrain data.
+## [br]
+## - [code]"out_of_range"[/code] ([Array][Vector2i]): `Grid \ C` — outside
+##   [member Unit.mp] reach regardless of occupancy or passability.
+## [br]
+## - [code]"combat_state_version"[/code] ([int]): [member
+##   BattleState.combat_state_version] at the moment this method ran
+##   (ADR-0001 / AC-20). This method caches nothing and always reflects the
+##   current board; a caller holding an overlay built from an earlier call
+##   compares this against a fresh read to detect a stale overlay (AC-22(a)).
+##
+## 🔴 AC-14 (禁止型, load-bearing): [code]"blocked_by_occupancy"[/code] and
+## [code]"blocked_by_terrain"[/code] exist ONLY to label a reason on a
+## presentation overlay. [method click_tile]/[method _apply_move] never call
+## this method and are UNCHANGED by this addition — they gate exclusively
+## through [method move_targets] (`A`), which [method BattleState.move_unit]
+## independently re-validates against on every call. A tile labeled
+## [code]"blocked_by_occupancy"[/code] or [code]"blocked_by_terrain"[/code]
+## here remains illegal to move to, unconditionally.
+##
+## 🔴 The selected unit's own current tile is always classified
+## [code]"legal"[/code], even though [method Board.reachable_tiles] itself
+## never includes the origin tile in any of its three returned sets (the
+## same fact [method threat_range_for]'s own doc comment records) — this
+## method adds it back explicitly, matching AC-13's "origin 恆屬於 A,不落入
+## 任何不可達分類".
+func move_targets_breakdown() -> Dictionary:
+	return _move_targets_breakdown_for(_selected_unit_id)
+
+
 ## Returns the tiles occupied by every enemy the currently selected unit can
 ## legally attack, ordered ascending by (y, x). Empty if nothing is
 ## selected, the selection cannot attack this phase, or the controller is
@@ -1105,6 +1163,93 @@ func _move_targets_for(unit_id: int) -> Array[Vector2i]:
 		return result
 	result = _state.legal_moves(unit_id)
 	result.sort_custom(_tile_less)
+	return result
+
+
+# story-007-movement-range-four-state-query.md: shared computation for
+# move_targets_breakdown(). Builds the three nested reachable-tile sets
+# (A/B/C) via BattleState.legal_moves()/legal_moves_relaxed(), then hands
+# them to _classify_move_targets() for the actual four-way partition — kept
+# as two separate steps so the partition LOGIC is testable against synthetic
+# sets, independent of whatever terrain/occupancy data a real Board happens
+# to have today (see movement_range_query_test.gd for why that independence
+# matters: no registered terrain character is impassable yet, so a real
+# board can never exercise the "blocked_by_terrain" branch end-to-end).
+func _move_targets_breakdown_for(unit_id: int) -> Dictionary:
+	var empty_result: Dictionary = {
+		"legal": [] as Array[Vector2i],
+		"blocked_by_occupancy": [] as Array[Vector2i],
+		"blocked_by_terrain": [] as Array[Vector2i],
+		"out_of_range": [] as Array[Vector2i],
+		"combat_state_version": _state.combat_state_version,
+	}
+	if _phase != Phase.PLAYER_INPUT or unit_id == -1:
+		return empty_result
+	if not _order.can_move(unit_id):
+		return empty_result
+
+	var origin: Vector2i = _state.position_of(unit_id)
+	var set_a: Dictionary = _as_set(_state.legal_moves(unit_id))
+	var set_b: Dictionary = _as_set(_state.legal_moves_relaxed(unit_id, true, false))
+	var set_c: Dictionary = _as_set(_state.legal_moves_relaxed(unit_id, true, true))
+
+	var breakdown: Dictionary = _classify_move_targets(origin, set_a, set_b, set_c)
+	breakdown["combat_state_version"] = _state.combat_state_version
+	return breakdown
+
+
+# story-007-movement-range-four-state-query.md: pure four-way partition —
+# given the unit's origin and its three nested reachable-tile sets
+# (A ⊆ B ⊆ C, each a Dictionary used purely as a set; story-002's own
+# guarantee that relaxing a constraint only ever grows or holds a reachable
+# set is what makes checking membership in this fixed order, most-to-least
+# permissive, sufficient for a clean, non-overlapping partition), classifies
+# every in-bounds board cell into exactly one of the four buckets. A plain
+# (non-static) instance method, deliberately NOT inlined into
+# _move_targets_breakdown_for() above, so a test can override it in a
+# spy/mutant subclass or call it directly with synthetic sets —
+# movement_range_query_test.gd does both.
+func _classify_move_targets(
+	origin: Vector2i, set_a: Dictionary, set_b: Dictionary, set_c: Dictionary
+) -> Dictionary:
+	var legal: Array[Vector2i] = []
+	var blocked_by_occupancy: Array[Vector2i] = []
+	var blocked_by_terrain: Array[Vector2i] = []
+	var out_of_range: Array[Vector2i] = []
+
+	for y: int in range(Board.BOARD_HEIGHT):
+		for x: int in range(Board.BOARD_WIDTH):
+			var cell: Vector2i = Vector2i(x, y)
+			if cell == origin or set_a.has(cell):
+				legal.append(cell)
+			elif set_b.has(cell):
+				blocked_by_occupancy.append(cell)
+			elif set_c.has(cell):
+				blocked_by_terrain.append(cell)
+			else:
+				out_of_range.append(cell)
+
+	legal.sort_custom(_tile_less)
+	blocked_by_occupancy.sort_custom(_tile_less)
+	blocked_by_terrain.sort_custom(_tile_less)
+	out_of_range.sort_custom(_tile_less)
+
+	return {
+		"legal": legal,
+		"blocked_by_occupancy": blocked_by_occupancy,
+		"blocked_by_terrain": blocked_by_terrain,
+		"out_of_range": out_of_range,
+	}
+
+
+# Converts an Array[Vector2i] into a Dictionary used purely as a set, for
+# O(1) .has() membership checks in _move_targets_breakdown_for() — same
+# dedup-via-Dictionary idiom _threat_targets_for()/threat_range_for() already
+# use elsewhere in this file.
+func _as_set(cells: Array[Vector2i]) -> Dictionary:
+	var result: Dictionary = {}
+	for cell: Vector2i in cells:
+		result[cell] = true
 	return result
 
 
