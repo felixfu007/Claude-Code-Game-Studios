@@ -548,6 +548,17 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
 > **「把沒驗證的東西標成已完成」**(今天上午 `story-016` 才又撞到一次)。
 >
 > **下一棒要做的是**:判斷要不要切一張 story 去補那條真陽性測試;若要,`AC-U8` 也一併。
+> ✅ **2026-10-12 管理者已裁決:切。工作單是
+> `production/epics/card-play-interface/story-u019-authoritative-flag-true-positive.md`
+> (`Ready`,Integration,估時 S)。**
+> 被跳過的兩個選項:①不切,等有人因為別的事打開那個檔案時順手做(協調者標示的風險:
+> 本 epic 的工作單大多已 Complete,**沒人有理由再打開它們**,而本專案這類登記有掛很久的前例);
+> ②直接把那兩條 AC 改判為已涵蓋(協調者標示**強烈不建議** —— 那是「把沒驗證的東西標成已完成」,
+> **本專案登記最多次的失效形狀**,2026-10-12 上午 `story-016` 才又撞到一次)。
+>
+> 🔴 **該 story 要驗的缺口不是「沒有測試」,是「測試餵的是替身」** ——
+> 現有四處注入的是 `func() -> bool: return true` 這個恆真 lambda,
+> 它證明「閘門接上了」,**沒有證明「真的旗標在真的權威寫入期間會變真」**。
 > 📌 **怎麼發現的**:在修一處「註解裡的 grep 指令會把自己算進去」時順手重量,
 > 發現 `battle_menu.gd` 的同一句宣稱已變假 —— 而那句宣稱正是本列的來源。
 

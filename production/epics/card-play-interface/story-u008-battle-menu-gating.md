@@ -152,6 +152,10 @@ EPIC.md 第二節單元清單表已列出落點,本節把它明文複述在這�
   > (2026-10-12 上午 `story-016` 才又撞到一次)。
   >
   > **下一棒要判斷的是**:要不要切一張 story 補那條真陽性測試(`AC-U8` 一併)。
+  > ✅ **2026-10-12 管理者已裁決:切。** 工作單:
+  > `production/epics/card-play-interface/story-u019-authoritative-flag-true-positive.md`
+  > (`Ready`,Integration,估時 S)。該 story 的 AC-5 會回來更新本處註記。
+  > 🔴 **在它完成之前,`AC-M8` 仍是「部分涵蓋」** —— 前提消失不等於驗收完成。
   > 📌 同一則更正也登記在 `production/epics/card-play-interface/EPIC.md` 限制表第 1 列之後。
 - **AC-M9**:選單開啟前棋盤上已選定一個單位 → 開啟後關閉 → **該選取完整保留** |
   Integration | **BLOCKING**

@@ -13,6 +13,47 @@
 
 ## Open
 
+- **2026-10-12**(第八十批,協調者查證 + 管理者裁決):
+  🔴 **約 17 個遊戲平衡數值硬編碼在 `const` 裡,而 `coding-standards.md` 明文要求
+  「Gameplay values must be data-driven (external config), never hardcoded」。**
+  **不是孤例,是系統性的** —— 分佈在 4 個檔案:
+  - `src/gameplay/affinity/affinity_rules.gd` —— **好感度曲線全部 9 個**
+    (`DISTANCE_ADJACENT`/`DISTANCE_FAR`/`DELTA_*` 五個/`PHI_MIN`/`PHI_MAX`)
+  - `src/gameplay/board/board.gd` —— `TERRAIN_TABLE` 的三階移動成本(1/2/3)
+  - `src/gameplay/cards/card_deck.gd` —— `OPENING_HAND_SIZE`/`HAND_SIZE_LIMIT`/`CARDS_DRAWN_PER_TURN`
+  - `src/gameplay/cards/card_modifier_rules.gd` —— `ATK_DELTA_MIN/MAX`、`DEF_DELTA_MIN/MAX`
+
+  🔴 **它們不只是「看起來像平衡數值」—— 設計文件把其中數個明文列為「可調旋鈕」並寫著
+  「起始建議值」**,意思就是預期要調。當場查:
+  ```bash
+  sed -n '/^## Tuning Knobs/,/^## /p' design/gdd/tactical-combat-system.md | grep -n "terrain_cost"
+  sed -n '/^## Tuning Knobs/,/^## /p' design/gdd/affinity-position-chain.md | head -20
+  ```
+  (戰棋 GDD 的旋鈕 #4 逐字:「**起始建議**:`terrain_cost` 三階(1/2/3)」。)
+
+  📌 **對照組,說明這不是全專案都沒做**:**實體資料確實已經外部化** ——
+  角色名冊(`assets/data/units/`)、卡牌(`assets/data/cards/`)、關係連線
+  (`assets/data/affinity/`)、關卡地形(`assets/data/levels/`)都在外部檔案。
+  **寫死的是「規則與曲線」,不是「實體」。**
+
+  **管理者 2026-10-12 裁決:登記為債,現在不搬。** 被跳過的兩個選項:
+  ①現在就切一張工作單搬(代價:動 4 個檔 + 其測試,而**今天沒有任何看得到的好處** ——
+  測試數字不變、畫面不變);②修改規則承認「公式常數可以寫死」(協調者標示不建議 ——
+  **那會與專案自己的設計文件矛盾**,因為文件明文稱它們為可調旋鈕)。
+
+  ⚠️ **裁決時已揭露的代價**:等到真的要調平衡才搬,**會是在最想快速試數字的那一天做搬家工作**,
+  而且數值越多搬越貴。**管理者是在知道這一點之後選的。**
+  📌 **真正的觸發時機**:遊戲第一次可以完整試玩、開始有試玩數據要回饋到數值時。
+  **在那之前搬家沒有任何可觀測的好處。**
+
+  追蹤來源:`production/session-state/active.md` 第八十批補述;
+  完整 29 項 const 清單當場重跑:
+  ```bash
+  grep -rn "^const [A-Z_]*: *\(int\|float\|Dictionary\) *=" src/gameplay/ --include=*.gd
+  ```
+  (⚠️ 那 29 項裡約 12 項是**結構常數**不是平衡數值 —— `FIELD_COUNT` 系列是 CSV 欄位數、
+  `MOVE_COST_UNKNOWN_TERRAIN`/`NO_OCCUPANT` 是哨兵值。**不要整批搬。**)
+
 - **2026-09-08**(Story 005 整幀緩衝 + `_process` 裁決 + 六行為者定序):
   🔴 **AC-32 與 AC-20 的測試沒有被證明會紅 —— 敏感度證明未做。**
   那幾條測試現在是綠的,但**沒有人故意把程式改壞、確認它們會轉紅**,
