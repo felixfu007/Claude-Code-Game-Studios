@@ -1,7 +1,34 @@
 # Story 003: AC-R5 新增測試 —— 多名負向夥伴同時解除負擔
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12,協調者獨立驗收)** —— AC-R5 落地,**測試直接通過**。
+>
+> 🔴 **本 story 的驗證意義就在「它會不會通過」** —— 工作單明文:若 Y、Z 沒有各自 +1,代表 R4/R5
+> 的落地並不完整,那已超出補測試的範圍。**實測通過,亦即 R4(2026-08-31 提交 `f8d1241` 的
+> 「逐條加總、無抑制」)在「多受益人」這個 EPIC.md 從未驗過的角度下依然成立。**
+>
+> **新增 1 條測試**:`test_bonus_for_two_beneficiaries_each_gain_one_when_shared_negative_partner_removed`
+>
+> | 工作單要求的三項關鍵差異 | 實測落地情況 |
+> |---|---|
+> | ①至少兩個受益人(不是一個) | Y=2、Z=3 兩人,另加對照用第四人 W=4(站位遠離,避免 3 人盤的邊界干擾) |
+> | ②負向線(不是正向線) | `"1,2,NEGATIVE,1"` + `"1,3,NEGATIVE,1"` |
+> | ③不經任何額外腳本事件 | 同一測試函式內 `positions.erase(1)` 後**直接查詢**,中間零方法呼叫 |
+>
+> 🔴 **核心斷言寫成「各自 +1」而非「總和變了」**,逐字:
+> ```gdscript
+> assert_int(y_after - y_before).is_equal(1)
+> assert_int(z_after - z_before).is_equal(1)
+> ```
+> 測試內的註解自己寫明理由:**只比總和無法區分「兩人各 +1」與「一人 +2 另一人不變」。**
+> 📌 另避開 `PHI_MIN = -4` 夾限(單線負向距 1 貢獻 −1,離夾限夠遠),否則 +1 的差值會被夾掉而測不出來。
+>
+> **敏感度證明:歸為 A 類(static 純函式,無繼承鏈可覆寫)**,理由逐條寫在測試檔內,
+> 與同檔今日稍早 AC-R1 的處理一致。這是 `.claude/rules/test-standards.md` 明文允許的二選一另一半。
+>
+> **協調者獨立複驗**:`grep -c "AC-R5"` → 1;`git status --short src/` 零產品碼改動;
+> 全套 `1127 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans`、`EXIT 100`、
+> Parse Error / Cyclic / Abnormal = 0。算術 `1116 + 10(QueryResult) + 1(本 story) = 1127`,逐項對得上。
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」涵蓋範圍)
 > **Type**: Logic
 > **Estimate**: S(0.5～1 session)
@@ -39,7 +66,7 @@
 
 *來源:`design/gdd/affinity-position-chain.md` Acceptance Criteria 節,AC-R5 原文:*
 
-- [ ] **AC-R5**:GIVEN X 與 Y、Z 各有負向距1線,WHEN X 從名冊移除,THEN Y、Z 的 `Φ`
+- [x] **AC-R5**:GIVEN X 與 Y、Z 各有負向距1線,WHEN X 從名冊移除,THEN Y、Z 的 `Φ`
   各自 +1,且不經任何額外腳本事件。
 
 **與現有 AC-R9 測試的關鍵差異(必須做到,否則等於重寫 AC-R9)**:

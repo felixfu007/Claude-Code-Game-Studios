@@ -274,7 +274,17 @@ func move_targets() -> Array[Vector2i]:
 ## instead, so a caller never special-cases "nothing selected" apart from
 ## "selected, but genuinely nothing left to classify".
 ##
-## Returns a [Dictionary] with exactly five keys:
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): returns a
+## [MoveTargetsBreakdownResult], not a bare [Dictionary]. The four
+## classification keys described below live at [member
+## MoveTargetsBreakdownResult.breakdown]; the version number ADR-0001
+## requires is [member QueryResult.version] on the returned object, NOT a
+## dictionary key — the previous [code]"combat_state_version"[/code] key is
+## gone entirely.
+##
+## [member MoveTargetsBreakdownResult.breakdown] is a [Dictionary] with
+## exactly four keys:
 ## [br]
 ## - [code]"legal"[/code] ([Array][Vector2i]): `A` — exactly [method
 ##   move_targets]'s own set, plus the unit's own current tile (see the
@@ -296,12 +306,13 @@ func move_targets() -> Array[Vector2i]:
 ## [br]
 ## - [code]"out_of_range"[/code] ([Array][Vector2i]): `Grid \ C` — outside
 ##   [member Unit.mp] reach regardless of occupancy or passability.
-## [br]
-## - [code]"combat_state_version"[/code] ([int]): [member
-##   BattleState.combat_state_version] at the moment this method ran
-##   (ADR-0001 / AC-20). This method caches nothing and always reflects the
-##   current board; a caller holding an overlay built from an earlier call
-##   compares this against a fresh read to detect a stale overlay (AC-22(a)).
+##
+## [member QueryResult.version] on the returned object is [member
+## BattleState.combat_state_version] at the moment this method ran (ADR-0001 /
+## AC-20). This method caches nothing and always reflects the current board; a
+## caller holding an overlay built from an earlier call compares [method
+## QueryResult.is_stale] against a fresh call to detect a stale overlay
+## (AC-22(a)).
 ##
 ## 🔴 AC-14 (禁止型, load-bearing): [code]"blocked_by_occupancy"[/code] and
 ## [code]"blocked_by_terrain"[/code] exist ONLY to label a reason on a
@@ -318,8 +329,8 @@ func move_targets() -> Array[Vector2i]:
 ## same fact [method threat_range_for]'s own doc comment records) — this
 ## method adds it back explicitly, matching AC-13's "origin 恆屬於 A,不落入
 ## 任何不可達分類".
-func move_targets_breakdown() -> Dictionary:
-	return _move_targets_breakdown_for(_selected_unit_id)
+func move_targets_breakdown() -> MoveTargetsBreakdownResult:
+	return MoveTargetsBreakdownResult.new(_state, _move_targets_breakdown_for(_selected_unit_id))
 
 
 ## Returns the tiles occupied by every enemy the currently selected unit can
@@ -1181,7 +1192,6 @@ func _move_targets_breakdown_for(unit_id: int) -> Dictionary:
 		"blocked_by_occupancy": [] as Array[Vector2i],
 		"blocked_by_terrain": [] as Array[Vector2i],
 		"out_of_range": [] as Array[Vector2i],
-		"combat_state_version": _state.combat_state_version,
 	}
 	if _phase != Phase.PLAYER_INPUT or unit_id == -1:
 		return empty_result
@@ -1193,9 +1203,7 @@ func _move_targets_breakdown_for(unit_id: int) -> Dictionary:
 	var set_b: Dictionary = _as_set(_state.legal_moves_relaxed(unit_id, true, false))
 	var set_c: Dictionary = _as_set(_state.legal_moves_relaxed(unit_id, true, true))
 
-	var breakdown: Dictionary = _classify_move_targets(origin, set_a, set_b, set_c)
-	breakdown["combat_state_version"] = _state.combat_state_version
-	return breakdown
+	return _classify_move_targets(origin, set_a, set_b, set_c)
 
 
 # story-007-movement-range-four-state-query.md: pure four-way partition —

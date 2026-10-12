@@ -1,0 +1,37 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:190)
+       [2] _init (res://prototypes/query-result-probe-2026-10-12/probe_array_typing.gd:8)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:190)
+       [2] _init (res://prototypes/query-result-probe-2026-10-12/probe_array_typing.gd:8)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:190)
+       [2] _init (res://prototypes/query-result-probe-2026-10-12/probe_array_typing.gd:8)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:190)
+       [2] _init (res://prototypes/query-result-probe-2026-10-12/probe_array_typing.gd:8)
+PROBE1: Array[QueryResult] accepted 2 subclass instances
+PROBE1: assert_same_version same-version -> true
+ERROR: QueryResult.assert_same_version: mixed versions in one merged frame (0 vs 1)
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] assert_same_version (res://src/gameplay/battle/query_result.gd:47)
+       [1] _init (res://prototypes/query-result-probe-2026-10-12/probe_array_typing.gd:22)
+PROBE1: assert_same_version mixed-version -> false
+PROBE1: move_result.is_stale() -> true
+PROBE1: stale_result.is_stale() -> false
+PROBE1: DONE

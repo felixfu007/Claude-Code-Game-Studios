@@ -479,6 +479,62 @@ func test_partner_phi_drops_by_three_immediately_when_unit_removed_from_position
 	assert_int(before - after).is_equal(3)
 
 
+# ---- R5:多受益人同時解除負擔,各自 +1,無額外腳本事件 -----------------------
+
+func test_bonus_for_two_beneficiaries_each_gain_one_when_shared_negative_partner_removed() -> void:
+	# AC-R5(新增)—— GIVEN X 與 Y、Z 各有負向距離 1 線,WHEN X 從名冊移除,
+	# THEN Y、Z 的 Φ 各自 +1,且不經任何額外腳本事件(同一測試函式內,移除後
+	# 直接查詢即可看到變化,不呼叫任何重置或清快取方法——沿用 AC-R9 的既有做法,
+	# 不使用 await 畫格)。
+	# ⚠️ 與既有 AC-R9 測試
+	# (test_partner_phi_drops_by_three_immediately_when_unit_removed_from_positions)
+	# 的三項關鍵差異:(1) 至少兩個受益人 Y、Z,不是一個——這是本條要驗的核心
+	# (「Y、Z 各自」);(2) 負向線,不是正向線;(3) 斷言寫成「各自 +1」的形式
+	# (對 Y、Z 分別做移除前/後比較),不是只比較總和——後者無法區分
+	# 「兩人各 +1」與「一人 +2 另一人不變」。
+	# Arrange — X(1)與 Y(2)、X 與 Z(3)各有一條負向距離 1 線;W(4)為對照用
+	# 第四人,不與任何人連線、站位遠離,避免只有 3 人站盤時的距離/佔位邊界
+	# 情況干擾判讀。負向距離 1 的單線貢獻為 -1,遠離 PHI_MIN(-4)夾限,
+	# 移除後 +1 的差值不會被夾掉。
+	var links: Array[AffinityLink] = _links(["1,2,NEGATIVE,1", "1,3,NEGATIVE,1"])
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	positions[2] = ORIGIN + Vector2i(1, 0)
+	positions[3] = ORIGIN + Vector2i(0, 1)
+	positions[4] = ORIGIN + Vector2i(10, 10)
+
+	# Act — 移除前查詢
+	var y_before: int = AffinityRules.bonus_for(2, positions, links)
+	var z_before: int = AffinityRules.bonus_for(3, positions, links)
+
+	positions.erase(1)  # X 從名冊移除,無需呼叫任何重置或清快取方法
+
+	# Act — 移除後直接查詢(同一函式內,中間未呼叫任何額外方法)
+	var y_after: int = AffinityRules.bonus_for(2, positions, links)
+	var z_after: int = AffinityRules.bonus_for(3, positions, links)
+
+	# Assert — 負向距離 1 線為 -1,X 離場後該線整條失效,Φ 各自回升到 0
+	assert_int(y_before).is_equal(-1)
+	assert_int(z_before).is_equal(-1)
+	assert_int(y_after).is_equal(0)
+	assert_int(z_after).is_equal(0)
+
+	# Assert — 核心斷言:Y、Z 各自 +1(逐一比較,而非只比較總和),避免
+	# 「兩人各 +1」與「一人 +2 另一人不變」被總和掩蓋而無法區分。
+	assert_int(y_after - y_before).is_equal(1)
+	assert_int(z_after - z_before).is_equal(1)
+
+
+# 敏感度證明:歸為 test-standards.md 登記的 A 類(「斷言對象是 static 純函式」)
+# ——AffinityRules.bonus_for() 為 extends RefCounted 類別上的 static func
+# (見 affinity_rules.gd class_name 之後的文件註解:「every function is a
+# static func with no side effects」)。static 呼叫在呼叫端直接綁死到該類別,
+# 沒有繼承鏈可供間諜子類別覆寫注入,因此做不出可查證的敏感度證明——比照本檔
+# AC-R1 段落(test_bonus_for_polarity_swap_with_everything_else_held_constant_
+# changes_output 上方那段註解)與其餘現行 bonus_for()/delta() 測試一致的
+# 處理方式,此處同樣未另立間諜子類別。
+
+
 # ---- R10:純查詢,不改動輸入,重複呼叫結果相同 ------------------------------
 
 func test_bonus_for_at_same_inputs_twice_yields_equal_outputs_and_leaves_inputs_untouched() -> void:

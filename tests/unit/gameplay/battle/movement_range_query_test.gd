@@ -23,6 +23,18 @@
 # 的既有比例一致：6 條主測試只配 2 條敏感度證明）：
 #   - test_four_states_partition... -> test_sensitivity_proof_partition_detects_missing_terrain_category
 #   - test_move_confirmation_rejects... -> test_sensitivity_proof_legality_gate_detects_bypass_of_authoritative_recheck
+#
+# 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+# (docs/architecture/query-result-scope-boundary-2026-10-12.md):
+# BattleController.move_targets_breakdown() now returns a
+# MoveTargetsBreakdownResult, not a bare Dictionary — the four classification
+# arrays moved to result.breakdown[...], and the "combat_state_version" key
+# is gone entirely (read result.version instead). The PRIVATE helper
+# _classify_move_targets() tested directly below (test 1 and its sensitivity
+# proof) is UNCHANGED by this migration — it never carried a version key and
+# still returns a bare Dictionary (see battle_controller.gd's own doc comment
+# on why the public entry point wraps the helper's output rather than the
+# helper returning the wrapped type itself).
 extends GdUnitTestSuite
 
 
@@ -135,13 +147,13 @@ func test_origin_always_classified_as_legal() -> void:
 	var origin: Vector2i = Vector2i(6, 3)
 
 	# Act
-	var breakdown: Dictionary = controller.move_targets_breakdown()
+	var result: MoveTargetsBreakdownResult = controller.move_targets_breakdown()
 
 	# Assert
-	assert_array(breakdown["legal"]).contains([origin])
-	assert_array(breakdown["blocked_by_occupancy"]).not_contains([origin])
-	assert_array(breakdown["blocked_by_terrain"]).not_contains([origin])
-	assert_array(breakdown["out_of_range"]).not_contains([origin])
+	assert_array(result.breakdown["legal"]).contains([origin])
+	assert_array(result.breakdown["blocked_by_occupancy"]).not_contains([origin])
+	assert_array(result.breakdown["blocked_by_terrain"]).not_contains([origin])
+	assert_array(result.breakdown["out_of_range"]).not_contains([origin])
 
 
 # =============================================================================
@@ -161,10 +173,10 @@ func test_move_confirmation_rejects_tile_flagged_blocked_by_occupancy() -> void:
 	assert_bool(controller.select_unit(1)).is_true()
 
 	var blocked_tile: Vector2i = Vector2i(8, 3)
-	var breakdown: Dictionary = controller.move_targets_breakdown()
+	var result: MoveTargetsBreakdownResult = controller.move_targets_breakdown()
 	# Sanity — 先確認這格真的被新查詢標示為「僅佔位擋死」，否則本測試驗不到它
 	# 聲稱要驗的東西。
-	assert_array(breakdown["blocked_by_occupancy"]).contains([blocked_tile])
+	assert_array(result.breakdown["blocked_by_occupancy"]).contains([blocked_tile])
 
 	# Act
 	var click_result: Dictionary = controller.click_tile(blocked_tile)
@@ -190,25 +202,25 @@ func test_query_output_carries_current_combat_state_version() -> void:
 	assert_bool(controller.select_unit(1)).is_true()
 
 	# Act / Assert — 尚未有任何已提交的變化：版本號為 0。
-	var breakdown_before: Dictionary = controller.move_targets_breakdown()
-	assert_int(breakdown_before["combat_state_version"]).is_equal(state.combat_state_version)
-	assert_int(breakdown_before["combat_state_version"]).is_equal(0)
+	var result_before: MoveTargetsBreakdownResult = controller.move_targets_breakdown()
+	assert_int(result_before.version).is_equal(state.combat_state_version)
+	assert_int(result_before.version).is_equal(0)
 
 	# Act — 觸發一次已提交的變化（移動到合法格，bump 版本號）。單位移動後
 	# TurnOrder 會標記其已用完本回合的移動，move_targets_breakdown() 因此落入
 	# 「無選取可用內容」的早退路徑 —— 這正是本測試要驗的：即使是這個早退路徑，
-	# 回傳的 combat_state_version 仍必須是最新值，不得沿用呼叫當下之前的舊值
+	# 回傳的 version 仍必須是最新值，不得沿用呼叫當下之前的舊值
 	# （AC-22(a)：至少須標記為過期）。
 	var legal_tile: Vector2i = Vector2i(6, 1)
-	assert_array(breakdown_before["legal"]).contains([legal_tile])
+	assert_array(result_before.breakdown["legal"]).contains([legal_tile])
 	controller.click_tile(legal_tile)
 
 	# Assert
-	var breakdown_after: Dictionary = controller.move_targets_breakdown()
-	assert_int(breakdown_after["combat_state_version"]).is_equal(state.combat_state_version)
-	assert_int(breakdown_after["combat_state_version"]).is_greater(
-		int(breakdown_before["combat_state_version"])
-	)
+	var result_after: MoveTargetsBreakdownResult = controller.move_targets_breakdown()
+	assert_int(result_after.version).is_equal(state.combat_state_version)
+	assert_int(result_after.version).is_greater(result_before.version)
+	assert_bool(result_before.is_stale()).is_true()
+	assert_bool(result_after.is_stale()).is_false()
 
 
 # =============================================================================

@@ -535,14 +535,22 @@ func preview_damage(attacker_id: int, target_id: int, phi: int) -> int:
 ## [method preview_damage]/[method resolve_attack] rather than merely tested
 ## against them.
 ##
-## Returns an EMPTY [Dictionary] — never one populated with zeroed/default
-## fields — if either id does not resolve to a [Unit] (logged via
-## [method @GlobalScope.push_error]). An all-zero Dictionary would be
-## indistinguishable from "a real attack that happens to deal 0 damage"; an
-## empty one cannot be confused with any real result, since every successful
-## call always populates all 7 keys. Per
-## [code].claude/docs/coding-standards.md[/code]'s 2026-09-15 entry, this is
-## deliberately NOT an [code]assert()[/code] guard.
+## 🔴 2026-10-12 migrated to ADR-0001's QueryResult contract type
+## (docs/architecture/query-result-scope-boundary-2026-10-12.md): this method
+## now returns a [DamageBreakdownResult], not a bare [Dictionary]. The payload
+## described below lives at [member DamageBreakdownResult.breakdown]; the
+## version number ADR-0001 requires is [member QueryResult.version] on the
+## returned object, NOT a dictionary key — the previous
+## [code]"combat_state_version"[/code] key is gone entirely.
+##
+## Returns [code]null[/code] — never a [DamageBreakdownResult] wrapping
+## zeroed/default fields — if either id does not resolve to a [Unit] (logged
+## via [method @GlobalScope.push_error]). An all-zero result would be
+## indistinguishable from "a real attack that happens to deal 0 damage";
+## [code]null[/code] cannot be confused with any real result, since every
+## successful call always populates all 6 [member DamageBreakdownResult.breakdown]
+## keys. Per [code].claude/docs/coding-standards.md[/code]'s 2026-09-15 entry,
+## this is deliberately NOT an [code]assert()[/code] guard.
 ##
 ## Core Rules #5's "Φ 的取值時點為快照" obligation: [param phi] is supplied by
 ## the CALLER, never queried by this method itself (it holds no reference to
@@ -550,20 +558,19 @@ func preview_damage(attacker_id: int, target_id: int, phi: int) -> int:
 ## same int into both a settlement step① call and this query is structurally
 ## guaranteed a stable snapshot, because there is no code path here that could
 ## re-derive a different value.
-func preview_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dictionary:
+func preview_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> DamageBreakdownResult:
 	var attacker: Unit = unit_by_id(attacker_id)
 	var target: Unit = unit_by_id(target_id)
 	if attacker == null or target == null:
 		push_error(
-			"BattleState.preview_damage_breakdown: unknown unit id (attacker_id=%d, target_id=%d) -- returning an empty Dictionary, not a zeroed breakdown"
+			"BattleState.preview_damage_breakdown: unknown unit id (attacker_id=%d, target_id=%d) -- returning null, not a zeroed breakdown"
 			% [attacker_id, target_id]
 		)
-		return {}
+		return null
 	var breakdown: Dictionary = _attack_damage_breakdown(attacker_id, target_id, phi)
 	var dealt: int = int(breakdown["damage"])
 	breakdown["target_hp_after"] = maxi(0, target.hp - dealt)
-	breakdown["combat_state_version"] = combat_state_version
-	return breakdown
+	return DamageBreakdownResult.new(self, breakdown)
 
 
 # Shared by resolve_attack(), preview_damage(), and preview_damage_breakdown():
