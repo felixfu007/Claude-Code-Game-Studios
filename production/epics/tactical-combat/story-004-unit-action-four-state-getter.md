@@ -1,7 +1,29 @@
 # Story 004: 單位行動四態 getter(不選取也能查任一單位)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M3a(切面 3)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12)** —— AC1~AC4 全數落地並經協調者獨立驗收
+>
+> **落地內容**:`turn_order.gd` 新增 `enum ActionState`(五值:`NONE_USED`/`ATTACK_ONLY`/
+> `MOVE_ONLY`/`DONE`/`NOT_FOUND`)與 `unit_action_state(id) -> ActionState`;`battle_controller.gd`
+> 新增同名公開轉發方法。新增測試檔 `tests/unit/gameplay/battle/unit_action_state_test.gd`,10 條。
+>
+> 🔴 **AC3 的解法是第五個列舉值,不是沿用 `is_done()` 的形狀**。`NOT_FOUND` 與 `DONE` 是
+> 不同值,呼叫端因此能區分「這個單位行動完了」與「這個單位不存在/已陣亡」——工作單明文
+> 禁止沿用 `is_done()` 那種「未知 id 讀成 true」的寫法,正是為了這個。
+>
+> **協調者獨立驗收(非採信回報 —— 實作者撞上回合上限,未交出報告)**:
+> 全套重跑 `Overall Summary: 1065 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped |
+> 0 orphans`、`ENGINE EXIT CODE = 100`、`Parse Error / Abnormal exit = 0`;
+> `1055 → 1065` 正好 **+10**,與新增的 `func test_` 數**完全對得上**(沒有測試偷偷沒跑)。
+> 具名 ` FAILED` 僅既有刻意紅且已核准的 `affinity_phi_provider_test.gd`。
+> 另掃注入殘留 **0 命中**;`git diff src/gameplay/battle/turn_order.gd` 刪除行 **0**
+> ——證明工作單明文禁止的「改 `can_move`/`can_attack` 移除閘門」沒有發生;
+> `unit_action_state()` 函式體內 `_is_actionable` 命中 **0**,AC2 的繞過為機械證實。
+>
+> **敏感度證明**:`test_sensitivity_proof_faction_gate_bypass_is_detected()` +
+> 間諜子類別 `_BuggyTurnOrderReusingGate`,該子類別刻意複用 `can_move`/`can_attack`
+> (即工作單 Implementation Notes 第 2 點禁止的寫法),斷言回歸測試抓得到。
+> 符合 2026-09-16 管理者裁決的常駐測試形式,非已淘汰的手動注入。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: S
@@ -102,7 +124,9 @@
 **Story Type**: Logic
 **Required evidence**: `tests/unit/gameplay/battle/unit_action_state_test.gd` —— BLOCKING
 
-**Status**: [ ] Not yet created
+**Status**: [x] ✅ 已建立並通過 —— `tests/unit/gameplay/battle/unit_action_state_test.gd`,10 條
+(四態各一、`end_unit_turn()` 優先序一、非當前陣營一、敏感度證明一、未知 id 一、已移除單位一、
+`BattleController` 轉發一)。當場數:`grep -c "^func test_" tests/unit/gameplay/battle/unit_action_state_test.gd`
 
 ## Dependencies
 

@@ -27,6 +27,29 @@ extends RefCounted
 ## faction's phase also rolls over.
 enum Side { PLAYER, ENEMY }
 
+## story-004-unit-action-four-state-getter.md: the four observable action-
+## economy states a unit can be queried in, plus a fifth explicit "does not
+## exist" value — matching GDD States and Transitions' "可行動是複合狀態"
+## rule (four states, not a single boolean). Ordinals are listed in the order
+## a unit's flags are actually spent down (neither -> one -> both), ending
+## with [constant NOT_FOUND] as a distinct fifth value.
+##
+## [method unit_action_state] never uses [code]assert()[/code] to guard an
+## "unreachable" branch — see coding-standards.md's standing rule on why that
+## is unsafe for a function returning an enum (a failed assertion silently
+## returns ordinal 0, which for the common "success value listed first"
+## convention means a failed assertion masquerades as success). Every branch
+## in [method unit_action_state] explicitly returns one of these five named
+## values; there is no abort path whose silent default this ordering needs
+## to defend against.
+enum ActionState {
+	NONE_USED = 0,
+	ATTACK_ONLY = 1,
+	MOVE_ONLY = 2,
+	DONE = 3,
+	NOT_FOUND = 4,
+}
+
 # int -> Side, for every unit still tracked. Removed units are erased.
 var _unit_side: Dictionary = {}
 
@@ -166,6 +189,47 @@ func is_done(id: int) -> bool:
 	if not _unit_side.has(id):
 		return true
 	return _done.get(id, false)
+
+
+## story-004-unit-action-four-state-getter.md / M1 audit: returns which of the
+## four observable action-economy states [param id] is currently in —
+## deliberately bypassing [method _is_actionable]'s faction/turn gate
+## entirely. Unlike [method can_move] and [method can_attack], this reports
+## [param id]'s REAL flag state regardless of which faction is currently
+## active; the M1 audit found that [method can_move]/[method can_attack]
+## collapse "wrong faction" and "flag already spent" into the same
+## [code]false[/code], making the two indistinguishable from outside this
+## class, and this method exists specifically to be queryable without that
+## collapse.
+##
+## Returns [constant NOT_FOUND] for any [param id] not currently tracked —
+## never registered, or removed via [method remove_unit] (permadeath) — which
+## is deliberately a DIFFERENT value from [constant DONE] so a caller can
+## tell "this unit finished its actions" apart from "this unit does not
+## exist". (This story's Acceptance Criteria explicitly reject reusing
+## [method is_done]'s "unknown id reads as true" shape here for exactly this
+## reason.)
+##
+## Precedence when [param id] IS tracked: [member _done] (settable directly
+## by [method end_unit_turn], independent of the flags) takes priority over
+## the flag combination, matching [method is_done]'s own authority on
+## "done"-ness — a unit explicitly ended via [method end_unit_turn] with only
+## one flag spent is [constant DONE], not [constant ATTACK_ONLY] or
+## [constant MOVE_ONLY].
+func unit_action_state(id: int) -> ActionState:
+	if not _unit_side.has(id):
+		return ActionState.NOT_FOUND
+	if _done.get(id, false):
+		return ActionState.DONE
+	var move_used: bool = _move_used.get(id, false)
+	var attack_used: bool = _attack_used.get(id, false)
+	if move_used and attack_used:
+		return ActionState.DONE
+	if move_used:
+		return ActionState.ATTACK_ONLY
+	if attack_used:
+		return ActionState.MOVE_ONLY
+	return ActionState.NONE_USED
 
 
 ## Returns the ids of the current faction's units that are not yet done —

@@ -244,6 +244,18 @@ func selectable_units() -> Array[int]:
 	return result
 
 
+## story-004-unit-action-four-state-getter.md / M1 audit: forwards to
+## [method TurnOrder.unit_action_state] for any [param id] — no prior
+## [method select_unit] call is required, and this is not gated on
+## [enum Phase] or faction, matching [method TurnOrder.unit_action_state]'s
+## own "bypasses the faction/turn gate" contract. This is the public entry
+## point the M1 audit asked for, replacing [code]battle_screen.gd[/code]'s
+## previous reliance on happening to hold the same [TurnOrder] instance as
+## this controller (M1 report's own words: "巧合式耦合,不是設計出來的介面").
+func unit_action_state(id: int) -> TurnOrder.ActionState:
+	return _order.unit_action_state(id)
+
+
 ## Returns the legal move tiles for the currently selected unit, ordered
 ## ascending by (y, x). Empty if nothing is selected, the selection cannot
 ## move this phase, or the controller is outside PLAYER_INPUT. Always a
