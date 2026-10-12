@@ -1,7 +1,32 @@
 # Story 005: `threat_targets()` 語意查證與必要時改名/擴充(U-T15)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M3a(切面 4)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-12)** —— 查證完成並走 AC 第二步的**第一條路徑(不改名)**,經協調者獨立驗收
+>
+> **查證結論摘要**(全文在下方 Implementation Notes,**不要只讀這段**):`_threat_targets_for()`
+> 的結構**本來就對應 GDD 公式四**,不是「選取單位的攻擊延伸」這種不同概念。U-T15 懷疑的
+> 「雙重期待」確實存在,但不是整個函式語意不對,而是**兩個更窄的缺口**:(a) 被同陣營閘門鎖死,
+> 玩家回合查敵方一律空陣列;(b) 實作做視線遮蔽判定,而 GDD 公式四**刻意不做**(理由逐字
+> 「寧可高估、絕不低估」)—— 兩者方向相反,實作在視線軸上會低估。
+>
+> **落地內容**:`battle_controller.gd` 新增 `threat_range_for(unit_id)`(單一單位,公式四語意,
+> 不受 Phase/陣營閘門,改用 `CombatRules.is_in_range()` 純曼哈頓距離)與
+> `threat_range_all(unit_ids)`(一次呼叫同時回傳 `union` 扁平聯集與 `per_unit` 逐敵拆分,
+> TR-tactical-036),另一個私有 helper `_move_reach_for()`。
+> 🔴 **`threat_targets()` / `_threat_targets_for()` 既有程式一個字元都沒改。**
+>
+> **協調者獨立驗收(非採信回報 —— 實作者撞上回合上限,未交出報告)**:
+> 全套重跑 `Overall Summary: 1074 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped |
+> 0 orphans`、`ENGINE EXIT CODE = 100`、`Parse Error / Abnormal exit = 0`;
+> `1065 → 1074` 正好 **+9**,與新增 `func test_` 數**完全對得上**。
+> 注入殘留 **0 命中**;`git diff src/gameplay/battle/battle_controller.gd` 刪除行 **0**。
+> 另查 `_move_reach_for()` 是否重刻了一份可達格邏輯 —— **沒有**,它呼叫的是既有
+> `_move_targets_for()` 同一支 `_state.legal_moves(unit_id)`,只是不套 phase/回合閘門。
+> (本專案登記過「同一個公式兩份實作、只是今天答案一致」的失效模式,故特別查。)
+>
+> 🔴 **留下一個必須傳下去的事實**:`threat_targets()`(既有,含視線)與 `threat_range_for()`
+> (新增,不含視線)**對同一個單位會給出不同答案,而且這是刻意的**。既有路徑的視線政策
+> 是否也該重新檢視,實作者已明文登記為本 story 範圍外 —— 見 Implementation Notes 第 4 項。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: M(含查證步驟)
@@ -57,11 +82,47 @@ AC-22 的即時性 + 單一快照原子性義務約束(公式四多敵聯集「�
 
 ## Implementation Notes
 
-⚠️ **未查證,待本 story 執行時補**:`_threat_targets_for()` 的實際函式名、現行簽章、現行回傳
-語意——本 story 撰寫時未讀該函式內文(依 UX 規格與 M1 報告皆明文「未讀該函式內文,不代為斷言」,
-本 story 沿用同一誠實揭露,不假設答案)。**下一個人從 `grep -n "threat_targets\|_threat_targets_for"
-src/gameplay/battle/battle_controller.gd` 開始查**,完整讀該函式後,把查證結論寫回本節取代
-這段文字。
+✅ **查證結論(本 story 執行時完成,2026-10-12)**:
+
+1. **現況簽章**:公開 `threat_targets()` 固定呼叫 `_threat_targets_for(_selected_unit_id)`,
+   但 `_threat_targets_for(unit_id)` 本身**已經**接受任意 `unit_id` 參數,不是寫死只接受選取
+   單位——把它鎖死在選取單位上的是外層那一行轉發,不是函式本體。
+
+2. **回傳語意**:`_threat_targets_for()` 的「起點集合 = 現在位置 + 移動延伸
+   (`_move_targets_for`)」結構,**本身已經正確對應 GDD 公式四 `threat_range(e)` 的
+   `reachable_set(e)` 定義**——它不是「選取單位的攻擊延伸」這種與公式四整體無關的不同概念。
+   UX 規格 U-T15 懷疑的「雙重期待」確實存在,但不是「整個函式語意不對」,而是兩個更窄、各自
+   獨立的缺口:
+   - **(a) 範圍缺口(U-T15 真正指出的那個)**:`_threat_targets_for()` 被
+     `_order.can_attack(unit_id)` 內 `_is_actionable()` 的同陣營/回合閘門鎖死——在玩家回合
+     查任何敵方單位一律拿到空陣列,而那正是威脅範圍疊加圖需要畫的時機。
+   - **(b) 視線軸缺口(查證時另外發現,先前無人驗證過)**:`_threat_targets_for()` 經由
+     `BattleState.is_attack_reachable()` 間接呼叫 `CombatRules.is_attack_legal()`,**會檢查
+     視線**;但 GDD 公式四正文明文排除視線檢查("寧可高估、絕不低估"——
+     `design/gdd/tactical-combat-system.md` 公式四段落)。兩者方向相反:實作在視線軸上會
+     低估,而 GDD 的保守性論證正建立在「視線軸上絕不低估」之上。
+
+3. **判定與做法(走 AC 第二步的第一條路徑,不改名)**:結構已對,問題在閘門與視線兩處,因此
+   不需要改名、也不需要放寬 `_threat_targets_for()` 本體的 unit_id 範圍。新增兩個完全獨立於
+   `_threat_targets_for()`/`threat_targets()` 既有程式碼路徑的查詢:
+   - `threat_range_for(unit_id)`——單一單位,公式四語意,不受 Phase/陣營/`can_attack()` 閘門
+     限制(比照 story-004 `unit_action_state()` 先例的設計理由),改用
+     `CombatRules.is_in_range()`(純曼哈頓距離,無視線)取代 `is_attack_reachable()`,同時修正
+     (a)(b) 兩個缺口。
+   - `threat_range_all(unit_ids)`——多敵聯集 + 逐敵拆分,單一次呼叫回傳兩個切面
+     (TR-tactical-036),建構在 `threat_range_for()` 之上;GDScript 單執行緒同步呼叫鏈保證
+     沒有外部寫入能插入兩個子計算之間(AC-22(b))。
+   `_threat_targets_for()`/`threat_targets()` **既有程式碼一個字元都沒有修改**——零回歸風險,
+   既有測試維持原樣全數通過(含新增的一條回歸測試直接對照兩者在無遮蔽場景下同值)。
+
+4. **明文登記的缺口(非本 story 裁決範圍)**:上述 (b) 視線軸缺口只在本 story 新增的兩個查詢
+   中修正;`attack_targets()`/`threat_targets()`(選取單位、含視線檢查的既有路徑)本身是否也
+   該重新檢視視線政策,是另一個問題——那是既有、已通過驗收的功能,本 story 的 Out of Scope
+   明文排除「`_threat_targets_for()` 之外其他函式的重新命名/連帶重構」,故刻意不動它的既有
+   語意,僅在此登記供日後參考。
+
+**測試證據**:`tests/unit/gameplay/battle/threat_range_query_test.gd`,9 條測試(含 2 條敏感度
+證明)全數通過,詳見 Test Evidence 節。
 
 **與 R3 風險的關聯**:EPIC.md 已將此列為風險 R3,判定「若真是雙重期待,改名比加參數安全」——
 本 story 執行時若確認是雙重期待,不需要另外提出裁決請求,直接依此原則改名即可,不需回頭問。
@@ -101,7 +162,10 @@ src/gameplay/battle/battle_controller.gd` 開始查**,完整讀該函式後,把�
 **Story Type**: Logic
 **Required evidence**: `tests/unit/gameplay/battle/threat_range_query_test.gd` —— BLOCKING
 
-**Status**: [ ] Not yet created
+**Status**: [x] ✅ 已建立並通過 —— `tests/unit/gameplay/battle/threat_range_query_test.gd`,9 條
+(含 **2 條常駐敏感度證明**,突變子類別 `_MutantThreatRangeChecksSight` 與
+`_MutantThreatRangeAllInconsistentUnion`,分別植入「偷偷加回視線檢查」與「聯集與逐敵拆分不一致」
+兩種缺陷,斷言測試抓得到)。當場數:`grep -c "^func test_" tests/unit/gameplay/battle/threat_range_query_test.gd`
 
 ## Dependencies
 

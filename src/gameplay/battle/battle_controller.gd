@@ -328,6 +328,103 @@ func threat_targets() -> Array[Vector2i]:
 	return _threat_targets_for(_selected_unit_id)
 
 
+## story-005-threat-targets-semantic-clarification.md / GDD 公式四
+## [code]threat_range(e)[/code]: returns every in-bounds board cell [param
+## unit_id] could threaten this turn, computed purely from the current board
+## snapshot — the union, over the unit's current tile plus every tile in its
+## move-reach ([method _move_reach_for]), of the cells within [member
+## Unit.min_range]/[member Unit.max_range] of that tile ([method
+## CombatRules.is_in_range]). Ordered ascending by (y, x). Returns an empty
+## array if [param unit_id] does not exist or is dead.
+##
+## 🔴 Deliberately NOT gated on [enum Phase], faction, or [method
+## TurnOrder.can_attack] — unlike [method threat_targets] above, which is the
+## SAME underlying shape restricted to "the currently selected unit, if it
+## can still attack this phase". This mirrors [method unit_action_state]'s
+## own precedent (story-004-unit-action-four-state-getter.md): both answer a
+## purely hypothetical "what could this unit do from where it stands right
+## now" question, which does not depend on whose turn it is. This closes the
+## gap story-005 was written to close (UX spec U-T15): querying an ENEMY
+## unit's threat range during PLAYER_INPUT — exactly when a threat-range
+## overlay needs to draw one — used to always come back empty through
+## [method threat_targets], because that method's shared private helper
+## rejects any unit not on the currently active faction.
+##
+## 🔴 Deliberately uses [method CombatRules.is_in_range] — pure Manhattan-
+## distance geometry, no line-of-sight check — rather than [method
+## BattleState.is_attack_reachable], which [method threat_targets]'s private
+## helper uses and which DOES check sight. GDD Formula 四 is explicit that
+## [code]threat_range(e)[/code] omits the sight check on purpose ("寧可高估、
+## 絕不低估" — the overlay this feeds is a player-facing warning, where
+## overestimating a threat is the safe direction and underestimating it is
+## not). Reusing [method BattleState.is_attack_reachable] here would silently
+## reintroduce the exact direction GDD says is unsafe.
+func threat_range_for(unit_id: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	var unit: Unit = _state.unit_by_id(unit_id)
+	if unit == null or not unit.is_alive():
+		return result
+
+	var current_pos: Vector2i = _state.position_of(unit_id)
+	var origins: Array[Vector2i] = _move_reach_for(unit_id)
+	origins.append(current_pos)
+
+	var threatened: Dictionary = {}
+	for origin: Vector2i in origins:
+		for y: int in range(Board.BOARD_HEIGHT):
+			for x: int in range(Board.BOARD_WIDTH):
+				var cell: Vector2i = Vector2i(x, y)
+				if cell == current_pos:
+					continue
+				if CombatRules.is_in_range(origin, cell, unit.min_range, unit.max_range):
+					threatened[cell] = true
+
+	for cell: Vector2i in threatened:
+		result.append(cell)
+	result.sort_custom(_tile_less)
+	return result
+
+
+## story-005-threat-targets-semantic-clarification.md / TR-tactical-036 +
+## AC-22(b): the multi-enemy counterpart to [method threat_range_for] — GDD's
+## [code]threat_range_all(E)[/code]. Returns a single [Dictionary] with
+## exactly two keys so a caller never needs two separate, potentially
+## inconsistent calls to get both facets:
+## [br]
+## - [code]"union"[/code] ([Array][Vector2i]): the flat union of every cell
+##   any unit in [param unit_ids] could threaten, ordered ascending by (y, x).
+## [br]
+## - [code]"per_unit"[/code] ([Dictionary], [int] key -> [Array][Vector2i]
+##   value): each input id's own [method threat_range_for] result, unchanged
+##   — the per-enemy breakdown GDD UI Requirements §1a's overlay needs.
+##
+## AC-22(b) (single-snapshot atomicity): both facets are built from ONE pass
+## over [param unit_ids], each sub-result computed against the same
+## unmutated [BattleState]. This method performs no write of any kind and
+## contains no [code]await[/code]/[code]call_deferred()[/code] — GDScript's
+## single-threaded, synchronous call chain means nothing else can run, and
+## therefore nothing else can mutate board state, between the first and last
+## iteration of its own loop. This is the same "fully synchronous today"
+## argument [method step_enemy_phase]'s own doc comment makes, with the same
+## caveat: it proves today's call chain never interleaves, not that it is
+## structurally impossible to ever introduce a yield point here — if one
+## ever is, this guarantee needs re-deriving, not assuming.
+func threat_range_all(unit_ids: Array[int]) -> Dictionary:
+	var per_unit: Dictionary = {}
+	var union_set: Dictionary = {}
+	for id: int in unit_ids:
+		var cells: Array[Vector2i] = threat_range_for(id)
+		per_unit[id] = cells
+		for cell: Vector2i in cells:
+			union_set[cell] = true
+
+	var union_result: Array[Vector2i] = []
+	for cell: Vector2i in union_set:
+		union_result.append(cell)
+	union_result.sort_custom(_tile_less)
+	return {"union": union_result, "per_unit": per_unit}
+
+
 ## Returns the current battle outcome, delegated to [method BattleState.outcome].
 func outcome() -> BattleState.Outcome:
 	return _state.outcome()
@@ -1056,6 +1153,23 @@ func _attack_targets_blocked_by_los_for(unit_id: int) -> Array[Vector2i]:
 				continue
 			if _state.is_attack_range_blocked_by_los(unit_id, current_pos, cell):
 				result.append(cell)
+	result.sort_custom(_tile_less)
+	return result
+
+
+# story-005-threat-targets-semantic-clarification.md: ungated counterpart to
+# _move_targets_for(), used only by threat_range_for()/threat_range_all().
+# _move_targets_for() bakes in Phase.PLAYER_INPUT and TurnOrder.can_move() —
+# correct for "can the player legally move this selection right now" but
+# wrong for the hypothetical "what could this unit reach if it moved"
+# question threat_range_for() must answer even for an enemy unit during
+# PLAYER_INPUT (see that method's own doc comment). Calls
+# BattleState.legal_moves() directly — the same call _move_targets_for()
+# itself makes — so this still respects board occupancy (GDD's
+# reachable_set(e, ignore_occupancy=false)); it only skips the turn-order/
+# phase gate layered on top of that call.
+func _move_reach_for(unit_id: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = _state.legal_moves(unit_id)
 	result.sort_custom(_tile_less)
 	return result
 
