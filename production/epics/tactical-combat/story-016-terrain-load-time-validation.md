@@ -1,7 +1,26 @@
 # Story 016: 地形載入時驗證(`Board.from_ascii()` 結構性 + 組成性檢查)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready
+> **Status**: Ready ⚠️ **(2026-10-12 協調者註:這個 Ready 與磁碟上的事實不符,但我沒有自行改判 Done)**
+>
+> 🔴 **實測:本 story 的程式與測試都已經存在而且全綠,狀態欄卻停在 `Ready`。**
+> - 產品碼:`src/gameplay/board/board.gd` 的 `from_ascii()` 已有載入期驗證
+>   (當場查:`grep -n "load-time validation" src/gameplay/board/board.gd`)。
+> - 測試:`tests/unit/gameplay/board/board_load_validation_test.gd` 存在,**13 條**
+>   (當場數:`grep -c "^func test_" tests/unit/gameplay/board/board_load_validation_test.gd`),
+>   且包含在 2026-10-12 全套綠燈內。
+> - 來源提交:`6b70b3c`,訊息逐字含「story-016 寫完」。
+>
+> **為什麼我沒有直接改成 Done**:宣告 Done 要逐條走 AC(`/story-done` 的職權),
+> 我只做了「產出存不存在」的量測,**沒有驗證每一條 AC 都成立**。
+> 把未驗證的東西標成已完成,正是本專案登記過的失效形狀。
+>
+> 🔴 **這是同一個失效模式的再次發作。** 提交 `6c92014` 的訊息逐字記載過:
+> 「**5 張程式做完的工作單狀態欄停了 12 天沒人發現**」。那次之後沒有加上任何檢查,
+> 所以它又發生了 —— 而且這次是因為**交接檔的狀態列把 016 算成 Done、檔案卻寫 Ready**,
+> 兩邊不一致才被撞出來的,不是任何規則抓到的。
+>
+> **下一步**:跑一次 `/story-done` 逐條驗 AC,通過就改 Done。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: S(半天內 —— 單一檔案、單一載入函式,見下方「範圍」)
