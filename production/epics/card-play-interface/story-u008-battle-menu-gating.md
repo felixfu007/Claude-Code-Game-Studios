@@ -133,9 +133,10 @@ EPIC.md 第二節單元清單表已列出落點,本節把它明文複述在這�
   > ```bash
   > grep -rn "authoritative_write_in_progress" src/ --include=*.gd | grep -v ":#"
   > ```
-  > 決定性的一處(這一處不會漂):
+  > 決定性的那一處(⚠️ **行號會漂,請用符號名當錨點重找**:
+  > `grep -n "^var authoritative_write_in_progress" src/gameplay/battle/battle_state.gd`):
   > ```
-  > src/gameplay/battle/battle_state.gd:132:var authoritative_write_in_progress: bool:
+  > var authoritative_write_in_progress: bool:   # ← 於 src/gameplay/battle/battle_state.gd
   > ```
   > 它是**有守衛的唯讀屬性**(外部寫入會 `push_error` 並拒絕),內部表示是**深度計數器**
   > 而非布林(ADR-0001 2026-10-05 巢狀提交裁決)。

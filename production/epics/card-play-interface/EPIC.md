@@ -525,10 +525,13 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
 > → **非註解命中數請當場數,不要抄這裡。** 🔴 協調者在寫這條註記的過程中連續量到兩個值
 > (先 15、修完幾處註解後 17)—— **這正是本專案「手抄數字必漂」的現場示範,而且就發生在
 > 一條在講「不要相信抄來的數字」的註記裡。**
-> **決定性的那一處不會漂**:
+> **決定性的那一處**(⚠️ 用符號名找,不要用行號):
 > ```
-> src/gameplay/battle/battle_state.gd:132:var authoritative_write_in_progress: bool:
+> var authoritative_write_in_progress: bool:   # ← 於 src/gameplay/battle/battle_state.gd
 > ```
+> ⚠️ **原本這裡寫的是 `battle_state.gd:132`** —— 而協調者寫下它之後【三分鐘內】實測就變成 139,
+> 因為同一批工作在它上面加了行。**這是「行號會漂」的現場示範,所以改用符號名錨點**:
+> `grep -n "^var authoritative_write_in_progress" src/gameplay/battle/battle_state.gd`
 > 它是一個**有守衛的唯讀屬性**(外部寫入會 `push_error` 並拒絕),內部表示是
 > **深度計數器而非布林**(ADR-0001 2026-10-05 巢狀提交裁決)。
 >
