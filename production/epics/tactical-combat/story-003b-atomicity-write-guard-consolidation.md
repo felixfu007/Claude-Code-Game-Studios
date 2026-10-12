@@ -641,6 +641,13 @@ test_phi_reflects_a_pairing_polarity_flip_made_after_construction`
 
 🔴 **2026-10-05 新增(路徑⑥/⑦,對應 AC10/AC11/AC12/Validation Criteria 4l/4m)**:
 
+> ⚠️ **2026-10-12 更新:下面這則註記在當時是對的,現在會把你導向錯的地方 —— 原文保留,先讀這段。**
+> **`4m` 現在真的存在了**,而且意思與這則註記假設的**完全不同**:ADR-0001 於 2026-10-12 整份重寫時
+> 新增了 `4m`(玩家回合開始的屬性修正遞減,一次 `ENEMY → PLAYER` 轉換 → 版本號恰好 +1)與 `4n`
+> (建構期的一次性 `tick_all_modifiers()` 呼叫 → 版本號不變)。**本則註記說的「以 `4l` 為準」對本 story
+> 仍然成立**(本 story 的 AC11 驗收向量本來就是它自己的,不是某個 `4m`),但**不要再據此認為
+> 「ADR-0001 沒有 4m」** —— 當場查:`grep -n "| 4m |" docs/architecture/adr-0001-tactical-query-atomicity-contract.md`
+>
 > 🔴 **`4m` 是筆誤,ADR-0001 裡沒有這一列(2026-10-08 查證)。**
 > `grep -c "4m" docs/architecture/adr-0001-*.md` → **0**。由實作者發現、協調者複驗。
 > **以 `4l` 為準。** 下面那兩條 AC11 專屬向量(`run_enemy_phase()` 巢狀收斂 /
