@@ -51,6 +51,22 @@
   by the implementer, who had been about to use `assert()` for exactly this purpose and
   probed it first; the coordinator then re-verified it independently rather than taking the
   report at face value.
+- 🔴 **A verification command written inside a comment counts itself as a match.**
+  Measured 2026-10-12: a doc comment in `src/gameplay/units/unit.gd` asserted
+  `grep -rn "enemy_stat(" src/` "has exactly one hit" — rerunning it found **2**,
+  the second being the comment line itself. The first fix attempt repeated the
+  exact same bug by embedding the corrected search string in its own replacement
+  text. A repo sweep found the same shape elsewhere; in one case **20 of 37**
+  claimed matches were comment lines, not production code.
+  **Why this is worse than a typo**: it never errors. The next person reruns the
+  command, gets a number that doesn't match, and starts doubting the wrong thing
+  — and every comment that repeats the claimed count is itself a new hit, so the
+  count grows with citations, not with code changes.
+  **Write it so it cannot structurally self-match**: scope the search path to
+  exclude the file the comment lives in, anchor on `^func`/`^static func` so a
+  `##` doc line can't match, or pipe through `| grep -v ":#"`.
+  ⚠️ No lint or hook checks this — compliance is unobservable, same as the rest
+  of this document's discipline rules.
 
 # Design Document Standards
 

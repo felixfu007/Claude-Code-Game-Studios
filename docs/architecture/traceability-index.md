@@ -17,8 +17,25 @@
 | affinity-data-pool.md | Foundation | Approved | 24 | **21** | **3** | 0 |
 | save-system.md | Foundation | Approved | 30 | 22 | 7 | 1 |
 | cursor-highlight-state.md | Foundation | Approved | **18**(原 19,見下方 2026-09-03 note) | **11**(原 12) | **7** | **0** |
-| tactical-combat-system.md | Core | **未 Approved** | 43 | 5 | 13 | 25 |
+| tactical-combat-system.md | Core | Approved | 43 | 5 | 13 | 25 |
 | game-concept.md(跨系統) | — | — | 14 | **4** | **4** | 6 |
+
+> 🔴 **`tactical-combat-system.md` 的「GDD 狀態」欄於 2026-10-12 由 `technical-director` 更正為
+> `Approved`(原寫 `**未 Approved**`)。** 這是 `production/epics/tactical-combat/EPIC.md`
+> 閘門 C5 第 2 項指派的既有義務。依據是兩個獨立權威來源,兩者一致(行號會漂,用內容錨點):
+>
+> ```bash
+> grep -n "Approved(2026-08-31 管理者裁決)" design/gdd/tactical-combat-system.md
+> grep -o "✅ \*\*Approved(2026-08-31 管理者裁決)\*\*" design/gdd/systems-index.md | head -1
+> ```
+>
+> 同表另三列(`affinity-data-pool` / `save-system` / `cursor-highlight-state`)早已是
+> `Approved`,**只有這一列落後**。
+>
+> ⚠️ **本次【只】改「GDD 狀態」一欄,四個涵蓋數字(43 / 5 / 13 / 25)刻意未動** ——
+> 那需要一輪 `/architecture-review` 重推,不是本次動作。
+> 📌 **同日重新檢視的 `TR-tactical-002` 判定維持 ❌(理由已換,見該列加註),
+> 故本列的 ❌ 數 25 不受其影響。**
 
 > 逐列標記由 `/architecture-review` **獨立於 ADR 撰寫脈絡**重新推導,不採信 ADR 自身「Requirements Addressed」表的宣稱。
 >
@@ -83,7 +100,7 @@
 | TR-ID | 需求 | 領域 | 涵蓋情形 |
 |---|---|---|---|
 | TR-tactical-001 | 棋盤必須是有限邊界的方格網,座標為整數——`Grid \ B` 列舉(AC-13)需要邊界表示法 | 資料 | ⚠️ 部分——ADR-0001 的稀疏佔位表避開了對棋盤尺寸的依賴,但沒有定義邊界結構本身 |
-| TR-tactical-002 | 地形須有三個正交的逐格屬性(`terrain_cost` ≥1、遮蔽布林值、`passable` 可通行布林旗標),須各自可查詢/可渲染,並有載入時驗證拒絕 `terrain_cost < 1` | 資料 | ❌ 缺口 — **需求文字於 2026-09-29 更正,涵蓋判定未重推**(仍是第七輪的 ❌)。原文寫「兩個」正交屬性,落後於 M2 story 001/002 要實作的 `passable` 第三屬性。🔴 **權威是 GDD 公式三,不是本列文字**;`production/epics/tactical-combat/EPIC.md` 的保險條款刻意保留不刪(現為「兩個來源一致」的佐證,下次落後時仍是安全網)。完整理由與未查證項見 `tr-registry.yaml` 同項 `revised` 欄 |
+| TR-tactical-002 | 地形須有三個正交的逐格屬性(`terrain_cost` ≥1、遮蔽布林值、`passable` 可通行布林旗標),須各自可查詢/可渲染,並有載入時驗證拒絕 `terrain_cost < 1` | 資料 | ❌ 缺口 — **需求文字於 2026-09-29 更正,涵蓋判定未重推**(仍是第七輪的 ❌)。原文寫「兩個」正交屬性,落後於 M2 story 001/002 要實作的 `passable` 第三屬性。🔴 **權威是 GDD 公式三,不是本列文字**;`production/epics/tactical-combat/EPIC.md` 的保險條款刻意保留不刪(現為「兩個來源一致」的佐證,下次落後時仍是安全網)。完整理由與未查證項見 `tr-registry.yaml` 同項 `revised` 欄 🔴 **2026-10-12 `technical-director` 重推,維持 ❌ —— 但上面那句「涵蓋判定未重推」已失效,理由換了。** 重推過了,結論相同但更耐久:**本表的 ❌ 定義是「無任何 ADR 涵蓋」(本檔自己明寫),而戰棋盤面演算法層 ADR 至今「尚未動筆」(亦為本檔自己明寫)。** `story-016`(地形載入時驗證,2026-10-12 驗收 Done、AC1~AC7 全過)是**實作**不是 ADR,**結構上無法翻動一個衡量 ADR 涵蓋的符號** —— 若可以,本表就不再衡量它宣稱衡量的東西。📌 **但實作事實應登記,下一輪重推時直接可用**:`board.gd` 的 `from_ascii()` 已有三道載入時驗證(列數、列長、未登記字元,皆 `push_error`),`tests/unit/gameplay/board/board_load_validation_test.gd` 13 條測試(數字當場重數:`grep -c "^func test_" tests/unit/gameplay/board/board_load_validation_test.gd`);三個正交屬性亦已各自落地(`TERRAIN_TABLE` 的 `cost`/`passable` 兩欄 + **刻意獨立**的 `BLOCKS_SIGHT` 表)。⚠️ **唯獨「載入時驗證拒絕 `terrain_cost < 1`」這一句,現行設計下結構上不可觸發**:`TERRAIN_TABLE` 是 `const Dictionary`(執行期唯讀),三個條目成本為 1/2/3 全部 ≥1,而地形資料檔只供應**字元**、成本來自程式碼內的 const 表 —— 沒有任何資料路徑能引入 <1 的成本(唯一注入點 `_terrain_entry()` 其註解明寫為 test-only 接縫)。🔴 **這不是「需求已滿足」,是需求句與實作在講兩種不同的設計**:需求預設成本是逐格資料驅動,實作做成以字元為鍵的硬編碼常數表 —— 這同時觸及 `coding-standards.md` 的「Gameplay values must be data-driven, never hardcoded」。**本次只登記,不裁決;該由 GDD 擁有者 / `lead-programmer` 決定。** |
 | TR-tactical-003 | 逐單位 schema:HP/ATK/DEF/MP/陣營/武器分層/兩個行動旗標/存活狀態 | 資料 | ❌ 缺口 |
 | TR-tactical-004 | `player_baseline_stat`(公式二輸入)全專案無擁有系統(OQ-2) | 資料 | ❌ 缺口 |
 | TR-tactical-005 | 武器資料表需要載入時的結構性 + 組成性驗證(AC-3、AC-23) | 資料 | ❌ 缺口 |
