@@ -1,7 +1,42 @@
 # Story 003c: 玩家回合開始鉤子的提交覆蓋 —— `begin_player_turn()`/`tick_all_modifiers()`(路徑⑥⑦)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(依賴 `story-003b` 完成,見下方 Dependencies——未完成前無法開工)
+> **Status**: ✅ **Done(2026-10-12)** —— AC1~AC4、AC6 落地並經協調者獨立驗收;
+> **AC5 不在本 story 執行,已併入「重寫 ADR-0001」**(2026-10-12 管理者裁決,見下)
+>
+> 🔴 **AC5 為什麼沒做,以及它去了哪裡 —— 下一個人必讀,不要以為是漏做。**
+> AC5 要求在 `docs/architecture/adr-0001-tactical-query-atomicity-contract.md` 新增
+> Validation Criteria **4m**。而該 ADR **已修訂兩次**(2026-09-09、2026-10-05,當場查:
+> `grep -n "次修訂" docs/architecture/adr-0001-tactical-query-atomicity-contract.md`),
+> 寫進去就是**第三次** —— 直接違反流程劑量規則 4(`.claude/docs/technical-preferences.md`
+> 的「流程劑量上限」表:「同一份文件**不做第三次以上修訂** / 要改第 3 次表示該重寫或該擱置」)。
+> ⚠️ **本 story 是 2026-10-05 切出來的,與 ADR-0001 第二次修訂同一天** ——
+> 切 story 的人沒有把「這會變成第三次」算進去。
+> **2026-10-12 管理者裁決:照規則走,重寫 ADR-0001。** 三個選項(不寫只登記 / 破例寫第三次 /
+> 照規則重寫)他選了第三個。**AC5 的條文隨該次重寫一併處理,不在本 story 內補。**
+>
+> 🔴 **AC4 已 descope(協調者 2026-10-12 核准),不是漏做。**
+> 建構期的 `tick_all_modifiers()` 兩處(`battle_loop.gd` 與 `battle_controller.gd` 各一)
+> **皆不包提交窗口**,對稱處理。理由:兩處既有文件註解都明文「建構當下不可能有任何修正值存在,
+> 是 no-op」,只包一邊會製造**沒有任何今日可觀測行為差異可以證成**的不對稱。
+> **連帶後果(誠實登記)**:Validation Criteria 4m 的「建構期一次性呼叫」那半句
+> **沒有測試證據**,而上述重寫會需要處理這個落差。
+>
+> **落地內容**:`src/gameplay/battle/battle_loop.gd` 新增私有方法
+> `_advance_faction_and_start_next_turn()`,把 `advance_faction()` 與 `begin_player_turn()`
+> 收進**同一個** `commit_authoritative_change()` Callable;`battle_controller.gd`
+> **未改動**(AC1 驗證結果是既有包裝原本就涵蓋)。新增測試 2 檔共 5 條。
+> **驗收**:協調者獨立重跑全套 `Overall Summary: 1055 test cases | 0 errors | 1 failures |
+> 0 flaky | 0 skipped | 0 orphans`、`ENGINE EXIT CODE = 100`、Parse Error / Abnormal exit 皆 0;
+> 具名 ` FAILED` 僅既有刻意紅的 `affinity_phi_provider_test.gd`。
+> 另掃注入殘留(`TEMP INJECTION` / `if false and` / `if false or`)**0 命中**、
+> 禁用樣式(`assert()` 守不可達、`call_deferred` 介入結算)**0 命中**。
+>
+> 📌 **順帶修掉一處會誤導人的註解**:`tests/unit/gameplay/battle/commit_authoritative_change_version_test.gd`
+> 原寫「`begin_player_turn()` 依路徑⑥的裁決刻意留在本次提交窗口之外」——本 story 落地後
+> **那句話變成假的**。⚠️ **數字(+1)完全不受影響,因為它從「在窗口外所以不遞增」變成
+> 「在窗口內但屬巢狀提交所以不遞增」** —— 兩個不同機制給出同一個數字,
+> **光看數字永遠察覺不到該註解已過時**。已加註更正,原文保留。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: S(純追加包裝與測試,不建立任何新機制,不動守衛本身或 15 個驅動層呼叫點改道)

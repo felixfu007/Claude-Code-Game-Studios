@@ -130,15 +130,20 @@ func test_los_blocked_enemy_is_skipped_even_though_its_hp_is_lower() -> void:
 
 func test_selects_lowest_hp_target_even_when_its_unit_id_is_higher() -> void:
 	# Arrange — EA（id 較大、血量較低）與 EB（id 較小、血量較高），皆可攻擊到
+	#
+	# 🔴 story-017-unit-combat-field-setters.md:HP 直接烘進 roster 的 hp_max
+	# 欄位(12 / 25),不再對 state.unit_by_id(...) 回傳的 Unit 做建構後的
+	# 直接 `.hp = ` 賦值 —— 這兩個 Unit 經由 BattleState.create() 建立,
+	# story-017 讓 create() 為每個 Unit 掛載寫入守衛，而本測試從未呼叫
+	# commit_authoritative_change()（寫入窗口全程未開），建構後再賦值會被
+	# 守衛拒絕。改走 hp_max 烘焙與下方 test_hp_tie_breaks_by_lowest_unit_id_
+	# and_is_deterministic() 既有的作法一致（該測試本來就是靠 hp_max 15/15
+	# 製造平手，從未做過建構後賦值）。最終 HP 數值與斷言語意不變：EA=12、EB=25。
 	var state: BattleState = _state(_open_rows(), [
 		"1,A1,PLAYER,20,10,5,0,1,3,6,3",
-		"9,EA,ENEMY,20,10,5,0,1,1,6,1",
-		"4,EB,ENEMY,20,10,5,0,1,1,6,5",
+		"9,EA,ENEMY,12,10,5,0,1,1,6,1",
+		"4,EB,ENEMY,25,10,5,0,1,1,6,5",
 	])
-	var unit_ea: Unit = state.unit_by_id(9)
-	var unit_eb: Unit = state.unit_by_id(4)
-	unit_ea.hp = 12
-	unit_eb.hp = 25
 
 	# Act
 	var result: Dictionary = GreedyTacticalAI.decide(state, 1, true, true)

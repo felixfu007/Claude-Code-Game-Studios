@@ -22,12 +22,136 @@ var id: int
 var code_name: String
 var faction: Faction
 var hp_max: int
-var hp: int
-var atk: int
-var def: int
-var mp: int
-var min_range: int
-var max_range: int
+
+## story-017-unit-combat-field-setters.md (ADR-0001 硬性義務第 2 條): optional
+## write-window guard, same selective-mount contract as [method
+## Board.attach_write_guard] / [method TurnOrder.attach_write_guard] — unset
+## by default (invalid [Callable]), in which case every one of the six
+## guarded properties below behaves exactly as a plain [code]var[/code]
+## always did. [Unit] remains a fully standalone, directly-constructible
+## [RefCounted] for every existing [method from_csv_line] / [code]Unit.new()[/code]
+## test fixture that never goes through [BattleState] at all — see
+## [method attach_write_guard].
+var _write_guard: Callable = Callable()
+
+
+## Attaches [param checker] (signature [code]func() -> bool[/code]) as this
+## unit's write-window guard — checked by each of the six guarded setters
+## below before mutating, rejecting the assignment (via [method
+## @GlobalScope.push_error], value left unchanged) if it returns
+## [code]false[/code]. [method BattleState.create] is the only production
+## caller, passing [code]Callable(state, "write_window_is_open")[/code] — a
+## [Callable] injection, deliberately NOT a reference to [BattleState]
+## itself, matching [method Board.attach_write_guard]'s and [method
+## TurnOrder.attach_write_guard]'s own doc comments (ADR-0001's layering:
+## [Unit] "does not hold the flag"). Passing an unset/invalid [Callable]
+## restores the pre-guard default (always permitted) — this is a legitimate,
+## supported call, not an edge case to avoid.
+func attach_write_guard(checker: Callable) -> void:
+	_write_guard = checker
+
+
+# Shared by all six guarded setters below: true if this mutation may
+# proceed — no guard attached (selective mount) or the attached guard
+# reports the write window open. Identical shape to
+# [method Board._write_allowed] / [method TurnOrder._write_allowed] — see
+# [member _write_guard]'s doc comment for why all three must share one
+# contract.
+func _write_allowed() -> bool:
+	return not _write_guard.is_valid() or bool(_write_guard.call())
+
+
+# Backing fields for the six guarded combat-value properties below. Actual
+# storage lives here, never directly under the public property name — see
+# each property's doc comment for the guard contract.
+var _hp: int
+var _atk: int
+var _def: int
+var _mp: int
+var _min_range: int
+var _max_range: int
+
+## Current hit points. Guarded property (story-017-unit-combat-field-setters.md,
+## ADR-0001 硬性義務第 2 條): rejects assignment (via [method
+## @GlobalScope.push_error], value left unchanged) if a write guard is
+## attached ([method attach_write_guard]) and reports the write window
+## closed. Unguarded [Unit]s (the selective-mount default) accept assignment
+## unconditionally, exactly as before this property existed.
+##
+## 🔴 [method take_damage] does NOT go through this setter — it writes
+## [member _hp] directly, bypassing the guard entirely. See that method's
+## doc comment for why ("未決的實作細節" 第 1 項, 選項 B).
+var hp: int:
+	get:
+		return _hp
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.hp: rejected -- write window is not open (value=%d)" % value)
+			return
+		_hp = value
+
+
+## Base attack value — see [method effective_atk] for the base/effective
+## seam this value feeds. Guarded property; same contract as [member hp]
+## above.
+var atk: int:
+	get:
+		return _atk
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.atk: rejected -- write window is not open (value=%d)" % value)
+			return
+		_atk = value
+
+
+## Base defense value — see [method effective_def] for the base/effective
+## seam this value feeds. Guarded property; same contract as [member hp]
+## above.
+var def: int:
+	get:
+		return _def
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.def: rejected -- write window is not open (value=%d)" % value)
+			return
+		_def = value
+
+
+## Movement points. Guarded property; same contract as [member hp] above.
+var mp: int:
+	get:
+		return _mp
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.mp: rejected -- write window is not open (value=%d)" % value)
+			return
+		_mp = value
+
+
+## Minimum attack range. Guarded property; same contract as [member hp]
+## above.
+var min_range: int:
+	get:
+		return _min_range
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.min_range: rejected -- write window is not open (value=%d)" % value)
+			return
+		_min_range = value
+
+
+## Maximum attack range. Guarded property; same contract as [member hp]
+## above.
+var max_range: int:
+	get:
+		return _max_range
+	set(value):
+		if not _write_allowed():
+			push_error("Unit.max_range: rejected -- write window is not open (value=%d)" % value)
+			return
+		_max_range = value
+
+
 var start_pos: Vector2i
 
 # Currently active card-driven ATK/DEF modifiers (skill-card-system #6,
@@ -223,9 +347,26 @@ func clear_modifiers() -> void:
 ## [method active_modifiers] or [method effective_atk]/[method effective_def]
 ## by any caller from this point on — see story-001-modifier-model.md's
 ## "甲類修正隨宿主單位陣亡消失" supplementary test.
+##
+## 🔴 story-017-unit-combat-field-setters.md ("未決的實作細節" 第 1 項, 選項
+## B): writes [member _hp] directly instead of going through the public
+## [member hp] setter, deliberately BYPASSING that setter's write-window
+## guard check entirely. This mirrors [method Board._set_occupant] / [method
+## Board._clear_occupant]'s status as the trusted internal mutation entry
+## point for their class — [method take_damage] is this class's equivalent
+## trusted entry point for HP loss, and is therefore callable unconditionally,
+## regardless of whether a write guard is attached or whether the write
+## window is currently open. Chosen over the alternative (routing through
+## the guarded [member hp] setter, which would require this method's 7
+## existing call sites — 6 of which are direct test calls that never go
+## through [BattleState] at all — to only ever fire inside a [method
+## BattleState.commit_authoritative_change] window) specifically to leave
+## those call sites byte-for-byte unaffected by this story. See the story's
+## own "未決的實作細節" section for the full tradeoff discussion between the
+## two options.
 func take_damage(amount: int) -> void:
-	hp = maxi(0, hp - amount)
-	if hp == 0:
+	_hp = maxi(0, _hp - amount)
+	if _hp == 0:
 		clear_modifiers()
 
 

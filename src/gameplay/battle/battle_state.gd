@@ -194,6 +194,17 @@ static func create(terrain_rows: PackedStringArray, roster_text: String) -> Batt
 		state._positions[unit.id] = unit.start_pos
 		state.board._set_occupant(unit.start_pos, unit.id)
 	state.board.attach_write_guard(Callable(state, "write_window_is_open"))
+	# story-017-unit-combat-field-setters.md (ADR-0001 硬性義務第 2 條): mounted
+	# AFTER the placement loop above completes and AFTER [member board]'s own
+	# guard attachment immediately above — same "連帶裁決二" vacuous-truth
+	# argument this method's own doc comment already makes for [member board]:
+	# no caller holds any of these [Unit]s and no query result has been issued
+	# yet, so no authoritative state could have "changed between two
+	# committed writes" during placement. Each [Unit]'s six guarded
+	# combat-value properties (see unit.gd) behave exactly as an unguarded
+	# plain [code]var[/code] (selective-mount default) until this line runs.
+	for unit: Unit in roster:
+		unit.attach_write_guard(Callable(state, "write_window_is_open"))
 	return state
 
 

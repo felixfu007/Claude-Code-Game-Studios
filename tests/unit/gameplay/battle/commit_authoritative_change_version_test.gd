@@ -183,8 +183,19 @@ func test_4j_battle_loop_driven_round_increments_version_by_exactly_the_predicte
 	#      才 done:第一次攻擊、第二次因攻擊旗標已用盡且不移動而結束回合;
 	#      整批無論內部動作數多寡,仍只計一次提交)                       +1
 	#   4) ENEMY -> PLAYER 的 advance_faction() 提交(round_number 進到 2;
-	#      begin_player_turn() 依路徑⑥的裁決刻意留在本次提交窗口之外
-	#      [story-003c 的範圍],不貢獻額外的版本遞增)                    +1
+	#      begin_player_turn() 不貢獻額外的版本遞增)                    +1
+	#      🔴 2026-10-12 更正(story-003c 落地後):本行原寫
+	#      「begin_player_turn() 依路徑⑥的裁決刻意留在本次提交窗口之外
+	#      [story-003c 的範圍]」—— 那句話現在是假的。story-003c 已把
+	#      advance_faction() 與 begin_player_turn() 收進【同一個】
+	#      commit_authoritative_change() Callable(見 battle_loop.gd 的
+	#      _advance_faction_and_start_next_turn())。
+	#      ⚠️ 本測試的 +1 與總數【完全不受影響】,但原因變了:
+	#        變更前 = 它在窗口【之外】,所以不遞增。
+	#        變更後 = 它在窗口【之內】,但屬巢狀提交,只有深度歸 0 才遞增
+	#                 (ADR-0001 第二次修訂的深度計數器語意)。
+	#      兩個不同的機制給出同一個數字 —— 這正是為什麼光看數字對不對
+	#      無法察覺這段註解已經過時。
 	# max_rounds=1 保證迴圈在完成以上 4 次提交後,於 round_number()=2 的
 	# 下一次迴圈頂端立即因 2 > 1 而中止,不會有第 5 次提交發生。
 	# 玩家 DEF=100 保證敵方攻擊造成的傷害恆為 0(CombatRules.damage 公式),

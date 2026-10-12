@@ -1,7 +1,53 @@
 # Story 017: `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(依賴 `story-003b` 完成,見下方 Dependencies——未完成前無法開工)
+> **Status**: ✅ **Done(2026-10-12)** —— AC1~AC7 全數落地並經協調者獨立驗收
+>
+> **落地內容**:`src/gameplay/units/unit.gd` 的 `hp`/`atk`/`def`/`mp`/`min_range`/`max_range`
+> 六個欄位改為帶守衛的 property(`_hp` 等 private backing field),守衛樣式與
+> `board.gd` 同形(`push_error()` + `return`,**不是** `assert()`;選擇性掛載,未掛載時放行);
+> `src/gameplay/battle/battle_state.gd` 的 `create()` 為每個 `Unit` 掛載守衛。
+> **`hp_max` 未動**(ADR 原文沒列就不列)。新增測試 14 條。
+>
+> 🔴 **「未決的實作細節」第 1 項(`take_damage()` 相容性)的裁決,寫在這裡 ——
+> 這是本 story 唯一一個真正的設計決定。**
+> **採選項 B:`take_damage()` 直接寫 `_hp`,完全繞過 `hp` setter 的守衛檢查。**
+> 定位與 `Board._set_occupant()` / `_clear_occupant()` 相同 —— 它是這個類別的
+> **受信任內部變更入口**,無條件可呼叫。完整理由(含與選項 A 的取捨)寫在
+> `unit.gd` 的 `take_damage()` 文件註解,當場查:
+> `grep -n "選項" src/gameplay/units/unit.gd`
+>
+> ⚠️ **這個裁決由實作者獨立拍板,未經 `lead-programmer` 覆核**(本次派工環境無 `Task` 工具),
+> 實作者已誠實標記。協調者事後複驗並接受,依據是**實測唯一的產品碼呼叫點**:
+> ```
+> $ grep -rn "take_damage(" src/ --include=*.gd | grep -v units/unit.gd
+> src/gameplay/battle/battle_state.gd:451:		target.take_damage(dealt)
+> ```
+> 而該行就在 `resolve_attack()` 的 `commit_authoritative_change(func() -> void:` 內部
+> —— **繞過守衛在今天是安全的,因為正式路徑本來就在窗口內。**
+>
+> 🔴 **但它留下一個缺口,已登記在第七十八批交接節**:
+> **日後若有人新增第二個窗口外的 `take_damage()` 呼叫點,那道被刻意繞過的守衛不會攔。**
+> 守衛是為了防這件事而加的,而這個入口被豁免了。
+>
+> 🔴 **AC9(敏感度證明)未照工作單字面執行,這是對的。**
+> 工作單「Test Evidence」節要求「對故意錯誤實作重跑測試確認轉紅,再改回」——
+> 那正是 `.claude/rules/test-standards.md`(2026-09-16 管理者裁決)明文**已淘汰**的手動注入法。
+> 實作者依規則而非依 AC 執行,並在測試檔檔頭寫明理由(14 條全部直接呼叫真實未修改的生產程式碼)。
+> 📌 **本 story 的 AC 比那條規則晚寫卻違反它** —— 與 `story-003b` AC9 同一個形狀,
+> 已是本專案第二次。切 story 時沒有查規則。
+>
+> **連帶修復**:`tests/unit/ai/greedy_tactical_ai_test.gd` 一條測試原本在建構後直接賦值
+> `.hp`,而該 `Unit` 來自 `BattleState.create()`、守衛已掛載、窗口全程未開 → 新介面下會被拒絕。
+> 改為把血量烘進 roster 的 `hp_max` 欄位(`from_csv_line()` 發生在守衛掛載之前),
+> **只改夾具建構方式,斷言語意一字未動**。
+> ⚠️ **這推翻了本 story「現況」節的一個推論** —— 該節認為這類賦值「不經過任何 `BattleState`」,
+> 實測為假。這正是「未決的實作細節」第 3 項明文要求「實際跑一次確認」的那個不確定性。
+>
+> **驗收**:協調者獨立重跑全套 `Overall Summary: 1055 test cases | 0 errors | 1 failures |
+> 0 flaky | 0 skipped | 0 orphans`、`ENGINE EXIT CODE = 100`、Parse Error / Abnormal exit 皆 0。
+> 另掃注入殘留 **0 命中**、禁用樣式 **0 命中**;守衛掛載時序經協調者逐行複驗
+> (在佈置迴圈**之後**,與 `board.gd` 既有的 vacuous-truth 論證一致)。
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: S(單一檔案 `unit.gd` 為主,`battle_state.gd` 少量接線;範圍小於

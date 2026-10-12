@@ -624,8 +624,8 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | Ready(執行序見下) | ADR-0001 | 003, 007, 012, 013 |
 | 015 | 行動旗標持久標記 + 不可通行地形呈現 | M4 | Visual/Feel | Ready(執行序見下) | N/A | 001, 004, 012, 013 |
 | 016 | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查 + `reachable_tiles()` 哨兵防護) | M2 | Logic | Ready(2026-10-05 管理者裁決切出) | N/A | 001, 002 |
-| 003c | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()`/`tick_all_modifiers()`,路徑⑥⑦) | M3a | Logic | Ready(2026-10-05 管理者裁決拆分自 003b,見 `story-index.md`) | ADR-0001 | **003b** |
-| 017 | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | M3a | Logic | Ready(2026-10-05 管理者裁決,見 `story-index.md`) | ADR-0001 | **003b** |
+| 003c | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()`/`tick_all_modifiers()`,路徑⑥⑦) | M3a | Logic | ✅ **Done(2026-10-12)** —— AC5 已併入「重寫 ADR-0001」,AC4 已 descope,兩者理由見該 story 檔頭 | ADR-0001 | **003b** |
+| 017 | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | M3a | Logic | ✅ **Done(2026-10-12)** —— `take_damage()` 採選項 B(繞過守衛),留下的缺口見該 story 檔頭 | ADR-0001 | **003b** |
 
 **執行層序列化(不得並行,共用 `src/ui/battle/battle_screen.gd`)**:`M6(008-011) → M5(012-013)
 → M4(014-015)`。規劃層可並行的只有 M2(001-002)與 M3a(003-006),M3b(007)需等 M2。

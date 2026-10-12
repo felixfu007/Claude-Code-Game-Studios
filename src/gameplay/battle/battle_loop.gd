@@ -116,23 +116,15 @@ func run(max_rounds: int) -> Dictionary:
 
 		var acting_ids: Array[int] = _order.units_with_flags_remaining()
 		if acting_ids.is_empty():
-			# story-003b-atomicity-write-guard-consolidation.md (ADR-0001
-			# path ⑤, named explicitly in the story's own path table as
-			# "battle_loop.gd:119"): TurnOrder.advance_faction() is a
-			# guarded mutator — its own single commit, mirroring
-			# BattleController.end_faction_phase()'s wrapping of the same
-			# call.
-			_state.commit_authoritative_change(func() -> void:
-				_order.advance_faction()
-			)
 			# story-002-modifier-lifecycle.md: this branch fires for BOTH
 			# faction transitions (PLAYER -> ENEMY and ENEMY -> PLAYER) — the
 			# tick only ever belongs to the latter, since GDD Formula 二's
 			# decrement is a once-per-round, player-turn-start rule, not a
-			# per-faction-boundary one. Gating on current_faction() here
-			# (rather than ticking unconditionally) is what keeps a
-			# PLAYER -> ENEMY boundary from double-counting a round's
-			# decrement.
+			# per-faction-boundary one. Gating on current_faction() (rather
+			# than ticking unconditionally) is what keeps a PLAYER -> ENEMY
+			# boundary from double-counting a round's decrement — see
+			# _advance_faction_and_start_next_turn()'s own doc comment for
+			# where that gate actually lives now.
 			#
 			# story-006-battle-loop-wiring.md: this is also the per-turn
 			# card-draw point — BattleState.begin_player_turn() wraps
@@ -157,14 +149,25 @@ func run(max_rounds: int) -> Dictionary:
 			# later fills its hand again a second time must be caught here
 			# again, not assumed already handled.
 			#
-			# 🔴 story-003b: begin_player_turn() below deliberately stays
-			# OUTSIDE any commit window — path ⑥ (wrapping this exact call)
-			# was split out to story-003c-player-turn-start-commit-wrapping.md
-			# (see that story for why). This is safe today because neither
-			# tick_all_modifiers() nor CardDeck.draw_for_turn() touches any
-			# guarded Board/TurnOrder mutator.
+			# 🔴 CORRECTED by story-003c-player-turn-start-commit-wrapping.md
+			# (this comment block previously said begin_player_turn()
+			# "deliberately stays OUTSIDE any commit window" — kept here,
+			# struck through by this note rather than silently deleted, per
+			# this project's discipline of not erasing a comment that
+			# explained a real, lived decision). That was story-003b's own
+			# path⑤ scope (it only named advance_faction(), battle_loop.gd
+			# :119) choosing not to cover this line. story-003c's AC2 closes
+			# that gap: advance_faction() and begin_player_turn() now land in
+			# the SAME commit_authoritative_change() Callable, via
+			# _advance_faction_and_start_next_turn() below — not two
+			# independent commits, and not one committed / one uncommitted.
+			# The original reasoning this comment carried (safe as a no-op
+			# today because neither tick_all_modifiers() nor
+			# CardDeck.draw_for_turn() touches a guarded Board/TurnOrder
+			# mutator) is still TRUE; it simply stopped being the reason this
+			# file is shaped the way it is.
+			_advance_faction_and_start_next_turn()
 			if _order.current_faction() == TurnOrder.Side.PLAYER:
-				_state.begin_player_turn()
 				if _state.has_pending_discard():
 					if not _resolve_forced_discard():
 						return _build_result(
@@ -229,6 +232,40 @@ func run(max_rounds: int) -> Dictionary:
 
 	# Unreachable — the while(true) above only exits through a return above.
 	return _build_result(_state.outcome(), log, false, _order.round_number())
+
+
+## story-003c-player-turn-start-commit-wrapping.md (ADR-0001 path ⑥): wraps
+## [method TurnOrder.advance_faction] and — only when that call lands the
+## turn order on [constant TurnOrder.Side.PLAYER] — [method
+## BattleState.begin_player_turn] inside the SAME outer [method
+## BattleState.commit_authoritative_change] Callable, so [member
+## BattleState.combat_state_version] increments exactly once for the whole
+## transition and any modifier [method BattleState.begin_player_turn] expires
+## is already gone by the moment that increment is observable from outside
+## this call — never a state where the version moved but the modifier change
+## had not (or vice versa).
+##
+## Mirrors [method BattleController._finalize_enemy_phase]'s own wrapping of
+## the identical pair of calls (story-003b AC11) — that method's version is
+## unconditional (its only caller already knows the transition lands on
+## PLAYER) while this one must re-check [method TurnOrder.current_faction]
+## itself, because the single branch in [method run] that calls this fires
+## for BOTH PLAYER -> ENEMY and ENEMY -> PLAYER transitions (see that call
+## site's own comment on why the gate cannot be unconditional here).
+##
+## Extracted out of [method run] (rather than left as two inline statements)
+## specifically so a test can override just this one method on a [BattleLoop]
+## subclass to simulate the pre-story-003c gap (the two calls landing in
+## separate commits, with [method BattleState.begin_player_turn] left
+## uncommitted) without touching this file — see
+## tests/unit/gameplay/battle/battle_loop_player_turn_start_commit_test.gd's
+## sensitivity-proof test for that mutant.
+func _advance_faction_and_start_next_turn() -> void:
+	_state.commit_authoritative_change(func() -> void:
+		_order.advance_faction()
+		if _order.current_faction() == TurnOrder.Side.PLAYER:
+			_state.begin_player_turn()
+	)
 
 
 # Consults _decide once for id and applies whatever it asks for: a move (if
