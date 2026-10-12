@@ -219,6 +219,32 @@ EPIC.md 那張表三列的現況描述全寫於 2026-09-29,**其中兩列今天�
 另三處是數字問題:一處宣稱「約 54 處」實測 **77**(漂移),兩處未過濾註解行(11 中 9 行、4 中 3 行是註解)。
 **六處全部改用結構上免疫的寫法**,並在各處寫明「那個 `| grep -v ":#"` 不是整潔,是必要」。
 
+### 🔴 三之二、一個誠實登記的缺口:呈現層版本核對的**失敗分支零測試覆蓋**
+
+```
+$ grep -rn "assert_same_version" tests/ --include=*.gd | awk -F: '{print $1}' | sort -u
+tests/unit/gameplay/battle/query_result_test.gd
+```
+**只有這一個檔案。**
+
+- ✅ **`QueryResult.assert_same_version()` 函式本身測得紮實** —— 6 條單元測試
+  (同版本 / 混版本 / 空陣列 / 單元素 / 子類別實例)+ 1 條敏感度證明(突變子類別改成恆回 true)。
+- 🔴 **但 `battle_screen.gd` 的 `_refresh_view()` 裡那段【接線】零覆蓋** ——
+  `if not versions_consistent or any_stale:` 分支(`push_error` + 清空三層高亮)
+  **從來沒有被任何測試執行過。**
+
+🔴 **而且它不是單純「忘了寫測試」** —— 那段程式碼**自己的註解**就寫著:
+> 「`_refresh_view()` 單次執行內沒有 await / 權威寫入 / `call_deferred`,
+>   所以三者『同版本』今天是**結構保證**,下面這個檢查**理論上恆為 true**」
+
+**亦即:它守的那件事,正好也讓它無法被測試走到。**
+📌 **我的推測(未驗證)**:用間諜子類別覆寫 `BattleController.move_targets()` 讓它回傳一個
+版本號落後的結果,應該就能走進那個分支 —— **但我沒驗證 `battle_screen.gd` 能不能注入替身
+controller**(它有 `_path_override` 系列注入點,**那是資料檔路徑,不是 controller 替身**)。
+
+**已交給 `godot-gdscript-specialist` 在覆核中判定是「可測但沒測」還是「結構上測不到」。**
+⚠️ **若覆核沒回答這一項,下一棒要自己接** —— 這是一段**已上線但從未執行過**的防護程式碼。
+
 ### 📌 四、下一棒(取代前面第七節的排序)
 
 | # | 做什麼 | 備註 |
