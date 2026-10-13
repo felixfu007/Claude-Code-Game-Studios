@@ -294,6 +294,26 @@ func _files_matching_surface_registration_calls(dir_path: String) -> Array[Strin
 				var lines: PackedStringArray = FileAccess.get_file_as_string(full_path).split("\n")
 				for i: int in range(lines.size()):
 					var stripped: String = lines[i].strip_edges()
+					# 🔴 2026-10-13 fix (story-008 dispatch) — a FULL-LINE
+					# comment is skipped before the substring check runs, not
+					# after: without this, prose explaining register_surface()/
+					# unregister_surface()'s behavior (e.g. "# CursorSurfaceRegistry's
+					# register() method hard-fails ...") false-positives as a
+					# real registration call the moment it contains the bare
+					# substring this matcher looks for — exactly the trap
+					# .claude/docs/coding-standards.md's 2026-10-12 entry ("A
+					# verification command written inside a comment counts
+					# itself as a match") warns about, just with this scanner
+					# itself as the thing being fooled rather than a human
+					# reader. GDScript comments are "#" after stripping leading
+					# whitespace — this intentionally only catches a FULL-LINE
+					# comment (matching this file's own stripped-line
+					# convention already used for the _EXEMPT_SHELL_LINES
+					# check below), not an inline "code  # comment" suffix,
+					# which this scanner has never needed to handle and is not
+					# the shape that broke here.
+					if stripped.begins_with("#"):
+						continue
 					if full_path == _EXEMPT_SHELL_FILE and stripped in _EXEMPT_SHELL_LINES:
 						continue
 					if _line_indicates_surface_registration_call(lines[i]):

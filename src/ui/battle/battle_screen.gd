@@ -978,6 +978,50 @@ func _ready() -> void:
 	_controller.battle_ended.connect(_on_battle_ended)
 
 	_board_view.render_terrain(terrain_rows)
+	# Story 008 (cursor navigation convergence) — registers the normal
+	# move/attack path's ownership of BOARD_TILE the moment this screen is
+	# ready, mirroring the card-play path's existing register/unregister
+	# discipline (_confirm_selected_card() etc. below). 🔴 Wiring only
+	# (AC-1): _cursor_cell below is NOT yet converted to read from
+	# CursorStateHost (that is a separate, later change) — until then,
+	# CursorStateHost's own per-frame pipeline and this screen's
+	# _handle_directional() independently move two separate state variables
+	# from the same keypress (engine-verified,
+	# tests/integration/ui/battle_cursor_navigation_convergence_test.gd's
+	# finding #1). Handed off to card-play at _handle_open_hand_pressed()'s
+	# open_hand() success branch, reclaimed at both
+	# _handle_open_hand_pressed()'s cancel-success branch and
+	# _apply_pending_card_confirm()'s confirm-success branch.
+	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
+	if register_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+		push_error(
+			"BattleScreen: CursorStateHost.register_surface(BOARD_TILE) returned %s instead of REGISTERED at _ready() -- normal move/attack cursor navigation will not work this session."
+			% register_result
+		)
+	# Story 008 — 🔴 SAFETY NET, found by running the full suite after adding
+	# the registration above: Table 1 of CursorSurfaceRegistry (ADR-0005
+	# 機制三) deliberately has NO automatic cleanup -- "lifecycle managed via
+	# explicit unregister calls" (cursor_surface_registry.gd's own class doc
+	# comment). Many EXISTING tests across this project instantiate
+	# BattleScreen.tscn for reasons unrelated to the cursor system (card deck
+	# wiring, hand bar wiring, mouse coords, etc.) and free it via
+	# auto_free() with no reason, before this story, to ever call
+	# CursorStateHost.unregister_surface(BOARD_TILE) themselves. Without this
+	# connection, a freed BattleScreen instance is left dangling in the
+	# registry, and CursorStateHost's own always-running
+	# CursorNavigationApplier._process() (Autoload, never torn down between
+	# tests) calls CursorSurfaceRegistry.get_surface() on it from a LATER,
+	# wholly unrelated test -- engine-verified failure, repeatable:
+	# "SCRIPT ERROR: Trying to return a previously freed instance" at
+	# cursor_surface_registry.gd's get_surface(), observed breaking
+	# tests/unit/ui/menu/battle_menu_layout_test.gd's own directional-input
+	# tests purely from execution ORDER, zero relation to this story. Safe to
+	# call unconditionally on exit regardless of which path (normal vs
+	# card-play) currently owns the tag — both register the SAME `self`
+	# reference, never a different node, so this either removes this
+	# instance's own registration or no-ops as UNREGISTERED_NOT_FOUND if
+	# something already released it (e.g. mid-handoff to card-play).
+	tree_exited.connect(func() -> void: CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE))
 	if not player_ids.is_empty():
 		_cursor_cell = _state.position_of(player_ids[0])
 
@@ -1799,12 +1843,35 @@ func _direction_just_pressed(action: StringName, tracker: Dictionary) -> bool:
 func _handle_open_hand_pressed() -> void:
 	if not _controller.is_card_play_in_progress():
 		if _controller.open_hand():
+			# Story 008 — hands BOARD_TILE off to the card-play path the
+			# instant it opens (S0 -> S1), BEFORE _confirm_selected_card()
+			# tries to register it again later (S1 -> S2):
+			# CursorSurfaceRegistry.register() hard-fails
+			# DUPLICATE_TAG_REJECTED even for the identical node
+			# re-registering an occupied tag (cursor_surface_registry.gd),
+			# so the two owners of BOARD_TILE can never both hold it at once.
+			var unregister_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
+			if unregister_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+				push_error(
+					"BattleScreen: CursorStateHost.unregister_surface(BOARD_TILE) returned %s instead of REGISTERED while opening the hand -- was it already unregistered by something else?"
+					% unregister_result
+				)
 			_card_selecting_from_hand = true
 			_refresh_view()
 		return
 	if _card_selecting_from_hand:
 		if _controller.cancel():
 			_card_selecting_from_hand = false
+			# Story 008 — CardPlaySession.cancel() only reaches Step.CLOSED
+			# from Step.SELECTING_CARD, which is exactly this branch: card
+			# play just fully closed back to S0 without playing a card.
+			# Reclaim BOARD_TILE for the normal move/attack path.
+			var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
+			if register_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+				push_error(
+					"BattleScreen: CursorStateHost.register_surface(BOARD_TILE) returned %s instead of REGISTERED while cancelling the hand back to S0."
+					% register_result
+				)
 			_refresh_view()
 
 
@@ -2214,6 +2281,14 @@ func _apply_pending_card_confirm() -> void:
 		# internally by a successful confirm()) already clears its real
 		# _selected_card/_selected_target_a/_selected_target_b.
 		_card_confirm_panel.hide_panel()
+		# Story 008 — CardPlaySession.confirm() always closes back to S0 on
+		# success: reclaim BOARD_TILE for the normal move/attack path.
+		var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
+		if register_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:
+			push_error(
+				"BattleScreen: CursorStateHost.register_surface(BOARD_TILE) returned %s instead of REGISTERED after confirming a card play."
+				% register_result
+			)
 		# AC-U1 — Implementation Note 5: confirm() already mutated the
 		# target's modifiers (甲類) or wrote to the affinity pool (丙類);
 		# Unit.effective_atk()/effective_def() and BattleState.preview_damage()
@@ -2357,6 +2432,31 @@ func _confirm_at_cursor() -> void:
 # authoritative write is or ever could be in progress. Whoever eventually
 # builds the real flag does not need to re-derive this — the placement is
 # already on the correct side of it.
+#
+# 🔴 CORRECTED 2026-10-13 — "That flag has NO field anywhere in src/
+# today" (the PAUSE PLACEMENT paragraph above) is now FALSE. As of
+# 2026-10-12 (stories 003b / 003c / 017) authoritative_write_in_progress is
+# a real guarded read-only property on BattleState, internally a depth
+# counter rather than a bool (ADR-0001, 2026-10-05 ruling on nested
+# commits). Check it with a line-start anchor so this very comment cannot
+# match itself:
+#   grep -rn "^var authoritative_write_in_progress" src/ --include=*.gd
+#
+# This comment cited step_enemy_phase()'s doc comment in
+# battle_controller.gd, which in turn cited CardPlaySession's. The ROOT was
+# corrected first; these two citers were not, and stayed stale — found
+# 2026-10-13 by the coordinator, both corrected under the same manager
+# approval. Correcting a root claim does not propagate to the prose citing
+# it; that is this project's most-registered failure shape.
+#
+# WHAT DOES NOT CHANGE: the pause placement reasoning above is unaffected
+# and still correct — it was deliberately written to sit on the right side
+# of a check that did not exist yet, and that check now exists. The await
+# is still STRICTLY BETWEEN two step_enemy_phase() calls, so ADR-0001
+# mechanism 二's requirement (the flag must never stay true across two
+# consecutive _process frames) is satisfied by the real flag exactly as it
+# would have been by the planned one. No code change is required here —
+# only the premise sentence was stale.
 #
 # 🔴 Re-entrancy (AC-E4): the SAME phase-guard below is what keeps this
 # function from double-driving the phase if it is invoked again while a

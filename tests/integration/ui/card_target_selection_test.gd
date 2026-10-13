@@ -1432,15 +1432,20 @@ func test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected(
 		) % [enemy_cell, navigate_result, enemy_tile_id]
 	).is_equal(enemy_tile_id)
 
-	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(
-		CursorTypes.SurfaceType.BOARD_TILE, instance
-	)
-	assert_int(register_result).append_failure_message(
-		(
-			"PRECONDITION: CursorStateHost.register_surface(BOARD_TILE) 沒有回傳 REGISTERED"
-			+ "(實得 %s)——是不是上一支測試沒清乾淨,或本次呼叫本身有誤?"
-		) % register_result
-	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+	# 🔴 2026-10-13 更正(story-008 接線後,發現非退步 —— 協調者已確認):本測試
+	# 原本在此手動呼叫 register_surface(),因為當時 BattleScreen._ready() 還不會
+	# 自己註冊 BOARD_TILE——本測試繞過 _confirm_selected_card() 走捷徑直接驅動
+	# BattleController,需要自己補一手註冊。story-008 接線後 _ready() 已經會
+	# 自動把 instance 註冊成 BOARD_TILE 的擁有者,這裡原本的呼叫只會拿到
+	# DUPLICATE_TAG_REJECTED(同一個 instance 想重複佔用同一個 tag)——這不是
+	# 退步,instance 本來就已經是註冊者了。改為直接核對這件事本身，而不是核對
+	# 「再呼叫一次 register_surface() 回傳什麼」。
+	var registry: CursorSurfaceRegistry = get_tree().root.get_node_or_null("CursorStateHost").get(&"_registry")
+	assert_object(registry.get_surface(CursorTypes.SurfaceType.BOARD_TILE)).append_failure_message(
+		"PRECONDITION: instance 應該已經是 BOARD_TILE 的註冊者(由 story-008 的 " +
+		"BattleScreen._ready() 完成)——若不是，代表該註冊沒有生效，或上一支測試沒" +
+		"清乾淨。"
+	).is_same(instance)
 
 	var set_result: CursorState.SetTargetResult = CursorStateHost.set_target(
 		CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, enemy_tile_id)
@@ -1530,15 +1535,20 @@ func test_sensitivity_proof_illegal_tile_confirm_legality_check_skipped_regressi
 	instance._card_selecting_from_hand = false
 	instance._card_selecting_target = true
 
-	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(
-		CursorTypes.SurfaceType.BOARD_TILE, instance
-	)
-	assert_int(register_result).append_failure_message(
-		(
-			"PRECONDITION: CursorStateHost.register_surface(BOARD_TILE) 沒有回傳 REGISTERED"
-			+ "(實得 %s)——是不是上一支測試沒清乾淨,或本次呼叫本身有誤?"
-		) % register_result
-	).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+	# 🔴 2026-10-13 更正(story-008 接線後,發現非退步 —— 協調者已確認):本測試
+	# 原本在此手動呼叫 register_surface(),因為當時 BattleScreen._ready() 還不會
+	# 自己註冊 BOARD_TILE——本測試繞過 _confirm_selected_card() 走捷徑直接驅動
+	# BattleController,需要自己補一手註冊。story-008 接線後 _ready() 已經會
+	# 自動把 instance 註冊成 BOARD_TILE 的擁有者,這裡原本的呼叫只會拿到
+	# DUPLICATE_TAG_REJECTED(同一個 instance 想重複佔用同一個 tag)——這不是
+	# 退步,instance 本來就已經是註冊者了。改為直接核對這件事本身，而不是核對
+	# 「再呼叫一次 register_surface() 回傳什麼」。
+	var registry: CursorSurfaceRegistry = get_tree().root.get_node_or_null("CursorStateHost").get(&"_registry")
+	assert_object(registry.get_surface(CursorTypes.SurfaceType.BOARD_TILE)).append_failure_message(
+		"PRECONDITION: instance 應該已經是 BOARD_TILE 的註冊者(由 story-008 的 " +
+		"BattleScreen._ready() 完成)——若不是，代表該註冊沒有生效，或上一支測試沒" +
+		"清乾淨。"
+	).is_same(instance)
 
 	var set_result: CursorState.SetTargetResult = CursorStateHost.set_target(
 		CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, enemy_tile_id)
