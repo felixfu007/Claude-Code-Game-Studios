@@ -1,7 +1,40 @@
 # Story 004: `AffinityDataPool` 執行期實例擁有權 + roster id↔Character 對映層(M2 前置)
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done —— 範圍收斂為 P-2(2026-10-13,協調者獨立重跑驗收)**
+>
+> ### 實作決定(story-004,2026-10-13)
+>
+> **P-1 判定:部分解決。** `battle_screen.gd` 已持有生命週期涵蓋整場戰鬥的 `_affinity_pool`
+> 成員(非 Autoload,符合 ADR-0002 機制一),但 `AffinityPhiProvider._init(state, links)`
+> 的建構子簽章**尚未接受池參照**,因此「#5 側可透過建構子注入取得池參照」這個能力今天還不成立。
+> **剩下的「讓 provider 的建構子能接收池參照 + 改 `battle_screen.gd` 的建構呼叫點」留給 `story-005`**
+> —— 那正是 005 要把讀取端改為逐次查詢池的主線;先在本 story 改簽章等於替 005 做了一半。
+> (另:本 story 執行期間有另一位實作者正在改 `battle_screen.gd`(story-009),同時動它會撞車。)
+>
+> **P-2 已完成**:`src/gameplay/affinity/affinity_roster_character_mapper.gd`
+> (`AffinityRosterCharacterMapper.character_for_roster_id()`,含驗證),測試在
+> `tests/integration/gameplay/affinity/affinity_roster_character_mapper_test.gd`(3 條)。
+>
+> 🔴 **偏移量常數:選「抽成共用」,不複製。** 把寫入端的 `_ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET`
+> 改名為公開的 `ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET`(值不變),讀取端直接引用。
+> **理由**:這是單一純量常數,**不像曼哈頓距離那樣有 GDD 明文要求保留兩份獨立實作的解耦理由**
+> (R2 那兩份是刻意設計,且今天剛落地專屬守衛測試)。本常數沒有對應的架構理由要求分歧,
+> 複製只是主動製造本專案登記最多次的失效形狀。代價是讀取側多一條跨目錄引用指向卡牌系統目錄 ——
+> 判斷該耦合成本低於兩份偏移量漂移的風險,且寫入端的文件註解本就自陳是這個對映的「歸屬處」。
+> ⚠️ 寫入端除常數改名與三處引用更新外**邏輯一字未動**,全套確認其既有測試全過。
+>
+> 📌 **敏感度證明:3 條全部證不了,歸 `test-standards.md` 的 A 類**(static 純函式,
+> GDScript 無法用間諜子類別覆寫靜態方法)。**實作者明文拒絕硬做一個「平行算式比對」的假證明**
+> —— 那只能證明測試自己的算術對,證不了生產程式碼的回歸會被抓到。
+>
+> 📌 **實作者主動回報的一個自己的 bug**:第一輪用 `assert_object()` 去檢查一個 int(enum 序數),
+> 而 GdUnit4 的 `assert_object()` 在建構時若收到 BOOL/INT/FLOAT/STRING 會主動報
+> 「unexpected type」。**那是測試選錯斷言方法,不是對映層或共用常數有 bug。**
+>
+> 驗收:`1162 → 1165 = +3`、`99 → 100 suites`、`ENGINE EXIT = 100`、
+> `Parse Error = 0`、`Abnormal exit = 0`。`battle_screen.gd` 與 provider 簽章皆未碰。
+> ⚠️ 原狀態行:`Ready`
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」——好感度數值池段直接適用)
 > **Type**: Integration
 > **Estimate**: M(1～2 session,取決於下方第一步查證結果——若 S-009 已解決 P-1,
@@ -135,7 +168,7 @@ EPIC.md 的 P-1(誰建立 `AffinityDataPool` 實例)標記的解法欄寫著「`
 需新建,比照 `tests/integration/gameplay/affinity_pool/` 的既有慣例),驗證池的存活範圍
 與 id 對映的邊界行為。
 
-**Status**: [ ] Not yet created
+**Status**: [x] 已建立(2026-10-13)—— `tests/integration/gameplay/affinity/affinity_roster_character_mapper_test.gd`(3 條),協調者獨立重跑驗收。
 
 ## Dependencies
 

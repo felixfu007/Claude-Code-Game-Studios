@@ -21,8 +21,16 @@
 #
 # 🔴 五個陷阱(EPIC.md/工作單,逐一對應下方程式碼位置):
 #   1. roster id(1~5)與 AffinityTypes.Character 序數(0 起算)差 1——見
-#      _ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET 與 append_record() 開頭。
+#      ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET 與 append_record() 開頭。
 #      ADR-0002 全文沒有任何一句話建立這個對映,本檔是它的歸屬處。
+#      🔴 2026-10-13(story-004,好感度—位置連鎖 epic #5)起,本常數已從底線
+#      前綴(原 _ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET,慣例上的私有)改為
+#      公開,供 #5 讀取側的
+#      src/gameplay/affinity/affinity_roster_character_mapper.gd 直接引用,
+#      不另外複製一份同樣的偏移量常數——選擇「抽成共用」而非「讀端自行複製」,
+#      理由見該檔文件註解:本常數是純量常數,不像曼哈頓距離那樣有 GDD 明文的
+#      解耦理由要求保留兩份獨立實作,抽成共用的耦合代價遠低於放任第二份悄悄
+#      漂移的風險。本檔仍是這個對映規則的唯一歸屬處,公開只是讓它能被引用。
 #   2. 序數驗證必須先於 AffinityTypes.pair_of()——見 append_record() 對
 #      is_valid_character() 的雙重驗證,以及對 character_a == character_b 的
 #      額外檢查。AffinityTypes.pair_of() 自己的文件註解明文:「含 a == b,
@@ -56,7 +64,13 @@ extends AffinityWritePort
 ## 註解陷阱一)。roster id 6~10 是敵方單位,不對應任何
 ## [enum AffinityTypes.Character] 成員,減去本偏移量後會落在 0~4 合法範圍
 ## 之外(5~9),由 [method AffinityTypes.is_valid_character] 擋下。
-const _ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET: int = 1
+##
+## 🔴 公開常數(2026-10-13 起,story-004)——讀取側
+## [AffinityRosterCharacterMapper]
+## (src/gameplay/affinity/affinity_roster_character_mapper.gd)直接引用本
+## 常數,不另外複製一份同樣的偏移量。本檔仍是這個對映規則的唯一歸屬處,
+## 公開只是讓它能被另一側引用,結構上排除兩份偏移量各自漂移的可能。
+const ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET: int = 1
 
 ## 若本檔自身的序數驗證已正確執行,呼叫 [method AffinityDataPool.append_record]
 ## 理論上不應該回傳下列任一種池側拒絕碼:[constant AffinityDataPool.WriteRejection.INVALID_PAIR]
@@ -109,8 +123,8 @@ func append_record(character_a: int, character_b: int, m: int, _source: StringNa
 	# 回傳 INVALID_PAIR——這裡的語意是「這個輸入從頭到尾就沒有描述過一個
 	# 可寫入的配對」,不同於下方 match 分支要防的「本檔驗證通過、但池又
 	# 反悔」那種情況(限制第 9 條)。
-	var char_a: AffinityTypes.Character = character_a - _ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET
-	var char_b: AffinityTypes.Character = character_b - _ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET
+	var char_a: AffinityTypes.Character = character_a - ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET
+	var char_b: AffinityTypes.Character = character_b - ROSTER_ID_TO_CHARACTER_ORDINAL_OFFSET
 
 	if not AffinityTypes.is_valid_character(char_a) or not AffinityTypes.is_valid_character(char_b):
 		push_error(
