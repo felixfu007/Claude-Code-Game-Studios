@@ -178,6 +178,151 @@
 ## established "pending flag set in `_input()`-reached code, consumed in
 ## `_process()` at priority -60" shape exactly. NOT YET IMPLEMENTED OR
 ## ENGINE-VERIFIED — this is a reading-based plan, not a tested one.
+##
+## ═══════════════════════════════════════════════════════════════════════════
+## 5. 2026-10-13 (THIS ROUND, READ-ONLY) — unit 3b point 2/4 investigation
+##    results. Logged per coordinator instruction after this round burned
+##    ~20 tool calls / ~140k tokens of reading with ZERO disk output — the
+##    coordinator judged the dispatch brief's "first action must be Write"
+##    rule did not fit a half-finished, no-skeleton pickup, and asked for a
+##    single append instead. NOTHING below is implemented.
+##    `src/ui/battle/battle_screen.gd` has ZERO diff from commit `b4c8e6d`
+##    this round.
+## ═══════════════════════════════════════════════════════════════════════════
+##
+## 5a. `_TargetRetargetActor` reuse — CONFIRMED, by directly reading its full
+##     class body in `battle_screen.gd` (not just grepping for it). The prior
+##     round's claim holds exactly as stated: `_process(_delta)`'s entire
+##     body is the one line `_owner._apply_pending_target_jump()`.
+##     `_init(owner)` sets `process_priority = -60` and stores `_owner` —
+##     nothing else. Reuse plan (add a second pending field + a second owner
+##     method, call it from the SAME actor's `_process()` right alongside the
+##     existing call) is structurally sound and needs no new class/file/node.
+##
+## 5b. `_update_cursor_visual()`'s SOLE production call site — CONFIRMED by
+##     grep (`grep -n "_update_cursor_visual" src/ui/battle/battle_screen.gd`):
+##     called from exactly ONE place, inside this screen's OWN `_process()`
+##     (process_priority 100, set in `_init()`), immediately after
+##     `_device.resolve_frame()`. No call from `_input()`; no other call site
+##     anywhere in `src/`. Matches what this file's OWN finding #1 above
+##     already discovered the hard way (`instance._process(0.0)` required,
+##     not `_update_cursor_visual()` alone, because the MOUSE/
+##     KEYBOARD_GAMEPAD branch depends on `_device.current()`, which only
+##     `resolve_frame()` — called earlier in the SAME `_process()` tick —
+##     updates).
+##
+## 🔴 5c. THE DISPATCH BRIEF'S HYPOTHESIS ("`_update_cursor_visual()` might
+##     not need pending machinery since it already runs in `_process()`")
+##     DOES NOT HOLD AS STATED — but the reason is informative, not a dead
+##     end. R5-2's constraint is not "`_input()` vs `_process()`" as such; it
+##     is a process_priority WINDOW, strictly between -100 and -25. This
+##     screen's OWN `_process()` is priority 100 (role ⑥, downstream reader —
+##     see `_init()`'s own doc comment and R4-1's table). 100 is just as far
+##     outside the (-100,-25) window as `_input()` is. So calling
+##     `CursorStateHost.set_target()` directly from inside
+##     `_update_cursor_visual()` would violate R5-2 exactly the way calling
+##     it from `_handle_mouse_button()` would. Some deferral is needed for
+##     the WRITE half either way. Only the READ half (decoding the host's
+##     already-settled target back into `_cursor_cell` for rendering —
+##     already how the converged KEYBOARD_GAMEPAD branch works today) is
+##     safe to leave at priority 100.
+##
+## 5d. Hover (continuous) vs click (discrete) — PARTIALLY WORKED OUT, with
+##     one open timing wrinkle (5e) I could NOT resolve this round. Tentative
+##     unification: `_handle_mouse_button()` and the MOUSE branch of
+##     `_update_cursor_visual()` both ultimately do the same thing today —
+##     turn `_last_mouse_window_pos` into a board cell via
+##     `_window_pos_to_cell()` and treat it as authoritative.
+##     `_handle_mouse_button()` ALREADY writes
+##     `_last_mouse_window_pos = event.position` as its first line, so a
+##     click is really "a mouse-motion update that ALSO fires
+##     `_controller.click_tile(cell)`". That `click_tile()` call is
+##     INDEPENDENT of `_cursor_cell`/the host — it reads the freshly-computed
+##     LOCAL `cell` variable, never a stored field (confirmed by reading the
+##     full function body) — so it is UNAFFECTED by whatever convergence
+##     timing gets chosen for the VISUAL cursor. This suggests click does NOT
+##     need its OWN separate pending-flag/actor wiring for cursor movement —
+##     only ONE new per-frame step is needed (not two), living in
+##     `_TargetRetargetActor._process()` (-60): "when this screen's LOCAL
+##     `_device.current() == DeviceAuthority.Device.MOUSE`, recompute the
+##     cell from `_last_mouse_window_pos`, and if in bounds, call
+##     `CursorStateHost.set_target(CursorTarget.make(BOARD_TILE, encoded))`."
+##     Both hover and click would converge through this one step, since both
+##     already funnel into `_last_mouse_window_pos`.
+##
+## 🔴 5e. THE OPEN WRINKLE 5d DOES NOT RESOLVE — reading this screen's LOCAL
+##     `_device.current()` from priority -60 would be ONE FRAME STALE.
+##     `_device` (this screen's own `DeviceAuthority`, DISTINCT from
+##     `CursorTypes.Authority`, the HOST's internal device-authority enum —
+##     see `_handle_directional()`'s own doc comment for why two separate
+##     trackers exist) only updates `current()` inside `resolve_frame()`,
+##     which this screen calls from ITS OWN `_process()` at priority 100 —
+##     AFTER `_TargetRetargetActor` (-60) would already have run for that
+##     same frame. So a -60 step reading `_device.current()` sees LAST
+##     frame's resolved value, not this frame's.
+##     Un-gated (always recompute from mouse position regardless of
+##     `_device.current()`), the mouse step would stomp on keyboard
+##     navigation every single frame the mouse sits anywhere on/off the
+##     board, even while the player uses only keyboard — NOT today's
+##     behavior (today's `_update_cursor_visual()` only takes the mouse
+##     branch when `_device.current() == MOUSE`). I have NOT found a clean
+##     fix within this story's "reuse `_TargetRetargetActor`, no new actor"
+##     cap:
+##       - Accepting the 1-frame staleness ONLY on the authority-transfer
+##         frame itself (not on steady-state mouse tracking) MIGHT be an
+##         acceptable, disclosable behavior difference under this AC's own
+##         explicit tolerance ("可能暴露既有行為差異...此為已知並接受的代價") —
+##         I have NOT verified whether the transfer frame is actually
+##         observable/testable, or whether it silently self-corrects one
+##         frame later.
+##       - Moving `resolve_frame()` earlier touches `DeviceAuthority`, which
+##         Implementation Note 1 explicitly reserves for story-009 ("先拆裝置
+##         權威會讓游標當場沒有來源" — retiring this tracker is story-009's
+##         job). I did NOT investigate this further because it looks like
+##         scope expansion into another story's territory, not because I
+##         confirmed it is unsafe.
+##     🔴 **THIS IS THE ITEM I AM LEAST CONFIDENT "REUSE THE EXISTING ACTOR"
+##     ACTUALLY SOLVES CLEANLY — IT MAY BE WHAT PUSHES unit 3b point 2/4 PAST
+##     THE "NEEDS A NEW ACTOR" CAP, OR AT LEAST PAST "REUSE TRIVIALLY".**
+##     Flagging explicitly rather than picking a resolution and silently
+##     coding it.
+##
+## 5f. Other things found, not in the dispatch brief:
+##     - `_handle_mouse_button()` ALSO calls `_board_view.set_cursor(cell)`
+##       directly — a second, redundant visual write on top of
+##       `_update_cursor_visual()`'s own `_board_view.set_cursor(_cursor_cell)`
+##       call later the same frame. This is the mouse-path twin of finding
+##       #1's "一次走兩格" shape: two writers, same root cause (a direct write
+##       bypassing the per-frame sync point). Likely needs removing in the
+##       same change that removes `_cursor_cell = cell`, mirroring how
+##       `_handle_directional()` lost its own direct write in point 3/4.
+##     - `CursorTypes.Authority` (the HOST's internal device-authority enum,
+##       inside `cursor_state.gd`, NOT this screen's local `DeviceAuthority`)
+##       already has a `MOUSE` member, decided inside
+##       `CursorState.arbitrate_device_authority()` via
+##       `MouseReclaimPolicy.evaluate()` — but that mechanism decides WHO HAS
+##       DEVICE AUTHORITY (self-drawn cursor vs. native pointer, 機制六①/
+##       機制十三); its own doc comment states it "must NOT touch `_target`",
+##       and it never calls `set_target()`. Grepped for any existing path
+##       that turns a mouse position into a `BOARD_TILE` `set_target()` call
+##       — found NONE. **This story is the FIRST thing in this codebase that
+##       would make mouse position drive `_target`.** That is a bigger step
+##       than "wire into an existing pattern" (how both the dispatch brief
+##       and the story doc frame point 2/4) — it is the same SHAPE of wiring
+##       (pending flag -> `_TargetRetargetActor` -> `set_target()`), but
+##       there is no existing "mouse version" of it to copy the way
+##       `_confirm_selected_card()`'s four register/unregister call sites
+##       gave a ready template for AC-1. Noting this so the next reader does
+##       not assume an unread mouse-side precedent exists somewhere.
+##     - `_controller.click_tile(cell)` reads the LOCAL `cell` variable,
+##       never `_cursor_cell` (confirmed by reading the full function body).
+##       Whatever convergence timing/lag point 2/4 ends up choosing for the
+##       VISUAL cursor, the actual gameplay click action is unaffected by it.
+##
+## STATUS: nothing in this section is implemented; `battle_screen.gd` has
+## ZERO diff from commit `b4c8e6d` this round. Next round should settle 5e
+## before writing any code — the chosen answer changes what
+## `_TargetRetargetActor`'s new owner method needs to read and from where.
 extends GdUnitTestSuite
 
 
