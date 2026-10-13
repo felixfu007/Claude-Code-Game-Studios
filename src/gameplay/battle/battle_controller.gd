@@ -1021,6 +1021,32 @@ func _finalize_enemy_phase() -> void:
 ## a documented gap owned by the not-yet-built tactical-combat-system write
 ## guard, not something this story builds.
 ##
+## 🔴 [b]CORRECTED 2026-10-13 — the claim above is now FALSE, and so is the
+## conclusion drawn from it.[/b] The old text said ADR-0001's
+## [code]authoritative_write_in_progress[/code] flag "has NO field anywhere in
+## src/ yet", citing [CardPlaySession]'s doc comment (2026-09-10) as
+## corroboration.
+##   1. [b]The flag is real as of 2026-10-12[/b] (stories 003b / 003c / 017):
+##      a guarded read-only property on [BattleState] whose internal
+##      representation is a depth counter, not a bool (ADR-0001, 2026-10-05
+##      ruling on nested commits). Immune form of the check — anchored at
+##      line start so a doc comment can never match itself:
+##        grep -rn "^var authoritative_write_in_progress" src/ --include=*.gd
+##   2. [b]The source this cites was itself corrected earlier[/b] —
+##      [CardPlaySession]'s doc comment no longer makes the claim. This
+##      comment and [code]src/ui/battle/battle_screen.gd[/code]'s
+##      [method _end_faction_phase_pressed] doc comment were the two citers
+##      that did not follow. Found 2026-10-13 by the coordinator, corrected
+##      under the same manager approval. [b]Correcting a root claim does not
+##      propagate to the prose citing it[/b] — this project's most-registered
+##      failure shape, here three citation levels deep.
+##   3. [b]What does NOT change:[/b] the synchronous-call-chain reasoning
+##      below stands on its own (it is about this call chain never yielding,
+##      not about whether the flag exists), and it is still the weaker
+##      guarantee the next paragraph says it is. Only the "no field exists"
+##      premise and the "owned by a not-yet-built write guard" attribution
+##      are stale.
+##
 ## 🔴 THIS IS A WEAKER GUARANTEE THAN THE ORIGINAL AC WORDING, NOT AN
 ## EQUIVALENT ONE — say so plainly rather than treating them as the same
 ## claim. The synchronous-call-chain proof above covers exactly one thing:

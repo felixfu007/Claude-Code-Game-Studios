@@ -562,6 +562,33 @@ Card.new_permanent_affinity_write(p_id, p_character_a, p_character_b, p_magnitud
 > 📌 **怎麼發現的**:在修一處「註解裡的 grep 指令會把自己算進去」時順手重量,
 > 發現 `battle_menu.gd` 的同一句宣稱已變假 —— 而那句宣稱正是本列的來源。
 
+> ✅ **2026-10-13 `story-u019` 已交付,上面那句「下一棒要做的是」有答案了。**
+> 新測試檔 `tests/integration/ui/menu/battle_menu_authoritative_flag_true_positive_test.gd`,
+> 8 條(4 條真陽性 + 4 條敏感度證明)。真陽性用真實 `BattleState.create()` +
+> `state.commit_authoritative_change()` 驅動**真實的**旗標,**斷言寫在 mutator 內部** ——
+> 那是旗標唯一會是 `true` 的時刻,寫在外面會量到 `false` 而且測試照樣會過。
+> 既有四處替身測試**原封不動,未改一字**:它們驗「閘門有接」,新測試驗「旗標會變真」,
+> **兩者並存,不是取代關係**(工作單 AC-3 明文要求)。
+>
+> 🔴 **連帶補上一個本表與 `story-u019` 工作單【都漏列】的缺口:替身其實有五處,不是四處。**
+> `AC-U8` 真正對應的生產路徑是 `CardPlaySession.open_hand()`,不是 `BattleMenu.open()` ——
+> 兩者是平行的兩個閘門。2026-10-12 盤點時用的搜尋字串是
+> `authoritative_write_in_progress_check`,而 `tests/integration/gameplay/cards/card_play_session_test.gd`
+> 裡那處替身的區域變數叫 `write_in_progress`,**不含那個子字串,所以 grep 找不到它**
+> (它掛在 `test_ac14_...` 這個名字下,用 `AC-U8` 也搜不到)。
+> ⚠️ **這是本專案 2026-10-12 登記的同一個失效家族的第六次**:一個樣式在它該命中的地方沒命中,
+> 而**空結果看起來跟「沒有這種東西」一模一樣**。前五次是「在不該命中的地方命中了」,
+> **這次是反方向 —— 同一個病因,相反的症狀。**
+> 上述新測試檔已一併補上 `CardPlaySession` 那一側的真陽性測試,該檔既有替身同樣未改動。
+>
+> 引擎複驗(協調者獨立重跑,不採信回報):
+> `Overall Summary: 1135 test cases | 0 errors | 1 failures | 0 flaky | 0 skipped | 0 orphans`、
+> `ENGINE EXIT = 100`、`Parse Error = 0`、`Abnormal exit = 0`;唯一具名 FAILED 為既有刻意紅的
+> `affinity_phi_provider_test.gd`。`1127 → 1135 = +8`,與新增的 `func test_` 數逐項對得上。
+>
+> ⚠️ **本列的「⚠️ 部分」標記、第 158 列、以及 `story-u012` 的對應標記,本次一字未刪。**
+> 本註記只負責把事實記清楚,**是否改判留給下一次裁決** —— 與上方 2026-10-12 註記同一立場。
+
 ---
 
 ## 八、✅ 兩項皆已於 2026-09-15 由管理者裁決(原為建議,現為既定事實)

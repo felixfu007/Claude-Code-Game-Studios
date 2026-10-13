@@ -1,0 +1,6 @@
+
+0.png  1024x1024  邊界洋紅 0/4092 (0.00%)  四角+四邊中點: b9babb, bcb8be, 92d6c2, bfb9c2, bab9ba, bbb5be, bcb8bd, bcb9bc
+0.png  1024x1024  邊界洋紅 0/4092 (0.00%)  四角+四邊中點: cacec7, d0cacb, 9df1d2, d4cbd3, ceccc7, d1c9d0, cfcaca, d0cbcb
+0.png  1024x1024  邊界洋紅 0/4092 (0.00%)  四角+四邊中點: 9a9696, 9a9599, 89a19b, 9c969c, 9a9696, 9b949a, 989596, 999696
+0.png  1024x1024  邊界洋紅 0/4092 (0.00%)  四角+四邊中點: 7f7b8a, 807a8b, 221a27, 3b3749, 7d778a, 281c2a, 858486, d6cccc
+candidate_jia_sprite_styleA_seed2001.png  1024x1024  邊界洋紅 0/4092 (0.00%)  四角+四邊中點: d4ddda, dbd9de, 9fffe7, dfd9e7, d8dad9, dbd6df, dad9db, dbd9dc

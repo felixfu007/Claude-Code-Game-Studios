@@ -157,6 +157,24 @@ EPIC.md 第二節單元清單表已列出落點,本節把它明文複述在這�
   > (`Ready`,Integration,估時 S)。該 story 的 AC-5 會回來更新本處註記。
   > 🔴 **在它完成之前,`AC-M8` 仍是「部分涵蓋」** —— 前提消失不等於驗收完成。
   > 📌 同一則更正也登記在 `production/epics/card-play-interface/EPIC.md` 限制表第 1 列之後。
+  >
+  > ✅ **2026-10-13 `story-u019` 交付完畢,上面「下一棒要判斷的是」那句已有答案。**
+  > 新測試檔:`tests/integration/ui/menu/battle_menu_authoritative_flag_true_positive_test.gd`。
+  > 兩條核心測試(`test_menu_open_rejected_while_real_authoritative_write_window_is_open` /
+  > `test_menu_open_succeeds_after_real_authoritative_write_window_closes`)用真實
+  > `BattleState.create()` + `state.commit_authoritative_change()` 驅動真實旗標,
+  > 斷言寫在 mutator 內部。另有 4 條 `test_sensitivity_proof_*`,全部以**方法覆寫突變**
+  > (覆寫 `commit_authoritative_change()`、操作繼承來的 `_authoritative_write_depth`)
+  > 證明這兩個斷言技巧抓得到缺陷 —— **刻意不覆寫帶 `get:` 的屬性本身**,因為本專案測試套件
+  > 裡沒有任何先例證明那樣做是安全的。4 條全部可證,無「證明不了」項。
+  > 本節上方列出的既有替身測試(`test_menu_key_rejected_while_authoritative_write_flag_true`)**未被改動**。
+  >
+  > ⚠️ **本次只關閉「旗標是否真的會變真」這一半。** `AC-M8` 後半「拒絕外觀與其他拒絕外觀不同」
+  > 仍由既有的 `test_rejection_appearance_differs_between_authoritative_write_and_forced_discard`
+  > 驗證,而該測試的**強制棄牌那一側依然是替身**(真正的強制棄牌判定屬 U-015 範圍)。
+  > **這不是本次新增的限制,是原本就登記的 Out of Scope。**
+  > 引擎複驗:`Overall Summary: 1135 test cases | 0 errors | 1 failures | ...`、`ENGINE EXIT = 100`。
+  > **本處「⚠️ 部分涵蓋」文字是否改判,留給下一次裁決。**
 - **AC-M9**:選單開啟前棋盤上已選定一個單位 → 開啟後關閉 → **該選取完整保留** |
   Integration | **BLOCKING**
 

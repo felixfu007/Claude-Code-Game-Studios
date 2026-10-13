@@ -76,6 +76,29 @@
 
 6. 🔴 **AC-U8 目前只能驗「閘門有接」,不能驗「旗標會變真」**——`authoritative_write_in_progress` 在 `src/gameplay/battle/battle_state.gd` 目前只是一句文件註解,不是實體欄位(`_authoritative_write_in_progress_check: Callable` 是 `CardPlaySession` 建構時注入的一個可選 Callable,未設定時視為「永不阻擋」)。本 story 能驗證的是:當這個 Callable 回傳 `true` 時,`open_hand()` 確實回傳 `false` 且 UI 顯示對應的拒絕外觀;**不能構造出「今天遊戲裡這個旗標真的被結算路徑設成 true」的真陽性場景**——那需要 #4 戰棋系統把 `authoritative_write_in_progress` 從註解變成真正的欄位(EPIC.md 限制第 1 條)。
 
+   > ✅ **2026-10-13 更正:上面第 6 點的前提已經消失,而且這個缺口本身曾被別處的盤點漏列。**
+   > `authoritative_write_in_progress` 自 2026-10-12 起是 `BattleState` 上一個**有守衛的唯讀屬性**
+   > (內部為深度計數器,ADR-0001 2026-10-05 巢狀提交裁決),不再是註解。當場查(用行首錨點,
+   > 這樣這段註解本身不會被算進去):
+   > `grep -rn "^var authoritative_write_in_progress" src/ --include=*.gd`
+   >
+   > 🔴 **漏列的部分**:2026-10-12 盤點「四處替身」時搜的是字串
+   > `authoritative_write_in_progress_check`,而本 story 對應的那處替身在
+   > `tests/integration/gameplay/cards/card_play_session_test.gd`,其區域變數叫 `write_in_progress`
+   > ——**不含那個子字串,grep 找不到它**;它又掛在 `test_ac14_...` 名下,用 `AC-U8` 也搜不到
+   > (本檔上方自己就記著這一點)。**它其實是第五處替身。**
+   >
+   > `story-u019` 已補上對應的真陽性測試,位於
+   > `tests/integration/ui/menu/battle_menu_authoritative_flag_true_positive_test.gd`:
+   > `test_card_play_session_open_hand_rejected_while_real_authoritative_write_window_is_open` /
+   > `..._succeeds_after_real_authoritative_write_window_closes`,用真實 `BattleState.create()` +
+   > `state.commit_authoritative_change()` 驅動真實旗標(而非恆真 lambda),另有 2 條對應的
+   > `test_sensitivity_proof_*`。**本檔既有的 `test_ac14_...` 替身測試未被改動。**
+   > 引擎複驗:`Overall Summary: 1135 test cases | 0 errors | 1 failures | ...`、`ENGINE EXIT = 100`。
+   >
+   > ⚠️ **上方第 6 點原文與 Test Evidence 節那個對不上的測試名稱,本次一字未改。**
+   > 是否更正留給下一次裁決;本註記只負責把事實記清楚。
+
 7. 🔴 **AC-U10 只能驗 4 組,不能驗 12 組**——75%/150% 兩檔字級功能不存在(`HudLayout.font_size()` 目前無玩家可調係數,UX-5)。本 story 只驗證 100% 檔位 × 四種螢幕共 4 組不溢出。⚠️ **不得抽樣宣稱「12 組已驗」**——`skill-card-play.md` 明文警告 150% 是唯一會溢出的那個,只測 100% 會全綠而那正是原條件要防的事;本 story 誠實只claim 4 組。
 
 8. ⚠️ **版面驗算表是 (C) 級,不是 (A) 級**(EPIC.md 陷阱十二)——四螢幕表格下方本檔自陳「上表為算術、非實機量測」,依 (A) 級定義為 (C) 級,因為它重新實作了 `HudLayout.font_size()` 與 `safe_rect()` 各一條規則。**落地前須以呼叫這兩個函式的拋棄式測試複驗並附檔案路徑**——沒有附檔案路徑的「(A) 級」一律降為 (C)。

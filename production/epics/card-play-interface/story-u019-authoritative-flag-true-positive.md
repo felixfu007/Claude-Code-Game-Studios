@@ -2,7 +2,13 @@
 
 > **Epic**:卡牌介面、戰鬥選單與取消鍵(`production/epics/card-play-interface/EPIC.md`)
 > **型別**:Integration
-> **狀態**:📋 **Ready**(2026-10-12 管理者裁決切出)
+> **狀態**:✅ **Done(2026-10-13,協調者獨立重跑驗收)** —— AC-1~AC-4 全數達成,
+> AC-5 三處登記已由管理者核准後套用。實作 `ui-programmer`,8 條新測試
+> (4 真陽性 + 4 敏感度證明)。🔴 **連帶發現替身其實有五處不是四處** —— 第五處在
+> `card_play_session_test.gd`,其區域變數名不含盤點用的搜尋字串,原本的 grep 找不到它。
+> 驗收:`1127 → 1135 = +8`、`ENGINE EXIT = 100`、`Parse Error = 0`、`Abnormal exit = 0`,
+> 唯一具名 FAILED 為既有刻意紅的 `affinity_phi_provider_test.gd`。
+> ⚠️ 原狀態行:`📋 Ready(2026-10-12 管理者裁決切出)`
 > **估時**:S
 > **依賴**:無前置。**不阻擋任何 story。**
 > **擁有者**:未指派 —— 動工前依 `.claude/docs/coordination-rules.md` 路由
