@@ -1,7 +1,15 @@
 # Story 008: AC-PERF 效能基準建立(M5)
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-13,協調者獨立重跑複驗)** —— 基準已建立:
+> `production/qa/affinity-query-perf-baseline.md`,量測腳本
+> `tests/perf/affinity_query_perf_benchmark.gd`(獨立 headless 腳本,**不是 GdUnit4 suite**,
+> 故不需動 `tests/gdunit4_runner.gd` 的 `FORCED_ARGS`)。
+> 🔴 **本次產出是【基準】不是【通過】** —— AC 第 3 條的明文要求,文件與提交訊息皆已遵守。
+> 🔴 **標註為「遷移前(讀靜態檔)基準」** —— `story-005` 量測時仍為 `Ready`、未開工(AC 第 4 條)。
+> **協調者獨立複驗**:實作者 `avg=65.12`、協調者 `avg=67.39`,**差約 3.5%**,
+> 已把這個實測雜訊帶寫進基準檔(對照門檻 20%,相差約 6 倍 —— 門檻合理,
+> 但**小於約 5% 的真實劣化這個方法分辨不出來**)。
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」涵蓋範圍)
 > **Type**: Logic
 > **Estimate**: S(0.5～1 session)
@@ -97,7 +105,7 @@ AC-PERF 的判準是「較**上一版基準**劣化 ≤ 20%」,而 EPIC.md 明�
 **Required evidence**: 一份進版控的基準檔案(格式由實作者決定),含平均耗時、量測日期、
 程式碼版本標記。
 
-**Status**: [ ] Not yet created
+**Status**: [x] 已建立(2026-10-13)—— `tests/perf/affinity_query_perf_benchmark.gd` + `production/qa/affinity-query-perf-baseline.md`,協調者獨立重跑複驗。
 
 ## Dependencies
 
