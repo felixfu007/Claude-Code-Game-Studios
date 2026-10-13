@@ -13,6 +13,40 @@
 
 ## Open
 
+- **2026-10-13**(`story-008` 單位 2,實作者 `ui-programmer` 發現 + 管理者裁決):
+  🔴 **手把搖桿的方向輸入在游標系統端沒有去抖動機制,而鍵盤有。**
+  ADR-0005 機制四之二只過濾 `InputEventKey.echo`,**而 `InputEventJoypadMotion` 根本沒有
+  `echo` 旗標**。目前 `battle_screen.gd` 自己用 `_direction_just_pressed()` /
+  `_direction_was_pressed` 這組字典做邊緣偵測來補,但那是畫面層自己的東西,
+  `CursorState.apply_buffered_navigation()` 裡沒有等價物。
+
+  **白話後果**:推著搖桿不放時,游標可能每一幀移動一格、飛過整個棋盤,
+  而鍵盤按著不放不會。
+
+  **已實機驗證的半邊**(engine-run,`tests/integration/ui/battle_cursor_navigation_convergence_test.gd`
+  的 `test_apply_buffered_navigation_has_no_builtin_debounce_for_repeated_joypad_motion_events`):
+  把**同一個**真實、已綁進 InputMap 的 `InputEventJoypadMotion` 連續餵兩次,
+  `apply_buffered_navigation()` **移動了兩次** —— 它確實沒有內建去抖動。
+
+  🔴 **未驗證的那一半(這是它還不能行動的原因)**:**引擎到底會不會為「握住不放的搖桿」
+  每一幀重送一個新的 `InputEventJoypadMotion`**(還是只在數值變動時送)。
+  若會,這是真實的、玩家看得到的缺陷;若不會,這個程式碼層的落差可能永遠不會顯現。
+  **確認它需要【開窗非 headless】探針 + 真實手把或模擬裝置** —— headless 下引擎不送 InputEvent。
+
+  **管理者 2026-10-13 裁決:先登記不動,等有手把可測再說。**
+  被跳過的兩個選項:①現在就切一張工作單(代價:它的驗證無論如何都得開視窗、遊戲畫面會上螢幕,
+  而委託方上班時間做不了,切了也只能回家做);②現在就補上去抖動不等驗證
+  (代價:**在不知道問題是否真的存在時就加防護**,而本專案明文禁止「對假想情況立法」;
+  且它可能該改的是 ADR-0005 本體,不是戰棋畫面)。
+
+  📌 **連帶的範圍裁決**:`story-008` 拆 `_handle_directional()` 時,
+  **預設保留現有的去抖動機制,只拿掉游標寫入** —— 要拿掉去抖動需要一個
+  「它不存在也沒關係」的證明,而那個證明就是上面那個未做的開窗探針。
+
+  🔴 **擁有者未指派。** 這一項的歸屬可能是 **ADR-0005 本體**(機制四之二的過濾範圍)
+  而不是任何一張戰棋工作單 —— 判定它屬誰,本身就是下一步要做的事。
+  追蹤來源:`production/epics/tactical-combat/story-008-cursor-navigation-convergence.md`、
+  `tests/integration/ui/battle_cursor_navigation_convergence_test.gd` 檔頭。
 - **2026-10-12**(第八十批,協調者查證 + 管理者裁決):
   🔴 **約 17 個遊戲平衡數值硬編碼在 `const` 裡,而 `coding-standards.md` 明文要求
   「Gameplay values must be data-driven (external config), never hardcoded」。**
