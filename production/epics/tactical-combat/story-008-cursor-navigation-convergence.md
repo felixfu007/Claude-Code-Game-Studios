@@ -1,7 +1,29 @@
 # Story 008: 一般移動/攻擊路徑接入 `CursorStateHost`(游標導航收斂)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M6(收斂表 #1)
-> **Status**: Ready
+> **Status**: ✅ **Done —— 縮減範圍結案(2026-10-13 管理者裁決,協調者獨立重跑驗收)**
+>
+> 🔴 **四個 `_cursor_cell` 直寫點完成 3 個,第 4 個(滑鼠路徑)移交 `story-009`。**
+> **這是管理者在知情下明文接受的範圍縮減,不是漏做。** 被跳過的四個選項與各自代價,
+> 逐一評估於 `docs/architecture/cursor-device-authority-for-board-tile-2026-10-13.md`(407 行)。
+>
+> **已完成**:`_ready()` 註冊 `BOARD_TILE` + 三個交接點、`_handle_directional()` 停止自行寫入、
+> `_update_cursor_visual()` 鍵盤/手把分支改讀 host、`tree_exited` 安全網
+> (修掉一個跨測試污染:Autoload 登記表留著已釋放的 `BattleScreen`,害順序在後的無關測試爆
+> `previously freed instance`)。
+>
+> **三項引擎實跑驗證**(落成測試,`tests/integration/ui/battle_cursor_navigation_convergence_test.gd`):
+> ①「一次走兩格」CONFIRMED ②「未選取任何單位時游標仍可移動」CONFIRMED **並寫成回歸鎖**
+> ③ 手把搖桿去抖動缺口 PARTIALLY CONFIRMED → **已移出範圍,登記於 `docs/tech-debt-register.md`**。
+>
+> 🔴 **兩次協調者的建議被實作者正確推翻,兩次都記在案**:
+> ①前置檔建議把 register 掛在 `unit_selected`/`selection_cleared` —— 錯的(主機端無滑鼠,
+> 玩家必須先能移動游標才能選到非預設單位);②協調者引用 AC-10b 當一幀過期的架構依據 ——
+> 查證後**不涵蓋**(管的不是同一個欄位,觸發條件也不同),該裁決因此退回重裁。
+>
+> 驗收:`1152 test cases | 0 errors | 1 failures | 0 orphans`、`99/99 suites`、
+> `ENGINE EXIT = 100`、`Parse Error = 0`、`Abnormal exit = 0`。
+> ⚠️ 原狀態行:`Ready`
 > **Layer**: Presentation
 > **Type**: Integration
 > **Estimate**: M
@@ -61,9 +83,15 @@ static 函式,與 `CursorState.apply_buffered_navigation()`(`cursor_state.gd:534
 - [ ] 一般移動/攻擊路徑(非打牌流程)須在適當時機呼叫
       `CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)`
       /`unregister_surface(...)`,比照打牌路徑既有的四個註冊點模式
-- [ ] `_cursor_cell` 的 4 個直寫點(`_ready()`、`_handle_mouse_button()`、`_handle_directional()`、
+- [x] `_cursor_cell` 的 4 個直寫點中的 **3 個**(`_ready()`、`_handle_directional()`、
+      `_update_cursor_visual()` 的**鍵盤/手把分支**)改為讀取
+      `CursorStateHost.get_current_target()`(提交 `b4c8e6d`,協調者獨立重跑驗收)
+- [ ] 🔴 **第 4 個(`_handle_mouse_button()` 與 `_update_cursor_visual()` 的滑鼠分支)
+      移交 story-009**,見本檔 Dependencies 節的 2026-10-13 裁決註記。
+      ⚠️ **原文保留如下,未刪**:
+      ~~`_cursor_cell` 的 4 個直寫點(`_ready()`、`_handle_mouse_button()`、`_handle_directional()`、
       `_update_cursor_visual()`)改為讀取 `CursorStateHost.get_current_target()`,不再由
-      `battle_screen.gd` 自行維護游標座標的權威來源
+      `battle_screen.gd` 自行維護游標座標的權威來源~~
 - [ ] `_handle_directional()` 的導航邏輯改呼叫 `CursorState.apply_buffered_navigation()`
       (`cursor_state.gd:534`),`clamp_cursor_move()`(`battle_screen.gd:1206`)本 story 完成後
       應無呼叫者(是否刪除該函式屬本 story 判斷,不強制,但不得兩份並存繼續被呼叫)
@@ -123,7 +151,12 @@ static 函式,與 `CursorState.apply_buffered_navigation()`(`cursor_state.gd:534
 ## Dependencies
 
 - Depends on: None(不依賴 M2/M3,但**必須先於 story-009 完成**——執行順序見下方)
-- Unlocks: story-009(裝置權威收斂,結構性依賴——見上方 Implementation Notes 第 1 點)
+- Unlocks: story-009(裝置權威收斂)。🔴 **2026-10-13 管理者裁決:本 story 的範圍縮減為
+  「鍵盤/手把路徑」,滑鼠路徑(`_handle_mouse_button()` 與 `_update_cursor_visual()`
+  滑鼠分支)移交 story-009。** 理由:滑鼠路徑的寫入需要一個「現在是不是滑鼠主導」的閘門,
+  而本地 `DeviceAuthority` 在 priority 100 才解析、−60 讀到的是上一幀值;唯一無過期的
+  閘門是 `CursorStateHost.get_device_authority()`,而改用它**等同 story-009 的 AC 第 2 項**。
+  意見書:`docs/architecture/cursor-device-authority-for-board-tile-2026-10-13.md`(407 行,五選項逐一評估)。
 
 ## 執行層序列化(M6 → M5 → M4)
 
