@@ -1,7 +1,28 @@
 # Story 006: 夾限狀態與逐條貢獻總和查詢 API(M3 本系統側)
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-13,協調者獨立重跑驗收)**
+>
+> 新增 `AffinityBonusBreakdown`(`src/gameplay/affinity/affinity_bonus_breakdown.gd`)+
+> `AffinityRules.bonus_breakdown_for_at()` / `bonus_breakdown_for()`,10 條新測試。
+>
+> 🔴 **AC-3 從「恆真的空測試」變成【結構保證】**:`bonus_for_at()` 現在直接
+> `return bonus_breakdown_for_at(...).clamped_sum`,兩者**不可能不一致** ——
+> 而且仍寫了 3 條一致性測試釘住它,**沒有因為「結構上保證了」就不測**。
+>
+> 🔴 **夾限分支用真實資料是不可達程式碼**(協調者前置反查:真實關係表只有 2 條線、
+> 每人最多 1 條,Φ 真實值域 `[−1,+3]`,而邊界是 `[−4,+12]`)。測試改用**合成 links**,
+> 經 `AffinityLink.links_from_text()` 的正式解析路徑建立,不手動塞欄位、不碰資料檔。
+> **NONE / UPPER / LOWER 三個方向全部構造得出來,零 N/A。** 另含一條邊界抽查
+> (`raw_sum` 恰等於 `PHI_MAX` 時 `is_clamped` 仍為 false)—— off-by-one 容易漏的那一格。
+>
+> 📌 **協調者裁定保留一項超出字面 AC 的加項**:`bonus_breakdown_for()`(非 `_at` 版)。
+> 理由:既有的 `bonus_for()`/`bonus_for_at()` 本來就成對,拆掉會留下不對稱的介面缺口;
+> 它有測試覆蓋(含「缺席回 0」邊界),純新增零風險。**這是 story 範圍內的判斷,未上呈。**
+>
+> 驗收:`1152 → 1162 = +10`、`99/99 suites`、`ENGINE EXIT = 100`、
+> `Parse Error = 0`、`Abnormal exit = 0`。`battle_screen.gd` 一次都沒碰(Out of Scope 遵守)。
+> ⚠️ 原狀態行:`Ready`
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」涵蓋範圍)
 > **Type**: Logic
 > **Estimate**: S(0.5～1 session)
@@ -109,7 +130,7 @@ BLOCKING 的自動化 AC),以下由本 story 作者依 GDD 原文轉寫為可測
 **Required evidence**: `tests/unit/gameplay/affinity/affinity_rules_test.gd` 內新增測試,
 涵蓋上述三種情況(未夾限、上界夾限、下界夾限),今天會跑且通過。
 
-**Status**: [ ] Not yet created
+**Status**: [x] 已建立(2026-10-13)—— `tests/unit/gameplay/affinity/affinity_rules_test.gd` 新增 10 條,協調者獨立重跑驗收。
 
 ## Dependencies
 

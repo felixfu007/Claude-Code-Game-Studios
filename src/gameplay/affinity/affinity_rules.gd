@@ -116,21 +116,66 @@ static func bonus_for(
 ## [param origin] — this is the "what if I move here" preview the prototype
 ## used for its hover readout; [param unit_id] does not need to be in
 ## [param positions]. Sums every line's raw [member AffinityLineStatus.delta]
-## (R4 — no suppression) and clamps the total exactly once, here, to
+## (R4 — no suppression) and clamps the total exactly once to
 ## [constant PHI_MIN]/[constant PHI_MAX] (R7/Formula 三). Individual lines
 ## reported by [method lines_for]/[method lines_for_at] are never clamped
 ## themselves, so they can legitimately sum to more or less than this
 ## function's return value.
+##
+## Implemented in terms of [method bonus_breakdown_for_at] (Story 006 —
+## [code]production/epics/affinity-position-chain/
+## story-006-clamp-and-contribution-disclosure-query-api.md[/code]) so the
+## summation lives in exactly one place; this function and
+## [method bonus_breakdown_for_at] can never disagree about the clamped total
+## by construction.
 static func bonus_for_at(
 	unit_id: int,
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
 	links: Array[AffinityLink]
 ) -> int:
-	var total: int = 0
+	return bonus_breakdown_for_at(unit_id, origin, positions, links).clamped_sum
+
+
+## Same as [method bonus_for_at] but discloses the pre-clamp raw sum and,
+## if the Φ clamp fired, which bound ([constant PHI_MIN] or [constant PHI_MAX])
+## it hit — see [AffinityBonusBreakdown]. Exists so a caller (the GDD's UI
+## Requirements: "原始和被夾限壓回時,必須明示「已達上限/下限」") does not
+## have to re-sum [method lines_for_at]'s deltas itself to find out, which is
+## exactly the second-implementation risk EPIC.md's R-2 names.
+##
+## [method bonus_for_at] returns exactly this breakdown's
+## [member AffinityBonusBreakdown.clamped_sum] — there is only one summation
+## loop, here, not one per function.
+static func bonus_breakdown_for_at(
+	unit_id: int,
+	origin: Vector2i,
+	positions: Dictionary[int, Vector2i],
+	links: Array[AffinityLink]
+) -> AffinityBonusBreakdown:
+	var raw_sum: int = 0
 	for status: AffinityLineStatus in lines_for_at(unit_id, origin, positions, links):
-		total += status.delta
-	return clampi(total, PHI_MIN, PHI_MAX)
+		raw_sum += status.delta
+	var clamped_sum: int = clampi(raw_sum, PHI_MIN, PHI_MAX)
+	return AffinityBonusBreakdown.create(raw_sum, clamped_sum)
+
+
+## Same as [method bonus_breakdown_for_at] but evaluates [param unit_id] at
+## its current position in [param positions] — the [method bonus_for]
+## counterpart, mirroring that function's "absent is zero" contract: returns
+## a breakdown with [member AffinityBonusBreakdown.raw_sum] and
+## [member AffinityBonusBreakdown.clamped_sum] both [code]0[/code] and
+## [member AffinityBonusBreakdown.clamped_direction]
+## [constant AffinityBonusBreakdown.Direction.NONE] when [param unit_id] is
+## absent from [param positions].
+static func bonus_breakdown_for(
+	unit_id: int,
+	positions: Dictionary[int, Vector2i],
+	links: Array[AffinityLink]
+) -> AffinityBonusBreakdown:
+	if not positions.has(unit_id):
+		return AffinityBonusBreakdown.create(0, 0)
+	return bonus_breakdown_for_at(unit_id, positions[unit_id], positions, links)
 
 
 ## Every affinity link touching [param unit_id], with its current distance,

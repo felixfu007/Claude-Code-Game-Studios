@@ -673,3 +673,250 @@ func test_manhattan_distance_agrees_with_combat_rules_across_boundary_distances(
 			assert_bool(
 				CombatRules.is_in_range(from_cell, to_cell, distance + 1, 999)
 			).is_false()
+
+
+# ---- Story 006:夾限狀態與逐條貢獻總和查詢 bonus_breakdown_for_at()/
+# ---- bonus_breakdown_for()
+# -----------------------------------------------------------------------
+#
+# production/epics/affinity-position-chain/
+# story-006-clamp-and-contribution-disclosure-query-api.md 的協調者前置反查
+# (story-006-coordinator-prework-2026-10-13.md)已實測:真實配對表
+# assets/data/affinity/vs01_affinity_links.txt 只有 2 條線、每人最多出現 1 次,
+# 真實資料的可達值域是 [-1, +3],而夾限邊界是 PHI_MIN=-4/PHI_MAX=+12 ——
+# 用真實資料「有沒有被夾限、夾到哪一邊」永遠是「沒有」,兩個夾限分支都是
+# 不可達程式碼。因此以下全部使用合成的 Array[AffinityLink](經由 _links()
+# 正式解析路徑建立,不手動塞欄位),讓單一單位掛上 4 條以上/5 條以上同極性
+# 相鄰線以越過邊界。N/A 情況:無——下方涵蓋 NONE/UPPER/LOWER 三個方向,
+# 沒有任何分支構造不出來。
+
+func test_bonus_breakdown_for_at_unclamped_single_link_reports_raw_equals_clamped() -> void:
+	# QA Test Cases「未被夾限的情況」—— 單條正向距1線(+3),遠低於上界 +12。
+	# Arrange
+	var links: Array[AffinityLink] = _links([LINK_1_2_POSITIVE])
+	var positions: Dictionary[int, Vector2i] = _pair_positions(2, 1)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+
+	# Assert
+	assert_int(breakdown.raw_sum).is_equal(3)
+	assert_int(breakdown.clamped_sum).is_equal(3)
+	assert_bool(breakdown.is_clamped).is_false()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.NONE)
+
+
+func test_bonus_breakdown_for_at_sums_multiple_lines_before_clamping() -> void:
+	# 證明 raw_sum 是逐條貢獻的加總,不是單線直通——兩條正向線,距離 1(+3)
+	# 與距離 5(-1),理論和 2,遠離任一夾限邊界。
+	# Arrange
+	var links: Array[AffinityLink] = _links([LINK_1_2_POSITIVE, LINK_1_3_POSITIVE])
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	positions[2] = ORIGIN + Vector2i(1, 0)
+	positions[3] = ORIGIN + Vector2i(5, 0)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+
+	# Assert — 3 + (-1) = 2
+	assert_int(breakdown.raw_sum).is_equal(2)
+	assert_int(breakdown.clamped_sum).is_equal(2)
+	assert_bool(breakdown.is_clamped).is_false()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.NONE)
+
+
+func test_bonus_breakdown_for_at_raw_sum_exactly_at_upper_bound_is_not_marked_clamped() -> void:
+	# 邊界抽查:raw_sum 剛好【等於】PHI_MAX(不是超過)時,沒有任何東西被切掉,
+	# 不應回報 is_clamped == true。4 條正向相鄰線,各自佔一個相異的正交相鄰格
+	# (上/下/左/右,棋盤上真實可達的佈局,仿 AC-MIX 的手法避免疊格)。
+	# Arrange — 4×(+3) = +12,恰為 PHI_MAX
+	var lines: Array[String] = []
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	var adjacent_offsets: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+	]
+	for i: int in range(4):
+		var partner_id: int = i + 2
+		lines.append("1,%d,POSITIVE,1" % partner_id)
+		positions[partner_id] = ORIGIN + adjacent_offsets[i]
+	var links: Array[AffinityLink] = _links(lines)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+
+	# Assert — 恰好等於上限,不是被夾限
+	assert_int(breakdown.raw_sum).is_equal(12)
+	assert_int(breakdown.clamped_sum).is_equal(12)
+	assert_bool(breakdown.is_clamped).is_false()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.NONE)
+
+
+func test_bonus_breakdown_for_at_six_positive_adjacent_links_clamps_to_upper_bound() -> void:
+	# 上界夾限分支(真實資料不可達,見本節檔頭說明)—— 6 條正向相鄰線,
+	# 理論和 +18,壓回 +12。沿用既有 AC-R7 測試的合法佈局手法。
+	# Arrange
+	var lines: Array[String] = []
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	for partner_id: int in range(2, 8):  # 2..7 → 6 個夥伴
+		lines.append("1,%d,POSITIVE,1" % partner_id)
+		positions[partner_id] = ORIGIN + Vector2i(1, 0)
+	var links: Array[AffinityLink] = _links(lines)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+
+	# Assert — 原始和 +18,夾限後 +12,撞到上界
+	assert_int(breakdown.raw_sum).is_equal(18)
+	assert_int(breakdown.clamped_sum).is_equal(12)
+	assert_bool(breakdown.is_clamped).is_true()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.UPPER)
+
+
+func test_bonus_breakdown_for_at_five_negative_adjacent_links_clamps_to_lower_bound() -> void:
+	# 下界夾限分支(真實資料不可達,見本節檔頭說明)—— 5 條負向相鄰線,
+	# 理論和 -5,壓回 -4。沿用既有 AC-F3 測試的合法佈局手法。
+	# Arrange
+	var lines: Array[String] = []
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	for partner_id: int in range(2, 7):  # 2..6 → 5 條負向相鄰
+		lines.append("1,%d,NEGATIVE,1" % partner_id)
+		positions[partner_id] = ORIGIN + Vector2i(1, 0)
+	var links: Array[AffinityLink] = _links(lines)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+
+	# Assert — 原始和 -5,夾限後 -4,撞到下界
+	assert_int(breakdown.raw_sum).is_equal(-5)
+	assert_int(breakdown.clamped_sum).is_equal(-4)
+	assert_bool(breakdown.is_clamped).is_true()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.LOWER)
+
+
+# ---- AC 第 3 條:新查詢的 clamped_sum 與既有 bonus_for_at() 在同一組輸入下 ----
+# ---- 必須一致(未夾限/上界/下界三種情況各驗一次) -----------------------------
+#
+# bonus_for_at() 自本 story 起直接回傳 bonus_breakdown_for_at(...).clamped_sum
+# (見 affinity_rules.gd),所以這組測試同時是「結構保證」的釘子——萬一日後
+# 有人把兩者拆回兩份獨立加總,這裡會第一個變紅。
+
+func test_bonus_breakdown_for_at_clamped_sum_matches_bonus_for_at_in_unclamped_case() -> void:
+	# Arrange
+	var links: Array[AffinityLink] = _links([LINK_1_2_POSITIVE])
+	var positions: Dictionary[int, Vector2i] = _pair_positions(2, 1)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+	var direct: int = AffinityRules.bonus_for_at(1, positions[1], positions, links)
+
+	# Assert
+	assert_int(breakdown.clamped_sum).is_equal(direct)
+
+
+func test_bonus_breakdown_for_at_clamped_sum_matches_bonus_for_at_in_upper_clamp_case() -> void:
+	# Arrange
+	var lines: Array[String] = []
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	for partner_id: int in range(2, 8):
+		lines.append("1,%d,POSITIVE,1" % partner_id)
+		positions[partner_id] = ORIGIN + Vector2i(1, 0)
+	var links: Array[AffinityLink] = _links(lines)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+	var direct: int = AffinityRules.bonus_for_at(1, positions[1], positions, links)
+
+	# Assert
+	assert_int(breakdown.clamped_sum).is_equal(direct)
+	assert_int(direct).is_equal(12)
+
+
+func test_bonus_breakdown_for_at_clamped_sum_matches_bonus_for_at_in_lower_clamp_case() -> void:
+	# Arrange
+	var lines: Array[String] = []
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[1] = ORIGIN
+	for partner_id: int in range(2, 7):
+		lines.append("1,%d,NEGATIVE,1" % partner_id)
+		positions[partner_id] = ORIGIN + Vector2i(1, 0)
+	var links: Array[AffinityLink] = _links(lines)
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		1, positions[1], positions, links
+	)
+	var direct: int = AffinityRules.bonus_for_at(1, positions[1], positions, links)
+
+	# Assert
+	assert_int(breakdown.clamped_sum).is_equal(direct)
+	assert_int(direct).is_equal(-4)
+
+
+# ---- bonus_breakdown_for():站在目前位置的版本,鏡射 bonus_for() 的契約 -------
+
+func test_bonus_breakdown_for_returns_zero_breakdown_when_unit_absent_from_positions() -> void:
+	# 鏡射既有 test_bonus_for_unit_absent_from_positions_is_zero 的「缺席即 0」契約。
+	# Arrange
+	var links: Array[AffinityLink] = _links([LINK_1_2_POSITIVE])
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[2] = ORIGIN
+
+	# Act
+	var breakdown: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for(1, positions, links)
+
+	# Assert
+	assert_int(breakdown.raw_sum).is_equal(0)
+	assert_int(breakdown.clamped_sum).is_equal(0)
+	assert_bool(breakdown.is_clamped).is_false()
+	assert_int(breakdown.clamped_direction).is_equal(AffinityBonusBreakdown.Direction.NONE)
+
+
+func test_bonus_breakdown_for_matches_bonus_breakdown_for_at_when_unit_present() -> void:
+	# bonus_breakdown_for() 應該只是「用目前位置呼叫 bonus_breakdown_for_at()」,
+	# 鏡射既有 bonus_for()/bonus_for_at() 的關係。
+	# Arrange
+	var links: Array[AffinityLink] = _links([LINK_1_2_POSITIVE, LINK_2_5_NEGATIVE])
+	var positions: Dictionary[int, Vector2i] = {}
+	positions[2] = ORIGIN
+	positions[1] = ORIGIN + Vector2i(1, 0)
+	positions[5] = ORIGIN + Vector2i(0, 3)
+
+	# Act
+	var via_for: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for(2, positions, links)
+	var via_for_at: AffinityBonusBreakdown = AffinityRules.bonus_breakdown_for_at(
+		2, positions[2], positions, links
+	)
+
+	# Assert
+	assert_int(via_for.raw_sum).is_equal(via_for_at.raw_sum)
+	assert_int(via_for.clamped_sum).is_equal(via_for_at.clamped_sum)
+	assert_bool(via_for.is_clamped).is_equal(via_for_at.is_clamped)
+	assert_int(via_for.clamped_direction).is_equal(via_for_at.clamped_direction)
+
+
+# 敏感度證明:歸為 test-standards.md 登記的 A 類(「斷言對象是 static 純函式」)
+# ——bonus_breakdown_for_at()/bonus_breakdown_for() 與本檔其餘 AffinityRules
+# 測試一樣,斷言對象是 extends RefCounted 類別上的 static func。static 呼叫在
+# 呼叫端直接綁死到該類別,沒有繼承鏈可供間諜子類別覆寫注入,因此做不出可查證
+# 的敏感度證明——與本檔上方既有的 bonus_for()/delta() 區塊處理方式一致,此處
+# 同樣未另立間諜子類別。[AffinityBonusBreakdown] 同理:純資料持有者,沒有行為
+# 可供間諜覆寫。
