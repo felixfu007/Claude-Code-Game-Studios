@@ -1,7 +1,13 @@
 # Story 003: Fallback 與缺字偵測回歸測試
 
 > **Epic**: 本地化(i18n)基礎設施 —— `production/epics/localization-infrastructure/EPIC.md`
-> **Status**: 🟡 **核准開工,強烈建議與 story-001 同批交付**(見下方理由)
+> **Status**: ✅ **Done(2026-10-13,協調者獨立重跑驗收)** —— 8 條新測試
+> (`tests/unit/core/i18n/locale_data_integrity_test.gd` 5 條 +
+> `i18n_source_discipline_test.gd` 2 條 + 協調者改寫 1 處 `assert()`)。
+> 🔴 **協調者反查把本單縮小了:A1~A3 已由既有 `loc_localize_test.gd` 涵蓋**
+> (實作者逐條讀斷言內容覆核後同意),**真缺口只有 A4 與 B**。
+> 驗收:`1139 → 1147 = +8`、`ENGINE EXIT = 100`、`Parse Error = 0`、`Abnormal exit = 0`。
+> ⚠️ 原狀態行:`🟡 核准開工,強烈建議與 story-001 同批交付`(該建議已滿足 —— story-001 於 2026-10-05 完成)
 > **Layer**: Infrastructure
 > **Type**: Logic
 > **Estimate**: S
@@ -104,7 +110,8 @@ story-001 骨架的一部分行為 —— 本 story 是**證明**那個行為存
 - 敏感度證明或「為什麼證明不了」的逐條登記(C 節)—— BLOCKING,依測試證據表對 Logic
   型 story 的既有規則
 
-**Status**: [ ] Not yet created
+**Status**: [x] 已建立(2026-10-13)—— `tests/unit/core/i18n/locale_data_integrity_test.gd`(5 條)
+與 `tests/unit/core/i18n/i18n_source_discipline_test.gd`(2 條),全部 PASSED,協調者獨立重跑驗收。
 
 ## Dependencies
 

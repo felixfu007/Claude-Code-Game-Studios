@@ -6,4 +6,5 @@
 - [Art production path: AI generation, decided](project_art_production_path_undecided.md) — route 2026-09-29; 2026-10-13: rev2 confirms pure-prompt ceiling, 2nd evidence for LoRA
 - [Color palette v0.1 + 06a format ambiguity](project_color_palette_v0_and_06a_format_ambiguity.md) — color-palette.csv created 2026-10-08 (38/64 colors); 06a §4.2's own CSV example contradicts its stated comment rule
 - [Outline: internal parts ruling](project_outline_internal_parts_ruling.md) — 2026-10-12: outline only on outer silhouette edge, never internal seams; not yet merged into art-direction.md §4
-- [Base model candidates 2026-10-13](project_base_model_candidates_2026-10-13.md) — Animagine XL 3.1 chosen 2026-10-13; tag prompts drafted in doc 13 (406/680 char est., unverified, magenta+fallback)
+- [Base model candidates 2026-10-13](project_base_model_candidates_2026-10-13.md) — Animagine XL 3.1 chosen; doc 13 tag prompts (414/680 char est.); 2nd ruling overrode harness/age substitutions
+- [State tradeoff of substitutions](feedback_state_tradeoff_of_substitutions.md) — when proposing A-for-B risk substitution, must also state B's functional role and what's lost, not just the risk avoided

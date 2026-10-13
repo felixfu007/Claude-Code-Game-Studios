@@ -69,7 +69,13 @@
 
 ---
 
-## 三、四個分章
+## 三、分章索引
+
+> 🔴 **本節標題原為「四個分章」,2026-10-13 更正。** 當時確實只有四章;之後陸續增加到 **18 份**,
+> 而這張索引表停在 `04`,**整整九個月份的往返文件沒有入口**。
+> ⚠️ **這正是本表下方那段警語講的事** —— 它警告「兩份手抄的版本號遲早會對不上」,
+> 而**它自己上方那個「四」就是一個手抄的數字,然後漂了**。
+> 📌 **新增文件時請同時加一列。** 要現值就當場數:`ls docs/ai-art-service-handoff/*.md | wc -l`
 
 | 檔案 | 內容 | 給誰讀 |
 |---|---|---|
@@ -77,6 +83,18 @@
 | [`02-deployment-runbook.md`](02-deployment-runbook.md) | 照著做就能裝起來的手冊、故障排除前五名、資源監控、驗收指紋樣板 | 實際動手的人 |
 | [`03-api-contract.md`](03-api-contract.md) | **驗收依據。** 端點、請求/回應格式、狀態機、錯誤碼、冪等性、健康檢查、驗收測試清單 | 雙方都必讀。**「做完了沒有」就看這一章。** |
 | [`04-security-and-licensing.md`](04-security-and-licensing.md) | 威脅模型、網路暴露面的硬性要求、「程式碼不是自己寫的」怎麼降風險、**AI 產圖做商業素材的授權注意事項** | 委託方必讀第五節(授權);承包方必讀第二、三節 |
+| [`05-implementation-conformance-review-2026-10-06.md`](05-implementation-conformance-review-2026-10-06.md) | 我方對承接方第一版實作的符合性審查 | 驗收紀錄 |
+| [`06-change-request-001-2026-10-08.md`](06-change-request-001-2026-10-08.md) + [`-reply-2026-10-10`](06-change-request-001-reply-2026-10-10.md) | 需求變更申請 CR-001 與承接方回覆 | 雙方 |
+| [`06a-change-request-art-requirements-2026-10-08.md`](06a-change-request-art-requirements-2026-10-08.md) + [`06a-art-clarifications-2026-10-12.md`](06a-art-clarifications-2026-10-12.md) | **美術側需求條文**:硬參數、後製工具、🔴 **第 3 節去背路線裁決**、色票檔格式、驗收總表 | 美術相關一律先讀 `06a` |
+| [`06b-change-request-lora-requirements-2026-10-08.md`](06b-change-request-lora-requirements-2026-10-08.md) + [`06b-technical-clarifications-2026-10-12.md`](06b-technical-clarifications-2026-10-12.md) | LoRA 訓練側需求與技術澄清(D1~D7) | 技術側 |
+| [`07-cr-001-decision-2026-10-12.md`](07-cr-001-decision-2026-10-12.md) | 🔴 **管理者對 CR-001 的裁決,含【訓練素材從哪來】的分工表**(③產候選圖 → ④推回 → ⑤**管理者本人挑定主角長相** → ⑥該組即 LoRA 素材) | **談 LoRA 之前必讀**——漏讀它會把已裁決的事當成待決 |
+| (無 `08`) | `08` 是**承接方**寫的《公司端使用說明》,只在 `AI_IMG` 的 `docs/team/handoff/`,**未鏡像到本倉庫** | — |
+| [`09-calibration-batch-01-art-review-2026-10-13.md`](09-calibration-batch-01-art-review-2026-10-13.md) | 第一輪 8 張校正圖的美術判定(開了 6 張全解析度) | 美術 |
+| [`10-cr001-calibration-round1-reply-2026-10-13.md`](10-cr001-calibration-round1-reply-2026-10-13.md) | 給承接方的正式回覆:風格採 A、prompt 由我方縮短、請試泛洪去背 | 雙方 |
+| [`11-rev2-comparison-2026-10-13.md`](11-rev2-comparison-2026-10-13.md) | rev2 四張與第一輪的對照判定(開了 8 張全解析度) | 美術 |
+| [`12-base-model-candidates-2026-10-13.md`](12-base-model-candidates-2026-10-13.md) | 扁平畫風底模候選三個 + **逐一重新查證的授權**(依第四章第五節第 2 點,不套用 SDXL 的結論) | 要換底模前必讀 |
+| [`13-animagine-tag-prompts-2026-10-13.md`](13-animagine-tag-prompts-2026-10-13.md) | Animagine XL 3.1 的標籤式 prompt + 逐項對照表 + 丟棄項。⚠️ **整份 (C) 級,本機未安裝未跑過** | 等底模裝好再用 |
+| [`14-request-install-animagine-2026-10-13.md`](14-request-install-animagine-2026-10-13.md) | 請承接方安裝新底模的請求 + 裝好之後要開的 8 張工單規格 | 承接方 |
 
 🔴 **版本數字只有一份出處。** 其他章節若提到驅動 / CUDA / PyTorch 版本,一律指回第一章第三節,
 **不會自己抄一份**。這是刻意的:兩份手抄的版本號遲早會對不上,而讀者沒有辦法分辨哪一份是對的

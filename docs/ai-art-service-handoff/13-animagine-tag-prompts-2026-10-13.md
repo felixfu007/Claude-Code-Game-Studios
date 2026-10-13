@@ -37,13 +37,13 @@ README 與社群指南的查證結果（已附來源，查證日期 2026-10-13�
 | 16 | solid flat magenta background (#FF00FF) | `simple background, magenta background` | 獨立成節，見第 5 節 |
 | 17 | no scenery / no background shadow / no gradient background | 負向：`scenery, gradient background, shadow on background` | — |
 | 18 | generous padding around character | *(丟棄)* | 見下節 |
-| 19 | young adult Taiwanese woman | `1girl` | 刻意不加任何年齡/成熟度標籤，理由見下方第 3 點 |
+| 19 | young adult Taiwanese woman | `1girl, adult woman` | 🔴 2026-10-13 管理者裁決推翻「不加標籤」，改採 `adult woman`（自由文字片語，非確認過的標準標籤，效果未知）——理由見表下新增註記 |
 | 20 | athletic build | `athletic build` | 非標準 booru 詞彙，混用寫法，效果未驗證 |
 | 21 | dark hair in tight ponytail | `black hair, ponytail` | — |
 | 22 | determined expression | `serious expression` | 換成較常見的標籤用詞 |
 | 23 | confident posture | *(丟棄)* | 見下節 |
 | 24 | navy-blue tactical firefighter uniform | `firefighter, navy blue uniform` | — |
-| 25 | gear harness | `utility belt`（**不用 `harness`**） | 見下方第 3 點 |
+| 25 | gear harness | `harness` | 🔴 2026-10-13 管理者裁決推翻 `utility belt`，改回 harness 系——理由見表下新增註記 |
 | 26 | fingerless gloves | `fingerless gloves` | 標準標籤 |
 | 27 | sturdy boots | `boots` | — |
 | 28 | holding firefighter breaching axe on shoulder | `holding axe, axe on shoulder` | — |
@@ -67,6 +67,43 @@ README 與社群指南的查證結果（已附來源，查證日期 2026-10-13�
 5. **「contemporary Taiwan setting」整段丟棄** —— 這句原意是角色打扮的時代/地域語境
    （非奇幻、現代），但標籤系統沒有「現代台灣」這個概念，而且若誤用地名類標籤，更可能
    被模型解讀成要畫場景地標（違反「no scenery」）。判斷留白比亂猜一個標籤安全。
+
+### 2026-10-13 管理者裁決：推翻上方第 3、4 點，維持第 5 點
+
+協調者把上方第 3、4 點的原始做法與理由逐字呈給管理者，並各自附上代價分析/反對意見。
+**本節只加註，上方第 3、4、5 點原文一字未刪** —— 兩邊的理由都留著，供日後查對。
+
+| 項目 | 本文件原做法 | 原理由（上方第 3/4 點） | 管理者裁決 | 推翻/維持的理由 |
+|---|---|---|---|---|
+| `gear harness` | 改用 `utility belt` | 避開 `harness` 在 booru 語料的不良共現關聯 | 🔴 **推翻，改回 harness 系標籤** | 協調者指出本文件先前沒講的代價：背帶在肩胸、腰帶在腰部，**改變角色剪影**——而「strong clear silhouette」是我方硬需求，最終成品是 32×40 棋子，剪影就是辨識度的全部。管理者選擇「先照規格走，出問題再修」，並跳過「`shoulder strap`/`chest rig` 這類中性替代」的折衷方案（理由：這類複合詞未查過在 booru 語料的命中率，`harness` 是確認過的高頻標籤） |
+| 年齡/成熟度標籤 | 完全不加 | 避開 `mature female` 等標籤的成人向語料關聯 | 🔴 **推翻，加上「成年」類標籤** | 協調者提出方向相反的風險（其明文標注為未在本底模實測的判斷）：動畫底模的 `1girl` 在無年齡修飾時預設偏年輕畫風，「young adult」角色可能被畫成少女——對商業遊戲而言，角色顯得更年幼是更敏感的方向，不是更安全。兩種風險（成人向關聯 vs. 偏年輕畫風）可能同時成立，管理者裁決此事該由管理者定奪，不該由任一方單方面決定 |
+| `contemporary Taiwan setting` | 整段丟棄 | 標籤系統無「現代台灣」概念，恐誤觸發場景標籤 | ✅ **維持原做法** | 無異議 |
+
+**2026-10-13 第二輪查證結果（執行上述裁決時新查到的事實）：**
+
+1. **`harness` 標籤的選擇，以及一項新查到、強化原本疑慮的事實**：Danbooru wiki
+   （`https://danbooru.donmai.us/wiki_pages/harness`）確認 `harness` 是真實存在、
+   被分類在服飾配件群組的標籤，且**官方 wiki 原文明寫**：「in fashion, where it can
+   be intricate and fetish-inspired」。這不再是本文件單方面的揣測，是查證到的事實——
+   **原本第 3 點要避開的風險是真的，管理者是在知道它是真的之後，仍選擇照規格走**。
+   wiki 另有更窄義的 `chest_harness`（定義：「worn specifically on the chest」），
+   語意上更貼近「胸前裝備背帶」，但「專指胸部」這個限定讓它在同一方向的風險判斷上更高，
+   故本文件維持選用較通用的 `harness`，不選 `chest_harness`，也不採用未經查證是否為
+   真實標籤的複合詞 `gear harness`/`tactical harness`。
+2. **年齡標籤：查證後找不到一個能乾淨表達「年輕成年、非熟齡」的標籤**，兩個最直觀的
+   候選分別查證後判定都不合用：
+   - `adult`（Danbooru wiki）：語意前提是「角色外觀偏離其官方/原作年齡設定」，典型
+     用法是「把官方設定是未成年的角色畫成成人版本」。**我方是原創角色，沒有「官方年齡
+     設定」可供偏離，這個標籤的語意前提在本案不成立，很可能無效或被模型忽略。**
+   - `mature female`（Danbooru wiki）：明確定義為「30 代後半以上，MILF/DILF 範疇」——
+     **直接對準原本第 4 點要避開的「熟女」方向，比完全不加標籤更糟，不是更安全。**
+   - 另查到社群指南建議用自由文字片語 `adult woman` / `beautiful adult woman`
+     （非嚴格 booru 標籤，混合式寫法）引導成年外觀，但**這不是一個查證過在 Danbooru
+     訓練語料裡有固定關聯強度的標籤字串，效果未知**。
+   **誠實結論，回報管理者**：沒有找到查證過、語意乾淨對應「年輕成年」的標籤。本文件
+   第 3 節/第 5.3 節採用 `adult woman`（自由文字片語，非嚴格標籤）作為**目前查得到的
+   最接近選項**，但這是「查不到乾淨答案、兩個直觀候選都被排除後的次佳嘗試」，不是
+   「確認有效的解法」，請管理者在這個理解下看待它。
 
 ## 2. Animagine XL 3.1 已知慣例
 
@@ -109,11 +146,13 @@ README 與社群指南的查證結果（已附來源，查證日期 2026-10-13�
 ## 3. 正向 Prompt（標籤式，洋紅背景版）
 
 ```
-masterpiece, best quality, very aesthetic, absurdres, safe, 1girl, solo, east asian, black hair, ponytail, serious expression, athletic build, standing, full body, three-quarter view, facing viewer, firefighter, navy blue uniform, utility belt, fingerless gloves, boots, holding axe, axe on shoulder, silver axe, steel gray trim, cel shading, flat color, bold outline, simple background, magenta background
+masterpiece, best quality, very aesthetic, absurdres, safe, 1girl, solo, adult woman, east asian, black hair, ponytail, serious expression, athletic build, standing, full body, three-quarter view, facing viewer, firefighter, navy blue uniform, harness, fingerless gloves, boots, holding axe, axe on shoulder, silver axe, steel gray trim, cel shading, flat color, bold outline, simple background, magenta background
 ```
 
-**撰寫者人工估算：406 字元**（逐 token 長度 + 逗號分隔符累加，手算，未用程式精算）。
+**撰寫者人工估算：414 字元**（逐 token 長度 + 逗號分隔符累加，手算，未用程式精算）。
 🔴 **此數字為人工估算，待協調者程式精算，不得當成確定值引用。**
+🔴 **2026-10-13 更新**：相較原版 406 字元，新增 `adult woman`（+13，含新增的分隔逗號）、
+`utility belt`→`harness`（−5），淨變化 +8，與原估算吻合（406+8=414）。
 
 ## 4. 負向 Prompt（標籤式）
 
@@ -152,10 +191,11 @@ prompt（606 字元原文 + 09 號文件第四節追加的 198 字元）裡的�
 `simple background, white background`：
 
 ```
-masterpiece, best quality, very aesthetic, absurdres, safe, 1girl, solo, east asian, black hair, ponytail, serious expression, athletic build, standing, full body, three-quarter view, facing viewer, firefighter, navy blue uniform, utility belt, fingerless gloves, boots, holding axe, axe on shoulder, silver axe, steel gray trim, cel shading, flat color, bold outline, simple background, white background
+masterpiece, best quality, very aesthetic, absurdres, safe, 1girl, solo, adult woman, east asian, black hair, ponytail, serious expression, athletic build, standing, full body, three-quarter view, facing viewer, firefighter, navy blue uniform, harness, fingerless gloves, boots, holding axe, axe on shoulder, silver axe, steel gray trim, cel shading, flat color, bold outline, simple background, white background
 ```
 
-**撰寫者人工估算：404 字元**（比主案少 2 字元，`white` 比 `magenta` 短）。
+**撰寫者人工估算：412 字元**（比主案少 2 字元，`white` 比 `magenta` 短；同主案套用
+2026-10-13 的 `adult woman` 新增與 `harness` 代換）。
 🔴 **同樣待協調者程式精算。**
 
 此版本不依賴精確色鍵匹配——去背改用 `09` 號文件第三節方案 (c)「取樣各圖實際邊界色
@@ -177,3 +217,12 @@ masterpiece, best quality, very aesthetic, absurdres, safe, 1girl, solo, east as
   本文件選擇放最前，未經驗證何者效果較好。
 - 本機服務 scheduler 固定 `normal`、無 Karras，與官方建議採樣參數的搭配效果未驗證，
   明確排除在本文件範圍外。
+- 🔴 **2026-10-13 新增兩項，兩者皆為管理者知情下的裁決，不是待修的缺陷**：
+  - `harness` 標籤經 Danbooru wiki 查證，**官方定義本身即標注其語意偏 fetish 向**——
+    這項風險是真實、已查證的，管理者在知道後選擇照規格走（優先保住剪影辨識度），
+    「出問題再修」是明文的處置方式，不是沒人注意到。
+  - `adult woman` 是查無乾淨標籤後的次佳嘗試（自由文字片語，非確認過的標準標籤），
+    `adult`、`mature female` 兩個直觀候選皆經查證判定不合用（理由見第 1 節表下新增
+    註記）。**它有沒有效果、會不會把角色畫得更年長或完全沒有作用，未經本機驗證。**
+  兩項請在下一步實際出圖驗證時優先核對：背帶/腰帶是否破壞 32×40 剪影可辨識度、
+  `adult woman` 是否確實把外觀推向「年輕成年」而非無效或推向「熟齡」。

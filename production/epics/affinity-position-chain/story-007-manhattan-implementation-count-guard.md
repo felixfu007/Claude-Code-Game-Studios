@@ -1,7 +1,14 @@
 # Story 007: 兩份曼哈頓距離實作數量的結構紀律守衛(M5)
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-13,協調者獨立重跑驗收)** —— 新檔
+> `tests/unit/gameplay/affinity/affinity_manhattan_implementation_count_test.gd`,5 條
+> (1 條正式 + 4 條敏感度證明)。**掃描結果恰好 2 份,與本檔假設一致。**
+> 🔴 本檔標為「未重新查證」的 `CombatRules` 函式名已確認為 `_manhattan_distance`。
+> 🔴 掃描器的自我匹配免疫是**結構性的**(範圍只限 `res://src` 不含 `res://tests`),
+> 不是靠註解格式自律 —— 與既有先例 `affinity_link_no_direct_return_test.gd` 刻意不同,
+> 檔頭已記錄差異與理由。
+> 驗收:`1147 → 1152 = +5`、`99/99 suites`、`ENGINE EXIT = 100`。
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」涵蓋範圍)
 > **Type**: Logic
 > **Estimate**: XS～S(0.5 session——EPIC.md 已指出有現成的同類型測試可仿照)
@@ -101,7 +108,7 @@
 **Story Type**: Logic
 **Required evidence**: 新測試檔案存在且通過,含乙類例外的兩項揭露義務。
 
-**Status**: [ ] Not yet created
+**Status**: [x] 已建立(2026-10-13)—— `tests/unit/gameplay/affinity/affinity_manhattan_implementation_count_test.gd`(5 條),全部 PASSED,協調者獨立重跑驗收。
 
 ## Dependencies
 

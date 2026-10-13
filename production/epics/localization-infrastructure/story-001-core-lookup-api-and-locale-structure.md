@@ -1,7 +1,10 @@
 # Story 001: 核心 key 查找 API + locale 檔案結構(骨架)
 
 > **Epic**: 本地化(i18n)基礎設施 —— `production/epics/localization-infrastructure/EPIC.md`
-> **Status**: 🟢 **核准開工**(2026-09-29 管理者裁決「Story 001~003 是否核准開工」→「准」,
+> **Status**: ✅ **Complete(2026-10-05)** —— 🔴 **狀態欄 2026-10-13 補正:原寫「🟢 核准開工」,
+> 而本檔下方自 2026-10-05 起就寫著「A~E 五節全部完成,本 story 標記 `Complete`」。
+> 【欄位與內文講相反的話,整整八天】** —— 掃狀態欄的人會以為它還沒開始。原文保留如下:
+> ~~🟢 核准開工~~(2026-09-29 管理者裁決「Story 001~003 是否核准開工」→「准」,
 > 見 `EPIC.md`「✅ 管理者裁決紀錄」表第 4 列。本檔為 2026-09-30 由 `localization-lead` 切出)
 > **Layer**: Infrastructure(跨切面,非 `tactical-combat` 的 Core/Presentation 分層 —— 本 epic
 

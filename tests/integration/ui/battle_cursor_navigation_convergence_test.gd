@@ -323,6 +323,83 @@
 ## ZERO diff from commit `b4c8e6d` this round. Next round should settle 5e
 ## before writing any code — the chosen answer changes what
 ## `_TargetRetargetActor`'s new owner method needs to read and from where.
+##
+## ═══════════════════════════════════════════════════════════════════════════
+## 6. 2026-10-13 (SAME DAY, LATER) — AC-10b VERIFICATION, per coordinator
+##    instruction after a manager ruling accepted "one stale frame at the
+##    handoff" on the strength of a coordinator-relayed, EXPLICITLY-UNVERIFIED
+##    claim that `design/gdd/cursor-highlight-state.md`'s AC-10b is a
+##    precedent for it. Coordinator's own framing: "若不涵蓋 → 停下來回報...
+##    這一點沒有商量餘地". READ THE REST OF THIS ITEM BEFORE ACTING ON THE
+##    RULING — the verdict below is NOT COVERED, and per that same instruction
+##    I have STOPPED rather than implemented anything in section 5 this round.
+## ═══════════════════════════════════════════════════════════════════════════
+##
+## AC-10b VERBATIM (`design/gdd/cursor-highlight-state.md`, Group C, 2026-08-04
+## addition): "GIVEN 裝置權威從 A 轉移到滑鼠(B=滑鼠)的觸發影格,WHEN 檢視該影格
+## 結束時的游標目標值,THEN 其等於滑鼠取得權威的同一個 ui_* action 所推導出的
+## 懸停目標——不殘留 A 的舊值超過該觸發影格本身." Production citation already
+## exists at `cursor_state.gd`'s `apply_buffered_navigation()` doc comment,
+## which is where the coordinator's "AC-10b mouse-case precedent" phrase
+## traces back to — confirmed by reading that comment directly, not just
+## grepping for the phrase.
+##
+## 🔴 VERDICT: NOT COVERED. AC-10b's "裝置權威" is NOT the same thing as the
+## stale value in this file's own finding 5e, on two independent grounds:
+##
+## (i) DIFFERENT FIELD, DIFFERENT SYSTEM. AC-10b's "裝置權威" is AC-1's
+##     canonical, GDD-defined field ("本系統的全域狀態物件...恰包含三個頂層
+##     欄位——目前游標目標...目前裝置權威...滑鼠奪權累積位移量") — i.e.
+##     `CursorState._device_authority` (`CursorTypes.Authority`), resolved by
+##     `CursorState.arbitrate_device_authority()`, called from
+##     `CursorStateHost._process()` at **process_priority -100**. Finding 5e's
+##     stale value is `battle_screen.gd`'s OWN, LOCAL `_device` field
+##     (`DeviceAuthority`, a wholly different class), resolved by
+##     `DeviceAuthority.resolve_frame()`, called from THIS SCREEN's own
+##     `_process()` at **process_priority 100**. `battle_screen.gd`'s own doc
+##     comments already state these are deliberately separate trackers (see
+##     `_handle_directional()`'s doc comment: "`_device` ... distinct from
+##     CursorStateHost's internal one"), and Implementation Note 1 reserves
+##     retiring the local one for story-009. AC-10b was written against, and
+##     only ever tested against (`frame_buffer_ordering_test.gd`'s
+##     `test_ac10_*` pair), the FIRST field. It says nothing about the SECOND.
+##
+## (ii) DIFFERENT TRIGGER SEMANTICS, CONFIRMED BY READING BOTH IMPLEMENTATIONS.
+##     AC-10b's "裝置權威從 A 轉移到滑鼠" is gated by
+##     `MouseReclaimPolicy.evaluate()` — Core Rules #3's accumulated-
+##     displacement THRESHOLD ("滑鼠奪回權威的空間門檻"), evaluated inside
+##     `arbitrate_device_authority()`. `battle_screen.gd`'s own
+##     `DeviceAuthority.resolve_frame()` (read directly,
+##     `src/ui/battle/device_authority.gd`) has NO threshold at all: "elif
+##     _mouse_moved_this_frame: next = Device.MOUSE" — ANY mouse motion this
+##     frame flips it, unconditionally. A precedent written for a gesture-
+##     gated transfer does not mechanically transfer to an ungated, every-
+##     motion flag flip; the two "transfer frames" are not the same event
+##     under the same rule.
+##
+## 🔴 A RELATED OPTION THIS SURFACES, NOT YET EVALUATED FOR SCOPE: reading
+##     `CursorStateHost.get_device_authority()` (the CANONICAL field, i) from
+##     `_TargetRetargetActor` (-60) instead of the local `_device.current()`
+##     would have ZERO staleness — it is resolved at -100, strictly before
+##     -60 runs, every frame. But per (ii) above this is NOT a drop-in
+##     substitute: it would switch the trigger condition for "does mouse
+##     hover move the BOARD_TILE target" from "any mouse motion" (today's
+##     local-tracker behavior, unconditional) to "mouse has accumulated
+##     enough displacement to win the GDD's reclaim gesture" (the canonical
+##     field's actual rule) — a materially different, arguably bigger,
+##     behavior change than a one-frame lag, and one that couples BOARD_TILE
+##     navigation to the mouse-reclaim submechanism (機制十三) for the first
+##     time. Flagging this as a DIFFERENT fifth option the manager's three
+##     listed alternatives (②③④ in the coordinator's relay) did not include —
+##     not recommending it, not implementing it, just surfacing it since it
+##     fell out of this verification pass.
+##
+## STATUS (this item): read-only verification, as instructed. NO code
+## written in response to the manager's ruling this round — the ruling's own
+## stated justification (AC-10b precedent) does not hold, so proceeding on it
+## would be "verdict acted on without re-checking reasoning" (this project's
+## own registered failure shape, 2026-10-12). Returned to the coordinator for
+## re-ruling rather than silently picking one of (ii)'s two paths myself.
 extends GdUnitTestSuite
 
 
