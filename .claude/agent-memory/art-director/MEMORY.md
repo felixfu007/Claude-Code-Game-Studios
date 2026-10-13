@@ -6,3 +6,4 @@
 - [Art production path: AI generation, decided](project_art_production_path_undecided.md) — route 2026-09-29; 2026-10-13: rev2 confirms pure-prompt ceiling, 2nd evidence for LoRA
 - [Color palette v0.1 + 06a format ambiguity](project_color_palette_v0_and_06a_format_ambiguity.md) — color-palette.csv created 2026-10-08 (38/64 colors); 06a §4.2's own CSV example contradicts its stated comment rule
 - [Outline: internal parts ruling](project_outline_internal_parts_ruling.md) — 2026-10-12: outline only on outer silhouette edge, never internal seams; not yet merged into art-direction.md §4
+- [Base model candidates 2026-10-13](project_base_model_candidates_2026-10-13.md) — Animagine XL 3.1 (rec) / Illustrious XL v2.0 / Nova Flat XL (license-blocked); both top picks need prompt rewritten to tag-style

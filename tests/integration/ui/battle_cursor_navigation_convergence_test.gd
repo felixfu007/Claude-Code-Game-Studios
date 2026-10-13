@@ -124,26 +124,60 @@
 ## The existing 4 card-play register/unregister call sites are UNCHANGED by
 ## this plan.
 ##
-## 🔴 STILL NOT IMPLEMENTED IN `battle_screen.gd`. No production code has
-## been touched this session either — this file remains the only artifact.
+## 🔴 2026-10-13 STATUS UPDATE — unit 3b, points 1/4, 3/4, 4/4 LANDED AND
+## ENGINE-GREEN (`_ready()` seeds the host instead of writing _cursor_cell
+## directly; `_handle_directional()` no longer self-writes _cursor_cell, kept
+## only its debounce loop + `_device.note_pad_input()` for DeviceAuthority's
+## own, separate bookkeeping — see that method's own doc comment for why;
+## `_update_cursor_visual()`'s KEYBOARD_GAMEPAD branch now reads
+## `CursorStateHost.get_current_target()` instead of trusting a stale
+## _cursor_cell). Full suite: 1147 test cases, 0 errors, 1 failure (the known,
+## pre-existing, approved-red `affinity_phi_provider_test.gd`), 98/98 suites
+## and 1147/1147 cases executed. Point 2/4 (`_handle_mouse_button()`) is the
+## ONLY direct-write point NOT yet converted — deferred to the next round per
+## explicit coordinator instruction, see finding 4 below for what was learned
+## about it so far (read, not yet implemented).
+##
+## 🔴 Manager ruling (2026-10-13, relayed by coordinator): the gamepad-stick
+## debounce question (finding #3 above) is DECIDED for now — "先登記不動,等
+## 有手把可測再說", with the explicit default for this story: KEEP
+## `_handle_directional()`'s existing `_direction_just_pressed()` /
+## `_direction_was_pressed` debounce, remove ONLY the cursor write. This is
+## EXACTLY what points 1/4, 3/4, 4/4 above already did — no further action
+## needed on this question for this story; removing the debounce itself would
+## need a windowed, non-headless proof that is explicitly scheduled for later,
+## not this story.
 ##
 ## ═══════════════════════════════════════════════════════════════════════════
-## 4. `_handle_mouse_button()`'s R5-2 constraint — QUEUED, NOT YET READ THIS
-##    ROUND (explicitly deprioritized behind items 1-3 above by the
-##    coordinator's own ordering).
+## 4. `_handle_mouse_button()`'s R5-2 constraint — READ (not yet implemented;
+##    coordinator cap: if the conclusion is "needs a new actor", stop and
+##    report, do not build it).
 ## ═══════════════════════════════════════════════════════════════════════════
 ## `CursorState.set_target()`'s doc comment (`cursor_state_host.gd:566-573`)
 ## requires callers to invoke it from their OWN node's `_process()` at a
 ## process_priority strictly between -100 and -25 (R5-2), never from
 ## `_input()`. `_handle_mouse_button()` runs inside `_input()`'s dispatch, so
 ## it cannot call `set_target()` directly once mouse clicks need to move the
-## host's authoritative target. This file already has `_TargetRetargetActor`
-## (process_priority -60) built for an analogous deferred-apply need
-## (card-play's "jump to next/prev legal target"), but its exact contract —
-## whether it can be reused for "set to an arbitrary clicked cell" or whether
-## a second deferred actor is needed — has NOT been read yet. If the answer
-## turns out to be "needs a new actor", that is a scope expansion to report
-## back, not to build silently (coordinator's explicit instruction).
+## host's authoritative target.
+##
+## 🔴 TENTATIVE CONCLUSION (read this round, NOT yet implemented — reading
+## happened before the coordinator's "don't touch this yet" instruction
+## arrived; recorded here so it is not lost, not acted on early):
+## `_TargetRetargetActor` (battle_screen.gd, process_priority -60) is a THIN,
+## GENERIC dispatcher — its entire `_process()` body is one line,
+## `_owner._apply_pending_target_jump()`. It is NOT itself the card-play jump
+## logic; `_apply_pending_target_jump()` (the owner method it calls) is. This
+## means the SAME actor instance can almost certainly be reused for the mouse
+## case WITHOUT building a second actor: add a second pending-request field
+## (e.g. a clicked-cell Vector2i plus a "pending" bool, set by
+## `_handle_mouse_button()`) and a second owner method (e.g.
+## `_apply_pending_mouse_cursor_retarget()`, calling
+## `CursorStateHost.set_target(CursorTarget.make(BOARD_TILE, encoded_id))`),
+## called from the SAME `_TargetRetargetActor._process()` right alongside the
+## existing `_apply_pending_target_jump()` call — mirroring that method's own
+## established "pending flag set in `_input()`-reached code, consumed in
+## `_process()` at priority -60" shape exactly. NOT YET IMPLEMENTED OR
+## ENGINE-VERIFIED — this is a reading-based plan, not a tested one.
 extends GdUnitTestSuite
 
 
@@ -218,73 +252,72 @@ func test_suite_file_parses_and_collects() -> void:
 # Finding #1 — "一次走兩格"
 # ═══════════════════════════════════════════════════════════════════════════
 
-func test_board_cursor_has_two_independent_writers_until_handle_directional_stops_self_moving() -> void:
-	# Arrange — 🔴 2026-10-13: renamed and Arrange rewritten after Story 008
-	# unit 3a landed (AC-1 wiring). BattleScreen._ready() now registers
-	# BOARD_TILE -> self on its own, so a manual registration attempt from
-	# here correctly gets DUPLICATE_TAG_REJECTED, not REGISTERED -- this is
-	# used as a precondition proof that _ready()'s own registration fired,
-	# not treated as a failure.
+func test_board_cursor_has_a_single_authoritative_source_after_convergence() -> void:
+	# Arrange — 🔴 2026-10-13: REWRITTEN per this test's own prior narrative
+	# promise, now that Story 008 unit 3b (points 1/4, 3/4, 4/4 — _ready()
+	# seeding, _handle_directional()'s self-write removed,
+	# _update_cursor_visual() reading the host) has landed. This test used to
+	# assert the BUG (two independent writers); it now asserts the CONVERGED
+	# invariant the bug has been fixed into: _cursor_cell is a MIRROR of
+	# CursorStateHost's target, not an independently computed value.
 	var instance: BattleScreen = _fresh_instance()
 	var host: Node = _host()
-	var cursor_cell_before: Vector2i = instance._cursor_cell
 	var state: CursorState = host.get(&"_state")
-	var host_cell_before: Vector2i = CursorTypes.decode_tile(
-		state.get_current_target().id, BoardCoords.BOARD_COLS
-	)
 
 	assert_int(CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, instance)) \
 		.append_failure_message(
-			"precondition: _ready() should already own BOARD_TILE for a freshly " +
-			"built BattleScreen -- if this is REGISTERED instead of " +
-			"DUPLICATE_TAG_REJECTED, unit 3a's _ready() registration regressed."
+			"precondition: _ready() should already own BOARD_TILE for a freshly built BattleScreen"
 		).is_equal(CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED)
 
-	# Act — ONE real ui_right press, delivered to both the screen's own
-	# _input() (today's unmodified _handle_directional() path) and the real
-	# Autoload's real _input()/_process()/flush_buffered_navigation(), matching
-	# tests/integration/ui/menu/battle_menu_gating_test.gd's established
-	# convention for driving the Autoload deterministically as plain direct
-	# method calls.
+	var cursor_cell_before: Vector2i = instance._cursor_cell
+	var host_cell_before: Vector2i = CursorTypes.decode_tile(
+		state.get_current_target().id, BoardCoords.BOARD_COLS
+	)
+	assert_vector(cursor_cell_before).append_failure_message(
+		"precondition: _ready()'s seeding (unit 3b point 1/4) should have " +
+		"left _cursor_cell and the host's target already in sync"
+	).is_equal(host_cell_before)
+
+	# Act — same single ui_right press as this test used before the rewrite,
+	# plus one new step: force the per-frame visual sync (unit 3b point 4/4)
+	# that the live game loop would run every frame. 🔴 2026-10-13 fix: this
+	# MUST be instance._process(0.0), not instance._update_cursor_visual()
+	# directly — engine-verified the hard way (first attempt called
+	# _update_cursor_visual() alone and got '(0,2)' instead of '(1,2)').
+	# Root cause was in THIS TEST, not production: _update_cursor_visual()'s
+	# branch depends on _device.current(), which DeviceAuthority only updates
+	# inside resolve_frame() (note_pad_input() above, fired by
+	# _handle_directional()'s debounce loop, only sets a flag — see
+	# device_authority.gd's own two-phase note/resolve split). Production's
+	# real BattleScreen._process() always calls _device.resolve_frame() BEFORE
+	# _update_cursor_visual() (see that method's own body); calling the visual
+	# sync alone skipped the resolve step, so _device.current() was still its
+	# constructed default (MOUSE), took the MOUSE branch instead of the
+	# just-converged KEYBOARD_GAMEPAD branch, and read stale
+	# _last_mouse_window_pos instead of the host's target.
 	var nav_event: InputEventKey = _real_pressed_event(&"ui_right")
 	Input.action_press(&"ui_right")
 	instance._input(nav_event)
 	host._input(nav_event)
 	host._process(0.0)
 	host.flush_buffered_navigation()
+	instance._process(0.0)
 	Input.action_release(&"ui_right")
 
-	# Assert — 🔴 NARRATIVE (coordinator instruction, 2026-10-13): these two
-	# assertions currently document the STILL-PRESENT "一次走兩格" bug (both
-	# writers move independently) and are EXPECTED TO KEEP PASSING AS WRITTEN
-	# through unit 3a (wiring only, already landed) — they are NOT meant to
-	# flip to the opposite behavior until unit 3b (stripping
-	# _handle_directional()'s own _cursor_cell write) lands. When unit 3b
-	# lands, THIS WHOLE TEST must be REWRITTEN to assert the converged
-	# invariant (single authoritative source, no independent _cursor_cell
-	# write) — it will not simply "turn green" as currently worded; if either
-	# assertion below starts failing before that rewrite happens, re-derive
-	# whether _handle_directional() already stopped self-writing before
-	# concluding this is a regression versus the fix landing early.
-	assert_vector(instance._cursor_cell).append_failure_message(
-		"_handle_directional()'s own clamp_cursor_move() still moves " +
-		"_cursor_cell by one cell on its own (unit 3a, wiring only, does not " +
-		"touch this) -- if this fails, _handle_directional() already stopped " +
-		"self-writing, which likely means unit 3b's stripping already " +
-		"happened elsewhere; check before treating this as broken."
-	).is_equal(cursor_cell_before + Vector2i.RIGHT)
-
+	# Assert — moved by EXACTLY one cell, through the single authoritative
+	# source (the host) — not two independent writers.
 	var host_cell_after: Vector2i = CursorTypes.decode_tile(
 		state.get_current_target().id, BoardCoords.BOARD_COLS
 	)
 	assert_vector(host_cell_after).append_failure_message(
-		"CONFIRMS the '一次走兩格' finding is STILL LIVE after unit 3a: " +
-		"CursorStateHost's own flush_buffered_navigation() independently " +
-		"moves its target by one cell from the SAME single keypress that " +
-		"also moved _cursor_cell above -- two writers, not coordinated. " +
-		"Expected to keep passing (bug still present) until unit 3b removes " +
-		"_handle_directional()'s own write."
+		"CursorStateHost's own target should have moved exactly one cell right"
 	).is_equal(host_cell_before + Vector2i.RIGHT)
+	assert_vector(instance._cursor_cell).append_failure_message(
+		"_cursor_cell should now MIRROR the host's target exactly (single " +
+		"source of truth) -- not independently computed by _handle_directional() " +
+		"anymore. If this diverges from host_cell_after, the two writers are " +
+		"back (regression), or _update_cursor_visual()'s read conversion broke."
+	).is_equal(host_cell_after)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -294,17 +327,35 @@ func test_board_cursor_has_two_independent_writers_until_handle_directional_stop
 func test_directional_navigation_can_select_a_non_default_unit_before_any_selection_exists_today() -> void:
 	# Arrange — vs01_roster.txt: unit id 1 (甲) at (0,2) is _ready()'s seeded
 	# default cursor position; unit id 2 (乙) sits one row below at (0,3).
+	# 🔴 2026-10-13: Act updated after Story 008 unit 3b landed —
+	# _handle_directional() no longer moves _cursor_cell itself (point 3/4);
+	# movement now genuinely depends on CursorStateHost's own pipeline
+	# (registered by _ready(), point 1/4) actually running, exactly as the
+	# real engine does automatically every frame. This test now drives that
+	# pipeline explicitly (host._input()/_process()/flush_buffered_navigation()
+	# + instance._process() to sync the visual, point 4/4) instead of relying
+	# on instance._input() alone — matching
+	# test_board_cursor_has_a_single_authoritative_source_after_convergence's
+	# own established pattern. The capability this test locks in (keyboard
+	# navigation works before any unit is selected) is unchanged; only HOW
+	# that movement happens changed.
 	var instance: BattleScreen = _fresh_instance()
+	var host: Node = _host()
 	assert_int(instance._controller.selected_unit()).append_failure_message(
 		"precondition: nothing should be selected yet"
 	).is_equal(-1)
 	var second_unit_cell: Vector2i = instance._cursor_cell + Vector2i.DOWN
 
-	# Act — one ui_down press (today's _handle_directional() path only, no
-	# card play, no CursorStateHost registration involved at all), then
-	# confirm at the new cursor position.
+	# Act — one ui_down press, driven through both the screen's own _input()
+	# and the real Autoload's real pipeline, then confirm at the new cursor
+	# position.
+	var nav_event: InputEventKey = _real_pressed_event(&"ui_down")
 	Input.action_press(&"ui_down")
-	instance._input(_real_pressed_event(&"ui_down"))
+	instance._input(nav_event)
+	host._input(nav_event)
+	host._process(0.0)
+	host.flush_buffered_navigation()
+	instance._process(0.0)
 	Input.action_release(&"ui_down")
 	assert_vector(instance._cursor_cell).append_failure_message(
 		"precondition: one ui_down press should move the cursor exactly one " +

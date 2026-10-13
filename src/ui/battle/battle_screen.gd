@@ -1022,8 +1022,33 @@ func _ready() -> void:
 	# instance's own registration or no-ops as UNREGISTERED_NOT_FOUND if
 	# something already released it (e.g. mid-handoff to card-play).
 	tree_exited.connect(func() -> void: CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE))
+	# Story 008 unit 3b (point 1/4, AC-2) — seeds CursorStateHost's target
+	# instead of writing _cursor_cell directly, then reads it back: the
+	# registration above already landed on this same node, so set_target()
+	# should not reject with SURFACE_NOT_REGISTERED. Calling set_target() here
+	# (not _input()/_process()) is safe: this runs during _ready(), before
+	# this node's own _process() (priority 100, see _init()) has ever ticked,
+	# and the CursorStateHost Autoload's _ready() has already run (Autoloads
+	# initialize before the main scene) — none of R5-2's per-frame ordering
+	# concerns about _input()/_process() apply to a one-time construction-time
+	# seed. _cursor_cell below is now a CACHE of the host's target, refreshed
+	# from it, not an independently computed value.
 	if not player_ids.is_empty():
-		_cursor_cell = _state.position_of(player_ids[0])
+		var initial_cell: Vector2i = _state.position_of(player_ids[0])
+		var initial_tile_id: int = CursorTypes.encode_tile(initial_cell, BoardCoords.BOARD_COLS)
+		var seed_result: CursorState.SetTargetResult = CursorStateHost.set_target(
+			CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, initial_tile_id)
+		)
+		if seed_result != CursorState.SetTargetResult.APPLIED:
+			push_error(
+				"BattleScreen: CursorStateHost.set_target() returned %s instead of APPLIED while seeding the initial cursor position at _ready()."
+				% seed_result
+			)
+		var seeded_target: CursorTarget = CursorStateHost.get_current_target()
+		if seeded_target != null and seeded_target.surface == CursorTypes.SurfaceType.BOARD_TILE:
+			_cursor_cell = CursorTypes.decode_tile(seeded_target.id, BoardCoords.BOARD_COLS)
+		else:
+			_cursor_cell = initial_cell
 
 	# Story U-013 (機制六②) — process_priority (-60) set in its own _init(),
 	# before add_child() (R6-12), same convention this file's own
@@ -1795,14 +1820,42 @@ func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
 
 # Edge-triggered directional cursor movement — see _direction_was_pressed's
 # doc comment for why this cannot just be event.is_action_pressed(). Shared
-# debounce logic lives in _direction_just_pressed(); this method owns only
-# the board-cursor-specific effect (clamp + move + redraw the cursor sprite).
+# debounce logic lives in _direction_just_pressed().
+#
+# 🔴 Story 008 unit 3b (point 3/4, AC-3) — this method no longer moves the
+# board cursor itself. CursorStateHost's own per-frame pipeline
+# (CursorNavigationApplier, process_priority -25) now does that automatically
+# every frame BOARD_TILE is registered to this screen and device authority is
+# KEYBOARD_GAMEPAD, via the SAME raw InputEvent this screen's own _input()
+# also receives (two separate nodes, one event, per ADR-0005's "dispatch
+# order is TREE order" note) — calling apply_buffered_navigation() again from
+# here, as AC-3's literal wording suggested, would be a SECOND, redundant
+# application on top of the host's own automatic one (confirmed by engine
+# run, see tests/integration/ui/battle_cursor_navigation_convergence_test.gd's
+# finding #1 — "一次走兩格"). The correct fix is for this method to stop
+# writing _cursor_cell at all, not to call that method itself.
+#
+# The debounce loop and _device.note_pad_input() call ARE KEPT, not deleted
+# wholesale, for a DIFFERENT reason than cursor movement: _device
+# (DeviceAuthority) is this screen's OWN, SEPARATE device-authority tracker —
+# distinct from CursorStateHost's internal one — and _update_cursor_visual()
+# below still branches on _device.current() to decide whether to render the
+# mouse-hover cursor or the board-authoritative one (Implementation Note #1:
+# "先拆裝置權威會讓游標當場沒有來源" — retiring THIS tracker is story-009's
+# job, not this one's). _device.note_pad_input() must still fire once per
+# discrete directional press (not every frame) for that bookkeeping to stay
+# correct, so the debounce gate stays in place to preserve that edge-trigger
+# shape — it is NOT kept as a mitigation for CursorStateHost's own gamepad-
+# stick debounce gap (that gap lives entirely inside CursorState's pipeline,
+# which this screen's debounce has no mechanism to influence at all: the
+# Autoload receives the SAME raw engine event independently of whatever this
+# function does with its own copy). That gap remains genuinely open and is
+# tracked separately (see this file's own test suite header, finding #3) —
+# not something this change claims to fix.
 func _handle_directional(_event: InputEvent) -> void:
 	for action: StringName in _DIRECTION_VECTORS:
 		if _direction_just_pressed(action, _direction_was_pressed):
 			_device.note_pad_input()
-			_cursor_cell = clamp_cursor_move(_cursor_cell, _DIRECTION_VECTORS[action])
-			_board_view.set_cursor(_cursor_cell)
 
 
 # Story U-013 — S1's card-browsing input (Interaction Map step 2). Shares
@@ -2554,6 +2607,20 @@ func _update_cursor_visual() -> void:
 			_cursor_active = false
 			_board_view.clear_cursor()
 	else:
+		# Story 008 unit 3b (point 4/4, AC-2) — _handle_directional() no
+		# longer writes _cursor_cell (point 3/4, see that method's own doc
+		# comment), so this branch can no longer assume _cursor_cell is
+		# already current. Reads CursorStateHost's per-frame-arbitrated
+		# target instead — safe here specifically because THIS screen's own
+		# _process() runs at process_priority 100 (_init()'s own doc comment:
+		# "the engine default priority (0) to 100"), which is exactly the
+		# priority ADR-0005 mandates for 機制六⑥ "下游讀取方" callers of
+		# get_current_target(). A null/non-BOARD_TILE target (e.g. transient
+		# mid-handoff to card-play) leaves _cursor_cell at its last known
+		# value rather than snapping to a decoded garbage cell.
+		var target: CursorTarget = CursorStateHost.get_current_target()
+		if target != null and target.surface == CursorTypes.SurfaceType.BOARD_TILE:
+			_cursor_cell = CursorTypes.decode_tile(target.id, BoardCoords.BOARD_COLS)
 		_cursor_active = true
 		_board_view.set_cursor(_cursor_cell)
 
