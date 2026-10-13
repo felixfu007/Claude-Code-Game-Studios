@@ -7,21 +7,29 @@
 ## [method BattleController.click_tile] calls, and [BattleController]'s
 ## signals become [BoardView] render calls.
 ##
-## Owns [BattleState], [TurnOrder], [BattleController], and [DeviceAuthority]
-## directly; the two nodes it drives ([BoardView] inside the world
-## [SubViewport], and a status/result [Label] pair in [code]UILayer[/code])
-## are the entire node tree this script touches.
+## Owns [BattleState], [TurnOrder], and [BattleController] directly; the two
+## nodes it drives ([BoardView] inside the world [SubViewport], and a
+## status/result [Label] pair in [code]UILayer[/code]) are the entire node
+## tree this script touches.
 ##
 ## [b]Input discipline (ADR-0005 forbidden patterns, binding per
 ## [code]docs/registry/architecture.yaml[/code] even while that ADR is
 ## [code]Proposed[/code]):[/b] every input decision happens in [method _input]
 ## — never [method Node._unhandled_input] — and [code]InputEvent.device[/code]
-## is never read. Device authority ([DeviceAuthority]) is the single
-## judgment point for "whose cursor is this", fed by [method
-## DeviceAuthority.note_mouse_motion] / [method DeviceAuthority.note_pad_input]
-## per event and resolved once per frame via [method
-## DeviceAuthority.resolve_frame] in [method _process] — never decided inline
-## inside an event handler, per that class's own two-stage contract.
+## is never read. Device authority is the single judgment point for "whose
+## cursor is this", and (as of story-009, 2026-10-13) it is answered
+## ENTIRELY by [method CursorStateHost.get_device_authority] — arbitrated by
+## that Autoload's own [method Node._input] (which buffers every engine
+## [InputEvent] independently of this screen) and [method
+## CursorState.arbitrate_device_authority] at
+## [code]process_priority = -100[/code]. [b]This screen used to own a SECOND,
+## separate device-authority tracker[/b] (a class named
+## [code]DeviceAuthority[/code], formerly
+## [code]src/ui/battle/device_authority.gd[/code], fed by ~17 manually placed
+## [code]note_pad_input()[/code]/[code]note_mouse_motion()[/code] calls) —
+## that class has been fully retired (story-009; EPIC.md M6 收斂表 #2) and no
+## longer exists anywhere in this project; do not reintroduce a second
+## tracker if a future change seems to need one.
 ##
 ## [b]Mouse coordinate handling — measured, not assumed (2026-08-27,
 ## SUPERSEDED 2026-09-04, see below):[/b] a real windowed probe confirmed
@@ -764,11 +772,17 @@ func diagnostic_last_menu_rejection_message() -> String:
 ## child node.
 ##
 ## [b]Side effect, disclosed rather than silent[/b]: this ALSO moves this
-## screen's own pre-existing, CursorState-unrelated per-frame work
-## ([member _device]'s [method DeviceAuthority.resolve_frame], [method
-## _update_cursor_visual], the enemy-phase diagnostic counter — none of it
-## reads or writes [code]CursorStateHost[/code]) from the engine default
-## priority (0) to 100. Nothing else in this scene currently orders itself
+## screen's own pre-existing, CursorState-unrelated per-frame work ([method
+## _update_cursor_visual], the enemy-phase diagnostic counter — neither reads
+## or writes [code]CursorStateHost[/code] directly; [method _update_cursor_visual]
+## only READS [method CursorStateHost.get_device_authority] /
+## [method CursorStateHost.get_current_target], it does not write them) from
+## the engine default priority (0) to 100. [b]Story 009 (2026-10-13)[/b] — a
+## third item used to live in this list, [code]DeviceAuthority.resolve_frame()[/code]
+## on this screen's own now-fully-retired [code]_device[/code] tracker; it is
+## removed from this sentence because the method and the tracker it ran on no
+## longer exist, not because the historical claim about U-013's own moment was
+## ever wrong. Nothing else in this scene currently orders itself
 ## against this node's own [member Node.process_priority] (no sibling/child
 ## node in this slice declares one of its own, other than the cursor system's
 ## own Autoload children), so this is expected to be behavior-preserving for
@@ -784,8 +798,22 @@ func _init() -> void:
 ## this screen cannot just do role ② inside its own [method _process]).
 ## Mirrors [code]cursor_navigation_applier.gd[/code]'s [CursorNavigationApplier]
 ## shape exactly: bare owner reference, [member Node.process_priority] set in
-## its OWN [method Node._init] before [method Node.add_child] (R6-12), single
-## responsibility of forwarding to one method on its owner.
+## its OWN [method Node._init] before [method Node.add_child] (R6-12).
+##
+## [b]Story 009 (2026-10-13) — now forwards to TWO methods, not one[/b]: the
+## mouse-path retirement of [code]battle_screen.gd[/code]'s own
+## [code]DeviceAuthority[/code] tracker added [method
+## BattleScreen._apply_mouse_target_if_authoritative] as a second per-frame
+## call from [method Node._process] below, alongside the pre-existing [method
+## BattleScreen._apply_pending_target_jump]. Both belong on this same node for
+## the SAME reason (ADR-0005 R5-2's open interval — [method
+## CursorStateHost.set_target] may only be called from strictly between -100
+## and -25), so splitting them across two nodes would buy nothing; the
+## "single responsibility" this comment used to claim was about forwarding
+## rather than owning any logic itself, not about call count — the line has
+## been corrected rather than left to describe a shape this class no longer
+## has (this project's own registered failure mode: prose describing
+## architecture drifting from the code once the code changes under it).
 ##
 ## [b]Deliberately an inner class, not a new file[/b] — this story's file
 ## lock is explicit: "本 story 修改兩個既有檔案(累加修改,不新建)"
@@ -815,6 +843,7 @@ class _TargetRetargetActor extends Node:
 
 	func _process(_delta: float) -> void:
 		_owner._apply_pending_target_jump()
+		_owner._apply_mouse_target_if_authoritative()
 
 
 func _ready() -> void:
@@ -1112,7 +1141,6 @@ func _process(_delta: float) -> void:
 		return
 	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_diagnostic_enemy_acting_process_frame_count += 1
-	_device.resolve_frame()
 	_update_cursor_visual()
 
 	# Story U-013 (ADR-0005 機制六⑥, Implementation Note #1 quoted verbatim
@@ -1148,7 +1176,6 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion:
 		_last_mouse_window_pos = (event as InputEventMouseMotion).position
-		_device.note_mouse_motion()
 		return
 
 	if event is InputEventMouseButton:
@@ -1172,7 +1199,6 @@ func _input(event: InputEvent) -> void:
 		# menu is a real, distinct action S4 must explicitly refuse, not just
 		# ignore).
 		if event.is_action_pressed(&"battle_menu"):
-			_device.note_pad_input()
 			_handle_battle_menu_pressed()
 			return
 
@@ -1194,7 +1220,6 @@ func _input(event: InputEvent) -> void:
 		# else regardless of card-play state, mirroring the Interaction Map's
 		# own framing of it as a toggle rather than a step-scoped action.
 		if event.is_action_pressed(&"battle_open_hand"):
-			_device.note_pad_input()
 			_handle_open_hand_pressed()
 			return
 
@@ -1207,7 +1232,6 @@ func _input(event: InputEvent) -> void:
 		if not _controller.is_card_play_in_progress():
 			_handle_directional(event)
 			if event.is_action_pressed(&"battle_confirm"):
-				_device.note_pad_input()
 				_confirm_at_cursor()
 				return
 			# Story U-016 — the battle_end_phase keypress dispatch that used to
@@ -1224,11 +1248,9 @@ func _input(event: InputEvent) -> void:
 		if _card_selecting_from_hand:
 			_handle_hand_navigation(event)
 			if event.is_action_pressed(&"battle_confirm"):
-				_device.note_pad_input()
 				_confirm_selected_card()
 				return
 			if event.is_action_pressed(&"battle_cancel"):
-				_device.note_pad_input()
 				if _controller.cancel():
 					_card_selecting_from_hand = false
 					_refresh_view()
@@ -1248,24 +1270,20 @@ func _input(event: InputEvent) -> void:
 		# so simply not matching the event is enough to let it propagate).
 		if _card_selecting_target:
 			if event.is_action_pressed(&"battle_next_target"):
-				_device.note_pad_input()
 				_target_jump_requested = true
 				_target_jump_forward = true
 				return
 			if event.is_action_pressed(&"battle_prev_target"):
-				_device.note_pad_input()
 				_target_jump_requested = true
 				_target_jump_forward = false
 				return
 			if event.is_action_pressed(&"battle_confirm"):
-				_device.note_pad_input()
 				# Implementation Note #1 — captured as a pending flag ONLY;
 				# see _process()'s own comment for where this is actually
 				# read (never here).
 				_pending_target_confirm_press = true
 				return
 			if event.is_action_pressed(&"battle_cancel"):
-				_device.note_pad_input()
 				_controller.cancel()
 				_handle_target_selection_cancel_transition()
 				_refresh_view()
@@ -1279,14 +1297,12 @@ func _input(event: InputEvent) -> void:
 		# is no mouse-only path to close off.
 		if _card_confirming:
 			if event.is_action_pressed(&"battle_confirm"):
-				_device.note_pad_input()
 				# AC-U11 — captured as a pending flag ONLY; see
 				# _apply_pending_card_confirm()'s own doc comment for why
 				# this must not call _controller.confirm() synchronously here.
 				_card_confirm_pending_press = true
 				return
 			if event.is_action_pressed(&"battle_cancel"):
-				_device.note_pad_input()
 				_controller.cancel()
 				_handle_card_confirm_cancel_transition()
 				_refresh_view()
@@ -1708,7 +1724,7 @@ static func _parse_terrain_rows(text: String) -> PackedStringArray:
 # Logs every failing file (all three, if all three failed) but only ever
 # shows one on screen — terrain checked before roster before affinity — since
 # _load_error_label's fixed 464x254px area only fits a single message. Never
-# constructs _state/_order/_controller/_device/_phi: BattleState.create() is
+# constructs _state/_order/_controller/_phi: BattleState.create() is
 # skipped entirely, so there is no half-built battle for anything downstream
 # to touch. set_process(false) / set_process_input(false) are the primary
 # guard; _load_failed is the second guard _process()/_input() check directly,
@@ -1777,7 +1793,16 @@ func _fail_load(failures: Dictionary[String, LoadFailure]) -> void:
 # when they clicked.
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	_last_mouse_window_pos = event.position
-	_device.note_mouse_motion()
+	# Story 009 — DeviceAuthority.note_mouse_motion() call removed along with
+	# this screen's own retired _device tracker (see this file's story-009
+	# implementation notes in
+	# tests/integration/ui/battle_cursor_navigation_convergence_test.gd for
+	# the full reasoning). CursorStateHost's own Autoload _input() already
+	# buffers EVERY engine InputEvent (including this one) into its own
+	# _frame_events independently of this screen, and mouse device-authority
+	# arbitration there reads a LIVE position each frame rather than this
+	# flag, so removing this call changes nothing the host observes.
+	#
 	# Story U-013, AC-14 — see the matching guard in _input()'s keyboard/
 	# gamepad branch for why this must not act while card play is open. Mouse
 	# is not wired for any card-play interaction (S1/S2+ are keyboard/gamepad
@@ -1799,8 +1824,17 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	var cell: Vector2i = _window_pos_to_cell(event.position)
 	if not BoardCoords.is_in_bounds(cell):
 		return
-	_cursor_cell = cell
-	_board_view.set_cursor(cell)
+	# Story 009 — _cursor_cell / _board_view.set_cursor(cell) direct writes
+	# removed. The cursor's VISUAL target write now happens exclusively
+	# through _apply_mouse_target_if_authoritative() (_TargetRetargetActor,
+	# process_priority -60), which reads the SAME _last_mouse_window_pos set
+	# above (already current for this frame — _input() dispatch runs before
+	# any _process() priority this frame) and writes
+	# CursorStateHost.set_target(); _update_cursor_visual() (process_priority
+	# 100, later this same frame) reads it back. This click's own GAME-LOGIC
+	# effect (click_tile below) is unrelated to that visual pipeline and still
+	# resolves synchronously against the exact `cell` computed above from the
+	# raw event position, unaffected by this change.
 	_controller.click_tile(cell)
 
 
@@ -1835,27 +1869,46 @@ func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
 # finding #1 — "一次走兩格"). The correct fix is for this method to stop
 # writing _cursor_cell at all, not to call that method itself.
 #
-# The debounce loop and _device.note_pad_input() call ARE KEPT, not deleted
-# wholesale, for a DIFFERENT reason than cursor movement: _device
-# (DeviceAuthority) is this screen's OWN, SEPARATE device-authority tracker —
-# distinct from CursorStateHost's internal one — and _update_cursor_visual()
-# below still branches on _device.current() to decide whether to render the
-# mouse-hover cursor or the board-authoritative one (Implementation Note #1:
-# "先拆裝置權威會讓游標當場沒有來源" — retiring THIS tracker is story-009's
-# job, not this one's). _device.note_pad_input() must still fire once per
-# discrete directional press (not every frame) for that bookkeeping to stay
-# correct, so the debounce gate stays in place to preserve that edge-trigger
-# shape — it is NOT kept as a mitigation for CursorStateHost's own gamepad-
-# stick debounce gap (that gap lives entirely inside CursorState's pipeline,
-# which this screen's debounce has no mechanism to influence at all: the
-# Autoload receives the SAME raw engine event independently of whatever this
-# function does with its own copy). That gap remains genuinely open and is
-# tracked separately (see this file's own test suite header, finding #3) —
+# 🔴 Story 009 (2026-10-13) — the paragraph above this one used to describe
+# _device.note_pad_input() bookkeeping here; that call is retired, not left
+# to drift (this project's own registered failure shape: prose describing
+# architecture outliving the code it described). Unit 2 switched
+# _update_cursor_visual()'s gate to CursorStateHost.get_device_authority();
+# unit 3a then removed all ~17 note_*()/resolve_frame() call sites (this one
+# included). The directional branch below therefore now does genuinely
+# NOTHING on an edge-triggered press — see its own body comment for why that
+# `pass` is deliberate rather than an oversight.
+#
+# ⚠️ As of unit 3a, _device ITSELF (the field, its construction call, and the
+# DeviceAuthority class file) still exists — it is now a fully dead, never-
+# read, never-written object graph (constructed once, nothing calls any
+# method on it). Deleting it is unit 3b, not yet landed as of this comment;
+# see this story's implementation notes (檔尾 of
+# tests/integration/ui/battle_cursor_navigation_convergence_test.gd).
+#
+# The debounce loop and gate (_direction_just_pressed(), _direction_was_pressed)
+# are KEPT ANYWAY, inert, rather than deleted alongside _device — collapsing
+# this shape is this story's own Out of Scope item, explicitly left to
+# story-010 (方向鍵去抖收斂). This is NOT a mitigation for CursorStateHost's
+# own gamepad-stick debounce gap (that gap lives entirely inside CursorState's
+# pipeline, which this screen's debounce has no mechanism to influence at all
+# — the Autoload receives the SAME raw engine event independently of whatever
+# this function does with its own copy). That gap remains genuinely open and
+# is tracked separately (see this file's own test suite header, finding #3) —
 # not something this change claims to fix.
 func _handle_directional(_event: InputEvent) -> void:
 	for action: StringName in _DIRECTION_VECTORS:
 		if _direction_just_pressed(action, _direction_was_pressed):
-			_device.note_pad_input()
+			# Story 009, unit 3 — the sole statement this branch used to run
+			# (_device.note_pad_input(), DeviceAuthority bookkeeping) is
+			# retired along with that class (see this function's own doc
+			# comment above). Nothing replaces it: CursorStateHost's own
+			# pipeline already moves the board cursor automatically (same doc
+			# comment), and this edge-trigger result has no other consumer.
+			# `pass` only, rather than deleting the loop/if entirely —
+			# collapsing this debounce shape is this story's own Out of Scope
+			# item, explicitly left to story-010 (方向鍵去抖收斂).
+			pass
 
 
 # Story U-013 — S1's card-browsing input (Interaction Map step 2). Shares
@@ -1868,7 +1921,6 @@ func _handle_directional(_event: InputEvent) -> void:
 func _handle_hand_navigation(_event: InputEvent) -> void:
 	for action: StringName in _HAND_DIRECTION_DELTAS:
 		if _direction_just_pressed(action, _hand_direction_was_pressed):
-			_device.note_pad_input()
 			_hand_bar.move_cursor(_HAND_DIRECTION_DELTAS[action])
 
 
@@ -1951,7 +2003,6 @@ func _handle_battle_menu_pressed() -> void:
 func _handle_forced_discard_input(event: InputEvent) -> void:
 	_handle_hand_navigation(event)
 	if event.is_action_pressed(&"battle_confirm"):
-		_device.note_pad_input()
 		_confirm_forced_discard()
 		return
 	if event.is_action_pressed(&"battle_cancel"):
@@ -1966,7 +2017,6 @@ func _handle_forced_discard_input(event: InputEvent) -> void:
 		# miss — the same "persistent trace beats transient flash" judgment
 		# this project already applied to modifier-expiry feedback), and this
 		# counter proves THIS press specifically hit the rejection branch.
-		_device.note_pad_input()
 		_diagnostic_forced_discard_cancel_rejected_count += 1
 		return
 
@@ -2131,6 +2181,80 @@ func _apply_pending_target_jump() -> void:
 		return
 	var tile_id: int = CursorTypes.encode_tile(positions[next_id], BoardCoords.BOARD_COLS)
 	CursorStateHost.set_target(CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, tile_id))
+
+
+## Story 009 (moved from story-008's scope by 2026-10-13 manager ruling; full
+## five-option evaluation in
+## [code]docs/architecture/cursor-device-authority-for-board-tile-2026-10-13.md[/code])
+## — mouse-path counterpart to [method _apply_pending_target_jump] above,
+## consumed by the SAME [_TargetRetargetActor]'s [method Node._process] at
+## [code]process_priority = -60[/code] (ADR-0005 R5-2's open interval — [method
+## CursorStateHost.set_target] may only be called from strictly between -100
+## and -25).
+##
+## [b]Unconditional per frame, not request-flag-gated[/b] — unlike [method
+## _apply_pending_target_jump] (a discrete "jump" queued from an edge-
+## triggered key press), the mouse has no discrete-event concept here: it is
+## continuous tracking, mirroring [method _update_cursor_visual]'s own MOUSE
+## branch below (which independently recomputes the same cell from the same
+## [member _last_mouse_window_pos] for ITS OWN purpose — see that method's
+## doc comment). Both call sites go through the shared [method
+## _window_pos_to_cell] helper (that helper's own doc comment: "no call site
+## may re-derive the scale/rect/transform math itself"), so there is exactly
+## ONE cell-computation rule, just two call sites — not the "two trackers"
+## shape this story exists to retire.
+##
+## [b]Gate order, structured as early-return rejects first[/b]:
+## 1. Card play / forced discard in progress — mouse is not wired for either
+##    path (mirrors [method _handle_mouse_button]'s own identical guard; see
+##    that method's own doc comment for why).
+## 2. [method CursorStateHost.get_device_authority] is not
+##    [constant CursorTypes.Authority.MOUSE] — device authority belongs to
+##    keyboard/gamepad this frame, so a stale mouse position must not
+##    overwrite [CursorStateHost]'s target (this read happens at [code]-60[/code],
+##    strictly after [code]CursorStateHost[/code]'s own arbitration at
+##    [code]-100[/code] — structurally zero staleness, per the architecture
+##    opinion doc's 第零節 frame-ordering table).
+## 3. [method _window_pos_to_cell] of [member _last_mouse_window_pos] lands
+##    out of board bounds — an off-board mouse must not write a target
+##    (mirrors [method _handle_mouse_button]'s own bounds check).
+##
+## [b][method CursorStateHost.set_target]'s return value is checked[/b] —
+## [constant CursorState.SetTargetResult.REJECTED_REENTRANT] (another write
+## mid-flight) is the only documented way this call can fail; per this
+## project's own registered failure shape (an unchecked enum return silently
+## degrading into "nothing happened" — [constant
+## CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED] is the
+## precedent), a failure is reported rather than swallowed, mirroring [method
+## Node._ready]'s own identical check when it seeds the initial target.
+##
+## ⚠️ [b]Known, accepted behavior changes (2026-10-13 manager ruling, written
+## into this story's Acceptance Criteria)[/b]: reclaiming board-cursor
+## authority from keyboard/gamepad back to mouse now requires
+## [member MouseReclaimThresholdConfig.board_tile_threshold_px] (currently a
+## PROVISIONAL 75px) of accumulated net displacement rather than any motion at
+## all; and E1 (holding a directional input can indefinitely veto mouse
+## reclaim — a frozen, registered, 100% reproducible defect) becomes reachable
+## from this, the main board path, for the first time. Neither is this
+## method's bug to fix — see the architecture opinion doc cited above for the
+## full analysis.
+func _apply_mouse_target_if_authoritative() -> void:
+	if _controller.is_card_play_in_progress() or _controller.has_pending_discard():
+		return
+	if CursorStateHost.get_device_authority() != CursorTypes.Authority.MOUSE:
+		return
+	var cell: Vector2i = _window_pos_to_cell(_last_mouse_window_pos)
+	if not BoardCoords.is_in_bounds(cell):
+		return
+	var tile_id: int = CursorTypes.encode_tile(cell, BoardCoords.BOARD_COLS)
+	var result: CursorState.SetTargetResult = CursorStateHost.set_target(
+		CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, tile_id)
+	)
+	if result != CursorState.SetTargetResult.APPLIED:
+		push_error(
+			"BattleScreen: CursorStateHost.set_target() returned %s instead of APPLIED while tracking mouse-authoritative cursor position."
+			% result
+		)
 
 
 ## Story U-013 (ADR-0005 機制六⑥) — called from [method _process] only (see
@@ -2597,7 +2721,15 @@ func _end_faction_phase_pressed() -> void:
 # rather than keep showing a projection for a tile the player is no longer
 # pointing at.
 func _update_cursor_visual() -> void:
-	if _device.current() == DeviceAuthority.Device.MOUSE:
+	# Story 009 — gate switched from this screen's own (now-retired)
+	# DeviceAuthority tracker to CursorStateHost's equivalent query. Each
+	# branch's BODY is unchanged: this one still independently recomputes the
+	# cell from _last_mouse_window_pos (see _apply_mouse_target_if_authoritative()'s
+	# own doc comment for why that duplication is the shared-helper pattern,
+	# not the "two trackers" problem this story retires), and the else branch
+	# already read CursorStateHost.get_current_target() before this change
+	# (Story 008).
+	if CursorStateHost.get_device_authority() == CursorTypes.Authority.MOUSE:
 		var cell: Vector2i = _window_pos_to_cell(_last_mouse_window_pos)
 		if BoardCoords.is_in_bounds(cell):
 			_cursor_cell = cell
