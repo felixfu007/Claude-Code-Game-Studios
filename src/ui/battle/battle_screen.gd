@@ -421,7 +421,6 @@ var card_text_path_override: String = ""
 var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
-var _device: DeviceAuthority
 
 ## Owning instance of the affinity data pool for this battle (ADR-0002
 ## mechanism one — a general, non-Autoload object constructed once and
@@ -994,7 +993,6 @@ func _ready() -> void:
 	_controller = BattleController.new(
 		_state, _order, Callable(_phi, "phi"), Callable(), card_deck, links, write_port
 	)
-	_device = DeviceAuthority.new()
 
 	_controller.unit_selected.connect(func(_id: int) -> void: _refresh_view())
 	_controller.selection_cleared.connect(func() -> void: _refresh_view())
@@ -1880,10 +1878,11 @@ func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
 # `pass` is deliberate rather than an oversight.
 #
 # ⚠️ As of unit 3a, _device ITSELF (the field, its construction call, and the
-# DeviceAuthority class file) still exists — it is now a fully dead, never-
-# read, never-written object graph (constructed once, nothing calls any
-# method on it). Deleting it is unit 3b, not yet landed as of this comment;
-# see this story's implementation notes (檔尾 of
+# DeviceAuthority class file) was still a fully dead, never-read,
+# never-written object graph (constructed once, nothing called any method on
+# it). Unit 3b (this change) deleted the field, its construction call, the
+# test file, and the DeviceAuthority class file itself; see this story's
+# implementation notes (檔尾 of
 # tests/integration/ui/battle_cursor_navigation_convergence_test.gd).
 #
 # The debounce loop and gate (_direction_just_pressed(), _direction_was_pressed)
@@ -2837,7 +2836,7 @@ func _refresh_view() -> void:
 	# 每人都掛一組數字時,每個數字都壓在下一個人的頭上,整欄不可讀
 	# (2026-08-28 截圖實測)。下棋要用的兩個數字反而是最讀不到的。
 	# 綁在游標而非滑鼠 hover:游標由鍵盤/手把/滑鼠三種裝置共同驅動
-	# (DeviceAuthority),所以主機端沒有指標也一樣看得到。
+	# (CursorStateHost),所以主機端沒有指標也一樣看得到。
 	var focus_cell: Vector2i = _cursor_cell if _cursor_active else Vector2i(-1, -1)
 
 	# HP 讀出對比度修復(design/art/hp-readout-contrast-fix.md 第二節,2026-09-23
