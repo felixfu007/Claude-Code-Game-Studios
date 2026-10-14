@@ -1,0 +1,7 @@
+{"coordinate_space": "source",
+ "regions": [
+  {"name": "face", "x": 420, "y": 40, "w": 160, "h": 150, "material": "skin"},
+  {"name": "legs", "x": 360, "y": 600, "w": 280, "h": 200, "material": "skin"},
+  {"name": "axe",  "x": 180, "y": 80,  "w": 200, "h": 180, "material": "metal"},
+  {"name": "axe_head", "x": 620, "y": 560, "w": 230, "h": 260, "material": "metal"}
+ ]}

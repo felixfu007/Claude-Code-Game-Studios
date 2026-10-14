@@ -1,0 +1,285 @@
+{
+  "styleA_seed2001": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#D9D8D9",
+      "TR": "#D8D8D9",
+      "BL": "#D9D8DB",
+      "BR": "#D9D8D9",
+      "T": "#D8D8D9",
+      "B": "#D8D8D9",
+      "L": "#D9D8D9",
+      "R": "#D8D8D9"
+    },
+    "sample_spread_max": 2.2,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#D8D8D9",
+    "background_fraction": 0.4424,
+    "border_removed_fraction": 0.9993,
+    "key_colored_but_enclosed_kept": 83834
+  },
+  "styleA_seed2002": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#D8D5D6",
+      "TR": "#D8D6D6",
+      "BL": "#D8D5D6",
+      "BR": "#D8D6D6",
+      "T": "#D8D6D5",
+      "B": "#D7D6D6",
+      "L": "#D8D6D6",
+      "R": "#D8D6D6"
+    },
+    "sample_spread_max": 1.4,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#D8D6D6",
+    "background_fraction": 0.6931,
+    "border_removed_fraction": 0.9993,
+    "key_colored_but_enclosed_kept": 23327
+  },
+  "styleA_seed2003": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#A9A8AA",
+      "TR": "#AAA8AA",
+      "BL": "#A9A8AA",
+      "BR": "#AAA8AA",
+      "T": "#AAA8A8",
+      "B": "#AAA8A9",
+      "L": "#AAA8A9",
+      "R": "#AAA9A9"
+    },
+    "sample_spread_max": 2.2,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#AAA8A9",
+    "background_fraction": 0.8183,
+    "border_removed_fraction": 0.9995,
+    "key_colored_but_enclosed_kept": 7621
+  },
+  "styleA_seed2004": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#9D98A9",
+      "TR": "#9C97A9",
+      "BL": "#110C1B",
+      "BR": "#110C1C",
+      "T": "#9D99A9",
+      "B": "#130E1D",
+      "L": "#9C99A8",
+      "R": "#F7F7F7"
+    },
+    "sample_spread_max": 395.6,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "T",
+        "L"
+      ],
+      [
+        "BL",
+        "BR",
+        "B"
+      ],
+      [
+        "R"
+      ]
+    ],
+    "status": "SKIPPED",
+    "reason": "最大色群只有 4/8 個樣本(需 >= 5),邊界沒有單一背景色"
+  },
+  "styleB_seed2001": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#DDDCDC",
+      "TR": "#DDDCDC",
+      "BL": "#DDDDDE",
+      "BR": "#DDDCDD",
+      "T": "#DCDCDC",
+      "B": "#DCDCDC",
+      "L": "#DDDCDC",
+      "R": "#DDDCDC"
+    },
+    "sample_spread_max": 2.4,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#DDDCDC",
+    "background_fraction": 0.4393,
+    "border_removed_fraction": 0.9993,
+    "key_colored_but_enclosed_kept": 56147
+  },
+  "styleB_seed2002": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#D7D5D5",
+      "TR": "#D6D5D5",
+      "BL": "#D7D4D5",
+      "BR": "#D6D5D5",
+      "T": "#D6D5D4",
+      "B": "#D6D5D6",
+      "L": "#D6D5D5",
+      "R": "#D7D5D5"
+    },
+    "sample_spread_max": 2.0,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#D6D5D5",
+    "background_fraction": 0.6933,
+    "border_removed_fraction": 0.9993,
+    "key_colored_but_enclosed_kept": 21286
+  },
+  "styleB_seed2003": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#ACAAAA",
+      "TR": "#ACA9AA",
+      "BL": "#ACAAAA",
+      "BR": "#ACAAAA",
+      "T": "#ADAAA8",
+      "B": "#ACAAAA",
+      "L": "#ACAAA9",
+      "R": "#ACAAA9"
+    },
+    "sample_spread_max": 2.4,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#ACAAAA",
+    "background_fraction": 0.8084,
+    "border_removed_fraction": 0.9995,
+    "key_colored_but_enclosed_kept": 6515
+  },
+  "styleB_seed2004": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#9E9EA8",
+      "TR": "#9D9DA8",
+      "BL": "#191526",
+      "BR": "#191527",
+      "T": "#9D9DA7",
+      "B": "#1B1629",
+      "L": "#B1B3BB",
+      "R": "#DEDEE2"
+    },
+    "sample_spread_max": 338.5,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "T"
+      ],
+      [
+        "BL",
+        "BR",
+        "B"
+      ],
+      [
+        "L"
+      ],
+      [
+        "R"
+      ]
+    ],
+    "status": "SKIPPED",
+    "reason": "最大色群只有 3/8 個樣本(需 >= 5),邊界沒有單一背景色"
+  },
+  "animagine_seed2001_magenta": {
+    "tolerance": 32,
+    "samples": {
+      "TL": "#E77CD7",
+      "TR": "#E77CD9",
+      "BL": "#E77BD8",
+      "BR": "#E87BD9",
+      "T": "#E77AD9",
+      "B": "#E877DC",
+      "L": "#E67FD5",
+      "R": "#E77DD6"
+    },
+    "sample_spread_max": 10.8,
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "status": "PROCESSED",
+    "key": "#E77BD8",
+    "background_fraction": 0.6908,
+    "border_removed_fraction": 1.0,
+    "key_colored_but_enclosed_kept": 38739
+  }
+}

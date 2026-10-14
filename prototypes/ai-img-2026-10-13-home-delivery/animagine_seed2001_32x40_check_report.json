@@ -1,0 +1,229 @@
+{
+  "report_schema": "ai_art_postprocess.check_report/1",
+  "tool": {
+    "name": "ai_art_postprocess",
+    "version": "0.2.0"
+  },
+  "mode": "process",
+  "status": "PASS",
+  "failed_step": null,
+  "error": null,
+  "input": {
+    "path": "C:\\Users\\User\\Documents\\AI_IMG\\docs\\team\\deliveries\\2026-10-13-animagine-smoke\\animagine_seed2001_magenta.png",
+    "sha256": "bb0360c74eba214925292d799f34bfe68dc969160644392c0e8fed4551fcbd6a",
+    "width": 1024,
+    "height": 1024
+  },
+  "output": {
+    "path": "C:\\Users\\User\\Documents\\AI_IMG\\docs\\team\\deliveries\\2026-10-13-edge-floodfill-trial\\pipeline-demo\\animagine_seed2001_32x40.png",
+    "written": true,
+    "sha256": "94f1b84ca5881029a9538743ada5f4849b4d7f8fc809afa2de19f08c3754940a",
+    "width": 32,
+    "height": 40,
+    "mode": "RGBA",
+    "pixels_sha256": "0a392fe6bb083a53f900b4daf0e7eee9403f9a32d26a184aa0c8bd8e7683e4ad",
+    "pixels_sha256_note": "解碼後 RGBA 原始位元組的 sha256,與 PNG 壓縮實作無關"
+  },
+  "palette": {
+    "path": "C:\\Users\\User\\Documents\\AI_IMG\\docs\\team\\handoff\\color-palette.csv",
+    "sha256": "56b7e37f20c1492af8816590100d4daa1302239782794a96e2b51b511547e181",
+    "entries": 38,
+    "reserved": [
+      "#FF00FF"
+    ],
+    "outline_colors": {
+      "skin": [
+        "#5C2A24"
+      ],
+      "cloth": [
+        "#3B2436"
+      ],
+      "metal": [
+        "#26303D"
+      ],
+      "nature": [
+        "#2B3327"
+      ]
+    },
+    "warnings": []
+  },
+  "parameters": {
+    "size": "32x40",
+    "palette": "C:\\Users\\User\\Documents\\AI_IMG\\docs\\team\\handoff\\color-palette.csv",
+    "chroma_key": false,
+    "chroma_key_color": null,
+    "key_from_edges": true,
+    "edge_min_agree": 5,
+    "key_tolerance_rgb_euclidean": 32,
+    "regions": "C:\\Users\\User\\Documents\\AI_IMG\\docs\\team\\deliveries\\2026-10-13-edge-floodfill-trial\\pipeline-demo\\regions_animagine_seed2001.json",
+    "default_outline_material": "cloth",
+    "hue_separation_deg": 15.0,
+    "algorithm": "chroma_key: 自畫布四邊 4 鄰接洪水填充(只標記與邊界連通且距色鍵 <= 容許誤差者);key_from_edges: 色鍵改為取樣四角+四邊中點共 8 點,最大同色群 >= edge_min_agree 才採用其平均色,否則該張失敗不處理;downsample: 面積加權平均,前景覆蓋率嚴格過半 -> alpha 255,否則 0,顏色只平均前景;quantize: RGB 歐氏距離最近的非 reserved 色票色,同距離取檔案中先出現者;outline: 在 alpha 輪廓上畫 1px,依人工矩形材質取 <category>_outline_* 第一個"
+  },
+  "chroma_key": {
+    "enabled": true,
+    "method": "edge_sample",
+    "color": "#E77BD8",
+    "tolerance_rgb_euclidean": 32,
+    "min_agree": 5,
+    "agreeing_samples": 8,
+    "samples": {
+      "TL": "#E77CD7",
+      "TR": "#E77CD9",
+      "BL": "#E77BD8",
+      "BR": "#E87BD9",
+      "T": "#E77AD9",
+      "B": "#E877DC",
+      "L": "#E67FD5",
+      "R": "#E77DD6"
+    },
+    "sample_groups": [
+      [
+        "TL",
+        "TR",
+        "BL",
+        "BR",
+        "T",
+        "B",
+        "L",
+        "R"
+      ]
+    ],
+    "background_pixels_native": 724348,
+    "key_colored_pixels_native": 763087,
+    "key_colored_but_enclosed_kept_native": 38739
+  },
+  "checks": {
+    "size": {
+      "match": true,
+      "expected": [
+        32,
+        40
+      ],
+      "actual": [
+        32,
+        40
+      ]
+    },
+    "off_palette_pixels": 0,
+    "off_palette_colors": [],
+    "opaque_reserved_color_pixels": 0,
+    "colors_used": 23,
+    "colors_used_note": "驗收表 #3 為建議值(SHOULD):單一角色全部素材組合計 <= 24;本數字只計本檔,工具不據此判失敗",
+    "non_binary_alpha_pixels": 0,
+    "outline": {
+      "contour_pixels": 117,
+      "continuous": true,
+      "gap_pixels": 0,
+      "pure_black_pixels": 0,
+      "non_pure_black": true,
+      "colors": [
+        {
+          "hex": "#3B2436",
+          "label": "cloth_outline_01",
+          "category": "cloth",
+          "hue_deg": 313.0,
+          "pixels": 58
+        },
+        {
+          "hex": "#26303D",
+          "label": "metal_outline_01",
+          "category": "metal",
+          "hue_deg": 213.9,
+          "pixels": 34
+        },
+        {
+          "hex": "#5C2A24",
+          "label": "skin_outline_01",
+          "category": "skin",
+          "hue_deg": 6.4,
+          "pixels": 25
+        }
+      ],
+      "distinct_hues": 3,
+      "min_hues_required": 2,
+      "hue_separation_deg": 15.0,
+      "sample_regions": [
+        {
+          "name": "face",
+          "material": "skin",
+          "rect_output_xywh": [
+            13,
+            1,
+            6,
+            7
+          ],
+          "contour_pixels": 16,
+          "colors": [
+            {
+              "hex": "#5C2A24",
+              "pixels": 16
+            }
+          ],
+          "all_match_material_outline": true
+        },
+        {
+          "name": "legs",
+          "material": "skin",
+          "rect_output_xywh": [
+            11,
+            23,
+            9,
+            9
+          ],
+          "contour_pixels": 9,
+          "colors": [
+            {
+              "hex": "#5C2A24",
+              "pixels": 9
+            }
+          ],
+          "all_match_material_outline": true
+        },
+        {
+          "name": "axe",
+          "material": "metal",
+          "rect_output_xywh": [
+            5,
+            3,
+            7,
+            8
+          ],
+          "contour_pixels": 19,
+          "colors": [
+            {
+              "hex": "#26303D",
+              "pixels": 19
+            }
+          ],
+          "all_match_material_outline": true
+        },
+        {
+          "name": "axe_head",
+          "material": "metal",
+          "rect_output_xywh": [
+            19,
+            21,
+            8,
+            12
+          ],
+          "contour_pixels": 15,
+          "colors": [
+            {
+              "hex": "#26303D",
+              "pixels": 15
+            }
+          ],
+          "all_match_material_outline": true
+        }
+      ],
+      "definition": "輪廓像素 = alpha 255 且 4 鄰接任一非 255 或位於畫布邊界;連續無缺口 = 每個輪廓像素都是色票中某個 <category>_outline_* 色(回覆 Q2 暫定解讀)"
+    }
+  },
+  "hard_checks": {
+    "1_size": "pass",
+    "2_off_palette_zero": "pass",
+    "4_outline": "pass",
+    "5_alpha_binary": "pass"
+  }
+}
