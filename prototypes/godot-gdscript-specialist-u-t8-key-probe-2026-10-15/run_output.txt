@@ -1,0 +1,126 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Story 011 U-T8 key probe (2026-10-15) ===
+Engine version: { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+InputMap 在 headless 下可讀: true (get_actions() 回傳 98 個動作)
+KEY_BACKSPACE=4194308  JOY_BUTTON_Y=3  KEY_Q=81  KEY_V=86  JOY_BUTTON_BACK=4  JOY_BUTTON_MISC1=15
+
+--- 候選鍵盤 Backspace ---
+  已被佔用: [&"ui_text_backspace", &"ui_filedialog_up_one_level"]
+
+--- 候選鍵盤 Q ---
+  未被佔用
+
+--- 候選鍵盤 V ---
+  未被佔用
+
+--- 候選手把 Y (上動作鍵) ---
+  已被佔用: [&"ui_select"]
+
+--- 候選手把 Back/Select ---
+  未被佔用
+
+--- 候選手把 Misc1 ---
+  未被佔用
+
+--- 全部既有動作一覽(供人工覆核) ---
+  ui_accept
+  ui_select
+  ui_cancel
+  ui_close_dialog
+  ui_close_dialog.macos
+  ui_focus_next
+  ui_focus_prev
+  ui_left
+  ui_right
+  ui_up
+  ui_down
+  ui_page_up
+  ui_page_down
+  ui_home
+  ui_end
+  ui_accessibility_drag_and_drop
+  ui_cut
+  ui_copy
+  ui_focus_mode
+  ui_paste
+  ui_undo
+  ui_redo
+  ui_text_completion_query
+  ui_text_completion_accept
+  ui_text_completion_replace
+  ui_text_newline
+  ui_text_newline_blank
+  ui_text_newline_above
+  ui_text_indent
+  ui_text_dedent
+  ui_text_backspace
+  ui_text_backspace_word
+  ui_text_backspace_word.macos
+  ui_text_backspace_all_to_left
+  ui_text_backspace_all_to_left.macos
+  ui_text_delete
+  ui_text_delete_word
+  ui_text_delete_word.macos
+  ui_text_delete_all_to_right
+  ui_text_delete_all_to_right.macos
+  ui_text_caret_left
+  ui_text_caret_word_left
+  ui_text_caret_word_left.macos
+  ui_text_caret_right
+  ui_text_caret_word_right
+  ui_text_caret_word_right.macos
+  ui_text_caret_up
+  ui_text_caret_down
+  ui_text_caret_line_start
+  ui_text_caret_line_start.macos
+  ui_text_caret_line_end
+  ui_text_caret_line_end.macos
+  ui_text_caret_page_up
+  ui_text_caret_page_down
+  ui_text_caret_document_start
+  ui_text_caret_document_start.macos
+  ui_text_caret_document_end
+  ui_text_caret_document_end.macos
+  ui_text_caret_add_below
+  ui_text_caret_add_below.macos
+  ui_text_caret_add_above
+  ui_text_caret_add_above.macos
+  ui_text_scroll_up
+  ui_text_scroll_up.macos
+  ui_text_scroll_down
+  ui_text_scroll_down.macos
+  ui_text_select_all
+  ui_text_select_word_under_caret
+  ui_text_select_word_under_caret.macos
+  ui_text_add_selection_for_next_occurrence
+  ui_text_skip_selection_for_next_occurrence
+  ui_text_clear_carets_and_selection
+  ui_text_toggle_insert_mode
+  ui_menu
+  ui_text_submit
+  ui_unicode_start
+  ui_graph_duplicate
+  ui_graph_delete
+  ui_graph_follow_left
+  ui_graph_follow_left.macos
+  ui_graph_follow_right
+  ui_graph_follow_right.macos
+  ui_filedialog_delete
+  ui_filedialog_up_one_level
+  ui_filedialog_refresh
+  ui_filedialog_show_hidden
+  ui_filedialog_find
+  ui_filedialog_focus_path
+  ui_filedialog_focus_path.macos
+  ui_swap_input_direction
+  ui_colorpicker_delete_preset
+  battle_confirm
+  battle_end_phase
+  battle_cancel
+  battle_open_hand
+  battle_next_target
+  battle_prev_target
+  battle_menu
+
+=== Probe complete ===

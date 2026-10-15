@@ -21,7 +21,7 @@ battle.load_error.reason_empty_content,資料檔案是空的。
 battle.load_error.reason_parsed_empty,資料檔案沒有可用的內容。
 battle.load_error.reason_parse_error,"資料檔案內容格式錯誤,其中一列資料無法辨識。"
 battle.hud.controls_hint,"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B
-開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start"
+開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start　結束單位 Q/Back"
 battle.hand_bar.count_format,%d/%d
 battle.hand_bar.unavailable,不可用
 battle.hand_bar.permanent_mark,永久

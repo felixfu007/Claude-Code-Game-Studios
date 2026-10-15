@@ -789,6 +789,22 @@ func diagnostic_last_click_tile_action() -> StringName:
 func diagnostic_click_tile_rejected_count() -> int:
 	return _diagnostic_click_tile_rejected_count
 
+## story-011-input-gaps.md (U-T8) — QA/test-only diagnostic surface, same
+## convention as [member _diagnostic_click_tile_rejected_count] above. Counts
+## every [code]battle_end_unit_turn[/code] press this screen dispatched to
+## [method BattleController.end_unit_turn] whose return value came back
+## [code]false[/code] (no unit selected, wrong phase, unit already done, or a
+## forced discard owed — see that method's own doc comment for the full list
+## of rejection causes) — proving the return value is actually consumed
+## rather than discarded, per this project's established "never drop a
+## bool/Dictionary result" discipline (see [method _handle_click_tile_result]'s
+## own doc comment for the U-T7 precedent this mirrors).
+var _diagnostic_end_unit_turn_rejected_count: int = 0
+
+## See [member _diagnostic_end_unit_turn_rejected_count].
+func diagnostic_end_unit_turn_rejected_count() -> int:
+	return _diagnostic_end_unit_turn_rejected_count
+
 
 ## Story U-013 (ADR-0005 機制六⑥, R4-7's own suggested split for a system
 ## that is simultaneously role ② and role ⑥ — see [_TargetRetargetActor]'s
@@ -1419,6 +1435,33 @@ func _input(event: InputEvent) -> void:
 			_handle_directional(event)
 			if event.is_action_pressed(&"battle_confirm"):
 				_confirm_at_cursor()
+				return
+			# Story 011 (U-T8, M1 audit 2026-09-29) — "主動結束單一單位" had no
+			# player-triggerable path at all (distinct from `battle_end_phase`'s
+			# own dead-action history immediately below: that one ends the WHOLE
+			# faction's turn and was deliberately moved to a menu row per
+			# `design/ux/battle-menu.md`'s own stated reason, "免得太容易被玩家
+			# 誤觸,白白浪費一回合" — ending a SINGLE unit's turn is lower-stakes
+			# and, per `tactical-combat-screen.md` 7.1's Interaction Map, grouped
+			# with the other direct-key per-unit actions (move/confirm/cancel/
+			# jump-target), not with the menu-gated whole-phase action. Reusing
+			# the already-dead, zero-bound `battle_end_phase` action for this
+			# different meaning was deliberately NOT done — that action's fate
+			# is `battle-menu.md`'s own BM-1, owned by 戰棋系統(#4)/
+			# `lead-programmer`, not decided by this story). Gated inside this
+			# `is_card_play_in_progress()`-guarded block for the same reason
+			# `battle_confirm`'s board-attack path is: AC-14 already forbids
+			# initiating a board action while a card-play interaction is open.
+			# [method BattleController.end_unit_turn] is called with whatever
+			# [method BattleController.selected_unit] returns right now
+			# (`-1` when nothing is selected) rather than this screen caching a
+			# separate `_selected_unit_id` field — [TurnOrder]'s own
+			# `_is_actionable()` already treats `-1` as "not actionable" and
+			# rejects cleanly (see [method _handle_end_unit_turn_result]'s doc
+			# comment), so there is no separate "nothing selected" guard to
+			# duplicate here.
+			if event.is_action_pressed(&"battle_end_unit_turn"):
+				_handle_end_unit_turn_result(_controller.end_unit_turn(_controller.selected_unit()))
 				return
 			# Story U-016 — the battle_end_phase keypress dispatch that used to
 			# live here is removed (project.godot's battle_end_phase action
@@ -2087,6 +2130,29 @@ func _handle_click_tile_result(result: Dictionary) -> void:
 			pass
 		_:
 			push_error("BattleScreen: BattleController.click_tile() returned unrecognized action %s" % action)
+
+
+## story-011-input-gaps.md (U-T8, M1 audit 2026-09-29: "`end_unit_turn(id)` 全專案
+## 只有兩個呼叫端 ... `src/ui/` 底下零命中") — sole call site for dispatching on
+## [method BattleController.end_unit_turn]'s return value, mirroring
+## [method _handle_click_tile_result]'s own "never drop the result" discipline
+## (U-T7, same story) rather than discarding the bool the way the M1 audit
+## found every pre-existing [method BattleController.click_tile] call site
+## doing.
+##
+## [param ended] is [code]false[/code] for any of [method
+## BattleController.end_unit_turn]'s documented rejection causes — no unit
+## selected ([method BattleController.selected_unit] returns [code]-1[/code],
+## which [method TurnOrder.is_done]/[method TurnOrder._is_actionable] both
+## treat as "not actionable", not a crash), wrong phase, the selected unit
+## already done, or a forced discard owed. This screen does not need to
+## distinguish which cause produced a given [code]false[/code] — same
+## one-counter-for-every-cause shape [member _diagnostic_click_tile_rejected_count]
+## already uses for [code]&"none"[/code]'s three internal causes, not a new
+## convention invented here.
+func _handle_end_unit_turn_result(ended: bool) -> void:
+	if not ended:
+		_diagnostic_end_unit_turn_rejected_count += 1
 
 
 # Edge-triggered directional cursor movement — see _direction_was_pressed's

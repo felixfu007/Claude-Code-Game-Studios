@@ -5,15 +5,15 @@
 # Coverage in THIS file: U-T6 (敵方回合拒絕是否逐幀生效 -- the visual cursor
 # side-effect must freeze every _process() frame while
 # BattleController.phase() == ENEMY_ACTING, not just once when the phase is
-# entered) AND U-T7 (click_tile() 回傳值分派與拒絕回饋 -- both call sites in
+# entered), U-T7 (click_tile() 回傳值分派與拒絕回饋 -- both call sites in
 # battle_screen.gd now route BattleController.click_tile()'s return value
 # through _handle_click_tile_result() instead of discarding it; see that
 # method's own doc comment for the three-way &"none" / &"blocked_pending_
-# discard" / legal-action dispatch). U-T8 (結束單一單位行動的新輸入路徑) is the
-# story's other sub-item, handled separately by a different work order and not
-# covered here (the story's own Test Evidence section names this exact path
-# as the single required file for the whole story, so U-T8's tests will also
-# land here once that work order completes).
+# discard" / legal-action dispatch), AND U-T8 (結束單一單位行動的新輸入路徑 --
+# a new `battle_end_unit_turn` project.godot action, keyboard Q + gamepad
+# Back/Select, dispatches to BattleController.end_unit_turn(selected_unit())
+# via _handle_end_unit_turn_result(), mirroring U-T7's own "never drop the
+# result" discipline).
 #
 # 🔴 本檔案 I/O 使用揭露(.claude/rules/test-standards.md 甲類例外,2026-09-16
 # 管理者裁決):每一條測試都 load()/instantiate() 真實的 BattleScreen.tscn,其
@@ -81,6 +81,14 @@ class _MutantDiscardsClickTileResult extends BattleScreen:
 		pass
 
 
+# U-T8 regression mutant -- same shape as _MutantDiscardsClickTileResult
+# immediately above, for the OTHER result this story stops discarding:
+# BattleController.end_unit_turn()'s bool return value.
+class _MutantDiscardsEndUnitTurnResult extends BattleScreen:
+	func _handle_end_unit_turn_result(_ended: bool) -> void:
+		pass
+
+
 func _fresh_instance() -> BattleScreen:
 	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
 	add_child(instance)
@@ -91,6 +99,19 @@ func _real_pressed_event(action: StringName) -> InputEventKey:
 	for event: InputEvent in InputMap.action_get_events(action):
 		if event is InputEventKey:
 			var duplicated: InputEventKey = (event as InputEventKey).duplicate()
+			duplicated.pressed = true
+			return duplicated
+	return null
+
+
+# U-T8 (P-I2 全手把對等) -- same technique as _real_pressed_event() above, but
+# for the GAMEPAD side of an action's binding, so a test can prove the
+# gamepad path reaches the exact same production dispatch as the keyboard
+# path, not merely that project.godot DECLARES a gamepad binding exists.
+func _real_pressed_joy_event(action: StringName) -> InputEventJoypadButton:
+	for event: InputEvent in InputMap.action_get_events(action):
+		if event is InputEventJoypadButton:
+			var duplicated: InputEventJoypadButton = (event as InputEventJoypadButton).duplicate()
 			duplicated.pressed = true
 			return duplicated
 	return null
@@ -372,6 +393,96 @@ func test_blocked_pending_discard_is_recorded_distinctly_and_does_not_bump_rejec
 	).is_equal(0)
 
 
+# ---- U-T8: 結束單一單位行動的新輸入路徑 ---------------------------------------
+#
+# vs01 roster: unit 1 (甲), PLAYER faction, starts at (0,2), alive, actionable
+# at battle start (same fixture fact test_click_on_own_unit_records_selected_
+# action_without_bumping_rejected_count above already relies on).
+
+func test_end_unit_turn_action_ends_selected_actionable_units_turn() -> void:
+	# Arrange -- select unit 1 via the real mouse-click path (same helper the
+	# U-T7 tests above already use), then confirm the precondition this test
+	# actually needs: unit 1 selected AND still actionable.
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	instance._handle_mouse_button(_click_event_at_cell(instance, Vector2i(0, 2)))
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"precondition: clicking unit 1's own tile should select it"
+	).is_equal(1)
+	assert_array(instance._controller.selectable_units()).append_failure_message(
+		"precondition: unit 1 should still be actionable before ending its turn"
+	).contains([1])
+
+	# Act -- real keyboard binding for the new action
+	var end_turn_event: InputEventKey = _real_pressed_event(&"battle_end_unit_turn")
+	assert_object(end_turn_event).append_failure_message(
+		"precondition: battle_end_unit_turn must have a real InputEventKey bound in this engine's InputMap"
+	).is_not_null()
+	instance._input(end_turn_event)
+
+	# Assert -- real production state changed (not a diagnostic shadow): this
+	# is only possible if BattleController.end_unit_turn(1) genuinely ran.
+	# [method BattleController.end_unit_turn]'s own doc comment: "Clears the
+	# selection if id was selected."
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"U-T8: ending the selected unit's own turn must clear the selection"
+	).is_equal(-1)
+	assert_array(instance._controller.selectable_units()).append_failure_message(
+		"U-T8: unit 1 must no longer be selectable after its turn was actively ended"
+	).not_contains([1])
+	assert_int(instance.diagnostic_end_unit_turn_rejected_count()).append_failure_message(
+		"U-T8: a successful end_unit_turn() must NOT bump the rejection counter"
+	).is_equal(0)
+
+
+# P-I2 (全手把對等) -- same scenario as the keyboard test above, but fired via
+# the REAL gamepad binding from InputMap, proving the gamepad path reaches the
+# identical production dispatch rather than merely proving project.godot
+# declares a gamepad event exists for this action.
+func test_end_unit_turn_action_is_reachable_via_the_real_gamepad_binding() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	instance._handle_mouse_button(_click_event_at_cell(instance, Vector2i(0, 2)))
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"precondition: clicking unit 1's own tile should select it"
+	).is_equal(1)
+
+	# Act
+	var end_turn_joy_event: InputEventJoypadButton = _real_pressed_joy_event(&"battle_end_unit_turn")
+	assert_object(end_turn_joy_event).append_failure_message(
+		"precondition: battle_end_unit_turn must have a real InputEventJoypadButton bound in this engine's InputMap (P-I2)"
+	).is_not_null()
+	instance._input(end_turn_joy_event)
+
+	# Assert
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"U-T8/P-I2: the gamepad binding must reach the exact same dispatch as the keyboard binding"
+	).is_equal(-1)
+	assert_array(instance._controller.selectable_units()).not_contains([1])
+
+
+func test_end_unit_turn_action_with_nothing_selected_is_rejected_and_recorded() -> void:
+	# Arrange -- nothing selected (selected_unit() defaults to -1;
+	# BattleController.end_unit_turn()'s own TurnOrder layer treats -1 as
+	# "not actionable" and rejects cleanly, see _handle_end_unit_turn_result()'s
+	# own doc comment)
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"precondition: nothing should be selected at battle start"
+	).is_equal(-1)
+
+	# Act
+	var end_turn_event: InputEventKey = _real_pressed_event(&"battle_end_unit_turn")
+	instance._input(end_turn_event)
+
+	# Assert
+	assert_int(instance.diagnostic_end_unit_turn_rejected_count()).append_failure_message(
+		"U-T8: pressing battle_end_unit_turn with nothing selected must be recorded as a rejection"
+	).is_equal(1)
+
+
 # ---- 敏感度證明 --------------------------------------------------------------
 
 # 證明 test_mouse_motion_during_enemy_acting_does_not_move_last_mouse_position
@@ -456,5 +567,35 @@ func test_sensitivity_proof_rejection_dispatch_test_catches_a_mutant_that_discar
 	# test's counter advance.
 	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
 		"sensitivity proof failed: mutant should have discarded the &\"none\" result " +
+		"without bumping the rejection counter, but the counter advanced anyway"
+	).is_equal(count_before)
+
+
+# 證明 test_end_unit_turn_action_with_nothing_selected_is_rejected_and_recorded
+# 真的會抓到這個 story 本身要修的缺口(end_unit_turn() 的 bool 回傳值被丟棄),
+# 而不是巧合通過 -- same shape as
+# test_sensitivity_proof_rejection_dispatch_test_catches_a_mutant_that_discards_the_result
+# immediately above, for U-T8's own result instead of U-T7's.
+func test_sensitivity_proof_end_unit_turn_rejection_test_catches_a_mutant_that_discards_the_result() -> void:
+	# Arrange
+	var instance: BattleScreen = load(_SCENE_PATH).instantiate()
+	instance.set_script(_MutantDiscardsEndUnitTurnResult)
+	auto_free(instance)
+	add_child(instance)
+	instance._process(0.0)
+	var end_turn_event: InputEventKey = _real_pressed_event(&"battle_end_unit_turn")
+	var count_before: int = instance.diagnostic_end_unit_turn_rejected_count()
+
+	# Act -- nothing selected, so the real BattleController.end_unit_turn(-1)
+	# call underneath would return false; the mutant discards that bool
+	# instead of recording it.
+	instance._input(end_turn_event)
+
+	# Assert -- the mutant reproduces pre-story behavior (calls end_unit_turn(),
+	# reads the bool, throws it away), proving the real
+	# _handle_end_unit_turn_result() dispatch -- not some unrelated side effect
+	# -- is what makes the real test's counter advance.
+	assert_int(instance.diagnostic_end_unit_turn_rejected_count()).append_failure_message(
+		"sensitivity proof failed: mutant should have discarded the false result " +
 		"without bumping the rejection counter, but the counter advanced anyway"
 	).is_equal(count_before)
