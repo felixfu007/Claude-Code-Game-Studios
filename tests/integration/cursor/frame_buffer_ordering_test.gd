@@ -599,6 +599,94 @@ func test_ac20_keyboard_gamepad_beats_mouse_same_frame_across_20_distinct_orderi
 		).is_equal(99)
 
 
+# ─── Sensitivity proof (mutant subclass) [AC-20] ────────────────────────────
+#
+# Manual injection (break production → run → revert) was RETIRED by the
+# 2026-09-16 manager ruling (.claude/rules/test-standards.md "敏感度證明的
+# 完成門檻" — it leaves no trace in the repo). This file instead uses the
+# mandated technique: a permanent spy/mutant subclass plus a
+# test_sensitivity_proof_* that stays in the suite — same precedent as
+# affinity_pool_wiring_test.gd's _SpyPool* family and
+# tests/unit/ui/menu/battle_menu_layout_test.gd's _Mutant* family.
+#
+# _MutantMouseBeatsKeyboardGamepad does NOT re-implement a single line of
+# arbitrate_device_authority()'s actual logic — it only re-derives the one
+# fact that method ALSO derives for itself ("did keyboard/gamepad claim a
+# NAVIGATION event this frame", via the exact same CursorTypes.classify() /
+# classify_action() calls cursor_state.gd's own lines 473-478 use), then lets
+# super() run the REAL method to completion (reentrancy gate, mouse-channel
+# check, diagnostics, signal emission, reclaim resets, pending-reseed drain —
+# all untouched, all correct). Only AFTER super() has written the CORRECT
+# answer does this mutant overwrite it — and only in the one case AC-20 is
+# about: a frame where keyboard/gamepad actually had a legitimate claim. This
+# targets exactly AC-20's fixed-priority claim and nothing else.
+class _MutantMouseBeatsKeyboardGamepad extends CursorState:
+	func arbitrate_device_authority(events: Array[InputEvent]) -> void:
+		var keyboard_gamepad_navigation_claimed: bool = false
+		for event: InputEvent in events:
+			if CursorTypes.classify(event) == CursorTypes.Authority.KEYBOARD_GAMEPAD \
+					and CursorTypes.classify_action(event) == CursorTypes.ActionClass.NAVIGATION:
+				keyboard_gamepad_navigation_claimed = true
+				break
+
+		super.arbitrate_device_authority(events)
+
+		# super() just wrote the CORRECT answer (KEYBOARD_GAMEPAD whenever it
+		# was claimed, regardless of whether mouse also claimed). Overwrite it
+		# here to simulate the exact regression AC-20 exists to catch: the
+		# fixed priority inverted, mouse beating keyboard/gamepad.
+		if keyboard_gamepad_navigation_claimed:
+			_device_authority = CursorTypes.Authority.MOUSE
+
+
+## Does NOT re-run all 20 arrangements — the injected defect does not depend
+## on array order at all (it overwrites super()'s result AFTER super() has
+## already resolved it under any ordering), so one trial proves exactly as
+## much as twenty would. Proves test_ac20_...()'s own two assertion
+## techniques — checking get_device_authority() and
+## get_current_target().id — actually go red when the fixed priority is
+## inverted, rather than being a coincidental green regardless of what the
+## production code does.
+func test_sensitivity_proof_ac20_priority_check_catches_mouse_winning_a_contested_frame() -> void:
+	var registry: CursorSurfaceRegistry = CursorSurfaceRegistry.new()
+	var reclaim: _RecordingReclaimPolicy = _RecordingReclaimPolicy.new()
+	reclaim.claims_mouse = true
+	var mutant: _MutantMouseBeatsKeyboardGamepad = _MutantMouseBeatsKeyboardGamepad.new(
+		reclaim, registry, Callable(self, "_test_mouse_position")
+	)
+	var surface: _FakeNavigableSurface = _FakeNavigableSurface.new()
+	auto_free(surface)
+	registry.register(_SURFACE, surface)
+	surface.next_response = 99
+
+	var nav_event: InputEventKey = _real_event(&"ui_right")
+	assert_object(nav_event).is_not_null()
+
+	mutant.arbitrate_device_authority([nav_event])
+	assert_int(mutant.get_device_authority()).append_failure_message(
+		"SENSITIVITY PROOF FAILED: the mutant deliberately inverts the fixed "
+		+ "KEYBOARD_GAMEPAD-beats-MOUSE priority AFTER letting the real method "
+		+ "compute the correct answer via super(), so get_device_authority() "
+		+ "must read MOUSE here — if it reads KEYBOARD_GAMEPAD, "
+		+ "test_ac20_...()'s own detection technique (checking this exact "
+		+ "getter) cannot tell a correctly-prioritized frame from an inverted one."
+	).is_equal(CursorTypes.Authority.MOUSE)
+
+	# The second assertion technique must also be proven: with authority
+	# corrupted to MOUSE, apply_buffered_navigation()'s own KEYBOARD_GAMEPAD
+	# gate should refuse to write — so the target must NOT become 99. This is
+	# the shape test_ac20_...()'s second assertion would catch under the same
+	# defect.
+	mutant.apply_buffered_navigation([nav_event])
+	assert_int(mutant.get_current_target().id).append_failure_message(
+		"SENSITIVITY PROOF FAILED: with authority wrongly corrupted to MOUSE, "
+		+ "apply_buffered_navigation()'s own KEYBOARD_GAMEPAD gate must refuse "
+		+ "to write — if get_current_target().id reads 99 here anyway, "
+		+ "test_ac20_...()'s second assertion (the target-update check) cannot "
+		+ "tell a correctly-prioritized frame from an inverted one either."
+	).is_not_equal(99)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # AC-20b: same-device two ui_* actions same frame (nav + confirm) — the
 # confirm-class read sees the value AFTER the navigation write.
@@ -728,6 +816,74 @@ func test_ac32_players_own_navigation_unsticks_a_pending_reresolve_target() -> v
 		"AC-32's core claim: the player's own navigation must unstick the "
 		+ "pending-re-resolve state with no caller intervention."
 	).is_true()
+
+
+# ─── Sensitivity proof (mutant subclass) [AC-32] ────────────────────────────
+#
+# Same technique and justification as the AC-20 section above (2026-09-16
+# manager ruling — manual injection retired, permanent spy/mutant subclass is
+# the mandated form).
+#
+# _MutantNavigationLeavesStaleValidity does NOT re-implement a single line of
+# apply_buffered_navigation() — it lets super() run the REAL, correct write
+# (the id is computed correctly, and CursorTarget.make()'s valid-by-
+# construction guarantee runs untouched), then — only AFTER super() returns —
+# forces validity back to stale. This targets exactly the regression AC-32
+# exists to catch: navigation computes the right coordinate but fails to
+# unstick the pending-re-resolve flag.
+class _MutantNavigationLeavesStaleValidity extends CursorState:
+	func apply_buffered_navigation(events: Array[InputEvent]) -> void:
+		super.apply_buffered_navigation(events)
+		if _target != null:
+			_target.is_valid = false
+
+
+## Proves test_ac32_...()'s own detection technique — checking
+## is_current_target_valid() after a navigation call — actually goes red under
+## this specific regression. Asserts id == 6 FIRST (proving the spy's super()
+## call really did run the real navigation write — this sensitivity proof is
+## about a VALIDITY-only defect, not a "nothing happened at all" one a weaker
+## test would also catch), then asserts validity must read false.
+func test_sensitivity_proof_ac32_unstick_detection_catches_navigation_that_leaves_validity_stale() -> void:
+	var registry: CursorSurfaceRegistry = CursorSurfaceRegistry.new()
+	var reclaim: _RecordingReclaimPolicy = _RecordingReclaimPolicy.new()
+	var mutant: _MutantNavigationLeavesStaleValidity = _MutantNavigationLeavesStaleValidity.new(
+		reclaim, registry, Callable(self, "_test_mouse_position")
+	)
+	var surface: _FakeNavigableSurface = _FakeNavigableSurface.new()
+	auto_free(surface)
+	registry.register(_SURFACE, surface)
+
+	var original: CursorTarget = _target(5)
+	assert_int(mutant.set_target(original)).is_equal(CursorState.SetTargetResult.APPLIED)
+	assert_int(mutant.mark_pending_reresolve(_target(5))).is_equal(CursorState.MarkResult.APPLIED)
+	assert_bool(mutant.is_current_target_valid()).append_failure_message(
+		"PRECONDITION: target is not actually pending re-resolve."
+	).is_false()
+
+	var nav_event: InputEventKey = _real_event(&"ui_right")
+	mutant.arbitrate_device_authority([nav_event])
+	assert_int(mutant.get_device_authority()).append_failure_message(
+		"PRECONDITION: authority did not become KEYBOARD_GAMEPAD."
+	).is_equal(CursorTypes.Authority.KEYBOARD_GAMEPAD)
+
+	surface.next_response = 6
+	mutant.apply_buffered_navigation([nav_event])
+
+	assert_int(mutant.get_current_target().id).append_failure_message(
+		"PRECONDITION: the mutant's super() call did not actually run the real "
+		+ "navigation write — this sensitivity proof needs id to update to 6 "
+		+ "so it is specifically proving a VALIDITY-only defect, not a "
+		+ "\"nothing happened\" one a weaker test would also catch."
+	).is_equal(6)
+	assert_bool(mutant.is_current_target_valid()).append_failure_message(
+		"SENSITIVITY PROOF FAILED: the mutant deliberately leaves validity "
+		+ "stale after a real navigation write, so is_current_target_valid() "
+		+ "must read false here — if it reads true, test_ac32_...()'s own "
+		+ "detection technique (checking this exact getter after navigation) "
+		+ "cannot tell AC-32's claim (the player's own navigation unsticks the "
+		+ "target) from a regression that silently fails to."
+	).is_false()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
