@@ -1340,12 +1340,19 @@ func set_target(target: CursorTarget) -> SetTargetResult
 >
 > 🔴 **影響範圍經反向搜尋實測(2026-09-08),不只本 ADR 與 GDD —— 至少 6 個檔案仍載有已刪除的
 > 雙參數簽章,其中兩個是本專案指定的權威來源:**
-> - `docs/registry/architecture.yaml`(**架構立場權威來源**):**5 處命中**,含第 406 行的
->   `signal_signature` **凍結簽章登記表**,逐字記著 `set_target(target: CursorTarget, from_ui_action: bool)`。
-> - `docs/architecture/traceability-index.md` 第 216 行:寫著 **「✅ 已涵蓋」**。該檔是 `CLAUDE.md`
+> - `docs/registry/architecture.yaml`(**架構立場權威來源**):**5 處命中**,含 `cursor_target_write` 條目的
+>   `signal_signature` 欄(查法:`grep -n "cursor_target_write" docs/registry/architecture.yaml`)—— 該欄是**凍結簽章登記表**,逐字記著 `set_target(target: CursorTarget, from_ui_action: bool)`。
+> - `docs/architecture/traceability-index.md` 的 `TR-cursor-012` 那一列(查法:`grep -n "TR-cursor-012" docs/architecture/traceability-index.md`):寫著 **「✅ 已涵蓋」**。該檔是 `CLAUDE.md`
 >   指定的涵蓋數字**唯一來源** —— **一個已知不成立的需求,正在唯一權威涵蓋表上顯示為已涵蓋。**
-> - `production/epics/cursor-highlight-state/EPIC.md` 第 81 行(`✅ 機制十`)、
->   `story-007-write-read-interface.md` 第 43 行(該工作單狀態為 **Complete**)。
+> - `production/epics/cursor-highlight-state/EPIC.md` 的 `TR-cursor-012` 那一列(`✅ 機制十`)、
+>   `story-007-write-read-interface.md` 的 `set_target(target) -> SetTargetResult` 那一條(該工作單狀態為 **Complete**)。
+>
+> 🔴 **一次到位的查法(2026-10-15 補,取代上面四組座標):**
+> `grep -rn "from_ui_action" docs/registry/architecture.yaml docs/architecture/traceability-index.md production/epics/cursor-highlight-state/`
+> —— 這四處要找的本來就是「仍載有已刪除的雙參數簽章」的地方,**用它要找的特徵去找,比用座標去找更穩**。
+> ⚠️ **本段原本用的是四個行號(`406`/`216`/`81`/`43`),2026-10-15 實測其中 2 處已經指錯地方**
+> (`architecture.yaml:406` 指到另一份 ADR 的路徑、`traceability-index.md:216` 指到一條分隔線)。
+> **這是事實層修訂,零決策變更** —— 本段的四個對象與裁決內容一字未改,只換了找到它們的方式。
 >
 > ⚠️ **上述 4 處刻意尚未修改,這是判斷不是疏漏**:它們要怎麼改取決於裁決結果 —— 若裁決為
 > 「GDD 改為一項資料」則全部照改;若裁決為「重新檢視當初要求第二項資料的理由」,
