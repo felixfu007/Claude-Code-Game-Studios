@@ -186,6 +186,36 @@ const TEXT_AFFINITY_PREVIEW_FORMAT: StringName = &"battle.hud.affinity_preview_f
 const TEXT_AFFINITY_CURRENT_FORMAT: StringName = &"battle.hud.affinity_current_format"
 const TEXT_DAMAGE_PREVIEW_FORMAT: StringName = &"battle.hud.damage_preview_format"
 
+## Story 012 (格位資訊面板) — key block for the new always-on tile-info panel
+## (distinct from the three-way affinity/damage preview above, per
+## `design/ux/tactical-combat-screen.md` 5.3(b): that label never showed
+## terrain/occupant data at all). See [method build_tile_info_text] for how
+## these are composed and [method _update_tile_info_panel] for the one call
+## site that writes them to screen.
+const TEXT_TILE_INFO_UNRESOLVED: StringName = &"battle.tile_info.unresolved"
+const TEXT_TILE_INFO_TERRAIN_LINE_FORMAT: StringName = &"battle.tile_info.terrain_line_format"
+const TEXT_TILE_INFO_TERRAIN_OPEN: StringName = &"battle.tile_info.terrain_open"
+const TEXT_TILE_INFO_TERRAIN_BRUSH: StringName = &"battle.tile_info.terrain_brush"
+const TEXT_TILE_INFO_TERRAIN_FALLEN_LOG: StringName = &"battle.tile_info.terrain_fallen_log"
+const TEXT_TILE_INFO_TERRAIN_UNKNOWN: StringName = &"battle.tile_info.terrain_unknown"
+const TEXT_TILE_INFO_COST_LINE_FORMAT: StringName = &"battle.tile_info.cost_line_format"
+const TEXT_TILE_INFO_COST_UNKNOWN: StringName = &"battle.tile_info.cost_unknown"
+const TEXT_TILE_INFO_CONCEALMENT_YES: StringName = &"battle.tile_info.concealment_yes"
+const TEXT_TILE_INFO_CONCEALMENT_NO: StringName = &"battle.tile_info.concealment_no"
+const TEXT_TILE_INFO_OCCUPANT_NONE: StringName = &"battle.tile_info.occupant_none"
+const TEXT_TILE_INFO_FACTION_PLAYER: StringName = &"battle.tile_info.faction_player"
+const TEXT_TILE_INFO_FACTION_ENEMY: StringName = &"battle.tile_info.faction_enemy"
+const TEXT_TILE_INFO_FACTION_LINE_FORMAT: StringName = &"battle.tile_info.faction_line_format"
+const TEXT_TILE_INFO_HP_LINE_FORMAT: StringName = &"battle.tile_info.hp_line_format"
+const TEXT_TILE_INFO_STATE_NONE_USED: StringName = &"battle.tile_info.state_none_used"
+const TEXT_TILE_INFO_STATE_ATTACK_ONLY: StringName = &"battle.tile_info.state_attack_only"
+const TEXT_TILE_INFO_STATE_MOVE_ONLY: StringName = &"battle.tile_info.state_move_only"
+const TEXT_TILE_INFO_STATE_DONE: StringName = &"battle.tile_info.state_done"
+const TEXT_TILE_INFO_STATE_NOT_FOUND: StringName = &"battle.tile_info.state_not_found"
+const TEXT_TILE_INFO_STATE_LINE_FORMAT: StringName = &"battle.tile_info.state_line_format"
+const TEXT_TILE_INFO_WEAPON_RANGE_LINE_FORMAT: StringName = &"battle.tile_info.weapon_range_line_format"
+const TEXT_TILE_INFO_MP_LINE_FORMAT: StringName = &"battle.tile_info.mp_line_format"
+
 ## Message template shown on [member _load_error_label] when terrain or
 ## roster data fails to load. Slot 1 is one of the TEXT_LOAD_REASON_*
 ## constants below; slot 2 is the failing file's [code]res://[/code] path.
@@ -335,6 +365,19 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 ## [method _refresh_view]'s Mode A/B/C. Narrowed [member _status_label] from
 ## its old x=8..472 span to x=8..180 to make room for this at x=184..472.
 @onready var _info_label: Label = $UILayer/InfoLabel
+## Story 012 (格位資訊面板) — backing translucent panel + label, newly added to
+## [code]BattleScreen.tscn[/code] under [code]UILayer[/code] by this story.
+## Deliberately NOT a reuse of [member _info_label] (see that member's doc
+## comment and `design/ux/tactical-combat-screen.md` 5.3(b)): this is new
+## always-on tile/occupant data, not the three-way affinity/damage preview.
+## Positioned/sized at runtime by [method _apply_tile_info_panel_layout]
+## rather than the [code].tscn[/code]'s baked numbers — same
+## "unconditionally overwritten on [method Node._ready]" convention
+## [code]hud_layout_scaler.gd[/code] already documents for its own five HUD
+## nodes, kept here instead of there because this story's file lock does not
+## include that file (coordinator dispatch, 2026-10-15).
+@onready var _tile_info_panel_bg: ColorRect = $UILayer/TileInfoPanelBg
+@onready var _tile_info_panel_label: Label = $UILayer/TileInfoPanelBg/TileInfoPanelLabel
 @onready var _result_label: Label = $UILayer/ResultLabel
 @onready var _controls_hint_label: Label = $UILayer/ControlsHintBg/ControlsHintLabel
 ## Backing bar for [member _controls_hint_label] — only referenced directly
@@ -472,6 +515,19 @@ var _rendered_cursor_cell: Vector2i = Vector2i(-1, -1)
 ## in [method _refresh_view] tell "cursor really is here" apart from "cursor
 ## is nowhere, this is just a stale coordinate".
 var _cursor_active: bool = false
+
+## Story 012 (格位資訊面板) — [method CursorStateHost.is_current_target_valid]
+## captured ONCE per frame in [method _process] at [code]process_priority =
+## 100[/code] (see that method's own comment block for why — ADR-0005 機制六
+## ⑥'s "下游讀取方必須在 process_priority 100 讀" obligation applies to every
+## reader of the arbitrated state, not only the pre-existing
+## [member _pending_target_confirm_press] consumer). [method
+## _update_tile_info_panel] reads ONLY this cached field, never
+## [CursorStateHost] directly — that method also runs synchronously from
+## several [method _input]-triggered [method _refresh_view] call sites, and
+## the AC for this story is explicit that the validity read itself must never
+## happen inside input handling.
+var _tile_info_cursor_valid: bool = false
 
 ## Last [member _cursor_active] value rendered into the preview — the second
 ## half of the [member _rendered_cursor_cell] gating pair. See
@@ -1270,12 +1326,26 @@ func _ready() -> void:
 	# rather than self-expanded into scope.
 	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
 
+	# Story 012 (格位資訊面板) — same "apply once, then re-apply on every
+	# resize" discipline hud_layout_scaler.gd's own _ready() already
+	# establishes for the rest of UILayer; see _apply_tile_info_panel_layout()'s
+	# own doc comment for why this screen owns it directly rather than that
+	# file.
+	_apply_tile_info_panel_layout()
+	get_window().size_changed.connect(_apply_tile_info_panel_layout)
+
 	_refresh_view()
 
 
 func _process(_delta: float) -> void:
 	if _load_failed:
 		return
+
+	# Story 012 (格位資訊面板) — captured unconditionally, every frame,
+	# regardless of phase: see [member _tile_info_cursor_valid]'s own doc
+	# comment for why this read must happen here and nowhere else.
+	_tile_info_cursor_valid = CursorStateHost.is_current_target_valid()
+
 	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_diagnostic_enemy_acting_process_frame_count += 1
 		# Story 011 (U-T6) -- M1 audit
@@ -1821,6 +1891,133 @@ static func format_affinity_current(bonus: int) -> String:
 ## [method _refresh_view] — cursor on an attackable enemy.
 static func format_damage_preview(damage: int, target_hp: int, target_hp_after: int) -> String:
 	return Loc.localize(TEXT_DAMAGE_PREVIEW_FORMAT) % [damage, target_hp, target_hp_after]
+
+
+## Story 012 (格位資訊面板) — terrain-character display name. Falls back to
+## [constant TEXT_TILE_INFO_TERRAIN_UNKNOWN] for any character not in
+## [constant Board.TERRAIN_TABLE] — [Board] itself already [method push_error]s
+## for an unregistered character ([method Board.get_terrain] /
+## [method Board.get_move_cost]'s own doc comments); this function still has
+## to produce SOME localized text rather than crash the panel.
+static func terrain_display_name(terrain_char: String) -> String:
+	match terrain_char:
+		Board.TERRAIN_OPEN:
+			return Loc.localize(TEXT_TILE_INFO_TERRAIN_OPEN)
+		Board.TERRAIN_BRUSH:
+			return Loc.localize(TEXT_TILE_INFO_TERRAIN_BRUSH)
+		Board.TERRAIN_FALLEN_LOG:
+			return Loc.localize(TEXT_TILE_INFO_TERRAIN_FALLEN_LOG)
+		_:
+			return Loc.localize(TEXT_TILE_INFO_TERRAIN_UNKNOWN)
+
+
+## Story 012 — maps [enum TurnOrder.ActionState] to its localized display
+## label (story-004's four states plus the defensive [constant
+## TurnOrder.ActionState.NOT_FOUND] fifth value — see that enum's own doc
+## comment). [constant TurnOrder.ActionState.NOT_FOUND] should never actually
+## reach this function for an occupant resolved via [method BattleState.unit_at]
+## (same forward-looking-wildcard discipline as [method hand_bar_slot_kind_for]
+## above), but is mapped explicitly rather than falling through silently.
+static func action_state_display_name(state: TurnOrder.ActionState) -> String:
+	match state:
+		TurnOrder.ActionState.NONE_USED:
+			return Loc.localize(TEXT_TILE_INFO_STATE_NONE_USED)
+		TurnOrder.ActionState.ATTACK_ONLY:
+			return Loc.localize(TEXT_TILE_INFO_STATE_ATTACK_ONLY)
+		TurnOrder.ActionState.MOVE_ONLY:
+			return Loc.localize(TEXT_TILE_INFO_STATE_MOVE_ONLY)
+		TurnOrder.ActionState.DONE:
+			return Loc.localize(TEXT_TILE_INFO_STATE_DONE)
+		_:
+			return Loc.localize(TEXT_TILE_INFO_STATE_NOT_FOUND)
+
+
+## [constant Board.MOVE_COST_UNKNOWN_TERRAIN] (-1) is an explicit-failure
+## sentinel, never a legitimate cost (coordinator dispatch, 2026-10-15) — this
+## line must never print "-1" to the player as if it were a real cost.
+static func format_tile_info_cost_line(cost: int) -> String:
+	if cost == Board.MOVE_COST_UNKNOWN_TERRAIN:
+		return Loc.localize(TEXT_TILE_INFO_COST_UNKNOWN)
+	return Loc.localize(TEXT_TILE_INFO_COST_LINE_FORMAT) % cost
+
+
+static func format_tile_info_terrain_line(terrain_char: String) -> String:
+	return Loc.localize(TEXT_TILE_INFO_TERRAIN_LINE_FORMAT) % terrain_display_name(terrain_char)
+
+
+## Visual/Audio §1.4 orthogonality — this is its own line, never merged with
+## [method format_tile_info_cost_line] into one "special terrain" field. See
+## [method Board.blocks_sight]'s own doc comment: sight-blocking and
+## passability/cost are two independent terrain properties recorded in two
+## independent tables, and this panel's layout mirrors that independence.
+static func format_tile_info_concealment_line(blocks_sight: bool) -> String:
+	if blocks_sight:
+		return Loc.localize(TEXT_TILE_INFO_CONCEALMENT_YES)
+	return Loc.localize(TEXT_TILE_INFO_CONCEALMENT_NO)
+
+
+static func format_tile_info_faction_line(faction: Unit.Faction) -> String:
+	var name: String = (
+		Loc.localize(TEXT_TILE_INFO_FACTION_PLAYER) if faction == Unit.Faction.PLAYER
+		else Loc.localize(TEXT_TILE_INFO_FACTION_ENEMY)
+	)
+	return Loc.localize(TEXT_TILE_INFO_FACTION_LINE_FORMAT) % name
+
+
+static func format_tile_info_hp_line(hp: int, hp_max: int) -> String:
+	return Loc.localize(TEXT_TILE_INFO_HP_LINE_FORMAT) % [hp, hp_max]
+
+
+static func format_tile_info_state_line(state: TurnOrder.ActionState) -> String:
+	return Loc.localize(TEXT_TILE_INFO_STATE_LINE_FORMAT) % action_state_display_name(state)
+
+
+static func format_tile_info_weapon_range_line(min_range: int, max_range: int) -> String:
+	return Loc.localize(TEXT_TILE_INFO_WEAPON_RANGE_LINE_FORMAT) % [min_range, max_range]
+
+
+static func format_tile_info_mp_line(mp: int) -> String:
+	return Loc.localize(TEXT_TILE_INFO_MP_LINE_FORMAT) % mp
+
+
+## Story 012 — composes the full, multi-line tile-info panel text from
+## already-resolved plain data. Deliberately takes no [BattleState]/[Board]/
+## node reference — every value is extracted by the caller first (see
+## [method _update_tile_info_panel]) — so this function is directly
+## unit-testable headless, mirroring [method format_damage_preview] et al.'s
+## existing "pure formatter" convention in this file.
+##
+## [param has_occupant] gates whether the five occupant-only lines (faction/
+## HP/four-state/weapon-range/MP) are appended at all: GDD UI Requirements §1
+## only requires those fields "若有" (if an occupant exists); an empty tile
+## shows [constant TEXT_TILE_INFO_OCCUPANT_NONE] in their place instead of
+## five lines of placeholder values.
+static func build_tile_info_text(
+	terrain_char: String,
+	cost: int,
+	blocks_sight: bool,
+	has_occupant: bool,
+	occupant_faction: Unit.Faction,
+	occupant_hp: int,
+	occupant_hp_max: int,
+	occupant_state: TurnOrder.ActionState,
+	occupant_min_range: int,
+	occupant_max_range: int,
+	occupant_mp: int
+) -> String:
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append(format_tile_info_terrain_line(terrain_char))
+	lines.append(format_tile_info_cost_line(cost))
+	lines.append(format_tile_info_concealment_line(blocks_sight))
+	if has_occupant:
+		lines.append(format_tile_info_faction_line(occupant_faction))
+		lines.append(format_tile_info_hp_line(occupant_hp, occupant_hp_max))
+		lines.append(format_tile_info_state_line(occupant_state))
+		lines.append(format_tile_info_weapon_range_line(occupant_min_range, occupant_max_range))
+		lines.append(format_tile_info_mp_line(occupant_mp))
+	else:
+		lines.append(Loc.localize(TEXT_TILE_INFO_OCCUPANT_NONE))
+	return "\n".join(lines)
 
 
 ## Classifies whether [param path] can even be opened, independent of its
@@ -3317,6 +3514,7 @@ func _refresh_view() -> void:
 	)
 
 	_update_status_label()
+	_update_tile_info_panel()
 
 	# 記錄這次畫的是哪一格 —— _update_cursor_visual() 的閘門靠這一對值判斷
 	# 「游標真的變了嗎」,少了這兩行就會變成每畫格重建一次整個棋盤。
@@ -3363,6 +3561,87 @@ static func _unit_has_link(unit_id: int, links: Array[AffinityLink]) -> bool:
 func _update_status_label() -> void:
 	var faction_text: String = Loc.localize(TEXT_FACTION_PLAYER) if _order.current_faction() == TurnOrder.Side.PLAYER else Loc.localize(TEXT_FACTION_ENEMY)
 	_status_label.text = Loc.localize(TEXT_STATUS_FORMAT) % [_order.round_number(), faction_text]
+
+
+## Story 012 (格位資訊面板) — writes [member _tile_info_panel_label] every
+## [method _refresh_view] call. Gates on BOTH [member _cursor_active] AND
+## [member _tile_info_cursor_valid] before showing anything resolved:
+## [member _tile_info_cursor_valid] alone is not enough, because [method
+## _apply_mouse_target_if_authoritative] simply returns (leaving
+## [CursorStateHost]'s target at its last on-board value) the instant the
+## mouse goes out of bounds — so the host's target can stay "valid" while the
+## cursor is genuinely nowhere. [member _cursor_active] is this screen's own
+## existing flag for exactly that "cursor is nowhere right now" case (see its
+## own doc comment). Either being false means an explicit, distinct
+## unresolved state — never the previous tile's leftover content (Player
+## Fantasy's named failure mode "狀態轉換造成的資訊斷裂").
+func _update_tile_info_panel() -> void:
+	if not _cursor_active or not _tile_info_cursor_valid:
+		_tile_info_panel_label.text = Loc.localize(TEXT_TILE_INFO_UNRESOLVED)
+		return
+
+	var terrain_char: String = _state.board.get_terrain(_cursor_cell)
+	var cost: int = _state.board.get_move_cost(_cursor_cell)
+	var blocks_sight: bool = _state.board.blocks_sight(_cursor_cell)
+	var occupant: Unit = _state.unit_at(_cursor_cell)
+
+	if occupant != null:
+		_tile_info_panel_label.text = build_tile_info_text(
+			terrain_char, cost, blocks_sight,
+			true, occupant.faction, occupant.hp, occupant.hp_max,
+			_controller.unit_action_state(occupant.id),
+			occupant.min_range, occupant.max_range, occupant.mp
+		)
+	else:
+		_tile_info_panel_label.text = build_tile_info_text(
+			terrain_char, cost, blocks_sight,
+			false, Unit.Faction.PLAYER, 0, 0, TurnOrder.ActionState.NOT_FOUND, 0, 0, 0
+		)
+
+
+## Story 012 — positions/sizes [member _tile_info_panel_bg] (and, via its
+## [code]anchors_preset = 15[/code] fill in [code]BattleScreen.tscn[/code],
+## [member _tile_info_panel_label] along with it) every time the window size
+## changes. Calls the SAME [HudLayout] static functions
+## [code]hud_layout_scaler.gd[/code] uses for the rest of [code]UILayer[/code]
+## ([method HudLayout.safe_rect] / [method HudLayout.font_size] /
+## [method HudLayout.status_label_rect]) rather than re-deriving any of that
+## math — this project's registered "same formula, two implementations"
+## failure mode — but is NOT added to [code]hud_layout_scaler.gd[/code]
+## itself: this story's file lock (coordinator dispatch, 2026-10-15) is
+## [code]battle_screen.gd[/code] + its own [code].tscn[/code] only. Flagged in
+## the task report as a seam a follow-up pass may want to fold into that file.
+##
+## [b]The width fraction / line count constants below are this implementer's
+## own placeholder judgment call, not a pixel-measured spike result[/b] like
+## [constant HudLayout.STATUS_LABEL_WIDTH_FRACTION]'s own spike-backed
+## constant — disclosed rather than presented as measured.
+const _TILE_INFO_PANEL_WIDTH_FRACTION: float = 0.4
+const _TILE_INFO_PANEL_LINE_COUNT: int = 8
+const _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER: float = 1.2
+const _TILE_INFO_PANEL_PADDING_MULTIPLIER: float = 0.8
+
+func _apply_tile_info_panel_layout() -> void:
+	var window_size: Vector2i = get_window().size
+	var safe: Rect2 = HudLayout.safe_rect(window_size)
+	var status: Rect2 = HudLayout.status_label_rect(window_size)
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var gap: float = fpx
+	var width: float = safe.size.x * _TILE_INFO_PANEL_WIDTH_FRACTION
+	var height: float = fpx * (
+		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * _TILE_INFO_PANEL_LINE_COUNT
+		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
+	)
+	var left: float = safe.position.x + safe.size.x - width
+	var top: float = status.position.y + status.size.y + gap
+
+	_tile_info_panel_bg.offset_left = left
+	_tile_info_panel_bg.offset_top = top
+	_tile_info_panel_bg.offset_right = left + width
+	_tile_info_panel_bg.offset_bottom = top + height
+
+	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
 
 
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:

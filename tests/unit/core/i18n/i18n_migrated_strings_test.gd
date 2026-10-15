@@ -68,8 +68,13 @@ const _EXPECTED_BATTLE_SCREEN: Dictionary[StringName, String] = {
 	&"battle.load_error.reason_empty_content": "資料檔案是空的。",
 	&"battle.load_error.reason_parsed_empty": "資料檔案沒有可用的內容。",
 	&"battle.load_error.reason_parse_error": "資料檔案內容格式錯誤,其中一列資料無法辨識。",
+	# 🔴 2026-10-15:story-011 U-T8（提交 3b1dfea）合法新增「結束單一單位行動」操作後，
+	# 此字面值跟著變更（assets/data/locales/strings.csv 第 23 列結尾加上「　結束單位
+	# Q/Back」）——這不是遷移時漏改，是內容本身在遷移完成之後被正常地改了。本檔的斷言
+	# 目的是「查出來的內容跟『遷移前』的字面值一樣」，而遷移前的字面值本來就不包含這段
+	# 新文字，故以下期望值對齊到變更後的現況，不是追溯竄改遷移歷史。
 	&"battle.hud.controls_hint": (
-		"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start"
+		"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start　結束單位 Q/Back"
 	),
 }
 

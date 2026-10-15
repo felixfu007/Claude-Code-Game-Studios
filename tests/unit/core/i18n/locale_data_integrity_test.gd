@@ -121,14 +121,23 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# Arrange / Act
 	var data_rows: Array[PackedStringArray] = _load_real_data_rows()
 
-	# Assert — 45 筆與 i18n_migrated_strings_test.gd 的
-	# test_total_migrated_key_count_is_forty_five 是同一個數字，兩處故意分別驗證
-	# 不同的事實（那邊驗「查得到且內容對」，這裡驗「原始 CSV 列數與欄數對」）——
-	# 若未來 CSV 筆數變動，兩處都要一起改，不然其中一處的數字就是一句謊言。
+	# Assert — 68 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
+	# 🔴 2026-10-15 更正：本處原寫「45 筆與 i18n_migrated_strings_test.gd 的
+	# test_total_migrated_key_count_is_forty_five 是同一個數字，兩處故意分別驗證不同
+	# 事實，CSV 筆數變動時兩處要一起改」——這句話描述的「同步維護」關係並不成立，只是
+	# 兩個數字在某個時間點剛好相等。那條測試量的是「story-002 遷移批次涵蓋的 key 數」，
+	# 範圍固定在遷移當時搬過去的 45 筆，不隨 CSV 之後新增的內容而成長；這裡量的是
+	# 「CSV 目前實際有幾列資料」，會隨任何新 story 往 CSV 加 key 而成長。
+	# story-012（格位資訊面板）直接透過 Loc API 新增 23 筆 key（68 = 45 + 23）——
+	# 這些 key 從未以硬寫字串的形式存在過，不是「被遷移」的對象，因此不屬於
+	# i18n_migrated_strings_test.gd 的涵蓋範圍；這批內容的字面值由
+	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
+	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 45（與 i18n_migrated_strings_test.gd 的 " +
-		"test_total_migrated_key_count_is_forty_five 同步維護），實得 %d" % data_rows.size()
-	).is_equal(45)
+		"strings.csv 資料列數應為 68（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
+		"實得 %d" % data_rows.size()
+	).is_equal(68)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(
