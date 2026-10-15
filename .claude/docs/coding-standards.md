@@ -602,7 +602,35 @@ written down and checkable by a second reader," not "no one will misclassify a s
 - No merge if tests fail — tests are a blocking gate in CI
 - Never disable or skip failing tests to make CI pass — fix the underlying issue
 - Engine-specific CI commands:
-  - **Godot**: `godot --headless --path . -s tests/gdunit4_runner.gd`
+  - **Godot(本機)**: 🔴 **`GODOT_BIN=<引擎路徑> ./tools/build/run_tests_with_import.sh`**
+    —— **2026-10-15 管理者裁決:匯入與測試合併成單一入口。**
+    - **為什麼**:同日發生一次真實事故 —— 一張工作單改了 `assets/data/locales/strings.csv`,
+      而一條斷言舊字面值的測試**應該要紅卻沒有紅**,因為 CSV 改動要等 Godot 重新匯入才會進
+      `.translation` 資源,引擎一直在服務舊快取。**協調者的「獨立重跑驗收」照樣報 0 failures。**
+      🔴 **這是本節登記的第六種假綠燈,而且隱蔽性高於前五種:測試檔與資料檔都在版控裡、
+      都是最新的,只有引擎的匯入產物是舊的 —— 從 `git status` 完全看不出來。**
+    - **被跳過的兩個選項**:①只加一道比對 mtime 的便宜健檢 ②只在文件裡再加一條
+      「記得先 import」的紀律。**②被跳過的理由寫在裁決裡**:本專案已為「靠人記得」付過五次
+      代價,第六次剛剛騙過了驗收 —— **不該用同一種形狀的解法。**
+    - **代價,管理者知情接受**:每次跑測試都多付一次匯入。協調者實測 **整支 94 秒**
+      (其中引擎跑測試約 75~80 秒,GdUnit4 自報 `Total execution time: 48s`)。
+      ⚠️ **沒有快速路徑** —— 腳本每次都無條件匯入,不做「有沒有東西需要重匯」的判斷。
+    - **已驗證的三件事**(協調者自己跑的,不採信回報):
+      ```
+      正常執行     → ENGINE EXIT = 0   / WRAPPER EXIT = 0   / 1203 test cases | 0 failures | (102/102)
+      測試故意失敗 → ENGINE EXIT = 100 / WRAPPER EXIT = 100 / 1204 test cases | 1 failures | (103/103)
+      匯入失敗     → WRAPPER EXIT = 1,且明文拒絕繼續(「Cannot proceed with tests; stale cache would be used」)
+      ```
+      🔴 **第二項是這個入口的全部價值所在** —— 它證明引擎的 exit code 有原封不動傳出去。
+      沒有這個證明,它就跟它要取代的那條紀律一樣不可觀測。
+    - **逾時**:`IMPORT_TIMEOUT_SEC`(預設 120)與 `TEST_TIMEOUT_SEC`(預設 900)皆可用環境
+      變數覆寫。⚠️ **預設值刻意寬鬆** —— 逾時的職責是防止無限期卡住(本專案登記過
+      「漏 `quit()` 的 headless 引擎會永遠空轉」),**不是效能門檻**。
+      原始版本設 120 秒,而當天實測只剩約 40 秒餘裕、測試數一天內從 1159 長到 1203;
+      一旦越過,`timeout` 會砍掉測試並回報 exit 124 —— **那是一個新的假訊號。**
+  - **Godot(CI,不受本次改動影響)**: `godot --headless --path . -s tests/gdunit4_runner.gd`
+    ✅ CI 用的 `godot-gdunit-labs/gdUnit4-action@v1` **自己會匯入**(2026-08-26 已驗證),
+    故上述事故**只發生在本機** —— 而本機是大多數人唯一會跑的地方。
     - The runner wraps GdUnit4's own CLI entry point and supplies the mandatory flags, so CI
       does not have to remember them. Verified 2026-08-26: 9 tests, 0 failures, 0 orphans,
       exit 0, against GdUnit4 v6.2.1 / Godot 4.7.1.
