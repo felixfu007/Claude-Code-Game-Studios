@@ -1,7 +1,7 @@
 # Story 011: 輸入缺口補強(敵方回合拒絕逐幀生效、拒絕回饋、結束單位行動路徑)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M6(範圍②)
-> **Status**: 🔄 **In Progress(2026-10-15)** —— 🔴 **三個子項只完成 U-T6**(提交 `4f3017a`,協調者獨立重跑驗收)。**U-T7(拒絕回饋)與 U-T8(主動結束單一單位行動)皆未開工。** 拆開派工是協調者的決定,理由:當日連續五位專家都在讀檔階段耗盡回合上限,收窄範圍才做得完。📌 U-T6 的修法與本檔 Implementation Note 第 3 點的**字面建議不同**(守衛放在 `_process()` 而非 `_input()` 頂層),理由與回歸鎖見該提交訊息。
+> **Status**: ✅ **Done(2026-10-15,協調者逐項獨立重跑驗收)** —— **三個子項全部完成**:U-T6 敵方回合逐幀凍結游標視覺副作用(`4f3017a`)、U-T7 `click_tile()` 回傳值不再被丟掉(`ee9d4a1`)、U-T8 玩家第一次能主動結束單一單位行動(`3b1dfea`)。全套 `ENGINE EXIT = 0` / `1183 test cases | 0 errors | 0 failures` / `(101/101)` / `grep " FAILED"` 零命中。📌 **拆成三張派工是協調者的決定**,理由:當日連續多位專家都在讀檔階段耗盡回合上限,收窄範圍才做得完。📌 U-T6 的修法與下方 Implementation Note 第 3 點的**字面建議不同**(守衛放 `_process()` 而非 `_input()` 頂層),理由與回歸鎖見該提交訊息。
 > **Layer**: Presentation
 > **Type**: Integration
 > **Estimate**: M

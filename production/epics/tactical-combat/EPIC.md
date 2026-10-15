@@ -637,7 +637,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 008 | 游標導航收斂(`CursorStateHost`) | M6 | Integration | Ready | ADR-0005 | None(先於 009) |
 | 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
 | 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | ✅ Done | ADR-0005 | 建議 008 之後 |
-| 011 | 輸入缺口補強(U-T6/U-T7/U-T8) | M6 | Integration | Ready | ADR-0001, ADR-0005 | 建議 008 之後 |
+| 011 | 輸入缺口補強(U-T6/U-T7/U-T8) | M6 | Integration | ✅ Done | ADR-0001, ADR-0005 | 建議 008 之後 |
 | 012 | 格位資訊面板 | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 004, 006, 008-011 |
 | 013 | 攻擊確認面板(二段確認) | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 006, 008-011 |
 | 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | Ready(執行序見下) | ADR-0001 | 003, 007, 012, 013 |
