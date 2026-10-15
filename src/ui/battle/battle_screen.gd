@@ -1226,7 +1226,29 @@ func _process(_delta: float) -> void:
 		return
 	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_diagnostic_enemy_acting_process_frame_count += 1
-	_update_cursor_visual()
+		# Story 011 (U-T6) -- M1 audit
+		# (docs/reviews/tactical-combat-m1-current-state-audit-2026-09-29.md):
+		# "BattleState 本身不會被敵方回合中的輸入改動,但游標仍會照常隨滑鼠/
+		# 方向鍵移動". _update_cursor_visual() below is the ONE place in this
+		# file that calls _board_view.set_cursor() (see that method's own
+		# body) -- not calling it here, every _process() frame phase() reads
+		# ENEMY_ACTING (not just once when the phase is entered), is what
+		# makes "cursor position does not change" hold for the whole stepped
+		# enemy playback rather than only its first frame.
+		#
+		# This is also the ONLY fix in this file that covers the
+		# KEYBOARD/GAMEPAD case: _input()'s own ENEMY_ACTING guard below stops
+		# this screen's OWN dispatch, but it cannot stop CursorStateHost's
+		# target from moving, because CursorNavigationApplier is a separate
+		# Autoload-owned node that receives the same raw InputEvent
+		# independently (see _handle_directional()'s own doc comment --
+		# "two separate nodes receiving the same raw InputEvent"). Skipping
+		# the call below freezes the DRAWN cursor regardless of what
+		# CursorStateHost's internal target does underneath, which is the
+		# only thing this screen is positioned to guarantee without editing
+		# that Autoload.
+	else:
+		_update_cursor_visual()
 
 	# Story U-013 (ADR-0005 機制六⑥, Implementation Note #1 quoted verbatim
 	# below) — this screen's own [member Node.process_priority] is 100 (see
@@ -1259,12 +1281,28 @@ func _input(event: InputEvent) -> void:
 	if _controller.phase() == BattleController.Phase.FINISHED:
 		return
 
+	# Story 011 (U-T6) -- ENEMY_ACTING freezes mouse tracking too, not only the
+	# keyboard/gamepad dispatch guarded below: _last_mouse_window_pos is what
+	# _apply_mouse_target_if_authoritative() (_TargetRetargetActor, every
+	# frame) and _update_cursor_visual()'s own MOUSE branch both read. Letting
+	# it keep advancing during the enemy's turn would not move the drawn
+	# cursor (that is frozen separately by _process()'s own ENEMY_ACTING
+	# branch, see its doc comment), but it WOULD make the cursor jump the
+	# instant PLAYER_INPUT resumes, to wherever the mouse happened to end up
+	# mid-playback -- freezing the raw position here keeps both consistent.
 	if event is InputEventMouseMotion:
-		_last_mouse_window_pos = (event as InputEventMouseMotion).position
+		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
+			_last_mouse_window_pos = (event as InputEventMouseMotion).position
 		return
 
 	if event is InputEventMouseButton:
-		_handle_mouse_button(event as InputEventMouseButton)
+		# Story 011 (U-T6) -- a click during the enemy's turn must not reach
+		# _handle_mouse_button() at all. BattleController.click_tile()'s own
+		# deeper phase guard already rejects the GAMEPLAY effect (M1 audit),
+		# but _handle_mouse_button() ALSO writes _last_mouse_window_pos as its
+		# first statement -- same freeze reasoning as the motion branch above.
+		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
+			_handle_mouse_button(event as InputEventMouseButton)
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
@@ -1285,6 +1323,33 @@ func _input(event: InputEvent) -> void:
 		# ignore).
 		if event.is_action_pressed(&"battle_menu"):
 			_handle_battle_menu_pressed()
+			return
+
+		# Story 011 (U-T6) -- M1 audit
+		# (docs/reviews/tactical-combat-m1-current-state-audit-2026-09-29.md):
+		# "_input(event) 頂部只擋 _load_failed 與 phase()==FINISHED,沒有對
+		# ENEMY_ACTING 的頂層檢查". Deliberately placed AFTER the battle_menu
+		# check immediately above, not before it: Story U-016 already
+		# established (see that check's own doc comment) that opening the
+		# menu is a real, distinct action that must reach BattleMenu.open()
+		# and be explicitly accepted or rejected BY IT in every phase -- and
+		# _end_faction_phase_pressed() already tolerates being re-entered
+		# while phase() is ALREADY ENEMY_ACTING (its own 2026-09-24 comment),
+		# so battle_menu reaching open() mid-enemy-playback is existing,
+		# tested behavior this guard must not break.
+		#
+		# Everything below this line, by contrast -- forced discard,
+		# battle_open_hand, the board move/attack path, hand/target
+		# navigation, card confirm/cancel -- is board or card interaction
+		# with no equivalent "let it through so it can reject itself" design.
+		# Returning here before any of it runs is what keeps the visual
+		# freeze _process()'s own ENEMY_ACTING branch enforces (see that
+		# method) from being undone by a stray write the same frame a
+		# keyboard/gamepad event arrives; it does not change gameplay
+		# outcomes either way, since BattleController.click_tile()'s own
+		# deeper phase guard already rejected them (M1 audit), but it closes
+		# the "cursor moves anyway" visible gap that guard does not cover.
+		if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 			return
 
 		# Story U-015 (強制棄牌 S4) — takes priority over EVERYTHING else in
