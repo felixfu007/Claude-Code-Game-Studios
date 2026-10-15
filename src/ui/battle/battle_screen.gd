@@ -3567,23 +3567,32 @@ func _refresh_view() -> void:
 		var move_result: MoveTargetsResult = _controller.move_targets()
 		var attack_result: AttackTargetsResult = _controller.attack_targets()
 		var threat_result: ThreatTargetsResult = _controller.threat_targets()
+		# Story 014 — move-range four-state breakdown (ADR-0001 QueryResult
+		# contract, same merged-display version check as the three queries
+		# above — all four execute inside this same synchronous
+		# _refresh_view() call, so they must report the same
+		# combat_state_version if the board truly held still).
+		var move_breakdown_result: MoveTargetsBreakdownResult = (
+			_controller.move_targets_breakdown()
+		)
 
 		# ADR-0001 merged-display 版本核對
-		# (docs/architecture/query-result-scope-boundary-2026-10-12.md):下面三層
-		# 高亮是這三支查詢結果的合併顯示,ADR-0001 要求合併顯示前核對版本號一致。
+		# (docs/architecture/query-result-scope-boundary-2026-10-12.md):下面幾層
+		# 高亮是這些查詢結果的合併顯示,ADR-0001 要求合併顯示前核對版本號一致。
 		# _refresh_view() 單次執行內沒有 await、沒有權威寫入、也沒有
-		# call_deferred(本檔案體內可 grep 驗證),所以三者「同版本」今天是結構
+		# call_deferred(本檔案體內可 grep 驗證),所以四者「同版本」今天是結構
 		# 保證,下面這個檢查理論上恆為 true —— 它守的是日後有人往這個函式裡加
 		# await 或提交呼叫,而那件事今天沒有任何東西擋著。
 		# 🔴 故意不用 assert() 守衛這個分支 —— coding-standards.md 已記載
 		# assert() 失敗會中止呼叫端;_refresh_view() 雖然不回傳 enum,但中止會
-		# 連帶跳過下面與這三支查詢無關的手牌列/狀態列重繪,所以改用
+		# 連帶跳過下面與這些查詢無關的手牌列/狀態列重繪,所以改用
 		# push_error() + 顯式 if/else,絕不中止函式。
 		var versions_consistent: bool = QueryResult.assert_same_version(
-			[move_result, attack_result, threat_result]
+			[move_result, attack_result, threat_result, move_breakdown_result]
 		)
 		var any_stale: bool = (
 			move_result.is_stale() or attack_result.is_stale() or threat_result.is_stale()
+			or move_breakdown_result.is_stale()
 		)
 		if not versions_consistent or any_stale:
 			push_error(
@@ -3593,20 +3602,36 @@ func _refresh_view() -> void:
 			_board_view.set_move_highlights([])
 			_board_view.set_threat_highlights([])
 			_board_view.set_attack_highlights([])
+			_board_view.set_move_unreachable_highlights([], [], [])
+			_board_view.set_attack_los_blocked_highlights([])
 		else:
 			var move_cells: Array[Vector2i] = move_result.cells
 			var attack_cells: Array[Vector2i] = attack_result.cells
 
+			# Story 014 — attack-range third layer: "範圍內但視線被擋"。
+			# 🔴 attack_targets_blocked_by_los() 未遷移為 QueryResult(其簽章
+			# 仍回傳裸 Array[Vector2i],無 .version 可查)。它在這個分支內、
+			# 緊接在上面的版本核對之後呼叫 —— 本函式全程無 await/call_deferred/
+			# 權威寫入(同上段已引用的既有事實),故這第五支查詢結構上與上面四支
+			# 共用同一份快照,即使它沒有自己的版本欄位可比對。
+			var attack_los_blocked_cells: Array[Vector2i] = (
+				_controller.attack_targets_blocked_by_los()
+			)
+
 			# 三層高亮刻意互斥,每一格最多只帶一種標記。這是純粹的呈現取捨
-			# (哪一層畫哪些格),不是規則判斷 —— 三個查詢的答案都由
+			# (哪一層畫哪些格),不是規則判斷 —— 查詢的答案都由
 			# BattleController 決定,這裡只決定畫面怎麼排。
 			#
-			# 威脅範圍要扣掉三種格:
+			# 威脅範圍要扣掉四種格:
 			#   1. move_cells —— 已經有藍色外框了,再疊黃斜線只會讓兩者都難認。
 			#   2. attack_cells —— 已經有紅色角標了,那是更強的資訊(現在就打得到)。
 			#   3. 我方單位所在格 —— threat_targets() 依設計回傳的是「射程涵蓋範圍」,
 			#      包含友軍站的格;但畫面上在自己人身上標「打得到這裡」會被讀成
 			#      「可以攻擊隊友」。這一格的排除只在呈現層做,查詢本身維持純幾何。
+			#   4. Story 014 新增:attack_los_blocked_cells —— threat_targets()
+			#      不知道 LOS 阻擋這件事,同一格可能同時落在兩者;兩者的畫面
+			#      都是「中空外框」,疊在一起會讓玩家分不出是哪一種,故在此排除,
+			#      讓視線阻擋的標記(現在、從目前位置就能判定的事實)優先顯示。
 			var ally_cells: Array[Vector2i] = []
 			for ally: Unit in _state.units_of(Unit.Faction.PLAYER):
 				ally_cells.append(_state.position_of(ally.id))
@@ -3614,16 +3639,44 @@ func _refresh_view() -> void:
 			threat_excluded.append_array(move_cells)
 			threat_excluded.append_array(attack_cells)
 			threat_excluded.append_array(ally_cells)
+			threat_excluded.append_array(attack_los_blocked_cells)
+
+			var threat_cells_final: Array[Vector2i] = cells_excluding(
+				threat_result.cells, threat_excluded
+			)
 
 			_board_view.set_move_highlights(move_cells)
-			_board_view.set_threat_highlights(
-				cells_excluding(threat_result.cells, threat_excluded)
-			)
+			_board_view.set_threat_highlights(threat_cells_final)
 			_board_view.set_attack_highlights(attack_cells)
+			_board_view.set_attack_los_blocked_highlights(attack_los_blocked_cells)
+
+			# Story 014 — 移動範圍不可達三態(B\A / C\B / Grid\C)。排除
+			# attack_cells 與 threat_cells_final:已經帶攻擊/威脅標記的格改用
+			# 那個標記,不疊加移動不可達的外框/點(同一個「一格一種標記」優先序,
+			# 上面 threat 的排除邏輯已先用過一次)。blocked_by_occupancy 裡
+			# 「我方單位擋路」的格刻意不在排除之列 —— 那正是 GDD Visual/Audio
+			# §1.1 要凸顯的主要情境(「先移動擋路的隊友」),而我方單位從不會是
+			# attack_cells 或 threat_cells_final 的成員,這條排除規則永遠不會
+			# 誤傷到它。
+			var move_breakdown_excluded: Array[Vector2i] = []
+			move_breakdown_excluded.append_array(attack_cells)
+			move_breakdown_excluded.append_array(threat_cells_final)
+
+			var breakdown: Dictionary = move_breakdown_result.breakdown
+			var blocked_occupancy_raw: Array[Vector2i] = breakdown["blocked_by_occupancy"]
+			var blocked_terrain_raw: Array[Vector2i] = breakdown["blocked_by_terrain"]
+			var out_of_range_raw: Array[Vector2i] = breakdown["out_of_range"]
+			_board_view.set_move_unreachable_highlights(
+				cells_excluding(blocked_occupancy_raw, move_breakdown_excluded),
+				cells_excluding(blocked_terrain_raw, move_breakdown_excluded),
+				cells_excluding(out_of_range_raw, move_breakdown_excluded)
+			)
 	else:
 		_board_view.set_move_highlights([])
 		_board_view.set_threat_highlights([])
 		_board_view.set_attack_highlights([])
+		_board_view.set_move_unreachable_highlights([], [], [])
+		_board_view.set_attack_los_blocked_highlights([])
 
 	# Story U-013 (下半) — card-play target-selection 3-state highlight
 	# overlay (board_view.gd's set_card_target_highlights(), already built by

@@ -22,14 +22,34 @@
 ##
 ## [b]Layer order is deliberate and asymmetric[/b] (child order in
 ## [code]BoardView.tscn[/code], which is what Node2D draws in): TerrainLayer,
-## MoveHighlightLayer, PiecesLayer, AffinityLineLayer, ThreatHighlightLayer,
-## AttackHighlightLayer, CardTargetHighlightLayer, StatsLayer, CursorSprite.
+## MoveHighlightLayer, PiecesLayer, MoveUnreachableLayer, AffinityLineLayer,
+## ThreatHighlightLayer, AttackHighlightLayer, AttackLosBlockedLayer,
+## CardTargetHighlightLayer, StatsLayer, CursorSprite.
 ## [b]Story U-013[/b] adds [code]CardTargetHighlightLayer[/code] — see
 ## [method set_card_target_highlights]'s own doc comment for why it sits
 ## above [code]AttackHighlightLayer[/code] (same "must draw above occupied
 ## cells" reasoning as that layer) and below [code]StatsLayer[/code] (HP bar/
 ## text must never be painted over, matching every other highlight layer's
 ## existing relationship to it).
+## [br]
+## [b]Story 014[/b] adds [code]MoveUnreachableLayer[/code] (the move-range
+## three unreachable states — see [method set_move_unreachable_highlights])
+## and [code]AttackLosBlockedLayer[/code] (the attack-range third layer — see
+## [method set_attack_los_blocked_highlights]). [code]MoveUnreachableLayer[/code]
+## sits ABOVE [code]PiecesLayer[/code] for the same reason
+## [code]ThreatHighlightLayer[/code] does — its
+## [code]blocked_by_occupancy[/code] cells are, by construction, usually
+## standing on a unit. It sits BELOW [code]AttackHighlightLayer[/code] /
+## [code]ThreatHighlightLayer[/code] so that an attack or threat mark (richer,
+## higher-priority information — a cell can be both "I can't move here" and
+## "I can attack this") visually wins on any cell both families would
+## otherwise mark; [code]battle_screen.gd[/code] additionally excludes those
+## cells from the arrays it passes in, so this is belt-and-suspenders, not the
+## only protection. [code]AttackLosBlockedLayer[/code] sits directly above
+## [code]AttackHighlightLayer[/code] (the two never share a cell by
+## construction — see that method's own doc comment) and below
+## [code]CardTargetHighlightLayer[/code]/[code]StatsLayer[/code], matching
+## every other highlight layer's relationship to those two.
 ## [br]
 ## The move layer sits BELOW the pieces while the threat and attack layers
 ## sit ABOVE them, for a measured reason: the placeholder piece textures are
@@ -97,6 +117,72 @@ const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_at
 const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_threat.png"
 
 const CURSOR_PATH: String = "res://assets/art/placeholder/cursor_outline.png"
+
+## Story 014 — move-range unreachable-state markers consumed by [method
+## set_move_unreachable_highlights]. Composed from primitives ([ColorRect] /
+## [Line2D]), the same precedent [constant CARD_TARGET_OUTLINE_COLOR]'s own
+## doc comment already cites for this exact situation (no placeholder PNG
+## exists for these three states; this project's precedent is to compose
+## from primitives rather than block on an art asset) — dedicated constants
+## rather than reusing [constant CARD_TARGET_OUTLINE_COLOR] so the two
+## unrelated semantics (card-target legality vs. move-range reachability)
+## never share one source of truth, matching the reasoning
+## `technical-preferences.md`'s "(A) 的精確定義" section gives for why
+## "two call sites happen to agree today" is not the same as "share one
+## formula".
+##
+## blocked_by_occupancy (`B \ A`) is drawn as a hollow outline, no fill, no
+## inner pattern — the "ring vs fill" vocabulary [constant
+## THREAT_HIGHLIGHT_PATH]'s own doc comment established, reused per this
+## story's own instruction rather than inventing a new one.
+const MOVE_BLOCKED_OUTLINE_COLOR: Color = Color(0.85, 0.85, 0.85, 0.85)
+const MOVE_BLOCKED_OUTLINE_INSET: float = 4.0
+const MOVE_BLOCKED_OUTLINE_WIDTH: float = 2.0
+
+## blocked_by_terrain (`C \ B`) additional marking, drawn INSIDE [constant
+## MOVE_BLOCKED_OUTLINE_COLOR]'s outline — three short horizontal bars, a
+## different pattern family from every diagonal-line mark elsewhere in this
+## file ([method _build_card_target_illegal_mark]'s two-diagonal X,
+## [constant ATTACK_LOS_BLOCKED_OUTLINE_COLOR]'s single diagonal slash) so
+## none of the three can be mistaken for one another under `P-F3`'s
+## grayscale test. 🔴 Structurally always empty today — every terrain
+## character in [code]Board.TERRAIN_TABLE[/code] is currently passable (see
+## [method BattleController.move_targets_breakdown]'s own doc comment) — but
+## implemented in full so the visual contract exists before any impassable
+## terrain data does.
+const MOVE_TERRAIN_HATCH_COLOR: Color = Color(0.85, 0.85, 0.85, 0.85)
+const MOVE_TERRAIN_HATCH_WIDTH: float = 2.0
+const MOVE_TERRAIN_HATCH_INSET: float = 8.0
+
+## out_of_range (`Grid \ C`) marker — deliberately the quietest of the three
+## unreachable markers: a small centered dot, not a full-cell mark. This is
+## overwhelmingly the most common of the four move-range states (everything
+## outside walking reach), and GDD Visual/Audio §1's own preamble ranks
+## Challenge over Sensation and warns against any treatment that forces a
+## "re-confirm" cost on the player — painting a full-cell mark on every far
+## tile would be exactly that kind of noise. A small dot is still an
+## independent, non-color SHAPE (distinct in both size and form from the
+## fill/outline/hatch marks used for the other three states), not a reliance
+## on "nothing is drawn" the way [method set_card_target_highlights]'s third
+## state works — GDD AC-13 and UX pattern `P-D1` both frame all four states
+## as needing an independent marker, not three states plus a default.
+const MOVE_OUT_OF_RANGE_DOT_COLOR: Color = Color(0.6, 0.6, 0.6, 0.45)
+const MOVE_OUT_OF_RANGE_DOT_SIZE: float = 6.0
+
+## Story 014 — attack-range third layer ("範圍內但視線被擋",
+## [method set_attack_los_blocked_highlights]). Hollow outline (same
+## technique as [constant MOVE_BLOCKED_OUTLINE_COLOR], dedicated colour so
+## the move-family and attack-family outlines are never visually conflated
+## even though the two are never expected on the same cell simultaneously)
+## plus a single diagonal slash — distinct from [constant
+## THREAT_HIGHLIGHT_PATH]'s plain ring, from [method
+## _build_card_target_illegal_mark]'s two-diagonal X, and from [constant
+## MOVE_TERRAIN_HATCH_COLOR]'s three horizontal bars.
+const ATTACK_LOS_BLOCKED_OUTLINE_COLOR: Color = Color(1.0, 0.55, 0.15, 0.9)
+const ATTACK_LOS_BLOCKED_OUTLINE_INSET: float = 4.0
+const ATTACK_LOS_BLOCKED_OUTLINE_WIDTH: float = 2.0
+const ATTACK_LOS_BLOCKED_SLASH_INSET: float = 8.0
+const ATTACK_LOS_BLOCKED_SLASH_WIDTH: float = 2.0
 
 ## Story U-013 — S2/S2p/S2q target-selection highlight. See [method
 ## set_card_target_highlights]'s own doc comment for why this is composed
@@ -186,6 +272,15 @@ const HP_TEXT_BG_COLOR_TARGET_ILLEGAL: Color = Color(0.0, 0.0, 0.0, 0.90)
 @onready var _terrain_layer: Node2D = $TerrainLayer
 @onready var _move_highlight_layer: Node2D = $MoveHighlightLayer
 @onready var _attack_highlight_layer: Node2D = $AttackHighlightLayer
+## Story 014 — attack-range third layer ("in range but LOS-blocked"). Sits
+## directly above [member _attack_highlight_layer] — see the class doc
+## comment's layer-order note.
+@onready var _attack_los_blocked_layer: Node2D = $AttackLosBlockedLayer
+## Story 014 — move-range unreachable three-state layer (blocked_by_occupancy
+## / blocked_by_terrain / out_of_range). Sits above [member _pieces_layer] —
+## see the class doc comment's layer-order note and
+## [method set_move_unreachable_highlights].
+@onready var _move_unreachable_layer: Node2D = $MoveUnreachableLayer
 ## Story U-013 — S2/S2p/S2q legal/illegal target highlight. Sits above
 ## [member _pieces_layer] (same reason as [member _threat_highlight_layer] /
 ## [member _attack_highlight_layer]) and below [member _stats_layer] — see
@@ -359,6 +454,27 @@ func set_attack_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_attack_highlight_layer, cells, ATTACK_HIGHLIGHT_PATH)
 
 
+## Story 014 — replaces the attack-range third layer: cells whose distance
+## from the selected unit falls within its weapon's range band but whose
+## line of sight is blocked ([method
+## BattleController.attack_targets_blocked_by_los]'s own set). GDD Visual/
+## Audio §1.3 / Core Rules #4: this layer must never be left undrawn for
+## these cells — leaving it blank would make a LOS-blocked cell look
+## identical to "no overlay" (out of range entirely), and the player would
+## misjudge how many cells are actually attackable. Pass an empty array to
+## clear.
+##
+## Hollow outline + single diagonal slash — see [constant
+## ATTACK_LOS_BLOCKED_OUTLINE_COLOR]'s own doc comment for why this specific
+## shape (not threat's plain ring, not card-target's two-diagonal X, not
+## blocked_by_terrain's three horizontal bars).
+func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
+	_clear_children(_attack_los_blocked_layer)
+	for cell: Vector2i in cells:
+		_attack_los_blocked_layer.add_child(_build_attack_los_blocked_outline(cell))
+		_attack_los_blocked_layer.add_child(_build_attack_los_blocked_slash(cell))
+
+
 ## Replaces the set of highlighted threat-range cells — the cells this unit
 ## could attack this turn if it moves first, as opposed to
 ## [method set_attack_highlights]'s "can be hit from where it stands right
@@ -371,6 +487,43 @@ func set_attack_highlights(cells: Array[Vector2i]) -> void:
 ## highlight kinds never overlap on screen.
 func set_threat_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_threat_highlight_layer, cells, THREAT_HIGHLIGHT_PATH)
+
+
+## Story 014 — replaces the move-range THREE unreachable states from [method
+## BattleController.move_targets_breakdown]'s four-way partition.
+## [method set_move_highlights]'s own bucket (`A`, legal) is unaffected by
+## this method and keeps its own call site unchanged (EPIC.md: "既有繪製
+## 路徑不動") — GDD Visual/Audio §1.1 / UX pattern `P-D1` require all four
+## states to be independently, exhaustively visible across the WHOLE board
+## (every in-bounds cell classifies into exactly one of the four), not just
+## the reachable subset.
+##
+## [param blocked_occupancy] is `B \ A` (would be reachable ignoring
+## occupancy, but a standing unit blocks it — GDD's primary motivating case
+## is an ALLY blocking the path/destination, "先移動擋路的隊友"). [param
+## blocked_terrain] is `C \ B` (would be reachable ignoring occupancy AND
+## passability, but impassable terrain blocks it — structurally always empty
+## today, see [constant MOVE_TERRAIN_HATCH_COLOR]'s own doc comment). [param
+## out_of_range] is `Grid \ C` (outside movement-point reach regardless of
+## occupancy or passability).
+##
+## Pass three empty arrays to clear. The caller is responsible for excluding
+## any cell already carrying a stronger-priority attack/threat mark from
+## these three arrays before calling — this method draws exactly what it is
+## given, same contract as every other method on this node.
+func set_move_unreachable_highlights(
+	blocked_occupancy: Array[Vector2i],
+	blocked_terrain: Array[Vector2i],
+	out_of_range: Array[Vector2i]
+) -> void:
+	_clear_children(_move_unreachable_layer)
+	for cell: Vector2i in blocked_occupancy:
+		_move_unreachable_layer.add_child(_build_move_blocked_outline(cell))
+	for cell: Vector2i in blocked_terrain:
+		_move_unreachable_layer.add_child(_build_move_blocked_outline(cell))
+		_move_unreachable_layer.add_child(_build_move_terrain_hatch(cell))
+	for cell: Vector2i in out_of_range:
+		_move_unreachable_layer.add_child(_build_move_out_of_range_dot(cell))
 
 
 ## Story U-013 — replaces the card-play target-selection highlight layer.
@@ -595,6 +748,149 @@ func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
 	diagonal_b.antialiased = false
 	root.add_child(diagonal_b)
 
+	return root
+
+
+# Story 014 — hollow square outline for move-range unreachable markers
+# (blocked_by_occupancy / blocked_by_terrain). Same 4-ColorRect-border
+# technique as _build_card_target_outline(), dedicated constants so the two
+# visual vocabularies never share one source of truth (see
+# MOVE_BLOCKED_OUTLINE_COLOR's own doc comment for why that separation
+# matters on this project).
+func _build_move_blocked_outline(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * MOVE_BLOCKED_OUTLINE_INSET
+	var side: float = BoardCoords.CELL_SIZE - MOVE_BLOCKED_OUTLINE_INSET * 2.0
+	var border_width: float = MOVE_BLOCKED_OUTLINE_WIDTH
+
+	var top: ColorRect = ColorRect.new()
+	top.color = MOVE_BLOCKED_OUTLINE_COLOR
+	top.position = top_left
+	top.size = Vector2(side, border_width)
+	root.add_child(top)
+
+	var bottom: ColorRect = ColorRect.new()
+	bottom.color = MOVE_BLOCKED_OUTLINE_COLOR
+	bottom.position = top_left + Vector2(0.0, side - border_width)
+	bottom.size = Vector2(side, border_width)
+	root.add_child(bottom)
+
+	var left: ColorRect = ColorRect.new()
+	left.color = MOVE_BLOCKED_OUTLINE_COLOR
+	left.position = top_left
+	left.size = Vector2(border_width, side)
+	root.add_child(left)
+
+	var right: ColorRect = ColorRect.new()
+	right.color = MOVE_BLOCKED_OUTLINE_COLOR
+	right.position = top_left + Vector2(side - border_width, 0.0)
+	right.size = Vector2(border_width, side)
+	root.add_child(right)
+
+	return root
+
+
+# Story 014 — three short horizontal "hazard bar" strokes for
+# blocked_by_terrain, drawn INSIDE _build_move_blocked_outline()'s border.
+# antialiased = false matches every other Line2D in this file's pixel-art
+# discipline (set_affinity_lines() / _build_card_target_illegal_mark()).
+func _build_move_terrain_hatch(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * MOVE_TERRAIN_HATCH_INSET
+	var side: float = BoardCoords.CELL_SIZE - MOVE_TERRAIN_HATCH_INSET * 2.0
+	var bar_fractions: Array[float] = [0.2, 0.5, 0.8]
+	for fraction: float in bar_fractions:
+		var bar: Line2D = Line2D.new()
+		bar.points = PackedVector2Array([
+			top_left + Vector2(0.0, side * fraction),
+			top_left + Vector2(side, side * fraction),
+		])
+		bar.width = MOVE_TERRAIN_HATCH_WIDTH
+		bar.default_color = MOVE_TERRAIN_HATCH_COLOR
+		bar.antialiased = false
+		root.add_child(bar)
+	return root
+
+
+# Story 014 — small centered dot for out_of_range (Grid\C), the quietest of
+# the three unreachable markers — see set_move_unreachable_highlights()'s
+# own doc comment and MOVE_OUT_OF_RANGE_DOT_COLOR's doc comment for why it is
+# deliberately understated rather than a full-cell mark. Wrapped in a Node2D
+# root even though it is a single rect, matching every other builder in this
+# file's "one throwaway subtree per render" shape (see _clear_children()'s
+# own doc comment) rather than adding a bare Control under a Node2D layer.
+func _build_move_out_of_range_dot(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var dot: ColorRect = ColorRect.new()
+	dot.color = MOVE_OUT_OF_RANGE_DOT_COLOR
+	var center: Vector2 = BoardCoords.grid_to_local_center(cell)
+	dot.position = center - Vector2.ONE * MOVE_OUT_OF_RANGE_DOT_SIZE * 0.5
+	dot.size = Vector2.ONE * MOVE_OUT_OF_RANGE_DOT_SIZE
+	root.add_child(dot)
+	return root
+
+
+# Story 014 — hollow square outline for the attack-range third layer
+# (range内但視線被擋). Same border technique as _build_move_blocked_outline(),
+# dedicated colour/inset so the attack-family mark is never visually
+# conflated with the move-family one even though the two are never expected
+# simultaneously on the SAME cell (attack range and move range answer
+# different questions) — using the same colour for both would still read as
+# "the same state" at a glance.
+func _build_attack_los_blocked_outline(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = (
+		BoardCoords.grid_to_local(cell) + Vector2.ONE * ATTACK_LOS_BLOCKED_OUTLINE_INSET
+	)
+	var side: float = BoardCoords.CELL_SIZE - ATTACK_LOS_BLOCKED_OUTLINE_INSET * 2.0
+	var border_width: float = ATTACK_LOS_BLOCKED_OUTLINE_WIDTH
+
+	var top: ColorRect = ColorRect.new()
+	top.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	top.position = top_left
+	top.size = Vector2(side, border_width)
+	root.add_child(top)
+
+	var bottom: ColorRect = ColorRect.new()
+	bottom.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	bottom.position = top_left + Vector2(0.0, side - border_width)
+	bottom.size = Vector2(side, border_width)
+	root.add_child(bottom)
+
+	var left: ColorRect = ColorRect.new()
+	left.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	left.position = top_left
+	left.size = Vector2(border_width, side)
+	root.add_child(left)
+
+	var right: ColorRect = ColorRect.new()
+	right.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	right.position = top_left + Vector2(side - border_width, 0.0)
+	right.size = Vector2(border_width, side)
+	root.add_child(right)
+
+	return root
+
+
+# Story 014 — single diagonal slash drawn INSIDE
+# _build_attack_los_blocked_outline()'s border, distinguishing this mark from
+# a plain outline (move-range blocked_by_occupancy) and from a two-diagonal X
+# (card-target illegal mark).
+func _build_attack_los_blocked_slash(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = (
+		BoardCoords.grid_to_local(cell) + Vector2.ONE * ATTACK_LOS_BLOCKED_SLASH_INSET
+	)
+	var side: float = BoardCoords.CELL_SIZE - ATTACK_LOS_BLOCKED_SLASH_INSET * 2.0
+	var slash: Line2D = Line2D.new()
+	slash.points = PackedVector2Array([
+		top_left + Vector2(0.0, side),
+		top_left + Vector2(side, 0.0),
+	])
+	slash.width = ATTACK_LOS_BLOCKED_SLASH_WIDTH
+	slash.default_color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	slash.antialiased = false
+	root.add_child(slash)
 	return root
 
 
