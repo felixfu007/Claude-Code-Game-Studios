@@ -42,3 +42,10 @@ paths:
   keyword/subject (e.g. "見 Cross-System Obligations Registry『序列化生命週期
   通知介面』列"), a Core Rules/AC number, or a section heading — none of these
   shift when unrelated content is inserted above them.
+  🔴 **For the Cross-System Obligations Registry specifically, the stable handle is now the
+  `OBL-nnn` id** in that table's leftmost column (added 2026-10-15 by manager ruling —
+  see the three hard rules noted directly under that table's heading, and the full rationale
+  in `docs/reviews/obligation-registry-stable-ids-proposal-2026-10-15.md`). Before that date
+  this rule banned line numbers **without offering a replacement for that table**, which is
+  why every reference to it used line numbers anyway — and why 4 of them had already rotted
+  into pointing at blank lines and separator rows by the time they were measured.
