@@ -266,3 +266,44 @@ func test_battle_controller_new_call_site_passes_card_deck_affinity_links_and_wr
 	var expected_links: Array[AffinityLink] = instance._phi.links()
 	assert_int(controller._card_play_session._links.size()).is_equal(expected_links.size())
 	assert_bool(expected_links.size() > 0).is_true()
+
+
+# ---- story-005 追加裁決（2026-10-15）：開局暫代灌入 --------------------------
+#
+# production/epics/affinity-position-chain/story-005-seeding-ruling-2026-10-15.md
+# —— BattleScreen._ready() 現在依 AFFINITY_PATH 解析出的 links，在 _phi 建構前
+# 把開局關係逐條寫進 _affinity_pool。這條鎖住灌入後 _phi.links() 的內容與靜態檔
+# （assets/data/affinity/vs01_affinity_links.txt，去掉註解後逐字為
+# "1,2,POSITIVE,1" / "3,4,NEGATIVE,1"）描述的關係一致 —— 不只斷言「大於 0」
+# （那正是本裁決檔第一節記錄的、曾經轉紅的那條既有斷言的弱點），逐一核對條數與
+# 每一條的極性。
+func test_ready_seeds_affinity_pool_from_static_table_links_match_polarity() -> void:
+	# Arrange — 真實場景、真實資料檔（本專案自己的 vs01_affinity_links.txt）
+	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+	add_child(instance)
+
+	# Act
+	var links: Array[AffinityLink] = instance._phi.links()
+
+	# Assert — 靜態檔恰有兩條關係：1-2 POSITIVE、3-4 NEGATIVE。灌入後
+	# _phi.links() 必須逐一命中，而不只是「非空」。
+	assert_int(links.size()).is_equal(2)
+
+	var polarity_by_pair: Dictionary = {}
+	for link: AffinityLink in links:
+		var key: Vector2i = Vector2i(
+			mini(link.unit_a, link.unit_b), maxi(link.unit_a, link.unit_b)
+		)
+		polarity_by_pair[key] = link.polarity
+
+	assert_bool(polarity_by_pair.has(Vector2i(1, 2))).append_failure_message(
+		"預期靜態檔第一條關係（roster id 1-2）出現在 _phi.links() 裡，實得 %s"
+		% [polarity_by_pair.keys()]
+	).is_true()
+	assert_int(polarity_by_pair.get(Vector2i(1, 2), -1)).is_equal(AffinityLink.Polarity.POSITIVE)
+
+	assert_bool(polarity_by_pair.has(Vector2i(3, 4))).append_failure_message(
+		"預期靜態檔第二條關係（roster id 3-4）出現在 _phi.links() 裡，實得 %s"
+		% [polarity_by_pair.keys()]
+	).is_true()
+	assert_int(polarity_by_pair.get(Vector2i(3, 4), -1)).is_equal(AffinityLink.Polarity.NEGATIVE)

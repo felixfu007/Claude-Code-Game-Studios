@@ -970,12 +970,100 @@ func _ready() -> void:
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		enemy_ids.append(unit.id)
 	_order = TurnOrder.new(player_ids, enemy_ids)
+	# story-005 (affinity-position-chain) — _affinity_pool must exist BEFORE
+	# _phi is constructed: _phi now queries it fresh on every phi()/links()
+	# call instead of reading a static pairing-table file once (see
+	# AffinityPhiProvider's own header comment). This moves the
+	# AffinityDataPool.new() call that used to sit right before the
+	# BattleController.new() call (Story U-003) up to here — nothing else
+	# about its construction changed, only its position in _ready().
+	_affinity_pool = AffinityDataPool.new()
+
+	# story-005 追加裁決(2026-10-15 管理者裁決,
+	# production/epics/affinity-position-chain/story-005-seeding-ruling-2026-10-15.md)
+	# —— 暫代灌入:開局依已解析完成的 `links`(來自 AFFINITY_PATH 的那份
+	# Array[AffinityLink])逐條對 _affinity_pool 寫入一筆記錄。沒有這段,
+	# AffinityDataPool._init() 預填的全部 10 對配對開局都是空記錄串列
+	# (n_pair=0),Φ 會恆為 0、棋盤開局一條關係線都不畫,直到劇情卡牌寫入
+	# 或存檔系統(ADR-0004,維持 Proposed)落地為止 —— 那兩者都還沒實作。
+	#
+	# 🔴 這是明文登記的暫代品,不是設計(裁決檔第二節第 3 點)。未來劇情卡牌
+	# 或存檔能真的寫入池子時,這段灌入要被換掉,不是再疊一層。
+	#
+	# 數值大小刻意不具意義(裁決檔第二節第 2 點):AffinityPhiProvider
+	# ._link_for_pair() 只取 combat_strength_read() 結果的 value 正負號
+	# (OQ-3 裁決),amp 恆為 AffinityLink.AMP_EXPECTED,故任何同號數值都會
+	# 得到完全相同的 Φ。這裡用 ±AMP_EXPECTED(= 1.0),與效能基準腳本
+	# tests/perf/affinity_query_perf_benchmark.gd 既有的植入慣例一致
+	# (該腳本為同一件事已選用 Source.STORY_EVENT + 同量級數值)。
+	for link: AffinityLink in links:
+		var character_a_variant: Variant = (
+			AffinityRosterCharacterMapper.character_for_roster_id(link.unit_a)
+		)
+		var character_b_variant: Variant = (
+			AffinityRosterCharacterMapper.character_for_roster_id(link.unit_b)
+		)
+		# 對映失敗(null)時跳過,不得當成合法配對寫入 —— 靜態檔理論上只會
+		# 出現主角 id(1~5),但解析層本身不保證這一點
+		# (AffinityRosterCharacterMapper.character_for_roster_id 的 null 回傳
+		# 已經自行 push_error 記錄了失敗原因,這裡不重複記一次 error,只用
+		# warning 標出「因此被跳過」這個後果)。
+		if character_a_variant == null or character_b_variant == null:
+			push_warning(
+				(
+					"BattleScreen._ready: skipping opening affinity seed for link "
+					+ "%d-%d -- at least one roster id failed to map to a Character "
+					+ "(see the error logged by "
+					+ "AffinityRosterCharacterMapper.character_for_roster_id above)."
+				) % [link.unit_a, link.unit_b]
+			)
+			continue
+		var character_a: AffinityTypes.Character = character_a_variant
+		var character_b: AffinityTypes.Character = character_b_variant
+		var pair: AffinityTypes.Pair = AffinityTypes.pair_of(character_a, character_b)
+		var seed_value: float = (
+			float(AffinityLink.AMP_EXPECTED)
+			if link.polarity == AffinityLink.Polarity.POSITIVE
+			else -float(AffinityLink.AMP_EXPECTED)
+		)
+		# append_record() 的拒絕碼必須檢查、不得丟掉(本專案已登記「靜默吞掉
+		# 失敗」是重複發作的失效形狀)。這裡選 push_error() 而非
+		# push_warning():靜態檔只有 2 條、兩個合法配對,正常路徑下這個呼叫
+		# 不應該被拒絕 —— 若真的被拒,代表灌入邏輯本身有錯(例如重複寫入同一
+		# 對、或 pair/source 序數算錯),是工程錯誤而非合法的遊戲狀態,比照
+		# AffinityPhiProvider._link_for_pair() 對 ReadRejection 的既有慣例
+		# (該方法對「結構上不該發生」的拒絕一律用 push_error)。刻意不用
+		# assert() —— 依 .claude/docs/coding-standards.md 的 2026-09-15 條目,
+		# assert() 失敗會讓函式回傳列舉序數 0,而 WriteRejection 的序數 0 正是
+		# NONE(成功),會讓失敗的寫入被靜默當成成功。
+		var seed_rejection: AffinityDataPool.WriteRejection = _affinity_pool.append_record(
+			pair, seed_value, AffinityTypes.Source.STORY_EVENT
+		)
+		if seed_rejection != AffinityDataPool.WriteRejection.NONE:
+			push_error(
+				(
+					"BattleScreen._ready: opening affinity seed for link %d-%d "
+					+ "(pair ordinal %d) was REJECTED with WriteRejection code %d -- "
+					+ "the opening board state will NOT reflect this static "
+					+ "relationship. This should never happen for the current "
+					+ "2-row static table; see story-005-seeding-ruling-2026-10-15.md."
+				) % [link.unit_a, link.unit_b, pair, seed_rejection]
+			)
+
 	# _phi is stored as a member (see its own doc comment on why a local here
 	# would be a bug) so BattleController's bound Callable stays valid for the
 	# controller's entire lifetime. The enemy attack path is untouched:
 	# BattleState.resolve_attack() already forces phi to 0 for ENEMY
 	# attackers by design, regardless of what this provider returns.
-	_phi = AffinityPhiProvider.new(_state, links)
+	#
+	# story-005 — _phi no longer takes the static `links` pairing table read
+	# from AFFINITY_PATH above; it now takes _affinity_pool and queries it
+	# fresh per call (see AffinityPhiProvider.links()). `links` itself is
+	# NOT retired by this change: BattleController still needs it below for
+	# PermanentAffinityWriteRules' canon-relationship-line check (丙類 card
+	# legality, GDD 界線 3/4) -- a completely separate concern from Φ's
+	# numeric strength data, which now lives in _affinity_pool instead.
+	_phi = AffinityPhiProvider.new(_state, _affinity_pool)
 
 	# Story U-003 — the two halves this story's merge exists to wire: a real
 	# CardDeck (rng=null here means production, time-seeded
@@ -987,7 +1075,6 @@ func _ready() -> void:
 	# mechanism one — see that member's own doc comment for why it is owned
 	# here).
 	var card_deck: CardDeck = _build_card_deck(cards)
-	_affinity_pool = AffinityDataPool.new()
 	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(_affinity_pool)
 
 	_controller = BattleController.new(

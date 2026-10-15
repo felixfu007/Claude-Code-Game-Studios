@@ -95,13 +95,40 @@ func _initialize() -> void:
 		return
 
 	var state: BattleState = BattleState.create(_load_vs01_terrain_rows(), roster_text)
+
+	# story-005 更新(2026-10-14)—— AffinityPhiProvider 不再接受靜態 links 陣列,
+	# 改接受即時查詢的 AffinityDataPool（見該類別建構子文件註解）。links_text
+	# 仍讀入但只用於驗證 vs01_affinity_links.txt 本身可解析（下方 push_error 分支），
+	# 不再餵給 provider —— 下方改用 pool.append_record() 植入與該檔同形狀的兩筆
+	# 記錄（1,2,POSITIVE 與 3,4,NEGATIVE），讓本腳本量到的呼叫路徑與正式連線後的
+	# AffinityPhiProvider.links()（逐次查詢 combat_strength_read()）一致，而不是
+	# 量一個空池的退化情況。這是遷移前基準之後的最小必要同步，不是重新建立基準——
+	# 本檔頭部註解仍標記「遷移前基準」，若要用本腳本建立「遷移後（逐次查詢）基準」
+	# 取代它，需要另一次刻意執行與人工核對（見本檔頭「為什麼是獨立腳本」第 2 點）。
 	var parsed_links: Variant = AffinityLink.links_from_text(links_text)
 	if parsed_links == null:
 		push_error("AC-PERF 基準腳本：AffinityLink.links_from_text() 回傳 null，vs01 配對表解析失敗。")
 		quit(1)
 		return
-	var links: Array[AffinityLink] = parsed_links
-	var provider: AffinityPhiProvider = AffinityPhiProvider.new(state, links)
+
+	var pool: AffinityDataPool = AffinityDataPool.new()
+	var seed_rejection_1: AffinityDataPool.WriteRejection = pool.append_record(
+		AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.STORY_EVENT
+	)
+	var seed_rejection_2: AffinityDataPool.WriteRejection = pool.append_record(
+		AffinityTypes.Pair.C3_C4, -1.0, AffinityTypes.Source.STORY_EVENT
+	)
+	if (
+		seed_rejection_1 != AffinityDataPool.WriteRejection.NONE
+		or seed_rejection_2 != AffinityDataPool.WriteRejection.NONE
+	):
+		push_error(
+			"AC-PERF 基準腳本：植入 AffinityDataPool 種子記錄被拒絕（%d, %d），無法建立基準。"
+			% [seed_rejection_1, seed_rejection_2]
+		)
+		quit(1)
+		return
+	var provider: AffinityPhiProvider = AffinityPhiProvider.new(state, pool)
 
 	# 決定性的「單位 id ×游標格」序列，不用 RNG。單位 id 取 vs01 全部 10 個（含存活的
 	# PLAYER 與 ENEMY 陣營），游標格掃過近似棋盤範圍。
@@ -119,14 +146,14 @@ func _initialize() -> void:
 
 	# 暖機：不計時，讓首次呼叫成本（JIT／初次配置）不要污染量測迴圈。
 	for i in range(WARMUP_ITERATIONS):
-		_run_one_preview_query(provider, links, roster_ids[i % roster_ids.size()], cells[i % cells.size()])
+		_run_one_preview_query(provider, roster_ids[i % roster_ids.size()], cells[i % cells.size()])
 
 	var samples_usec: Array[int] = []
 	for i in range(MEASURED_ITERATIONS):
 		var unit_id: int = roster_ids[i % roster_ids.size()]
 		var cell: Vector2i = cells[i % cells.size()]
 		var start_usec: int = Time.get_ticks_usec()
-		_run_one_preview_query(provider, links, unit_id, cell)
+		_run_one_preview_query(provider, unit_id, cell)
 		samples_usec.append(Time.get_ticks_usec() - start_usec)
 
 	var total_usec: int = 0
@@ -159,11 +186,15 @@ func _initialize() -> void:
 # 那條最高頻呼叫路徑——不是只量 bonus_for_at() 單一次呼叫。
 func _run_one_preview_query(
 	provider: AffinityPhiProvider,
-	links: Array[AffinityLink],
 	unit_id: int,
 	cell: Vector2i
 ) -> void:
+	# story-005 更新 —— links 不再是呼叫端持有的靜態陣列，改為每次都呼叫
+	# provider.links() 逐次查詢 AffinityDataPool（見 AffinityPhiProvider.links()
+	# 文件註解）。這一行呼叫本身現在也是量測對象的一部分，與正式畫面
+	# battle_screen.gd `_refresh_view()` 的 `_phi.links()` 呼叫時機一致。
 	var positions: Dictionary[int, Vector2i] = provider.positions()
+	var links: Array[AffinityLink] = provider.links()
 	var _current_lines: Array[AffinityLineStatus] = AffinityRules.board_lines(positions, links)
 	var hypo: Dictionary[int, Vector2i] = provider.positions_with(unit_id, cell)
 	var _hypo_lines: Array[AffinityLineStatus] = AffinityRules.board_lines(hypo, links)
