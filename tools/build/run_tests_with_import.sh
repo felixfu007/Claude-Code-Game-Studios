@@ -160,6 +160,25 @@ main() {
     # Display import output
     cat "$import_log"
 
+    # 🔴 2026-10-15 協調者實測補強:匯入會【偶發】失敗,而且不是真的壞掉。
+    # 當天實測:同一份程式碼,一次 WRAPPER EXIT = 1(匯入非 0),緊接著單獨
+    # 連跑三次 --import 全部 exit 0。最可能的成因是【另一個引擎行程還沒完全
+    # 結束】—— 兩個引擎同時動 .godot 快取。本專案的工作方式(協調者在專家的
+    # 引擎剛跑完就接著驗收)會讓這個情況經常發生。
+    # ⚠️ 這比任何一條測試紅掉都嚴重:**一個會偶發誤報的閘門,跟沒有閘門一樣
+    # 不可信** —— 用的人第二次看到它紅就會開始懷疑它,而不是懷疑程式碼。
+    # 📌 處置:失敗時【重試一次】再判定。重試仍失敗才當成真的失敗。
+    if [[ $import_exit -ne 0 && $import_exit -ne 124 ]]; then
+        echo ""
+        echo "NOTE: Import returned $import_exit -- retrying once before failing."
+        echo "      (Known flake: another engine process may still hold the .godot cache.)"
+        echo "      See this script's comment above for the 2026-10-15 measurement."
+        echo ""
+        import_exit=0
+        timeout "$IMPORT_TIMEOUT_SEC" "$GODOT" --headless --path "$GODOT_PROJECT" --import >"$import_log" 2>&1 || import_exit=$?
+        cat "$import_log"
+    fi
+
     # Check import result
     if [[ $import_exit -eq 124 ]]; then
         echo ""

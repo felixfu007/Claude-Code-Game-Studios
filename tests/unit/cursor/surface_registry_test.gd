@@ -497,3 +497,271 @@ func test_table_2_registration_does_not_make_node_retrievable_from_table_1() -> 
 	# tag lookup can ever surface it; spot-check against every declared tag.
 	for tag: CursorTypes.SurfaceType in CursorTypes.SurfaceType.values():
 		assert_object(registry.get_surface(tag)).is_null()
+
+
+# ─── Story 012: ADR-0005 機制十四 guard (register() entry-point rejection) ───
+#
+# Governing contract: docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md
+# ("甲案" — reject at register()'s entry point; does NOT store the node, and
+# register() itself push_error()s the detail, per that contract's 第二節).
+#
+# Engine evidence this whole block depends on — NOT reimplemented here, read
+# directly from the real engine 2026-10-15:
+#   prototypes/godot-gdscript-specialist-cursor-guard-probe-2026-10-15/run_output.txt
+# Key facts from that probe:
+#   - Control.new().focus_mode defaults to FOCUS_NONE (0); Button.new()
+#     defaults to FOCUS_ALL (2).
+#   - A plain Control with no theme has no "hover"/"focus" StyleBox at all.
+#   - Button's BUILT-IN theme has "hover", "focus" AND "normal" StyleBoxes
+#     that are three DIFFERENT instances (reference-unequal) even on a node
+#     that was never added to the tree.
+#   - Control.get_theme_stylebox() returns the EXACT instance previously
+#     passed to add_theme_stylebox_override() (reference-equal).
+
+
+## T4 is the one test in this Phase-1 block that actually proves condition 2
+## ("no built-in hover theme") was implemented, not merely condition 1
+## ("focus_mode == FOCUS_NONE"). Contract 第六節's own reasoning: a
+## default-constructed [Button] already fails condition 1 (focus_mode
+## defaults to FOCUS_ALL — see probe above), so test_bare_button_is_rejected
+## below would pass identically whether or not condition 2 exists at all.
+## This test explicitly clears condition 1 first, so the ONLY thing left that
+## can explain a rejection is condition 2. Same shape of risk this project
+## already registered once (Story 007 AC-32: "the assertion's observed
+## result has a second possible cause").
+func test_button_with_focus_none_is_still_rejected() -> void:
+	# Arrange — explicitly compliant with condition 1; Button's untouched
+	# built-in theme still violates condition 2 (hover/focus StyleBox differ
+	# from normal by reference — see probe evidence above).
+	var registry := CursorSurfaceRegistry.new()
+	var button: Button = auto_free(Button.new())
+	button.focus_mode = Control.FOCUS_NONE
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, button
+	)
+
+	# Assert
+	assert_int(result).is_not_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.NATIVE_HOVER_THEME_REJECTED)
+
+
+func test_control_with_focus_all_is_rejected() -> void:
+	# Arrange — a plain Control, otherwise compliant (no built-in theme), but
+	# with focus_mode explicitly set away from FOCUS_NONE.
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_ALL
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, control
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.FOCUS_MODE_NOT_NONE_REJECTED)
+
+
+func test_rejected_control_is_not_stored() -> void:
+	# Arrange — same violating input as test_control_with_focus_all_is_rejected.
+	# This is the test that proves the contract's "拒絕註冊" decision (甲-1 —
+	# reject outright) rather than "甲-2" (register anyway and merely log):
+	# a violation must not occupy the tag at all.
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_ALL
+
+	# Act
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, control)
+
+	# Assert
+	assert_object(registry.get_surface(CursorTypes.SurfaceType.BOARD_TILE)).is_null()
+
+
+func test_bare_button_is_rejected() -> void:
+	# Arrange — a Button with no properties touched at all. Per the probe
+	# evidence above, Button.new().focus_mode defaults to FOCUS_ALL (2), so
+	# THIS specific input is rejected on condition 1 — both conditions are
+	# actually violated here (the untouched Button also fails condition 2),
+	# and the contract's tie-break ("violating both returns the lower
+	# ordinal, FOCUS_MODE_NOT_NONE_REJECTED") is asserted explicitly.
+	# test_button_with_focus_none_is_still_rejected above is the test that
+	# isolates condition 2 alone.
+	var registry := CursorSurfaceRegistry.new()
+	var button: Button = auto_free(Button.new())
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, button
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.FOCUS_MODE_NOT_NONE_REJECTED)
+
+
+func test_compliant_control_is_registered() -> void:
+	# Arrange — a plain Control (no built-in theme, so no hover/focus
+	# StyleBox at all — probe-verified) with focus_mode explicitly cleared.
+	# ⚠️ TAUTOLOGY TODAY (contract 第六節 names this explicitly, same caveat as
+	# this project's 2026-09-23 Check-4 "N/A ≠ PASS" precedent): register()
+	# already returned REGISTERED for every valid node BEFORE this guard
+	# existed, so this test is green whether or not the guard runs at all. It
+	# has zero regression value on its own — kept as the compliant-input
+	# companion to the rejection tests above, and as a precondition sanity
+	# check for the guard-verdict tests further down.
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_NONE
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, control
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+
+func test_non_control_is_registered() -> void:
+	# Arrange — Node2D, structurally exempt from 機制十四 (not a Control).
+	# ⚠️ TAUTOLOGY TODAY — same caveat as test_compliant_control_is_registered
+	# above. This is also the shape of the ONLY real production surface
+	# registered today (BattleScreen extends Node — contract 第五節): the
+	# guard's Control-only branch has never actually executed against a real
+	# mounted surface as of this story.
+	var registry := CursorSurfaceRegistry.new()
+	var node: Node2D = auto_free(Node2D.new())
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, node
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+
+# ─── Story 012, beyond Phase 1: escape hatch, diagnostic verdict, regression ─
+#
+# Contract 第六節 called these "Phase 2" only because referencing
+# FOCUS_MODE_NOT_NONE_REJECTED / NATIVE_HOVER_THEME_REJECTED /
+# diagnostic_last_guard_verdict() before they existed in production code is a
+# PARSE ERROR (GdUnit4 exit 105 — test discovery aborts, not "tests fail").
+# Writing them only after the guard was implemented (this same change) avoids
+# that trap; they are included now rather than deferred further.
+
+func test_button_with_focus_none_and_cleared_hover_theme_is_registered() -> void:
+	# Arrange — the ADR's explicit escape hatch: override the built-in
+	# hover/focus StyleBox with the SAME instance used for normal, so they
+	# compare reference-equal (probe-verified: get_theme_stylebox() returns
+	# the exact instance passed to add_theme_stylebox_override()). Both
+	# "hover" and "focus" must be cleared — probe evidence shows Button's
+	# built-in theme provides distinct instances for all three keys.
+	var registry := CursorSurfaceRegistry.new()
+	var button: Button = auto_free(Button.new())
+	button.focus_mode = Control.FOCUS_NONE
+	var normal_stylebox: StyleBox = button.get_theme_stylebox(&"normal")
+	button.add_theme_stylebox_override(&"hover", normal_stylebox)
+	button.add_theme_stylebox_override(&"focus", normal_stylebox)
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, button
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.REGISTERED)
+
+
+func test_non_control_registration_records_not_applicable_guard_verdict() -> void:
+	# Arrange — see diagnostic_last_guard_verdict()'s doc comment: a
+	# non-Control registration must record NOT_APPLICABLE, never PASSED —
+	# the guard's two conditions never actually ran against it.
+	var registry := CursorSurfaceRegistry.new()
+	var node: Node2D = auto_free(Node2D.new())
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, node)
+
+	# Act / Assert
+	assert_int(
+		registry.diagnostic_last_guard_verdict(CursorTypes.SurfaceType.BOARD_TILE)
+	).is_equal(CursorSurfaceRegistry.GuardVerdict.NOT_APPLICABLE)
+
+
+func test_compliant_control_registration_records_passed_guard_verdict() -> void:
+	# Arrange
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_NONE
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, control)
+
+	# Act / Assert
+	assert_int(
+		registry.diagnostic_last_guard_verdict(CursorTypes.SurfaceType.BOARD_TILE)
+	).is_equal(CursorSurfaceRegistry.GuardVerdict.PASSED)
+
+
+func test_rejected_control_registration_records_rejected_guard_verdict() -> void:
+	# Arrange
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_ALL
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, control)
+
+	# Act / Assert
+	assert_int(
+		registry.diagnostic_last_guard_verdict(CursorTypes.SurfaceType.BOARD_TILE)
+	).is_equal(CursorSurfaceRegistry.GuardVerdict.REJECTED)
+
+
+func test_never_registered_tag_guard_verdict_is_never_attempted() -> void:
+	# Arrange — no register() call under this tag at all, on a fresh registry.
+	var registry := CursorSurfaceRegistry.new()
+
+	# Act / Assert
+	assert_int(
+		registry.diagnostic_last_guard_verdict(CursorTypes.SurfaceType.BOARD_TILE)
+	).is_equal(CursorSurfaceRegistry.GuardVerdict.NEVER_ATTEMPTED)
+
+
+func test_guard_verdict_is_retained_after_unregister() -> void:
+	# Arrange — diagnostic_last_guard_verdict()'s documented contract: it
+	# records "the verdict of the LAST register() call", a historical fact,
+	# and is deliberately NOT cleared by unregister() (unlike _surfaces /
+	# get_surface(), which DO reflect current mount state).
+	var registry := CursorSurfaceRegistry.new()
+	var control: Control = auto_free(Control.new())
+	control.focus_mode = Control.FOCUS_NONE
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, control)
+
+	# Act
+	registry.unregister(CursorTypes.SurfaceType.BOARD_TILE)
+
+	# Assert — surface itself is gone, but the guard verdict record persists
+	assert_object(registry.get_surface(CursorTypes.SurfaceType.BOARD_TILE)).is_null()
+	assert_int(
+		registry.diagnostic_last_guard_verdict(CursorTypes.SurfaceType.BOARD_TILE)
+	).is_equal(CursorSurfaceRegistry.GuardVerdict.PASSED)
+
+
+func test_violating_control_with_already_occupied_tag_still_returns_duplicate_tag_rejected() -> void:
+	# Arrange — contract 第二節's hard placement constraint: the guard runs
+	# AFTER the duplicate-tag check, so it must NEVER override an existing
+	# DUPLICATE_TAG_REJECTED verdict with a different rejection code. This is
+	# the test the contract names as its own acceptance criterion ("既有測試
+	# 應一條都不變色" — this specific scenario, a violating node on an
+	# occupied tag, previously returned DUPLICATE_TAG_REJECTED and must still
+	# do so after the guard was added).
+	var registry := CursorSurfaceRegistry.new()
+	var first_node: Node = auto_free(Node.new())
+	registry.register(CursorTypes.SurfaceType.BOARD_TILE, first_node)
+	var violating_control: Control = auto_free(Control.new())
+	violating_control.focus_mode = Control.FOCUS_ALL
+
+	# Act
+	var result: CursorSurfaceRegistry.RegisterResult = registry.register(
+		CursorTypes.SurfaceType.BOARD_TILE, violating_control
+	)
+
+	# Assert
+	assert_int(result).is_equal(CursorSurfaceRegistry.RegisterResult.DUPLICATE_TAG_REJECTED)

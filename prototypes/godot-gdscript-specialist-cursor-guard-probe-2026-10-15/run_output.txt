@@ -1,0 +1,31 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Cursor surface guard probe (2026-10-15) ===
+Engine version: { "major": 4, "minor": 7, "patch": 1, "hex": 263937, "status": "stable", "build": "official", "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541", "timestamp": 0, "string": "4.7.1-stable (official)" }
+
+--- P1: default focus_mode ---
+Control.FOCUS_NONE=0 Control.FOCUS_CLICK=1 Control.FOCUS_ALL=2
+Control.new().focus_mode = 0
+Button.new().focus_mode = 2
+
+--- P2 (partial): out-of-tree theme stylebox query ---
+out-of-tree plain Control.has_theme_stylebox(&"hover") (no override, no built-in theme) = false
+out-of-tree Button.has_theme_stylebox(&"hover") (no override, built-in Button theme) = true
+out-of-tree Button.has_theme_stylebox(&"normal") (no override, built-in Button theme) = true
+out-of-tree Button built-in hover stylebox = ():<StyleBoxFlat#-9223372012594920097>
+out-of-tree Button built-in normal stylebox = ():<StyleBoxFlat#-9223372012611697314>
+out-of-tree Button built-in hover == normal (reference) -> false
+out-of-tree Button.has_theme_stylebox(&"focus") (no override, built-in Button theme) = true
+out-of-tree Button built-in focus == normal (reference) -> false
+
+--- P3: stylebox override reference equality (the guard's whole mechanical basis) ---
+Case1: has_theme_stylebox(&"hover") after override = true
+Case1: get_theme_stylebox(&"hover") == the instance passed to add_theme_stylebox_override -> true
+Case1: queried instance id = -9223372006286686755, original instance id = -9223372006286686755
+Case2 (escape hatch): hover_q == normal_q (both overridden to the SAME instance) -> true
+Case2 (escape hatch): hover_q == shared_sb -> true, normal_q == shared_sb -> true
+Case3 (two distinct-but-identical-looking StyleBoxEmpty instances): hover == normal -> false (contract expects false here -- documented over-rejection)
+Case4: has_theme_stylebox(&"focus") after override = true
+Case4: get_theme_stylebox(&"focus") == the instance passed to add_theme_stylebox_override -> true
+
+=== Probe complete ===

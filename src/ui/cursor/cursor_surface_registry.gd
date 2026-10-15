@@ -30,6 +30,14 @@
 ## See [code]tests/unit/cursor/surface_registry_test.gd[/code]'s doc comment for
 ## exactly which half of each GDD acceptance criterion is exercised at this
 ## layer versus deferred to a later story.
+##
+## [b]Story 012 (ADR-0005 機制十四 guard, 2026-10-15)[/b]: [method register]
+## enforces 機制十四's two conditions on any [param node] that [code]is
+## Control[/code] (see that method's own doc comment and
+## [enum RegisterResult]'s two new members for the mechanics). Governing
+## execution contract: [code]docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md[/code]
+## ("甲案" — reject at the [method register] entry point rather than register
+## and merely log).
 class_name CursorSurfaceRegistry
 extends RefCounted
 
@@ -52,7 +60,49 @@ extends RefCounted
 ## other three named members is affected — see
 ## [code]tests/unit/cursor/surface_registry_test.gd[/code] for the
 ## corresponding tests.
-enum RegisterResult { REGISTERED, DUPLICATE_TAG_REJECTED, UNREGISTERED_NOT_FOUND, INVALID_NODE }
+## [b]FOCUS_MODE_NOT_NONE_REJECTED / NATIVE_HOVER_THEME_REJECTED added
+## 2026-10-15 (Story 012, ADR-0005 機制十四 guard)[/b]: appended at the END
+## (ordinals 4/5) — same discipline as [constant INVALID_NODE] above, no
+## existing member removed or reordered. Returned only when [param node]
+## [code]is Control[/code] (機制十四's two conditions are structurally
+## inapplicable to any other node type — see [method register]'s doc
+## comment). When [b]both[/b] conditions are violated simultaneously,
+## [method register] returns [constant FOCUS_MODE_NOT_NONE_REJECTED] (the
+## lower ordinal) — deterministic by construction, not by which check
+## happens to run first — but its [method @GlobalScope.push_error] message
+## always reports BOTH conditions' verdicts, so a caller is never left having
+## to fix one violation only to immediately hit the other with no warning.
+enum RegisterResult {
+	REGISTERED,                    # 0 — unchanged
+	DUPLICATE_TAG_REJECTED,        # 1 — unchanged
+	UNREGISTERED_NOT_FOUND,        # 2 — unchanged
+	INVALID_NODE,                  # 3 — unchanged
+	FOCUS_MODE_NOT_NONE_REJECTED,  # 4 — new: 機制十四 condition 1 violated (focus_mode != FOCUS_NONE)
+	NATIVE_HOVER_THEME_REJECTED,   # 5 — new: 機制十四 condition 2 violated (built-in hover/focus theme state)
+}
+
+## QA/diagnostic-only verdict of the LAST [method register] call's 機制十四
+## guard evaluation for a given [param surface] tag — see
+## [method diagnostic_last_guard_verdict]. [b]Downstream business logic must
+## NEVER branch on this[/b] (same convention as this project's other
+## [code]diagnostic_*[/code] accessors, 機制十五). Deliberately a 4-value enum,
+## not 3: [constant NOT_APPLICABLE] means "the guard ran and the node's type
+## structurally exempts it" (non-[Control] — see [method register]);
+## [constant NEVER_ATTEMPTED] means "no [method register] call has ever been
+## made under this tag" — collapsing the two into one value would recreate
+## the exact ambiguity this contract was written to avoid (see
+## [code]docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md[/code]
+## 第四節, and this project's 2026-09-23 Check-4 "N/A ≠ PASS" precedent in
+## [code].claude/docs/coding-standards.md[/code]).
+## [b]Lifecycle (implementer's call — contract 第四節 left this undecided,
+## flagged "stop and ask before implementing")[/b]: a verdict is recorded
+## only on a [method register] call that actually reaches the guard (i.e.
+## NOT on [constant INVALID_NODE] or [constant DUPLICATE_TAG_REJECTED] early
+## returns, which never touch the guard at all) and is [b]retained[/b] across
+## a later [method unregister] — this is "the verdict from the last
+## register() call", a historical fact about that call, not "is this tag
+## currently mounted". [method unregister] does not clear it.
+enum GuardVerdict { NOT_APPLICABLE, PASSED, REJECTED, NEVER_ATTEMPTED }
 
 ## Result of [method register_native_pointer_exception] /
 ## [method unregister_native_pointer_exception] (table 2 only).
@@ -60,6 +110,11 @@ enum ExceptionRegisterResult { REGISTERED, ALREADY_EXCEPTED, NOT_REGISTERED, INV
 
 # ─── Table 1: registered cursor surfaces ────────────────────────────────────
 var _surfaces: Dictionary[CursorTypes.SurfaceType, Node] = {}
+
+## QA/diagnostic-only — see [enum GuardVerdict] and
+## [method diagnostic_last_guard_verdict]. NOT consulted by [method register]
+## or [method unregister]'s own control flow.
+var _guard_verdicts: Dictionary[CursorTypes.SurfaceType, GuardVerdict] = {}
 
 # ─── Table 2: AC-60 native-pointer exception whitelist ──────────────────────
 var _native_pointer_exceptions: Array[Control] = []
@@ -97,13 +152,120 @@ var _native_pointer_exceptions: Array[Control] = []
 ## it and aborts the CALLER before this line runs. [constant INVALID_NODE] is
 ## therefore only reachable in practice via a [code]null[/code] argument, not
 ## a use-after-free of a previously-valid reference.
+##
+## [b]ADR-0005 機制十四 guard (Story 012, 2026-10-15) — runs AFTER the
+## duplicate-tag check above, BEFORE storing[/b]
+## ([code]docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md[/code]
+## 第二節's placement contract: the guard may only turn an input that would
+## otherwise have returned [constant REGISTERED] into a rejection — it must
+## NEVER change what would otherwise have been [constant DUPLICATE_TAG_REJECTED]
+## into a different rejection code). Applies ONLY when [param node]
+## [code]is Control[/code] (機制十四's type-split table: non-[Control] node
+## types have neither a [code]focus_mode[/code] nor a theme StyleBox and are
+## structurally exempt, not merely assumed compliant — see
+## [enum GuardVerdict]).
+##
+## Two conditions, [b]both[/b] required:
+## 1. [member Control.focus_mode] [code]== Control.FOCUS_NONE[/code].
+## 2. No built-in mouse-hover (or keyboard/gamepad-focus) theme StyleBox.
+##    Mechanical proxy for the ADR's "visually indistinguishable" requirement
+##    (engine-verified 2026-10-15,
+##    [code]prototypes/godot-gdscript-specialist-cursor-guard-probe-2026-10-15/[/code]):
+##    a "hover" (or "focus") theme StyleBox is a violation unless it is the
+##    [b]exact same resource instance[/b] (reference-equal, via
+##    [method Control.get_theme_stylebox]) as the "normal" StyleBox.
+##    [b]Escape hatch[/b]: call
+##    [code]add_theme_stylebox_override(&"hover", <the SAME instance used for
+##    "normal">)[/code] (and likewise for [code]&"focus"[/code]) — confirmed
+##    by the probe above to compare reference-equal afterward.
+##    [b]Known, accepted over-rejection[/b] (probe Case 3): two DIFFERENT
+##    [StyleBox] instances that are visually identical still compare
+##    reference-UNEQUAL and are judged a violation. This is a stricter
+##    constraint than the ADR's own wording and is the contract's deliberate
+##    choice (reject-on-doubt, not pass-on-doubt) — use the same instance, not
+##    a second instance with matching properties.
+##
+## Violating EITHER condition rejects the registration outright (does
+## [b]NOT[/b] store [param node] — [method get_surface] keeps returning
+## whatever it already returned for [param surface]). Violating BOTH returns
+## [constant FOCUS_MODE_NOT_NONE_REJECTED] (the lower ordinal — deterministic,
+## not evaluation-order-dependent), but [method @GlobalScope.push_error] always
+## reports both conditions' verdicts so a caller does not fix one violation
+## only to discover the other on the next attempt. [b]No [code]assert()[/code]
+## is used in this guard[/b] (2026-09-15 ordinal-0 finding,
+## [code].claude/docs/coding-standards.md[/code]: an [code]assert()[/code]
+## failure aborts the function and yields ordinal 0 of its declared return
+## type — [constant REGISTERED] here — silently reporting success for a
+## rejected write).
 func register(surface: CursorTypes.SurfaceType, node: Node) -> RegisterResult:
 	if not is_instance_valid(node):
 		return RegisterResult.INVALID_NODE
 	if _surfaces.has(surface):
 		return RegisterResult.DUPLICATE_TAG_REJECTED
+
+	if node is Control:
+		var control: Control = node as Control
+		var focus_mode_ok: bool = control.focus_mode == Control.FOCUS_NONE
+		var hover_violates: bool = _stylebox_state_differs_from_normal(control, &"hover")
+		var focus_violates: bool = _stylebox_state_differs_from_normal(control, &"focus")
+		var hover_theme_ok: bool = not (hover_violates or focus_violates)
+		if not focus_mode_ok or not hover_theme_ok:
+			_guard_verdicts[surface] = GuardVerdict.REJECTED
+			push_error(
+				(
+					"CursorSurfaceRegistry register() rejected surface %s by ADR-0005 " +
+					"機制十四 guard -- node_class=%s node_path=%s. " +
+					"Condition 1 (focus_mode == FOCUS_NONE): %s (actual focus_mode=%d, " +
+					"FOCUS_NONE=%d). Condition 2 (no built-in hover/focus theme state): " +
+					"%s (hover_differs_from_normal=%s, focus_differs_from_normal=%s). " +
+					"Fix: set focus_mode = Control.FOCUS_NONE, and if this node type has " +
+					"a built-in theme, override its hover/focus StyleBox with the SAME " +
+					"instance used for its normal StyleBox via add_theme_stylebox_override() " +
+					"so they compare reference-equal."
+				) % [
+					CursorTypes.SurfaceType.find_key(surface),
+					control.get_class(),
+					(control.get_path() if control.is_inside_tree() else "<not in tree>"),
+					("OK" if focus_mode_ok else "VIOLATED"),
+					control.focus_mode,
+					Control.FOCUS_NONE,
+					("OK" if hover_theme_ok else "VIOLATED"),
+					hover_violates,
+					focus_violates,
+				]
+			)
+			if not focus_mode_ok:
+				return RegisterResult.FOCUS_MODE_NOT_NONE_REJECTED
+			return RegisterResult.NATIVE_HOVER_THEME_REJECTED
+		_guard_verdicts[surface] = GuardVerdict.PASSED
+	else:
+		# Structurally exempt (not merely "assumed compliant") — see
+		# [enum GuardVerdict]'s doc comment on why this must be recorded as
+		# NOT_APPLICABLE and never as PASSED.
+		_guard_verdicts[surface] = GuardVerdict.NOT_APPLICABLE
+
 	_surfaces[surface] = node
 	return RegisterResult.REGISTERED
+
+
+## Mechanism-14 guard helper (condition 2) — returns [code]true[/code] (a
+## violation) when [param control] has a theme StyleBox for [param theme_key]
+## ([code]&"hover"[/code] or [code]&"focus"[/code]) that is NOT the exact same
+## resource instance as its [code]&"normal"[/code] StyleBox. See
+## [method register]'s doc comment for the engine evidence this relies on and
+## the known over-rejection case. [b]Single source of this comparison rule in
+## the codebase[/b] — do not re-derive it elsewhere (this project has already
+## been burned by two independent implementations of the same formula
+## quietly drifting apart; see [code].claude/docs/technical-preferences.md[/code]
+## 的「世界層縮放與定位改為手動管理」一節的 single-source-of-truth 教訓).
+func _stylebox_state_differs_from_normal(control: Control, theme_key: StringName) -> bool:
+	if not control.has_theme_stylebox(theme_key):
+		return false
+	var state_stylebox: StyleBox = control.get_theme_stylebox(theme_key)
+	var normal_stylebox: StyleBox = (
+		control.get_theme_stylebox(&"normal") if control.has_theme_stylebox(&"normal") else null
+	)
+	return state_stylebox != normal_stylebox
 
 
 ## Removes the surface currently registered under [param surface], if any.
@@ -137,6 +299,20 @@ func registered_surfaces_sorted() -> Array[CursorTypes.SurfaceType]:
 		tags.append(tag)
 	tags.sort()
 	return tags
+
+
+## QA/diagnostic-only accessor — see [enum GuardVerdict]'s doc comment for the
+## full rationale (why [constant GuardVerdict.NOT_APPLICABLE] must not be
+## conflated with "passed", and why this value survives [method unregister]).
+## Downstream business logic must NEVER branch on this (機制十五 convention).
+## Returns [constant GuardVerdict.NEVER_ATTEMPTED] for a [param surface] tag
+## that has never had a [method register] call reach the guard at all (either
+## no [method register] call was ever made under this tag, or every call made
+## under it was rejected before reaching the guard by
+## [constant RegisterResult.INVALID_NODE] or
+## [constant RegisterResult.DUPLICATE_TAG_REJECTED]).
+func diagnostic_last_guard_verdict(surface: CursorTypes.SurfaceType) -> GuardVerdict:
+	return _guard_verdicts.get(surface, GuardVerdict.NEVER_ATTEMPTED)
 
 
 ## Registers [param node] as an AC-60 native-pointer exception — a surface
