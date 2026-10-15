@@ -2,15 +2,18 @@
 # input-dispatch gap coverage for `battle_screen.gd`, per the M1 audit
 # (`docs/reviews/tactical-combat-m1-current-state-audit-2026-09-29.md`).
 #
-# Coverage in THIS file: U-T6 only (敵方回合拒絕是否逐幀生效 -- the visual
-# cursor side-effect must freeze every _process() frame while
+# Coverage in THIS file: U-T6 (敵方回合拒絕是否逐幀生效 -- the visual cursor
+# side-effect must freeze every _process() frame while
 # BattleController.phase() == ENEMY_ACTING, not just once when the phase is
-# entered). U-T7 (click_tile() 回傳值分派與拒絕回饋) and U-T8 (結束單一單位行動
-# 的新輸入路徑) are the story's other two sub-items -- per the coordinator's
-# explicit scope split for this work order, only U-T6 and U-T7 belong to this
-# assignment and U-T8 is handled separately; if U-T7 lands in the same pass as
-# U-T6 it will be appended to this file (the story's own Test Evidence section
-# names this exact path as the single required file for the whole story).
+# entered) AND U-T7 (click_tile() 回傳值分派與拒絕回饋 -- both call sites in
+# battle_screen.gd now route BattleController.click_tile()'s return value
+# through _handle_click_tile_result() instead of discarding it; see that
+# method's own doc comment for the three-way &"none" / &"blocked_pending_
+# discard" / legal-action dispatch). U-T8 (結束單一單位行動的新輸入路徑) is the
+# story's other sub-item, handled separately by a different work order and not
+# covered here (the story's own Test Evidence section names this exact path
+# as the single required file for the whole story, so U-T8's tests will also
+# land here once that work order completes).
 #
 # 🔴 本檔案 I/O 使用揭露(.claude/rules/test-standards.md 甲類例外,2026-09-16
 # 管理者裁決):每一條測試都 load()/instantiate() 真實的 BattleScreen.tscn,其
@@ -68,6 +71,16 @@ class _MutantAlwaysCallsUpdateCursorVisual extends BattleScreen:
 		_update_cursor_visual()
 
 
+# U-T7 regression mutant -- reproduces the exact pre-story behavior the M1
+# audit found: both call sites read BattleController.click_tile()'s return
+# Dictionary and threw it away. Overriding _handle_click_tile_result() as a
+# no-op is the minimal change that puts that behavior back without touching
+# anything else.
+class _MutantDiscardsClickTileResult extends BattleScreen:
+	func _handle_click_tile_result(_result: Dictionary) -> void:
+		pass
+
+
 func _fresh_instance() -> BattleScreen:
 	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
 	add_child(instance)
@@ -81,6 +94,22 @@ func _real_pressed_event(action: StringName) -> InputEventKey:
 			duplicated.pressed = true
 			return duplicated
 	return null
+
+
+# Same technique as battle_screen_card_play_wiring_test.gd's own
+# _click_event_at_cell() (that file's AC-14 tests) -- converts a board cell
+# into a raw window-pixel InputEventMouseButton via the real
+# WorldLayout/BoardCoords transforms, the same pair _window_pos_to_cell()
+# itself uses, rather than hand-picking a pixel position.
+func _click_event_at_cell(instance: BattleScreen, cell: Vector2i) -> InputEventMouseButton:
+	var window_size: Vector2i = instance.get_window().size
+	var canvas_to_window: Transform2D = WorldLayout.canvas_to_window_transform(window_size)
+	var raw_pos: Vector2 = BoardCoords.grid_to_window(cell, canvas_to_window, Vector2.ZERO)
+	var click_event: InputEventMouseButton = InputEventMouseButton.new()
+	click_event.button_index = MOUSE_BUTTON_LEFT
+	click_event.pressed = true
+	click_event.position = raw_pos
+	return click_event
 
 
 # 讓 instance 同步進入 ENEMY_ACTING,比照
@@ -221,6 +250,128 @@ func test_battle_menu_press_still_reaches_open_during_enemy_acting() -> void:
 	).is_true()
 
 
+# ---- U-T7: click_tile() 回傳值分派與拒絕回饋 ----------------------------------
+#
+# vs01 roster (assets/data/units/vs01_roster.txt): unit 1 (甲) starts at
+# (0,2). (0,0) and (12,5) are both open ground (vs01_terrain.txt row 1/6 are
+# all '.') with no occupant and, with nothing selected, outside any unit's
+# move/attack range -- i.e. a click there falls through
+# BattleController.click_tile()'s final `return {"action": &"none"}` branch
+# (M1 audit: this is "拒絕" in the story's sense, not
+# &"blocked_pending_discard", which is covered separately below).
+
+func test_mouse_click_on_empty_tile_with_nothing_selected_records_rejection() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)  # PLAYER_INPUT baseline sync
+	var click: InputEventMouseButton = _click_event_at_cell(instance, Vector2i(12, 5))
+
+	# Act
+	instance._handle_mouse_button(click)
+
+	# Assert -- the &"none" rejection is now observable instead of silently
+	# discarded (M1 audit's own finding before this story)
+	assert_that(instance.diagnostic_last_click_tile_action()).append_failure_message(
+		"U-T7: a click on an empty, irrelevant tile must be recorded as the &\"none\" rejection"
+	).is_equal(&"none")
+	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
+		"U-T7: the rejection counter must bump for a &\"none\" result"
+	).is_equal(1)
+
+
+func test_rejection_counter_accumulates_across_multiple_rejected_clicks() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	var click: InputEventMouseButton = _click_event_at_cell(instance, Vector2i(12, 5))
+
+	# Act -- two separate rejected clicks
+	instance._handle_mouse_button(click)
+	instance._handle_mouse_button(click)
+
+	# Assert -- not merely a boolean flag; it counts
+	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
+		"U-T7: the rejection counter must accumulate, not just latch to 1"
+	).is_equal(2)
+
+
+func test_confirm_at_cursor_routes_through_the_same_rejection_dispatch_as_mouse_click() -> void:
+	# Arrange -- the DECLARED default for _cursor_cell is Vector2i.ZERO, but
+	# _ready() re-seeds it onto the first PLAYER unit's own position (0,2) --
+	# clicking THAT would select unit 1, not fall through to &"none" (this
+	# was caught by a first run of this exact test: it failed with "Expecting
+	# 'none' but was 'selected'" because of that re-seed, which is why the
+	# cell is set explicitly here rather than trusting the field's class-body
+	# default). (12,5) is the same open/unoccupied/out-of-range tile the
+	# mouse-click test above uses, reached via the OTHER call site this story
+	# fixes.
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	instance._cursor_cell = Vector2i(12, 5)
+
+	# Act
+	instance._confirm_at_cursor()
+
+	# Assert
+	assert_that(instance.diagnostic_last_click_tile_action()).append_failure_message(
+		"U-T7: _confirm_at_cursor() must route through the same dispatch as _handle_mouse_button()"
+	).is_equal(&"none")
+	assert_int(instance.diagnostic_click_tile_rejected_count()).is_equal(1)
+
+
+func test_click_on_own_unit_records_selected_action_without_bumping_rejected_count() -> void:
+	# Arrange -- unit 1 (甲) at (0,2), PLAYER faction, current faction is
+	# PLAYER at battle start
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+	var click: InputEventMouseButton = _click_event_at_cell(instance, Vector2i(0, 2))
+
+	# Act
+	instance._handle_mouse_button(click)
+
+	# Assert -- a legal action is recorded (proving the dispatch ran), but it
+	# is NOT a rejection
+	assert_int(instance._controller.selected_unit()).append_failure_message(
+		"precondition: clicking own unit with nothing selected should select it"
+	).is_equal(1)
+	assert_that(instance.diagnostic_last_click_tile_action()).append_failure_message(
+		"U-T7: a legal &\"selected\" action must be recorded, distinct from &\"none\""
+	).is_equal(&"selected")
+	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
+		"U-T7: a legal action must NOT bump the rejection counter"
+	).is_equal(0)
+
+
+# &"blocked_pending_discard" is believed unreachable from either real call
+# site today (see _handle_click_tile_result()'s own doc comment: both guards
+# already return before click_tile() is ever called while a discard is
+# owed) -- this project has no fixture that can legitimately reach S4 forced
+# discard AND still have click_tile() invoked past both guards. This test
+# therefore drives the dispatch method directly with a hand-built result
+# Dictionary, exactly mirroring the real shape
+# BattleController.click_tile() documents for that branch
+# (battle_controller.gd:781), to prove the dispatch keeps it fully separate
+# from both &"none" and the legal-action branches -- the exact mixing this
+# story's AC calls out by name.
+func test_blocked_pending_discard_is_recorded_distinctly_and_does_not_bump_rejected_count() -> void:
+	# Arrange
+	var instance: BattleScreen = _fresh_instance()
+	instance._process(0.0)
+
+	# Act
+	instance._handle_click_tile_result({"action": &"blocked_pending_discard"})
+
+	# Assert -- distinct from &"none": recorded, but NOT counted as a
+	# rejection
+	assert_that(instance.diagnostic_last_click_tile_action()).append_failure_message(
+		"U-T7: &\"blocked_pending_discard\" must be recorded as itself, not folded into &\"none\""
+	).is_equal(&"blocked_pending_discard")
+	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
+		"U-T7: &\"blocked_pending_discard\" is the EXISTING deliberate silence -- it must not " +
+		"inflate the &\"none\" rejection counter"
+	).is_equal(0)
+
+
 # ---- 敏感度證明 --------------------------------------------------------------
 
 # 證明 test_mouse_motion_during_enemy_acting_does_not_move_last_mouse_position
@@ -282,3 +433,28 @@ func test_sensitivity_proof_process_guard_test_catches_a_mutant_that_always_call
 		"sensitivity proof failed: mutant should call _update_cursor_visual() " +
 		"every _process() frame regardless of phase, but it did not"
 	).is_equal(count_before + 2)
+
+
+# 證明 test_mouse_click_on_empty_tile_with_nothing_selected_records_rejection
+# 真的會抓到這個 story 本身要修的缺口(回傳值被丟棄),而不是巧合通過。
+func test_sensitivity_proof_rejection_dispatch_test_catches_a_mutant_that_discards_the_result() -> void:
+	# Arrange
+	var instance: BattleScreen = load(_SCENE_PATH).instantiate()
+	instance.set_script(_MutantDiscardsClickTileResult)
+	auto_free(instance)
+	add_child(instance)
+	instance._process(0.0)
+	var click: InputEventMouseButton = _click_event_at_cell(instance, Vector2i(12, 5))
+	var count_before: int = instance.diagnostic_click_tile_rejected_count()
+
+	# Act
+	instance._handle_mouse_button(click)
+
+	# Assert -- the mutant reproduces the pre-story behavior (reads the
+	# Dictionary, throws it away), proving the real _handle_click_tile_result()
+	# dispatch -- not some unrelated side effect -- is what makes the real
+	# test's counter advance.
+	assert_int(instance.diagnostic_click_tile_rejected_count()).append_failure_message(
+		"sensitivity proof failed: mutant should have discarded the &\"none\" result " +
+		"without bumping the rejection counter, but the counter advanced anyway"
+	).is_equal(count_before)

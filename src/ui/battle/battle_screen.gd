@@ -753,6 +753,42 @@ func diagnostic_last_menu_rejection_result() -> BattleMenu.OpenResult:
 func diagnostic_last_menu_rejection_message() -> String:
 	return _diagnostic_last_menu_rejection_message
 
+## story-011-input-gaps.md (U-T7, M1 audit 2026-09-29) — QA/test-only
+## diagnostic surface, same convention as
+## [member _diagnostic_last_menu_rejection_result]. Records the
+## [code]action[/code] field of the most recent [method
+## BattleController.click_tile] call this screen made (from either the mouse
+## or the keyboard/gamepad confirm path — see
+## [method _handle_click_tile_result]), proving that dispatch actually ran
+## instead of the return value being silently discarded (the M1 audit's own
+## finding: 「`&"none"` 這個 action 值沒有任何一處消費它」).
+## 🔴 NOT a claim that a rejection is displayed anywhere on screen — same
+## disclosed gap as [member _diagnostic_last_menu_rejection_message] above;
+## a visible rejection indicator is new UI surface this story's Out of Scope
+## section does not ask for.
+## ⚠️ [code]&"none"[/code] has THREE distinct internal causes inside [method
+## BattleController.click_tile] (wrong phase / clicked somewhere irrelevant
+## while nothing is selected / [method BattleController._apply_attack] or
+## [method BattleController._apply_move]'s own internal re-check failing) —
+## this diagnostic cannot and does not distinguish which of the three
+## produced a given [code]&"none"[/code]; it only proves the branch ran.
+var _diagnostic_last_click_tile_action: StringName = &""
+
+## Counts every [method BattleController.click_tile] call whose returned
+## [code]action[/code] came back [code]&"none"[/code] — distinct from
+## [member _diagnostic_last_click_tile_action], which only remembers the
+## single most recent action and would be overwritten by the very next
+## legal click.
+var _diagnostic_click_tile_rejected_count: int = 0
+
+## See [member _diagnostic_last_click_tile_action].
+func diagnostic_last_click_tile_action() -> StringName:
+	return _diagnostic_last_click_tile_action
+
+## See [member _diagnostic_click_tile_rejected_count].
+func diagnostic_click_tile_rejected_count() -> int:
+	return _diagnostic_click_tile_rejected_count
+
 
 ## Story U-013 (ADR-0005 機制六⑥, R4-7's own suggested split for a system
 ## that is simultaneously role ② and role ⑥ — see [_TargetRetargetActor]'s
@@ -1985,7 +2021,12 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	# effect (click_tile below) is unrelated to that visual pipeline and still
 	# resolves synchronously against the exact `cell` computed above from the
 	# raw event position, unaffected by this change.
-	_controller.click_tile(cell)
+	#
+	# Story 011 (U-T7, M1 audit 2026-09-29) — the return value used to be
+	# discarded here (click_tile()'s &"none" rejection had no consumer
+	# anywhere in this file). Now routed through _handle_click_tile_result()
+	# — see that method's own doc comment for the three-way dispatch.
+	_handle_click_tile_result(_controller.click_tile(cell))
 
 
 # Sole call site in this file for converting a raw OS window-pixel mouse
@@ -2000,6 +2041,52 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 func _window_pos_to_cell(window_pos: Vector2) -> Vector2i:
 	var window_to_canvas: Transform2D = WorldLayout.window_to_canvas_transform(get_window().size)
 	return BoardCoords.window_to_grid(window_pos, window_to_canvas, Vector2.ZERO)
+
+
+## story-011-input-gaps.md (U-T7, M1 audit 2026-09-29) — sole call site for
+## dispatching on [method BattleController.click_tile]'s return value. Both
+## [method _handle_mouse_button] and [method _confirm_at_cursor] route
+## through here rather than discarding the Dictionary, matching
+## [method click_tile]'s own doc comment's three-way distinction:
+##
+## - [code]&"none"[/code] — REJECTED. Bumps
+##   [member _diagnostic_click_tile_rejected_count] so the rejection is
+##   observable. 🔴 Does NOT distinguish &"none"'s three internal causes —
+##   see [member _diagnostic_last_click_tile_action]'s own doc comment.
+## - [code]&"blocked_pending_discard"[/code] — the EXISTING deliberate
+##   silence this screen already applies during S4 forced discard (mirrors
+##   [code]battle_open_hand[/code]'s own silent swallow while a discard is
+##   owed — nothing to reject because the player cannot act at all right
+##   now). Handled as its OWN branch, not merged into the &"none" count
+##   above — that mixing is exactly what this story's AC calls out by name.
+##   🔴 Believed unreachable from either call site today:
+##   [method _handle_mouse_button]'s own
+##   [code]is_card_play_in_progress() or has_pending_discard()[/code] guard,
+##   and [method _input]'s keyboard/gamepad branch (has_pending_discard()
+##   checked FIRST, dispatching to [method _handle_forced_discard_input]
+##   instead), both already return before [method click_tile] is ever
+##   called while a discard is owed. Handled explicitly anyway, in case a
+##   future guard-ordering change ever lets it through.
+## - Every other value ([code]&"selected"[/code], [code]&"deselected"[/code],
+##   [code]&"moved"[/code], [code]&"attacked"[/code]) is a legitimate action.
+##   No work needed beyond recording it: [BattleController]'s own
+##   [signal unit_selected]/[signal selection_cleared]/[signal unit_moved]/
+##   [signal attack_resolved] (all connected in [method _ready]) already
+##   drive [method _refresh_view] for these.
+## - Any OTHER value is a programmer error, not a gap this screen should
+##   swallow quietly — per coding-standards.md's rule against asserting on
+##   believed-unreachable branches, this uses push_error() rather than
+##   assert(), so it stays loud in both debug and release builds.
+func _handle_click_tile_result(result: Dictionary) -> void:
+	var action: StringName = result.get("action", &"none")
+	_diagnostic_last_click_tile_action = action
+	match action:
+		&"none":
+			_diagnostic_click_tile_rejected_count += 1
+		&"blocked_pending_discard", &"selected", &"deselected", &"moved", &"attacked":
+			pass
+		_:
+			push_error("BattleScreen: BattleController.click_tile() returned unrecognized action %s" % action)
 
 
 # Edge-triggered directional cursor movement — see _direction_was_pressed's
@@ -2717,7 +2804,10 @@ func _handle_target_selection_cancel_transition() -> void:
 func _confirm_at_cursor() -> void:
 	if not BoardCoords.is_in_bounds(_cursor_cell):
 		return
-	_controller.click_tile(_cursor_cell)
+	# Story 011 (U-T7, M1 audit 2026-09-29) — same gap and same fix as the
+	# matching call in _handle_mouse_button(): the return value used to be
+	# discarded. See _handle_click_tile_result()'s own doc comment.
+	_handle_click_tile_result(_controller.click_tile(_cursor_cell))
 
 
 # "End my faction phase" — invoked via
