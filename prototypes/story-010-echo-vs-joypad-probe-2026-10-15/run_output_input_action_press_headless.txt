@@ -1,0 +1,6 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Probe: does Input.action_press() / is_action_pressed() round-trip headless? ===
+Input.is_action_pressed(ui_up) BEFORE action_press = false
+Input.is_action_pressed(ui_up) AFTER action_press  = true
+Input.is_action_pressed(ui_up) AFTER action_release = false

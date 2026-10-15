@@ -1,0 +1,16 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== Probe: does InputEventJoypadMotion / InputEventJoypadButton have an 'echo' property? ===
+InputEventKey has 'echo' in property list: true
+InputEventKey.echo default value: false
+InputEventJoypadMotion has 'echo' in property list: false
+InputEventJoypadMotion.get('echo') (null if no such property): <null>
+InputEventJoypadButton has 'echo' in property list: false
+InputEventJoypadButton.get('echo') (null if no such property): <null>
+=== Static-type compile check (already proven by prior parse-error run) ===
+Prior run of this probe (same file, before this edit) failed to COMPILE with:
+  'Expression is of type InputEventJoypadMotion so it can't be of type InputEventWithModifiers'
+  'Expression is of type InputEventJoypadButton so it can't be of type InputEventWithModifiers'
+This is the GDScript static type checker itself confirming, at parse time (not a runtime guess),
+that InputEventJoypadMotion/InputEventJoypadButton do NOT inherit InputEventWithModifiers --
+the class InputEventKey.echo is declared on. echo is structurally a keyboard-only concept.
