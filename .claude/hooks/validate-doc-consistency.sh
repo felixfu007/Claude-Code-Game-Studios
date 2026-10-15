@@ -85,7 +85,7 @@ cd "$(dirname "$0")/../.." 2>/dev/null || exit 0
 # C6 is collapsed to one line in normal runs (2026-09-03). This is where the
 # individual hits live now. Nothing else runs in this mode.
 if [ "$1" = "--line-refs" ]; then
-    grep -rnoE '第 ?[0-9]+(/[0-9]+)* ?[列行]|see line [0-9]+|見第 ?[0-9]+' \
+    grep -rnoE '第 ?[0-9]+(/[0-9]+)* ?(列|行)|see line [0-9]+|見第 ?[0-9]+' \
         --include='*.md' design docs/architecture docs/registry 2>/dev/null \
       | awk -F: '
           { file=$1; ln=$2; text=$0; sub(/^[^:]*:[^:]*:/, "", text);
@@ -436,7 +436,7 @@ done
 # a known standing backlog, not news. The count is the signal; the individual
 # hits moved behind --line-refs. Only the NUMBER is computed here because awk on
 # Git Bash mangles the multibyte 列/行 char.
-LINE_REF_COUNT=$(grep -rnoE '第 ?[0-9]+(/[0-9]+)* ?[列行]|see line [0-9]+|見第 ?[0-9]+' \
+LINE_REF_COUNT=$(grep -rnoE '第 ?[0-9]+(/[0-9]+)* ?(列|行)|see line [0-9]+|見第 ?[0-9]+' \
     --include='*.md' design docs/architecture docs/registry 2>/dev/null \
   | awk -F: '
       { file=$1; ln=$2; text=$0; sub(/^[^:]*:[^:]*:/, "", text);

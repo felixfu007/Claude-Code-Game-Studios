@@ -173,3 +173,18 @@ $RECYCLE.BIN/
 # 素材本身的 .import 仍然進版控(見上方 Godot 區塊刻意未啟用的 *.import 規則),
 # 這裡只排除證據目錄。加於 2026-08-27,第一次出現 evidence/*.png.import 之後。
 production/qa/evidence/*.import
+
+# === prototypes 底下的參考圖/交付圖:同樣只排除 .import 伴隨檔 ===
+# 🔴 2026-10-15 管理者裁決,擴充上一條規則的適用範圍。
+# 上一條的理由逐字是「它們不是素材,那個 .import 純粹是雜訊,而且每次有人跑
+# --import 就會多出一個」—— 而那個理由對 prototypes/ 底下的 AI 產圖交付副本
+# **完全適用**:遊戲永遠不會載入它們,它們是給人看的參考圖。
+# 上一條規則只寫了 production/qa/evidence/,於是照字面做會把純雜訊收進版控。
+# 觸發事件:2026-10-15 一位專家為了讓探針腳本解析 class_name 而跑了一次
+# --import,prototypes/ai-img-2026-10-13-home-delivery/ 底下隨即冒出 5 個
+# .png.import。它們與那次改動完全無關。
+# ⚠️ 圖本身仍然進版控(與證據截圖同樣的理由),這裡只排除 .import。
+prototypes/**/*.png.import
+prototypes/**/*.jpg.import
+prototypes/**/*.jpeg.import
+prototypes/**/*.webp.import
