@@ -1,7 +1,7 @@
 # Story 012:已註冊表面禁用原生 focus/hover(兩項條件)
 
 > **Epic**:單一游標/高亮狀態系統
-> **Status**:🟢 **Ready(2026-10-15 解除封鎖 —— 管理者裁決甲案)** —— 本欄原寫 `🔴 Blocked(2026-09-03 開工前查核 —— 驗收標準的定義域目前是空集合)`。🔴 **那個前提已經不成立**:協調者 2026-10-15 實測 `grep -rn "register_surface" src/` 命中 `battle_screen.gd` 五處(型別 `BOARD_TILE`),**定義域不再是空集合**。管理者裁決採文末**甲案**(在 `register()` 入口拒絕違規註冊),執行契約在 `docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md`(500 行)。⚠️ **但解除封鎖解除的是「寫得出會失敗的測試」,不是「機制十四在 production 被驗到了」** —— `BattleScreen` 是 `Node` 不是 `Control`,落在「結構性不適用」那側,**覆蓋率:1/4 型別存在,0/4 真的執行過兩項條件。**
+> **Status**:✅ **Done(2026-10-15,協調者獨立重跑驗收)** —— 提交 `04472fe`。管理者裁決甲案落地:機制十四那兩項條件**第一次有程式在檢查**(`CursorSurfaceRegistry.register()` 拒絕違規註冊)。契約在 `docs/reviews/cursor-surface-register-guard-contract-2026-10-15.md`。⚠️ **覆蓋率誠實登記:1/4 表面型別存在,0/4 真的執行過兩項條件** —— `BattleScreen` 是 `Node` 不是 `Control`,落在「結構性不適用」那側(判決記 `NOT_APPLICABLE`,**不記「通過」**)。新增 13 條測試,其中 **T5/T6 是重言式**(今天必綠),doc comment 已標註。
 > **Layer**:Core
 > **Type**:UI
 > **Estimate**:S(約 2–3 小時)
