@@ -47,6 +47,32 @@
   而不是任何一張戰棋工作單 —— 判定它屬誰,本身就是下一步要做的事。
   追蹤來源:`production/epics/tactical-combat/story-008-cursor-navigation-convergence.md`、
   `tests/integration/ui/battle_cursor_navigation_convergence_test.gd` 檔頭。
+
+  > ### 🔴 2026-10-15 補註(story-010 查證,協調者獨立複驗)—— 上方原文一字未改,本註只縮小它的前提
+  >
+  > **① `echo` 不涵蓋手把,已從「未驗證」升格為「結構上不可能」。**
+  > 上方寫「`InputEventJoypadMotion` 根本沒有 `echo` 旗標」是對的,而本次補上了更強的一層證據:
+  > GDScript **靜態型別檢查器在 parse 期**拒絕編譯「手把事件屬於 `InputEventWithModifiers`」
+  > (`echo` 宣告所在的類別),亦即這不是「引擎沒給」,是**繼承鏈裡沒有這個東西**。
+  > 探針與逐字輸出:`prototypes/story-010-echo-vs-joypad-probe-2026-10-15/`。
+  >
+  > **② 上方「連帶的範圍裁決」的前提已經變了,而變的方向是【風險變小】。**
+  > 原文寫:「`story-008` 拆 `_handle_directional()` 時,預設保留現有的去抖動機制,只拿掉游標寫入
+  > —— 要拿掉去抖動需要一個『它不存在也沒關係』的證明」。
+  > 🔴 **`story-008`/`009` 做完之後,`_handle_directional()` 的去抖分支主體只剩一個 `pass`**,
+  > 而它更新的 `_direction_was_pressed` 字典**除了 `_direction_just_pressed()` 自己以外全專案零讀者**。
+  > 當場查:`grep -n "_direction_was_pressed" src/ui/battle/battle_screen.gd`(只有宣告、註解、與那一處呼叫)。
+  > **亦即棋盤那半的去抖今天保護的東西是零**;手牌列那半(`_hand_direction_was_pressed`)仍然活著。
+  >
+  > **③ 所以「刪掉棋盤那半」不會讓手把的情況變差 —— 但這【不是】說可以刪。**
+  > 真正的曝險從來不在 `battle_screen.gd`,而在 `CursorState.apply_buffered_navigation()`
+  > (上方已實測確認它沒有內建去抖動)。**管理者「先登記不動」的裁決不受本註影響,仍然有效。**
+  > ⚠️ **而且刪掉會連帶動到一條今天才寫的測試**:`tests/unit/ui/direction_key_debounce_test.gd`
+  > 的 §3(`test_board_and_hand_direction_trackers_do_not_cross_contaminate`)會因為棋盤側 tracker
+  > 消失而變成一條**永遠綠但不再把關**的測試 —— 要刪就必須同批改寫它,不能放著。
+  >
+  > **④ 擋著這一項的那個探針,條件沒有變:開窗非 headless + 真實手把。**
+  > 本次兩支探針都是 headless,**沒有、也無法**回答「引擎會不會為握住的搖桿每幀重送事件」。
 - **2026-10-12**(第八十批,協調者查證 + 管理者裁決):
   🔴 **約 17 個遊戲平衡數值硬編碼在 `const` 裡,而 `coding-standards.md` 明文要求
   「Gameplay values must be data-driven (external config), never hardcoded」。**

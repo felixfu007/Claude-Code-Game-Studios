@@ -226,7 +226,7 @@ HP 對比度修復批次的既有紀律。
 |---|---|---|---|
 | 1 | **游標導航** —— `battle_screen._handle_directional()` → `clamp_cursor_move()`(`battle_screen.gd:1206`)→ 直寫 `_cursor_cell` | `CursorState.apply_buffered_navigation()`(`cursor_state.gd:534`),經 `CursorStateHost` | 一般移動/攻擊路徑須註冊 `BOARD_TILE` surface(目前只有打牌路徑註冊);`_cursor_cell` 的 4 個寫入點改為讀 `CursorStateHost.get_current_target()` |
 | 2 | **裝置權威** —— `battle_screen.gd:941` 自行 `DeviceAuthority.new()`,靠約 15 處手動 `note_pad_input()`/`note_mouse_motion()` 餵資料 | `CursorState.arbitrate_device_authority()`(由 `cursor_state_host.gd:391` 以引擎事件流自動驅動) | `src/ui/battle/device_authority.gd`(116 行)預期整份退役;15 處手動呼叫全部移除 |
-| 3 | **方向鍵去抖** —— `battle_screen._direction_just_pressed()` 自維護 pressed-state Dictionary | ADR-0005 的 `InputEventKey.echo` 過濾(`cursor_types.gd:165`) | ⚠️ **兩者解決同一問題但手法不同,語意未必等價** —— 收斂前必須先確認 echo 過濾涵蓋「手把類比搖桿長按」(Dictionary 那份明文是為它寫的),否則會收掉一個還在用的行為 |
+| 3 | **方向鍵去抖** —— `battle_screen._direction_just_pressed()` 自維護 pressed-state Dictionary | ADR-0005 的 `InputEventKey.echo` 過濾(`cursor_types.gd:165`) | 🔴 **已查證結案(2026-10-15,story-010):本項收斂【不成立】,不是「待辦」而是「做不到」。** `InputEventJoypadMotion` / `InputEventJoypadButton` **沒有 `echo` 屬性** —— 不是尚未實作,是該屬性不在這兩個類別的繼承鏈裡。GDScript 靜態型別檢查器在 **parse 期**自己擋下(`Expression is of type InputEventJoypadMotion so it cannot be of type InputEventWithModifiers`),比執行期反射更強。**兩者不是同一份去抖的兩份實作,是兩種不同的輸入模型(輪詢 vs 事件驅動)。** 本列原寫的「收斂前必須先確認 echo 過濾涵蓋手把長按」已執行完畢,答案是否定。證據:`prototypes/story-010-echo-vs-joypad-probe-2026-10-15/` |
 
 🔴 **收斂的順序是「先接線、再退役」,不是反過來。** 第 2 項的 `device_authority.gd` 退役
 必須排在第 1 項接線驗證通過之後 —— 現況 `_update_cursor_visual()`(`battle_screen.gd:2417`)
@@ -636,7 +636,7 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 007 | 移動範圍四態查詢介面(`A`/`B\A`/`C\B`/`Grid\C`) | M3b | Integration | Ready | ADR-0001 | 001, 002, **003b**(同上) |
 | 008 | 游標導航收斂(`CursorStateHost`) | M6 | Integration | Ready | ADR-0005 | None(先於 009) |
 | 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
-| 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | Ready | ADR-0005 | 建議 008 之後 |
+| 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | ✅ Done | ADR-0005 | 建議 008 之後 |
 | 011 | 輸入缺口補強(U-T6/U-T7/U-T8) | M6 | Integration | Ready | ADR-0001, ADR-0005 | 建議 008 之後 |
 | 012 | 格位資訊面板 | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 004, 006, 008-011 |
 | 013 | 攻擊確認面板(二段確認) | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 006, 008-011 |

@@ -1,7 +1,7 @@
 # Story 010: 方向鍵去抖收斂至 `InputEventKey.echo` 過濾
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M6(收斂表 #3)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-15,協調者獨立重跑驗收)** —— 提交 `040a376`。🔴 **結論是【不收斂】**,即工作單 AC 第二步的**第二個分支**:`InputEventJoypadMotion` / `InputEventJoypadButton` **根本沒有 `echo` 屬性**(引擎實測 + GDScript 靜態型別檢查器在 parse 期自己擋下「手把事件屬於 `InputEventWithModifiers`」),故 Dictionary 去抖**不得收掉**。探針與逐字輸出在 `prototypes/story-010-echo-vs-joypad-probe-2026-10-15/`。新增 6 條迴歸鎖 `tests/unit/ui/direction_key_debounce_test.gd`(含手動注入的敏感度證明)。
 > **Layer**: Presentation
 > **Type**: Logic
 > **Estimate**: S~M(視驗證結果而定,見下方查證步驟)

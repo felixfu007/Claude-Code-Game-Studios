@@ -1,7 +1,7 @@
 # Story 011: 輸入缺口補強(敵方回合拒絕逐幀生效、拒絕回饋、結束單位行動路徑)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M6(範圍②)
-> **Status**: Ready
+> **Status**: 🔄 **In Progress(2026-10-15)** —— 🔴 **三個子項只完成 U-T6**(提交 `4f3017a`,協調者獨立重跑驗收)。**U-T7(拒絕回饋)與 U-T8(主動結束單一單位行動)皆未開工。** 拆開派工是協調者的決定,理由:當日連續五位專家都在讀檔階段耗盡回合上限,收窄範圍才做得完。📌 U-T6 的修法與本檔 Implementation Note 第 3 點的**字面建議不同**(守衛放在 `_process()` 而非 `_input()` 頂層),理由與回歸鎖見該提交訊息。
 > **Layer**: Presentation
 > **Type**: Integration
 > **Estimate**: M
