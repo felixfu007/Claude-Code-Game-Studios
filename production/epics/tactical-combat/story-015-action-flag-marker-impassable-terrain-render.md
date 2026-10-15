@@ -1,7 +1,7 @@
 # Story 015: 單位行動旗標持久非色彩標記 + 不可通行地形呈現
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M4
-> **Status**: Ready(規劃層無阻擋;執行層見下方序列化)
+> **Status**: ✅ **Done(2026-10-15,協調者獨立重跑驗收)** —— 提交 `5624ba3`。**戰棋 epic 最後一張。** 四態靠「哪一側 pip 填滿」區分(單一顏色打到底,灰階下成立),每個存活單位常駐、不受選取門控。⚠️ **三項誠實登記未做**:①`battle_screen.gd` 掃 `Board.passable()` 那段**沒有專屬測試,而現有地形全部 passable=true,等於目前零防線** ②像素級灰階肉眼複核(批次化到家中) ③角標規模是否足以與既有語彙區分,實作者自評不確定。
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: S~M

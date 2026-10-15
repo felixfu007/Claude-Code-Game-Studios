@@ -1,7 +1,7 @@
 # Story 013: 攻擊確認面板(二段確認,`_confirm_at_cursor()` 拆段)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M5
-> **Status**: Ready(2026-10-05 解除封鎖 —— 本地化 Story 001 已 Complete,見下方註)
+> **Status**: ✅ **Done(2026-10-15,協調者獨立重跑驗收)** —— 提交 `abe81fc`。攻擊改為二段確認。🔴 **零寫入是【實測】不是宣稱**:測試實際讀引擎的 `combat_state_version`,開面板前後斷言相等,並有對照組斷言第二次確認時**確實遞增**(證明該欄位本身是活的)。實作者另主動補了滑鼠路徑的 guard —— 不補的話滑鼠點擊可完全繞過二段確認。
 > ✅ **2026-10-05 解除封鎖。** 本行原文逐字為:
 > `> **Status**: Blocked(見下方「阻擋條件」——本地化 Story 001 尚未完成)`
 > **解除依據**:本地化 Story 001 的 A~E 五節全部完成並標 `Complete`

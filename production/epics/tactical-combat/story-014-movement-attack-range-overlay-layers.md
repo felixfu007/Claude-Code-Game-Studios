@@ -1,7 +1,7 @@
 # Story 014: 移動範圍三態+第四態、攻擊範圍三層疊加圖(世界層繪製)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M4
-> **Status**: Ready(規劃層無阻擋;執行層見下方序列化)
+> **Status**: ✅ **Done(2026-10-15,協調者獨立重跑驗收)** —— 提交 `f9f1968`。四態與三層全部用**程式圖元畫形狀**(ColorRect/Line2D),**零新增佔位圖**。🔴 「移動力不足」畫小灰點而非不畫,為 2026-10-15 管理者裁決(理由與被跳過的選項記在 `board_view.gd` 的 `MOVE_OUT_OF_RANGE_DOT_COLOR` 上方)。⚠️ 未做:`battle_screen.gd` 排除邏輯的端對端測試。
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: M

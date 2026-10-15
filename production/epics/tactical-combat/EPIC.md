@@ -638,10 +638,10 @@ U-T13/U-T14 → **Out of Scope**(分屬 #10 與尚未存在的關卡流程)。
 | 009 | 裝置權威收斂(退役 `device_authority.gd`) | M6 | Integration | Ready | ADR-0005 | 008 |
 | 010 | 方向鍵去抖收斂(`echo` 過濾,含手把涵蓋查證) | M6 | Logic | ✅ Done | ADR-0005 | 建議 008 之後 |
 | 011 | 輸入缺口補強(U-T6/U-T7/U-T8) | M6 | Integration | ✅ Done | ADR-0001, ADR-0005 | 建議 008 之後 |
-| 012 | 格位資訊面板 | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 004, 006, 008-011 |
-| 013 | 攻擊確認面板(二段確認) | M5 | UI | Ready(2026-10-05 解除封鎖,本地化 Story 001 已 Complete) | ADR-0001, ADR-0005 | 006, 008-011 |
-| 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | Ready(執行序見下) | ADR-0001 | 003, 007, 012, 013 |
-| 015 | 行動旗標持久標記 + 不可通行地形呈現 | M4 | Visual/Feel | Ready(執行序見下) | N/A | 001, 004, 012, 013 |
+| 012 | 格位資訊面板 | M5 | UI | ✅ Done | ADR-0001, ADR-0005 | 004, 006, 008-011 |
+| 013 | 攻擊確認面板(二段確認) | M5 | UI | ✅ Done | ADR-0001, ADR-0005 | 006, 008-011 |
+| 014 | 移動/攻擊範圍疊加圖(世界層) | M4 | Visual/Feel | ✅ Done | ADR-0001 | 003, 007, 012, 013 |
+| 015 | 行動旗標持久標記 + 不可通行地形呈現 | M4 | Visual/Feel | ✅ Done | N/A | 001, 004, 012, 013 |
 | 016 | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查 + `reachable_tiles()` 哨兵防護) | M2 | Logic | ✅ **Done(2026-10-12 協調者逐條驗收)** —— AC1~AC7 全過,逐條證據見該 story 檔 `
 | 003c | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()`/`tick_all_modifiers()`,路徑⑥⑦) | M3a | Logic | ✅ **Done(2026-10-12)** —— AC5 已併入「重寫 ADR-0001」,AC4 已 descope,兩者理由見該 story 檔頭 | ADR-0001 | **003b** |
 | 017 | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | M3a | Logic | ✅ **Done(2026-10-12)** —— `take_damage()` 採選項 B(繞過守衛),留下的缺口見該 story 檔頭 | ADR-0001 | **003b** |
