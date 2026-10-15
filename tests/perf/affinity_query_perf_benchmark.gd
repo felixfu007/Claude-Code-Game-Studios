@@ -7,11 +7,13 @@
 # 「失敗」。比照 .claude/docs/coding-standards.md 對「沒有可測對象要寫 N/A、不得寫通過」
 # 的紀律：第一次執行是建立起點，不是驗證回歸。
 #
-# 🔴 本次量測的是「遷移前」基準：story-005（好感度數值池遷移，M2）在本次執行時仍是
-# Ready、尚未開工，配對表來自靜態檔 AffinityLink.links_from_text() 一次性解析，不含
-# story-005 完成後 AffinityDataPool 逐次查詢會新增的跨系統呼叫開銷
-# （combat_strength_read()）。遷移前的基準不能直接拿來當作遷移後的回歸比較對象——
-# story-005 完成後應再量一次、標註為「遷移後（逐次查詢）基準」，取代本檔作為權威版本。
+# 🔴 本腳本量測的是「遷移後」基準：story-005（好感度數值池遷移，M2）已於
+# 2026-10-14 完成，配對表改為 AffinityPhiProvider 對 AffinityDataPool 的逐次查詢
+# （combat_strength_read()），不再是建構時一次性解析的靜態檔。本檔原本（2026-10-14
+# 之前）量的是「遷移前」基準——配對表來自靜態檔 AffinityLink.links_from_text() 一次性
+# 解析，不含逐次查詢會新增的跨系統呼叫開銷；該舊基準已不能直接拿來當作本檔現在量出的
+# 數字的回歸比較對象，下一次要比較「較上一版基準劣化 ≤ 20%」時，比較對象是本檔本身
+# 上一次（遷移後）執行寫出的基準，不是遷移前的歷史數字。
 #
 # ── 用法 ─────────────────────────────────────────────────────────────────
 #   <godot> --headless --path . -s tests/perf/affinity_query_perf_benchmark.gd
@@ -102,9 +104,10 @@ func _initialize() -> void:
 	# 不再餵給 provider —— 下方改用 pool.append_record() 植入與該檔同形狀的兩筆
 	# 記錄（1,2,POSITIVE 與 3,4,NEGATIVE），讓本腳本量到的呼叫路徑與正式連線後的
 	# AffinityPhiProvider.links()（逐次查詢 combat_strength_read()）一致，而不是
-	# 量一個空池的退化情況。這是遷移前基準之後的最小必要同步，不是重新建立基準——
-	# 本檔頭部註解仍標記「遷移前基準」，若要用本腳本建立「遷移後（逐次查詢）基準」
-	# 取代它，需要另一次刻意執行與人工核對（見本檔頭「為什麼是獨立腳本」第 2 點）。
+	# 量一個空池的退化情況。這原本是遷移前基準之後的最小必要同步，用來讓本腳本在
+	# story-005 完成當下仍可編譯執行；本檔頭部註解與下方輸出標籤已隨本次更新改為
+	# 「遷移後（逐次查詢）基準」，本腳本現在就是用來建立取代舊基準的權威版本
+	# （見本檔頭「為什麼是獨立腳本」第 2 點所說的「另一次刻意執行與人工核對」）。
 	var parsed_links: Variant = AffinityLink.links_from_text(links_text)
 	if parsed_links == null:
 		push_error("AC-PERF 基準腳本：AffinityLink.links_from_text() 回傳 null，vs01 配對表解析失敗。")
@@ -173,7 +176,7 @@ func _initialize() -> void:
 	_write_baseline(average_usec, median_usec, min_usec, max_usec, samples_usec.size(), commit_hash, measured_date)
 
 	print(
-		"AC-PERF baseline established (PRE-migration, static-file reads) — "
+		"AC-PERF baseline established (POST-migration, per-query AffinityDataPool reads) — "
 		+ "average=%.2f usec/query median=%d usec/query min=%d max=%d over %d queries, commit=%s"
 		% [average_usec, median_usec, min_usec, max_usec, samples_usec.size(), commit_hash]
 	)
@@ -259,7 +262,7 @@ AC-PERF 的判準是「較上一版基準劣化 ≤ 20%%」。下表是**目前�
 
 | 欄位 | 值 |
 |---|---|
-| 基準類型 | 🔴 **遷移前（讀靜態檔）基準** —— story-005（好感度數值池遷移）本次量測時仍為 Ready、尚未開工 |
+| 基準類型 | 遷移後（逐次查詢 `AffinityDataPool.combat_strength_read()`）基準 —— story-005（好感度數值池遷移）已於 2026-10-14 完成 |
 | 量測日期 | %s |
 | 程式碼版本（commit） | `%s` |
 | 連續查詢次數 | %d（另有 100 次暖機，不計入） |
@@ -279,11 +282,16 @@ AC-PERF 的判準是「較上一版基準劣化 ≤ 20%%」。下表是**目前�
 （見下表最大值與平均值的落差）。**下一次重新量測時，機器負載不保證相同** ——
 比較「劣化 ≤ 20%%」時，這一點本身就可能是雜訊來源之一，不是只有程式碼變更。
 
-## ⚠️ 遷移後必須再量一次
+## ✅ 遷移後的重新量測 —— 已於 2026-10-15 執行完畢
 
-若 story-005（逐次查詢資料池）完成，本基準即失效——GDD 明文警告呼叫頻率為輸入事件級，
-而遷移後每次查詢會多一次跨系統呼叫（`combat_strength_read()`）。屆時應重跑本腳本、
-在提交訊息與本檔都標註「遷移後（逐次查詢）基準」，取代上表作為未來回歸比對的權威版本。
+本節原本寫的是一條待辦:「若 story-005(逐次查詢資料池)完成,本基準即失效……屆時應重跑
+本腳本、標註『遷移後(逐次查詢)基準』,取代上表作為未來回歸比對的權威版本。」
+**story-005 已於 2026-10-14~15 完成(提交 `bbdc0f6`),該待辦已執行,上表即是遷移後基準。**
+
+🔴 **它記載的技術事實仍然成立,保留在此**:GDD 明文警告呼叫頻率為輸入事件級,
+而遷移後每次 `links()` 查詢會對每一組候選配對各多一次跨系統呼叫
+(`AffinityDataPool.combat_strength_read()`),不再是回傳一份建構時凍結的陣列。
+**這是遷移前後數字可比性的主要變因,比對劣化幅度時必須納入考量。**
 
 ## 刻意未計入的因素
 

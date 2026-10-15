@@ -317,3 +317,88 @@ func test_links_skips_only_the_rejected_pair_leaving_other_valid_pairs_unaffecte
 	assert_int(provider.diagnostic_rejected_pair_count()).is_equal(1)
 	# 合法路徑（links()）本身仍然正常：存活主角只有兩位、配對正向、相距 1 格
 	assert_int(provider.phi(1, 999)).is_equal(3)
+
+
+# ---- (10) links()：2026-09-29 第 6 項裁決降級處理 —— 淨值恰為 0.0 但有真實
+# 互動記錄（n_pair > 0）的合法遊戲內資料狀態，借用裁決 4 的降級路徑（不產生線、
+# 貢獻視為 0），但診斷紀錄等級必須與裁決 4 分開 ------------------------------
+# production/epics/affinity-position-chain/EPIC.md「✅ 第 6 項裁決
+# （2026-09-29）」：combat_strength_read() 回傳 rejection==NONE、n_pair>0、
+# value==0.0 —— 這對角色確實有互動記錄，只是正負剛好抵銷（與測試 (8) 的
+# n_pair==0「從未互動」邊界是不同情境，不要混為一談）。裁決內容借用裁決 4
+# 的同一套降級路徑，但明文要求兩者診斷紀錄等級不同：裁決 4 處理工程錯誤
+# （警告等級、diagnostic_rejected_pair_count()）；本項處理合法遊戲內資料狀態
+# （資訊等級、diagnostic_zero_value_pair_count()）。本測試釘住兩個計數器各自
+# 的遞增/不遞增，確保兩條降級路徑在診斷紀錄上沒有被混為一談。
+
+func test_links_excludes_a_pair_with_net_zero_value_despite_real_interactions_and_logs_as_info_not_rejection() -> void:
+	# Arrange — 兩個存活主角，對同一配對寫入兩筆記錄，淨值抵銷為 0.0 而
+	# n_pair == 2（真實互動記錄存在，不是 n_pair==0 的「從未互動」邊界）。
+	#
+	# 🔴 這裡【不能】沿用既有測試 (9) 翻轉測試「t_i 皆為 _t_now=0，故衰減一律
+	# 為 1.0」那條捷徑——本測試第一次嘗試照抄那條假設送審時，實測當場推翻：
+	# append_record() 每次成功寫入都會把 _t_now 前進一格（見
+	# AffinityDataPool.append_record() 原始碼 `var new_t: int = _t_now + 1`），
+	# 故同一個 pool 連續寫入兩筆記錄，兩筆的 t_i 必然不同（這裡是 1 與 2），
+	# 不是兩者皆為 0。combat_strength_read() 預設查詢時點＝目前 _t_now（=2），
+	# 於是較早那筆 age=1 會被 `λ_combat^1` 衰減、較晚那筆 age=0 恆為權重 1.0
+	# （_weighted_sum() 的 `0^0:=1` 特判）——天真地寫 +1.0/-1.0 會得到淨值
+	# `λ_combat - 1.0`，不是 0.0（實測：以 0.94 的佔位校準值量到 -0.06）。
+	#
+	# 正確做法：直接呼叫 AffinityCalibration.uncalibrated_placeholder() 讀取
+	# 真實的 λ_combat 校準值（不是自己重新發明/抄一份衰減公式——本測試只用它
+	# 來反推「要讓兩筆記錄的加權淨值精確抵銷，第二筆要寫多少」，衰減公式本身
+	# 仍然只在 AffinityDataPool._weighted_sum() 這一處實作）。讓第一筆
+	# m=+1.0（age=1，權重 = λ_combat），第二筆
+	# m=-λ_combat（age=0，權重 = 1.0）：
+	# 淨值 = 1.0×λ_combat + (-λ_combat)×1.0 = 0，且不受 λ_combat 實際數值
+	# 影響（校準旋鈕改了，這條測試仍然成立），維持決定性。
+	var lambda_combat: float = AffinityCalibration.uncalibrated_placeholder().lambda_combat
+	var roster: Array[String] = [
+		"1,P1,PLAYER,20,10,0,0,1,1,0,0",
+		"2,P2,PLAYER,20,10,0,0,1,1,1,0",
+	]
+	var state: BattleState = BattleState.create(PackedStringArray(), "\n".join(roster))
+	var pool: AffinityDataPool = AffinityDataPool.new()
+	var rejection_1: AffinityDataPool.WriteRejection = pool.append_record(
+		AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.STORY_EVENT
+	)
+	var rejection_2: AffinityDataPool.WriteRejection = pool.append_record(
+		AffinityTypes.Pair.C1_C2, -lambda_combat, AffinityTypes.Source.STORY_EVENT
+	)
+	assert_int(rejection_1).is_equal(AffinityDataPool.WriteRejection.NONE)
+	assert_int(rejection_2).is_equal(AffinityDataPool.WriteRejection.NONE)
+	var provider: AffinityPhiProvider = AffinityPhiProvider.new(state, pool)
+
+	# Sanity check — 淨值確實抵銷為 0.0 且 n_pair > 0，證明這是本測試要釘的
+	# 情境（有真實互動記錄），不是測試 (8) 的 n_pair==0 邊界
+	var sanity_result: AffinityDataPool.AffinityReadResult = pool.combat_strength_read(
+		AffinityTypes.Pair.C1_C2
+	)
+	assert_int(sanity_result.rejection).is_equal(AffinityDataPool.ReadRejection.NONE)
+	assert_int(sanity_result.n_pair).is_equal(2)
+	assert_float(sanity_result.value).is_equal_approx(0.0, 0.0001)
+
+	# Act — 只呼叫 links() 一次。provider.phi() 內部也會呼叫一次 links()
+	# （story-005 逐查詢反快取：每次呼叫都重新查 pool），若在這裡額外呼叫
+	# phi() 會讓同一個降級分支被 _link_for_pair() 命中兩次、診斷計數器因而
+	# 遞增兩次而非一次——這不是計數器本身的 bug，是測試不應該疊加兩條會
+	# 命中同一分支的呼叫路徑再斷言「遞增 1」。
+	var links: Array[AffinityLink] = provider.links()
+
+	# Assert 1 — 不產生線（不只是淨值算出 0，是 links() 結果裡根本沒有這筆）
+	assert_bool(links.is_empty()).is_true()
+	# Assert 2 — 資訊等級的計數器遞增
+	assert_int(provider.diagnostic_zero_value_pair_count()).is_equal(1)
+	# Assert 3 — 裁決 4 的警告等級計數器【沒有】遞增，這是釘住「兩種降級路徑
+	# 沒有被混為一談」的那一條，對應 EPIC.md 第 6 項裁決明文要求：「不得沿用
+	# 裁決 4 的警告等級，否則正常遊玩會持續噴出看起來像錯誤的紀錄」。
+	assert_int(provider.diagnostic_rejected_pair_count()).is_equal(0)
+
+	# 📌「沒有觸發 push_warning()」這件事本身，本測試沒有直接驗證 —— GdUnit4
+	# 是否提供攔截 push_warning() 呼叫的機制，本測試作者未查證，不為此發明
+	# 額外機制。上面 diagnostic_rejected_pair_count() 維持 0 是代理指標：
+	# _link_for_pair() 原始碼（見該方法文件註解分支 1）顯示 push_warning() 與
+	# _diagnostic_rejected_pair_count += 1 在同一個 if 區塊內成對出現，兩者
+	# 必定同時發生或同時不發生，故此計數器維持 0 可作為「push_warning() 也
+	# 沒有被呼叫」的間接證據，但這不是對 push_warning() 本身的直接驗證。
