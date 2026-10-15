@@ -166,6 +166,21 @@ const MOVE_TERRAIN_HATCH_INSET: float = 8.0
 ## on "nothing is drawn" the way [method set_card_target_highlights]'s third
 ## state works — GDD AC-13 and UX pattern `P-D1` both frame all four states
 ## as needing an independent marker, not three states plus a default.
+## 🔴 2026-10-15 管理者裁決:**保留這個點,不要改成「不畫」。**
+##
+## 背景:「移動力不足」是四態裡佔格數最多的一態 —— 選取任何單位時,
+## 棋盤上幾乎所有空格都屬於它。實作者當時把「畫小點 vs 完全不畫」標為
+## 自己的判斷而非裁決,並誠實指出它與本作「越安靜越好」的設計傾向有衝突。
+##
+## **管理者選「保留」,理由不只是規格字面(AC 的「四者皆須有獨立的非色彩
+## 通道視覺標記(無例外)」),而是它真的在傳達資訊**:玩家看得出
+## 「這一格我有評估過,是距離不夠」與「這一格根本不在考慮範圍內」的差別。
+## 🔴 **在四態互斥且窮盡的設計下,「什麼都不畫」等於悄悄引入第五種狀態**
+## —— 而空白同時代表「走不到」與「根本沒選單位」,玩家分不出系統有沒有在回應他。
+##
+## ⚠️ **被跳過的兩個選項**:①改成不畫(代價:上述歧義)
+## ②等管理者在家中複核 M4 截圖後再決定(代價:若屆時改判,那批截圖要重拍)。
+## 📌 **所以:下一個人看到棋盤上一大片小灰點,那是裁決後的預期行為,不是沒清乾淨。**
 const MOVE_OUT_OF_RANGE_DOT_COLOR: Color = Color(0.6, 0.6, 0.6, 0.45)
 const MOVE_OUT_OF_RANGE_DOT_SIZE: float = 6.0
 
