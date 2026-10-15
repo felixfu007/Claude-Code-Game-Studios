@@ -121,7 +121,17 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# Arrange / Act
 	var data_rows: Array[PackedStringArray] = _load_real_data_rows()
 
-	# Assert — 68 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
+	# Assert — 75 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
+	# 🔴 2026-10-15 第二次更新(同一天內):45 → 68(story-012 格位資訊面板 +23)
+	# → 75(story-013 攻擊確認面板 +7)。
+	# ⚠️ **這個寫死的數字一天之內被兩張不同的工作單撞紅兩次**,而且兩次都是
+	# 「該 story 本身沒做錯任何事,只是新增了 key」。兩次都讓這支檔案的
+	# **第一條**測試失敗,連帶中止它後面 5 條(本專案已登記「一條失敗會中止
+	# 它所在 suite 的剩餘測試」),使全套總數看起來少 5 筆 —— 那個落差
+	# 本身也要花時間追。
+	# 📌 **登記為待裁決**:這個斷言要防的是「資料列意外消失」,而寫死總數
+	# 讓每一張新增 key 的 story 都得付一次維護成本。是否改成「下限 + 不重複
+	# + 無空值」的組合(後兩者本檔已有獨立測試),是一次設計決定,不在本次修正範圍。
 	# 🔴 2026-10-15 更正：本處原寫「45 筆與 i18n_migrated_strings_test.gd 的
 	# test_total_migrated_key_count_is_forty_five 是同一個數字，兩處故意分別驗證不同
 	# 事實，CSV 筆數變動時兩處要一起改」——這句話描述的「同步維護」關係並不成立，只是
@@ -134,10 +144,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 68（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 75（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(68)
+	).is_equal(75)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

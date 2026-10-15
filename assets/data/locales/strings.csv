@@ -45,6 +45,13 @@ battle.card_confirm.existing_modifier_line_format,%s：ATK %s／DEF %s，剩 %d 
 battle.card_confirm.effective_format,合併後：ATK_eff %d／DEF_eff %d
 battle.card_confirm.target_format_pair,作用對象：%s ↔ %s
 battle.card_confirm.strength_label_format,好感度：%s
+battle.attack_confirm.header_format,%s ⚔ %s
+battle.attack_confirm.atk_format,ATK：%d
+battle.attack_confirm.def_format,DEF：%d
+battle.attack_confirm.phi_format,Φ：%s
+battle.attack_confirm.phi_clamped_format,（好感度原始值 %s，結算夾限為 %s）
+battle.attack_confirm.damage_format,結果傷害：%d
+battle.attack_confirm.target_hp_format,目標血量：%d → %d
 battle.hand_bar.temporary_effect_summary_format,ATK%s · DEF%s · 剩%d回合
 battle.menu.disabled_row_prefix_glyph,"✕ "
 battle.menu.return_to_battle_row,回到遊戲
