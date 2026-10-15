@@ -483,7 +483,7 @@ headless 取不到像素是 dummy rendering driver 的引擎限制,**與載入�
 
 ⚠️ **註冊 Autoload 會讓它在每一個場景啟動,包含全部測試場景。**
 新增時必須實跑全套 `tests/unit` 確認沒有新失敗 —— `CursorStateHost` 註冊時已如此驗證
-(287 條、0 orphans、唯一失敗是既有那條刻意紅且已核准的 `affinity_phi_provider` 測試)。
+(287 條、0 orphans、唯一失敗是當時既有那條刻意紅且已核准的 `affinity_phi_provider` 測試)。🔴 **2026-10-15 更正:那條紅燈已經不存在了。** 好感度 `story-005` 讓它變綠(且不是靠改斷言),**全套自此第一次零失敗**:協調者當日獨立重跑為 `ENGINE EXIT = 0` / `1159 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `Executed test suites: (99/99)`。**本檔每次對話開場載入,留著舊說法會讓下一個人去找一條不存在的紅燈。** 要現值就當場跑,不要抄這裡的數字。
 
 ⚠️ **`class_name` 不可與 Autoload 名稱同名** —— 會產生 parse-time 衝突。
 `cursor_state_host.gd` 因此刻意不宣告 `class_name`(檔內註解有記錄實測到的錯誤訊息)。

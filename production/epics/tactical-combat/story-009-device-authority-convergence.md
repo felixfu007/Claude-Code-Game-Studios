@@ -1,7 +1,7 @@
 # Story 009: 裝置權威收斂(退役 `device_authority.gd`)
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md` M6(收斂表 #2)
-> **Status**: Ready(⚠️ 依賴 story-008 完成)
+> **Status**: ✅ **Done(2026-10-14,協調者獨立重跑驗收)** —— 三個單位全部完成:單位 1+2+3a 於 `2319e37`(滑鼠路徑接上 `CursorStateHost`、17 處手動記帳退役),單位 3b 於 `828b4be`(`device_authority.gd` 與 `device_authority_test.gd` 整份退役)。🔴 **本行 2026-10-15 補正 —— 在此之前它漂移了一天**:程式 10/14 就提交了,狀態欄還停在 `Ready`。
 > **Layer**: Presentation
 > **Type**: Integration
 > **Estimate**: M

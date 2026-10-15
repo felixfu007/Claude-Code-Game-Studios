@@ -82,7 +82,7 @@ static func bonus_for_at(...) -> int:   # ← 簽章四個參數已略,完整簽
 
 | # | 需求一句話 | 現況 | 歸屬模組 |
 |---|---|---|---|
-| R1 | 關係表是資料不是規則;極性/強度來自**上游即時查詢**,靜態檔僅為暫代品 | 🔴 **未達成**。現行讀 `assets/data/affinity/vs01_affinity_links.txt`,且在 `AffinityPhiProvider._init()` 建構時一次讀入 `_links`。查證:`grep -n "_links" src/gameplay/affinity/affinity_phi_provider.gd` | **M2** |
+| R1 | 關係表是資料不是規則;極性/強度來自**上游即時查詢**,靜態檔僅為暫代品 | ✅ **已達成(2026-10-15,提交 `bbdc0f6`)**。`AffinityPhiProvider.links()` 每次呼叫都重新向 `AffinityDataPool.combat_strength_read()` 取得,無建構時快取。查證:`grep -n "_pool.combat_strength_read" src/gameplay/affinity/affinity_phi_provider.gd`。⚠️ **靜態檔尚未完全退場,但已不是 `Φ` 的資料來源**:它①仍供 `PermanentAffinityWriteRules` 做丙類卡牌的正典關係線合法性檢查,②並由 2026-10-15 管理者裁決的**暫代灌入**在開局寫進池子(`story-005-seeding-ruling-2026-10-15.md`)—— 那段灌入是明文登記的暫代品,未來由劇情卡牌/存檔取代。 | **M2** |
 | R2 | 曼哈頓距離與戰鬥射程採相同定義;**允許兩份實作,但必須測到一致** | ✅ 行為已測(AC-R2)。⚠️ **「仍然只有兩份」這個結構性質無任何自動檢查**。查證:`grep -rn "manhattan" src/ --include=*.gd` | **M5** |
 | R3 | 距離—數值曲線 +3 / 0 / −1(正向),−1 / 0 / +2(負向) | ✅ 已實作為具名常數(`AffinityRules.DELTA_*`),行為有測但**測試未標 AC-R3**(見第 4 節) | **M1** |
 | R4 | 所有關係線全部生效、逐條加總、**無任何抑制** | ✅ **已落地並有金絲雀測試釘住**(AC-R4a/R4b)。`SUPPRESSED` 已整個刪除 | — 已完成 |
@@ -294,7 +294,7 @@ $ grep -A0 "TR-affinity-001" docs/architecture/tr-registry.yaml
 |---|---|---|---|
 | **M0** | **治理前置:把 #5 的 R1–R10 補登進追溯體系** | `docs/architecture/tr-registry.yaml`、`traceability-index.md` | ✅ **已完成 2026-09-29** —— 管理者裁決 3 指派,由窄範圍 `/architecture-review`(Phase 8)執行。R1–R10 已登記為 `TR-affinity-position-001`~`-010`,`traceability-index.md` 已建立本系統的完整矩陣節。🔴 **該節的 ❌ 是「已裁決不補 ADR」的 ❌,不是待辦** —— 不得讀成 10 份待寫 ADR,亦不得列入「需要 ADR 的已知缺口」清單。分佈當場數(指令在該節內),本列不抄數字 |
 | **M1** | **驗收基準對齊**:補上 AC-R1 / AC-R3 / AC-R5 三條沒有具名測試的驗收準則 | **只動 `tests/`**,零 production 變更 | ✅ **可以,而且是唯一零前置的模組** |
-| **M2** | **上游接線**:配對資料由靜態檔一次讀入改為**每次查詢重新取得**(R1 + R9 配對側) | `affinity_phi_provider.gd`、`battle_screen.gd`(接線點)、`affinity_link.gd`(讀檔路徑退場) | 🔴 **被擋** —— 等 #1 的 `combat_strength_read` 可用(見第 8 節) |
+| **M2** | **上游接線**:配對資料由靜態檔一次讀入改為**每次查詢重新取得**(R1 + R9 配對側) | `affinity_phi_provider.gd`、`battle_screen.gd`(接線點)、`affinity_link.gd`(讀檔路徑退場) | ✅ **完成(2026-10-15,story-005,提交 `bbdc0f6`)** —— 封鎖已於 2026-09-29 裁決 4 解除,實作於 2026-10-14~15 落地。⚠️ `affinity_link.gd` 的 `links_from_text()` **未退役**,理由見 R1 列。 |
 | **M3** | **夾限與逐條貢獻的揭露**:讓呼叫端**知道** `Φ` 被夾限壓回了,而不必自己重算一次總和 | `affinity_rules.gd`(新增查詢面)、`affinity_line_status.gd` | 🟡 **可以動本系統側**;消費端(UI)被 UX 規格擋住 |
 | **M4** | **陣亡回饋的資料擁有權**(OQ-6:死前 `Φ` 快照誰持有) | 未定 —— **刻意未定**,因為擁有者還沒決定 | 🔴 **被擋** —— 需管理者裁決 + `/ux-design` |
 | **M5** | **結構紀律與效能基準**:R2「仍然只有兩份曼哈頓實作」的守衛,與 AC-PERF 的第一條基準 | **只動 `tests/`** | ✅ 可以 |

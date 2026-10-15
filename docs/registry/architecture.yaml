@@ -693,6 +693,33 @@ interfaces:
                                     # a RECORDED OBLIGATION, not a decision between options.
     signal_signature: "AffinityDataPool.combat_strength_read(pair, t_query=t_now) -> result (polarity+strength, float)"
     notes: >
+      LANDED 2026-10-15 (story-005, commit bbdc0f6) — the obligation below is now SATISFIED
+      in code. AffinityPhiProvider no longer holds a frozen _links field; links() rebuilds
+      the pairing table from the pool on every single call, exactly as positions() already
+      rebuilt positions. Verify: grep -n "_pool.combat_strength_read"
+      src/gameplay/affinity/affinity_phi_provider.gd. Coordinator re-ran the suite
+      independently (report not taken at face value): ENGINE EXIT = 0, "Overall Summary:
+      1159 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans",
+      "Executed test suites: (99/99)", grep " FAILED" zero hits — the project's FIRST
+      all-green suite, and the single red test that preceded it was this story's own
+      completion criterion.
+      STATUS STAYS active, NOT closed: this entry records a STANDING obligation, not a
+      task. Anyone adding a second consumer of combat_strength_read, or re-introducing a
+      construction-time cache, is still bound by it.
+      🔴 TWO THINGS THE LANDING DID NOT DO, recorded so nobody reads "LANDED" as "finished":
+      (1) assets/data/affinity/vs01_affinity_links.txt is NOT retired. It still feeds
+      PermanentAffinityWriteRules' canon-relationship-line check (card legality — a
+      different concern from Phi's numeric strength), AND a 2026-10-15 manager ruling
+      seeds the pool from it at battle open. Without that seeding every pair starts at
+      n_pair == 0, so Phi would be permanently 0 and the board would draw no relationship
+      lines at all until dialogue-card writes or save-load exist — neither is implemented,
+      and the save system (ADR-0004) is explicitly out of the 12-month plan. That seeding
+      is a REGISTERED STOPGAP, not design:
+      production/epics/affinity-position-chain/story-005-seeding-ruling-2026-10-15.md.
+      ⚠️ No lint, hook or gate checks that the stopgap is ever removed.
+      (2) The OPEN/DELIBERATELY-UNDECIDED quantisation question below is UNCHANGED —
+      amp is still hardcoded 1 (sign-only). story-005 did not decide it and did not need to.
+      ── Everything below this line is the pre-landing record, kept verbatim as history. ──
       PAIRING DATA MUST BE RE-FETCHED ON EVERY Phi QUERY — same freshness class as the
       position snapshot, NOT loaded once at construction.
       Measured 2026-08-31: AffinityPhiProvider._links is loaded once in _init() and never
@@ -715,7 +742,7 @@ interfaces:
       - design/gdd/affinity-position-chain.md
       - design/gdd/affinity-data-pool.md
     added: 2026-08-31
-    revised: ""
+    revised: 2026-10-15
 
   - contract: phi_curve_enemy_advantage_cross_calibration
     status: open_gap

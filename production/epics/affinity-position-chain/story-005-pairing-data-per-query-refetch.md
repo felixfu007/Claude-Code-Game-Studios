@@ -1,12 +1,12 @@
 # Story 005: 配對資料改為逐次查詢(M2 主線 —— 唯一真正改變行為的故事)
 
 > **Epic**: 好感度—位置連鎖系統(#5)
-> **Status**: Ready(⚠️ 依 story-004 的判定結果,實作前請先確認 004 已 Done)
+> **Status**: ✅ **Done(2026-10-15,協調者獨立重跑驗收,不採信回報)** —— 提交 `bbdc0f6`。全套 `ENGINE EXIT = 0` / `Overall Summary: 1159 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `Executed test suites: (99/99)` / `grep " FAILED"` 零命中。**本專案測試套件第一次全綠**,而先前唯一那條紅燈正是本 story 的完成判準。
 > **Layer**: Gameplay(控制清單「核心層規則(Core)」——好感度數值池段直接適用)
 > **Type**: Integration
 > **Estimate**: M(1～2 session)
 > **Manifest Version**: 2026-09-09(`docs/architecture/control-manifest.md` 檔頭)
-> **Last Updated**: —(由 `/dev-story` 開工時填)
+> **Last Updated**: 2026-10-15
 
 ## Context
 
@@ -105,6 +105,19 @@ Autoload 節記載的「唯一失敗」就是這一條)——**請不要在本 s
 
 ## ⚠️ 待決問題(本 story 作者發現,未經覆核,需管理者或 systems-designer 裁決)
 
+> ✅ **2026-10-15 補註:本節已於 2026-09-29 由管理者裁決完畢,下方原文保留作為決策紀錄,但不要再照它的結論句行動。**
+> **條文在 `production/epics/affinity-position-chain/EPIC.md` 的「✅ 第 6 項裁決」節**
+> (當場查:`grep -n "第 6 項裁決" production/epics/affinity-position-chain/EPIC.md`)——
+> 管理者逐字選了**「畫成中性線,不影響戰力(建議)」**,亦即採納下方作者的建議。
+> 🔴 **與裁決 4 有一項實作上不可合併的差異**:裁決 4 處理的是工程錯誤(警告等級),
+> 本項處理的是合法的遊戲內資料狀態(**資訊等級**),診斷紀錄不得沿用警告等級。
+>
+> ⚠️ **下方最後一段「🔴 這是本 story 作者的判斷…不得當成已裁決的事實實作」在 2026-09-29 之前是對的,現在被本註取代。**
+> 現行實作(`src/gameplay/affinity/affinity_phi_provider.gd` 的 `_link_for_pair()`)已依該裁決落地。
+> 📌 **本項與 2026-10-15 的「開局暫代灌入」裁決無關**:那一項管「池裡根本沒資料」
+> (`production/epics/affinity-position-chain/story-005-seeding-ruling-2026-10-15.md`),
+> 本項管「池裡有資料但淨值剛好為 0」。
+
 **`combat_strength_read()` 回傳 `result.rejection == NONE` 且 `result.n_pair > 0`,
 但 `result.value` 恰好等於 `0.0`**——即這對角色之間**確實有真實的互動記錄**
 (不是「從未互動」),只是正負記錄剛好抵銷,淨值為 0。
@@ -190,7 +203,7 @@ Autoload 節記載的「唯一失敗」就是這一條)——**請不要在本 s
 - 新增測試涵蓋裁決 4 的降級路徑與 `n_pair == 0` 邊界(建議放在同一測試檔,或
   `tests/integration/gameplay/affinity/` 下,依實作規模由實作者判斷)。
 
-**Status**: [ ] Not yet created
+**Status**: ✅ 已建立。完成判準測試 `test_phi_reflects_a_pairing_polarity_flip_made_after_construction` 已變綠(且不是靠改斷言 —— 新版另加一道翻轉前的 sanity 斷言);另新增裁決 4 降級、`n_pair == 0` 邊界、開局灌入三組測試。
 
 ## Dependencies
 
