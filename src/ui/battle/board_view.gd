@@ -22,9 +22,9 @@
 ##
 ## [b]Layer order is deliberate and asymmetric[/b] (child order in
 ## [code]BoardView.tscn[/code], which is what Node2D draws in): TerrainLayer,
-## MoveHighlightLayer, PiecesLayer, MoveUnreachableLayer, AffinityLineLayer,
-## ThreatHighlightLayer, AttackHighlightLayer, AttackLosBlockedLayer,
-## CardTargetHighlightLayer, StatsLayer, CursorSprite.
+## ImpassableTerrainLayer, MoveHighlightLayer, PiecesLayer, MoveUnreachableLayer,
+## AffinityLineLayer, ThreatHighlightLayer, AttackHighlightLayer, AttackLosBlockedLayer,
+## CardTargetHighlightLayer, StatsLayer, ActionFlagLayer, CursorSprite.
 ## [b]Story U-013[/b] adds [code]CardTargetHighlightLayer[/code] — see
 ## [method set_card_target_highlights]'s own doc comment for why it sits
 ## above [code]AttackHighlightLayer[/code] (same "must draw above occupied
@@ -284,7 +284,83 @@ const HP_TEXT_COLOR_PREVIEW: Color = Color(1.0, 0.78, 0.28)
 ## fix is allowed to change.
 const HP_TEXT_BG_COLOR_TARGET_ILLEGAL: Color = Color(0.0, 0.0, 0.0, 0.90)
 
+## Story 015 — persistent per-unit action-economy badge ordinal consumed by
+## [method render_pieces] via the OPTIONAL "action_flag" dictionary entry
+## (GDD States and Transitions' "可行動" compound state — 皆未用/只剩攻擊/
+## 只剩移動/已行動). Deliberately BoardView's own enum rather than
+## [code]TurnOrder.ActionState[/code]: this node must not gain a gameplay
+## dependency (same reason [enum LineTone] exists instead of importing
+## [code]AffinityLineStatus.State[/code] directly — see that enum's own doc
+## comment). The caller ([code]battle_screen.gd[/code]) does the
+## [code]TurnOrder.ActionState[/code] -> [enum ActionFlag] mapping.
+##
+## [b]Unlike every other per-piece flag on the [method render_pieces]
+## dictionary (show_hp_text, card_target_illegal), this one is never gated on
+## selection or cursor focus[/b] — GDD's own requirement is "常駐於棋盤上，
+## 不需要選取或開啟面板才看得到" (persistent; visible without selecting the
+## unit or opening a panel). [method render_pieces] draws a marker for this
+## field on every piece it is given, unconditionally.
+enum ActionFlag { NONE_USED, ATTACK_ONLY, MOVE_ONLY, DONE }
+
+## [enum ActionFlag] badge geometry — TWO small square "pips" anchored to the
+## piece SPRITE's top-right corner (not the cell's — contrast [constant
+## HP_BAR_WIDTH]'s doc comment, which anchors to the cell specifically so the
+## HP strip never leaves the 32x32 bounds). Anchoring to the sprite instead
+## deliberately places this badge in the [constant PIECE_SPRITE_HEIGHT]
+## overhang zone ABOVE the cell's own top edge, so it can never overlap
+## [method _build_hp_text]'s strip (which lives entirely inside the cell,
+## per that method's own "glyphs sliced in half" doc comment) — the two
+## persistent per-piece badges this file draws occupy disjoint vertical
+## bands by construction, not by coincidence.
+##
+## The left pip reports MOVE availability, the right pip reports ATTACK
+## availability (fixed order, see [method _build_action_flag_marker]) — HOLLOW
+## (outline only) means that action is still available, FILLED (solid) means
+## it has been spent. This directly encodes all four [enum ActionFlag] values
+## as two independent bits rather than one opaque 4-way code, and composes
+## into a shape family ("a PAIR of adjacent micro-badges, exactly one or
+## both or neither filled") that does not exist anywhere else in this file —
+## every other hollow-outline or solid-fill mark here is a SINGLE full-cell
+## (24-28px) shape, never a pair of ~5px pips glued to a piece's corner. See
+## [method _build_action_flag_marker]'s own doc comment for the full
+## distinguishability argument against this file's other seven shape
+## families (solid fill, ring, hollow outline, outline+3-bars, outline+
+## 1-slash, outline+X, centered dot).
+const ACTION_FLAG_PIP_SIZE: float = 5.0
+const ACTION_FLAG_PIP_GAP: float = 1.0
+const ACTION_FLAG_PIP_MARGIN: float = 1.0
+const ACTION_FLAG_PIP_BORDER_WIDTH: float = 1.0
+## Dedicated near-white constant rather than reusing [constant
+## CARD_TARGET_OUTLINE_COLOR] — same "two unrelated semantics never share one
+## source of truth" discipline [constant MOVE_BLOCKED_OUTLINE_COLOR]'s doc
+## comment already establishes, even though the two colours happen to look
+## similar today.
+const ACTION_FLAG_PIP_COLOR: Color = Color(0.95, 0.95, 0.95, 0.95)
+
+## Story 015 — terrain-impassability marker ([method
+## Board.passable] == false) consumed by [method
+## set_impassable_terrain_highlights]. A checkerboard half-fill — two
+## diagonally-opposite quadrants of the cell solid, the other two left fully
+## transparent so the terrain texture beneath still reads through — a shape
+## family none of this file's other seven (solid fill, ring, hollow outline,
+## outline+3-bars, outline+1-slash, outline+X, centered dot) uses: none of
+## them alternates solid/empty QUADRANTS of the same cell. Deliberately dark
+## and desaturated rather than reusing any existing highlight colour
+## (`P-F3`): this is a terrain-level fact, true regardless of whose turn it
+## is or what is selected, and must read as visually distinct from every
+## selection-dependent overlay in this file.
+const IMPASSABLE_TERRAIN_CHECKER_COLOR: Color = Color(0.05, 0.05, 0.05, 0.6)
+
 @onready var _terrain_layer: Node2D = $TerrainLayer
+## Story 015 — terrain-impassability marker layer. Sits directly above
+## [member _terrain_layer] and below [member _move_highlight_layer] — a
+## terrain-level fact belongs at the bottom of the stack, same reasoning
+## [member _move_highlight_layer] being BELOW [member _pieces_layer] already
+## establishes (see the class doc comment's layer-order note). No unit can
+## ever stand on an impassable cell (a board/rule guarantee this node takes
+## on faith, same as every other layer here), so this layer never competes
+## with [member _pieces_layer] for the same pixels.
+@onready var _impassable_terrain_layer: Node2D = $ImpassableTerrainLayer
 @onready var _move_highlight_layer: Node2D = $MoveHighlightLayer
 @onready var _attack_highlight_layer: Node2D = $AttackHighlightLayer
 ## Story 014 — attack-range third layer ("in range but LOS-blocked"). Sits
@@ -313,6 +389,15 @@ const HP_TEXT_BG_COLOR_TARGET_ILLEGAL: Color = Color(0.0, 0.0, 0.0, 0.90)
 ## Per-piece HP bar/text layer. Sits above both highlight layers — see the
 ## class doc comment's layer-order note and [method render_pieces].
 @onready var _stats_layer: Node2D = $StatsLayer
+## Story 015 — persistent per-unit action-flag badge layer. Sits ABOVE
+## [member _stats_layer] — the TOPMOST gameplay-info layer before
+## [member _cursor_sprite] — so this badge can never be hidden behind any
+## highlight overlay (move/attack/threat/card-target) or the HP bar/text,
+## matching GDD's "persistent, always visible" requirement for this exact
+## marker. See [constant ACTION_FLAG_PIP_SIZE]'s own doc comment for why this
+## does not actually compete with [member _stats_layer]'s HP text for pixels
+## despite being drawn above it.
+@onready var _action_flag_layer: Node2D = $ActionFlagLayer
 @onready var _cursor_sprite: Sprite2D = $CursorSprite
 
 
@@ -332,6 +417,28 @@ func render_terrain(terrain_rows: PackedStringArray) -> void:
 			sprite.centered = true
 			sprite.position = BoardCoords.grid_to_local_center(Vector2i(x, y))
 			_terrain_layer.add_child(sprite)
+
+
+## Story 015 — replaces the set of terrain cells whose [method Board.passable]
+## is false (GDD Tuning Knobs #4). Pass an empty array to clear. This is a
+## property of the TERRAIN ITSELF, not a per-frame selection-dependent
+## overlay — the caller is expected to compute [param cells] once (this
+## project's own forbidden-pattern registry bars procedural/runtime terrain
+## generation; GDD terrain is hand-authored and does not change mid-battle)
+## and call this once (e.g. alongside [method render_terrain] in
+## [code]_ready()[/code]), not on every refresh.
+##
+## 🔴 Structurally draws zero cells against the project's shipped level data
+## today — [code]vs01_terrain.txt[/code]'s three registered terrain
+## characters are all [code]passable=true[/code] (GDD Tuning Knobs #4
+## starting recommendation) — but implemented in full so the visual contract
+## exists before any impassable terrain data does, same precedent [constant
+## MOVE_TERRAIN_HATCH_COLOR]'s own doc comment already establishes for
+## exactly this situation.
+func set_impassable_terrain_highlights(cells: Array[Vector2i]) -> void:
+	_clear_children(_impassable_terrain_layer)
+	for cell: Vector2i in cells:
+		_impassable_terrain_layer.add_child(_build_impassable_terrain_marker(cell))
 
 
 ## Renders every piece on the board from [param pieces]. Each entry is a
@@ -369,24 +476,40 @@ func render_terrain(terrain_rows: PackedStringArray) -> void:
 ##                              # re-derived here — this node makes no rule
 ##                              # decisions, matching every other flag on this
 ##                              # dictionary.
+##     "action_flag": int,     # OPTIONAL — an [enum ActionFlag] ordinal
+##                              # (皆未用/只剩攻擊/只剩移動/已行動). Absent =
+##                              # NONE_USED. The caller (battle_screen.gd)
+##                              # maps [code]TurnOrder.ActionState[/code] ->
+##                              # [enum ActionFlag] — see that enum's own doc
+##                              # comment for why this node never imports
+##                              # TurnOrder itself. Unlike every other flag on
+##                              # this dictionary, drawn UNCONDITIONALLY for
+##                              # every piece — never gated on show_hp_text,
+##                              # selection, or cursor focus (GDD: "常駐於
+##                              # 棋盤上，不需要選取或開啟面板才看得到").
 ## }
 ## [/codeblock]
 ## Replaces whatever pieces were previously rendered. This method does not
 ## know or care whether the data came from a live [code]Unit[/code] roster
 ## or a test fixture — it only reads the dictionary shape above.
 ##
-## Splits its output across two layers: the piece sprite goes to
+## Splits its output across three layers: the piece sprite goes to
 ## [member _pieces_layer]; the HP bar and HP text go to [member _stats_layer]
 ## (see the class doc comment's layer-order note for why — a stat block
 ## living inside [member _pieces_layer] was a known, logged defect: it got
-## painted over by the threat/attack highlight layers). All stat-block
+## painted over by the threat/attack highlight layers); the action-flag badge
+## goes to [member _action_flag_layer] (Story 015 — see that member's own doc
+## comment for why it sits even above [member _stats_layer]). All stat-block
 ## geometry stays entirely inside the piece's own 32x32 cell — unlike the
 ## piece sprite, which is allowed to overhang the cell's top edge (see
 ## [constant PIECE_SPRITE_HEIGHT]), a stat block that also overhung would
-## paint into the status bar above row-0 cells.
+## paint into the status bar above row-0 cells. The action-flag badge is the
+## one exception: it is deliberately anchored to the SPRITE's overhang zone,
+## not the cell — see [constant ACTION_FLAG_PIP_SIZE]'s own doc comment.
 func render_pieces(pieces: Array[Dictionary]) -> void:
 	_clear_children(_pieces_layer)
 	_clear_children(_stats_layer)
+	_clear_children(_action_flag_layer)
 	for data: Dictionary in pieces:
 		var cell: Vector2i = data["cell"]
 		var faction: String = data.get("faction", "PLAYER")
@@ -396,6 +519,7 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		var hp_preview: int = data.get("hp_preview", -1)
 		var show_hp_text: bool = data.get("show_hp_text", false)
 		var card_target_illegal: bool = data.get("card_target_illegal", false)
+		var action_flag: ActionFlag = data.get("action_flag", ActionFlag.NONE_USED)
 
 		var path: String = ENEMY_SPRITE_PATH
 		if faction == "PLAYER":
@@ -411,6 +535,8 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		_stats_layer.add_child(
 			_build_stat_block(cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal)
 		)
+
+		_action_flag_layer.add_child(_build_action_flag_marker(cell, action_flag))
 
 
 ## Replaces the affinity connection lines drawn in [member _affinity_line_layer].
@@ -906,6 +1032,110 @@ func _build_attack_los_blocked_slash(cell: Vector2i) -> Node2D:
 	slash.default_color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
 	slash.antialiased = false
 	root.add_child(slash)
+	return root
+
+
+# Story 015 — persistent per-unit action-flag badge: two adjacent pips
+# anchored to the piece SPRITE's top-right corner (see ACTION_FLAG_PIP_SIZE's
+# own doc comment for why the sprite, not the cell, and for the full
+# distinguishability argument). Left pip = move availability, right pip =
+# attack availability — this fixed order is the only place that mapping is
+# defined; _action_flag_for_state() callers (battle_screen.gd) never need to
+# know it, they only pick an ActionFlag ordinal.
+#
+# flag -> (move_used, attack_used), derived directly from TurnOrder's own
+# naming (ATTACK_ONLY means "only attack is LEFT", i.e. move has been used;
+# MOVE_ONLY means "only move is LEFT", i.e. attack has been used):
+#   NONE_USED    -> move available,  attack available  (both pips hollow)
+#   ATTACK_ONLY  -> move used,       attack available  (left filled, right hollow)
+#   MOVE_ONLY    -> move available,  attack used        (left hollow, right filled)
+#   DONE         -> move used,       attack used        (both pips filled)
+func _build_action_flag_marker(cell: Vector2i, flag: ActionFlag) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var cell_top_left: Vector2 = BoardCoords.grid_to_local(cell)
+	var sprite_top: float = (
+		cell_top_left.y + BoardCoords.CELL_SIZE - PIECE_SPRITE_HEIGHT
+	)
+	var sprite_right: float = cell_top_left.x + BoardCoords.CELL_SIZE
+	var badge_top: float = sprite_top + ACTION_FLAG_PIP_MARGIN
+	var attack_pip_left: float = sprite_right - ACTION_FLAG_PIP_MARGIN - ACTION_FLAG_PIP_SIZE
+	var move_pip_left: float = attack_pip_left - ACTION_FLAG_PIP_GAP - ACTION_FLAG_PIP_SIZE
+
+	var move_used: bool = flag == ActionFlag.ATTACK_ONLY or flag == ActionFlag.DONE
+	var attack_used: bool = flag == ActionFlag.MOVE_ONLY or flag == ActionFlag.DONE
+
+	root.add_child(_build_action_flag_pip(Vector2(move_pip_left, badge_top), move_used))
+	root.add_child(_build_action_flag_pip(Vector2(attack_pip_left, badge_top), attack_used))
+	return root
+
+
+# Story 015 — a single ACTION_FLAG_PIP_SIZE square pip, either FILLED (solid,
+# a used action) or HOLLOW (4-ColorRect border, same technique as
+# _build_card_target_outline()/_build_move_blocked_outline(), an available
+# action). top_left is the pip's own top-left corner in BoardView-local
+# coordinates.
+func _build_action_flag_pip(top_left: Vector2, filled: bool) -> Node2D:
+	var root: Node2D = Node2D.new()
+	if filled:
+		var fill: ColorRect = ColorRect.new()
+		fill.color = ACTION_FLAG_PIP_COLOR
+		fill.position = top_left
+		fill.size = Vector2(ACTION_FLAG_PIP_SIZE, ACTION_FLAG_PIP_SIZE)
+		root.add_child(fill)
+		return root
+
+	var side: float = ACTION_FLAG_PIP_SIZE
+	var border_width: float = ACTION_FLAG_PIP_BORDER_WIDTH
+
+	var top: ColorRect = ColorRect.new()
+	top.color = ACTION_FLAG_PIP_COLOR
+	top.position = top_left
+	top.size = Vector2(side, border_width)
+	root.add_child(top)
+
+	var bottom: ColorRect = ColorRect.new()
+	bottom.color = ACTION_FLAG_PIP_COLOR
+	bottom.position = top_left + Vector2(0.0, side - border_width)
+	bottom.size = Vector2(side, border_width)
+	root.add_child(bottom)
+
+	var left: ColorRect = ColorRect.new()
+	left.color = ACTION_FLAG_PIP_COLOR
+	left.position = top_left
+	left.size = Vector2(border_width, side)
+	root.add_child(left)
+
+	var right: ColorRect = ColorRect.new()
+	right.color = ACTION_FLAG_PIP_COLOR
+	right.position = top_left + Vector2(side - border_width, 0.0)
+	right.size = Vector2(border_width, side)
+	root.add_child(right)
+
+	return root
+
+
+# Story 015 — checkerboard half-fill for an impassable terrain cell: the
+# top-left and bottom-right quadrants solid, the other two left transparent.
+# See IMPASSABLE_TERRAIN_CHECKER_COLOR's own doc comment for why this shape
+# family (alternating quadrants) is used instead of any of this file's other
+# seven.
+func _build_impassable_terrain_marker(cell: Vector2i) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var top_left: Vector2 = BoardCoords.grid_to_local(cell)
+	var half: float = BoardCoords.CELL_SIZE * 0.5
+
+	var top_left_quadrant: ColorRect = ColorRect.new()
+	top_left_quadrant.color = IMPASSABLE_TERRAIN_CHECKER_COLOR
+	top_left_quadrant.position = top_left
+	top_left_quadrant.size = Vector2(half, half)
+	root.add_child(top_left_quadrant)
+
+	var bottom_right_quadrant: ColorRect = ColorRect.new()
+	bottom_right_quadrant.color = IMPASSABLE_TERRAIN_CHECKER_COLOR
+	bottom_right_quadrant.position = top_left + Vector2(half, half)
+	bottom_right_quadrant.size = Vector2(half, half)
+	root.add_child(bottom_right_quadrant)
+
 	return root
 
 

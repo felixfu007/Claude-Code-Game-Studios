@@ -8,6 +8,8 @@ script = ExtResource("1_bv_script")
 
 [node name="TerrainLayer" type="Node2D" parent="."]
 
+[node name="ImpassableTerrainLayer" type="Node2D" parent="."]
+
 [node name="MoveHighlightLayer" type="Node2D" parent="."]
 
 [node name="PiecesLayer" type="Node2D" parent="."]
@@ -25,6 +27,8 @@ script = ExtResource("1_bv_script")
 [node name="CardTargetHighlightLayer" type="Node2D" parent="."]
 
 [node name="StatsLayer" type="Node2D" parent="."]
+
+[node name="ActionFlagLayer" type="Node2D" parent="."]
 
 [node name="CursorSprite" type="Sprite2D" parent="."]
 visible = false

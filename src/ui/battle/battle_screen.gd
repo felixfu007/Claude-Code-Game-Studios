@@ -1240,6 +1240,21 @@ func _ready() -> void:
 	_controller.battle_ended.connect(_on_battle_ended)
 
 	_board_view.render_terrain(terrain_rows)
+	# Story 015 — terrain impassability is a static property of the board,
+	# computed once here (not in _refresh_view()) because this project's own
+	# forbidden-pattern registry bars procedural/runtime terrain generation:
+	# the board this screen just built from terrain_rows never changes shape
+	# mid-battle. Scans every in-bounds cell via Board.BOARD_WIDTH/HEIGHT
+	# (same range _classify_move_targets() already iterates) rather than
+	# terrain_rows' own dimensions, since _state.board is the thing
+	# Board.passable() actually reads.
+	var impassable_cells: Array[Vector2i] = []
+	for y: int in range(Board.BOARD_HEIGHT):
+		for x: int in range(Board.BOARD_WIDTH):
+			var board_cell: Vector2i = Vector2i(x, y)
+			if not _state.board.passable(board_cell):
+				impassable_cells.append(board_cell)
+	_board_view.set_impassable_terrain_highlights(impassable_cells)
 	# Story 008 (cursor navigation convergence) — registers the normal
 	# move/attack path's ownership of BOARD_TILE the moment this screen is
 	# ready, mirroring the card-play path's existing register/unregister
@@ -3431,6 +3446,27 @@ func _update_cursor_visual() -> void:
 		_refresh_view()
 
 
+# Story 015 — maps TurnOrder.ActionState -> BoardView.ActionFlag so
+# board_view.gd never gains a gameplay dependency (same "caller does the enum
+# translation" contract this file's own tone -> LineTone mapping already
+# establishes for set_affinity_lines()). NOT_FOUND cannot occur for any id
+# this is ever called with — every id passed in comes from _state.units_of(),
+# which only yields units TurnOrder has registered — but is mapped
+# defensively to DONE (the "nothing left to show" state) rather than
+# asserted away, matching coding-standards.md's standing rule against using
+# assert() to guard an "unreachable" branch in a function returning an enum.
+func _action_flag_for_state(state: TurnOrder.ActionState) -> BoardView.ActionFlag:
+	match state:
+		TurnOrder.ActionState.NONE_USED:
+			return BoardView.ActionFlag.NONE_USED
+		TurnOrder.ActionState.ATTACK_ONLY:
+			return BoardView.ActionFlag.ATTACK_ONLY
+		TurnOrder.ActionState.MOVE_ONLY:
+			return BoardView.ActionFlag.MOVE_ONLY
+		_:
+			return BoardView.ActionFlag.DONE
+
+
 # Full redraw from BattleState — the cursor preview first, then pieces, then
 # highlights for whatever is currently selected. Simpler and safer than
 # incremental patching for a 13x6 board with 10 units: every signal
@@ -3547,6 +3583,9 @@ func _refresh_view() -> void:
 			"card_target_illegal": (
 				_card_selecting_target and not card_target_legal_set.has(unit.id)
 			),
+			# Story 015 — 持久角標,不受選取/游標門控,每個存活單位都查一次
+			# (GDD:「常駐於棋盤上，不需要選取或開啟面板才看得到」)。
+			"action_flag": _action_flag_for_state(_controller.unit_action_state(unit.id)),
 		})
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		pieces.append({
@@ -3560,6 +3599,7 @@ func _refresh_view() -> void:
 			"card_target_illegal": (
 				_card_selecting_target and not card_target_legal_set.has(unit.id)
 			),
+			"action_flag": _action_flag_for_state(_controller.unit_action_state(unit.id)),
 		})
 	_board_view.render_pieces(pieces)
 
