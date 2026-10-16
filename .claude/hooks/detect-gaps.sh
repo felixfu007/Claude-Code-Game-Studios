@@ -165,7 +165,42 @@ if [ -d "src/gameplay" ]; then
         design_doc_1="design/gdd/${system_name}-system.md"
         design_doc_2="design/gdd/${system_name}.md"
 
-        if [ ! -f "$design_doc_1" ] && [ ! -f "$design_doc_2" ]; then
+        # 🔴 2026-10-16(管理者裁決):目錄 → 設計文件的明文對照表。
+        # 沒有它的時候,Check 4 在【每一次 session 啟動】都會噴四條假警告 ——
+        # 因為這四個系統【都有】設計文件,只是檔名跟目錄名對不起來。
+        # 當天逐檔查證過:
+        #   src/gameplay/affinity/      → design/gdd/affinity-position-chain.md
+        #   src/gameplay/affinity_pool/ → design/gdd/affinity-data-pool.md
+        #   src/gameplay/battle/        → design/gdd/tactical-combat-system.md
+        #   src/gameplay/cards/         → design/gdd/skill-card-system.md
+        #
+        # 為什麼這比「那四行字很煩」重要:一個每次都誤報的偵測器,用的人第二次
+        # 看到就會開始無視它,然後真的有缺口時也不會被看見。這個失效形狀本專案
+        # 已經登記過很多次。
+        #
+        # ⚠️ 已知代價,管理者在選它而非其他方案時知情接受:這張表自己會漂。
+        # 以後在 src/gameplay/ 新增一個目錄、而它的設計文件檔名又對不起來,
+        # Check 4 就會再噴一條假警告,直到有人來補一列。
+        # 被跳過的替代方案(改成 grep 設計文件裡有沒有提到該目錄路徑)之所以
+        # 不採用:協調者【沒有查證過】設計文件裡到底有沒有寫那些路徑 ——
+        # 如果沒寫,那個做法會連真的缺口一起消音,比現在更糟。
+        design_doc_mapped=""
+        case "$system_name" in
+          affinity)      design_doc_mapped="design/gdd/affinity-position-chain.md" ;;
+          affinity_pool) design_doc_mapped="design/gdd/affinity-data-pool.md" ;;
+          battle)        design_doc_mapped="design/gdd/tactical-combat-system.md" ;;
+          cards)         design_doc_mapped="design/gdd/skill-card-system.md" ;;
+        esac
+
+        # 對照表指到的檔案不見了 -> 這是真的缺口,而且要指出對照表可能已過期
+        if [ -n "$design_doc_mapped" ] && [ ! -f "$design_doc_mapped" ]; then
+          echo "⚠️  GAP: Gameplay system 'src/gameplay/$system_name/' maps to"
+          echo "    $design_doc_mapped -- but that file does NOT exist."
+          echo "    Either the doc was deleted/renamed, or this mapping in"
+          echo "    .claude/hooks/detect-gaps.sh Check 4 is now stale."
+        fi
+
+        if [ -z "$design_doc_mapped" ] && [ ! -f "$design_doc_1" ] && [ ! -f "$design_doc_2" ]; then
           echo "⚠️  GAP: Gameplay system 'src/gameplay/$system_name/' ($file_count files) has no design doc"
           echo "    Expected: design/gdd/${system_name}-system.md or design/gdd/${system_name}.md"
           echo "    Suggested action: /reverse-document design src/gameplay/$system_name"
