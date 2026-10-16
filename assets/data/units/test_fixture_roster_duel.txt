@@ -1,0 +1,25 @@
+# test_fixture_roster_duel.txt — 測試專用合成夾具,供
+# tests/integration/ui/battle/battle_screen_battle_outcome_test.gd 的 AC-1
+# (勝利路徑)/ AC-2(勝利的畫面後果)使用。
+#
+# 與 test_fixture_roster.txt(hp_max=999/atk=1,打不死人 —— 見該檔檔頭)刻意
+# 不同:本夾具我方一擊必殺敵方唯一單位,且我方零陣亡 —— 符合
+# src/gameplay/battle/battle_state.gd 的 outcome() 的 VICTORY 硬條件
+# (我方零陣亡 AND 敵方全滅)。
+#
+# 傷害公式 dealt = max(0, atk - def + phi)。本夾具下 phi 恆為 0:
+# AffinityPhiProvider.links() 只在玩家陣營「兩個以上」單位之間才會配對
+# (src/gameplay/affinity/affinity_phi_provider.gd 的 links() 雙重迴圈對
+# player_units 跑 i<j),本夾具只有 1 個 PLAYER 單位,迴圈不會產生任何配對,
+# phi() 對空 links 必為 0。故 dealt = 99 - 0 = 99,遠大於敵方 hp_max(1),
+# 單次 resolve_attack() 保證一擊必殺。
+#
+# 單位座標 (0,0)/(1,0) 相鄰(Manhattan 距離 1),落在
+# test_fixture_terrain_duel.txt 描述的 5x3 範圍內;min_range=1/max_range=1
+# 的近戰單位不必移動即可互相攻擊,測試可以直接呼叫
+# BattleController.click_tile() 兩次(選取 + 攻擊)完成整個回合。
+#
+# 欄位順序同 vs01_roster.txt：
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTHERO,PLAYER,999,99,0,1,1,1,0,0
+2,TESTDUMMY,ENEMY,1,0,0,1,1,1,1,0

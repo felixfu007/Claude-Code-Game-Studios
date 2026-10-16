@@ -1,0 +1,25 @@
+# test_fixture_roster_doomed.txt — 測試專用合成夾具,供
+# tests/integration/ui/battle/battle_screen_battle_outcome_test.gd 的 AC-3
+# (戰敗路徑)使用。
+#
+# 依 src/gameplay/battle/battle_state.gd 的 outcome() doc comment:DEFEAT 的
+# 條件是「任一我方單位死亡」,不要求我方全滅(逐字:"if any PLAYER unit has
+# died, the result is DEFEAT even if every [enemy unit has also died]")。
+# 本夾具只有 1 個敵方單位,擊殺我方唯一單位後 DEFEAT 立即成立,不需要多回合
+# 互毆(多回合會讓測試變慢且不穩 —— 本 story 工作單明文要求避免)。
+#
+# 傷害公式與 test_fixture_roster_duel.txt 相同(見其檔頭說明的 dealt = max(0,
+# atk - def + phi) 推導)。敵方攻擊的 phi 由
+# src/gameplay/battle/battle_controller.gd 的 _process_enemy_unit() 寫死為 0
+# (resolve_attack(id, attack_target, 0)),所以 dealt = 99 - 0 = 99,遠大於
+# 我方 hp_max(1),敵方 AI(GreedyTacticalAI,無 RNG)一擊必殺我方唯一單位。
+#
+# 座標與地形同 test_fixture_roster_duel.txt(共用
+# test_fixture_terrain_duel.txt):(0,0)/(1,0) 相鄰,min_range=1/max_range=1
+# 的敵方單位不必移動即可攻擊,GreedyTacticalAI.decide() 會選擇當前格作為
+# 「已可攻擊」的候選格(見 src/ai/greedy_tactical_ai.gd 的候選格比較規則)。
+#
+# 欄位順序同 vs01_roster.txt：
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTVICTIM,PLAYER,1,0,0,1,1,1,0,0
+2,TESTKILLER,ENEMY,999,99,0,1,1,1,1,0

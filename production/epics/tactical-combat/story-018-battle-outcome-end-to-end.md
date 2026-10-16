@@ -1,7 +1,7 @@
 # Story 018: 整場戰鬥端到端結算 —— 畫面側第一條防線
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-16,協調者獨立重跑驗收)** —— 六條 AC 全部落地,`src/` **零改動**。全套 `ENGINE EXIT = 0` / `1268 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(107/107)` / `grep " FAILED"` 零命中 / `Parse Error` 零命中,六條逐條具名 PASSED。🔴 **本 story 最有價值的產出不是測試本身,是它揭穿的兩個陷阱**:①`set_script()` 會把先前賦值的 override 屬性清回預設 —— 順序顛倒會讓敏感度證明靜默測錯情境;②GdUnit4 在實際值為**空字串**時,失敗報告的 `Expecting` 與 `but was` 兩行**去色後逐字相同**(它用底色標缺字),足以把人導向完全錯誤的方向 —— 實測已發生一次。兩者皆已寫進測試檔註解。⚠️ **誠實登記**:AC-1「`battle_ended` 恰好發出一次」這個保證**沒有、也不可能有**留在本檔範圍內的敏感度證明(D 類,唯一注入點在 `battle_controller.gd`,不在本 story 授權範圍)。
 > **Layer**: Presentation / Integration
 > **Type**: Integration
 > **Estimate**: M
