@@ -1,0 +1,1 @@
+- [GDD 8-section format tension](gdd_8_section_format_tension.md) — design/gdd/ mandates 8 sections for every doc; lightweight content skeletons dispatched there may conflict — flag, don't silently resolve
