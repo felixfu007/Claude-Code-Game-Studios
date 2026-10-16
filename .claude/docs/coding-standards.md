@@ -579,6 +579,86 @@ written down and checkable by a second reader," not "no one will misclassify a s
   > ⚠️ **仍然沒有任何自動檢查會攔第三種檔案存取。** 上面那句「Do not invent a third kind」
   > 是紀律要求,不是閘門 —— 與本專案其餘同類規則一樣,**遵守與否目前不可觀測**。
 
+### 🔴 兩個會讓測試【靜默測錯東西】的陷阱(2026-10-16 story-018 實測,管理者裁決登記)
+
+這兩條是同一次工作裡踩到的,而且它們會疊加:第一條讓測試偷偷測錯情境,第二條讓你
+**診斷時被引擎自己的錯誤訊息導向完全錯誤的方向**。兩條都已實際發生過。
+
+#### 一、`set_script()` 會把先前賦值的屬性清回宣告預設值
+
+本專案的敏感度證明慣用「常駐 mutant 子類別 + `set_script()`」(進樹前換腳本,
+Case A,2026-09-17 探針已驗證安全)。而 `BattleScreen` 同時有可注入的資料路徑屬性
+(`terrain_path_override` / `roster_path_override` 等)。**兩者的呼叫順序會決定測試測到什麼。**
+
+```gdscript
+# ❌ 錯的順序 —— override 會被清掉,而且不會報錯
+var instance: BattleScreen = load(_SCENE_PATH).instantiate()
+instance.terrain_path_override = _TERRAIN_DUEL_PATH
+instance.roster_path_override  = _ROSTER_DUEL_PATH
+instance.set_script(_MutantXxx)          # ← 在這裡把上面兩行清成 ""
+
+# ✅ 對的順序
+instance.set_script(_MutantXxx)
+instance.terrain_path_override = _TERRAIN_DUEL_PATH
+instance.roster_path_override  = _ROSTER_DUEL_PATH
+```
+
+**實測鑑別法**(在 `set_script()` 之後加一行,印出來是兩個空字串):
+
+```gdscript
+print("after set_script: terrain=", instance.terrain_path_override, " roster=", instance.roster_path_override)
+```
+```
+DEBUG after set_script: terrain=  roster=
+```
+
+🔴 **失效的形狀是「測試還在、還會跑、但測的是另一個情境」** —— 錯的順序下 `_ready()`
+會去載入**正式關卡資料**而不是夾具,於是那條測試**安靜地驗了一個你沒打算驗的東西**。
+**它不會報錯、不會變紅、不會留下任何痕跡。**
+
+⚠️ **既有範本沒踩到這個,純屬它剛好不需要 override**
+(`tests/integration/ui/battle/battle_screen_enemy_phase_playback_test.gd` 的兩個 mutant
+`set_script()` 寫在第一行,而且從不設任何路徑屬性)——**照抄範本不會保護你**,
+因為範本裡根本沒有這個順序問題可抄。
+
+#### 二、🔴 GdUnit4 在實際值為【空字串】時,`Expecting` 與 `but was` 兩行去色後逐字相同
+
+這與本文件 CI 節那一串「這條測試線會怎麼騙你」是**同一個家族的又一種形狀**(🔴 **刻意不寫第幾種** —— 本專案登記過同一個計數在多份文件並存三個互斥的值,手抄必漂移;要數就當場數)。**但它騙的不是「有沒有跑」**,
+是**「哪裡不一樣」**。實測輸出(去色後):
+
+```
+Report:
+Expecting:
+ '戰敗'
+ but was
+ '戰敗'
+```
+
+**兩邊看起來完全相同。** 而同一次執行裡,測試自己印的除錯行是:
+
+```
+DEBUG actual='' len=0 expected='戰敗' len=2 eq=false
+```
+
+**實際值是空字串,長度 0。**
+
+**成因**(`cat -A` 看原始位元組可重現):GdUnit4 用**背景色**標示「實際值缺少的字元」——
+「but was」那一行裡的 `戰敗` 帶著 `ESC[48;2;38;0;0m`(深紅底)。
+實際值為空時,等於把**期望值整串**用缺字底色印出來。
+**顏色一旦被 strip(管線、`sed`、重導向、貼進文件、CI 日誌),它就讀成
+「兩個相同的字串不相等」。**
+
+🔴 **它已經實際害人一次**:實作者據此判定是文字比較/編碼問題,寫了一支
+**比較 `Loc.localize()` 跟它自己**的探針,白跑一輪。真正的線索在它自己那行 `len=0`。
+
+**可執行的結論**:
+
+> **看到「兩個看起來相同的字串不相等」時,第一個假設是【實際值是空的】,不是編碼問題。**
+> 先印 `.length()`,或用 `cat -A` 看原始位元組,**不要先去追字串編碼。**
+
+⚠️ **這兩條都沒有任何 lint 或閘門會檢查** —— 與本節其餘規則一樣,遵守與否目前不可觀測。
+它們買到的是「下一個人有明文可查對」。
+
 ## What NOT to Automate
 
 - Visual fidelity (shader output, VFX appearance, animation curves)
