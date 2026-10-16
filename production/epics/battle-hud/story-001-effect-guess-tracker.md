@@ -1,7 +1,7 @@
 # Story 001:猜測判定與一致率追蹤器(純邏輯,零畫面)
 
 > **Epic**: 戰鬥 HUD(僅預判標記)—— `production/epics/battle-hud/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-16,協調者獨立重跑驗收)** —— 六條 AC 全部落地,17 條測試。全套 `ENGINE EXIT = 0` / `1286 test cases | 0 errors | 0 failures` / `(109/109)` / `grep " FAILED"` 零命中 / `Parse Error` 零命中。🔴 **三處設計值得記**:①`enum EffectDirection` 刻意從 **1** 開始,序數 0 空著 —— 讓「斷言失敗靜默回傳」不可能看起來像有效答案(把陷阱內化進型別,不只是避開它);②`get_consistency_rate()` 在 `N == 0` 回傳 **−1.0 而非 0.0**,因為 `0.0` 與「到目前為止全猜錯」無法區分;③**AC14 守衛把「0 代表沒東西可掃、不代表掃過了乾淨」印進執行輸出**,不只寫在註解 —— 全套 log 可查(`grep "NOT .scanned and clean."` 命中 1)。
 > **Layer**: Core(純 `RefCounted`,無節點)
 > **Type**: Logic
 > **Estimate**: S~M
