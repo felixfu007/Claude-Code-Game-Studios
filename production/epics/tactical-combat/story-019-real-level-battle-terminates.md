@@ -1,7 +1,7 @@
 # Story 019: 真實關卡打完一整場 —— 5 對 5、真實地形、真實 AI
 
 > **Epic**: 戰棋移動與交戰系統(#4)—— `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-16,協調者獨立重跑驗收)** —— 六條 AC 全部落地,`src/` **零改動**。全套 `ENGINE EXIT = 0` / `1269 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(108/108)` / `grep " FAILED"` 零命中 / `Parse Error` 零命中。🔴 **但「通過」不是本 story 的結論,量到的數字才是**:真實 vs01 在雙方皆由 `GreedyTacticalAI` 驅動下 **第 1 回合即 `DEFEAT`,敵方五人全部毫髮無傷**(丙 22→0,其餘九人滿血)。GDD 自列預期回合數 4~6。⚠️ **本測試只走完 1 回合,`_ROUND_CAP = 10` 從未被接近** —— 跨回合旗標重置、多回合回合順序、長局狀態累積**仍然零防線**,已明寫進檔頭 AC-6。
 > **Layer**: Integration
 > **Type**: Integration
 > **Estimate**: M
