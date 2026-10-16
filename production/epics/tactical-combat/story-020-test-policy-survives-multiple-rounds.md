@@ -1,7 +1,7 @@
 # Story 020: 讓測試的我方打法不自殺 —— 把真實關卡跑進多回合
 
 > **Epic**: 戰棋移動與交戰系統(#4)
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-16,協調者獨立重跑驗收)** —— 七條 AC 全部落地,`src/` **零改動**,只改 `Affected Files` 範圍內那一支測試檔。全套 `ENGINE EXIT = 0` / `1269 test cases | 0 errors | 0 failures` / `(108/108)` / `grep " FAILED"` 零命中。🔴 **本 story 最有價值的產出不是「回合數從 1 變 2」,是它揭露了一個先前無人踩到的【整場凍結點】**:強制棄牌未解決時,`click_tile()` 全部回傳 `blocked_pending_discard`、`end_faction_phase()` 直接不做事 —— **玩家與敵方階段雙雙停擺**。story-019 因為第 1 回合就結束而從未觸及。**那個洞一直都在,只是沒有東西跑得夠久去踩到。** ⚠️ **仍然沒涵蓋**:`round_count=2` 遠低於 GDD 自列預期 4~6(`vertical-slice-level-01.md:139`),更長的局面仍未被測過;安全過濾器只審「主動移動」,不審「原地不動被逼近」(乙就是這樣死的,實作者主動揭露);棄牌解決路徑只被走過一次。
 > **Layer**: Integration(測試基礎設施)
 > **Type**: Integration
 > **Estimate**: M
