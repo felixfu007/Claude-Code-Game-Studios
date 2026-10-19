@@ -56,7 +56,7 @@ grep -rn "AffinityDataPool.new()" src/ --include=*.gd
 
 | # | 標題 | Type | Status |
 |---|---|---|---|
-| 001 | 資料表、觸發判定與規則驗證(純邏輯) | Logic | Ready |
+| 001 | 資料表、觸發判定與規則驗證(純邏輯) | Logic | ✅ **Done(2026-10-19)** —— AC1~AC7 全部有測試,40 條 |
 | 002 | 接上關卡轉場與真實好感度池 | Integration | **Blocked** —— 等上面兩個缺口的裁決,以及 `game-shell` story-003 |
 
 ## 本 epic 不涵蓋

@@ -1,0 +1,30 @@
+# 支援對話資料表(系統 #8)— 固定欄位順序:
+# conversation_id,trigger_after_mission,pair_a,pair_b,valence
+#
+# conversation_id         對話識別碼,格式 SC-NN。
+#
+# trigger_after_mission   掛在哪一場關卡【之後】。5 場 MVP 骨架關卡之間共有 4 個轉場
+#                         槽位(1→2、2→3、3→4、4→5),本欄填「前一場」的場次編號
+#                         (1~4)。例如 1 代表「第 1 場結算完成、進入第 2 場之前」。
+#
+# pair_a / pair_b         參與對話的兩個角色,採用與 vs01_affinity_links.txt /
+#                         vs01_cards.txt 同一套名冊 id(1=甲 2=乙 3=丙 4=丁 5=戊,
+#                         見 assets/data/units/vs01_roster.txt)。
+#
+# valence                 positive / negative / neutral(小寫,逐字比對 ——
+#                         見 src/gameplay/narrative/support_conversation_record.gd
+#                         的 _valence_from_string())。negative 會啟動 OBL-031
+#                         補救規則(不得排在最後一槽,見 SupportConversationRules.
+#                         validate_negative_not_last_slot())。
+#
+# ── 內容定案依據 ────────────────────────────────────────────────
+# design/quick-specs/mvp-five-levels-skeleton.md 第三部分(Q1~Q3 已結案):
+#   SC-01 → 1→2 槽位、甲乙(加深正向)
+#   SC-02 → 2→3 槽位、甲丙(負向)
+#   SC-03 → 3→4 槽位、乙丁(正向)
+# 4→5 槽位(trigger_after_mission=4)刻意空置,戊不參與任何一段 —— 兩者皆非疏漏。
+#
+# conversation_id,trigger_after_mission,pair_a,pair_b,valence
+SC-01,1,1,2,positive
+SC-02,2,1,3,negative
+SC-03,3,2,4,positive

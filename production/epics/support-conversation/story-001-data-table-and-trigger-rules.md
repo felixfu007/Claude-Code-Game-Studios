@@ -1,7 +1,7 @@
 # Story 001:支援對話資料表、觸發判定與規則驗證(純邏輯)
 
 > **Epic**: 支援對話系統 —— `production/epics/support-conversation/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ **Done(2026-10-19,協調者獨立重跑驗收,不採信回報)** —— AC1~AC7 全部有通過的自動化測試。全套 `ENGINE EXIT = 0` / `1335 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(114/114)` / 兩個 grep 零命中。新增 3 個測試套件、40 條測試。
 > **Layer**: Domain(純邏輯,零節點、零場景)
 > **Type**: Logic(**BLOCKING** —— 必須有自動化單元測試)
 > **Estimate**: M
