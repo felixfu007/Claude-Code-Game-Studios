@@ -22,6 +22,24 @@
 ## 後真的切到下一場)、AC8(來回切換迴歸鎖)本輪不做,誠實登記於任務報告,不是
 ## 遺漏。
 ##
+## 🔴 [b]第三輪接線(2026-10-19,production/epics/support-conversation/
+## story-003-cross-mission-affinity-continuity.md「下一輪接線」)[/b]:本檔掛載
+## [CampaignAffinityLedger] 靜態持有 —— 持有者選「甲」:既有的戰役層靜態持有者
+## 多帶一份資料,不是開第三個靜態狀態持有者(2026-10-19 裁決④的例外名單維持
+## [code]GameSettings[/code]/[code]CampaignProgress[/code] 兩項不變,「再要第三個,
+## 請重新裁決」)。
+##
+## 🔴 [b]結構防線(上一輪實作者主動揭露的陷阱的答案)[/b]:上一輪的
+## [code]campaign_affinity_ledger.gd[/code] 文件註解明文警告「[method
+## CampaignAffinityLedger.begin_mission] 忘了呼叫,本類別結構上偵測不到」。
+## [method start_mission_affinity_ledger] 是本類別對外公開、唯一能取得
+## [CampaignAffinityLedger] 參照的入口,且內部必定先呼叫
+## [method CampaignAffinityLedger.begin_mission] 才回傳——呼叫端沒有任何管道能
+## 拿到一個「沒 begin 過」的 ledger,這個陷阱因此在本層被結構性排除,不依賴
+## 呼叫端自律。[method rollback_on_defeat] 同理直接操作
+## [member _affinity_ledger],不對外暴露另一條能繞過 [method start_mission_affinity_ledger]
+## 的存取路徑。
+##
 ## ⚠️ [b]已知規則張力,誠實登記[/b]:[code].claude/rules/gameplay-code.md[/code]
 ## 明文「No static singletons for game state — use dependency injection」。本檔
 ## 與 [code]game_settings.gd[/code] 一樣是 static var,嚴格而言與該條文字相牴觸——
@@ -42,10 +60,27 @@ enum AdvanceResult { ADVANCED, CAMPAIGN_COMPLETE }
 
 static var _current_mission: int = FIRST_MISSION_INDEX
 
+## 戰役層「到目前為止累積的好感度變化」——見本類別文件註解「第三輪接線」段。
+## 腳本載入時就建構好一個空的 [CampaignAffinityLedger] 實例,終生只有這一個,
+## 不會被重新指派([method reset_for_test] 呼叫的是它的
+## [method CampaignAffinityLedger.clear],不是把這個變數換一個新實例)。
+static var _affinity_ledger: CampaignAffinityLedger = CampaignAffinityLedger.new()
+
 
 ## 目前第幾場(1 起算)。
 static func current_mission() -> int:
 	return _current_mission
+
+
+## 取得「這一場要注入 [member BattleScreen.campaign_ledger_override] 的累積記錄
+## ledger」的唯一入口。🔴 內部必定先呼叫
+## [method CampaignAffinityLedger.begin_mission] 才回傳——見本類別文件註解
+## 「結構防線」段。呼叫端(未來的戰役流程控制器,或測試)每次要開始/重新開始
+## 一場戰鬥時都呼叫本方法取得要注入的 ledger,不得自行持有另一條取得
+## [CampaignAffinityLedger] 參照的管道。
+static func start_mission_affinity_ledger() -> CampaignAffinityLedger:
+	_affinity_ledger.begin_mission()
+	return _affinity_ledger
 
 
 ## AC3(勝利推進)—— 前進到下一場。[param total_missions] 由呼叫端提供
@@ -60,15 +95,23 @@ static func advance_on_victory(total_missions: int) -> AdvanceResult:
 	return AdvanceResult.ADVANCED
 
 
-## AC4(失敗回滾)—— 場次編號不前進。本函式刻意存在(而非讓呼叫端什麼都不做),
-## 理由是語意對稱:讀程式碼的人看得出「這裡是故意什麼都不做」,而不是漏寫了
-## 應有的回滾邏輯。
+## AC4(失敗回滾)—— 場次編號不前進,且本場透過 [method start_mission_affinity_ledger]
+## 取得並寫入的戰役層累積記錄一併丟棄([method CampaignAffinityLedger.rollback_current_mission])。
+##
+## 🔴 第三輪前本函式只有 [code]pass[/code](場次編號本來就靠「不呼叫
+## [method advance_on_victory]」維持不前進,不需要額外動作);語意對稱的理由
+## 不變——讀程式碼的人看得出「場次編號部分是故意什麼都不做」,而不是漏寫了
+## 應有的回滾邏輯。第三輪多做的是把累積記錄的回滾也收進同一個呼叫點,
+## 因為兩者是「失敗時不留下這一場的痕跡」同一個語意的兩個部分。
 static func rollback_on_defeat() -> void:
-	pass
+	_affinity_ledger.rollback_current_mission()
 
 
-## 測試專用:將本類別的靜態狀態重置回預設值。任何呼叫 [method advance_on_victory]
-## 的測試都必須在收尾呼叫本方法,比照 [code]GameSettings.reset_for_test[/code]
-## 的既有紀律。
+## 測試專用:將本類別的靜態狀態重置回預設值,[member _affinity_ledger] 也一併
+## 清空(含它自己的 mission 基準點)。任何呼叫 [method advance_on_victory] /
+## [method start_mission_affinity_ledger] / [method rollback_on_defeat] 的測試
+## 都必須在收尾呼叫本方法,比照 [code]GameSettings.reset_for_test[/code] 的
+## 既有紀律。
 static func reset_for_test() -> void:
 	_current_mission = FIRST_MISSION_INDEX
+	_affinity_ledger.clear()

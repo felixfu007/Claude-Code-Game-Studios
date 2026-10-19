@@ -99,6 +99,14 @@ const CARDS_PATH: String = "res://assets/data/cards/vs01_cards.txt"
 ## there is for [constant CARDS_PATH] / [constant AFFINITY_PATH].
 const CARD_TEXT_PATH: String = "res://assets/data/cards/vs01_card_text.txt"
 
+## 裁決①第三輪(production/epics/support-conversation/
+## story-003-cross-mission-affinity-continuity.md「下一輪接線」)—— AC3(勝利
+## 推進)用來判斷場次總數的戰役序列表,資料驅動(coding-standards.md:gameplay
+## values 一律外部設定檔,不得寫死總場數)。比照 [constant AFFINITY_PATH] 等
+## 既有靜態路徑常數的慣例;解析沿用既有的 [CampaignSequence]
+## (src/gameplay/campaign/campaign_sequence.gd),本檔不重新實作一份。
+const CAMPAIGN_SEQUENCE_PATH: String = "res://assets/data/levels/campaign_sequence.txt"
+
 ## Classification of why loading terrain/roster/affinity data failed, checked
 ## independently per file in [method _ready]. Ordered from "never got to open
 ## the file" through "opened it but the content was useless" so a single
@@ -491,9 +499,17 @@ var card_text_path_override: String = ""
 ## [member _affinity_pool],而不是另開一輪。
 ##
 ## 🔴 預設 [code]null[/code]——[code]null[/code] 時 [method _ready] 完全
-## 不執行這段迴圈,production 行為與本輪改動之前逐字相同。誰在 production
-## 持有/建立這個實例並把它指派到這裡,尚未裁決(下一輪的事);本輪只交付
-## 「餵進來之後灌入路徑長什麼樣子」。
+## 不執行這段迴圈,production 行為與本輪改動之前逐字相同。
+##
+## 🔴 第三輪更新:持有者已裁決——[method CampaignProgress.start_mission_affinity_ledger]
+## 是取得要注入這裡的 ledger 的唯一入口(見該方法與 [CampaignProgress] 類別
+## 文件註解「結構防線」段)。[method _on_battle_ended] 同一輪已接上 AC3(勝利
+## 推進)/AC4(失敗回滾)。⚠️ 仍未裁決/未解開的是:production 實際遊玩流程
+## 要怎麼把非 [code]null[/code] 的值灌進這裡——[code]src/ui/shell/title_screen.gd[/code]
+## 目前用 [method SceneTree.change_scene_to_file] 切到本場景,該呼叫沒有資料
+## 注入的時機窗,此欄位因此在真正遊玩時仍停在預設 [code]null[/code]。這是
+## [code]game-shell[/code] Epic 戰役流程控制器(AC7/AC8,尚未落地)的事,
+## 不在本輪範圍。
 ##
 ## [b]Timing contract:[/b] 與 [member terrain_path_override] 相同——必須在
 ## [method PackedScene.instantiate] 之後、[method Node.add_child] 之前設定,
@@ -2223,6 +2239,31 @@ static func classify_file_access(path: String) -> LoadFailure:
 		return LoadFailure.UNREADABLE
 	file.close()
 	return LoadFailure.NONE
+
+
+## 裁決①第三輪(story-003-cross-mission-affinity-continuity.md)—— 讀取並解析
+## [constant CAMPAIGN_SEQUENCE_PATH],回傳場次總數,供 [method _on_battle_ended]
+## 的 AC3(勝利推進)呼叫 [method CampaignProgress.advance_on_victory] 時使用。
+## 讀取或解析失敗時回傳 [code]0[/code](呼叫端以此判斷「無法得知總場數,不前進」)
+## 並 [method @GlobalScope.push_error] ——不得默默假設任何場次數。Pure 且
+## node-independent(比照 [method classify_file_access] 同一個理由),可脫離本
+## 場景獨立單元測試。
+static func campaign_total_missions() -> int:
+	var failure: LoadFailure = classify_file_access(CAMPAIGN_SEQUENCE_PATH)
+	if failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [CAMPAIGN_SEQUENCE_PATH, LoadFailure.find_key(failure)])
+		return 0
+	var text: String = FileAccess.get_file_as_string(CAMPAIGN_SEQUENCE_PATH)
+	var parsed: Variant = CampaignSequence.sequence_from_text(text)
+	if parsed == null:
+		push_error(
+			"BattleScreen.campaign_total_missions: CampaignSequence.sequence_from_text "
+			+ "returned null for %s -- see its own push_error above for the offending line"
+			% [CAMPAIGN_SEQUENCE_PATH]
+		)
+		return 0
+	var sequence: Array[CampaignSequence] = parsed
+	return sequence.size()
 
 
 ## Classifies an already-read file's content: [constant
@@ -4002,6 +4043,31 @@ func _apply_tile_info_panel_layout() -> void:
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
 	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else Loc.localize(TEXT_RESULT_DEFEAT)
+
+	# 裁決①第三輪(production/epics/support-conversation/
+	# story-003-cross-mission-affinity-continuity.md「下一輪接線」)—— AC3(勝利
+	# 併入)/AC4(失敗回滾)接線。
+	#
+	# 🔴 整段掛在既有的 [member campaign_ledger_override] != null 這個守衛之後,
+	# 刻意比照該欄位自己的 opt-in 慣例:沒有被注入戰役層 ledger 的 BattleScreen
+	# 實例(本專案目前絕大多數既有測試)完全不受影響,不需要因此改動既有測試去
+	# 呼叫 CampaignProgress.reset_for_test()。
+	#
+	# 🔴 production 尚未真的把這條路接起來——src/ui/shell/title_screen.gd 用
+	# get_tree().change_scene_to_file() 切場景,該呼叫沒有資料注入的時機窗(見
+	# campaign_ledger_override 自己的 doc comment),本輪沒有解開這個限制。這段
+	# 接線目前只有「被測試手動注入 ledger 的 BattleScreen 實例」會真的執行到——
+	# 誠實登記,不是遺漏(見任務報告)。
+	if campaign_ledger_override != null:
+		if outcome == BattleState.Outcome.VICTORY:
+			var total_missions: int = campaign_total_missions()
+			if total_missions > 0:
+				CampaignProgress.advance_on_victory(total_missions)
+			# total_missions == 0 代表讀取/解析失敗,campaign_total_missions() 自己
+			# 已經 push_error() 記錄原因——這裡不前進,不得默默假設任何場次數。
+		else:
+			CampaignProgress.rollback_on_defeat()
+
 	# production/epics/game-shell/story-001 (AC5) — 接在既有勝敗文字顯示之後,
 	# 不覆蓋它(story-018 的端對端測試已釘住上面兩行會執行)。真人玩家靠這個
 	# 計時器在 RESULT_DISPLAY_SECONDS 秒後自動回到標題畫面;測試不需要等待

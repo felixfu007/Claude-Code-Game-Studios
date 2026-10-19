@@ -102,3 +102,125 @@ func test_sensitivity_proof_reset_for_test_restores_default() -> void:
 		"reset_for_test() 應該把 static var 還原成預設值 1,否則會污染同一次執行" +
 		"期間的其他測試"
 	).is_equal(1)
+
+
+# ============================================================================
+# 第三輪接線(story-003-cross-mission-affinity-continuity.md「下一輪接線」)——
+# CampaignAffinityLedger 持有者選「甲」,掛在本類別上。
+# ============================================================================
+
+
+## 🔴 陷阱防線的證明(見 campaign_affinity_ledger.gd 類別文件註解「忘了呼叫的
+## 後果」,以及 campaign_progress.gd 類別文件註解「結構防線」段)—— 本輪選的是
+## (a) 結構上不可能忘記:[method CampaignProgress.start_mission_affinity_ledger]
+## 是取得 ledger 的唯一入口,內部必定呼叫 [method CampaignAffinityLedger.begin_mission]。
+##
+## 本測試分兩段:先繞過 CampaignProgress、手動 [code]CampaignAffinityLedger.new()[/code]
+## 卻忘了呼叫 begin_mission(),重現陷阱本身(證明它是真的會發生,不是編出來的
+## 假設);再透過 [method CampaignProgress.start_mission_affinity_ledger] 走同樣的
+## 操作序列,證明歷史不會被一起清空——因為呼叫端沒有任何管道能繞過 begin_mission()。
+func test_sensitivity_proof_start_mission_affinity_ledger_prevents_forgotten_begin_mission() -> void:
+	# ---- 重現陷阱本身:繞過 CampaignProgress,手動持有 ledger、忘了呼叫 begin_mission() ----
+	var raw_ledger: CampaignAffinityLedger = CampaignAffinityLedger.new()
+	raw_ledger.append(AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.STORY_EVENT)  # 第 1 場的歷史
+	raw_ledger.append(AffinityTypes.Pair.C3_C4, 1.0, AffinityTypes.Source.STORY_EVENT)  # 第 1 場的歷史
+	# 「第 2 場」忘了呼叫 begin_mission() —— 直接疊加新變化
+	raw_ledger.append(AffinityTypes.Pair.C1_C3, -1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	raw_ledger.rollback_current_mission()
+	assert_int(raw_ledger.records().size()).append_failure_message(
+		"重現陷阱:忘了呼叫 begin_mission() 時,基準點停在建構當下的 0," +
+		"rollback_current_mission() 會把連同更早場次的歷史一起清空 —— 這是上一輪" +
+		"實作者主動揭露的陷阱,本斷言證明它是真的會發生,不是假設"
+	).is_equal(0)
+
+	# ---- 透過 CampaignProgress 走正確路徑:同樣的操作序列,歷史不會被清掉 ----
+	CampaignProgress.reset_for_test()
+	var ledger1: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	ledger1.append(AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.STORY_EVENT)
+	ledger1.append(AffinityTypes.Pair.C3_C4, 1.0, AffinityTypes.Source.STORY_EVENT)
+	CampaignProgress.advance_on_victory(_TOTAL_MISSIONS)  # 第 1 場勝利,併入歷史
+
+	# 第 2 場開始 —— 呼叫端唯一的入口,結構上必定重新 begin_mission()
+	var ledger2: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	ledger2.append(AffinityTypes.Pair.C1_C3, -1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	CampaignProgress.rollback_on_defeat()  # 第 2 場打輸
+
+	assert_int(ledger2.records().size()).append_failure_message(
+		"透過 CampaignProgress.start_mission_affinity_ledger() 取得 ledger 時," +
+		"結構上不可能忘記呼叫 begin_mission() —— 回滾應只丟棄第 2 場新增的 1 筆," +
+		"保留前 2 筆歷史,實得 %d 筆" % ledger2.records().size()
+	).is_equal(2)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
+
+
+## [method start_mission_affinity_ledger] 回傳的是同一個共用實例的參照,不是
+## 每次呼叫重新 new() 一份 —— 這是上面那條敏感度證明成立的前提(ledger1/ledger2
+## 操作的必須是同一份累積歷史),本測試單獨把這個前提釘住。
+func test_start_mission_affinity_ledger_returns_same_instance_across_calls() -> void:
+	# Arrange
+	CampaignProgress.reset_for_test()
+
+	# Act
+	var first: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	var second: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+
+	# Assert
+	assert_object(second).append_failure_message(
+		"start_mission_affinity_ledger() 應回傳同一個共用實例的參照,否則第二次" +
+		"呼叫取得的 ledger 看不到前一場累積的歷史"
+	).is_same(first)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
+
+
+## AC4(失敗回滾)在 CampaignProgress 這一層的直接驗證:rollback_on_defeat()
+## 真的呼叫了 ledger 的 rollback_current_mission(),不是場次編號不前進那半句
+## pass 被誤讀成「什麼都不用做」。
+func test_rollback_on_defeat_discards_entries_added_since_start_mission() -> void:
+	# Arrange
+	CampaignProgress.reset_for_test()
+	var ledger: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	ledger.append(AffinityTypes.Pair.C2_C5, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	assert_int(ledger.records().size()).append_failure_message(
+		"precondition:append() 應已讓記錄非空,否則下面的斷言證明不了任何事"
+	).is_equal(1)
+
+	# Act
+	CampaignProgress.rollback_on_defeat()
+
+	# Assert
+	assert_int(ledger.records().size()).append_failure_message(
+		"rollback_on_defeat() 應該呼叫 CampaignAffinityLedger.rollback_current_mission()" +
+		"把本場新增的記錄丟棄"
+	).is_equal(0)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
+
+
+## reset_for_test() 的敏感度證明延伸:連 ledger 也一併清空,不是只清場次編號。
+func test_sensitivity_proof_reset_for_test_also_clears_affinity_ledger() -> void:
+	# Arrange
+	CampaignProgress.reset_for_test()
+	var ledger: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	ledger.append(AffinityTypes.Pair.C1_C4, 1.0, AffinityTypes.Source.STORY_EVENT)
+	assert_int(ledger.records().size()).append_failure_message(
+		"precondition:append() 應已讓記錄非空,否則下面的斷言證明不了任何事"
+	).is_equal(1)
+
+	# Act
+	CampaignProgress.reset_for_test()
+
+	# Assert —— 重新取得的 ledger(同一個共用實例)應該是空的
+	var ledger_after_reset: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	assert_int(ledger_after_reset.records().size()).append_failure_message(
+		"reset_for_test() 應該把 _affinity_ledger 也清空,否則會污染同一次執行" +
+		"期間的其他測試(跨測試靜態狀態洩漏,見 .claude/rules/gameplay-code.md" +
+		"2026-10-19 裁決④的已知代價)"
+	).is_equal(0)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
