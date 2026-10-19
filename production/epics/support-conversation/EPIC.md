@@ -86,7 +86,7 @@ grep -rn "AffinityDataPool.new()" src/ --include=*.gd
 | # | 標題 | Type | Status |
 |---|---|---|---|
 | 001 | 資料表、觸發判定與規則驗證(純邏輯) | Logic | ✅ **Done(2026-10-19)** —— AC1~AC7 全部有測試,40 條 |
-| 002 | 池側轉接器 + NEUTRAL 不寫入(裁決②③)| Logic | 🔄 實作中(2026-10-19)|
+| 002 | 池側轉接器 + NEUTRAL 不寫入(裁決②③)| Logic | ✅ **Done(2026-10-19,協調者獨立重跑驗收)** —— 🔴 守衛測試拆成兩條斷言,不是放寬成 2 |
 | 003 | 好感度跨關卡延續(裁決①)| Logic + Integration | **Ready** —— 🔴 它會換掉 battle_screen.gd 的開局灌入,範圍最大 |
 
 ## 本 epic 不涵蓋

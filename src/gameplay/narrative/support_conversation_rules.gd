@@ -50,14 +50,16 @@ static func validate_negative_not_last_slot(
 ## 把 [param valence] 轉成帶號寫入量值,正負號由 valence 決定,絕對值固定為
 ## [constant MAGNITUDE_ABS]。
 ##
-## 🔴 [b]NEUTRAL 的量值未經設計定案 —— 誠實登記,不是裝作有答案。[/b] 輕量規格第 2
-## 節只定義 NEUTRAL「影響第 4 節補救規則是否生效」,MVP 三段對話沒有任何一段是
-## NEUTRAL(見 assets/data/narrative/support_conversations.txt),規格從未規定
-## NEUTRAL 完成時該寫入池多少量值。這裡回傳 [code]0.0[/code] 是一個誠實的預設猜測,
-## 不是裁決 —— 真實池([code]AffinityDataPool.append_record[/code])的
-## [code]WriteRejection.ZERO_AMPLITUDE[/code] 分支會拒絕量值為 0 的寫入,意味著
-## 「今天這樣寫,接上真池後 NEUTRAL 的完成在寫入那一步會被池拒絕」。這個後果留給
-## story-002(接真池)處理,不在本 story 範圍內解決,也不是本函式能單方面決定的。
+## ✅ [b]NEUTRAL 的量值曾經未定案,現已由裁決③(2026-10-19 管理者裁決,逐字選項
+## 「觸發對話,但不寫好感度(推薦)」)解決。[/b] 原本的疑慮——真實池
+## ([code]AffinityDataPool.append_record[/code])的
+## [code]WriteRejection.ZERO_AMPLITUDE[/code] 分支會拒絕量值為 0 的寫入,「寫 0」
+## 實際上等於「這筆寫入被拒絕」——如今的解法不是去定義一個非零的 NEUTRAL 量值,
+## 而是 [method trigger] 對 NEUTRAL [b]完全不呼叫[/b]寫入埠(見該方法文件註解與
+## 實作)。[b]因此本函式對 [constant SupportConversationRecord.Valence.NEUTRAL]
+## 回傳的 [code]0.0[/code] 在正式流程裡永遠不會被送進任何寫入埠[/b]——保留
+## [code]0.0[/code] 只是語意上最接近「無方向」的佔位值,這不再是一個待裁決的開放
+## 問題,只是這個分支的回傳值本身在實務上不重要。
 static func magnitude_for_valence(valence: SupportConversationRecord.Valence) -> float:
 	match valence:
 		SupportConversationRecord.Valence.POSITIVE:
@@ -91,12 +93,23 @@ static func magnitude_for_valence(valence: SupportConversationRecord.Valence) ->
 ##    「posthumous 判定」):轉移到 [constant SupportConversationRecord.
 ##    TriggerState.SKIPPED]、[b]不呼叫[/b] [param port],回傳 SKIPPED。
 ## 3. 否則:把兩個名冊 id 轉成 [enum AffinityTypes.Character]([AffinityRosterCharacterMapper])、
-##    組成 [enum AffinityTypes.Pair]([method AffinityTypes.pair_of]),呼叫
+##    組成 [enum AffinityTypes.Pair]([method AffinityTypes.pair_of])。
+##    [b]若 [member SupportConversationRecord.valence] 為
+##    [constant SupportConversationRecord.Valence.NEUTRAL][/b](裁決③,2026-10-19
+##    管理者裁決,逐字選項「觸發對話,但不寫好感度(推薦)」):跳過呼叫
+##    [method SupportConversationWritePort.append_record] —— 理由見
+##    [method magnitude_for_valence] 文件註解(「寫 0」等同被池的
+##    [code]WriteRejection.ZERO_AMPLITUDE[/code] 拒絕,故正確做法是不呼叫,不是
+##    呼叫後傳 0)。[b]POSITIVE/NEGATIVE[/b] 則照常呼叫
 ##    [method SupportConversationWritePort.append_record] —— 這是本系統對寫入埠
 ##    [b]唯一[/b]的呼叫點(規格 AC-6/OBL-009,見
 ##    [code]tests/unit/gameplay/narrative/support_conversation_write_call_site_count_test.gd[/code]
-##    的結構性守衛測試),然後轉移到
-##    [constant SupportConversationRecord.TriggerState.COMPLETED]、回傳 COMPLETED。
+##    的結構性守衛測試,該測試數的是原始碼裡 [code].append_record([/code] 的文字
+##    出現次數,本次改動只是把既有那一行包進條件判斷,文字本身沒有新增/刪減,
+##    不影響該測試的計數)。[b]不論 valence 為何[/b],最終都轉移到
+##    [constant SupportConversationRecord.TriggerState.COMPLETED]、回傳 COMPLETED
+##    —— 對話確實發生了,NEUTRAL 只是沒有寫入好感度數值,狀態不是 SKIPPED
+##    (SKIPPED 專屬上面第 2 步的陣亡情境)。
 static func trigger(
 	record: SupportConversationRecord, is_alive: Callable, port: SupportConversationWritePort
 ) -> SupportConversationRecord.TriggerState:
@@ -127,6 +140,13 @@ static func trigger(
 
 	var pair: AffinityTypes.Pair = AffinityTypes.pair_of(character_a, character_b)
 	var m: float = magnitude_for_valence(record.valence)
-	port.append_record(pair, m, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
+	# 裁決③(2026-10-19 管理者裁決,逐字選項「觸發對話,但不寫好感度(推薦)」):
+	# NEUTRAL 完全不呼叫寫入埠 —— AffinityDataPool.append_record() 對 m == 0.0
+	# 回傳 WriteRejection.ZERO_AMPLITUDE,「寫 0」實際上等於「這筆寫入被拒絕」,
+	# 故正確做法是不呼叫,不是呼叫後傳 0。見 magnitude_for_valence() 文件註解。
+	if record.valence != SupportConversationRecord.Valence.NEUTRAL:
+		port.append_record(pair, m, AffinityTypes.Source.SUPPORT_CONVERSATION)
+
 	record.try_transition(SupportConversationRecord.TriggerState.COMPLETED)
 	return record.state

@@ -21,6 +21,7 @@ class _SpyWritePort extends SupportConversationWritePort:
 # 以下常數是餵給規則函式的合成資料,不是本作的真實內容。
 const LINE_POSITIVE: String = "SC-TEST-01,1,1,2,positive"
 const LINE_NEGATIVE: String = "SC-TEST-02,2,3,4,negative"
+const LINE_NEUTRAL: String = "SC-TEST-03,3,1,2,neutral"
 
 const SUPPORT_CONVERSATIONS_PATH: String = "res://assets/data/narrative/support_conversations.txt"
 
@@ -232,6 +233,61 @@ func test_trigger_already_resolved_record_is_idempotent_no_op() -> void:
 	assert_int(result).is_equal(SupportConversationRecord.TriggerState.COMPLETED)
 	assert_int(port.calls.size()).append_failure_message(
 		"重複觸發已完成的對話不應該再寫入第二次"
+	).is_equal(1)
+
+
+# ---- trigger() — 裁決③(2026-10-19 管理者裁決):NEUTRAL 觸發但不寫好感度 -----
+
+func test_trigger_neutral_valence_completes_without_writing() -> void:
+	# 裁決③ 逐字選項「觸發對話,但不寫好感度(推薦)」:AffinityDataPool.append_record()
+	# 對 m == 0.0 回傳 WriteRejection.ZERO_AMPLITUDE —— 「寫 0」等同「這筆寫入被
+	# 拒絕」,所以正確做法是完全不呼叫寫入埠,而不是呼叫後傳 0。
+	# Arrange
+	var record: SupportConversationRecord = SupportConversationRecord.from_csv_line(LINE_NEUTRAL)
+	var port: _SpyWritePort = _SpyWritePort.new()
+	var is_alive: Callable = func(_roster_id: int) -> bool: return true
+
+	# Act
+	var result: SupportConversationRecord.TriggerState = SupportConversationRules.trigger(
+		record, is_alive, port
+	)
+
+	# Assert — 對話確實發生(COMPLETED,不是 SKIPPED —— SKIPPED 專屬陣亡情境),
+	# 但零次寫入。
+	assert_int(result).is_equal(SupportConversationRecord.TriggerState.COMPLETED)
+	assert_int(record.state).is_equal(SupportConversationRecord.TriggerState.COMPLETED)
+	assert_int(port.calls.size()).append_failure_message(
+		"NEUTRAL 對話完成時不應呼叫寫入埠(裁決③:寫 0 等同被 ZERO_AMPLITUDE 拒絕,"
+		+ "正確做法是不呼叫)"
+	).is_equal(0)
+
+
+func test_sensitivity_proof_neutral_zero_write_is_neutral_specific_not_whole_path_broken() -> void:
+	# 敏感度證明:證明上面那條測試量到的「零次呼叫」是 NEUTRAL 專屬的分支邏輯,
+	# 不是 trigger() 整條寫入路徑意外壞掉 —— 同一個 is_alive(全員存活)之下,
+	# POSITIVE/NEGATIVE 仍然必須照常呼叫寫入埠恰好一次。
+	# Arrange
+	var positive_record: SupportConversationRecord = SupportConversationRecord.from_csv_line(
+		LINE_POSITIVE
+	)
+	var negative_record: SupportConversationRecord = SupportConversationRecord.from_csv_line(
+		LINE_NEGATIVE
+	)
+	var positive_port: _SpyWritePort = _SpyWritePort.new()
+	var negative_port: _SpyWritePort = _SpyWritePort.new()
+	var is_alive: Callable = func(_roster_id: int) -> bool: return true
+
+	# Act
+	SupportConversationRules.trigger(positive_record, is_alive, positive_port)
+	SupportConversationRules.trigger(negative_record, is_alive, negative_port)
+
+	# Assert
+	assert_int(positive_port.calls.size()).append_failure_message(
+		"敏感度證明失敗:POSITIVE 也變成零次呼叫 —— NEUTRAL 測試量到的 0 可能只是"
+		+ "整條寫入路徑壞掉,不是 NEUTRAL 專屬分支。"
+	).is_equal(1)
+	assert_int(negative_port.calls.size()).append_failure_message(
+		"敏感度證明失敗:NEGATIVE 也變成零次呼叫 —— 同上。"
 	).is_equal(1)
 
 
