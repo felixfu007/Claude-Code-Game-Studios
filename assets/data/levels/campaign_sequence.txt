@@ -14,5 +14,15 @@
 # 「本 story 明文不涵蓋」第 2 項(level-designer 的工作)。本檔不代為捏造路徑,
 # 只寫出今天真的存在的那一列。
 #
+# ⚠️ 2026-10-19(level-designer):第 2 場《追痕》的四個資料檔已經做好(見
+# assets/data/levels/vs02_terrain.txt 等四檔),但本表「補上第 2 列」這個動作
+# 刻意沒有在這次一併做——理由見同日交接報告,簡述:至少
+# tests/integration/ui/battle/battle_screen_campaign_mission_outcome_wiring_test.gd
+# 與 tests/unit/gameplay/campaign/campaign_sequence_test.gd 兩份測試把「本表今天
+# 只有 1 列」寫死成斷言(前者斷言 vs01 勝利後 current_mission() 停在 1、不會推進;
+# 後者斷言 sequence_from_text() 回傳 has_size(1))。先加這一列會讓這兩條測試由綠
+# 轉紅,而更新測試斷言不是 level-designer 的職權。要補第 2 列,請與兩份測試的改動
+# 一併送出。
+#
 # mission_index,terrain_path,roster_path,affinity_path,cards_path
 1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt

@@ -1,0 +1,22 @@
+# vs02 好感度配對表 — 固定欄位順序:
+# unit_a,unit_b,polarity,amp
+#
+# 本場沿用 vs01_affinity_links.txt 的兩條既有關係線,原樣不變——「誰跟誰
+# 有關係、是正是負」是角色設定(design/narrative/characters.md 第三節
+# 「關係」,Canon level: Established,管理者三輪裁決定案),不是
+# level-designer 的職權,也不是逐關卡可以重新設計的東西。
+#
+# unit_a / unit_b:vs01_roster.txt / vs02_roster.txt 共用的角色 id
+# (1=甲 2=乙 3=丙 4=丁 5=戊)。
+# polarity:POSITIVE(正關係)或 NEGATIVE(負關係)。
+# amp:倍率,目前一律 1(保留給未來的對話卡牌加乘效果)。
+#
+#   甲乙合作(正)→ 1,2,POSITIVE
+#   丙丁對立(負)→ 3,4,NEGATIVE
+#
+# ⚠️ 戊(麥子健)沒有任何配對,這是刻意的,不是漏寫——同 vs01,理由見
+# design/narrative/characters.md 第三節「戊中立——算計過的自我保護」。
+# 要新增他的線,先改 characters.md,不是改這份資料檔。
+#
+1,2,POSITIVE,1
+3,4,NEGATIVE,1
