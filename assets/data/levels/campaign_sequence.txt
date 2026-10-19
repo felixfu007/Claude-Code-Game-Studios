@@ -1,0 +1,18 @@
+# 戰役關卡序列表(遊戲殼層 Epic,story-003:關卡序列與轉場流程)—— 固定欄位順序:
+# mission_index,terrain_path,roster_path,affinity_path,cards_path
+#
+# mission_index                      場次編號(1 起算)。
+# terrain_path/roster_path/affinity_path/cards_path
+#                                     比照 src/ui/battle/battle_screen.gd 既有四個
+#                                     注入點(terrain_path_override /
+#                                     roster_path_override / affinity_path_override /
+#                                     cards_path_override)的同名資料,解析層見
+#                                     src/gameplay/campaign/campaign_sequence.gd。
+#
+# 🔴 本表目前只有第 1 列 —— 第 2~5 場的地形、名冊、牌組、好感度前置全部尚未
+# 製作,見 production/epics/game-shell/story-003-campaign-flow-and-transition-slots.md
+# 「本 story 明文不涵蓋」第 2 項(level-designer 的工作)。本檔不代為捏造路徑,
+# 只寫出今天真的存在的那一列。
+#
+# mission_index,terrain_path,roster_path,affinity_path,cards_path
+1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt
