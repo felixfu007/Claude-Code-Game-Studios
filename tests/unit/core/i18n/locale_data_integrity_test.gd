@@ -243,11 +243,16 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# Arrange / Act
 	var data_rows: Array[PackedStringArray] = _load_real_data_rows()
 
-	# Assert — 78 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
+	# Assert — 83 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
 	# 🔴 2026-10-15 第二次更新(同一天內):45 → 68(story-012 格位資訊面板 +23)
 	# → 75(story-013 攻擊確認面板 +7)。
 	# 🔴 2026-10-19 第三次更新:75 → 78(story-001-title-screen-and-scene-switching.md
 	# 新增 shell.title.start_battle / shell.title.settings / shell.title.quit 三列)。
+	# 🔴 2026-10-19 第四次更新(同一天內):78 → 83
+	# (story-002-minimal-settings-screen.md 新增 shell.settings.egm_toggle /
+	# shell.settings.back / battle.menu.egm_status_format /
+	# battle.menu.egm_status_on / battle.menu.egm_status_off 五列)。延續前三次的
+	# 同一處理方式(直接更新數字),不是對檔尾「待裁決」重新下裁決。
 	# 這是本檔自己在上面登記過「待裁決」的那個維護成本第三次發生,延續前兩次的
 	# 同一處理方式(直接更新數字),不是對那條「待裁決」重新下裁決 —— 是否改成
 	# 「下限 + 不重複 + 無空值」的組合仍然沒有被本次更新決定,留給下一次有人真的
@@ -272,10 +277,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 78（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 83（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(78)
+	).is_equal(83)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

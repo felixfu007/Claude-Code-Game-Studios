@@ -1,0 +1,4 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+get_cmdline_args() = ["-s", "C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/prototypes/godot-specialist-static-var-probe-2026-10-19/probe_cmdline_args.gd"]
+get_cmdline_user_args() = ["--capture-battle"]

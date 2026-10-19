@@ -204,6 +204,14 @@ const LEAVE_CONFIRM_CANCEL: StringName = &"battle.menu.leave_confirm_cancel"
 ## Story-002 續批 — 見 [constant LEAVE_CONFIRM_CANCEL] 的 doc comment。
 const LEAVE_CONFIRM_LEAVE: StringName = &"battle.menu.leave_confirm_leave"
 
+## `production/epics/game-shell/story-002-minimal-settings-screen.md`(AC8)——
+## 唯讀 EGM 狀態行格式字串,例如「效果猜測標記：開啟」。
+const EGM_STATUS_FORMAT: StringName = &"battle.menu.egm_status_format"
+## 同上,EGM 開啟時代入 [constant EGM_STATUS_FORMAT] 的值。
+const EGM_STATUS_ON: StringName = &"battle.menu.egm_status_on"
+## 同上,EGM 關閉時代入 [constant EGM_STATUS_FORMAT] 的值。
+const EGM_STATUS_OFF: StringName = &"battle.menu.egm_status_off"
+
 ## Placeholder internal spacing (this file's own judgement call, not a spec
 ## number — see class doc comment). Outer margin on all four sides of the
 ## panel's content area, in multiples of fpx.
@@ -352,6 +360,20 @@ var forced_discard_in_progress_check: Callable = Callable()
 ## passing unchanged.
 var controller: BattleController = null
 
+## Story-002(AC8)— 本場戰鬥的效果猜測標記(EGM)開關快取值,由
+## [code]battle_screen.gd[/code] 在自己的 [method Node._ready] 內注入恰好一次
+## (與 [BattleScreen] 自己對 AC2/AC3 使用的是同一份快取,不會讓 [GameSettings]
+## 被問第二次)。🔴 [b]唯讀顯示,玩家不可從這裡互動變更[/b] ——
+## `design/quick-specs/battle-hud-prediction-marker.md` AC13:「戰鬥中打開選項
+## 選單 → EGM 開關應顯示目前值但不可互動變更;變更只在下一場戰鬥開始時生效」。
+## 本檔沒有任何地方把這個欄位接上 [signal BaseButton.toggled] 或類似的互動信號 ——
+## 顯示它的 [member _egm_status_label] 是純 [Label],不是可點擊的開關控制項,
+## 這是「玩家看得懂的形狀」而非「一顆按下去沒反應的鈕」的具體作法(工作單 AC8)。
+## 同本檔 [member controller] 的既有慣例,是一個「plain public field,不是
+## property setter」的注入點 —— [method _refresh_egm_status_label] 本身是
+## idempotent 的,呼叫幾次都安全。
+var egm_enabled: bool = false
+
 ## Story U-010 — injected [code]func() -> void[/code], called when the player
 ## CONFIRMS leaving from M4 (pressing "離開"). 🔴 [b]THIS FIELD'S UNSET
 ## MEANING IS THE OPPOSITE OF EVERY OTHER INJECTABLE [Callable] IN THIS
@@ -429,6 +451,11 @@ const DISABLED_ROW_PREFIX_GLYPH: StringName = &"battle.menu.disabled_row_prefix_
 @onready var _end_phase_reason_label: Label = $Panel/ContentMargin/Rows/EndPhaseReasonLabel
 @onready var _divider: ColorRect = $Panel/ContentMargin/Rows/Divider
 @onready var _quit_row: Button = $Panel/ContentMargin/Rows/QuitRow
+
+## Story-002(AC8)— 唯讀 EGM 狀態行,見 [member egm_enabled] 的 doc comment。
+## 刻意不放進 [member _rows](M2 的 VBoxContainer),是本檔自己的根節點子節點 ——
+## 見 [method egm_status_rect] 的 doc comment,那裡解釋了為什麼。
+@onready var _egm_status_label: Label = $EgmStatusLabel
 
 ## Story U-010 — M4 (leave-confirmation) node refs. [member _leave_confirm_blocker]
 ## is a transparent, [constant Control.MOUSE_FILTER_STOP] full-rect [ColorRect]
@@ -593,6 +620,12 @@ func _ready() -> void:
 	_leave_quit_button.focus_neighbor_bottom = _leave_quit_button.get_path_to(_leave_quit_button)
 
 	_refresh_end_phase_row()
+	# Story-002(AC8)— 初始樣式/文字,見 [method _refresh_egm_status_label]。
+	# 此刻 [member egm_enabled] 可能還是宣告時的預設 false(battle_screen.gd 要等
+	# 到自己的 _ready() 才會注入真值,而子節點的 _ready() 先於父節點執行)——
+	# 沒有關係,因為本選單預設 [code]visible = false[/code],玩家第一次真正看到
+	# 這行文字一定是透過下面 [method open] 的同一呼叫,屆時值已經注入完成。
+	_refresh_egm_status_label()
 
 
 ## Story U-008 (ADR-0005 機制九, `battle-menu.md`'s "① 開啟時須呼叫
@@ -646,6 +679,10 @@ func open() -> OpenResult:
 	# waiting for the next [method _process] tick, so the very first frame the
 	# menu is visible already reflects current battle state.
 	_refresh_end_phase_row()
+	# Story-002(AC8)— 同一理由:每次開啟都重新讀一次已注入的快取值,第一個
+	# 看得到的畫面就已經正確,不必等 _process()(本欄位本來就不會在選單開啟期間
+	# 變動,呼叫這裡純粹是防禦性的,成本可忽略)。
+	_refresh_egm_status_label()
 	return OpenResult.OPENED
 
 
@@ -792,6 +829,18 @@ func _refresh_end_phase_row() -> void:
 		# edge — evict it to the same row [method open] itself defaults to.
 		if _end_phase_row.has_focus():
 			_return_row.grab_focus()
+
+
+## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
+## AC8)— single place [member _egm_status_label]'s text is computed, called from
+## [method _ready] and [method open] (same two-call-site convention as
+## [method _refresh_end_phase_row] above, minus the [method Node._process]
+## polling site — [member egm_enabled] never changes while this menu is open,
+## so no per-frame re-evaluation is needed). Idempotent: safe to call more than
+## once.
+func _refresh_egm_status_label() -> void:
+	var state_key: StringName = EGM_STATUS_ON if egm_enabled else EGM_STATUS_OFF
+	_egm_status_label.text = Loc.localize(EGM_STATUS_FORMAT) % [Loc.localize(state_key)]
 
 
 ## Story U-009 (AC-M5's shared-predicate requirement) — the single judgement
@@ -986,6 +1035,21 @@ func _apply_layout() -> void:
 	)
 	_end_phase_reason_label.add_theme_color_override(&"font_color", REASON_TEXT_COLOR)
 
+	# Story-002(AC8)— positioned via [method egm_status_rect], see that
+	# function's own doc comment for why this sits outside [member _rows]
+	# rather than squeezing into the spec-mandated M1 budget.
+	var egm_r: Rect2 = egm_status_rect(window_size)
+	_egm_status_label.offset_left = egm_r.position.x
+	_egm_status_label.offset_top = egm_r.position.y
+	_egm_status_label.offset_right = egm_r.end.x
+	_egm_status_label.offset_bottom = egm_r.end.y
+	_egm_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_egm_status_label.add_theme_font_override(&"font", HUD_FONT)
+	_egm_status_label.add_theme_font_size_override(
+		&"font_size", int(fpx * REASON_FONT_FPX_MULTIPLIER)
+	)
+	_egm_status_label.add_theme_color_override(&"font_color", REASON_TEXT_COLOR)
+
 	# Story U-010 — M4 sizing/position via the SAME anchor math [method
 	# panel_rect] already established for M1 (see [method leave_confirm_rect]);
 	# style/margin/separation placeholders reuse M1's own placeholder
@@ -1081,3 +1145,26 @@ static func leave_confirm_rect(window_size: Vector2i) -> Rect2:
 	var size: Vector2 = leave_confirm_size(window_size)
 	var pos: Vector2 = safe.position + (safe.size - size) / 2.0
 	return Rect2(pos, size)
+
+
+## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
+## AC8)— readonly EGM status line, positioned directly below the M1 panel,
+## horizontally centered, same width as the panel.
+##
+## 🔴 Deliberately NOT placed inside [member _rows] (M2's [VBoxContainer]) —
+## [constant PANEL_HEIGHT_FPX_MULTIPLIER] (9 fpx) is a `battle-menu.md`
+## spec-mandated value this story does not touch, and it is already
+## regression-tested by [code]battle_menu_layout_test.gd[/code] against
+## [method panel_rect]. Squeezing a fourth line into that fixed budget would
+## crowd the three existing rows at most resolutions. Sitting outside the
+## panel is this file's own layout judgement call (AC9's visual presentation
+## is ADVISORY and explicitly not graded today per this story's dispatch —
+## same category of deferred-polish decision as [TitleScreen]'s placeholder
+## panel offsets), left for the pre-signoff visual pass to reposition if
+## needed, not a spec-mandated placement.
+static func egm_status_rect(window_size: Vector2i) -> Rect2:
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var panel_r: Rect2 = panel_rect(window_size)
+	var height: float = fpx * REASON_FONT_FPX_MULTIPLIER * 1.6
+	var pos: Vector2 = Vector2(panel_r.position.x, panel_r.end.y + fpx * ROW_SEPARATION_FPX_MULTIPLIER)
+	return Rect2(pos, Vector2(panel_r.size.x, height))

@@ -863,6 +863,25 @@ func diagnostic_last_menu_rejection_result() -> BattleMenu.OpenResult:
 func diagnostic_last_menu_rejection_message() -> String:
 	return _diagnostic_last_menu_rejection_message
 
+## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
+## AC2/AC3)— 效果猜測標記(Effect-Guess Marker,EGM)是否對本場戰鬥生效,在
+## [method _ready] 讀取 [GameSettings] 恰好一次並快取於此,整場戰鬥不再重讀 ——
+## 這就是 `design/quick-specs/battle-hud-prediction-marker.md`「不支援戰鬥中途
+## 熱切換」的落地點:戰鬥開始後玩家即使在設定畫面改變開關,也不會影響這裡已經
+## 快取的值(AC3)。
+##
+## 🔴 本欄位目前只是忠實快取開關值,供 [method is_egm_enabled_for_this_battle]
+## 與 [BattleMenu] 的 AC8 唯讀顯示讀取;EGM 猜測選擇器本身(規格第 2 節步驟 1~7
+## 的完整互動流程,包含 [EffectGuessTracker] 的實際接線)不在本 story 範圍內,
+## 是尚待派工的未來故事 —— 本欄位是那個未來接線唯一需要的落地點,不預先假設
+## 它會怎麼被消費。
+var _egm_enabled_for_this_battle: bool = false
+
+## 本場戰鬥的 EGM 開關快取值。見 [member _egm_enabled_for_this_battle] 的 doc
+## comment。
+func is_egm_enabled_for_this_battle() -> bool:
+	return _egm_enabled_for_this_battle
+
 ## story-011-input-gaps.md (U-T7, M1 audit 2026-09-29) — QA/test-only
 ## diagnostic surface, same convention as
 ## [member _diagnostic_last_menu_rejection_result]. Records the
@@ -1008,6 +1027,10 @@ class _TargetRetargetActor extends Node:
 
 
 func _ready() -> void:
+	# Story-002(AC2)— 讀取一次,整場戰鬥不再重讀。見
+	# [member _egm_enabled_for_this_battle] 的 doc comment。
+	_egm_enabled_for_this_battle = GameSettings.is_egm_enabled()
+
 	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
 
 	var terrain_text: String = ""
@@ -1373,6 +1396,9 @@ func _ready() -> void:
 	# not a state-machine one.
 	_battle_menu.visible = false
 	_battle_menu.controller = _controller
+	# Story-002(AC8)— BattleMenu 的唯讀 EGM 狀態顯示讀取同一份已快取的值,不會
+	# 再向 GameSettings 問第二次(與本畫面自己的 AC2/AC3 使用同一個事實來源)。
+	_battle_menu.egm_enabled = _egm_enabled_for_this_battle
 	_battle_menu.authoritative_write_in_progress_check = Callable()
 	_battle_menu.forced_discard_in_progress_check = Callable(_controller, "has_pending_discard")
 	# BattleMenu._on_end_phase_row_pressed() already calls

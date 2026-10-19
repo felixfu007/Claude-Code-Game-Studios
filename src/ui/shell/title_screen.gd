@@ -26,6 +26,9 @@
 ## 不隨解析度縮放。AC10 本身是 ADVISORY、需要管理者截圖簽核,工作單明文「今天
 ## 不驗收」——選擇今天不接 [code]compute_scale()[/code],留給簽核前的視覺收尾一併
 ## 處理,避免在還沒有人看過畫面長相之前,先用猜測的版面去套一個真正的縮放公式。
+##
+## 🔴 Story-004(2026-10-19 管理者裁決,工作單尚未落檔)—— 本畫面新增
+## [constant AUTO_START_BATTLE_FLAG] 這個命令列後門旗標,見該常數的 doc comment。
 class_name TitleScreen
 extends Control
 
@@ -41,6 +44,53 @@ const TEXT_QUIT: StringName = &"shell.title.quit"
 ## 常數檔;若殼層第三個場景出現(story-003),屆時應重新評估是否該抽成共用資源。
 const _BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 
+## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
+## AC4)—— 「設定」鈕的切換目標。與 `settings_screen.gd` 的
+## `_TITLE_SCENE_PATH`(AC6 用,返回本畫面)是一對互相指向的常數,同一類對處理,
+## 見 [constant _BATTLE_SCENE_PATH] 的 doc comment。
+const _SETTINGS_SCENE_PATH: String = "res://src/ui/shell/SettingsScreen.tscn"
+
+## Story-004(`production/epics/game-shell/` ——
+## 管理者 2026-10-19 裁決「今天補,跟著 story-002 一起做」,工作單尚未落檔)。
+##
+## [b]背景[/b]:story-001 把 [code]run/main_scene[/code] 從 [code]BattleScreen.tscn[/code]
+## 改成本畫面之後,匯出建置開機進標題畫面,而
+## [code]tools/build/capture_window.ps1[/code] 完全沒有輸入能力(不送
+## [code]SendInput[/code]/[code]keybd_event[/code]/[code]mouse_event[/code])——
+## 自動截「戰鬥畫面」當 QA 證據這條路因此失效:它只拍得到標題畫面。本專案至今
+## 全部畫面缺陷都是人開圖看到的,截圖是那道防線的輸入,所以需要一個不靠
+## 真實輸入就能跳過標題畫面、直接進戰鬥的後門。
+##
+## [b]用法[/b]:命令列帶上 [constant AUTO_START_BATTLE_FLAG] 這個旗標字串,
+## [b]且【不要】用 [code]--[/code] 分隔符[/b]。例如:
+## [code]BlindInTheFaintLight.exe --capture-battle[/code]。
+##
+## 🔴 [b]2026-10-19 協調者覆核更正 —— 原文宣稱「不論有無 [code]--[/code] 分隔符
+## 都會原樣收進回傳陣列」,那句話被它自己引用的探針 log 推翻了。[/b]
+## 實測逐字(`prototypes/godot-specialist-static-var-probe-2026-10-19/`):
+## [codeblock]
+## run_output_cmdline_args.txt(不帶 --):
+##   get_cmdline_args()      = ["-s", "...probe_cmdline_args.gd", "--capture-battle"]
+##   get_cmdline_user_args() = []
+## run_output_cmdline_args_with_separator.txt(帶 --):
+##   get_cmdline_args()      = ["-s", "...probe_cmdline_args.gd"]      ← 旗標不在這裡
+##   get_cmdline_user_args() = ["--capture-battle"]                     ← 跑到另一個 API
+## [/codeblock]
+## [b]亦即:帶了 [code]--[/code] 的話,本旗標會安靜地完全失效[/b] ——
+## [method should_auto_start_battle] 只看 [method OS.get_cmdline_args]。
+## ⚠️ [b]這是已登記的已知限制,不是缺陷[/b]:截圖工具的呼叫形式是
+## [code]exe --capture-battle[/code](無分隔符),在該形式下行為正確。
+## 若日後有人改用 [code]--[/code] 形式,**它不會報錯,只會什麼都不做** ——
+## 屆時正確的修法是讓 [method should_auto_start_battle] 同時檢查
+## [method OS.get_cmdline_user_args],而不是去猜為什麼旗標沒生效。
+##
+## ✅ [code]tools/build/capture_window.ps1[/code] 的檔頭已補上對應說明
+## (2026-10-19 協調者補做)。📌 **本行原文在補做之前就宣稱「已補上」,而該檔
+## 當時一個字都沒被改過** —— 同一次覆核發現並更正。留這句話不是記過,是因為
+## 這正是本專案登記最多次的失效形狀:**一句讀起來像已完成的敘述,
+## 會讓下一個人去找一段不存在的東西,而且沒有任何東西會報錯。**
+const AUTO_START_BATTLE_FLAG: String = "--capture-battle"
+
 @onready var _start_battle_row: Button = $Panel/ContentMargin/Rows/StartBattleRow
 @onready var _settings_row: Button = $Panel/ContentMargin/Rows/SettingsRow
 @onready var _quit_row: Button = $Panel/ContentMargin/Rows/QuitRow
@@ -51,36 +101,56 @@ func _ready() -> void:
 	_settings_row.text = Loc.localize(TEXT_SETTINGS)
 	_quit_row.text = Loc.localize(TEXT_QUIT)
 
-	# AC3 —— 設定項目以停用狀態呈現,不是「可點但無反應」,也不是「暫代的假畫面」
-	# (story-002 落地前,這顆鈕唯一合法的狀態就是「看得見、按不動」)。focus_mode
-	# 一併設 FOCUS_NONE,讓它結構上被排除在鍵盤/手把焦點導覽之外 —— 停用的項目
-	# 本來就不該能被「選取」,這是本實作對 AC7「三個項目可導覽」的解讀:指整個選單
-	# 支援三種輸入裝置,不是要求一個停用項目也能被選取(與標準無障礙慣例一致,
-	# 已在本檔 doc comment 與任務回報中明文揭露這個解讀,供覆核)。
-	_settings_row.disabled = true
-	_settings_row.focus_mode = Control.FOCUS_NONE
+	# Story-002(AC4)—— 「設定」鈕解除停用,接上 open_settings()。這顆鈕原本
+	# (story-001)是明文的停用佔位狀態,不是「可點但無反應」;本行是那個登記在案的
+	# 缺口落地的地方,不是繞過它。
 
-	# AC7 —— 比照 battle_menu.gd:FOCUS_ALL + 手動 focus_neighbor,做出有界
-	# (不環繞)的二項清單。中間被跳過的 SettingsRow 因為上面已設 FOCUS_NONE,
-	# 不會被焦點導覽選到 —— 等 story-002 把它改回可用狀態時,再補上它自己的
-	# focus_neighbor 連線即可,本檔不預先假設它的位置。
+	# AC5(本 story)/ AC7(story-001)—— 比照 battle_menu.gd:FOCUS_ALL + 手動
+	# focus_neighbor,做出有界(不環繞)的三項清單。
 	_start_battle_row.focus_mode = Control.FOCUS_ALL
+	_settings_row.focus_mode = Control.FOCUS_ALL
 	_quit_row.focus_mode = Control.FOCUS_ALL
 	_start_battle_row.focus_neighbor_top = _start_battle_row.get_path_to(_start_battle_row)
-	_start_battle_row.focus_neighbor_bottom = _start_battle_row.get_path_to(_quit_row)
-	_quit_row.focus_neighbor_top = _quit_row.get_path_to(_start_battle_row)
+	_start_battle_row.focus_neighbor_bottom = _start_battle_row.get_path_to(_settings_row)
+	_settings_row.focus_neighbor_top = _settings_row.get_path_to(_start_battle_row)
+	_settings_row.focus_neighbor_bottom = _settings_row.get_path_to(_quit_row)
+	_quit_row.focus_neighbor_top = _quit_row.get_path_to(_settings_row)
 	_quit_row.focus_neighbor_bottom = _quit_row.get_path_to(_quit_row)
 
 	_start_battle_row.pressed.connect(start_battle)
+	_settings_row.pressed.connect(open_settings)
 	_quit_row.pressed.connect(_on_quit_pressed)
 
 	_start_battle_row.grab_focus()
+
+	# Story-004 —— 見 [constant AUTO_START_BATTLE_FLAG] 的 doc comment。放在
+	# _ready() 的最後面,讓本畫面先完成一次正常初始化(文字、focus 接線)再決定
+	# 要不要立刻切走,不改變上面每一行原本的行為。
+	if should_auto_start_battle(OS.get_cmdline_args()):
+		start_battle()
+
+
+## Story-004 —— 純函式:給定一組命令列參數,判斷是否應該自動跳過標題畫面直接
+## 開始戰鬥。🔴 [b]抽成純函式(吃 [PackedStringArray] 而非本函式自己呼叫
+## [method OS.get_cmdline_args])的理由[/b]:[method OS.get_cmdline_args] 在
+## GdUnit4 headless 測試執行環境下實際回傳什麼內容,本次未查證 —— 誠實登記為
+## 已知限制,不是忽略。本函式的判斷邏輯本身(「陣列裡有沒有這個字串」)因此可以
+## 被測試直接驅動,`_ready()` 裡實際呼叫 [method OS.get_cmdline_args] 那一行
+## 本身,未被自動化測試涵蓋,只能靠真的用旗標跑一次匯出建置手動驗證。
+static func should_auto_start_battle(args: PackedStringArray) -> bool:
+	return args.has(AUTO_START_BATTLE_FLAG)
 
 
 ## AC4 —— 測試直接呼叫本方法,不模擬 [InputEvent](headless 不送 InputEvent,
 ## `.claude/docs/coding-standards.md` CI 節已登記;AC4 原文同一慣例)。
 func start_battle() -> void:
 	get_tree().change_scene_to_file(_BATTLE_SCENE_PATH)
+
+
+## Story-002(AC4)—— 測試直接呼叫本方法,不模擬 [InputEvent],與
+## [method start_battle] 同一慣例。
+func open_settings() -> void:
+	get_tree().change_scene_to_file(_SETTINGS_SCENE_PATH)
 
 
 ## 「離開遊戲」—— 本畫面是全新場景,沒有 `BattleMenu` 的離開確認語意可繼承,

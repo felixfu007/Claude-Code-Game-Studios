@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+Q1 initial GameSettingsProbe.is_egm_enabled() = false
+Q2 after set(true), same class access = true
+Q3 after reset_for_test() = false

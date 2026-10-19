@@ -1,0 +1,41 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+Scanning for test suites in: prototypes/godot-specialist-static-var-probe-2026-10-19
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_a.gd[0m
+  [38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_a.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_a_writes_true_and_deliberately_does_not_reset[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PROBE test_a: 已寫入 true,刻意不呼叫 reset_for_test(),交給 test_b 觀察
+  [38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_a.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_a_writes_true_and_deliberately_does_not_reset[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 14ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 40ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_b.gd[0m
+  [38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_b.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_b_observes_whatever_state_test_a_left_behind[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PROBE test_b: 觀察到 GameSettingsProbe.is_egm_enabled() = true (true 代表 static var 真的跨測試檔案共用狀態;false 代表每個測試檔案是獨立行程/獨立狀態)
+  [38;2;250;235;215mres://prototypes/godot-specialist-static-var-probe-2026-10-19/probe_gdunit_cross_test_b.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_b_observes_whatever_state_test_a_left_behind[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 15ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 40ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (2/2)[0m
+[38;2;233;150;122mExecuted test cases : (2/2)[0m
+[38;2;233;150;122mTotal execution time: 80ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_727/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_727/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources

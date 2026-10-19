@@ -1,7 +1,7 @@
 # Story 002:最小設定畫面(效果猜測標記開關落地)
 
 > **Epic**: 遊戲殼層 —— `production/epics/game-shell/EPIC.md`
-> **Status**: Blocked —— 等 `story-001` 完成(標題畫面的「設定」鈕目前是停用狀態)
+> **Status**: ✅ **Done-pending-visual(2026-10-19,協調者獨立重跑驗收)** —— AC1~AC5、AC7、AC8 落地;🔴 **AC6(標題⇄設定來回切換的迴歸測試)明文未做**,AC4/AC5 有實作無專屬測試,AC9 視覺待管理者在家簽核。全套:`ENGINE EXIT = 0` / `1295 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(111/111)` / 兩個 grep 零命中。**設定值選了 `static var`(`src/core/settings/game_settings.gd`),不是 Autoload** —— 理由與實測依據見該檔類別註解與 `prototypes/godot-specialist-static-var-probe-2026-10-19/README.md`(含一組【真正的 GdUnit4 跨測試檔案】探針,實測證明 static var 會跨測試洩漏狀態,這是 `reset_for_test()` 義務的直接依據,不是常識帶過)。
 > **Layer**: Presentation + State
 > **Type**: UI(呈現為 ADVISORY)+ Logic(狀態與讀取為 BLOCKING)
 > **Estimate**: M

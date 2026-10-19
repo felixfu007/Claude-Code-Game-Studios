@@ -33,6 +33,11 @@ focus_mode = 0
 
 [node name="QuitRow" type="Button" parent="Panel/ContentMargin/Rows"]
 
+[node name="EgmStatusLabel" type="Label" parent="."]
+mouse_filter = 2
+focus_mode = 0
+horizontal_alignment = 1
+
 [node name="LeaveConfirm" type="Control" parent="."]
 visible = false
 anchors_preset = 15

@@ -132,6 +132,29 @@ capture_window.ps1 — 對匯出後的 Godot .exe 拍攝視窗畫面（QA 證據
 - 【視窗 class 名稱固定為 'Engine'】這是 Godot 4.7.1 匯出視窗的
   實測結果。若日後 Godot 版本更新導致 class 名稱改變，本腳本的
   視窗比對條件需要同步更新（見 docs/engine-reference/godot/VERSION.md）。
+
+============================================================
+🔴 2026-10-19 起：遊戲開機進【標題畫面】，不再直接進戰鬥
+============================================================
+
+game-shell story-001 把 project.godot 的 run/main_scene 從
+BattleScreen.tscn 改成 TitleScreen.tscn。本腳本沒有任何輸入能力
+（不送 SendInput / keybd_event / mouse_event），所以直接啟動
+匯出建置只會拍到標題畫面，拍不到戰鬥畫面。
+
+【要拍戰鬥畫面，啟動時帶這個旗標】：
+
+    BlindInTheFaintLight.exe --capture-battle
+
+旗標由 src/ui/shell/title_screen.gd 的 AUTO_START_BATTLE_FLAG 定義，
+TitleScreen._ready() 命中就直接切到 BattleScreen。
+
+🔴 【不要加 -- 分隔符】：實測 Godot 的 OS.get_cmdline_args() 在帶了
+   -- 之後【收不到】這個旗標（它會跑到 OS.get_cmdline_user_args()），
+   而 title_screen.gd 只看前者 —— 也就是說寫成
+   `exe -- --capture-battle` 的話，它不會報錯，只會什麼都不做。
+   逐字 log 在 prototypes/godot-specialist-static-var-probe-2026-10-19/
+   的 run_output_cmdline_args.txt 與 run_output_cmdline_args_with_separator.txt。
 #>
 
 [CmdletBinding()]

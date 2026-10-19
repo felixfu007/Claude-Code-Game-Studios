@@ -85,3 +85,8 @@ battle.tile_info.mp_line_format,MP：%d
 shell.title.start_battle,開始戰鬥
 shell.title.settings,設定
 shell.title.quit,離開遊戲
+shell.settings.egm_toggle,效果猜測標記
+shell.settings.back,返回
+battle.menu.egm_status_format,效果猜測標記：%s
+battle.menu.egm_status_on,開啟
+battle.menu.egm_status_off,關閉
