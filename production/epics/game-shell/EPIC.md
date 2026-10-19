@@ -67,6 +67,24 @@ grep -rn "change_scene" src/ --include=*.gd     # → 零命中
 | 001 | 標題畫面與場景切換骨架 | UI + Integration | ✅ **Done-pending-visual(2026-10-19)** —— AC10 待管理者在家簽核 |
 | 002 | 最小設定畫面(EGM 開關落地) | UI + Logic | **Ready**(工作單已寫)—— 001 已完成,「設定」鈕等它解除停用 |
 | 003 | 關卡之間的轉場槽位(支援對話系統的掛載點) | Integration | 未建立 —— 待 #8 規格的開放問題 6 有答案 |
+| 004 | 直接開進戰鬥的啟動旗標(修復自動截圖證據) | Tools | 未建立 —— 見下方「story-001 的一項連帶後果」 |
+
+## 🔴 story-001 的一項連帶後果:自動截圖證據失效了(2026-10-19 協調者發現,尚未修)
+
+`run/main_scene` 改指向 `TitleScreen` 之後,**匯出的建置開機進的是標題畫面**。
+而截圖工具 `tools/build/capture_window.ps1` 的做法是「啟動 exe → 沿行程樹找到真正的遊戲視窗 → 拍它」,
+**它沒有任何輸入能力,不會按「開始戰鬥」**(當場可查:`grep -n "SendInput\|keybd_event\|mouse_event" tools/build/capture_window.ps1` 零命中)。
+
+**後果分兩半,不要混讀**:
+- **人工看畫面不受影響** —— 多按一下「開始戰鬥」而已。
+- 🔴 **自動截「戰鬥畫面」當證據這件事等於失效。** 而本專案的
+  `.claude/docs/coding-standards.md` 明文記載:**至今每一個畫面缺陷都是人開圖看到的,
+  自動檢查一次也沒抓到過** —— 截圖是那道人眼防線的輸入,不是裝飾。
+
+**建議修法(story-004,尚未裁決)**:在 `TitleScreen._ready()` 檢查
+`OS.get_cmdline_args()`,帶特定旗標時直接呼叫 `start_battle()`。
+⚠️ **這是新增範圍,不是 story-001 的缺陷** —— story-001 的 `Affected Files` 沒有截圖工具,
+本節只登記事實與建議,**不自行擴大上一張工作單的範圍**。
 
 ## 本 epic 不涵蓋
 
