@@ -453,9 +453,26 @@ const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 @onready var _attack_confirm_panel: AttackConfirmPanel = $UILayer/AttackConfirmPanel
 
 ## Injectable override for [constant TERRAIN_PATH]. Empty string (the
-## default) means "no override — read [constant TERRAIN_PATH] exactly as
-## before"; this screen's default-path behavior for every existing caller
-## (production, and any prior test/tool that never sets this) is unchanged.
+## default) means "no override — defer to [method _ready]'s own resolution
+## chain" (see the 🔴 paragraph immediately below) — this screen's
+## [b]precedence[/b] for every existing caller (production, and any prior
+## test/tool that never sets this) is unchanged: a non-empty override here
+## always wins, unconditionally.
+##
+## 🔴 [b]story-003(`production/epics/game-shell/
+## story-003-campaign-flow-and-transition-slots.md`「下一輪接線」)— what an
+## EMPTY override now falls back to has changed.[/b] Resolution order is:
+## (1) this override, if non-empty — unconditional top priority, every
+## existing test keys off this; (2) the row in
+## [constant CAMPAIGN_SEQUENCE_PATH] whose [member CampaignSequence.mission_index]
+## matches [method CampaignProgress.current_mission] (see
+## [method _campaign_sequence_entry_for]), if one exists; (3) [constant
+## TERRAIN_PATH] otherwise. (2) and (3) resolve to the byte-for-byte SAME path
+## for mission 1 today — `campaign_sequence.txt`'s only row is identical to
+## the four existing path constants — so this is a zero production-behavior
+## change on the only mission that currently ships. Falling back to (3) for
+## any mission 2-5 is documented behavior, not a gap: those rows do not exist
+## yet (`level-designer`'s work, out of this round's scope).
 ## Exists purely so a test can point this screen at a different terrain
 ## fixture without hand-rebuilding the node subtree [method _ready] already
 ## builds — see 2026-09-23 task note (Story evidence gap): a scene-load probe
@@ -895,6 +912,21 @@ func diagnostic_last_menu_rejection_result() -> BattleMenu.OpenResult:
 func diagnostic_last_menu_rejection_message() -> String:
 	return _diagnostic_last_menu_rejection_message
 
+## story-003 下一輪接線(戰役序列表驅動開局路徑)—— QA/test-only diagnostic
+## surface, same convention as [member _diagnostic_last_menu_rejection_result].
+## Captures the FOUR resolved data paths [method _ready] actually used this
+## battle, AFTER applying the override -> campaign-sequence-row -> constant
+## fallback chain documented on [member terrain_path_override] — keyed
+## [code]"terrain"[/code] / [code]"roster"[/code] / [code]"affinity"[/code] /
+## [code]"cards"[/code]. Lets a test assert exactly which path won the
+## resolution without re-deriving the chain itself. No gameplay code reads
+## this.
+var _diagnostic_resolved_data_paths: Dictionary = {}
+
+## See [member _diagnostic_resolved_data_paths].
+func diagnostic_resolved_data_paths() -> Dictionary:
+	return _diagnostic_resolved_data_paths
+
 ## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
 ## AC2/AC3)— 效果猜測標記(Effect-Guess Marker,EGM)是否對本場戰鬥生效,在
 ## [method _ready] 讀取 [GameSettings] 恰好一次並快取於此,整場戰鬥不再重讀 ——
@@ -1065,9 +1097,21 @@ func _ready() -> void:
 
 	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
 
+	# story-003 下一輪接線 —— 四個資料路徑共用同一次查表結果,不逐一重新讀檔/
+	# 解析序列表。解析順序見 [member terrain_path_override] 文件註解。
+	var campaign_sequence_entry: CampaignSequence = (
+		_campaign_sequence_entry_for(CampaignProgress.current_mission())
+	)
+
 	var terrain_text: String = ""
 	var terrain_rows: PackedStringArray = PackedStringArray()
-	var terrain_path: String = TERRAIN_PATH if terrain_path_override.is_empty() else terrain_path_override
+	var terrain_path: String = terrain_path_override
+	if terrain_path.is_empty():
+		terrain_path = (
+			campaign_sequence_entry.terrain_path
+			if campaign_sequence_entry != null
+			else TERRAIN_PATH
+		)
 	var terrain_failure: LoadFailure = classify_file_access(terrain_path)
 	if terrain_failure == LoadFailure.NONE:
 		terrain_text = FileAccess.get_file_as_string(terrain_path)
@@ -1076,7 +1120,13 @@ func _ready() -> void:
 
 	var roster_text: String = ""
 	var roster_units: Array[Unit] = []
-	var roster_path: String = ROSTER_PATH if roster_path_override.is_empty() else roster_path_override
+	var roster_path: String = roster_path_override
+	if roster_path.is_empty():
+		roster_path = (
+			campaign_sequence_entry.roster_path
+			if campaign_sequence_entry != null
+			else ROSTER_PATH
+		)
 	var roster_failure: LoadFailure = classify_file_access(roster_path)
 	if roster_failure == LoadFailure.NONE:
 		roster_text = FileAccess.get_file_as_string(roster_path)
@@ -1112,7 +1162,13 @@ func _ready() -> void:
 	# diagnostic-only for this path).
 	var affinity_text: String = ""
 	var links: Array[AffinityLink] = []
-	var affinity_path: String = AFFINITY_PATH if affinity_path_override.is_empty() else affinity_path_override
+	var affinity_path: String = affinity_path_override
+	if affinity_path.is_empty():
+		affinity_path = (
+			campaign_sequence_entry.affinity_path
+			if campaign_sequence_entry != null
+			else AFFINITY_PATH
+		)
 	var affinity_failure: LoadFailure = classify_file_access(affinity_path)
 	if affinity_failure == LoadFailure.NONE:
 		affinity_text = FileAccess.get_file_as_string(affinity_path)
@@ -1135,7 +1191,13 @@ func _ready() -> void:
 	# 少於開局手牌數" is an existing, documented CardDeck edge case) and only
 	# ever produces a push_warning(), never reaching _fail_load().
 	var cards: Array[Card] = []
-	var cards_path: String = CARDS_PATH if cards_path_override.is_empty() else cards_path_override
+	var cards_path: String = cards_path_override
+	if cards_path.is_empty():
+		cards_path = (
+			campaign_sequence_entry.cards_path
+			if campaign_sequence_entry != null
+			else CARDS_PATH
+		)
 	var cards_failure: LoadFailure = classify_file_access(cards_path)
 	if cards_failure == LoadFailure.NONE:
 		var cards_text: String = FileAccess.get_file_as_string(cards_path)
@@ -1161,6 +1223,16 @@ func _ready() -> void:
 		# discarded). Kept in _card_flavor_texts so _open_card_confirm_panel()
 		# can show the confirm panel's "卡名與牌面文字" field.
 		_card_flavor_texts = CardText.flavor_texts_from_text(card_text_text)
+
+	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
+	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
+	# 快照正是診斷「解析到了哪個檔案」的第一手資料。
+	_diagnostic_resolved_data_paths = {
+		"terrain": terrain_path,
+		"roster": roster_path,
+		"affinity": affinity_path,
+		"cards": cards_path,
+	}
 
 	if (
 		terrain_failure != LoadFailure.NONE
@@ -2264,6 +2336,37 @@ static func campaign_total_missions() -> int:
 		return 0
 	var sequence: Array[CampaignSequence] = parsed
 	return sequence.size()
+
+
+## 本輪(story-003「關卡序列與轉場流程」下一輪接線,與 [method
+## campaign_total_missions] 同一批)—— 讀取並解析 [constant
+## CAMPAIGN_SEQUENCE_PATH],回傳 [param mission_index] 對應的那一列。讀取/解析
+## 失敗,或序列表裡沒有這個場次,回傳 [code]null[/code] —— [method _ready] 以此
+## 判斷要不要回退到 [constant TERRAIN_PATH] 等四個既有常數
+## (見 [member terrain_path_override] 文件註解的解析順序說明)。
+##
+## 🔴 刻意不把「讀取/解析失敗」與「序列表裡沒有這個場次」分成兩種回傳值 ——
+## [method _ready] 對這兩種情況的反應完全相同(都回退到既有常數),目前沒有
+## 呼叫端需要區分,比照 [method campaign_total_missions] 用單一哨兵值表達
+## 「查不到」的既有慣例(那邊是 [code]0[/code],這裡是 [code]null[/code],理由
+## 相同:[code]int[/code] 沒有天然的「查不到」值,[CampaignSequence] 作為物件
+## 型別則有)。
+##
+## Pure 且 node-independent(比照 [method campaign_total_missions] 同一個理由)
+## ,可脫離本場景獨立單元測試。
+static func _campaign_sequence_entry_for(mission_index: int) -> CampaignSequence:
+	var failure: LoadFailure = classify_file_access(CAMPAIGN_SEQUENCE_PATH)
+	if failure != LoadFailure.NONE:
+		return null
+	var text: String = FileAccess.get_file_as_string(CAMPAIGN_SEQUENCE_PATH)
+	var parsed: Variant = CampaignSequence.sequence_from_text(text)
+	if parsed == null:
+		return null
+	var sequence: Array[CampaignSequence] = parsed
+	for entry: CampaignSequence in sequence:
+		if entry.mission_index == mission_index:
+			return entry
+	return null
 
 
 ## Classifies an already-read file's content: [constant
