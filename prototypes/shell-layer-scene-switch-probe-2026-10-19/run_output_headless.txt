@@ -1,0 +1,31 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== PROBE START === frame=0
+Q1-SETUP: CursorStateHost found at /root before any scene load? true
+Q1-SETUP: CursorStateHost.get_instance_id() before = 30484202971
+SETUP: BattleScreen #1 mounted. is_inside_tree=true instance_id=52412024296 frame=1
+Q2-BEFORE-SWITCH: register_surface(dummy) while BattleScreen#1 alive -> DUPLICATE_TAG_REJECTED (DUPLICATE_TAG_REJECTED=1 REGISTERED=0) -- 預期 DUPLICATE,代表 #1 自己佔著 BOARD_TILE
+Q3: about to call change_scene_to_file() at frame=1
+Q3-BEFORE-CALL: battle_instance_1.is_inside_tree()=true is_instance_valid=true
+PROBE: battle_instance_1.tree_exiting fired at frame=1
+PROBE: battle_instance_1.tree_exited fired at frame=1
+Q3-RETURN-VALUE: change_scene_to_file() returned Error=0 (OK=0) immediately upon return
+Q3-IMMEDIATELY-AFTER: battle_instance_1.is_inside_tree()=false is_instance_valid=true frame=1
+Q3-CALLER-CONTINUES: this line executes immediately after the call returned -- proves the calling function is NOT suspended by change_scene_to_file() itself
+PROBE[BlankScene]: _ready() fired at frame=1 instance_id=74759276263
+Q3-AFTER-1-FRAME: battle_instance_1 is_instance_valid=false frame=2 current_scene=ProbeBlankScene
+Q3-AFTER-2-FRAMES: battle_instance_1 is_instance_valid=false frame=3 current_scene=ProbeBlankScene
+Q1-AFTER-BLANK: CursorStateHost found? true
+Q1-AFTER-BLANK: instance_id=30484202971 same_as_before=true
+Q2-AFTER-SWITCH: register_surface(dummy) after switching to blank scene -> REGISTERED -- 預期 REGISTERED,代表 #1 的 tree_exited 安全網成功解除了 BOARD_TILE
+Q2-CLEANUP: unregister_surface(dummy) -> REGISTERED
+Q4: switching back to BattleScreen at frame=3
+PROBE[BlankScene]: _exit_tree() fired at frame=3 instance_id=74759276263
+Q4-RETURN-VALUE: change_scene_to_file(BattleScreen) returned Error=0
+Q4-RESULT: current_scene after round trip = BattleScreen
+Q4-RESULT: battle_instance_2 is_inside_tree=true instance_id=74910271646
+Q4-RESULT: battle_instance_2.get_instance_id() == battle_instance_1's (freed) ? N/A(instance_1 already freed, so definitely different) -- 預期不同,代表是全新實例,不是同一個被重新加回樹的物件
+Q4-BOARD-TILE: register_surface(dummy) after round-trip -> DUPLICATE_TAG_REJECTED -- 預期 DUPLICATE_TAG_REJECTED,代表 BattleScreen#2 的 _ready() 乾淨地重新佔住了 BOARD_TILE
+Q1-FINAL: instance_id=30484202971 same_as_original=true
+Q1-EXTRA: CursorStateHost.diagnostic_process_tick_count (若此欄位存在且 > 0,代表 _process 全程持續運作,未曾重建) = 5
+=== PROBE END === frame=5
