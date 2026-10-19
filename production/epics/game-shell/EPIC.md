@@ -64,8 +64,8 @@ grep -rn "change_scene" src/ --include=*.gd     # → 零命中
 
 | # | 標題 | Type | Status |
 |---|---|---|---|
-| 001 | 標題畫面與場景切換骨架 | UI + Integration | Ready |
-| 002 | 最小設定畫面(EGM 開關落地) | UI | 未建立 —— 待 001 完成後評估 |
+| 001 | 標題畫面與場景切換骨架 | UI + Integration | ✅ **Done-pending-visual(2026-10-19)** —— AC10 待管理者在家簽核 |
+| 002 | 最小設定畫面(EGM 開關落地) | UI + Logic | **Ready**(工作單已寫)—— 001 已完成,「設定」鈕等它解除停用 |
 | 003 | 關卡之間的轉場槽位(支援對話系統的掛載點) | Integration | 未建立 —— 待 #8 規格的開放問題 6 有答案 |
 
 ## 本 epic 不涵蓋

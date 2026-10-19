@@ -1,7 +1,29 @@
 # Story 001:標題畫面與場景切換骨架
 
 > **Epic**: 遊戲殼層 —— `production/epics/game-shell/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ **Done-pending-visual(2026-10-19,協調者獨立重跑驗收,不採信回報)**
+> —— AC1~AC6、AC9 全部落地且有自動化測試;**AC10 待管理者在家看畫面簽核**(今天在公司看不了,明文不驗收)。
+> 全套由協調者自己重跑:`ENGINE EXIT = 0` / `WRAPPER EXIT = 0` /
+> `Overall Summary: 1290 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` /
+> `Executed test suites: (110/110)` / `grep "Parse Error"` 零命中 / `grep " FAILED"` 零命中。
+> 基線 1286 → 1290 **正好是新增的 4 條**,且新測試檔名確實出現在輸出裡(不是存在但沒跑)。
+>
+> 🔴 **本 story 最值得記的是協調者覆核抓到的一個【會變成間歇性失敗】的寫法**:
+> `_on_battle_ended()` 原本用 `get_tree().create_timer(3.0)` —— **SceneTree 層級、
+> 與 `BattleScreen` 實例生命週期脫鉤**。而 `story-018` 的既有測試會真的走到 `battle_ended`,
+> 等於全套執行期間裝上一顆「3 秒後自動切整個場景」的計時器,而全套要跑 75~80 秒。
+> **訊號連線只在接收者真正 `free()` 時才失效,`queue_free()` 到真正釋放之間有延遲** ——
+> 若延遲夠長,它就會在另一條完全無關的測試執行中切走場景。**它不會每次都炸,只會偶爾炸。**
+> 實作者查證後同意,並選了比協調者建議更徹底的改法:**改用 `BattleScreen` 自己的子 `Timer` 節點**
+> (生命週期綁在實例上,本節點被釋放時倒數當場停止),守衛另外也加了當最後一道防線。
+>
+> ⚠️ **三項誠實登記未做**:①AC7(三種輸入導覽)/ AC8(在地化)**程式碼已實作但無專屬測試**;
+> ②四條新測試**沒有敏感度證明**;③AC10 視覺完全未驗證。
+>
+> 📌 **連帶改到一個不在 `Affected Files` 的檔**:`tests/unit/core/i18n/locale_data_integrity_test.gd`
+> 的寫死列數 75 → 78(新增 3 個標題畫面字串直接撞到)。**實作者直接改並主動揭露,
+> 協調者判定這個判斷是對的**(兩次前例、且是自己改動的直接後果,不是「既有測試依賴一個被打破的架構假設」)。
+> 管理者同日裁決**另把該條移到檔案最後一條**,理由見該檔新增的區段註解。
 > **Layer**: Presentation + Integration
 > **Type**: UI(呈現條件為 ADVISORY)+ Integration(切換行為為 BLOCKING)
 > **Estimate**: M

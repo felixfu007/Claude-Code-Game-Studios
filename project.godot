@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="盲目於微光"
-run/main_scene="res://src/ui/battle/BattleScreen.tscn"
+run/main_scene="res://src/ui/shell/TitleScreen.tscn"
 config/features=PackedStringArray("4.7")
 
 [autoload]

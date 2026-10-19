@@ -82,3 +82,6 @@ battle.tile_info.state_not_found,（查無此單位）
 battle.tile_info.state_line_format,狀態：%s
 battle.tile_info.weapon_range_line_format,武器射程：%d–%d
 battle.tile_info.mp_line_format,MP：%d
+shell.title.start_battle,開始戰鬥
+shell.title.settings,設定
+shell.title.quit,離開遊戲

@@ -117,44 +117,6 @@ static func _load_real_data_rows() -> Array[PackedStringArray]:
 
 # ---- 真實資料檔：結構完整性（甲類，唯讀 assets/data/locales/strings.csv）-----------
 
-func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
-	# Arrange / Act
-	var data_rows: Array[PackedStringArray] = _load_real_data_rows()
-
-	# Assert — 75 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
-	# 🔴 2026-10-15 第二次更新(同一天內):45 → 68(story-012 格位資訊面板 +23)
-	# → 75(story-013 攻擊確認面板 +7)。
-	# ⚠️ **這個寫死的數字一天之內被兩張不同的工作單撞紅兩次**,而且兩次都是
-	# 「該 story 本身沒做錯任何事,只是新增了 key」。兩次都讓這支檔案的
-	# **第一條**測試失敗,連帶中止它後面 5 條(本專案已登記「一條失敗會中止
-	# 它所在 suite 的剩餘測試」),使全套總數看起來少 5 筆 —— 那個落差
-	# 本身也要花時間追。
-	# 📌 **登記為待裁決**:這個斷言要防的是「資料列意外消失」,而寫死總數
-	# 讓每一張新增 key 的 story 都得付一次維護成本。是否改成「下限 + 不重複
-	# + 無空值」的組合(後兩者本檔已有獨立測試),是一次設計決定,不在本次修正範圍。
-	# 🔴 2026-10-15 更正：本處原寫「45 筆與 i18n_migrated_strings_test.gd 的
-	# test_total_migrated_key_count_is_forty_five 是同一個數字，兩處故意分別驗證不同
-	# 事實，CSV 筆數變動時兩處要一起改」——這句話描述的「同步維護」關係並不成立，只是
-	# 兩個數字在某個時間點剛好相等。那條測試量的是「story-002 遷移批次涵蓋的 key 數」，
-	# 範圍固定在遷移當時搬過去的 45 筆，不隨 CSV 之後新增的內容而成長；這裡量的是
-	# 「CSV 目前實際有幾列資料」，會隨任何新 story 往 CSV 加 key 而成長。
-	# story-012（格位資訊面板）直接透過 Loc API 新增 23 筆 key（68 = 45 + 23）——
-	# 這些 key 從未以硬寫字串的形式存在過，不是「被遷移」的對象，因此不屬於
-	# i18n_migrated_strings_test.gd 的涵蓋範圍；這批內容的字面值由
-	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
-	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
-	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 75（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
-		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
-		"實得 %d" % data_rows.size()
-	).is_equal(75)
-
-	for row: PackedStringArray in data_rows:
-		assert_int(row.size()).append_failure_message(
-			"資料列 %s 應恰好 2 欄（key, zh_TW），實得 %d 欄 —— 欄數不對通常代表某個值" % [
-				str(row), row.size()
-			] + "裡的雙引號沒有正確收尾，導致解析器把下一欄/下一列併了進來"
-		).is_equal(2)
 
 
 func test_strings_csv_has_no_duplicate_keys() -> void:
@@ -261,3 +223,63 @@ func test_sensitivity_proof_empty_value_detector_flags_injected_empty_value() ->
 		"敏感度證明失敗：植入了空值 key 'a.b'，偵測邏輯卻沒有抓到，代表" +
 		"test_strings_csv_has_no_empty_translation_values 即使資料檔壞掉也會綠燈"
 	).is_equal(["a.b"] as Array[String])
+
+
+# ---- 🔴 寫死總數的斷言：刻意放在本檔【最後一條】（2026-10-19 管理者裁決）--------
+# 裁決逐字選項：「改數字 + 移到檔案最後一條（推薦）」。
+# 被跳過的兩個：「只改數字（75→78），其他不動」、「改成『下限 + 不重複 + 無空值』」。
+#
+# 為什麼是「移到最後」而不是「換掉斷言形狀」：
+#   保留精確總數 → 少掉一列馬上會被抓到（下限式斷言擋不住單列誤刪，而字串少一列的
+#   症狀是畫面上冒出一個原始代號，很容易被當成「還沒做完」而不是「壞了」）。
+#   但本專案的引擎行為是「一條測試失敗會中止同 suite 剩餘測試」—— 這條原本是本檔
+#   第一條，撞紅時會連帶讓同檔另外 5 條一次都不執行，全套總數出現一個要另外花時間
+#   追的落差。移到最後，精確保護保留、連帶代價消失。
+#
+# 📌 它今天（2026-10-19，game-shell story-001）第三次被撞紅，前兩次是 2026-10-15
+#    同一天內的 story-012（+23）與 story-013（+7）。三次都不是該 story 做錯事，
+#    只是新增了 key。**下一張新增字串的工作單仍然要改一次這個數字，這是裁決接受的代價。**
+func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
+	# Arrange / Act
+	var data_rows: Array[PackedStringArray] = _load_real_data_rows()
+
+	# Assert — 78 筆是 assets/data/locales/strings.csv 目前的真實資料列數。
+	# 🔴 2026-10-15 第二次更新(同一天內):45 → 68(story-012 格位資訊面板 +23)
+	# → 75(story-013 攻擊確認面板 +7)。
+	# 🔴 2026-10-19 第三次更新:75 → 78(story-001-title-screen-and-scene-switching.md
+	# 新增 shell.title.start_battle / shell.title.settings / shell.title.quit 三列)。
+	# 這是本檔自己在上面登記過「待裁決」的那個維護成本第三次發生,延續前兩次的
+	# 同一處理方式(直接更新數字),不是對那條「待裁決」重新下裁決 —— 是否改成
+	# 「下限 + 不重複 + 無空值」的組合仍然沒有被本次更新決定,留給下一次有人真的
+	# 要處理那個待裁決項時再做。
+	# ⚠️ **這個寫死的數字一天之內被兩張不同的工作單撞紅兩次**,而且兩次都是
+	# 「該 story 本身沒做錯任何事,只是新增了 key」。兩次都讓這支檔案的
+	# **第一條**測試失敗,連帶中止它後面 5 條(本專案已登記「一條失敗會中止
+	# 它所在 suite 的剩餘測試」),使全套總數看起來少 5 筆 —— 那個落差
+	# 本身也要花時間追。
+	# 📌 **登記為待裁決**:這個斷言要防的是「資料列意外消失」,而寫死總數
+	# 讓每一張新增 key 的 story 都得付一次維護成本。是否改成「下限 + 不重複
+	# + 無空值」的組合(後兩者本檔已有獨立測試),是一次設計決定,不在本次修正範圍。
+	# 🔴 2026-10-15 更正：本處原寫「45 筆與 i18n_migrated_strings_test.gd 的
+	# test_total_migrated_key_count_is_forty_five 是同一個數字，兩處故意分別驗證不同
+	# 事實，CSV 筆數變動時兩處要一起改」——這句話描述的「同步維護」關係並不成立，只是
+	# 兩個數字在某個時間點剛好相等。那條測試量的是「story-002 遷移批次涵蓋的 key 數」，
+	# 範圍固定在遷移當時搬過去的 45 筆，不隨 CSV 之後新增的內容而成長；這裡量的是
+	# 「CSV 目前實際有幾列資料」，會隨任何新 story 往 CSV 加 key 而成長。
+	# story-012（格位資訊面板）直接透過 Loc API 新增 23 筆 key（68 = 45 + 23）——
+	# 這些 key 從未以硬寫字串的形式存在過，不是「被遷移」的對象，因此不屬於
+	# i18n_migrated_strings_test.gd 的涵蓋範圍；這批內容的字面值由
+	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
+	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
+	assert_int(data_rows.size()).append_failure_message(
+		"strings.csv 資料列數應為 78（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
+		"實得 %d" % data_rows.size()
+	).is_equal(78)
+
+	for row: PackedStringArray in data_rows:
+		assert_int(row.size()).append_failure_message(
+			"資料列 %s 應恰好 2 欄（key, zh_TW），實得 %d 欄 —— 欄數不對通常代表某個值" % [
+				str(row), row.size()
+			] + "裡的雙引號沒有正確收尾，導致解析器把下一欄/下一列併了進來"
+		).is_equal(2)

@@ -351,6 +351,20 @@ const _HAND_DIRECTION_DELTAS: Dictionary = {
 ## one constant, nothing in [BattleController].
 const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 
+## production/epics/game-shell/story-001-title-screen-and-scene-switching.md
+## (AC5) —— 戰鬥結束後,結果文字(TEXT_RESULT_VICTORY/TEXT_RESULT_DEFEAT)顯示
+## 這麼多秒,再切回標題畫面。見 [method _on_battle_ended] / [method
+## return_to_title_screen] 的 doc comment:選固定秒數而非等玩家按鍵,是這個
+## story 的工程判斷 —— 本畫面目前沒有任何「戰鬥已結束」狀態下的專屬輸入處理
+## 路徑,加一條等玩家按鍵的新分支需要改動既有 [method _input] 的分派邏輯,
+## 風險高於加一個不碰任何既有程式碼路徑的獨立計時器。
+const RESULT_DISPLAY_SECONDS: float = 3.0
+
+## AC5 的切換目標。與 [code]src/ui/shell/title_screen.gd[/code] 的
+## [code]_BATTLE_SCENE_PATH[/code] 是一對互相指向的常數,各自只知道對方的路徑
+## 字串 —— 理由見該檔同一常數的 doc comment。
+const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
+
 ## 2026-09-04 (Story 001): [code]_world_viewport_container[/code] used to be
 ## kept as a member here for [code].global_position[/code] in the mouse
 ## coordinate math — removed because that math now goes entirely through
@@ -3907,6 +3921,57 @@ func _apply_tile_info_panel_layout() -> void:
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
 	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else Loc.localize(TEXT_RESULT_DEFEAT)
+	# production/epics/game-shell/story-001 (AC5) — 接在既有勝敗文字顯示之後,
+	# 不覆蓋它(story-018 的端對端測試已釘住上面兩行會執行)。真人玩家靠這個
+	# 計時器在 RESULT_DISPLAY_SECONDS 秒後自動回到標題畫面;測試不需要等待
+	# 真實時間流逝,直接呼叫 return_to_title_screen() 本身即可驅動同一條切換
+	# 路徑(與 AC4「測試直接呼叫公開方法,不模擬 InputEvent/計時器」的既有慣例
+	# 一致)。
+	#
+	# 🔴 2026-10-19 協調者覆核更正:原本這裡用的是
+	# get_tree().create_timer(...).timeout.connect(...) —— SceneTree 層級的
+	# 計時器,與這個 BattleScreen 實例的生命週期完全脫鉤。問題是 story-018 的
+	# 既有測試會真的走到 battle_ended(例如 test_victory_when_all_enemies_defeated),
+	# 於是全套測試執行期間會有一顆「3 秒後自動切場景」的計時器被裝上去 ——
+	# 而全套跑完約 75~80 秒,3 秒內會經過哪些測試不確定。訊號連線只在接收者
+	# 被真正 free() 時才會失效,queue_free()/auto_free() 到真正釋放之間存在
+	# 延遲;若延遲夠長,計時器就可能在另一條完全無關的測試執行中觸發
+	# change_scene_to_file(),正是 coding-standards.md「Determinism: no
+	# time-dependent assertions」「Isolation: tests must not depend on
+	# execution order」要防的形狀,而且只會偶爾出現,不會每次都炸。
+	# 改用 BattleScreen 自己的子 Timer 節點:生命週期直接綁在這個實例上,
+	# 本節點被 queue_free()(含 auto_free())時,子 Timer 跟著一起被釋放,
+	# 倒數當場停止,結構上不可能在本實例已經不存在之後還觸發 —— 比只加
+	# is_inside_tree() 守衛更釜底抽薪(守衛仍然另外加了,見 return_to_title_screen()
+	# 開頭,當作最後一道防線)。
+	var return_timer: Timer = Timer.new()
+	return_timer.one_shot = true
+	return_timer.wait_time = RESULT_DISPLAY_SECONDS
+	return_timer.timeout.connect(return_to_title_screen)
+	add_child(return_timer)
+	return_timer.start()
+
+
+## AC5 的切換入口 —— 測試直接呼叫本方法即可驅動「回到標題畫面」,不必等待
+## RESULT_DISPLAY_SECONDS 的真實時間流逝。
+##
+## EPIC 全域硬性實作義務的落地點:本方法呼叫 [method
+## SceneTree.change_scene_to_file] 時,這個 BattleScreen 實例會被移出場景樹,
+## 觸發 [signal Node.tree_exited] —— 而這個訊號在本檔 [method _ready] 已經接了
+## [code]CursorStateHost.unregister_surface(BOARD_TILE)[/code](見該行自己的
+## doc comment,Story 008 安全網),不需要在這裡重複呼叫;重複呼叫只會得到
+## [constant CursorSurfaceRegistry.RegisterResult.UNREGISTERED_NOT_FOUND],
+## 安全但多餘。這條釋放路徑已由
+## [code]prototypes/shell-layer-scene-switch-probe-2026-10-19/[/code] 的引擎
+## 探針量測確認可行(`Q2-AFTER-SWITCH` -> `REGISTERED`),本 story 的
+## AC6 迴歸測試把同一條路徑釘成自動化測試。
+func return_to_title_screen() -> void:
+	# 防呆守衛(最後一道防線,見 _on_battle_ended() 的計時器改用子 Timer 節點的
+	# 說明):本節點已離樹時不做任何事,避免對一個不在樹上的場景呼叫
+	# change_scene_to_file()。
+	if not is_inside_tree():
+		return
+	get_tree().change_scene_to_file(_TITLE_SCENE_PATH)
 
 
 ## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see
