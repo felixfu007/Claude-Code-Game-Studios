@@ -484,6 +484,22 @@ var cards_path_override: String = ""
 ## [member terrain_path_override] — see its doc comment.
 var card_text_path_override: String = ""
 
+## 裁決①第二輪(production/epics/support-conversation/
+## story-003-cross-mission-affinity-continuity.md)—— 讓戰役層累積記錄
+## ([CampaignAffinityLedger])能透過與 [constant AFFINITY_PATH] 靜態灌入
+## 相同的那條路徑([method _apply_opening_affinity_record])寫進
+## [member _affinity_pool],而不是另開一輪。
+##
+## 🔴 預設 [code]null[/code]——[code]null[/code] 時 [method _ready] 完全
+## 不執行這段迴圈,production 行為與本輪改動之前逐字相同。誰在 production
+## 持有/建立這個實例並把它指派到這裡,尚未裁決(下一輪的事);本輪只交付
+## 「餵進來之後灌入路徑長什麼樣子」。
+##
+## [b]Timing contract:[/b] 與 [member terrain_path_override] 相同——必須在
+## [method PackedScene.instantiate] 之後、[method Node.add_child] 之前設定,
+## [method _ready] 只讀取一次。
+var campaign_ledger_override: CampaignAffinityLedger = null
+
 var _state: BattleState
 var _order: TurnOrder
 var _controller: BattleController
@@ -1213,26 +1229,39 @@ func _ready() -> void:
 		)
 		# append_record() 的拒絕碼必須檢查、不得丟掉(本專案已登記「靜默吞掉
 		# 失敗」是重複發作的失效形狀)。這裡選 push_error() 而非
-		# push_warning():靜態檔只有 2 條、兩個合法配對,正常路徑下這個呼叫
-		# 不應該被拒絕 —— 若真的被拒,代表灌入邏輯本身有錯(例如重複寫入同一
-		# 對、或 pair/source 序數算錯),是工程錯誤而非合法的遊戲狀態,比照
-		# AffinityPhiProvider._link_for_pair() 對 ReadRejection 的既有慣例
-		# (該方法對「結構上不該發生」的拒絕一律用 push_error)。刻意不用
-		# assert() —— 依 .claude/docs/coding-standards.md 的 2026-09-15 條目,
-		# assert() 失敗會讓函式回傳列舉序數 0,而 WriteRejection 的序數 0 正是
-		# NONE(成功),會讓失敗的寫入被靜默當成成功。
-		var seed_rejection: AffinityDataPool.WriteRejection = _affinity_pool.append_record(
-			pair, seed_value, AffinityTypes.Source.STORY_EVENT
+		# push_warning() 的理由(靜態檔只有 2 條、正常路徑下這個呼叫不該被
+		# 拒絕、刻意不用 assert())維持不變,現在寫在共用方法
+		# [method _apply_opening_affinity_record] 裡,不在每個呼叫端各重複
+		# 一份。
+		_apply_opening_affinity_record(
+			pair,
+			seed_value,
+			AffinityTypes.Source.STORY_EVENT,
+			(
+				"opening affinity seed for link %d-%d (pair ordinal %d)"
+				% [link.unit_a, link.unit_b, pair]
+			)
 		)
-		if seed_rejection != AffinityDataPool.WriteRejection.NONE:
-			push_error(
-				(
-					"BattleScreen._ready: opening affinity seed for link %d-%d "
-					+ "(pair ordinal %d) was REJECTED with WriteRejection code %d -- "
-					+ "the opening board state will NOT reflect this static "
-					+ "relationship. This should never happen for the current "
-					+ "2-row static table; see story-005-seeding-ruling-2026-10-15.md."
-				) % [link.unit_a, link.unit_b, pair, seed_rejection]
+
+	# 裁決①第二輪(production/epics/support-conversation/
+	# story-003-cross-mission-affinity-continuity.md)—— 把戰役層累積記錄
+	# ([member campaign_ledger_override])透過同一條灌入路徑(同一個
+	# [method _apply_opening_affinity_record])寫進 [member _affinity_pool],
+	# 不是在池子建好之後另開一輪獨立的寫入與錯誤處理邏輯。
+	#
+	# 🔴 誰在 production 持有/建立這個 ledger 實例、何時呼叫
+	# [method CampaignAffinityLedger.begin_mission] /
+	# [method CampaignAffinityLedger.rollback_current_mission] 尚未裁決 ——
+	# 本輪只負責「餵進來之後怎麼灌」,接線本身是下一輪的事。
+	# [member campaign_ledger_override] 預設 null;null 時這段整個不執行,
+	# production 行為與本輪改動之前逐字相同。
+	if campaign_ledger_override != null:
+		for entry: CampaignAffinityLedger.Entry in campaign_ledger_override.records():
+			_apply_opening_affinity_record(
+				entry.pair,
+				entry.m,
+				entry.source,
+				"campaign ledger replay record (pair ordinal %d)" % [entry.pair]
 			)
 
 	# _phi is stored as a member (see its own doc comment on why a local here
@@ -1430,6 +1459,32 @@ func _ready() -> void:
 	get_window().size_changed.connect(_apply_tile_info_panel_layout)
 
 	_refresh_view()
+
+
+## 寫一筆開局好感度記錄進 [member _affinity_pool],並在被拒絕時大聲
+## [method @GlobalScope.push_error] —— 本專案已登記「靜默吞掉失敗的寫入」
+## 是重複發作的失效形狀,此方法是唯一的檢查點,兩個呼叫端(靜態
+## [constant AFFINITY_PATH] 灌入、戰役層 [member campaign_ledger_override]
+## 重播)共用同一份,不得各自複製一份錯誤處理。刻意不用
+## [method @GlobalScope.assert] —— 依 [code].claude/docs/coding-standards.md[/code]
+## 2026-09-15 條目,assert() 失敗會讓函式回傳列舉序數 0,而
+## [enum AffinityDataPool.WriteRejection] 的序數 0 正是
+## [constant AffinityDataPool.WriteRejection.NONE](成功),會讓失敗的寫入
+## 被靜默當成成功。
+##
+## [param failure_context] 只用於被拒絕時的錯誤訊息,讓兩個呼叫端各自的
+## log 仍能分辨是哪一筆記錄被拒 —— 不影響寫入本身的邏輯。
+func _apply_opening_affinity_record(
+	pair: AffinityTypes.Pair, m: float, source: AffinityTypes.Source, failure_context: String
+) -> void:
+	var rejection: AffinityDataPool.WriteRejection = _affinity_pool.append_record(pair, m, source)
+	if rejection != AffinityDataPool.WriteRejection.NONE:
+		push_error(
+			(
+				"BattleScreen._ready: %s was REJECTED with WriteRejection code "
+				+ "%d -- the opening board state will NOT reflect this record."
+			) % [failure_context, rejection]
+		)
 
 
 func _process(_delta: float) -> void:
