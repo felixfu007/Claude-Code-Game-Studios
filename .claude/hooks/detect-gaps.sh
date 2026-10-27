@@ -190,6 +190,9 @@ if [ -d "src/gameplay" ]; then
           affinity_pool) design_doc_mapped="design/gdd/affinity-data-pool.md" ;;
           battle)        design_doc_mapped="design/gdd/tactical-combat-system.md" ;;
           cards)         design_doc_mapped="design/gdd/skill-card-system.md" ;;
+          # 2026-10-27(管理者核准):narrative 的規格是輕量規格,不在 design/gdd/。
+          # 依據:production/epics/support-conversation/EPIC.md 檔頭「規格權威」行。
+          narrative)     design_doc_mapped="design/quick-specs/support-conversation-system.md" ;;
         esac
 
         # 對照表指到的檔案不見了 -> 這是真的缺口,而且要指出對照表可能已過期
