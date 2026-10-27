@@ -60,6 +60,18 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 📌 hook 回報「narrative 系統無設計文件」是誤報(規格在 `design/quick-specs/support-conversation-system.md`),hook 只認 `design/gdd/` 檔名。未修。
 📌 覆核停損計數:目前連續零收穫 = 0(story-004 批次前抓到自己誤標 Done)。
 
+### 四、下午:文件類技術債(管理者裁決 9「繼續清文件類技術債」,被跳過:戰鬥 HUD / 第 2 場做出差異)
+
+| commit | 內容 |
+|---|---|
+| `3016120` | 活文件 14 處寫死行號 → 穩定把手(7 處當天已指錯)。B 類 28 處歷史敘述刻意不改 → `--line-refs` 活文件恆剩 28 |
+| `b2cad31` | TR-cursor-013 加註 R6-7 已於 8/21 定案(狀態不自行升級);art-direction 快照標註;story-004 Done |
+| `20e0aa4`/`3112f53` | 🔴 **開場自動載入文件 6 條過期宣稱加註** —— 最嚴重:「戰棋仍不能開工 / OQ-2 無人擁有」(9/9 已關、9/29 已 Ready) |
+
+📌 hook 開場警告兩條「AC 編號重複」(affinity-data-pool AC-4、cursor-highlight-state AC-63a)查證為**誤報**,各只有一處定義。
+📌 協調者今天一次查法錯誤:grep「OQ-2 已解除」零命中,原文是「~~**OQ-2**~~ ✅ **已解除**」—— 空結果會說謊。
+⚠️ **未查證、值得下一步**:現有多支測試改寫 `CursorStateHost` 全域狀態,teardown 是否完整、有無順序相依,沒人查過。
+
 ### 四、待管理者在家時
 
 - 美術:看 P1~P4 → 決定底模方向(26 號)。
