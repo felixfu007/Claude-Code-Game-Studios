@@ -1479,7 +1479,7 @@ func _ready() -> void:
 	# reference, never a different node, so this either removes this
 	# instance's own registration or no-ops as UNREGISTERED_NOT_FOUND if
 	# something already released it (e.g. mid-handoff to card-play).
-	tree_exited.connect(func() -> void: CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE))
+	tree_exited.connect(_on_tree_exited_cursor_handoff)
 	# Story 008 unit 3b (point 1/4, AC-2) — seeds CursorStateHost's target
 	# instead of writing _cursor_cell directly, then reads it back: the
 	# registration above already landed on this same node, so set_target()
@@ -1494,12 +1494,14 @@ func _ready() -> void:
 	if not player_ids.is_empty():
 		var initial_cell: Vector2i = _state.position_of(player_ids[0])
 		var initial_tile_id: int = CursorTypes.encode_tile(initial_cell, BoardCoords.BOARD_COLS)
-		var seed_result: CursorState.SetTargetResult = CursorStateHost.set_target(
+		# Story 015 AC3: new-battle seed goes through handoff_after_mount()
+		# (ADR-0005 機制十一 2026-09-04 ruling), not set_target().
+		var seed_result: CursorState.SetTargetResult = CursorStateHost.handoff_after_mount(
 			CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, initial_tile_id)
 		)
 		if seed_result != CursorState.SetTargetResult.APPLIED:
 			push_error(
-				"BattleScreen: CursorStateHost.set_target() returned %s instead of APPLIED while seeding the initial cursor position at _ready()."
+				"BattleScreen: CursorStateHost.handoff_after_mount() returned %s instead of APPLIED while seeding the initial cursor position at _ready()."
 				% seed_result
 			)
 		var seeded_target: CursorTarget = CursorStateHost.get_current_target()
@@ -4172,6 +4174,25 @@ func _apply_tile_info_panel_layout() -> void:
 
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
+
+
+## Story 015 -- tree_exited handler: cursor handoff, then unregister.
+## GDD Core Rules #7 「表面卸載前的目標交接義務」/ AC-51: if the current cursor
+## target belongs to BOARD_TILE (this screen), mark it pending-re-resolve
+## BEFORE the surface goes away, so the target does not linger as "valid" for a
+## surface that no longer exists. The guard looks at the TARGET's surface type
+## only (not who registered), so it is equally correct mid-card-play.
+## Return values are checked, never swallowed.
+func _on_tree_exited_cursor_handoff() -> void:
+	var current: CursorTarget = CursorStateHost.get_current_target()
+	if current != null and current.surface == CursorTypes.SurfaceType.BOARD_TILE:
+		var mark_result: CursorState.MarkResult = CursorStateHost.mark_pending_reresolve(current)
+		if mark_result != CursorState.MarkResult.APPLIED and mark_result != CursorState.MarkResult.NO_CURRENT_TARGET:
+			push_error(
+				"BattleScreen: CursorStateHost.mark_pending_reresolve() returned %s instead of APPLIED/NO_CURRENT_TARGET while leaving the battle screen (GDD Core Rules #7 / AC-51)."
+				% mark_result
+			)
+	CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
 
 
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:

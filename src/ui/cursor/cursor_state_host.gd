@@ -522,10 +522,13 @@ func _get_hovered_control() -> Control:
 #
 # Deliberately NOT added here (flagged, not silently omitted — do not add
 # these without a story that actually needs them):
-#   - mark_pending_reresolve() — U-013's own scope excludes external
-#     mid-selection invalidation (see that story's "Out of Scope" section).
-#   - handoff_before_unload() / handoff_after_mount() — 機制十一 screen-
-#     transition lifecycle, not this story.
+#   - handoff_before_unload() — 機制十一甲 branch (load-flow started, old
+#     surface still alive), NOT the generic "surface unmounts" entry point.
+#     Generic unmount uses [method mark_pending_reresolve] below (GDD Core
+#     Rules #7). Add only when a load-flow story actually needs it.
+#   (Story 015 added [method mark_pending_reresolve] and
+#   [method handoff_after_mount] below; the earlier "not needed" notes for
+#   them no longer hold.)
 #   - reclaim_progress() / reclaim_reset_triggered forwarding — 機制十三's
 #     presentation layer already reaches [member _state] via direct
 #     constructor injection (Story 011); not battle_screen.gd's concern.
@@ -573,6 +576,21 @@ func get_current_target() -> CursorTarget:
 ## mandated open interval, R5-2) — never from [code]_input()[/code].
 func set_target(target: CursorTarget) -> CursorState.SetTargetResult:
 	return _state.set_target(target)
+
+
+## Forwards to [method CursorState.mark_pending_reresolve] (ADR-0005 機制十一;
+## GDD Core Rules #7 「表面卸載前的目標交接義務」/ AC-51, Story 015). A surface
+## whose own target is current MUST call this before unmounting. One-line
+## forward only -- no judgement logic here.
+func mark_pending_reresolve(expected: CursorTarget) -> CursorState.MarkResult:
+	return _state.mark_pending_reresolve(expected)
+
+
+## Forwards to [method CursorState.handoff_after_mount] (ADR-0005 機制十一,
+## 2026-09-04 ruling: a new session/battle seeds via this entry point, never
+## [method set_target]; Story 015). One-line forward only.
+func handoff_after_mount(target: CursorTarget) -> CursorState.SetTargetResult:
+	return _state.handoff_after_mount(target)
 
 
 ## Forwards to [method CursorSurfaceRegistry.register] (ADR-0005 機制三,
