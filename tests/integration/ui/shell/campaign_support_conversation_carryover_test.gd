@@ -96,8 +96,9 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	assert_object(battle1).is_not_null()
 	var ledger: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
 	assert_int(ledger.records().size()).append_failure_message(
-		"precondition:勝利之前累積記錄應為空"
-	).is_equal(0)
+		"precondition:勝利之前累積記錄應只有 2 筆起始關係(STORY_EVENT),沒有支援對話"
+	).is_equal(2)
+	assert_int(_count_source(ledger, AffinityTypes.Source.STORY_EVENT)).is_equal(2)
 	# Act
 	_win(battle1)
 
@@ -105,15 +106,14 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
 		"第 1 場勝利後應推進到第 2 場(campaign_sequence.txt 有 2 列)"
 	).is_equal(2)
-
-
-	# Assert — 累積記錄恰有一筆 SC-01(甲乙 = C1_C2),來源為支援對話
+	# Assert — 累積記錄 = 2 筆起始關係 + 恰有一筆 SC-01(甲乙 = C1_C2,來源為支援對話)
 	var records: Array[CampaignAffinityLedger.Entry] = ledger.records()
-	assert_int(records.size()).append_failure_message(
-		"勝利後累積記錄應恰有 1 筆(SC-01),實得 %d" % records.size()
+	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
+		"勝利後累積記錄應恰有 1 筆 SC-01,實得 %d(總筆數 %d)" % [_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION), records.size()]
 	).is_equal(1)
-	assert_int(records[0].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
-	assert_int(records[0].pair).is_equal(AffinityTypes.Pair.C1_C2)
+	assert_int(records.size()).is_equal(3)
+	assert_int(records[2].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
+	assert_int(records[2].pair).is_equal(AffinityTypes.Pair.C1_C2)
 
 	# Act 2 — 釋放第一場,經 production 入口進入下一場
 	await _release(battle1, original)
@@ -159,8 +159,8 @@ func test_defeat_does_not_write_support_conversation_and_mission_stays() -> void
 	assert_int(battle._controller.outcome()).is_equal(BattleState.Outcome.DEFEAT)
 
 	# Assert
-	assert_int(ledger.records().size()).append_failure_message(
-		"戰敗不得寫入任何支援對話記錄"
+	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
+		"戰敗不得寫入任何支援對話記錄(起始關係那 2 筆 STORY_EVENT 不計)"
 	).is_equal(0)
 	assert_int(CampaignProgress.current_mission()).is_equal(1)
 
@@ -181,9 +181,19 @@ func test_sensitivity_proof_removing_support_trigger_leaves_ledger_empty() -> vo
 	_win(battle)
 
 	# Assert — 變種下累積記錄為空;(a) 要求恰有 1 筆,所以 (a) 在變種下會紅
-	assert_int(ledger.records().size()).append_failure_message(
-		"變種(沒有觸發步驟)的累積記錄應為空,證明 (a) 的斷言確實偵測得到「沒觸發」"
+	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
+		"變種(沒有觸發步驟)的支援對話記錄應為空,證明 (a) 的斷言確實偵測得到「沒觸發」"
 	).is_equal(0)
 
 	# Cleanup
 	await _release(battle, original)
+
+
+## story-004:第 1 場開局會把關卡起始關係(STORY_EVENT)寫進累積記錄,
+## 所以「記錄為空」不再成立;改數特定來源的筆數。
+func _count_source(ledger: CampaignAffinityLedger, source: AffinityTypes.Source) -> int:
+	var n: int = 0
+	for entry: CampaignAffinityLedger.Entry in ledger.records():
+		if entry.source == source:
+			n += 1
+	return n

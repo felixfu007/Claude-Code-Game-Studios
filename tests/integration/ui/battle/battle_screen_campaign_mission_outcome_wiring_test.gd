@@ -72,8 +72,10 @@ func test_defeat_then_replay_same_mission_starts_from_identical_affinity_state()
 	# Act —— 模擬「這一場打到一半,產生了新的好感度變化」:直接 append 進
 	# campaign_ledger_override 持有的同一個 ledger 參照(本輪沒有接真正的寫入口,
 	# 見本檔檔頭誠實登記)
+	# story-004:第 1 場開局起始關係已寫進累積記錄(2 筆),先記基準再比「+1」
+	var seed_count_run1: int = ledger_run1.records().size()
 	ledger_run1.append(AffinityTypes.Pair.C1_C4, 2.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
-	assert_int(ledger_run1.records().size()).is_equal(1)
+	assert_int(ledger_run1.records().size()).is_equal(seed_count_run1 + 1)
 
 	# Act —— 這一場打輸了
 	instance1._on_battle_ended(BattleState.Outcome.DEFEAT)
@@ -122,6 +124,8 @@ func test_victory_advances_campaign_progress_and_keeps_new_entries() -> void:
 	var instance: BattleScreen = _load_instance_with_ledger(ledger)
 	assert_bool(instance._load_failed).is_false()
 
+	# story-004:第 1 場開局起始關係已寫進累積記錄,先記基準
+	var seed_count: int = ledger.records().size()
 	ledger.append(AffinityTypes.Pair.C2_C5, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
 
 	# Act
@@ -137,8 +141,8 @@ func test_victory_advances_campaign_progress_and_keeps_new_entries() -> void:
 		"(AC3:併入累積)"
 	).is_true()
 	assert_int(ledger.records().size()).append_failure_message(
-		"預期 2 筆(本測試的 C2_C5 + 勝利觸發的 SC-01),實得 %d 筆" % ledger.records().size()
-	).is_equal(2)
+		"預期 %d 筆(開局起始關係 + 本測試的 C2_C5 + 勝利觸發的 SC-01),實得 %d 筆" % [seed_count + 2, ledger.records().size()]
+	).is_equal(seed_count + 2)
 
 	# Assert —— AC3:場次推進判斷。2026-10-27 起 campaign_sequence.txt 有 2 列,
 	# 第 1 場勝利推進到第 2 場(原斷言:停在 1,因當時只有 1 列)

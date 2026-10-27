@@ -44,6 +44,9 @@ func _stand_in_title() -> Node:
 
 ## 先放「前一場」留下的一筆記錄,再進戰鬥(begin_mission 把基準點挪到它之後)。
 func _append_earlier_mission_record() -> void:
+	# story-004:「前一場已留下記錄」意味著現在是第 2 場以後;戰役模式下第 2 場以後
+	# 不再灌起始關係,所以計數仍只含測試自己放的記錄(第 1 場會多 2 筆起始關係)。
+	CampaignProgress.advance_on_victory(2)
 	CampaignProgress.start_mission_affinity_ledger().append(
 		AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION
 	)

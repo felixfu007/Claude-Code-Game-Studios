@@ -1,3 +1,7 @@
+# 🔴 戰役模式下第 2 場以後不讀本檔(管理者 2026-10-27 裁決「只有第 1 場灌,之後靠累積」,
+# production/epics/support-conversation/story-004-single-source-affinity-seeding.md);
+# 非戰役路徑(未注入累積記錄的 BattleScreen)仍讀本檔。
+#
 # vs02 好感度配對表 — 固定欄位順序:
 # unit_a,unit_b,polarity,amp
 #

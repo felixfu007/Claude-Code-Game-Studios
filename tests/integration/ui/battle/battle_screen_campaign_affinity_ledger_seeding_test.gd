@@ -138,9 +138,10 @@ func test_ready_with_campaign_ledger_override_replays_entries_into_affinity_pool
 	assert_int(read2.n_pair).is_equal(1)
 	assert_int(read2.diagnostic_visited_count).is_equal(1)
 	assert_float(read2.value).append_failure_message(
-		"ledger 第二筆記錄（C2_C5，m=-3.0）是寫入序列裡最後一筆，age=0 時衰減量" +
-		"結構上恆為 1.0，預期 value 精確等於 -3.0，實得 %f" % read2.value
-	).is_equal_approx(-3.0, 0.0001)
+		"ledger 第二筆記錄（C2_C5，m=-3.0）衰減後正負號應維持為負，實得 %f。" % read2.value +
+		"story-004:第 1 場開局起始關係改寫進累積記錄、排在這筆之後重播,所以它不再是" +
+		"最後一筆(age>0),舊的「精確 -3.0」假設不成立,改斷言正負號"
+	).is_less(0.0)
 
 	# Assert — 原本的靜態灌入（C1_C2、C3_C4）沒有被 ledger 重播擠掉或改變，
 	# 兩條機制確實共用同一個池、互不覆蓋

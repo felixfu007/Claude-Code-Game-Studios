@@ -1283,8 +1283,18 @@ func _ready() -> void:
 	# (n_pair=0),Φ 會恆為 0、棋盤開局一條關係線都不畫,直到劇情卡牌寫入
 	# 或存檔系統(ADR-0004,維持 Proposed)落地為止 —— 那兩者都還沒實作。
 	#
-	# 🔴 這是明文登記的暫代品,不是設計(裁決檔第二節第 3 點)。未來劇情卡牌
-	# 或存檔能真的寫入池子時,這段灌入要被換掉,不是再疊一層。
+	# 🔴 現況(production/epics/support-conversation/
+	# story-004-single-source-affinity-seeding.md,管理者 2026-10-27 裁決
+	# 「只有第 1 場灌,之後靠累積(推薦)」,取代上面 10/15 的「要被換掉」):
+	#   - 未注入 [member campaign_ledger_override](非戰役路徑):照舊,
+	#     links 直接灌進池子,逐字不變。
+	#   - 已注入且為第 1 場:links 換算出的起始關係改為 append 進累積記錄,
+	#     再由下方 ledger 重播迴圈灌進池子 —— 戰役模式下唯一的灌入路徑。
+	#     第 1 場打輸時 rollback_on_defeat() 回滾到本場 begin 基準,這幾筆
+	#     一起被丟掉,重打時才會再寫一次、不會重複。
+	#   - 已注入且為第 2 場以後:不讀 links、不寫任何東西,池子只反映累積記錄。
+	#
+	# 數值大小的說明如下(沿用 10/15 裁決)。
 	#
 	# 數值大小刻意不具意義(裁決檔第二節第 2 點):AffinityPhiProvider
 	# ._link_for_pair() 只取 combat_strength_read() 結果的 value 正負號
@@ -1292,7 +1302,14 @@ func _ready() -> void:
 	# 得到完全相同的 Φ。這裡用 ±AMP_EXPECTED(= 1.0),與效能基準腳本
 	# tests/perf/affinity_query_perf_benchmark.gd 既有的植入慣例一致
 	# (該腳本為同一件事已選用 Source.STORY_EVENT + 同量級數值)。
-	for link: AffinityLink in links:
+	var seed_into_ledger: bool = false
+	var links_to_seed: Array[AffinityLink] = links
+	if campaign_ledger_override != null:
+		if CampaignProgress.current_mission() == CampaignProgress.FIRST_MISSION_INDEX:
+			seed_into_ledger = true
+		else:
+			links_to_seed = []
+	for link: AffinityLink in links_to_seed:
 		var character_a_variant: Variant = (
 			AffinityRosterCharacterMapper.character_for_roster_id(link.unit_a)
 		)
@@ -1328,6 +1345,9 @@ func _ready() -> void:
 		# 拒絕、刻意不用 assert())維持不變,現在寫在共用方法
 		# [method _apply_opening_affinity_record] 裡,不在每個呼叫端各重複
 		# 一份。
+		if seed_into_ledger:
+			campaign_ledger_override.append(pair, seed_value, AffinityTypes.Source.STORY_EVENT)
+			continue
 		_apply_opening_affinity_record(
 			pair,
 			seed_value,
