@@ -168,6 +168,8 @@
   **消費端(真正會卸載的 UI 表面)一個都還不存在**,所以「每個」現在恆真而無意義。
   ⚠️ **補驗時機**:每當有新的 UI 表面接入本系統時,都必須檢查它的卸載路徑有呼叫交接介面。
   **這不是一次性補驗,是一條持續義務** —— 與上面兩項(一次性補驗)性質不同。
+  ✅ **2026-10-27**:第一個真正會卸載的表面(戰鬥畫面)已補交接(cursor story-015);
+  範本測試 `tests/integration/cursor/battle_screen_surface_handoff_test.gd`。**下一個表面(關係圖、支援對話畫面)照做。**
   最早的實質檢查點是 Story 011 / 012(白名單消費端、focus/hover 停用)。
   追蹤來源:`production/epics/cursor-highlight-state/story-003-surface-registry.md`
 

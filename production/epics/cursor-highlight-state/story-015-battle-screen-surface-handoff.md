@@ -1,7 +1,7 @@
 # Story 015:戰鬥畫面照規格做游標交接(離開時標待重新解析、開局走 handoff)
 
 > **Epic**: 游標/高亮狀態系統 —— `production/epics/cursor-highlight-state/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ Done(2026-10-27)—— AC1~AC6 落地;協調者重跑 1414 全綠(commit `fa1dff2`)。原狀態:Ready
 > **Layer**: Presentation + Integration
 > **Type**: Integration(BLOCKING)
 > **Estimate**: S~M
@@ -42,3 +42,10 @@
 ## Affected Files
 
 `src/ui/cursor/cursor_state_host.gd`、`src/ui/battle/battle_screen.gd`、`tests/` 底下相關與新增測試。
+
+## ✅ 2026-10-27 交付紀錄
+
+`godot-gdscript-specialist`;協調者獨立重跑:`ENGINE EXIT = 0` / `1414 test cases | 0 errors | 0 failures | 0 orphans` / `(130/130)`。
+- 既有測試**零修改**(開局重置觸發點改為 SURFACE_HANDOFF 後,相關 4 檔照舊通過;實作者明言未逐檔讀,不主張原因)。
+- ⚠️ 未涵蓋:**出牌中途離開戰鬥**沒有專屬測試(守衛只看目標表面類型;全套未出現新增的 push_error)。
+- ADR-0005 Key Interfaces 與 tech-debt-register 的加註已於同日經管理者核准套用。

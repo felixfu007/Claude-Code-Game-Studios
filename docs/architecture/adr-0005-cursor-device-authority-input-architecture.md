@@ -1881,9 +1881,13 @@ func get_current_target() -> CursorTarget                                       
 func set_target(target: CursorTarget) -> CursorState.SetTargetResult            # 轉發 CursorState 同名方法,機制十/TR-cursor-012(機制六②角色用)
 func register_surface(surface: CursorTypes.SurfaceType, node: Node) -> CursorSurfaceRegistry.RegisterResult    # 轉發 _registry.register(),機制三/TR-cursor-003
 func unregister_surface(surface: CursorTypes.SurfaceType) -> CursorSurfaceRegistry.RegisterResult              # 轉發 _registry.unregister(),機制三/TR-cursor-003
+func mark_pending_reresolve(expected: CursorTarget) -> CursorState.MarkResult   # 轉發,機制十(2026-10-27 story-015 新增)
+func handoff_after_mount(target: CursorTarget) -> CursorState.SetTargetResult  # 轉發,機制十一(2026-10-27 story-015 新增)
 # 落地位置:src/ui/cursor/cursor_state_host.gd 檔尾「Story U-013: thin forwarding
 # read/write/registration entries」節。刻意不加 mark_pending_reresolve() / 甲乙分支 /
 # reclaim_progress() / target_changed() 訊號轉發——理由見該節註解,U-013 目前不需要。
+# ✅ 2026-10-27 事實層加註(零決策變更,管理者核准):story-015 已補上述兩個轉手。handoff_before_unload() 仍不加:
+#    它是機制十一甲分支(讀檔流程)的入口,一般表面卸載走 mark_pending_reresolve。原句保留。
 
 # ─── cursor_navigation_applier.gd(第四輪修訂新增,R4-1)───────
 class_name CursorNavigationApplier extends Node

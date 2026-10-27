@@ -170,6 +170,7 @@ ADR-0005 因此把它隔離在 `MouseReclaimPolicy` 這道可替換邊界後方,
 | 012 | [已註冊表面禁用原生 focus/hover](story-012-disable-native-focus.md) | UI | ⏸ 擱置(2026-09-07,原 Blocked) | S(約 2–3 小時) | 十四 | 003 |
 | 013 | [幀精準量測儀器](story-013-frame-instrumentation.md) | Logic | ⏸ 擱置(2026-09-07) | S(約 3–4 小時) | 十五 | 005, 011 |
 | 014 | 🔴 [滑鼠奪權策略(**凍結區:照現況實作,不修缺陷**)](story-014-mouse-reclaim-frozen.md) | Logic | ✅ Complete | M(約 6–8 小時) | 八 | 001, 002 |
+| 015 | [戰鬥畫面照規格做游標交接](story-015-battle-screen-surface-handoff.md) | Integration | ✅ **Done(2026-10-27)** —— 管理者裁決;離開時 mark_pending_reresolve、開局 handoff_after_mount |
 
 **估時合計:約 65–86 小時**(2026-09-02 補;原為 `[待 sprint 規劃時填]` 佔位符,
 `/story-readiness` 判定「無估時的 story 無法排程」)。**這是粗估,不是承諾。**
