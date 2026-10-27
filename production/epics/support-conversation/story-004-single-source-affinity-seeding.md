@@ -1,7 +1,7 @@
 # Story 004:關係單一來源 —— 只有第 1 場灌關卡起始關係,之後靠累積
 
 > **Epic**: 支援對話系統 —— `production/epics/support-conversation/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ Done(2026-10-27)—— AC1~AC6 有測試;見檔尾交付紀錄。原狀態:Ready
 > **Layer**: Domain + Integration
 > **Type**: Logic + Integration(BLOCKING)
 > **Estimate**: M —— 🔴 動承重的開局灌入段,有既有測試釘著
@@ -29,8 +29,19 @@
 
 ## 已知後果(裁決時已揭露)
 
-- 第 2 場以後的 `vs0N_affinity_links.txt` 在戰役模式下**不再被讀**(非戰役路徑仍讀)。
+- 第 2 場以後的 `vs0N_affinity_links.txt` 在戰役模式下**不再用於灌入好感度**(非戰役路徑仍灌)。
   關卡設計者不能再逐場設定關係,只能靠劇情事件改。
+  🔴 **2026-10-27 更正**:原寫「不再被讀」不精確 —— 它**仍被讀**,用於丙類牌「正典關係線」合法性判斷
+  (`BattleController.new(..., links, ...)` → `PermanentAffinityWriteRules`),本張未改動。實作者主動揭露。
+
+## ✅ 2026-10-27 交付紀錄
+
+`gameplay-programmer`;協調者獨立重跑:`ENGINE EXIT = 0` / `1411 test cases | 0 errors | 0 failures | 0 orphans` / `(128/128)`(commit `cc57b79`)。
+- 新測試 `tests/integration/ui/shell/campaign_single_source_seeding_test.gd` 4 條(含常駐變種;變種模擬的是「第 2 場仍灌」的可觀測後果,`_ready` 無注入縫,檔頭已揭露)。
+- 4 支既有測試因「累積記錄多了起始關係」改斷言,皆屬舊假設不再成立。
+- ⚠️ **一條斷言被放寬**:`battle_screen_campaign_affinity_ledger_seeding_test.gd` 的 C2_C5 由「精確 −3.0」改為「<0」。
+  該測試情境是「第 1 場開局時累積記錄已非空」—— **正式遊戲不可能出現**(第 1 場開局前必定為空:新戰役、
+  歸零後、打輸回滾後),起始關係排到其後重播而使衰減改變。協調者覆核接受,登記於此。
 
 ## Affected Files
 

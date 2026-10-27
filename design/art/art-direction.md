@@ -111,7 +111,7 @@ AI 路線上,細節同樣在新文件裡,不在此重寫。
 - `src/ui/battle/hand_bar.gd`(`_ensure_detail_panel()` 建立的 Z3 詳情面板兩個 `Label`——
   `text_label` 與 `effect_label`;位置當場查:`grep -n "Label.new" src/ui/battle/hand_bar.gd`)
 
-**逐字證據**:
+**逐字證據**(⚠️ **2026-09-23 快照** —— 下方行號已漂移,例如 `hand_bar.gd` 那兩行 2026-10-27 實測為 `943:`/`957:`;要現值請當場重跑同一條 grep,不要拿這裡的數字當現值。2026-10-27 加註):
 
 ```
 $ grep -c "Cubic\|add_theme_font_override\|HUD_FONT" src/ui/battle/board_view.gd
