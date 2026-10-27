@@ -11,20 +11,21 @@ class_name CampaignSequence
 extends RefCounted
 
 ## 每列固定的逗號分隔欄位數:
-## mission_index,terrain_path,roster_path,affinity_path,cards_path
-const FIELD_COUNT: int = 5
+## mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
+const FIELD_COUNT: int = 6
 
 var mission_index: int
 var terrain_path: String
 var roster_path: String
 var affinity_path: String
 var cards_path: String
+var card_text_path: String
 
 
 ## 解析單一資料列,或在欄位數不對時回傳 [code]null[/code](畸形輸入必須有明確的
 ## 拒絕行為,不得靜默吞掉 —— 比照 [method SupportConversationRecord.from_csv_line]
 ## 的既有慣例)。欄位順序固定:
-## mission_index,terrain_path,roster_path,affinity_path,cards_path。
+## mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path。
 ##
 ## 🔴 刻意不檢查路徑指向的檔案是否存在 —— 本類別只負責解析文字,檔案存在與否是
 ## 讀取端(未來接線時 [code]BattleScreen[/code] 既有的 MISSING/UNREADABLE 分類)
@@ -44,6 +45,7 @@ static func from_csv_line(line: String) -> CampaignSequence:
 	record.roster_path = fields[2]
 	record.affinity_path = fields[3]
 	record.cards_path = fields[4]
+	record.card_text_path = fields[5]
 	return record
 
 

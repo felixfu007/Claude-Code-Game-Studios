@@ -155,3 +155,66 @@ func test_path_override_still_wins_over_sequence_table_at_mission_1() -> void:
 
 	# Cleanup
 	CampaignProgress.reset_for_test()
+
+
+# ---- 技術債(2026-10-27):卡面文字表跟著場次切換 ----
+#
+# 序列表第 6 欄 card_text_path。解析順序與 terrain/roster 相同:
+# override -> 序列表該列 -> CARD_TEXT_PATH。
+func test_card_text_path_follows_mission_from_sequence_table() -> void:
+	# Arrange —— 場次 1:vs01
+	CampaignProgress.reset_for_test()
+	var m1: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+	add_child(m1)
+	var m1_path: String = m1.diagnostic_resolved_data_paths().get("card_text", "")
+	remove_child(m1)
+
+	# Arrange —— 場次 2:vs02
+	CampaignProgress.advance_on_victory(2)
+	assert_int(CampaignProgress.current_mission()).is_equal(2)
+	var m2: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+
+	# Act
+	add_child(m2)
+	var m2_path: String = m2.diagnostic_resolved_data_paths().get("card_text", "")
+
+	# Assert
+	assert_str(m1_path).is_equal("res://assets/data/cards/vs01_card_text.txt")
+	assert_str(m2_path).append_failure_message(
+		"第 2 場開局應讀 vs02_card_text.txt,而不是寫死的 vs01 表"
+	).is_equal("res://assets/data/cards/vs02_card_text.txt")
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
+
+
+func test_card_text_path_override_wins_and_unknown_mission_falls_back_to_constant() -> void:
+	# Arrange —— override 優先(場次 1,序列表查得到)
+	CampaignProgress.reset_for_test()
+	var with_override: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+	with_override.card_text_path_override = "res://assets/data/cards/vs02_card_text.txt"
+
+	# Act
+	add_child(with_override)
+
+	# Assert
+	assert_str(with_override.diagnostic_resolved_data_paths().get("card_text", "")).is_equal(
+		"res://assets/data/cards/vs02_card_text.txt"
+	)
+	remove_child(with_override)
+
+	# Arrange —— 場次 3 不在序列表:回退 CARD_TEXT_PATH
+	CampaignProgress.advance_on_victory(5)
+	CampaignProgress.advance_on_victory(5)
+	var fallback: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+
+	# Act
+	add_child(fallback)
+
+	# Assert
+	assert_str(fallback.diagnostic_resolved_data_paths().get("card_text", "")).is_equal(
+		BattleScreen.CARD_TEXT_PATH
+	)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()

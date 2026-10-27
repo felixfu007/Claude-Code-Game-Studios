@@ -5,22 +5,23 @@ extends GdUnitTestSuite
 const _CAMPAIGN_SEQUENCE_PATH: String = "res://assets/data/levels/campaign_sequence.txt"
 
 
-func test_from_csv_line_parses_all_five_fields() -> void:
+func test_from_csv_line_parses_all_six_fields() -> void:
 	# Arrange
-	var line: String = "1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt"
+	var line: String = "1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt,res://a_card_text.txt"
 
 	# Act
 	var record: CampaignSequence = CampaignSequence.from_csv_line(line)
 
 	# Assert
 	assert_object(record).append_failure_message(
-		"合法的 5 欄資料列不應解析失敗"
+		"合法的 6 欄資料列不應解析失敗"
 	).is_not_null()
 	assert_int(record.mission_index).is_equal(1)
 	assert_str(record.terrain_path).is_equal("res://a_terrain.txt")
 	assert_str(record.roster_path).is_equal("res://a_roster.txt")
 	assert_str(record.affinity_path).is_equal("res://a_affinity.txt")
 	assert_str(record.cards_path).is_equal("res://a_cards.txt")
+	assert_str(record.card_text_path).is_equal("res://a_card_text.txt")
 
 
 func test_from_csv_line_wrong_field_count_returns_null() -> void:
@@ -41,8 +42,8 @@ func test_sequence_from_text_skips_comments_and_blank_lines_and_expresses_more_t
 	var text: String = (
 		"# 這是註解\n"
 		+ "\n"
-		+ "1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt\n"
-		+ "2,res://b_terrain.txt,res://b_roster.txt,res://b_affinity.txt,res://b_cards.txt\n"
+		+ "1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt,res://a_card_text.txt\n"
+		+ "2,res://b_terrain.txt,res://b_roster.txt,res://b_affinity.txt,res://b_cards.txt,res://b_card_text.txt\n"
 	)
 
 	# Act
@@ -59,7 +60,7 @@ func test_sequence_from_text_skips_comments_and_blank_lines_and_expresses_more_t
 func test_sequence_from_text_invalid_line_returns_null_not_partial_array() -> void:
 	# Arrange — 第二列欄位數不對
 	var text: String = (
-		"1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt\n"
+		"1,res://a_terrain.txt,res://a_roster.txt,res://a_affinity.txt,res://a_cards.txt,res://a_card_text.txt\n"
 		+ "2,res://b_terrain.txt\n"
 	)
 
@@ -100,3 +101,5 @@ func test_real_campaign_sequence_file_parses_with_at_least_mission_one() -> void
 	assert_str(records[0].roster_path).is_equal("res://assets/data/units/vs01_roster.txt")
 	assert_str(records[0].affinity_path).is_equal("res://assets/data/affinity/vs01_affinity_links.txt")
 	assert_str(records[0].cards_path).is_equal("res://assets/data/cards/vs01_cards.txt")
+	assert_str(records[0].card_text_path).is_equal("res://assets/data/cards/vs01_card_text.txt")
+	assert_str(records[1].card_text_path).is_equal("res://assets/data/cards/vs02_card_text.txt")

@@ -1,5 +1,5 @@
 # 戰役關卡序列表(遊戲殼層 Epic,story-003:關卡序列與轉場流程)—— 固定欄位順序:
-# mission_index,terrain_path,roster_path,affinity_path,cards_path
+# mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
 #
 # mission_index                      場次編號(1 起算)。
 # terrain_path/roster_path/affinity_path/cards_path
@@ -28,8 +28,10 @@
 # (has_size(1) → 2;勝利後場次停在 1 → 推進到 2)。上兩段原文保留作決策紀錄。
 # 🔴 10/19 的提交訊息與交接紀錄都寫「序列表第一次有第二列」—— 當時其實沒有加,
 # 第 2 場資料檔存在但遊戲走不到,直到本次。
-# ⚠️ 本表沒有卡面文字欄;第 2 場實際讀 vs01_card_text.txt(兩表卡 id 相同,今天無差)。
+# ⚠️ (已過時,見下)本表沒有卡面文字欄;第 2 場實際讀 vs01_card_text.txt(兩表卡 id 相同,今天無差)。
+# ✅ 2026-10-27(技術債):已補第 6 欄 card_text_path,BattleScreen 依場次讀對應的卡面文字表;
+# 解析順序 override -> 本欄 -> CARD_TEXT_PATH。上一行原文保留作決策紀錄。
 #
-# mission_index,terrain_path,roster_path,affinity_path,cards_path
-1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt
-2,res://assets/data/levels/vs02_terrain.txt,res://assets/data/units/vs02_roster.txt,res://assets/data/affinity/vs02_affinity_links.txt,res://assets/data/cards/vs02_cards.txt
+# mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
+1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt,res://assets/data/cards/vs01_card_text.txt
+2,res://assets/data/levels/vs02_terrain.txt,res://assets/data/units/vs02_roster.txt,res://assets/data/affinity/vs02_affinity_links.txt,res://assets/data/cards/vs02_cards.txt,res://assets/data/cards/vs02_card_text.txt

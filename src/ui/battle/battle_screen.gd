@@ -901,6 +901,7 @@ func diagnostic_forced_discard_cancel_rejected_count() -> int:
 var _diagnostic_last_menu_rejection_result: BattleMenu.OpenResult = BattleMenu.OpenResult.OPENED
 var _diagnostic_last_menu_rejection_message: String = ""
 
+
 ## See [member _diagnostic_last_menu_rejection_result].
 func diagnostic_last_menu_rejection_result() -> BattleMenu.OpenResult:
 	return _diagnostic_last_menu_rejection_result
@@ -915,7 +916,7 @@ func diagnostic_last_menu_rejection_message() -> String:
 ## battle, AFTER applying the override -> campaign-sequence-row -> constant
 ## fallback chain documented on [member terrain_path_override] — keyed
 ## [code]"terrain"[/code] / [code]"roster"[/code] / [code]"affinity"[/code] /
-## [code]"cards"[/code]. Lets a test assert exactly which path won the
+## [code]"cards"[/code] / [code]"card_text"[/code]. Lets a test assert exactly which path won the
 ## resolution without re-deriving the chain itself. No gameplay code reads
 ## this.
 var _diagnostic_resolved_data_paths: Dictionary = {}
@@ -1211,7 +1212,14 @@ func _ready() -> void:
 	# classify here. Parsed purely to prove the table loads cleanly — no
 	# screen in this slice consumes flavor text yet (U-009+, out of scope for
 	# this story), so the result is not retained past this call.
-	var card_text_path: String = CARD_TEXT_PATH if card_text_path_override.is_empty() else card_text_path_override
+	# 解析順序與 terrain/roster 相同:override -> 序列表該列的 card_text_path -> CARD_TEXT_PATH。
+	var card_text_path: String = card_text_path_override
+	if card_text_path.is_empty():
+		card_text_path = (
+			campaign_sequence_entry.card_text_path
+			if campaign_sequence_entry != null
+			else CARD_TEXT_PATH
+		)
 	var card_text_failure: LoadFailure = classify_file_access(card_text_path)
 	if card_text_failure == LoadFailure.NONE:
 		var card_text_text: String = FileAccess.get_file_as_string(card_text_path)
@@ -1229,6 +1237,7 @@ func _ready() -> void:
 		"roster": roster_path,
 		"affinity": affinity_path,
 		"cards": cards_path,
+		"card_text": card_text_path,
 	}
 
 	if (
@@ -1534,6 +1543,10 @@ func _ready() -> void:
 	# story's task report for why that was left as an explicit open item
 	# rather than self-expanded into scope.
 	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
+	# 離開確認框的「回主選單」:選單是 UI,不得持有或改戰役狀態
+	# (.claude/rules/ui-code.md 第一條),所以「回滾本場累積記錄」由戰鬥畫面做,
+	# 選單只呼叫這個 Callable。見 abandon_mission_to_title()。
+	_battle_menu.return_to_title_callable = abandon_mission_to_title
 
 	# Story 012 (格位資訊面板) — same "apply once, then re-apply on every
 	# resize" discipline hud_layout_scaler.gd's own _ready() already
@@ -4223,6 +4236,20 @@ func return_to_title_screen() -> void:
 	# 說明):本節點已離樹時不做任何事,避免對一個不在樹上的場景要求切換。
 	if not is_inside_tree():
 		return
+	SceneRouter.go_to_title(get_tree())
+
+
+## 戰鬥中途放棄(離開確認框的「回主選單」)。與 [method return_to_title_screen]
+## 的差別:本方法先回滾這一場寫進戰役累積記錄的內容
+## ([method CampaignProgress.rollback_on_defeat],場次編號不變),
+## 因為 UX 文案寫明「離開後這場戰鬥的進度會消失」。勝利後計時器自動回標題走的是
+## [method return_to_title_screen],那條【不得】回滾。
+## 只在 [member campaign_ledger_override] 非 null 時回滾(與勝利寫入同一個守衛)。
+func abandon_mission_to_title() -> void:
+	if not is_inside_tree():
+		return
+	if campaign_ledger_override != null:
+		CampaignProgress.rollback_on_defeat()
 	SceneRouter.go_to_title(get_tree())
 
 
