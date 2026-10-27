@@ -126,6 +126,10 @@ func _cancel_button(instance: Node) -> Button:
 	return instance.get_node("LeaveConfirm/Panel/ContentMargin/Content/Buttons/CancelButton")
 
 
+func _return_to_title_button(instance: Node) -> Button:
+	return instance.get_node("LeaveConfirm/Panel/ContentMargin/Content/Buttons/ReturnToTitleButton")
+
+
 func _leave_button(instance: Node) -> Button:
 	return instance.get_node("LeaveConfirm/Panel/ContentMargin/Content/Buttons/LeaveButton")
 
@@ -378,12 +382,18 @@ func test_navigating_within_m4_does_not_escape_to_m1_rows() -> void:
 	# Decision layer — set in _ready(), asserted directly here.
 	assert_str(String(cancel_btn.focus_neighbor_top)).is_equal(".")
 	assert_str(String(cancel_btn.focus_neighbor_bottom)).is_equal(".")
-	assert_str(String(cancel_btn.focus_neighbor_left)).is_equal(String(cancel_btn.get_path_to(leave_btn)))
-	assert_str(String(cancel_btn.focus_neighbor_right)).is_equal(String(cancel_btn.get_path_to(leave_btn)))
+	var title_btn: Button = _return_to_title_button(instance)
+	# 2026-10-27 story-005:三個按鈕,左右不環繞、到邊界停住(鄰居指向自己)。
+	assert_str(String(cancel_btn.focus_neighbor_left)).is_equal(".")
+	assert_str(String(cancel_btn.focus_neighbor_right)).is_equal(String(cancel_btn.get_path_to(title_btn)))
+	assert_str(String(title_btn.focus_neighbor_left)).is_equal(String(title_btn.get_path_to(cancel_btn)))
+	assert_str(String(title_btn.focus_neighbor_right)).is_equal(String(title_btn.get_path_to(leave_btn)))
+	assert_str(String(title_btn.focus_neighbor_top)).is_equal(".")
+	assert_str(String(title_btn.focus_neighbor_bottom)).is_equal(".")
+	assert_str(String(leave_btn.focus_neighbor_left)).is_equal(String(leave_btn.get_path_to(title_btn)))
+	assert_str(String(leave_btn.focus_neighbor_right)).is_equal(".")
 	assert_str(String(leave_btn.focus_neighbor_top)).is_equal(".")
 	assert_str(String(leave_btn.focus_neighbor_bottom)).is_equal(".")
-	assert_str(String(leave_btn.focus_neighbor_left)).is_equal(String(leave_btn.get_path_to(cancel_btn)))
-	assert_str(String(leave_btn.focus_neighbor_right)).is_equal(String(leave_btn.get_path_to(cancel_btn)))
 
 	# Applied layer — real simulated input, menu genuinely open.
 	assert_int(instance.open()).is_equal(BattleMenu.OpenResult.OPENED)
@@ -400,27 +410,19 @@ func test_navigating_within_m4_does_not_escape_to_m1_rows() -> void:
 			"must not move focus anywhere (self-loop wiring)."
 		).is_true()
 
-	instance.get_viewport().push_input(_real_key_event(&"ui_right"))
-	await get_tree().process_frame
-	assert_bool(leave_btn.has_focus()).append_failure_message(
-		"pressing ui_right from Cancel must move focus to Leave."
-	).is_true()
-
-	# 🔴 Corrected during this fix (not the original assumption): this file's
-	# own [method BattleMenu._ready] wires BOTH horizontal directions on BOTH
-	# M4 buttons to point to "the other one" (see that method's own comment,
-	# "Cancel <-> Leave in both left/right directions") — a deliberate 2-item
-	# ping-pong, not a self-loop on the rightmost item. The line this replaces
-	# asserted the opposite ("must stay on Leave") and was simply wrong about
-	# what this file's own production code does; it was never a containment
-	# defect (focus never left M4 either way — see the broadened check below,
-	# which covers all three M1 rows, not just QuitRow).
-	instance.get_viewport().push_input(_real_key_event(&"ui_right"))
-	await get_tree().process_frame
-	assert_bool(cancel_btn.has_focus()).append_failure_message(
-		"pressing ui_right again from Leave must ping-pong back to Cancel " +
-		"(both buttons' focus_neighbor_left/right point at the other one)."
-	).is_true()
+	# Cancel -> 回主選單 -> 離開遊戲,然後到邊界停住(不環繞);再往左走回去。
+	var walk: Array = [
+		[&"ui_right", title_btn, "ui_right from Cancel must reach 回主選單."],
+		[&"ui_right", leave_btn, "ui_right from 回主選單 must reach 離開遊戲."],
+		[&"ui_right", leave_btn, "ui_right from 離開遊戲 must STOP (no wrap-around)."],
+		[&"ui_left", title_btn, "ui_left from 離開遊戲 must reach 回主選單."],
+		[&"ui_left", cancel_btn, "ui_left from 回主選單 must reach Cancel."],
+		[&"ui_left", cancel_btn, "ui_left from Cancel must STOP (no wrap-around)."],
+	]
+	for step: Array in walk:
+		instance.get_viewport().push_input(_real_key_event(step[0]))
+		await get_tree().process_frame
+		assert_bool((step[1] as Button).has_focus()).append_failure_message(step[2]).is_true()
 	for m1_row: Button in [_return_row(instance), _quit_row(instance), instance.get_node(
 		"Panel/ContentMargin/Rows/EndPhaseRow"
 	)]:
@@ -584,6 +586,92 @@ func test_uninjected_quit_callable_would_call_real_quit_by_design() -> void:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# 2026-10-27 game-shell story-005 AC5~AC7 — 「回主選單」按鈕與 return_to_title_callable。
+# 🔴 每條按到「回主選單」的測試都先注入 stub(未注入 = 真的切場景)。
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+func test_return_to_title_button_calls_only_return_to_title_callable() -> void:
+	var instance: BattleMenu = _instantiate()
+	add_child(instance)
+	var calls: Array[int] = [0, 0]  # [return_to_title, quit]
+	instance.return_to_title_callable = func() -> void: calls[0] += 1
+	instance.quit_callable = func() -> void: calls[1] += 1
+
+	_return_to_title_button(instance).pressed.emit()
+
+	assert_int(calls[0]).append_failure_message("回主選單 must call return_to_title_callable once.").is_equal(1)
+	assert_int(calls[1]).append_failure_message("回主選單 must NOT call quit_callable.").is_equal(0)
+
+
+## 突變:「回主選單」誤接成呼叫 quit_callable(最危險的接錯方向——回主選單變成關遊戲)。
+class _MutantReturnToTitleCallsQuit extends BattleMenu:
+	func _on_return_to_title_pressed() -> void:
+		_on_leave_confirmed_pressed()
+
+
+## [常駐敏感度證明] for `test_return_to_title_button_calls_only_return_to_title_callable`:
+## 同一套偵測(兩個 stub 計數)必須在突變下失敗的那一側抓到差異。
+func test_sensitivity_proof_return_to_title_detection_catches_miswiring_to_quit() -> void:
+	var mutant: Control = load(SCENE_PATH).instantiate()
+	mutant.set_script(_MutantReturnToTitleCallsQuit)
+	auto_free(mutant)
+	add_child(mutant)
+	var calls: Array[int] = [0, 0]  # [return_to_title, quit]
+	mutant.return_to_title_callable = func() -> void: calls[0] += 1
+	mutant.quit_callable = func() -> void: calls[1] += 1
+
+	_return_to_title_button(mutant).pressed.emit()
+
+	assert_int(calls[1]).append_failure_message(
+		"SENSITIVITY PROOF FAILED: mutant routes 回主選單 into quit_callable, so the " +
+		"quit stub MUST have been called - if 0, the real test's counting cannot see miswiring."
+	).is_equal(1)
+	assert_int(calls[0]).is_equal(0)
+
+
+func test_leave_game_button_calls_only_quit_callable() -> void:
+	var instance: BattleMenu = _instantiate()
+	add_child(instance)
+	var calls: Array[int] = [0, 0]  # [return_to_title, quit]
+	instance.return_to_title_callable = func() -> void: calls[0] += 1
+	instance.quit_callable = func() -> void: calls[1] += 1
+
+	_leave_button(instance).pressed.emit()
+
+	assert_int(calls[1]).append_failure_message("離開遊戲 must call quit_callable once.").is_equal(1)
+	assert_int(calls[0]).append_failure_message("離開遊戲 must NOT call return_to_title_callable.").is_equal(0)
+
+
+func test_uninjected_return_to_title_callable_would_call_real_router_by_design() -> void:
+	var instance: BattleMenu = _instantiate()
+	add_child(instance)
+
+	assert_bool(instance.diagnostic_would_call_real_return_to_title()).append_failure_message(
+		"unset return_to_title_callable must mean 'call the real SceneRouter.go_to_title' " +
+		"(same deliberate asymmetry as quit_callable), never an inert default."
+	).is_true()
+	instance.return_to_title_callable = func() -> void: pass
+	assert_bool(instance.diagnostic_would_call_real_return_to_title()).is_false()
+
+
+func test_m4_default_focus_is_cancel_and_button_order_is_cancel_title_leave() -> void:
+	var instance: BattleMenu = _instantiate()
+	add_child(instance)
+	assert_int(instance.open()).is_equal(BattleMenu.OpenResult.OPENED)
+	instance.open_leave_confirm()
+
+	assert_bool(_cancel_button(instance).has_focus()).is_true()
+	var buttons: Node = _cancel_button(instance).get_parent()
+	assert_array([
+		buttons.get_child(0).name, buttons.get_child(1).name, buttons.get_child(2).name
+	]).is_equal([&"CancelButton", &"ReturnToTitleButton", &"LeaveButton"])
+	assert_str(_return_to_title_button(instance).text).is_equal("回主選單")
+	assert_str(_leave_button(instance).text).is_equal("離開遊戲")
+	instance.close()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # AC-M7 (ADVISORY) — 離開確認的文字明確說出「進度會消失」.
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -683,6 +771,7 @@ func test_leave_confirm_buttons_resolve_with_focus_mode_all() -> void:
 	add_child(instance)
 	for path in [
 		"LeaveConfirm/Panel/ContentMargin/Content/Buttons/CancelButton",
+		"LeaveConfirm/Panel/ContentMargin/Content/Buttons/ReturnToTitleButton",
 		"LeaveConfirm/Panel/ContentMargin/Content/Buttons/LeaveButton",
 	]:
 		var btn: Node = instance.get_node(path)

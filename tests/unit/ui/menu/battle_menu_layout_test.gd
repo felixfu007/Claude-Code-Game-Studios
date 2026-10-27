@@ -688,3 +688,52 @@ func test_focus_border_luminance_differs_from_real_default_button_background() -
 	# compare at all — structurally meaning the unfocused state has no
 	# comparable flat fill, so the opaque white border cannot coincide with
 	# "nothing" either.
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 2026-10-27 game-shell story-005 AC8(ADVISORY)— M4 三個按鈕的寬度查核。
+# 把真的 M4 掛進樹、依每個定義解析度跑真的 _apply_layout(),量三個按鈕實際的
+# get_combined_minimum_size().x 加上 HBox 實際 separation × 2,與 M4 面板內容寬
+# (leave_confirm_rect 寬 − 左右 margin)比較。[不可證 - 類 A′]:斷言對象是版面
+# 量測值,沒有可注入的錯誤版本。若任何解析度溢出,不得改 14 fpx 寬度,回報實測數字。
+# ═══════════════════════════════════════════════════════════════════════════
+func test_m4_three_buttons_fit_in_panel_content_width_at_every_defined_resolution() -> void:
+	var instance: Control = _instantiate()
+	add_child(instance)
+	var original_size: Vector2i = get_window().size
+	var overflows: Array[String] = []
+	var report: Array[String] = []
+	for label: String in RESOLUTIONS_WITH_MIN_WINDOW:
+		var window_size: Vector2i = RESOLUTIONS_WITH_MIN_WINDOW[label]
+		get_window().size = window_size
+		assert_vector(Vector2(get_window().size)).append_failure_message(
+			"PRECONDITION: could not set window size to %s (got %s) - measurement would be vacuous." % [
+				window_size, get_window().size
+			]
+		).is_equal(Vector2(window_size))
+		instance._apply_layout()
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+		var fpx: float = float(HudLayout.font_size(window_size))
+		var margin_px: float = float(int(fpx * BattleMenu.CONTENT_MARGIN_FPX_MULTIPLIER))
+		var content_w: float = BattleMenu.leave_confirm_rect(window_size).size.x - 2.0 * margin_px
+		var hbox: HBoxContainer = instance.get_node("LeaveConfirm/Panel/ContentMargin/Content/Buttons")
+		var sep: float = float(hbox.get_theme_constant(&"separation"))
+		var total: float = 2.0 * sep
+		var widths: Array[float] = []
+		for btn_name: String in ["CancelButton", "ReturnToTitleButton", "LeaveButton"]:
+			var w: float = (hbox.get_node(btn_name) as Button).get_combined_minimum_size().x
+			widths.append(w)
+			total += w
+		var line: String = "AC8 %s window=%s fpx=%d content_w=%.1f buttons=%s sep=%.0f total=%.1f" % [
+			label, window_size, int(fpx), content_w, widths, sep, total
+		]
+		report.append(line)
+		print(line)
+		if total > content_w:
+			overflows.append(line)
+	get_window().size = original_size
+	assert_array(overflows).append_failure_message(
+		"AC8: M4 three buttons overflow panel content width at: %s" % [overflows]
+	).is_empty()

@@ -39,11 +39,7 @@ extends Control
 const TEXT_EGM_TOGGLE: StringName = &"shell.settings.egm_toggle"
 const TEXT_BACK: StringName = &"shell.settings.back"
 
-## AC6 —— 返回標題畫面的切換目標。與 `title_screen.gd` 的
-## [code]_SETTINGS_SCENE_PATH[/code](AC4 用,從標題進入本畫面)是一對互相指向的
-## 常數,各自只知道對方的路徑字串 —— 與 `title_screen.gd`/`battle_screen.gd` 現有的
-## 同一類常數對處理方式相同,未另抽共用路徑常數檔。
-const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
+## 場景路徑的單一出處是 [SceneRouter](story-005),本檔不再持有任何場景路徑常數。
 
 @onready var _egm_toggle_row: CheckButton = $Panel/ContentMargin/Rows/EgmToggleRow
 @onready var _back_row: Button = $Panel/ContentMargin/Rows/BackRow
@@ -84,4 +80,4 @@ func _on_egm_toggled(button_pressed: bool) -> void:
 ## `.claude/docs/coding-standards.md` CI 節已登記;`title_screen.gd` 的
 ## [method TitleScreen.start_battle] 同一慣例)。
 func back_to_title() -> void:
-	get_tree().change_scene_to_file(_TITLE_SCENE_PATH)
+	SceneRouter.go_to_title(get_tree())

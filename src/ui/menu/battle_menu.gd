@@ -203,6 +203,8 @@ const QUIT_ROW: StringName = &"battle.menu.quit_row"
 const LEAVE_CONFIRM_CANCEL: StringName = &"battle.menu.leave_confirm_cancel"
 ## Story-002 續批 — 見 [constant LEAVE_CONFIRM_CANCEL] 的 doc comment。
 const LEAVE_CONFIRM_LEAVE: StringName = &"battle.menu.leave_confirm_leave"
+## 2026-10-27 game-shell story-005 — M4 第三個按鈕「回主選單」。
+const LEAVE_CONFIRM_RETURN_TO_TITLE: StringName = &"battle.menu.leave_confirm_return_to_title"
 
 ## `production/epics/game-shell/story-002-minimal-settings-screen.md`(AC8)——
 ## 唯讀 EGM 狀態行格式字串,例如「效果猜測標記：開啟」。
@@ -404,6 +406,19 @@ var quit_callable: Callable = Callable()
 func diagnostic_would_call_real_quit() -> bool:
 	return not quit_callable.is_valid()
 
+## 2026-10-27 game-shell story-005 — M4「回主選單」的可注入動作。語意比照
+## [member quit_callable]:🔴 [b]未設定 = 呼叫真的 [code]SceneRouter.go_to_title(get_tree())[/code][/b]
+## (不是惰性預設)。不對稱的理由同 quit_callable —— 一個接了線卻靜默什麼都不做的
+## 離開按鈕,比測試忘了注入 stub 更糟(寧可大聲失敗)。
+## 🔴 [b]每一條會按到「回主選單」的測試都必須先注入 stub[/b]:真的切場景會把測試環境的
+## current_scene 換掉。見 [method diagnostic_would_call_real_return_to_title]。
+var return_to_title_callable: Callable = Callable()
+
+## 唯讀、無副作用:讓測試斷言 [method _on_return_to_title_pressed] 「會走」哪個分支,
+## 而不必真的呼叫它。比照 [method diagnostic_would_call_real_quit]。
+func diagnostic_would_call_real_return_to_title() -> bool:
+	return not return_to_title_callable.is_valid()
+
 ## Placeholder M3 reason-text color — BM-7 (視覺樣式全部未定) is explicitly
 ## unowned pending `art-director`, same caveat as [constant MASK_COLOR] /
 ## [constant PANEL_BG_COLOR] / [constant DIVIDER_COLOR] above.
@@ -473,6 +488,7 @@ const DISABLED_ROW_PREFIX_GLYPH: StringName = &"battle.menu.disabled_row_prefix_
 @onready var _leave_confirm_title_label: Label = $LeaveConfirm/Panel/ContentMargin/Content/TitleLabel
 @onready var _leave_confirm_body_label: Label = $LeaveConfirm/Panel/ContentMargin/Content/BodyLabel
 @onready var _leave_cancel_button: Button = $LeaveConfirm/Panel/ContentMargin/Content/Buttons/CancelButton
+@onready var _leave_return_to_title_button: Button = $LeaveConfirm/Panel/ContentMargin/Content/Buttons/ReturnToTitleButton
 @onready var _leave_quit_button: Button = $LeaveConfirm/Panel/ContentMargin/Content/Buttons/LeaveButton
 
 ## Story U-009 (ADR-0001's registered path ⑤, `end_faction_phase()`) — emitted
@@ -587,9 +603,10 @@ func _ready() -> void:
 	_leave_confirm_body_label.text = Loc.localize(LEAVE_CONFIRM_BODY)
 	# Story-002 續批 — M4 兩個按鈕文字,見 LEAVE_CONFIRM_CANCEL 的 doc comment。
 	_leave_cancel_button.text = Loc.localize(LEAVE_CONFIRM_CANCEL)
+	_leave_return_to_title_button.text = Loc.localize(LEAVE_CONFIRM_RETURN_TO_TITLE)
 	_leave_quit_button.text = Loc.localize(LEAVE_CONFIRM_LEAVE)
 
-	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
+	for m4_button: Button in [_leave_cancel_button, _leave_return_to_title_button, _leave_quit_button]:
 		m4_button.focus_mode = Control.FOCUS_ALL
 
 	# 🔴 Confirm-key decision, affirmed for M4 explicitly rather than silently
@@ -600,6 +617,7 @@ func _ready() -> void:
 	# section). No new decision was needed because M4 does not introduce a new
 	# activation mechanism.
 	_leave_cancel_button.pressed.connect(close_leave_confirm)
+	_leave_return_to_title_button.pressed.connect(_on_return_to_title_pressed)
 	_leave_quit_button.pressed.connect(_on_leave_confirmed_pressed)
 
 	# Explicit neighbor wiring, matching every other focus transition in this
@@ -610,14 +628,20 @@ func _ready() -> void:
 	# back onto an M1 row while M4 is open — independent of whatever
 	# mouse-blocking state M1's rows are in ([member _leave_confirm_blocker]
 	# only stops mouse input, not keyboard focus search).
-	_leave_cancel_button.focus_neighbor_left = _leave_cancel_button.get_path_to(_leave_quit_button)
-	_leave_cancel_button.focus_neighbor_right = _leave_cancel_button.get_path_to(_leave_quit_button)
-	_leave_cancel_button.focus_neighbor_top = _leave_cancel_button.get_path_to(_leave_cancel_button)
-	_leave_cancel_button.focus_neighbor_bottom = _leave_cancel_button.get_path_to(_leave_cancel_button)
-	_leave_quit_button.focus_neighbor_left = _leave_quit_button.get_path_to(_leave_cancel_button)
-	_leave_quit_button.focus_neighbor_right = _leave_quit_button.get_path_to(_leave_cancel_button)
-	_leave_quit_button.focus_neighbor_top = _leave_quit_button.get_path_to(_leave_quit_button)
-	_leave_quit_button.focus_neighbor_bottom = _leave_quit_button.get_path_to(_leave_quit_button)
+	# 2026-10-27 game-shell story-005 — 三個按鈕(取消 / 回主選單 / 離開遊戲),左右
+	# 不環繞、到邊界停住(鄰居指向自己);上下全部指向自己。
+	var cb: Button = _leave_cancel_button
+	var tb: Button = _leave_return_to_title_button
+	var qb: Button = _leave_quit_button
+	cb.focus_neighbor_left = cb.get_path_to(cb)
+	cb.focus_neighbor_right = cb.get_path_to(tb)
+	tb.focus_neighbor_left = tb.get_path_to(cb)
+	tb.focus_neighbor_right = tb.get_path_to(qb)
+	qb.focus_neighbor_left = qb.get_path_to(tb)
+	qb.focus_neighbor_right = qb.get_path_to(qb)
+	for m4_nav: Button in [cb, tb, qb]:
+		m4_nav.focus_neighbor_top = m4_nav.get_path_to(m4_nav)
+		m4_nav.focus_neighbor_bottom = m4_nav.get_path_to(m4_nav)
 
 	_refresh_end_phase_row()
 	# Story-002(AC8)— 初始樣式/文字,見 [method _refresh_egm_status_label]。
@@ -764,6 +788,15 @@ func _on_leave_confirmed_pressed() -> void:
 		quit_callable.call()
 	else:
 		get_tree().quit()
+
+
+## 2026-10-27 game-shell story-005 — 「回主選單」。永遠經 [member return_to_title_callable];
+## 未設定時才呼叫真的 [method SceneRouter.go_to_title](回傳的 Node 不需處理)。
+func _on_return_to_title_pressed() -> void:
+	if return_to_title_callable.is_valid():
+		return_to_title_callable.call()
+	else:
+		SceneRouter.go_to_title(get_tree())
 
 
 ## Story U-009 (`design/ux/battle-menu.md` Data Requirements: "選單開啟期間持續
@@ -1076,7 +1109,7 @@ func _apply_layout() -> void:
 		&"font_size", int(fpx * REASON_FONT_FPX_MULTIPLIER)
 	)
 
-	for m4_button: Button in [_leave_cancel_button, _leave_quit_button]:
+	for m4_button: Button in [_leave_cancel_button, _leave_return_to_title_button, _leave_quit_button]:
 		m4_button.custom_minimum_size = Vector2(0, row_h)
 		m4_button.add_theme_font_override(&"font", HUD_FONT)
 		m4_button.add_theme_font_size_override(&"font_size", int(fpx))

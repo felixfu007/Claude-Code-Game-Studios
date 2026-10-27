@@ -23,6 +23,17 @@ const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 const _BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 
 
+# game-shell story-005:start_battle() 現在經 SceneRouter.enter_battle() 呼叫
+# CampaignProgress.start_mission_affinity_ledger(),會改動靜態狀態(戰役累積記錄的
+# 基準點),所以每條測試前後都還原,避免洩漏到其他測試檔。
+func before_test() -> void:
+	CampaignProgress.reset_for_test()
+
+
+func after_test() -> void:
+	CampaignProgress.reset_for_test()
+
+
 ## 把 [param node] 以 production 的真實生命週期掛上樹:call_deferred 進
 ## [member SceneTree.root],等 2 個 process_frame 讓 [method Node._ready] 跑完
 ## (比照探針,也是這個專案「不得在 _ready() 內直接 add_child()」紀律的推論結果)。
@@ -218,3 +229,42 @@ func test_title_screen_does_not_register_any_cursor_surface() -> void:
 		if result == CursorSurfaceRegistry.RegisterResult.REGISTERED:
 			CursorStateHost.unregister_surface(surface_type)
 		probe.free()
+
+
+# ── story-005:在 _ready() 期間呼叫 start_battle()(--capture-battle 旗標路徑的形狀)──
+# 🔴 SceneRouter 的交換是 call_deferred,所以 _ready() 內呼叫不會撞到
+# "Parent node is busy setting up children"。本測試斷言可觀測後果(最後 current_scene
+# 是 BattleScreen);「零該錯誤」由跑全套時 grep 引擎 log 佐證(見任務報告)。
+class _TitleStartsBattleInReady extends TitleScreen:
+	func _ready() -> void:
+		super._ready()
+		start_battle()
+
+
+func test_start_battle_called_during_ready_still_reaches_battle_screen() -> void:
+	# Arrange — 先放一個佔位場景當 current_scene,避免路由器釋放測試執行器的場景
+	var original_current_scene: Node = get_tree().current_scene
+	var placeholder: Node = Node.new()
+	get_tree().root.call_deferred("add_child", placeholder)
+	await get_tree().process_frame
+	get_tree().current_scene = placeholder
+	var title: TitleScreen = load(_TITLE_SCENE_PATH).instantiate()
+	title.set_script(_TitleStartsBattleInReady)
+
+	# Act — _ready() 在掛載時執行,內部呼叫 start_battle()
+	get_tree().root.call_deferred("add_child", title)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# Assert
+	var switched: Node = get_tree().current_scene
+	assert_str(switched.name if switched != null else "null").append_failure_message(
+		"_ready() 期間呼叫 start_battle() 之後 current_scene 應為 BattleScreen"
+	).is_equal("BattleScreen")
+
+	# Cleanup
+	if is_instance_valid(title):
+		title.queue_free()
+	await _free_if_valid(switched)
+	get_tree().current_scene = original_current_scene

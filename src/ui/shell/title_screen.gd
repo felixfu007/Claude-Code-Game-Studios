@@ -38,17 +38,7 @@ const TEXT_START_BATTLE: StringName = &"shell.title.start_battle"
 const TEXT_SETTINGS: StringName = &"shell.title.settings"
 const TEXT_QUIT: StringName = &"shell.title.quit"
 
-## AC4 —— 「開始戰鬥」的切換目標。與 `battle_screen.gd` 的
-## `_TITLE_SCENE_PATH`(AC5 用,切回本畫面)是一對互相指向的常數,各自只知道
-## 對方的路徑字串 —— 本專案目前只有這兩個「戰鬥外/戰鬥中」場景,未另抽共用路徑
-## 常數檔;若殼層第三個場景出現(story-003),屆時應重新評估是否該抽成共用資源。
-const _BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
-
-## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
-## AC4)—— 「設定」鈕的切換目標。與 `settings_screen.gd` 的
-## `_TITLE_SCENE_PATH`(AC6 用,返回本畫面)是一對互相指向的常數,同一類對處理,
-## 見 [constant _BATTLE_SCENE_PATH] 的 doc comment。
-const _SETTINGS_SCENE_PATH: String = "res://src/ui/shell/SettingsScreen.tscn"
+## 場景路徑的單一出處是 [SceneRouter](story-005),本檔不再持有任何場景路徑常數。
 
 ## Story-004(`production/epics/game-shell/` ——
 ## 管理者 2026-10-19 裁決「今天補,跟著 story-002 一起做」,工作單尚未落檔)。
@@ -143,14 +133,16 @@ static func should_auto_start_battle(args: PackedStringArray) -> bool:
 
 ## AC4 —— 測試直接呼叫本方法,不模擬 [InputEvent](headless 不送 InputEvent,
 ## `.claude/docs/coding-standards.md` CI 節已登記;AC4 原文同一慣例)。
+## 經 [SceneRouter] 手動切場景(story-005):路由器在新戰鬥畫面進樹之前注入戰役累積記錄,
+## 交換延後到空閒時執行,所以在 [method Node._ready] 期間呼叫(--capture-battle 路徑)也安全。
 func start_battle() -> void:
-	get_tree().change_scene_to_file(_BATTLE_SCENE_PATH)
+	SceneRouter.enter_battle(get_tree())
 
 
 ## Story-002(AC4)—— 測試直接呼叫本方法,不模擬 [InputEvent],與
 ## [method start_battle] 同一慣例。
 func open_settings() -> void:
-	get_tree().change_scene_to_file(_SETTINGS_SCENE_PATH)
+	SceneRouter.go_to_settings(get_tree())
 
 
 ## 「離開遊戲」—— 本畫面是全新場景,沒有 `BattleMenu` 的離開確認語意可繼承,

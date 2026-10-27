@@ -122,7 +122,7 @@ func test_card_confirm_panel_migrated_keys_resolve_to_original_literals() -> voi
 #      + 1 個優先序 2 追加 — 加上 5 個 story-002 續批從 BattleMenu.tscn 遷入的按鈕文字)----
 
 const _EXPECTED_BATTLE_MENU: Dictionary[StringName, String] = {
-	&"battle.menu.leave_confirm_title": "離開遊戲?",
+	&"battle.menu.leave_confirm_title": "離開這場戰鬥?",
 	&"battle.menu.leave_confirm_body": "目前沒有存檔功能,離開後這場\n戰鬥的進度會消失。",
 	&"battle.menu.rejection_authoritative_write": "（權威寫入進行中，暫時無法開啟選單）",
 	&"battle.menu.rejection_forced_discard": "請先完成棄牌",
@@ -134,9 +134,9 @@ const _EXPECTED_BATTLE_MENU: Dictionary[StringName, String] = {
 	# 不是 battle_menu.gd 原本 7 個 key 的一部分。
 	&"battle.menu.return_to_battle_row": "回到遊戲",
 	&"battle.menu.end_phase_row": "結束回合",
-	&"battle.menu.quit_row": "離開遊戲",
+	&"battle.menu.quit_row": "離開戰鬥",
 	&"battle.menu.leave_confirm_cancel": "取消",
-	&"battle.menu.leave_confirm_leave": "離開",
+	&"battle.menu.leave_confirm_leave": "離開遊戲",
 }
 
 func test_battle_menu_migrated_keys_resolve_to_original_literals() -> void:

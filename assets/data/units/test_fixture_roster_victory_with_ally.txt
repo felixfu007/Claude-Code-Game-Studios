@@ -1,0 +1,9 @@
+# 測試夾具:勝利且甲乙都存活 —— 供 game-shell story-005 AC4 的端對端測試使用
+# (tests/integration/ui/shell/campaign_support_conversation_carryover_test.gd)。
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+# 與 test_fixture_roster_duel.txt 的差別:多一個我方 id 2(乙,不參戰、留在 (0,1)),
+# 敵方改為 id 6(HP 1),讓「打倒唯一敵人」的勝利發生時,SC-01(甲乙)的兩人都還活著。
+# 搭配 test_fixture_terrain_duel.txt(全空地)。
+1,TESTHERO,PLAYER,999,99,0,1,1,1,0,0
+2,TESTALLY,PLAYER,999,0,0,1,1,1,0,1
+6,TESTDUMMY,ENEMY,1,0,0,1,1,1,1,0

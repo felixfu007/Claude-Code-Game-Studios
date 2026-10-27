@@ -107,6 +107,10 @@ const CARD_TEXT_PATH: String = "res://assets/data/cards/vs01_card_text.txt"
 ## (src/gameplay/campaign/campaign_sequence.gd),本檔不重新實作一份。
 const CAMPAIGN_SEQUENCE_PATH: String = "res://assets/data/levels/campaign_sequence.txt"
 
+## game-shell story-005 AC4:支援對話資料表(系統 #8),勝利時依場次編號觸發。
+## 解析沿用 [SupportConversationRecord.records_from_text]。
+const SUPPORT_CONVERSATIONS_PATH: String = "res://assets/data/narrative/support_conversations.txt"
+
 ## Classification of why loading terrain/roster/affinity data failed, checked
 ## independently per file in [method _ready]. Ordered from "never got to open
 ## the file" through "opened it but the content was useless" so a single
@@ -368,11 +372,6 @@ const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 ## 風險高於加一個不碰任何既有程式碼路徑的獨立計時器。
 const RESULT_DISPLAY_SECONDS: float = 3.0
 
-## AC5 的切換目標。與 [code]src/ui/shell/title_screen.gd[/code] 的
-## [code]_BATTLE_SCENE_PATH[/code] 是一對互相指向的常數,各自只知道對方的路徑
-## 字串 —— 理由見該檔同一常數的 doc comment。
-const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
-
 ## 2026-09-04 (Story 001): [code]_world_viewport_container[/code] used to be
 ## kept as a member here for [code].global_position[/code] in the mouse
 ## coordinate math — removed because that math now goes entirely through
@@ -521,12 +520,10 @@ var card_text_path_override: String = ""
 ## 🔴 第三輪更新:持有者已裁決——[method CampaignProgress.start_mission_affinity_ledger]
 ## 是取得要注入這裡的 ledger 的唯一入口(見該方法與 [CampaignProgress] 類別
 ## 文件註解「結構防線」段)。[method _on_battle_ended] 同一輪已接上 AC3(勝利
-## 推進)/AC4(失敗回滾)。⚠️ 仍未裁決/未解開的是:production 實際遊玩流程
-## 要怎麼把非 [code]null[/code] 的值灌進這裡——[code]src/ui/shell/title_screen.gd[/code]
-## 目前用 [method SceneTree.change_scene_to_file] 切到本場景,該呼叫沒有資料
-## 注入的時機窗,此欄位因此在真正遊玩時仍停在預設 [code]null[/code]。這是
-## [code]game-shell[/code] Epic 戰役流程控制器(AC7/AC8,尚未落地)的事,
-## 不在本輪範圍。
+## 推進)/AC4(失敗回滾)。
+##
+## game-shell story-005:production 的注入由 [method SceneRouter.enter_battle]
+## 負責(手動切場景,在 add_child 之前設定本欄位),不再停在預設 [code]null[/code]。
 ##
 ## [b]Timing contract:[/b] 與 [member terrain_path_override] 相同——必須在
 ## [method PackedScene.instantiate] 之後、[method Node.add_child] 之前設定,
@@ -4156,13 +4153,19 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	# 實例(本專案目前絕大多數既有測試)完全不受影響,不需要因此改動既有測試去
 	# 呼叫 CampaignProgress.reset_for_test()。
 	#
-	# 🔴 production 尚未真的把這條路接起來——src/ui/shell/title_screen.gd 用
-	# get_tree().change_scene_to_file() 切場景,該呼叫沒有資料注入的時機窗(見
-	# campaign_ledger_override 自己的 doc comment),本輪沒有解開這個限制。這段
-	# 接線目前只有「被測試手動注入 ledger 的 BattleScreen 實例」會真的執行到——
-	# 誠實登記,不是遺漏(見任務報告)。
+	# production 的接線:src/ui/shell/scene_router.gd 的 enter_battle() 在新實例進樹
+	# 之前注入 ledger(game-shell story-005),所以這段在真正遊玩時會執行。
 	if campaign_ledger_override != null:
 		if outcome == BattleState.Outcome.VICTORY:
+			# game-shell story-005 AC4 —— 勝利時觸發支援對話。
+			# 🔴 必須在 advance_on_victory() 之【前】:場次編號推進後,
+			# current_mission() 就已是下一場,取到的 slot 會錯一格(觸發到
+			# 「下一場之後」的對話)。推進前的 slot 才是「剛打完的那一場」。
+			# 🔴 寫進戰役累積記錄(ledger),不寫本場的好感度池:本場池子在下一場
+			# 開局之前就隨場景被丟掉了,寫進去等於沒寫;ledger 則會在下一場開局時
+			# 由 _ready() 逐筆灌回新池子(見 campaign_ledger_override 迴圈)。
+			# 讀檔失敗不得擋住場次推進,所以這一步自己吞下失敗(已 push_error)。
+			_trigger_support_conversations_for_finished_mission()
 			var total_missions: int = campaign_total_missions()
 			if total_missions > 0:
 				CampaignProgress.advance_on_victory(total_missions)
@@ -4205,8 +4208,8 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 ## AC5 的切換入口 —— 測試直接呼叫本方法即可驅動「回到標題畫面」,不必等待
 ## RESULT_DISPLAY_SECONDS 的真實時間流逝。
 ##
-## EPIC 全域硬性實作義務的落地點:本方法呼叫 [method
-## SceneTree.change_scene_to_file] 時,這個 BattleScreen 實例會被移出場景樹,
+## EPIC 全域硬性實作義務的落地點:本方法經 [method SceneRouter.go_to_title]
+## 切場景,舊的 BattleScreen 實例會被移出場景樹,
 ## 觸發 [signal Node.tree_exited] —— 而這個訊號在本檔 [method _ready] 已經接了
 ## [code]CursorStateHost.unregister_surface(BOARD_TILE)[/code](見該行自己的
 ## doc comment,Story 008 安全網),不需要在這裡重複呼叫;重複呼叫只會得到
@@ -4217,11 +4220,43 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 ## AC6 迴歸測試把同一條路徑釘成自動化測試。
 func return_to_title_screen() -> void:
 	# 防呆守衛(最後一道防線,見 _on_battle_ended() 的計時器改用子 Timer 節點的
-	# 說明):本節點已離樹時不做任何事,避免對一個不在樹上的場景呼叫
-	# change_scene_to_file()。
+	# 說明):本節點已離樹時不做任何事,避免對一個不在樹上的場景要求切換。
 	if not is_inside_tree():
 		return
-	get_tree().change_scene_to_file(_TITLE_SCENE_PATH)
+	SceneRouter.go_to_title(get_tree())
+
+
+## game-shell story-005 AC4 —— 讀取支援對話資料表,對「剛打完的這一場」觸發對話,
+## 寫入戰役累積記錄。只在勝利且 [member campaign_ledger_override] 非 null 時由
+## [method _on_battle_ended] 呼叫。名冊 id 與單位 id 為同一套(1=甲…5=戊,
+## 見 [code]assets/data/narrative/support_conversations.txt[/code] 檔頭與
+## [code]vs01_roster.txt[/code]);存活判斷用 [method Unit.is_alive];找不到該單位
+## (本場沒有這個角色)視為不存活,對話被略過。
+func _trigger_support_conversations_for_finished_mission() -> void:
+	var failure: LoadFailure = classify_file_access(SUPPORT_CONVERSATIONS_PATH)
+	if failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [SUPPORT_CONVERSATIONS_PATH, LoadFailure.find_key(failure)])
+		return
+	var text: String = FileAccess.get_file_as_string(SUPPORT_CONVERSATIONS_PATH)
+	var parsed: Variant = SupportConversationRecord.records_from_text(text)
+	if parsed == null:
+		push_error(
+			"BattleScreen: support conversation table %s failed to parse; "
+			% [SUPPORT_CONVERSATIONS_PATH]
+			+ "skipping support conversation trigger (campaign still advances)"
+		)
+		return
+	var records: Array[SupportConversationRecord] = parsed
+	var state: BattleState = _state
+	var is_alive: Callable = func(roster_id: int) -> bool:
+		var unit: Unit = state.unit_by_id(roster_id)
+		return unit != null and unit.is_alive()
+	SupportConversationTransition.trigger_for_mission_transition(
+		CampaignProgress.current_mission(),
+		records,
+		is_alive,
+		SupportConversationLedgerWritePort.new(campaign_ledger_override)
+	)
 
 
 ## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see

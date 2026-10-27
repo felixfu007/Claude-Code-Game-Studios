@@ -1,6 +1,6 @@
 keys,zh_TW
 battle.hud.status_format,第 %d 回合．%s
-battle.menu.leave_confirm_title,離開遊戲?
+battle.menu.leave_confirm_title,離開這場戰鬥?
 battle.hud.faction_player,我方行動
 battle.hud.faction_enemy,敵方行動
 battle.hud.result_victory,勝利
@@ -56,9 +56,10 @@ battle.hand_bar.temporary_effect_summary_format,ATK%s · DEF%s · 剩%d回合
 battle.menu.disabled_row_prefix_glyph,"✕ "
 battle.menu.return_to_battle_row,回到遊戲
 battle.menu.end_phase_row,結束回合
-battle.menu.quit_row,離開遊戲
+battle.menu.quit_row,離開戰鬥
 battle.menu.leave_confirm_cancel,取消
-battle.menu.leave_confirm_leave,離開
+battle.menu.leave_confirm_leave,離開遊戲
+battle.menu.leave_confirm_return_to_title,回主選單
 battle.tile_info.unresolved,（目前無法顯示格位資訊）
 battle.tile_info.terrain_line_format,地形：%s
 battle.tile_info.terrain_open,開闊地

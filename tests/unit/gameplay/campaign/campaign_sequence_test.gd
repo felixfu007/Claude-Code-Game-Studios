@@ -91,9 +91,12 @@ func test_real_campaign_sequence_file_parses_with_at_least_mission_one() -> void
 			"生產資料檔 %s 解析失敗或為空 —— 查核一已知現況是只有第 1 場有真實" +
 			"資料,本表至少應能解析出這一列"
 		) % _CAMPAIGN_SEQUENCE_PATH
-	).has_size(1)
+	).has_size(2)
 	assert_int(records[0].mission_index).is_equal(1)
 	assert_str(records[0].terrain_path).is_equal("res://assets/data/levels/vs01_terrain.txt")
+	# 2026-10-27 story-005 AC4:第 2 場補進序列表(原斷言 has_size(1))
+	assert_int(records[1].mission_index).is_equal(2)
+	assert_str(records[1].terrain_path).is_equal("res://assets/data/levels/vs02_terrain.txt")
 	assert_str(records[0].roster_path).is_equal("res://assets/data/units/vs01_roster.txt")
 	assert_str(records[0].affinity_path).is_equal("res://assets/data/affinity/vs01_affinity_links.txt")
 	assert_str(records[0].cards_path).is_equal("res://assets/data/cards/vs01_cards.txt")

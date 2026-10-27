@@ -24,5 +24,12 @@
 # 轉紅,而更新測試斷言不是 level-designer 的職權。要補第 2 列,請與兩份測試的改動
 # 一併送出。
 #
+# ✅ 2026-10-27(game-shell story-005 AC4):第 2 列已補上,兩份測試同批更新
+# (has_size(1) → 2;勝利後場次停在 1 → 推進到 2)。上兩段原文保留作決策紀錄。
+# 🔴 10/19 的提交訊息與交接紀錄都寫「序列表第一次有第二列」—— 當時其實沒有加,
+# 第 2 場資料檔存在但遊戲走不到,直到本次。
+# ⚠️ 本表沒有卡面文字欄;第 2 場實際讀 vs01_card_text.txt(兩表卡 id 相同,今天無差)。
+#
 # mission_index,terrain_path,roster_path,affinity_path,cards_path
 1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt
+2,res://assets/data/levels/vs02_terrain.txt,res://assets/data/units/vs02_roster.txt,res://assets/data/affinity/vs02_affinity_links.txt,res://assets/data/cards/vs02_cards.txt

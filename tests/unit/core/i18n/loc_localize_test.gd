@@ -63,7 +63,7 @@ func test_localize_dot_notation_key_battle_menu_leave_confirm_title_returns_regi
 	var result: String = Loc.localize(key)
 
 	# Assert
-	assert_str(result).is_equal("離開遊戲?")
+	assert_str(result).is_equal("離開這場戰鬥?")
 
 
 # ---- localize()：完全不存在的 key，絕不回傳裸 key 字串本身 -----------------------

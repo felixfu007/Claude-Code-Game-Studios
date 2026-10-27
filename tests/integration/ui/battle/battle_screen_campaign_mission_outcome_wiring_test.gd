@@ -128,17 +128,23 @@ func test_victory_advances_campaign_progress_and_keeps_new_entries() -> void:
 	instance._on_battle_ended(BattleState.Outcome.VICTORY)
 
 	# Assert —— AC3:勝利併入累積(不回滾,新記錄留著)
-	assert_int(ledger.records().size()).append_failure_message(
+	# 2026-10-27 game-shell story-005:原斷言恰 1 筆。勝利現在會在同一個 ledger 觸發
+	# 第 1 場之後的支援對話(SC-01 甲乙,vs01 全員存活),所以是本測試那筆 + SC-01 共 2 筆。
+	# 改成「本測試那筆仍在」而不是只比總數,總數另外斷言。
+	var pairs: Array = ledger.records().map(func(e: CampaignAffinityLedger.Entry) -> int: return e.pair)
+	assert_bool(pairs.has(AffinityTypes.Pair.C2_C5)).append_failure_message(
 		"VICTORY 不應呼叫 rollback_current_mission() —— 本場新增的記錄應該保留" +
-		"(AC3:併入累積),實得 %d 筆" % ledger.records().size()
-	).is_equal(1)
+		"(AC3:併入累積)"
+	).is_true()
+	assert_int(ledger.records().size()).append_failure_message(
+		"預期 2 筆(本測試的 C2_C5 + 勝利觸發的 SC-01),實得 %d 筆" % ledger.records().size()
+	).is_equal(2)
 
-	# Assert —— AC3:場次推進判斷。campaign_sequence.txt 今天只有 1 列,
-	# 故預期終態是 CAMPAIGN_COMPLETE(見本函式文件註解)
+	# Assert —— AC3:場次推進判斷。2026-10-27 起 campaign_sequence.txt 有 2 列,
+	# 第 1 場勝利推進到第 2 場(原斷言:停在 1,因當時只有 1 列)
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
-		"campaign_sequence.txt 今天只有 1 列,VICTORY 不應該把場次推進到不存在的" +
-		"第 2 場"
-	).is_equal(1)
+		"campaign_sequence.txt 有 2 列,第 1 場 VICTORY 應推進到第 2 場"
+	).is_equal(2)
 
 	# Cleanup
 	CampaignProgress.reset_for_test()

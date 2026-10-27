@@ -69,4 +69,6 @@ alignment = 1
 
 [node name="CancelButton" type="Button" parent="LeaveConfirm/Panel/ContentMargin/Content/Buttons"]
 
+[node name="ReturnToTitleButton" type="Button" parent="LeaveConfirm/Panel/ContentMargin/Content/Buttons"]
+
 [node name="LeaveButton" type="Button" parent="LeaveConfirm/Panel/ContentMargin/Content/Buttons"]

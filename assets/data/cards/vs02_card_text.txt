@@ -1,4 +1,9 @@
 # vs02 卡牌顯示文字表 — 固定欄位順序:
+# 🔴 2026-10-27 協調者更正:下方「battle_screen.gd 完全沒有讀取任何 card_text 路徑
+# (grep 零命中)」不成立 —— 它讀 CARD_TEXT_PATH(寫死 vs01_card_text.txt,可由
+# card_text_path_override 蓋掉),當場查:grep -n "card_text_path" src/ui/battle/battle_screen.gd
+# 戰役序列表沒有卡面文字欄,所以第 2 場目前實際讀的是 vs01 那份;兩表卡牌 id 完全相同,
+# 故今天顯示結果一樣。原文保留如下。
 # id,flavor_text
 #
 # 🔴 本檔不在派工單的明文交付清單內,是 level-designer 主動補上的——理由:

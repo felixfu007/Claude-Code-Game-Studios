@@ -2,6 +2,14 @@
 # 整合測試 —— Unit A:SceneRouter 本身(AC1、AC2 的純新增部分)。
 # 掛載/等幀/還原 current_scene 的慣例照抄 title_screen_scene_switch_test.gd:
 # 每條測試開頭存 current_scene 原值、結尾無條件還原;切換後至少等 2 個 process_frame。
+#
+# 🔴 敏感度證明:本檔沒有常駐 test_sensitivity_* —— 理由屬 test-standards.md 的【A 類】:
+# SceneRouter 全部是 static 函式,沒有繼承鏈可覆寫成變種。(a)(c) 斷言的是 switch_to() 本體
+# 「在 add_child 之前呼叫 configure」,唯一有意義的注入點就是那一行正式程式碼(兼屬 D 類)。
+# 實作者 2026-10-27 依協調者派工單做過一次【暫時注入】(把 configure 呼叫改成 if false),
+# 結果 exit 100、(a) FAILED,已還原、grep 零殘留 —— 但 2026-09-16 裁決已淘汰暫時注入,
+# 因為它在版本庫裡不留痕跡,上述結果只能憑實作者回報,不可查證。允許暫時注入是協調者
+# 派工單的錯,不是實作者的。
 extends GdUnitTestSuite
 
 
