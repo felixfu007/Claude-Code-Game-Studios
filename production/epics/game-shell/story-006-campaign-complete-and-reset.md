@@ -1,7 +1,7 @@
 # Story 006:戰役完成 —— 顯示「戰役完成」並歸零
 
 > **Epic**: 遊戲殼層 —— `production/epics/game-shell/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ Done-pending-visual(2026-10-27)—— AC1~AC5 有測試(`tests/integration/ui/shell/campaign_complete_test.gd` + campaign_progress 單元 2 條);「戰役完成」文字外觀待管理者目視
 > **Layer**: Logic + Presentation
 > **Type**: Logic(BLOCKING)+ UI 文字(ADVISORY,待管理者目視)
 > **Estimate**: S

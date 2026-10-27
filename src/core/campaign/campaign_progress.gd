@@ -113,5 +113,12 @@ static func rollback_on_defeat() -> void:
 ## 都必須在收尾呼叫本方法,比照 [code]GameSettings.reset_for_test[/code] 的
 ## 既有紀律。
 static func reset_for_test() -> void:
+	reset_campaign()
+
+
+## 戰役完成後歸零(game-shell story-006,AC2/AC4)——場次回到第 1 場、
+## 戰役層累積記錄清空(含 mission 基準點),下次從標題按「開始」從頭打。
+## 這是正式公開方法;[method reset_for_test] 呼叫它,單一出處。
+static func reset_campaign() -> void:
 	_current_mission = FIRST_MISSION_INDEX
 	_affinity_ledger.clear()

@@ -179,6 +179,7 @@ const TEXT_FACTION_PLAYER: StringName = &"battle.hud.faction_player"
 const TEXT_FACTION_ENEMY: StringName = &"battle.hud.faction_enemy"
 const TEXT_RESULT_VICTORY: StringName = &"battle.hud.result_victory"
 const TEXT_RESULT_DEFEAT: StringName = &"battle.hud.result_defeat"
+const TEXT_RESULT_CAMPAIGN_COMPLETE: StringName = &"battle.hud.result_campaign_complete"
 
 ## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
 ## Mode A/B/C). [constant TEXT_AFFINITY_PREVIEW_FORMAT] is Mode A ("if I move
@@ -4181,7 +4182,15 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 			_trigger_support_conversations_for_finished_mission()
 			var total_missions: int = campaign_total_missions()
 			if total_missions > 0:
-				CampaignProgress.advance_on_victory(total_missions)
+				var advance_result: CampaignProgress.AdvanceResult = (
+					CampaignProgress.advance_on_victory(total_missions)
+				)
+				# game-shell story-006:打贏最後一場 -> 顯示「戰役完成」並歸零。
+				# 順序刻意是:支援對話(上面)-> advance -> 判斷 -> 歸零。歸零會清掉
+				# 剛寫入的支援對話記錄,這是對的——戰役結束了,沒有「下一場」會讀它。
+				if advance_result == CampaignProgress.AdvanceResult.CAMPAIGN_COMPLETE:
+					_result_label.text = Loc.localize(TEXT_RESULT_CAMPAIGN_COMPLETE)
+					CampaignProgress.reset_campaign()
 			# total_missions == 0 代表讀取/解析失敗,campaign_total_missions() 自己
 			# 已經 push_error() 記錄原因——這裡不前進,不得默默假設任何場次數。
 		else:

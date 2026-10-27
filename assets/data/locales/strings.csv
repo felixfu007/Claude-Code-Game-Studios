@@ -91,3 +91,4 @@ shell.settings.back,返回
 battle.menu.egm_status_format,效果猜測標記：%s
 battle.menu.egm_status_on,開啟
 battle.menu.egm_status_off,關閉
+battle.hud.result_campaign_complete,戰役完成

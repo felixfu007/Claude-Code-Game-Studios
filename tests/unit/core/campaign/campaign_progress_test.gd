@@ -224,3 +224,48 @@ func test_sensitivity_proof_reset_for_test_also_clears_affinity_ledger() -> void
 
 	# Cleanup
 	CampaignProgress.reset_for_test()
+
+
+# game-shell story-006 AC2/AC4 —— 正式歸零入口。
+func test_reset_campaign_after_final_mission_returns_to_first_and_clears_ledger() -> void:
+	# Arrange
+	CampaignProgress.reset_for_test()
+	CampaignProgress.advance_on_victory(2)
+	var ledger: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	ledger.append(AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	var result: CampaignProgress.AdvanceResult = CampaignProgress.advance_on_victory(2)
+	assert_int(result).is_equal(CampaignProgress.AdvanceResult.CAMPAIGN_COMPLETE)
+	assert_int(CampaignProgress.current_mission()).is_equal(2)
+
+	# Act
+	CampaignProgress.reset_campaign()
+
+	# Assert
+	assert_int(CampaignProgress.current_mission()).append_failure_message(
+		"reset_campaign() 後場次應回到第 1 場"
+	).is_equal(1)
+	assert_int(ledger.records().size()).append_failure_message(
+		"reset_campaign() 後累積記錄應清空"
+	).is_equal(0)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
+
+
+func test_reset_for_test_still_resets_mission_and_ledger() -> void:
+	# Arrange
+	CampaignProgress.reset_for_test()
+	CampaignProgress.advance_on_victory(5)
+	CampaignProgress.start_mission_affinity_ledger().append(
+		AffinityTypes.Pair.C1_C2, 1.0, AffinityTypes.Source.SUPPORT_CONVERSATION
+	)
+
+	# Act
+	CampaignProgress.reset_for_test()
+
+	# Assert
+	assert_int(CampaignProgress.current_mission()).is_equal(1)
+	assert_int(CampaignProgress.start_mission_affinity_ledger().records().size()).is_equal(0)
+
+	# Cleanup
+	CampaignProgress.reset_for_test()
