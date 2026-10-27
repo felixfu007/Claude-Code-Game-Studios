@@ -38,6 +38,19 @@
 # test_[scenario]_[expected],extends GdUnitTestSuite。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 const SCENE_PATH: String = "res://src/ui/menu/BattleMenu.tscn"
 
 # 與 hud_layout_test.gd / world_layout_test.gd 同一組解析度慣例。

@@ -26,11 +26,18 @@ const _BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 # game-shell story-005:start_battle() 現在經 SceneRouter.enter_battle() 呼叫
 # CampaignProgress.start_mission_affinity_ledger(),會改動靜態狀態(戰役累積記錄的
 # 基準點),所以每條測試前後都還原,避免洩漏到其他測試檔。
+var _host_snap: CursorHostSnapshot = null
+
+
 func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
 	CampaignProgress.reset_for_test()
 
 
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	CampaignProgress.reset_for_test()
 
 

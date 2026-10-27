@@ -73,6 +73,19 @@
 extends GdUnitTestSuite
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
+
 ## [code]CursorStateHost[/code] deliberately declares NO [code]class_name[/code]
 ## (see that file's own class doc comment) — this [preload] is the only way to
 ## construct a detached instance ([method GDScript.new]) for the third test

@@ -13,6 +13,19 @@
 # 命名慣例依 tests/unit/ui/battle_screen_cursor_test.gd 先例。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 # 兩個互不相鄰的固定座標,單純當「可辨識的端點」用,與棋盤規則無關。
 const CELL_A: Vector2i = Vector2i(2, 1)
 const CELL_B: Vector2i = Vector2i(5, 4)

@@ -16,11 +16,18 @@ extends GdUnitTestSuite
 const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
 func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
 	CampaignProgress.reset_for_test()
 
 
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	CampaignProgress.reset_for_test()
 
 

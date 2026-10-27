@@ -143,12 +143,22 @@ func _fresh_instance() -> BattleScreen:
 	return instance
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
 ## 2026-09-23(第三批)—— 本檔第一支會真的呼叫 CursorStateHost.register_surface()
 ## 的測試(test_illegal_tile_reachable_by_directional_navigation_but_confirm_rejected)
 ## 需要這道清理,沿用 tests/integration/ui/battle/battle_screen_card_play_wiring_test.gd
 ## 的既有 after_test() 慣例逐字——不確定呼叫是否成功都無妨,unregister() 對「本來就沒
 ## 註冊」是 idempotent 的 UNREGISTERED_NOT_FOUND,不是錯誤。
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
 	if host == null:
 		return

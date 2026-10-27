@@ -60,6 +60,19 @@
 # 命名慣例依既有先例：test_[scenario]_[expected]，extends GdUnitTestSuite。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 const SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const _BOARD_VIEW_RELATIVE_PATH: String = "WorldViewportContainer/WorldViewport/BoardView"
 const _FIXTURE_TERRAIN_IMPASSABLE_PATH: String = (

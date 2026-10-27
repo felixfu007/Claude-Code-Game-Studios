@@ -101,6 +101,13 @@ func _has_property(obj: Object, prop_name: String) -> bool:
 	return false
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
 ## 與 battle_screen_card_play_wiring_test.gd 的 after_test() 相同義務：本檔
 ## _fresh_instance() 也會 add_child() 一個真實 BattleScreen，其 _ready() 會在
 ## 真實、共用的 CursorStateHost Autoload 上註冊 BOARD_TILE。不清掉的話，後續
@@ -108,6 +115,9 @@ func _has_property(obj: Object, prop_name: String) -> bool:
 ## "Trying to return a previously freed instance." —— 該檔 after_test() 的
 ## doc comment 有完整重現記錄，此處採同一套清理，不重新發明。
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
 	if host == null:
 		return

@@ -134,7 +134,16 @@ func _leave_button(instance: Node) -> Button:
 	return instance.get_node("LeaveConfirm/Panel/ContentMargin/Content/Buttons/LeaveButton")
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
 func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
 	# Defensive, matching battle_menu_gating_test.gd's own established rigor:
 	# guarantee no test in this file can leave the REAL shared SceneTree /
 	# CursorStateHost suspended for whatever runs next, even if an assertion

@@ -410,7 +410,11 @@ var _original_target: CursorTarget
 var _original_device_authority: int
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
 func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
 	# Same save convention as tests/integration/ui/menu/battle_menu_gating_test.gd's
 	# before_test()/after_test() pair — CursorStateHost is a shared Autoload
 	# singleton across every test file in this engine process; its mutable
@@ -423,6 +427,8 @@ func before_test() -> void:
 
 
 func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
 	var host: Node = _host()
 	host.set(&"_arbitration_suspended", _original_arbitration_suspended)
 	host.set(&"_frame_events", [])

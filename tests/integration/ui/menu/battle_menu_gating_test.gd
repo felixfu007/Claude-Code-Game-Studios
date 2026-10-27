@@ -91,7 +91,11 @@ var _original_target: CursorTarget
 var _original_tree_paused: bool
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
 func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
 	var host: Node = _host()
 	_original_arbitration_suspended = host.get(&"_arbitration_suspended")
 	var state: CursorState = host.get(&"_state")
@@ -101,6 +105,8 @@ func before_test() -> void:
 
 
 func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
 	# Restored in this specific order: paused=false FIRST, so that if any
 	# assertion above already failed and returned early, the rest of this
 	# suite (and every later test file in this engine process) is not left

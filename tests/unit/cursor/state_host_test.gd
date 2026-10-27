@@ -74,6 +74,18 @@
 extends GdUnitTestSuite
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	_host_snap.restore()
+
+
+
 ## [code]CursorStateHost[/code] deliberately declares NO [code]class_name[/code]
 ## (see that file's class doc comment — a `class_name` identical to its own
 ## Autoload registration name is a parse-time error, verified during this

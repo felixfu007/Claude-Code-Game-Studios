@@ -20,11 +20,17 @@ class _MutantNoReset extends BattleScreen:
 		CampaignProgress.advance_on_victory(campaign_total_missions())
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
 func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
 	CampaignProgress.reset_for_test()
 
 
 func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
 	CampaignProgress.reset_for_test()
 
 

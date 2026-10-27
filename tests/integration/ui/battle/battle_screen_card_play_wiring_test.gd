@@ -44,6 +44,13 @@ func _fresh_instance() -> BattleScreen:
 	return instance
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
 ## Story U-013 (下半, 2026-09-22) — cross-test-pollution hygiene, found by
 ## actually running the full suite: [method
 ## test_confirm_selected_card_reads_index_maps_to_card_and_calls_select_card]
@@ -76,6 +83,9 @@ func _fresh_instance() -> BattleScreen:
 ## same discipline [code]tests/integration/ui/menu/battle_menu_gating_test.gd[/code]'s
 ## own [method after_test] already established for this exact Autoload.
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
 	if host == null:
 		return

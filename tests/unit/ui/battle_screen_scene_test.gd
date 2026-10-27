@@ -23,6 +23,18 @@
 # test_[scenario]_[expected]，extends GdUnitTestSuite。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	_host_snap.restore()
+
+
 const SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 
 

@@ -46,6 +46,19 @@
 # 各自單獨注入時互不影響,但「同時」注入要驗證整組合成場景一致時需要彼此相容。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 const SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 
 # 刻意套用 battle_screen_load_guard_test.gd 既有的「不存在路徑」寫法

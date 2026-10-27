@@ -35,6 +35,19 @@
 extends GdUnitTestSuite
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
+
 ## Surface tag every test in this file registers and targets. Deliberately
 ## the same convention as [code]write_read_interface_test.gd[/code]'s
 ## [code]_REGISTERED_SURFACE[/code] — [b]not[/b] shared code, a separate

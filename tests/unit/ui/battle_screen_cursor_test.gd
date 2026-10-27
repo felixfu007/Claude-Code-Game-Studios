@@ -8,6 +8,19 @@
 extends GdUnitTestSuite
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
+
 func test_move_within_bounds_applies_delta() -> void:
 	# Arrange — 板中央的一格，往右移動應該就是單純加法
 	var cell: Vector2i = Vector2i(6, 3)

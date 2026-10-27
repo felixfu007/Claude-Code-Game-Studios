@@ -34,10 +34,20 @@ func _fresh_instance() -> BattleScreen:
 	return instance
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
 ## 同 card_confirm_panel_test.gd 的既有 after_test() 慣例逐字——本檔多數測試
 ## 都會讓 BOARD_TILE 走過 register（_ready() 本身就會註冊一次），不清理會讓
 ## 下一個測試檔撞到 "Trying to return a previously freed instance."。
 func after_test() -> void:
+	# Full shared-Autoload restore (target/authority/flags/buffer/registry); see
+	# tests/helpers/cursor_host_snapshot.gd. Kept the pre-existing cleanup below.
+	_host_snap.restore()
 	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
 	if host == null:
 		return

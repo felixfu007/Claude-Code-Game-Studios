@@ -43,6 +43,19 @@
 # 🔴 因此這 8 條刻意不配對應的「注入證明」測試——這是評估後的結論,不是遺漏。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 const NEW_ACTIONS: PackedStringArray = [
 	"battle_cancel",
 	"battle_open_hand",

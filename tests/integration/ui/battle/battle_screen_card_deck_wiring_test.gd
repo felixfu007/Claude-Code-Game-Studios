@@ -13,6 +13,19 @@
 extends GdUnitTestSuite
 
 
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
+
 const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const _MISSING_CARDS_PATH: String = "res://assets/data/cards/does_not_exist.txt"
 

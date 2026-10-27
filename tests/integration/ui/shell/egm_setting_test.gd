@@ -20,6 +20,19 @@
 ## 不清理會污染同一次 headless 執行期間的其他測試。
 extends GdUnitTestSuite
 
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	# Restore shared CursorStateHost Autoload state; see tests/helpers/cursor_host_snapshot.gd
+	_host_snap.restore()
+
+
 const _BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 
 
