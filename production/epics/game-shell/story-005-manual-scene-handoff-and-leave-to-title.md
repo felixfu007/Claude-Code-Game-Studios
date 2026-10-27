@@ -1,7 +1,7 @@
 # Story 005:場景切換改為手動管理(交得出資料)+ 離開戰鬥回主選單
 
 > **Epic**: 遊戲殼層 —— `production/epics/game-shell/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ Done-pending-visual(2026-10-27)—— AC1~AC7 有測試;AC8(四列→改為三按鈕版面)待管理者在家目視
 > **Layer**: Presentation + Integration
 > **Type**: UI(呈現為 ADVISORY)+ Integration(切換行為為 BLOCKING)
 > **Estimate**: L —— **它要動今天已驗收的兩張工作單的既有行為,請特別小心**
@@ -102,3 +102,41 @@ GODOT_BIN="C:/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.
 1. **把要改的那幾段程式碼直接貼進派工單**(不要讓 agent 去讀四千行的檔案);
 2. **替它做掉技術決定**(不要留「你判斷」的分岔給一個正在燒回合的 agent);
 3. **切成每個都能單獨編譯的單位,並明文授權「這一輪零改動既有檔也算合格」。**
+
+---
+
+## ✅ 2026-10-27 交付紀錄
+
+| 單位 | 內容 | 誰 |
+|---|---|---|
+| A | `src/ui/shell/scene_router.gd`(單一切場景入口,注入窗在 add_child 之前;交換延後、先移除舊再加新) | `godot-gdscript-specialist` |
+| C1 | `src/gameplay/narrative/support_conversation_ledger_write_port.gd`(支援對話寫入送進戰役累積記錄) | `gameplay-programmer` |
+| B | 三個畫面改走 SceneRouter;勝利時於場次推進前觸發支援對話(AC4) | `gameplay-programmer` |
+| D | 離開確認框改三按鈕(AC5~AC8,管理者 10/27 裁決「放進離開確認框」—— M1 加第四列會超出 9 fpx) | `godot-specialist` |
+| — | 序列表補第 2 列 + 兩條釘「只有 1 列」的測試同步;carryover 測試基準改同場次對照 | 協調者 |
+
+**協調者獨立重跑**:
+```
+ENGINE EXIT = 0
+Overall Summary: 1395 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |
+Executed test suites: (125/125)
+```
+
+**覆核收穫(常設覆核裁決要抓的那一類)**:
+1. `scene_router.gd` 把一句從未實測的順序宣稱寫成事實 → 已標「未驗證」。
+2. 🔴 10/19 提交 `671a383` 的訊息與交接紀錄宣稱「戰役序列表第一次有第二列」—— **不成立**,
+   第 2 場資料檔存在但遊戲走不到,直到本次。Unit B 專家發現,協調者核實。
+3. carryover 測試原以第 1 場開局為基準比第 2 場 —— vs01/vs02 甲乙初始關係逐字相同,
+   **是碰巧對**。已改為「第 2 場、無累積記錄」的對照開局。
+
+**AC8**:三按鈕寬度五解析度實測皆放得下(960×540 約 94%、1080p 89%、2K 88%、4K 86%、超寬 88%)。
+**畫面好不好看仍待管理者在家目視。**
+
+### 🔴 登記的潛伏坑(已另派技術債)
+戰鬥中途「回主選單」原本不回滾這一場的累積記錄 —— `begin_mission()` 只挪基準點。
+今天實際影響為零(唯一寫入者是勝利時的支援對話),但日後戰鬥中若也寫入,
+被放棄那場的寫入會被保留,違反 M4 文案「離開後這場戰鬥的進度會消失」。
+
+### ⚠️ 已知未涵蓋
+- `--capture-battle` 實際讀 `OS.get_cmdline_args()` 那一行仍未被自動化測試涵蓋(同 story-004)。
+- 卡面文字表不在序列表裡,第 2 場讀的是 vs01 那份(兩表卡 id 相同,今天無差)—— 已另派技術債。
