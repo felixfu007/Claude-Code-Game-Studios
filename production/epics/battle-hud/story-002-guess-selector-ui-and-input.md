@@ -19,6 +19,12 @@
 
 ## 🔴 開工前查核(2026-10-16 協調者執行)—— 一條 AC 的驗收對象是空集合
 
+> ✅ **2026-10-27 更新:本節前提已不成立。** 設定畫面已存在(game-shell story-002),
+> 戰鬥開局讀一次 `GameSettings.is_egm_enabled()` 後整場鎖定,唯讀查詢
+> `BattleScreen.is_egm_enabled_for_this_battle()` 已存在且有測試(`egm_setting_test.gd`)。
+> ➜ **AC13 由既有實作滿足;AC-NEW(暫代開關)作廢 —— 本 story 不得再做任何暫代 EGM 開關。**
+> 以下原文保留作為決策紀錄。(管理者 2026-10-27 核准此加註)
+
 本專案 `production/epics/cursor-highlight-state/EPIC.md` 登記過這個形狀的通則:
 > `/story-readiness` 檢查的是「前置 story 完成了沒」與「ADR 核准了沒」,
 > **它結構上不會檢查「這張要驗的東西是否存在」**。
