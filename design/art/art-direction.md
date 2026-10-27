@@ -107,9 +107,9 @@ AI 路線上,細節同樣在新文件裡,不在此重寫。
 依本節「介面短標籤/HUD 數字用 Cubic 11」的規定,以下兩處建立 `Label` 時**沒有呼叫
 `add_theme_font_override` 套用 `Cubic_11.ttf`**,會落回引擎預設字型:
 
-- `src/ui/battle/board_view.gd`(`_build_hp_text()` 建立的血量數字 `Label`,約第 471 行)
+- `src/ui/battle/board_view.gd`(`_build_hp_text()` 建立的血量數字 `Label`;位置當場查:`grep -n "Label.new" src/ui/battle/board_view.gd`)
 - `src/ui/battle/hand_bar.gd`(`_ensure_detail_panel()` 建立的 Z3 詳情面板兩個 `Label`——
-  `text_label`〔約第 945 行〕與 `effect_label`〔約第 952 行〕)
+  `text_label` 與 `effect_label`;位置當場查:`grep -n "Label.new" src/ui/battle/hand_bar.gd`)
 
 **逐字證據**:
 
@@ -131,7 +131,7 @@ $ grep -n "Cubic\|add_theme_font_override" src/ui/battle/hand_bar.gd
 `StatusLabel`/`InfoLabel`/`ResultLabel`/`ControlsHintLabel`/`LoadErrorLabel` 五個 `Label`
 乍看也像同一個缺口(`battle_screen.gd` 本身確實零命中字型覆寫關鍵字),**但實際由另一支
 掛載腳本 `src/ui/battle/hud_layout_scaler.gd`(掛在 `UILayer` 節點,`BattleScreen.tscn`
-第 22 行)在 `_apply_layout()` 統一套用**——這五個沒有問題。**查證範圍**:已對
+裡該節點的 `script` 屬性)在 `_apply_layout()` 統一套用**——這五個沒有問題。**查證範圍**:已對
 `src/ui/` 下每一個 `Label.new()` 呼叫與每一個 `.tscn` 裡的 `type="Label"` 節點逐一核對
 是否有對應的字型覆寫(直接呼叫或透過掛載腳本),範圍是整個 `src/ui/`,非抽樣。
 

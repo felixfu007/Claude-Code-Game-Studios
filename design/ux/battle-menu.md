@@ -348,7 +348,7 @@
 
 ✅ **2026-09-15 已解除(Story 008,提交 `99ccbdf`)**:這兩個函式當時在 `src/` 只有
 宣告意圖的註解、沒有函式本體;**今天已落地**——`src/ui/cursor/cursor_state_host.gd`
-第 364 行(`suspend_arbitration()`)與第 376 行(`resume_arbitration()`),
+的 `suspend_arbitration()` 與 `resume_arbitration()`,
 `grep -rn "^func suspend_arbitration\|^func resume_arbitration" src/` 現為兩處命中,
 並有 `tests/integration/cursor/focus_pause_gating_test.gd` 15 條測試覆蓋(含成對
 暫停/恢復、暫停期間殘留事件被丟棄、恢復後以目前滑鼠座標重新播種)。**語意與本節

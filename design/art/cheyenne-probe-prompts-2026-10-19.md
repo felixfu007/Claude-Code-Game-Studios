@@ -25,7 +25,7 @@ to the nature of the sampler, steps and CFG」——下方 4 張的參數因此�
 沒有 5.3 節**(全檔章節一~八,中間為 3.1~3.6/4.1~4.3 小節,無「五之三」——當場查:
 `grep -n "^#" design/art/ai-image-licensing-audit-2026-09-29.md`)。**正確出處是
 `docs/ai-art-service-handoff/04-security-and-licensing.md` 第 5.3 節**(`base-model-feasibility-v2`
-第 123 行引用的也是這份)。本節依正確出處重寫,不轉述錯誤那份。
+第二節「立繪-C」候選的第 2 點風險引用的也是這份)。本節依正確出處重寫,不轉述錯誤那份。
 
 > **硬性規則**(`04-security-and-licensing.md` 5.3 節,引 EFF 2023 立場):風格本身不受著作權
 > 保護,但若 prompt 刻意意圖重製「某一張具體存在、可辨識的原作品」,責任可能落在下指令的人
