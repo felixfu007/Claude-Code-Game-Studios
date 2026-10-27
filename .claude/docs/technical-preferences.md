@@ -493,6 +493,7 @@ headless 取不到像素是 dummy rendering driver 的引擎限制,**與載入�
 📌 **Autoload 測試的固有代價**:同一個 Autoload 實例被全部測試共用。目前 `state_host_test.gd`
 的相關測試皆為唯讀斷言,彼此不污染、執行順序無關。**但 Story 005/007 一旦出現會改寫全域狀態的
 測試,就會產生順序相依風險** —— 屆時需要顯式 setup/teardown 紀律,落地前先確認 GdUnit4 的隔離行為。
+> ✅ **2026-10-27 實測:上段的條件已經成立** —— 已有多支測試會改寫 `CursorStateHost` 全域狀態;`state_host_test.gd` 本身仍為唯讀。當場查:`grep -rl "CursorStateHost\.\(set_target\|register_surface\)(" tests`。⚠️ 這些測試的 teardown 是否完整、GdUnit4 隔離行為是否確認過,**本次未查證**。原句保留。
 
 ## Allowed Libraries / Addons
 
@@ -545,6 +546,7 @@ awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decision
 
 ⚠️ **核准不等於全部能開工**:`tactical-combat-system.md` 另受其自身 **OQ-2(我方基準數值表無人擁有)**
 阻擋,ADR-0001 不是它唯一的鎖。
+> ✅ **2026-10-27 實測:上一句已不成立** —— OQ-2 已於 2026-09-09 關閉(擁有者為 `design/quick-specs/unit-stats-provisional.md` 第 1 節),戰棋 epic 自 2026-09-29 起為 `Ready`。當場查:`grep -n "目前本節無待清償的阻擋項" design/gdd/tactical-combat-system.md`、`grep -n "Status" production/epics/tactical-combat/EPIC.md`。原句保留。
 
 ✅ **2026-08-25:ADR-0002、ADR-0003 兩份已 `Accepted`**(管理者同批裁決;0003 的核准條件五就是
 0002 已核准,故必須同一次動作)。
@@ -554,7 +556,7 @@ awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decision
 
 | ADR | 主題 | 最近動作 | 現在卡在什麼 |
 |---|---|---|---|
-| 0001 | 戰棋查詢介面原子性契約 | ✅ **2026-09-01 `Accepted`** · 🔴 **第二次修訂 2026-10-05**(巢狀提交語意;**地位不變,仍是 `Accepted`** —— 見本表下方註) · ✅ **2026-10-12 整份重寫**(管理者裁決;零決策變更、狀態與編號皆不變。🔴 **自此不再累計修訂次數** —— 見本表下方註的 2026-10-12 更新) | 可開始寫正式程式碼。⚠️ **但戰棋系統仍不能開工** —— 它自己還卡 OQ-2(我方基準數值表無人擁有)。未涵蓋項見該檔 `## Status`
+| 0001 | 戰棋查詢介面原子性契約 | ✅ **2026-09-01 `Accepted`** · 🔴 **第二次修訂 2026-10-05**(巢狀提交語意;**地位不變,仍是 `Accepted`** —— 見本表下方註) · ✅ **2026-10-12 整份重寫**(管理者裁決;零決策變更、狀態與編號皆不變。🔴 **自此不再累計修訂次數** —— 見本表下方註的 2026-10-12 更新) | 可開始寫正式程式碼。⚠️ **但戰棋系統仍不能開工(✅ 2026-10-27 實測已不成立:OQ-2 於 2026-09-09 關閉、戰棋 epic 於 2026-09-29 轉 Ready —— 見本節下方「核准不等於全部能開工」段的加註)** —— 它自己還卡 OQ-2(我方基準數值表無人擁有)。未涵蓋項見該檔 `## Status`
 
 > 🔴 **本列於 2026-08-31 更正:原寫「從未驗證…唯一未被檢查過的一份」,不準確。**
 > `godot-specialist` 確實在 `/design-review tactical-combat-system.md` 第四輪對本 ADR
@@ -601,11 +603,14 @@ awk '/^state_ownership:/{s="state"} /^interfaces:/{s="interface"} /^api_decision
 > 計數已經歸零而不是來到第三次。
 > ⚠️ **重寫後該檔全文不再出現「第幾次修訂」字樣**(當場查:`grep -c "次修訂" docs/architecture/adr-0001-tactical-query-atomicity-contract.md` 的命中只會是
 > 「兩次修訂」這種敘述性用法)。既有文件或註解若以修訂次序稱呼它的某項決定,那些決定**全部仍在正文裡**。
+> ✅ **2026-10-27 實測:上一句字面不精確** —— ADR 裡「本文件自此不再標註『第幾次修訂』」這句本身就含這四個字;`grep -c "次修訂"` 的命中全部是敘述性用法,**結論(沒有任何決定以修訂次序標註)不變**。原句保留。
 
 **最新權威涵蓋數字**:見 `docs/architecture/traceability-index.md`(**唯一來源,本行不複述**)。
 ⚠️ 2026-09-01 稽核發現該組數字散在 **6 處**;同輪另發現追溯索引把 `TR-concept-012`/`-014`
 誤判為「尚未登記」而實際 2026-08-18 已登記 —— **修正後總數會變動**,故此處不再抄任何數字。
 三個 Foundation 系統合計 73 項**只有 1 項缺口**。判定 CONCERNS。
+> ✅ **2026-10-27 實測:上一句的 73 已不成立**(游標系統 2026-09-03 取消一項需求);缺口仍為 1 項(`TR-save-030`)。
+> 依本段原則**刻意不寫新數字**,要就當場數:`grep -n "| Foundation |" docs/architecture/traceability-index.md`。原句保留。
 **第八輪從未執行** —— 上表「待第八輪」全部指同一次尚未進行的審查。
 
 **跨文件銜接缺口**:C1~C7 **全部已關閉**。C1~C6 於第五輪關閉;**C7 於 2026-08-21 由兩側各自
