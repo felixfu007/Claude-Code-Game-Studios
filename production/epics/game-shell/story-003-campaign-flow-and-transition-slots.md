@@ -1,7 +1,7 @@
 # Story 003:關卡序列與轉場流程(支援對話的掛載點)
 
 > **Epic**: 遊戲殼層 —— `production/epics/game-shell/EPIC.md`
-> **Status**: Ready
+> **Status**: ✅ Done(2026-10-27)—— AC7/AC8 由 game-shell story-005 補上:AC7 見 `tests/integration/ui/shell/campaign_support_conversation_carryover_test.gd`(勝利後 current_mission()==2、第 2 場讀序列表第 2 列)與 `battle_screen_campaign_sequence_path_resolution_test.gd`;AC8 見 `title_screen_scene_switch_test.gd` 的 round-trip 與 `scene_router_test.gd` (d)。原狀態:Ready
 > **Layer**: Domain(流程邏輯)+ Presentation(場景切換接線)
 > **Type**: Logic(**BLOCKING**)+ Integration
 > **Estimate**: M
