@@ -126,6 +126,8 @@ awk '/^forbidden_patterns:/{f=1} f&&/^    adr:/{print $2}' docs/registry/archite
 > `git show $(git rev-list -1 --before=2026-09-01 HEAD -- production/milestones/one-year-plan.md):production/milestones/one-year-plan.md | grep -c 1038` → `1`
 > ②原寫「例外登記的是『這**兩份**檔案』」,而同節上方已寫三份 —— **本檔前後矛盾**,現統一為三份。
 > ⚠️ 計畫檔 §6② 的對應句**至今仍寫「兩份」**(2026-09-08 增列第三份時未同步)。
+> ✅ **2026-10-27 實測:上一句已不成立** —— 計畫檔第六節②現寫「下列**三份**文件」
+> (當場查:`grep -n "下列\*\*三份\*\*" production/milestones/one-year-plan.md`)。原句保留。
 > **錯在來源側,已另行派工 `producer`;本檔以三份為準,不等來源修好。**
 > 📌 順帶:`wc -l` 實測 2026-09-14 現值為 **1087 / 492 / 536**(登記快照 1038 / 477 / 468),
 > **三份全部已漂移** —— 包括計畫檔宣稱「未漂移」的那一份。快照就是會漂,所以:
