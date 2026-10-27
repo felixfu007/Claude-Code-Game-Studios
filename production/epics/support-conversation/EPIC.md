@@ -87,7 +87,8 @@ grep -rn "AffinityDataPool.new()" src/ --include=*.gd
 |---|---|---|---|
 | 001 | 資料表、觸發判定與規則驗證(純邏輯) | Logic | ✅ **Done(2026-10-19)** —— AC1~AC7 全部有測試,40 條 |
 | 002 | 池側轉接器 + NEUTRAL 不寫入(裁決②③)| Logic | ✅ **Done(2026-10-19,協調者獨立重跑驗收)** —— 🔴 守衛測試拆成兩條斷言,不是放寬成 2 |
-| 003 | 好感度跨關卡延續(裁決①)| Logic + Integration | ✅ **Done(2026-10-27)** —— AC5(支援對話寫入真的進入下一場)由 game-shell story-005 交付。原狀態:Ready |
+| 003 | 好感度跨關卡延續(裁決①)| Logic + Integration | 🟡 **部分 Done(2026-10-27 更正)** —— AC5 由 game-shell story-005 交付;🔴 **AC2 未做**(協調者同日誤標 Done 後更正),移交 004。原狀態:Ready |
+| 004 | 關係單一來源:只有第 1 場灌關卡起始關係,之後靠累積(story-003 AC2)| Logic + Integration | **Ready** —— 管理者 2026-10-27 裁決 |
 
 ## 本 epic 不涵蓋
 

@@ -1,7 +1,7 @@
 # Story 003:好感度跨關卡延續(戰役層持有累積記錄)
 
 > **Epic**: 支援對話系統 —— `production/epics/support-conversation/EPIC.md`
-> **Status**: ✅ Done(2026-10-27)—— AC5 由 game-shell story-005 交付(端對端測試 `tests/integration/ui/shell/campaign_support_conversation_carryover_test.gd`)。原狀態:Ready
+> **Status**: 🟡 **部分 Done(2026-10-27 更正)** —— AC1/AC3~AC6 有測試;🔴 **AC2(換掉暫代灌入)未做**,協調者 10/27 上午誤標整張 Done、同日更正;AC2 依管理者 10/27 裁決「只有第 1 場灌,之後靠累積」移交 story-004。誤標前的文字:✅ Done(2026-10-27)—— AC5 由 game-shell story-005 交付(端對端測試 `tests/integration/ui/shell/campaign_support_conversation_carryover_test.gd`)。原狀態:Ready
 > **Layer**: Domain + Integration
 > **Type**: Logic(**BLOCKING**)+ Integration
 > **Estimate**: L —— **比今天其他幾張都大,它要換掉一段既有的開局灌入**
