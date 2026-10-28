@@ -36,6 +36,16 @@ var _decide: Callable
 ## rejects are all treated identically (as "still unresolved").
 var _discard_policy: Callable
 
+## story-021-battle-loop-phi-provider.md: optional affinity-bonus (Φ) provider,
+## same contract as [member BattleController._phi_provider]:
+## [code]phi_provider.call(attacker_id: int, target_id: int) -> int[/code]
+## (what [code]AffinityPhiProvider.phi[/code] implements). Unset (the default)
+## means Φ = 0 on every attack, identical to pre-story behaviour. Applies to
+## PLAYER-side attackers only, exactly as BattleController does (its
+## _process_enemy_unit passes literal 0, and BattleState.resolve_attack forces
+## phi to 0 for an ENEMY attacker regardless).
+var _phi_provider: Callable
+
 
 ## Builds a loop over an already-constructed [param state] and
 ## [param order] (both assumed to describe the same roster), driven by
@@ -69,8 +79,10 @@ func _init(
 	order: TurnOrder,
 	decide: Callable,
 	card_deck: CardDeck = null,
-	discard_policy: Callable = Callable()
+	discard_policy: Callable = Callable(),
+	phi_provider: Callable = Callable()
 ) -> void:
+	_phi_provider = phi_provider
 	_state = state
 	_order = order
 	_state.attach_turn_order(order)
@@ -315,7 +327,7 @@ func _process_unit(id: int, log: Array[String]) -> void:
 	var attack_target: int = int(decision.get("attack", -1))
 	if attack_target != -1 and can_attack_flag:
 		if _state.can_attack(id, attack_target):
-			var dealt: int = _state.resolve_attack(id, attack_target, 0)
+			var dealt: int = _state.resolve_attack(id, attack_target, _compute_phi(id, attack_target))
 			_order.use_attack(id)
 			did_something = true
 			var target: Unit = _state.unit_by_id(attack_target)
@@ -333,6 +345,18 @@ func _process_unit(id: int, log: Array[String]) -> void:
 			"R%d %s: %s ends turn without acting"
 			% [_order.round_number(), _side_name(), actor.code_name]
 		)
+
+
+# story-021: Φ for one attack. Mirrors BattleController._compute_phi() (checked
+# with is_valid() on every call, never cached) but, like that class's enemy
+# path, yields 0 for any attacker that is not on the acting PLAYER side.
+# Separate method so a test subclass can override just this seam.
+func _compute_phi(attacker_id: int, target_id: int) -> int:
+	if _order.current_faction() != TurnOrder.Side.PLAYER:
+		return 0
+	if not _phi_provider.is_valid():
+		return 0
+	return int(_phi_provider.call(attacker_id, target_id))
 
 
 # Human-readable name for the faction currently acting, for log lines only.
