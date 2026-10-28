@@ -92,3 +92,14 @@ battle.menu.egm_status_format,效果猜測標記：%s
 battle.menu.egm_status_on,開啟
 battle.menu.egm_status_off,關閉
 battle.hud.result_campaign_complete,戰役完成
+battle.hud.guess_option_positive,猜 正
+battle.hud.guess_option_negative,猜 負
+battle.hud.guess_option_neutral,猜 無
+battle.hud.guess_option_marked_format,▸%s
+battle.hud.guess_direction_positive,正
+battle.hud.guess_direction_negative,負
+battle.hud.guess_direction_neutral,無
+battle.hud.guess_match,✓ 符合
+battle.hud.guess_mismatch,✕ 不符合
+battle.hud.guess_result_format,%s　猜%s　%s
+battle.hud.consistency_counter_format,猜中 %d/%d

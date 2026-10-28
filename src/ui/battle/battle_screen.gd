@@ -945,6 +945,279 @@ var _egm_enabled_for_this_battle: bool = false
 func is_egm_enabled_for_this_battle() -> bool:
 	return _egm_enabled_for_this_battle
 
+
+# ---- battle-hud story-002:效果猜測標記(EGM)選擇器 ---------------------------
+# 規格:design/quick-specs/battle-hud-prediction-marker.md 第 2/4/6 節。
+# EGM 開關【只】讀 [method is_egm_enabled_for_this_battle] 背後那份快取;本 story
+# 沒有、也不得有任何暫代開關(2026-10-27 管理者核准的加註:AC13 由設定畫面滿足)。
+
+const TEXT_GUESS_OPTION_POSITIVE: StringName = &"battle.hud.guess_option_positive"
+const TEXT_GUESS_OPTION_NEGATIVE: StringName = &"battle.hud.guess_option_negative"
+const TEXT_GUESS_OPTION_NEUTRAL: StringName = &"battle.hud.guess_option_neutral"
+const TEXT_GUESS_OPTION_MARKED_FORMAT: StringName = &"battle.hud.guess_option_marked_format"
+const TEXT_GUESS_DIRECTION_POSITIVE: StringName = &"battle.hud.guess_direction_positive"
+const TEXT_GUESS_DIRECTION_NEGATIVE: StringName = &"battle.hud.guess_direction_negative"
+const TEXT_GUESS_DIRECTION_NEUTRAL: StringName = &"battle.hud.guess_direction_neutral"
+const TEXT_GUESS_MATCH: StringName = &"battle.hud.guess_match"
+const TEXT_GUESS_MISMATCH: StringName = &"battle.hud.guess_mismatch"
+const TEXT_GUESS_RESULT_FORMAT: StringName = &"battle.hud.guess_result_format"
+
+## 游標所在格相對於 EGM 的三種狀態。刻意不含序數 0(見 coding-standards 對
+## enum 回傳值的紀律)。
+enum GuessCellState {
+	OFF = 1,      ## EGM 關閉,或這格不適用(非候選格、棋子自己腳下、已跳過)
+	PENDING = 2,  ## 尚未猜測:預覽文字隱藏,選擇器顯示
+	LOCKED = 3,   ## 已鎖定:預覽 + 符合/不符合,選擇器唯讀(不顯示)
+}
+
+## 本場的猜測追蹤器。EGM 關閉時為 null —— 此時本檔所有 EGM 路徑一律短路,
+## 行為與 EGM 不存在時逐字相同(AC1)。
+var _guess_tracker: EffectGuessTracker = null
+
+## 選擇器目前高亮的選項([enum EffectGuessTracker.EffectDirection] 的值,或
+## [constant EffectGuessTracker.NO_GUESS] = 初始狀態/尚未動過)。每換一格就重置。
+var _guess_choice: int = EffectGuessTracker.NO_GUESS
+var _guess_choice_cell: Vector2i = Vector2i(-1, -1)
+
+## 本次選取過程中「跳過」的格子(AC12):未猜測就送出移動確認。跳過的格子預覽
+## 比照 EGM 關閉時立即顯示,不得因跳過而繼續隱藏。
+var _guess_skipped: Dictionary[Vector2i, bool] = {}
+
+## true 時 selection_cleared 不去取消追蹤器 —— [method _click_tile_with_egm] 在
+## click_tile() 回傳【之後】才決定要 confirm_move() 還是 cancel,因為移動成功時
+## 控制器可能已先發出 selection_cleared,若在那一刻取消,鎖定的猜測會在計分前被丟掉。
+var _guess_suppress_cancel: bool = false
+
+## 滑鼠用的三顆選擇按鈕(正/負/無),EGM 開啟時才建立。FOCUS_NONE:鍵盤/手把走
+## battle_guess_cycle + battle_confirm,不走 Control 焦點導覽(避免與游標系統搶焦點)。
+var _guess_buttons: Dictionary[int, Button] = {}
+
+## 唯讀診斷:選擇器目前是否顯示(headless 測試用)。
+func diagnostic_guess_selector_visible() -> bool:
+	for btn: Button in _guess_buttons.values():
+		if btn.visible:
+			return true
+	return false
+
+## 唯讀診斷:選擇器目前高亮的選項,見 [member _guess_choice]。
+func diagnostic_guess_choice() -> int:
+	return _guess_choice
+
+## 唯讀診斷:本場的追蹤器(EGM 關閉時為 null)。測試用於讀取鎖定/計分狀態。
+func diagnostic_guess_tracker() -> EffectGuessTracker:
+	return _guess_tracker
+
+## 目前游標所在格的 EGM 狀態。純讀取,無副作用。
+func _guess_cell_state(selected: int) -> GuessCellState:
+	if _guess_tracker == null or selected == -1 or not _cursor_active:
+		return GuessCellState.OFF
+	if not _is_move_preview_cell(selected):
+		return GuessCellState.OFF
+	# 棋子自己腳下:delta 恆為 0,沒有可猜的東西。
+	if _cursor_cell == _state.position_of(selected):
+		return GuessCellState.OFF
+	if _guess_tracker.has_locked_guess(_cursor_cell):
+		return GuessCellState.LOCKED
+	if _guess_skipped.has(_cursor_cell):
+		return GuessCellState.OFF
+	return GuessCellState.PENDING
+
+
+## 好感度 delta = 預覽值 - 現值(規格第 3 節)。與 [method _refresh_view] 預覽文字
+## 用同一組 AffinityRules 呼叫,不另行推導。
+func _guess_delta_for_cell(unit_id: int, cell: Vector2i) -> int:
+	var positions: Dictionary[int, Vector2i] = _phi.positions()
+	var links: Array[AffinityLink] = _phi.links()
+	var hypo: Dictionary[int, Vector2i] = _phi.positions_with(unit_id, cell)
+	return AffinityRules.bonus_for_at(unit_id, cell, hypo, links) \
+		- AffinityRules.bonus_for(unit_id, positions, links)
+
+
+static func _guess_direction_text_key(direction: int) -> StringName:
+	match direction:
+		EffectGuessTracker.EffectDirection.POSITIVE:
+			return TEXT_GUESS_DIRECTION_POSITIVE
+		EffectGuessTracker.EffectDirection.NEGATIVE:
+			return TEXT_GUESS_DIRECTION_NEGATIVE
+		_:
+			return TEXT_GUESS_DIRECTION_NEUTRAL
+
+
+static func _guess_option_text_key(direction: int) -> StringName:
+	match direction:
+		EffectGuessTracker.EffectDirection.POSITIVE:
+			return TEXT_GUESS_OPTION_POSITIVE
+		EffectGuessTracker.EffectDirection.NEGATIVE:
+			return TEXT_GUESS_OPTION_NEGATIVE
+		_:
+			return TEXT_GUESS_OPTION_NEUTRAL
+
+
+## 已鎖定格的唯讀文字:預覽 + 猜測 + 符合/不符合。AC10:不符合除顏色外另有
+## 圖形(✕)與文字(「不符合」),本函式輸出的字串本身就帶差異,不依賴顏色。
+static func format_guess_result(preview_text: String, guess: int, delta: int) -> String:
+	var actual: int = EffectGuessTracker.classify_delta(delta)
+	var verdict_key: StringName = TEXT_GUESS_MATCH if guess == actual else TEXT_GUESS_MISMATCH
+	return Loc.localize(TEXT_GUESS_RESULT_FORMAT) % [
+		preview_text,
+		Loc.localize(_guess_direction_text_key(guess)),
+		Loc.localize(verdict_key),
+	]
+
+
+func _build_guess_selector() -> void:
+	var layer: Node = $UILayer
+	var directions: Array[int] = [
+		EffectGuessTracker.EffectDirection.POSITIVE,
+		EffectGuessTracker.EffectDirection.NEGATIVE,
+		EffectGuessTracker.EffectDirection.NEUTRAL,
+	]
+	for direction: int in directions:
+		var btn: Button = Button.new()
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.visible = false
+		btn.pressed.connect(_on_guess_button_pressed.bind(direction))
+		layer.add_child(btn)
+		_guess_buttons[direction] = btn
+
+
+## 依目前狀態更新選擇器按鈕。位置取 InfoLabel 目前(已被 HudLayoutScaler 縮放過)
+## 的矩形、靠右排成一列,因此不新增任何 HudLayout 規格。
+func _update_guess_selector_ui(pending: bool) -> void:
+	for direction: int in _guess_buttons:
+		var btn: Button = _guess_buttons[direction]
+		btn.visible = pending
+		if not pending:
+			continue
+		var text: String = Loc.localize(_guess_option_text_key(direction))
+		if direction == _guess_choice:
+			text = Loc.localize(TEXT_GUESS_OPTION_MARKED_FORMAT) % text
+		btn.text = text
+		btn.add_theme_font_override(&"font", _info_label.get_theme_font(&"font"))
+		btn.add_theme_font_size_override(&"font_size", _info_label.get_theme_font_size(&"font_size"))
+	if not pending:
+		return
+	var rect: Rect2 = _info_label.get_global_rect()
+	var width: float = rect.size.x / 3.0
+	var index: int = 0
+	for direction: int in _guess_buttons:
+		var btn: Button = _guess_buttons[direction]
+		btn.position = Vector2(rect.position.x + width * index, rect.position.y)
+		btn.size = Vector2(width, rect.size.y)
+		index += 1
+
+
+func _guess_mouse_over_selector(window_pos: Vector2) -> bool:
+	for btn: Button in _guess_buttons.values():
+		if btn.visible and btn.get_global_rect().has_point(window_pos):
+			return true
+	return false
+
+
+## 鎖定一次猜測並同一瞬間揭曉(AC4):record_guess() 之後立刻重畫,
+## [method _refresh_view] 看到該格已鎖定就顯示真實預覽值並讓選擇器轉為唯讀。
+## 沒有任何其他路徑會在鎖定前顯示真實數值。
+func _lock_guess(direction: int) -> void:
+	if _guess_cell_state(_controller.selected_unit()) != GuessCellState.PENDING:
+		return
+	_guess_tracker.record_guess(_cursor_cell, direction as EffectGuessTracker.EffectDirection)
+	_refresh_view()
+
+
+func _on_guess_button_pressed(direction: int) -> void:
+	_guess_choice = direction
+	_lock_guess(direction)
+
+
+## battle_guess_cycle:循環 正→負→無→正…(初始狀態無高亮,第一下到「正」)。
+func _handle_guess_cycle() -> void:
+	if _guess_cell_state(_controller.selected_unit()) != GuessCellState.PENDING:
+		return
+	match _guess_choice:
+		EffectGuessTracker.EffectDirection.POSITIVE:
+			_guess_choice = EffectGuessTracker.EffectDirection.NEGATIVE
+		EffectGuessTracker.EffectDirection.NEGATIVE:
+			_guess_choice = EffectGuessTracker.EffectDirection.NEUTRAL
+		_:
+			_guess_choice = EffectGuessTracker.EffectDirection.POSITIVE
+	_refresh_view()
+
+
+## battle_confirm 在選擇器上的語意。回傳 true = 這次按鍵被選擇器消耗(鎖定了
+## 一次猜測),呼叫端不得再當成移動確認;false = 不適用或「跳過」,呼叫端照常
+## 走移動確認。跳過:選擇器仍為初始狀態(沒高亮任何選項)就直接確認(AC12)。
+func _handle_guess_confirm() -> bool:
+	if _guess_cell_state(_controller.selected_unit()) != GuessCellState.PENDING:
+		return false
+	if _guess_choice != EffectGuessTracker.NO_GUESS:
+		_lock_guess(_guess_choice)
+		return true
+	_guess_skipped[_cursor_cell] = true
+	return false
+
+
+## [method BattleController.click_tile] 的 EGM 包裝(滑鼠與 battle_confirm 共用)。
+## EGM 關閉時直接轉呼叫,不做任何事。
+func _click_tile_with_egm(cell: Vector2i) -> Dictionary:
+	if _guess_tracker == null:
+		return _controller.click_tile(cell)
+	var selected: int = _controller.selected_unit()
+	var delta: int = 0
+	if selected != -1 and cell != _state.position_of(selected):
+		delta = _guess_delta_for_cell(selected, cell)
+		# 滑鼠點一個尚未猜測的格子 = 跳過(與 battle_confirm 的跳過同語意)。
+		if not _guess_tracker.has_locked_guess(cell):
+			_guess_skipped[cell] = true
+	_guess_suppress_cancel = true
+	var result: Dictionary = _controller.click_tile(cell)
+	_guess_suppress_cancel = false
+	if result.get("action", &"none") == &"moved":
+		# 計分:該格有鎖定猜測才計入(AC7),否則 confirm_move 只清狀態。
+		_guess_tracker.confirm_move(cell, delta)
+		_update_consistency_counter()
+		_guess_skipped.clear()
+	elif _controller.selected_unit() == -1:
+		_guess_tracker.cancel_move_selection()
+		_guess_skipped.clear()
+	return result
+
+
+# ---- battle-hud story-003:一致率計數器 -----------------------------------------
+const TEXT_CONSISTENCY_COUNTER_FORMAT: StringName = &"battle.hud.consistency_counter_format"
+
+## 一致率計數器 Label。EGM 關閉時為 null(不存在)。數值一律讀追蹤器,不自行重算。
+var _consistency_label: Label = null
+
+## 唯讀診斷:計數器 Label(EGM 關閉時為 null)。
+func diagnostic_consistency_label() -> Label:
+	return _consistency_label
+
+## 計數器文字:猜中 M/N。拆成可覆寫的單一出口,供敏感度證明的常駐變種植入缺陷。
+func _consistency_counter_text() -> String:
+	return Loc.localize(TEXT_CONSISTENCY_COUNTER_FORMAT) % [
+		_guess_tracker.get_scored_correct(), _guess_tracker.get_scored_total()
+	]
+
+func _build_consistency_counter() -> void:
+	_consistency_label = Label.new()
+	_consistency_label.name = "ConsistencyCounterLabel"
+	_consistency_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	$UILayer.add_child(_consistency_label)
+	_update_consistency_counter()
+
+func _update_consistency_counter() -> void:
+	if _consistency_label == null or _guess_tracker == null:
+		return
+	_consistency_label.text = _consistency_counter_text()
+
+func _apply_consistency_counter_layout(window_size: Vector2i) -> void:
+	if _consistency_label == null:
+		return
+	var rect: Rect2 = HudLayout.consistency_counter_rect(window_size)
+	_consistency_label.position = rect.position
+	_consistency_label.size = rect.size
+	_consistency_label.add_theme_font_size_override(&"font_size", HudLayout.font_size(window_size))
+
 ## story-011-input-gaps.md (U-T7, M1 audit 2026-09-29) — QA/test-only
 ## diagnostic surface, same convention as
 ## [member _diagnostic_last_menu_rejection_result]. Records the
@@ -1093,6 +1366,11 @@ func _ready() -> void:
 	# Story-002(AC2)— 讀取一次,整場戰鬥不再重讀。見
 	# [member _egm_enabled_for_this_battle] 的 doc comment。
 	_egm_enabled_for_this_battle = GameSettings.is_egm_enabled()
+	# battle-hud story-002:EGM 關閉時 _guess_tracker 維持 null,本檔所有 EGM 路徑短路。
+	if _egm_enabled_for_this_battle:
+		_guess_tracker = EffectGuessTracker.new()
+		_build_guess_selector()
+		_build_consistency_counter()
 
 	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
 
@@ -1410,8 +1688,20 @@ func _ready() -> void:
 		_state, _order, Callable(_phi, "phi"), Callable(), card_deck, links, write_port
 	)
 
-	_controller.unit_selected.connect(func(_id: int) -> void: _refresh_view())
-	_controller.selection_cleared.connect(func() -> void: _refresh_view())
+	_controller.unit_selected.connect(func(_id: int) -> void:
+		# 開啟一次新的「移動選取過程」(規格第 2 節步驟 1):所有格的猜測重置。
+		if _guess_tracker != null:
+			_guess_tracker.begin_move_selection()
+			_guess_skipped.clear()
+			_guess_choice = EffectGuessTracker.NO_GUESS
+		_refresh_view()
+	)
+	_controller.selection_cleared.connect(func() -> void:
+		if _guess_tracker != null and not _guess_suppress_cancel:
+			_guess_tracker.cancel_move_selection()
+			_guess_skipped.clear()
+		_refresh_view()
+	)
 	_controller.unit_moved.connect(func(_id: int, _from: Vector2i, _to: Vector2i) -> void: _refresh_view())
 	_controller.attack_resolved.connect(
 		func(_attacker_id: int, _target_id: int, _damage: int, _target_died: bool) -> void:
@@ -1693,7 +1983,10 @@ func _input(event: InputEvent) -> void:
 	# instant PLAYER_INPUT resumes, to wherever the mouse happened to end up
 	# mid-playback -- freezing the raw position here keeps both consistent.
 	if event is InputEventMouseMotion:
-		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
+		# battle-hud story-002:滑鼠在猜測選擇器上時不更新游標用的滑鼠位置,
+		# 否則游標會被拖離候選格、選擇器在被點到之前就消失。
+		if _controller.phase() != BattleController.Phase.ENEMY_ACTING \
+				and not _guess_mouse_over_selector((event as InputEventMouseMotion).position):
 			_last_mouse_window_pos = (event as InputEventMouseMotion).position
 		return
 
@@ -1704,7 +1997,10 @@ func _input(event: InputEvent) -> void:
 		# but _handle_mouse_button() ALSO writes _last_mouse_window_pos as its
 		# first statement -- same freeze reasoning as the motion branch above.
 		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
-			_handle_mouse_button(event as InputEventMouseButton)
+			# battle-hud story-002:點在猜測選擇器按鈕上的點擊歸按鈕自己處理
+			# (Button.pressed),不得同時當成棋盤點擊。
+			if not _guess_mouse_over_selector((event as InputEventMouseButton).position):
+				_handle_mouse_button(event as InputEventMouseButton)
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
@@ -1808,7 +2104,14 @@ func _input(event: InputEvent) -> void:
 		# is_card_play_in_progress() at all.
 		if not _controller.is_card_play_in_progress():
 			_handle_directional(event)
+			# battle-hud story-002:猜測選擇器循環鍵(鍵盤 X / 手把 Y)。
+			if event.is_action_pressed(&"battle_guess_cycle"):
+				_handle_guess_cycle()
+				return
 			if event.is_action_pressed(&"battle_confirm"):
+				# 選擇器上的確認 = 鎖定猜測並揭曉,消耗這次按鍵;跳過或不適用則照常。
+				if _handle_guess_confirm():
+					return
 				_confirm_at_cursor()
 				return
 			# Story 011 (U-T8, M1 audit 2026-09-29) — "主動結束單一單位" had no
@@ -2631,7 +2934,7 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	# discarded here (click_tile()'s &"none" rejection had no consumer
 	# anywhere in this file). Now routed through _handle_click_tile_result()
 	# — see that method's own doc comment for the three-way dispatch.
-	_handle_click_tile_result(_controller.click_tile(cell))
+	_handle_click_tile_result(_click_tile_with_egm(cell))
 
 
 # Sole call site in this file for converting a raw OS window-pixel mouse
@@ -3448,7 +3751,7 @@ func _confirm_at_cursor() -> void:
 	# Story 011 (U-T7, M1 audit 2026-09-29) — same gap and same fix as the
 	# matching call in _handle_mouse_button(): the return value used to be
 	# discarded. See _handle_click_tile_result()'s own doc comment.
-	_handle_click_tile_result(_controller.click_tile(_cursor_cell))
+	_handle_click_tile_result(_click_tile_with_egm(_cursor_cell))
 
 
 ## Story 013 — builds every value the T2' attack confirm panel needs, reading
@@ -3769,14 +4072,28 @@ func _refresh_view() -> void:
 	if selected != -1 and _cursor_active:
 		attack_target_id = _cursor_attack_target_id()
 
-	if selected != -1 and _cursor_active and _is_move_preview_cell(selected):
+	# battle-hud story-002:EGM 狀態。EGM 關閉時恆為 OFF,下面的分支與改動前逐字相同(AC1)。
+	if _cursor_cell != _guess_choice_cell:
+		_guess_choice_cell = _cursor_cell
+		_guess_choice = EffectGuessTracker.NO_GUESS
+	var guess_state: GuessCellState = _guess_cell_state(selected)
+
+	if guess_state == GuessCellState.PENDING:
+		# 尚未猜測:預覽文字隱藏(info_text 維持空字串),且關係線也維持「現況」
+		# 而非假設座標 —— 假設座標的線色會洩漏真實 delta,等於把答案畫在棋盤上
+		# (AC4/AC8:真實數值不得早於標記完成就出現)。
+		pass
+	elif selected != -1 and _cursor_active and _is_move_preview_cell(selected):
 		var hypo: Dictionary[int, Vector2i] = _phi.positions_with(selected, _cursor_cell)
 		line_positions = hypo
 		line_statuses = AffinityRules.board_lines(hypo, links)
-		info_text = format_affinity_preview(
-			AffinityRules.bonus_for(selected, positions, links),
-			AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
-		)
+		var current_bonus: int = AffinityRules.bonus_for(selected, positions, links)
+		var preview_bonus: int = AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
+		info_text = format_affinity_preview(current_bonus, preview_bonus)
+		if guess_state == GuessCellState.LOCKED:
+			info_text = format_guess_result(
+				info_text, _guess_tracker.get_locked_guess(_cursor_cell), preview_bonus - current_bonus
+			)
 	elif attack_target_id != -1:
 		# Φ 一律經由 _phi.phi() 取得,傷害本身一律經由 _state.preview_damage()
 		# 取得 —— 兩者都是結算路徑(resolve_attack())內部呼叫的同一批函式,
@@ -3809,6 +4126,9 @@ func _refresh_view() -> void:
 			)
 
 	_info_label.text = info_text
+	if _guess_tracker != null:
+		_update_guess_selector_ui(guess_state == GuessCellState.PENDING)
+		_update_consistency_counter()
 	_board_view.set_affinity_lines(affinity_line_dicts(line_statuses, line_positions))
 
 	# 只有「選取中的單位」與「游標指著的那一格」會顯示精確數字,其餘只有血條。
@@ -4174,6 +4494,7 @@ func _apply_tile_info_panel_layout() -> void:
 
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
+	_apply_consistency_counter_layout(window_size)
 
 
 ## Story 015 -- tree_exited handler: cursor handoff, then unregister.

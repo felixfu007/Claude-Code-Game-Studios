@@ -192,3 +192,19 @@ static func result_label_offset_rect(window_size: Vector2i) -> Rect2:
 	var fpx: float = float(font_size(window_size))
 	var size: Vector2 = Vector2(fpx * RESULT_LABEL_WIDTH_MULTIPLIER, fpx * RESULT_LABEL_HEIGHT_MULTIPLIER)
 	return Rect2(-(size / 2.0), size)
+
+
+## battle-hud story-003 -- EGM consistency counter ("猜中 6/8") box. Sits
+## directly under [method status_label_rect] (top-left corner, one
+## [constant LABEL_GAP_MULTIPLIER] gap below), same width as the status
+## label. Overlay on the board, no side column. It cannot overlap the tile
+## info panel (right-aligned, 40% of safe width: it starts right of 60%, this
+## box ends at 30%) nor [method info_label_rect] (different row).
+static func consistency_counter_rect(window_size: Vector2i) -> Rect2:
+	var status: Rect2 = status_label_rect(window_size)
+	var fpx: float = float(font_size(window_size))
+	var gap: float = fpx * LABEL_GAP_MULTIPLIER
+	return Rect2(
+		Vector2(status.position.x, status.position.y + status.size.y + gap),
+		Vector2(status.size.x, status.size.y)
+	)
