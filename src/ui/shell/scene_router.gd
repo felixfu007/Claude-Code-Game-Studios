@@ -14,6 +14,7 @@ extends RefCounted
 const TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 const BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const SETTINGS_SCENE_PATH: String = "res://src/ui/shell/SettingsScreen.tscn"
+const SUPPORT_CONVERSATION_SCENE_PATH: String = "res://src/ui/shell/SupportConversationScreen.tscn"
 
 
 ## 載入並切換到指定場景。
@@ -40,6 +41,24 @@ static func switch_to(tree: SceneTree, scene_path: String, configure: Callable =
 ## 不要在這裡另外呼叫。
 static func enter_battle(tree: SceneTree) -> Node:
 	return switch_to(tree, BATTLE_SCENE_PATH, _inject_campaign_ledger)
+
+
+## 進入支援對話畫面(support-conversation-ui story-004)。
+## 新實例進樹前注入 [param conversation_ids] 並接上 all_conversations_finished,
+## 播畢後進下一場戰鬥([method enter_battle])。
+static func go_to_support_conversation(tree: SceneTree, conversation_ids: Array[String]) -> Node:
+	var configure: Callable = func(instance: Node) -> void:
+		var screen: SupportConversationScreen = instance as SupportConversationScreen
+		if screen == null:
+			push_error("SceneRouter: go_to_support_conversation target is not a SupportConversationScreen")
+			return
+		screen.conversation_ids = conversation_ids.duplicate()
+		screen.all_conversations_finished.connect(_enter_battle_after_conversations.bind(tree))
+	return switch_to(tree, SUPPORT_CONVERSATION_SCENE_PATH, configure)
+
+
+static func _enter_battle_after_conversations(tree: SceneTree) -> void:
+	enter_battle(tree)
 
 
 ## 回到標題畫面。

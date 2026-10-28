@@ -4547,6 +4547,12 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 				var advance_result: CampaignProgress.AdvanceResult = (
 					CampaignProgress.advance_on_victory(total_missions)
 				)
+				# support-conversation-ui story-004(管理者 2026-10-28 裁決):
+				# 勝利且非最後一場 -> 結果顯示後不回標題,改接下一步
+				# (有對話 -> 對話畫面 -> 下一場;無對話 -> 直接下一場)。
+				_proceed_to_next_mission = (
+					advance_result != CampaignProgress.AdvanceResult.CAMPAIGN_COMPLETE
+				)
 				# game-shell story-006:打贏最後一場 -> 顯示「戰役完成」並歸零。
 				# 順序刻意是:支援對話(上面)-> advance -> 判斷 -> 歸零。歸零會清掉
 				# 剛寫入的支援對話記錄,這是對的——戰役結束了,沒有「下一場」會讀它。
@@ -4584,9 +4590,27 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	var return_timer: Timer = Timer.new()
 	return_timer.one_shot = true
 	return_timer.wait_time = RESULT_DISPLAY_SECONDS
-	return_timer.timeout.connect(return_to_title_screen)
+	# story-004:計時器只在「戰敗 / 戰役完成 / 無戰役」路徑回標題;
+	# 勝利且非最後一場改由 _on_result_display_finished() 分流。
+	return_timer.timeout.connect(_on_result_display_finished)
 	add_child(return_timer)
 	return_timer.start()
+
+
+## support-conversation-ui story-004:結果顯示時間到。勝利且非最後一場(
+## [member _proceed_to_next_mission])-> 有實際觸發的對話就進支援對話畫面
+## (播畢由 [SceneRouter] 接進下一場),沒有就直接進下一場;其餘情況回標題。
+## 測試可直接呼叫,不必等計時器。
+func _on_result_display_finished() -> void:
+	if not is_inside_tree():
+		return
+	if not _proceed_to_next_mission:
+		return_to_title_screen()
+		return
+	if _completed_support_conversation_ids.is_empty():
+		SceneRouter.enter_battle(get_tree())
+	else:
+		SceneRouter.go_to_support_conversation(get_tree(), _completed_support_conversation_ids)
 
 
 ## AC5 的切換入口 —— 測試直接呼叫本方法即可驅動「回到標題畫面」,不必等待
@@ -4649,12 +4673,24 @@ func _trigger_support_conversations_for_finished_mission() -> void:
 	var is_alive: Callable = func(roster_id: int) -> bool:
 		var unit: Unit = state.unit_by_id(roster_id)
 		return unit != null and unit.is_alive()
-	SupportConversationTransition.trigger_for_mission_transition(
-		CampaignProgress.current_mission(),
-		records,
-		is_alive,
-		SupportConversationLedgerWritePort.new(campaign_ledger_override)
+	var triggered: Array[SupportConversationRecord] = (
+		SupportConversationTransition.trigger_for_mission_transition(
+			CampaignProgress.current_mission(),
+			records,
+			is_alive,
+			SupportConversationLedgerWritePort.new(campaign_ledger_override)
+		)
 	)
+	# story-004:回傳陣列含 SKIPPED(參與者陣亡),只有 COMPLETED 才播。
+	for record: SupportConversationRecord in triggered:
+		if record.state == SupportConversationRecord.TriggerState.COMPLETED:
+			_completed_support_conversation_ids.append(record.conversation_id)
+
+
+## story-004:本場勝利後實際觸發(COMPLETED)的支援對話 id,供結果顯示後分流。
+var _completed_support_conversation_ids: Array[String] = []
+## story-004:勝利且非最後一場時為 true(結果顯示後接下一場而非回標題)。
+var _proceed_to_next_mission: bool = false
 
 
 ## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see
