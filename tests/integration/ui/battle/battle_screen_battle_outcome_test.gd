@@ -205,7 +205,7 @@ func test_defeat_when_any_player_unit_dies() -> void:
 	# DEFEAT 在它殺死我方唯一單位的當下立即成立。
 	assert_int(instance._controller.outcome()).is_equal(BattleState.Outcome.DEFEAT)
 	assert_bool(instance._result_label.visible).is_true()
-	assert_str(instance._result_label.text).is_equal(Loc.localize(BattleScreen.TEXT_RESULT_DEFEAT))
+	assert_str(instance._result_label.text).is_equal(Loc.localize(BattleScreen.TEXT_RESULT_DEFEAT_REASON_FORMAT) % Loc.localize(&"character.name.1"))  # story-022:戰敗文字附倒下者
 
 
 # ---- AC-5: 敏感度證明 -------------------------------------------------------

@@ -155,3 +155,5 @@ support.ui.skip_confirm_no,取消
 battle.hud.relation_map_title,關係圖
 battle.hud.relation_map_dead,(陣亡)
 battle.hud.relation_map_toggle,關係圖 [R]
+battle.hud.result_defeat_reason_format,戰敗——%s倒下了
+battle.hud.result_defeat_reason_separator,、

@@ -179,6 +179,8 @@ const TEXT_FACTION_PLAYER: StringName = &"battle.hud.faction_player"
 const TEXT_FACTION_ENEMY: StringName = &"battle.hud.faction_enemy"
 const TEXT_RESULT_VICTORY: StringName = &"battle.hud.result_victory"
 const TEXT_RESULT_DEFEAT: StringName = &"battle.hud.result_defeat"
+const TEXT_RESULT_DEFEAT_REASON_FORMAT: StringName = &"battle.hud.result_defeat_reason_format"
+const TEXT_RESULT_DEFEAT_REASON_SEPARATOR: StringName = &"battle.hud.result_defeat_reason_separator"
 const TEXT_RESULT_CAMPAIGN_COMPLETE: StringName = &"battle.hud.result_campaign_complete"
 
 ## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
@@ -532,6 +534,8 @@ var card_text_path_override: String = ""
 var campaign_ledger_override: CampaignAffinityLedger = null
 
 var _state: BattleState
+## 開局時的我方單位 id(含之後倒下者),供戰敗文字枚舉(story-022)。
+var _player_roster_ids: Array[int] = []
 var _order: TurnOrder
 var _controller: BattleController
 
@@ -1621,6 +1625,7 @@ func _ready() -> void:
 	var enemy_ids: Array[int] = []
 	for unit: Unit in _state.units_of(Unit.Faction.PLAYER):
 		player_ids.append(unit.id)
+	_player_roster_ids = player_ids.duplicate()
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		enemy_ids.append(unit.id)
 	_order = TurnOrder.new(player_ids, enemy_ids)
@@ -4610,9 +4615,24 @@ func _on_tree_exited_cursor_handoff() -> void:
 	CursorStateHost.unregister_surface(CursorTypes.SurfaceType.BOARD_TILE)
 
 
+## story-022:戰敗文字 =「戰敗」+ 倒下的我方角色名。倒下者讀
+## [BattleState] 既有的存活資料([method Unit.is_alive]),不另記一份;
+## 開局我方 id 清單([member _player_roster_ids])只用來枚舉「誰曾在場」。
+## 名稱走 character.name.N;查無倒下者時退回原本的純「戰敗」文字。
+func _defeat_result_text() -> String:
+	var names: Array[String] = []
+	for id: int in _player_roster_ids:
+		var unit: Unit = _state.unit_by_id(id)
+		if unit != null and not unit.is_alive():
+			names.append(Loc.localize(StringName("character.name.%d" % id)))
+	if names.is_empty():
+		return Loc.localize(TEXT_RESULT_DEFEAT)
+	return Loc.localize(TEXT_RESULT_DEFEAT_REASON_FORMAT) % Loc.localize(TEXT_RESULT_DEFEAT_REASON_SEPARATOR).join(names)
+
+
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_result_label.visible = true
-	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else Loc.localize(TEXT_RESULT_DEFEAT)
+	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else _defeat_result_text()
 
 	# 裁決①第三輪(production/epics/support-conversation/
 	# story-003-cross-mission-affinity-continuity.md「下一輪接線」)—— AC3(勝利
