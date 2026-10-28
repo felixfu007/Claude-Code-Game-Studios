@@ -1,0 +1,6 @@
+# tut04 好感度配對表 — 固定欄位順序:
+# unit_a,unit_b,polarity,amp
+#
+# 只有一條正向線(甲乙,與 vs01 同一條);刻意不放丙丁負向線(教學只教正向,
+# 見 design/quick-specs/tutorial-level.md 第 4 節)。
+1,2,POSITIVE,1
