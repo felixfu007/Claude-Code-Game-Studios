@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第八十八批(2026-10-28 晚間,管理者在家試玩)收工。** 管理者實打三輪、15 點回饋全做;協調者用真實滑鼠事件自打第 1 場 + 三解析度截圖。測試 1559 → **1586,全綠**。🔴 **全部未提交**(23 檔修改 + 2 支新測試 + 截圖 + 報告)。
+Feature: 🔴 **數值已改正式資料**(管理者裁決,違反公式二共用 pct —— 已記於 `unit-stats-provisional.md` 檔頭)。自動對戰 0/20 → **11/20**,但第 4 場 0/4。新增**阻擋規則**(敵人進我方鄰格即停)、**原地移動**、**自動結束回合**、**全程滑鼠**。
+Task: 🔴 **下次第一件:讀 `production/qa/playtest-report-2026-10-28.md`,問管理者是否提交;再照報告第四節 A→B→C 修。** 本機 Godot 在 `C:\Godot\`(不是 PLAY.bat 找的 Downloads)。測試:`GODOT_BIN=/c/Godot/Godot_v4.7.1-stable_win64_console.exe bash tools/build/run_tests_with_import.sh`。
+以下為第八十七批原狀態列。
 Epic: **第八十七批(2026-10-28)收工。** 戰鬥 HUD story-002/003、支援對話 UI epic 全部(001~004)、戰役延長 5 場(game-shell story-007)、關係圖迷你地圖 story-001、BattleLoop 接好感度(tactical story-021)、教學關初稿、自動對戰量測四版。測試 1414 → 1559,全綠。
 Feature: 🔴 **自動對戰 5 場 × 多種打法全敗;數值設計師判定根因是數值表從未算「敵方集火速度」。只有降敵 ATK 有效。正式數值未改 —— 等管理者今晚實際打第 1 場。** 管理者今天 **24 項裁決**(逐字見下方第八十七批)。
 Task: 🔴 **下次第一件:問管理者昨晚打第 1 場的結果(能否贏、第幾回合、誰先倒),據此決定數值(`docs/reviews/difficulty-analysis-2026-10-28.md`)。第二件:畫面簽核回饋(對話/字型/猜測選擇器/計數器/關係圖)。第三件:教學關 8 個開放問題。** 本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -13,6 +17,46 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 接手第一件事(2026-10-28 晚間 **第八十八批** —— 位階高於下方所有既有指示)
+
+**權威材料:`production/qa/playtest-report-2026-10-28.md`**(管理者明說「明天開工我會照你這份報告修復跟調整」)。
+截圖:`production/qa/evidence/playtest-2026-10-28/`(01~12 + `playthrough_log.txt`)。
+
+### 狀態
+- 🔴 **全部未提交。** 開工先問管理者是否提交(報告第五節第 1 項)。另有 git stash `stash@{0}`(同步前的 CRLF 雜訊與舊 export_presets.cfg,無須保留)。
+- 全套測試協調者最後一次重跑:`1586 test cases | 0 errors | 0 failures | 0 orphans`,`(142/142)`,`ENGINE EXIT = 0`。
+- ⚠️ 每次跑引擎都會把一批 `.import` 檔改成 LF/CRLF 差異(內容無變),**不要提交它們**。
+
+### 三輪回饋落點(程式位置)
+| 回饋 | 落點 |
+|---|---|
+| 數值兩次調整 | 9 份 `assets/data/units/vs0*/tut0*_roster.txt`;`battle_state_test.gd` 兩處斷言同步 |
+| 自動結束回合 | `BattleScreen._auto_end_faction_phase_if_no_unit_can_act` + `BattleController.has_unit_with_available_action` |
+| 選單結束回合關選單 / 右鍵關選單 | `BattleMenu._on_end_phase_row_pressed` / `BattleMenu._input` |
+| 全程滑鼠 | `BattleScreen._dispatch_mouse_action`(合成 InputEventAction 直接交 `_input`,**刻意不走** `Input.parse_input_event` 以免裝置權威切離滑鼠)、`_handle_mouse_click_in_card_or_confirm_state`、`HandBar.slot_index_at`、`HudLayout.hud_action_button_rect` |
+| 手牌縮小 | `HandBar.COLLAPSED_SCALE`(節點 scale,不動各 rect 函式) |
+| 原地移動 | `BattleController._apply_stay`(發 unit_moved from==to) |
+| 阻擋規則 | `BattleState.legal_moves` / `zone_of_control_cells`;`Board.reachable_tiles` 新增 `stop_cells`/`parent_out`/`ignore_occupant_at`;`Board.path_to` |
+| 逐格移動動畫 | `BattleScreen._play_enemy_moves_cell_by_cell` + `_display_cell_override` |
+| 右鍵取消選取 | `_input` 非出牌分支的 battle_cancel |
+| 卡片懸停說明 | `_hover_hand_card`;`card_faces` 終於接上(原註解標為 out of scope 的缺口) |
+| 攻擊範圍紅底 | `BoardView.set_threat_highlights` + `THREAT_FILL_COLOR` |
+| 資訊框/關係圖按鈕縮小 | `HudLayout.small_font_size`、`relation_minimap_toggle_rect` |
+| 文件 | `design/quick-specs/unit-stats-provisional.md` 檔頭兩段 |
+
+### AI_IMG(同晚)
+- 管理者目視 4 張探針圖,四點逐字:「不太像台灣人」「P4斧頭拿反了」「立繪應該沒有背景」「P2腳色膚色太黑了」。
+- 裁決:底模「Cheyenne 和 1~2 個新底模並排比較(推薦)」;立繪背景「透明去背,跟棋子一樣(推薦)」。
+- ✅ **已送 26 號 `dc220f7`**(1 added / 0 removed,依 push postmortem 用 longpaths 乾淨 clone 推送)。內容:目視意見 + 新底模選擇條件 + 新版逐字 prompt + 比較總覽交付要求。
+- 🔴 **我方規格 `art-tone-direction.md` 第一節仍寫立繪要「陰暗朦朧氣氛背景」—— 已被今晚裁決推翻,尚未改**(要改須先問)。
+- 家用端資料夾 `C:\Users\User\Documents\AI_IMG` 落後 2 筆(25、26 號),需家用端自己 pull。
+- 下一步:家用端交比較總覽 → 管理者選底模 → 我方送 27 號。
+
+### ⚠️ 未走正式流程的事(誠實登記)
+- 本批**沒有開工作單**、沒有派專家,協調者直接改 —— 管理者當場要求、當場驗收的試玩修正。若要補文件,補在報告而非逐張開單。
+- 阻擋規則是**新的戰鬥規則**,GDD `tactical-combat-system.md` 尚未記載。
+- 滑鼠攻擊不經確認框、鍵盤會 —— 本批**發現未修**(報告問題 B,待裁決)。
+
 ## 🔴 接手第一件事(2026-10-28 **第八十七批**,已收工 —— 位階高於下方所有既有指示)
 
 管理者指示:持續推進到 17:00 收工;卡住就停下來出選項。

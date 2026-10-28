@@ -1,0 +1,60 @@
+SHOT 01_start
+SHOT 02_hand_open
+SHOT 03_hand_hover_card3
+hand open after right-click: false
+SHOT 04_menu_open
+menu open after right-click: false
+== round 1, player phase. player HP: 甲 30/30, 乙 26/26, 丙 22/22, 丁 26/26, 戊 30/30 | enemy HP: E1 23/23, E2 20/20, E3 18/18, E4 22/22, E5 24/24
+SHOT 05_unit_selected_ranges
+SHOT 06_after_move
+unit 甲 -> (4, 4)
+  needed manual end-unit (Q) for 甲
+unit 乙 -> (3, 3)
+  needed manual end-unit (Q) for 乙
+unit 丙 -> (3, 4)
+  needed manual end-unit (Q) for 丙
+unit 丁 -> (4, 5)
+  needed manual end-unit (Q) for 丁
+unit 戊 -> (3, 5)
+SHOT 08_enemy_phase_0
+SHOT 08_enemy_phase_1
+SHOT 08_enemy_phase_2
+SHOT 08_enemy_phase_3
+== round 2, player phase. player HP: 甲 30/30, 乙 26/26, 丙 9/22, 丁 18/26, 戊 30/30 | enemy HP: E1 23/23, E2 20/20, E3 18/18, E4 22/22, E5 24/24
+unit 甲 -> (4, 4)
+  attack click did not open confirm panel
+unit 乙 -> (4, 3)
+  attack click did not open confirm panel
+unit 丙 -> (3, 4)
+  attack click did not open confirm panel
+unit 丁 -> (4, 5)
+  attack click did not open confirm panel
+unit 戊 -> (2, 0)
+== round 3, player phase. player HP: 甲 24/30, 乙 26/26, 丙 2/22, 丁 11/26, 戊 24/30 | enemy HP: E1 23/23, E2 20/20, E3 1/18, E5 16/24
+unit 甲 -> (4, 4)
+  attack click did not open confirm panel
+unit 乙 -> (5, 3)
+  attack click did not open confirm panel
+unit 丙 -> (3, 2)
+  attack click did not open confirm panel
+unit 丁 -> (5, 4)
+  attack click did not open confirm panel
+unit 戊 -> (4, 0)
+  attack click did not open confirm panel
+== round 4, player phase. player HP: 甲 24/30, 乙 26/26, 丙 2/22, 丁 4/26, 戊 18/30 | enemy HP: E1 13/23, E2 9/20
+unit 甲 -> (4, 4)
+  needed manual end-unit (Q) for 甲
+unit 乙 -> (6, 3)
+  attack click did not open confirm panel
+unit 丙 -> (3, 3)
+  attack click did not open confirm panel
+unit 丁 -> (4, 3)
+  needed manual end-unit (Q) for 丁
+unit 戊 -> (2, 0)
+  attack click did not open confirm panel
+== round 5, player phase. player HP: 甲 24/30, 乙 26/26, 丙 2/22, 丁 4/26, 戊 12/30 | enemy HP: E1 3/23
+unit 甲 -> (3, 1)
+  attack click did not open confirm panel
+OUTCOME phase=2 outcome=1 round=5
+final player HP: 甲 24/30, 乙 26/26, 丙 2/22, 丁 4/26, 戊 12/30 | enemy HP: 
+SHOT 09_end
