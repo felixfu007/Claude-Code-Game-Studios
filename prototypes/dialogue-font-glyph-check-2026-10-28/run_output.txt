@@ -1,0 +1,7 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+load_dynamic_font err=0 font_name=LXGW WenKai TC style=Regular
+dialogue lines=39 distinct dialogue chars=201
+TOTAL distinct checked=213
+MISSING count=0 list=[]
+SUPPLEMENTARY whole-file non-ASCII distinct=466 missing=[🔴]
