@@ -120,14 +120,36 @@ func test_key_echo_is_ignored() -> void:
 	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()
 
 
-func test_cannot_open_while_card_hand_open() -> void:
+func test_can_open_while_card_hand_open_and_card_flow_continues() -> void:
 	var instance: BattleScreen = _instance()
 	instance._input(_key(&"battle_open_hand"))
-	if not instance._controller.is_card_play_in_progress():
-		return  # 此關卡開不了手牌時,本條不適用(不當成通過證據)
+	assert_bool(instance._controller.is_card_play_in_progress()).append_failure_message(
+		"前提失敗(測試空轉):手牌沒有開起來,後面的斷言不具意義").is_true()
 	instance._input(_key(&"battle_toggle_relation_map"))
-	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
+	assert_bool(instance._controller.is_card_play_in_progress()).append_failure_message("開地圖不得中斷出牌流程").is_true()
+	instance._refresh_view()
+	assert_bool(instance.diagnostic_relation_minimap_visible()).append_failure_message("出牌時不得自動收起").is_true()
 
+
+func test_can_open_while_battle_menu_open() -> void:
+	var instance: BattleScreen = _instance()
+	instance._input(_key(&"battle_menu"))
+	assert_bool(instance._battle_menu.visible).append_failure_message("前置:選單應已開啟").is_true()
+	instance._input(_key(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
+
+
+func test_enemy_phase_start_auto_closes_map_and_blocks_reopen() -> void:
+	var instance: BattleScreen = _instance()
+	instance._input(_key(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
+	instance._controller.end_faction_phase()
+	assert_int(instance._controller.phase()).is_equal(BattleController.Phase.ENEMY_ACTING)
+	instance._refresh_view()
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()
+	instance._toggle_relation_minimap()
+	assert_bool(instance.diagnostic_relation_minimap_visible()).append_failure_message("敵方回合不得開啟").is_false()
 
 func test_open_map_does_not_block_board_input() -> void:
 	var instance: BattleScreen = _instance()
@@ -230,3 +252,43 @@ func test_layout_applied_to_nodes() -> void:
 	var size: Vector2i = instance.get_window().size
 	var panel: Control = instance.get_node("UILayer/RelationMinimap")
 	assert_vector(panel.position).is_equal(HudLayout.relation_minimap_rect(size).position)
+
+
+# ---- 吞鍵分支之前也能切換(管理者 2026-10-28 裁決:我方階段隨時可開) ---------------
+
+## 偵測 R 沒有被傳進強制棄牌分支。
+class _SpyDiscardInput extends BattleScreen:
+	var discard_calls: int = 0
+	func _handle_forced_discard_input(event: InputEvent) -> void:
+		discard_calls += 1
+		super(event)
+
+
+func test_toggle_works_during_attack_confirm_and_is_not_forwarded() -> void:
+	var instance: BattleScreen = _instance()
+	# 直接設旗標(不走完整點擊流程):吞鍵分支的判斷條件就是這個旗標。
+	instance._attack_confirming = true
+	instance._input(_key(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
+	assert_bool(instance._attack_confirm_pending_press).append_failure_message("R 不得被當成確認").is_false()
+	assert_bool(instance._attack_confirming).append_failure_message("切換不得改變確認面板狀態").is_true()
+	instance._input(_pad(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()
+
+
+func test_toggle_works_during_forced_discard_and_is_not_forwarded() -> void:
+	var instance: BattleScreen = _instance(_SpyDiscardInput)
+	# 直接戳 CardDeck 的私有旗標造出「欠一次強制棄牌」(headless 無法便宜走完整抽牌流程)。
+	var deck: CardDeck = instance._state.card_deck()
+	assert_object(deck).append_failure_message("前提失敗(測試空轉):沒有牌組").is_not_null()
+	deck._pending_discard = true
+	assert_bool(instance._controller.has_pending_discard()).append_failure_message(
+		"前提失敗(測試空轉):強制棄牌狀態沒造出來").is_true()
+	instance._input(_key(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
+	assert_int((instance as _SpyDiscardInput).discard_calls).append_failure_message("R 不得傳給強制棄牌分支").is_equal(0)
+	# 對照:別的鍵仍會走進強制棄牌分支(證明 spy 有效、分支確實在運作)
+	instance._input(_key(&"battle_confirm"))
+	assert_int((instance as _SpyDiscardInput).discard_calls).is_equal(1)
+	instance._input(_pad(&"battle_toggle_relation_map"))
+	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()

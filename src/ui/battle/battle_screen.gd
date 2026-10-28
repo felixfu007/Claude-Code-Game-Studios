@@ -1212,13 +1212,17 @@ func _build_relation_minimap() -> void:
 	_relation_toggle_button.pressed.connect(_toggle_relation_minimap)
 	$UILayer.add_child(_relation_toggle_button)
 
-## 可開條件(規格 s2):我方行動階段、無手牌/強制棄牌/攻擊確認/戰鬥選單。關閉永遠允許。
+## 可開條件 —— 管理者 2026-10-28 裁決,選項逐字:
+## 「我方階段隨時可開,出牌時也不收起;敵方回合自動收(推薦)」。
+## 被跳過的兩項:「維持規格(現在的做法)」、「任何時候都可開,包含敵方回合」。
+## 🔴 與 design/ux/relation-minimap.md 第 2 節原文的差異:原文寫「敵方階段、戰鬥選單、
+## 手牌開啟中、強制回應覆蓋層不可開啟」;本裁決只保留「敵方回合不可開」,
+## 手牌/出牌/棄牌/攻擊確認/戰鬥選單期間 phase() 仍是 PLAYER_INPUT(Phase 只有
+## PLAYER_INPUT / ENEMY_ACTING / FINISHED 三值),故一律可開、也不自動收起。
+## 關閉永遠允許。
+## 該鍵判斷已移到那兩個分支之前,故兩種情況鍵盤/手把皆可切換。
 func _relation_minimap_can_open() -> bool:
-	return _controller.phase() == BattleController.Phase.PLAYER_INPUT \
-		and not _controller.is_card_play_in_progress() \
-		and not _controller.has_pending_discard() \
-		and not _attack_confirming \
-		and not _battle_menu.visible
+	return _controller.phase() == BattleController.Phase.PLAYER_INPUT
 
 func _toggle_relation_minimap() -> void:
 	if _relation_minimap == null or _load_failed:
@@ -1232,7 +1236,7 @@ func _toggle_relation_minimap() -> void:
 func _update_relation_minimap(line_statuses: Array[AffinityLineStatus], positions: Dictionary[int, Vector2i]) -> void:
 	if _relation_minimap == null:
 		return
-	# 規格 s2:不可開的情境下不得留半開殘留 —— 階段/手牌/棄牌/確認面板一進來就收起。
+	# 管理者 2026-10-28 裁決:敵方回合開始(或戰鬥結束)時自動收起,不留半開殘留。
 	if _relation_minimap.visible and not _relation_minimap_can_open():
 		_relation_minimap.set_open(false)
 	var alive: Array[int] = []
@@ -2081,6 +2085,17 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		# relation-minimap story-001:開/關關係圖,管理者 2026-10-28 裁決「我方階段隨時可開」,
+		# 故放在攻擊確認面板與強制棄牌這兩個吞鍵分支【之前】—— 否則那兩種情況按不到。
+		# 切換後 return,R 不會再傳給那兩個分支。僅顯示,不暫停棋盤;開著時其餘輸入照常。
+		# 鍵盤 echo 一律忽略;敵方回合只能關、不能開(見 _relation_minimap_can_open)。
+		if event.is_action(&"battle_toggle_relation_map"):
+			if event is InputEventKey and (event as InputEventKey).echo:
+				return
+			if event.is_pressed():
+				_toggle_relation_minimap()
+				return
+
 		# Story 013（T2' 攻擊確認面板)— highest priority among every
 		# keyboard/gamepad branch below, including battle_menu: the story's AC
 		# requires "面板開啟期間,游標移動/開手牌/開選單皆須被拒絕". This
@@ -2165,15 +2180,6 @@ func _input(event: InputEvent) -> void:
 		if _controller.has_pending_discard():
 			_handle_forced_discard_input(event)
 			return
-
-		# relation-minimap story-001:開/關關係圖。僅顯示,不暫停棋盤 ——
-		# 開著時其餘輸入照常往下走。鍵盤 echo 一律忽略;不可開的情境按了無反應。
-		if event.is_action(&"battle_toggle_relation_map"):
-			if event is InputEventKey and (event as InputEventKey).echo:
-				return
-			if event.is_pressed():
-				_toggle_relation_minimap()
-				return
 
 		# Story U-013 — `battle_open_hand` (S0<->S1) is checked before anything
 		# else regardless of card-play state, mirroring the Interaction Map's
