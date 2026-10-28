@@ -1,7 +1,7 @@
 # Story 001:關係圖的開關與繪製
 
 > **Epic**: `production/epics/relation-minimap/EPIC.md`
-> **Status**: Ready(2026-10-28)
+> **Status**: ✅ **Done-pending-visual(2026-10-28)** —— `0bec6be` + `5ed6c4e`;1554 全綠(協調者重跑)。開啟條件依管理者裁決放寬為我方階段隨時可開。畫面待管理者簽核。原狀態:Ready(2026-10-28)
 > **Type**: UI
 > **規格權威**: `design/ux/relation-minimap.md` 第 2~5、7 節及對應 AC(游標相關第 6 節屬 story-002)
 

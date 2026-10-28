@@ -19,6 +19,8 @@
 
 ## 2. 何時可見、怎麼開關
 
+> ✅ **2026-10-28 管理者裁決取代本節的開啟條件**:我方階段隨時可開(含出牌、攻擊確認、強制棄牌、戰鬥選單期間),敵方回合自動收起;開著時棋盤操作照常。逐字見 `production/epics/relation-minimap/EPIC.md` 裁決 1、4。以下原文保留。
+
 **可見時機(預設,見 Q2)**:戰鬥畫面的我方行動階段,且無模態/強制回應畫面開啟時可開啟。
 敵方階段、戰鬥選單、手牌開啟中、強制回應覆蓋層(例:強制棄牌)**不可開啟**(按了無反應,且不得留下半開狀態)。
 關閉是預設狀態:**不自動彈出**,避免擋住玩家正在看的棋盤。
@@ -90,6 +92,8 @@
   則強度欄須由好感度層**新增唯讀出口**(交 `lead-programmer` 與 `game-designer`),**不得由 UI 反推**(見 Q1)。
 
 ## 6. 游標系統義務(`RELATION_MINIMAP_NODE`)
+
+> ✅ **2026-10-28 管理者裁決:本節不實作**(EPIC 裁決 5「維持純顯示,不做地圖游標」)。關係圖為純顯示,不登記 `RELATION_MINIMAP_NODE`、不移動游標;本節原文保留,供日後若要加「切到地圖」模式時參考。
 
 來源:`design/gdd/systems-index.md` Cross-System Obligations Registry。**這是接上一個已開好的孔,不是新設計**:
 `CursorTypes.SurfaceType.RELATION_MINIMAP_NODE` 與 `relation_minimap_node_threshold_px`(`mouse_reclaim_threshold_config.gd`,
