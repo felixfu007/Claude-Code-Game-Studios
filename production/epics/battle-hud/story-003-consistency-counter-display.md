@@ -1,7 +1,7 @@
 # Story 003:一致率計數器的畫面呈現
 
 > **Epic**: 戰鬥 HUD(僅預判標記)—— `production/epics/battle-hud/EPIC.md`
-> **Status**: Ready(2026-10-28 建立)
+> **Status**: ✅ **Done-pending-visual(2026-10-28)** —— AC1~AC6 有測試(`tests/integration/ui/battle/battle_screen_egm_consistency_counter_test.gd`,14 條)。位置/遮擋/字級待管理者簽核。commit `025c36d`。原狀態:Ready(2026-10-28 建立)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: S

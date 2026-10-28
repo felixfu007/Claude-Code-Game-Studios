@@ -48,4 +48,5 @@
 `godot-gdscript-specialist`;協調者獨立重跑:`ENGINE EXIT = 0` / `1414 test cases | 0 errors | 0 failures | 0 orphans` / `(130/130)`。
 - 既有測試**零修改**(開局重置觸發點改為 SURFACE_HANDOFF 後,相關 4 檔照舊通過;實作者明言未逐檔讀,不主張原因)。
 - ⚠️ 未涵蓋:**出牌中途離開戰鬥**沒有專屬測試(守衛只看目標表面類型;全套未出現新增的 push_error)。
+  ✅ **2026-10-28 部分補上**:出牌第 1 步(選牌中)與第 2 步(選目標中)離開戰鬥已有專屬測試(`tests/integration/ui/battle/battle_screen_surface_handoff_mid_card_play_test.gd`,含常駐變種,commit `b2bc057`)。**確認面板中與敵方回合中離開仍未涵蓋。**
 - ADR-0005 Key Interfaces 與 tech-debt-register 的加註已於同日經管理者核准套用。

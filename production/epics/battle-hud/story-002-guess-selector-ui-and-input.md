@@ -1,7 +1,7 @@
 # Story 002:猜測選擇器的畫面與輸入
 
 > **Epic**: 戰鬥 HUD(僅預判標記)—— `production/epics/battle-hud/EPIC.md`
-> **Status**: Ready(**AC13 明文切出,見下方「開工前查核」**)
+> **Status**: ✅ **Done-pending-visual(2026-10-28)** —— AC1~AC4、AC10~AC12 有測試(`tests/integration/ui/battle/battle_screen_egm_guess_selector_test.gd`,40 條,18 條常駐敏感度證明、3 條不可證理由在檔頭);AC13 由既有設定畫面滿足。畫面(AC2/AC4/AC10)待管理者簽核。commit `025c36d`;協調者重跑 1471 全綠。原狀態:Ready(**AC13 明文切出,見下方「開工前查核」**)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M
