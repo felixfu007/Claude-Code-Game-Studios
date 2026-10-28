@@ -1,7 +1,7 @@
 # Story 007:戰役序列接上第 3~5 場
 
 > **Epic**: `production/epics/game-shell/EPIC.md`
-> **Status**: Ready(2026-10-28;關卡資料 15 檔已交件,協調者驗過地形尺寸、座標不重疊不出界、數值與 vs02 相同)
+> **Status**: ✅ **Done-pending-play(2026-10-28)** —— commit `565aa5f`;五場引擎載入全過、三段對話可達。關卡能否打贏、難度未驗證(需人實際打)。原狀態:Ready
 > **Type**: Integration
 > **依據**: 管理者 2026-10-28 裁決,選項逐字「**做第 3~5 場關卡資料(推薦)**」;被跳過:關係圖迷你地圖 / 教學關。
 > **前置**: level-designer 新增的 `assets/data/*/vs03_*` ~ `vs05_*` 共 15 檔。
