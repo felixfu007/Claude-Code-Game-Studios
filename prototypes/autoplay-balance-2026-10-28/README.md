@@ -87,3 +87,37 @@ status:concluded(第二版)。結論:**改善後仍 5 場 × 全部打法全敗*
 - C 的集火在這些局面幾乎沒有發揮空間:我方攻擊次數(1~3)反而比 A 少,因為安全規則把前進/出手的格排除了。C 與 C(phi=0) 在 5 場裡結果與首倒逐字相同,好感度站位偏好在這 5 場沒改變結局(phi 實際有算入傷害:見 PHI_RAW,但 `END` 血量差距 ≤ 1~3 點)。
 - 未計入:卡牌、人類利用地形/視線、重整隊形;好感度累積記錄(見上)。
 - 未驗證:vs04 診斷的「友軍擋格」因果(僅上述實測結果間接支持);C 的集火規則是否優於「單純 B」無統計意義(每場每打法 1 局、決定性,不是樣本)。
+
+## 第三版:數值敏感度掃描(2026-10-28,管理者裁決「試驗區試調數值+數值設計師分析,不改正式資料」)
+
+腳本 `autoplay_v3_sweep.gd`(複製自 v2,打法 C 邏輯逐字沿用,好感度開),原始輸出 `run_output_v3.txt`(`grep -n "^SWEEP" run_output_v3.txt`)。不改任何 assets/、src/、tests/。
+
+### 調整方式(載入真實 vs01~vs05 名冊、`BattleState.create` 之後於記憶體中進行)
+- 敵方 ATK:`Unit.atk` 屬性 setter(受寫入窗守衛,故包在 `BattleState.commit_authoritative_change(...)` 內),`roundi(原 ATK × 係數)`(四捨五入,.5 進位遠離零)。DEF/HP/MP/射程不動。
+- 我方 HP:`Unit.hp_max` 是無守衛的一般欄位(直接賦值)、`Unit.hp` 屬性 setter(同上包在 commit 內);兩者皆設 `roundi(原 hp_max × 係數)`,即當前 HP = 新上限。
+- 敵方少一人:**名冊文字層**刪掉 faction=ENEMY 且 id 最大的那一列(`_drop_last_enemy`),再 `BattleState.create`。這是對輸入資料的變動,不是重寫規則;`TurnOrder` 的敵方 id 列表隨之少一人。vs01~vs05 各被移除的是各自名冊最後一個敵人(id 最大)。
+- 組合:敵方 ATK ×0.8 + 我方 HP ×1.3,同上兩條。
+- 戰敗規則未改(仍是任一我方死亡即 DEFEAT);「我方全滅才敗」只記錄結束時我方存活人數。
+- 揭露:每格每場決定性一局(非統計樣本);好感度每場用該場起始關係(同第二版)。基準列與第二版 C 的結果/首倒逐字相符(vs01 甲、vs02 乙、vs03 甲、vs04 乙、vs05 丙),可視為腳本沒搞壞。
+
+### 結果(R=回合 atk=我方攻擊次數 kill=擊倒敵數/開局敵數 alive=結束時我方存活/開局我方;首倒 = 第一個倒下的單位)
+| 設定 | vs01 | vs02 | vs03 | vs04 | vs05 |
+|---|---|---|---|---|---|
+| 基準 | 敗 R2 atk2 kill0/5 alive4/5 首倒甲 | 敗 R3 atk3 kill0/5 alive4/5 首倒乙 | 敗 R2 atk1 kill0/5 alive4/5 首倒甲 | 敗 R2 atk1 kill0/5 alive4/5 首倒乙 | 敗 R3 atk2 kill0/5 alive4/5 首倒丙 |
+| 敵ATK×0.8 | 敗 R3 atk4 kill0/5 alive4/5 甲 | 敗 R4 atk4 kill0/5 alive4/5 丙 | 敗 R4 atk8 kill1/5 alive4/5 E2 | 敗 R2 atk0 kill0/5 alive4/5 乙 | 敗 R5 atk8 kill1/5 alive4/5 E2 |
+| 敵ATK×0.7 | 敗 R3 atk9 kill1/5 alive4/5 E4 | 敗 R4 atk6 kill1/5 alive4/5 E2 | 敗 R4 atk10 kill1/5 alive4/5 E5 | 敗 R4 atk7 kill1/5 alive4/5 E1 | 敗 R6 atk15 kill2/5 alive4/5 E1 |
+| 敵ATK×0.6 | 敗 R3 atk9 kill1/5 alive4/5 E4 | **勝 R9 atk23 kill5/5 alive5/5** | 敗 R6 atk22 kill4/5 alive4/5 E5 | 敗 R4 atk4 kill0/5 alive4/5 戊 | 敗 R6 atk20 kill4/5 alive4/5 E2 |
+| 我方HP×1.3 | 敗 R2 atk1 kill0/5 alive4/5 甲 | 敗 R4 atk4 kill1/5 alive4/5 E2 | 敗 R4 atk8 kill1/5 alive4/5 E2 | 敗 R3 atk4 kill0/5 alive4/5 乙 | 敗 R5 atk9 kill2/5 alive4/5 E2 |
+| 我方HP×1.5 | 敗 R3 atk5 kill0/5 alive4/5 甲 | 敗 R4 atk4 kill0/5 alive4/5 丙 | 敗 R4 atk8 kill1/5 alive4/5 E2 | 敗 R2 atk0 kill0/5 alive4/5 乙 | 敗 R4 atk7 kill1/5 alive4/5 E4 |
+| 敵少一人 | 敗 R2 atk3 kill0/4 alive4/5 丙 | 敗 R3 atk2 kill0/4 alive4/5 戊 | 敗 R3 atk5 kill1/4 alive4/5 E2 | 敗 R3 atk5 kill0/4 alive4/5 乙 | 敗 R3 atk2 kill0/4 alive4/5 丙 |
+| 敵ATK×0.8+我方HP×1.3 | 敗 R3 atk9 kill1/5 alive4/5 E4 | 敗 R4 atk6 kill1/5 alive4/5 E3 | 敗 R4 atk11 kill1/5 alive4/5 E5 | 敗 R2 atk1 kill0/5 alive4/5 甲 | 敗 R6 atk15 kill2/5 alive4/5 E1 |
+
+(首倒為 E 開頭 = 我方先擊倒敵人;「敗」的局結束時我方一律 4/5 存活,因為戰敗規則是第一個我方單位倒下即結束。)
+
+### 讀法
+- 40 局中只有 1 局勝:**vs02 敵ATK×0.6**(R9,我方無人倒、全殲 5 敵)。其餘 39 局皆敗。
+- 最先出現「勝」的方向:**敵方 ATK 下調**(×0.6,僅 vs02)。我方 HP ×1.3/×1.5、敵少一人、ATK×0.8+HP×1.3 組合皆 0 勝。
+- 敵ATK下調對「我方先擊倒敵人」最有效:×0.7 起 vs01/02/03/04/05 全部 kill≥1;×0.6 時 vs03/vs05 擊倒 4/5 但仍敗(1 敵殘存),vs01 與 vs04 反而 kill1 / kill0(vs04 ×0.6 首倒戊,atk4)。
+- 我方 HP ×1.3/×1.5 單獨效果有限:vs01、vs04 在 ×1.5 仍是 R2~R3 敗、kill0;vs04 ×1.5 atk0(與 ×0.8 同為 R2 atk0)。
+- 「我方全滅才敗」假設:未改規則,故僅記錄。所有敗局結束時我方 4/5 存活;若規則改為全滅才敗,這些局當時皆仍會繼續(有 4 人活著)。繼續後結果:**未驗證**(未跑)。
+- 未驗證:ATK 係數與勝負的單調性(只取 3 個係數點、每格一局決定性);ATK×0.6 在 vs02 以外 4 場仍敗的原因(僅有上表數字,未做因果診斷);結果對打法 C 以外打法是否成立;vs04 在調整下 atk=0 的成因。

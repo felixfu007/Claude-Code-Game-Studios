@@ -1,0 +1,157 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+  PHI_RAW vs01 C_focus_affinity attacker=2 target=6 phi=-1
+SWEEP vs01 base outcome=DEFEAT rounds=2 player_attacks=2 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs01 base outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=2 seeded_links=2 phi_calls=2 phi_nonzero=2 first_down=[甲 is defeated (after: R2 ENEMY: E5 attacks 甲 for 14 damage)]
+  END players=["乙:26/26", "丙:22/22", "丁:1/26", "戊:30/30"] enemies=["E1:33/36", "E2:28/28", "E3:24/24", "E4:21/32", "E5:41/41"]
+  PHI_RAW vs01 C_focus_affinity attacker=3 target=9 phi=2
+SWEEP vs01 eATK_x0.8 outcome=DEFEAT rounds=3 player_attacks=4 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs01 eATK_x0.8 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=1 first_down=[甲 is defeated (after: R3 ENEMY: E1 attacks 甲 for 8 damage)]
+  END players=["乙:26/26", "丙:22/22", "丁:26/26", "戊:16/30"] enemies=["E1:26/36", "E2:28/28", "E3:24/24", "E4:10/32", "E5:41/41"]
+  PHI_RAW vs01 C_focus_affinity attacker=2 target=6 phi=-1
+SWEEP vs01 eATK_x0.7 outcome=DEFEAT rounds=3 player_attacks=9 enemies_killed=1/5 players_alive=4/5 first_down=[E4 is defeated]
+RESULT vs01 eATK_x0.7 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=9 seeded_links=2 phi_calls=9 phi_nonzero=6 first_down=[E4 is defeated (after: R3 PLAYER: 戊 attacks E4 for 8 damage)]
+  END players=["甲:16/30", "乙:18/26", "丙:3/22", "戊:30/30"] enemies=["E1:18/36", "E2:28/28", "E3:14/24", "E5:41/41"]
+  PHI_RAW vs01 C_focus_affinity attacker=2 target=9 phi=3
+SWEEP vs01 eATK_x0.6 outcome=DEFEAT rounds=3 player_attacks=9 enemies_killed=1/5 players_alive=4/5 first_down=[E4 is defeated]
+RESULT vs01 eATK_x0.6 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=9 seeded_links=2 phi_calls=9 phi_nonzero=4 first_down=[E4 is defeated (after: R3 PLAYER: 甲 attacks E4 for 8 damage)]
+  END players=["甲:22/30", "乙:26/26", "丙:7/22", "戊:30/30"] enemies=["E1:6/36", "E2:28/28", "E3:15/24", "E5:41/41"]
+SWEEP vs01 pHP_x1.3 outcome=DEFEAT rounds=2 player_attacks=1 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs01 pHP_x1.3 outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=1 seeded_links=2 phi_calls=1 phi_nonzero=0 first_down=[甲 is defeated (after: R2 ENEMY: E4 attacks 甲 for 9 damage)]
+  END players=["乙:34/34", "丙:29/29", "丁:34/34", "戊:39/39"] enemies=["E1:32/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs01 C_focus_affinity attacker=1 target=6 phi=-1
+SWEEP vs01 pHP_x1.5 outcome=DEFEAT rounds=3 player_attacks=5 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs01 pHP_x1.5 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=5 seeded_links=2 phi_calls=5 phi_nonzero=3 first_down=[甲 is defeated (after: R3 ENEMY: E2 attacks 甲 for 7 damage)]
+  END players=["乙:39/39", "丙:3/33", "丁:39/39", "戊:33/45"] enemies=["E1:22/36", "E2:28/28", "E3:24/24", "E4:17/32", "E5:41/41"]
+  PHI_RAW vs01 C_focus_affinity attacker=3 target=9 phi=2
+SWEEP vs01 enemy_minus_1 outcome=DEFEAT rounds=2 player_attacks=3 enemies_killed=0/4 players_alive=4/5 first_down=[丙 is defeated]
+RESULT vs01 enemy_minus_1 outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=3 seeded_links=2 phi_calls=3 phi_nonzero=2 first_down=[丙 is defeated (after: R2 ENEMY: E3 attacks 丙 for 17 damage)]
+  END players=["甲:8/30", "乙:26/26", "丁:26/26", "戊:18/30"] enemies=["E1:36/36", "E2:28/28", "E3:24/24", "E4:4/32"]
+  PHI_RAW vs01 C_focus_affinity attacker=2 target=6 phi=-1
+SWEEP vs01 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=3 player_attacks=9 enemies_killed=1/5 players_alive=4/5 first_down=[E4 is defeated]
+RESULT vs01 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=9 seeded_links=2 phi_calls=9 phi_nonzero=6 first_down=[E4 is defeated (after: R3 PLAYER: 戊 attacks E4 for 8 damage)]
+  END players=["甲:20/39", "乙:24/34", "丙:6/29", "戊:39/39"] enemies=["E1:18/36", "E2:28/28", "E3:14/24", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=2 target=7 phi=-1
+SWEEP vs02 base outcome=DEFEAT rounds=3 player_attacks=3 enemies_killed=0/5 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs02 base outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=3 seeded_links=2 phi_calls=3 phi_nonzero=2 first_down=[乙 is defeated (after: R3 ENEMY: E1 attacks 乙 for 14 damage)]
+  END players=["甲:11/30", "丙:22/22", "丁:11/26", "戊:30/30"] enemies=["E1:36/36", "E2:7/28", "E3:13/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=4 target=8 phi=2
+SWEEP vs02 eATK_x0.8 outcome=DEFEAT rounds=4 player_attacks=4 enemies_killed=0/5 players_alive=4/5 first_down=[丙 is defeated]
+RESULT vs02 eATK_x0.8 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=3 first_down=[丙 is defeated (after: R4 ENEMY: E1 attacks 丙 for 12 damage)]
+  END players=["甲:18/30", "乙:18/26", "丁:4/26", "戊:12/30"] enemies=["E1:30/36", "E2:13/28", "E3:2/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=1 target=6 phi=-1
+SWEEP vs02 eATK_x0.7 outcome=DEFEAT rounds=4 player_attacks=6 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs02 eATK_x0.7 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=6 seeded_links=2 phi_calls=6 phi_nonzero=4 first_down=[E2 is defeated (after: R4 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:8/30", "乙:26/26", "丁:8/26", "戊:16/30"] enemies=["E1:31/36", "E3:13/24", "E4:24/32", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=1 target=7 phi=-1
+SWEEP vs02 eATK_x0.6 outcome=VICTORY rounds=9 player_attacks=23 enemies_killed=5/5 players_alive=5/5 first_down=[E2 is defeated]
+RESULT vs02 eATK_x0.6 outcome=VICTORY rounds=9 aborted=false reason= player_attacks=23 seeded_links=2 phi_calls=23 phi_nonzero=17 first_down=[E2 is defeated (after: R3 PLAYER: 乙 attacks E2 for 6 damage)]
+  END players=["甲:3/30", "乙:3/26", "丙:4/22", "丁:12/26", "戊:10/30"] enemies=[]
+  PHI_RAW vs02 C_focus_affinity attacker=3 target=7 phi=2
+SWEEP vs02 pHP_x1.3 outcome=DEFEAT rounds=4 player_attacks=4 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs02 pHP_x1.3 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=3 first_down=[E2 is defeated (after: R4 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:20/39", "乙:34/34", "丙:2/29", "戊:8/39"] enemies=["E1:30/36", "E3:13/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=4 target=8 phi=2
+SWEEP vs02 pHP_x1.5 outcome=DEFEAT rounds=4 player_attacks=4 enemies_killed=0/5 players_alive=4/5 first_down=[丙 is defeated]
+RESULT vs02 pHP_x1.5 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=3 first_down=[丙 is defeated (after: R4 ENEMY: E1 attacks 丙 for 16 damage)]
+  END players=["甲:26/45", "乙:28/39", "丁:9/39", "戊:17/45"] enemies=["E1:30/36", "E2:13/28", "E3:2/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs02 C_focus_affinity attacker=4 target=8 phi=2
+SWEEP vs02 enemy_minus_1 outcome=DEFEAT rounds=3 player_attacks=2 enemies_killed=0/4 players_alive=4/5 first_down=[戊 is defeated]
+RESULT vs02 enemy_minus_1 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=2 seeded_links=2 phi_calls=2 phi_nonzero=1 first_down=[戊 is defeated (after: R3 ENEMY: E2 attacks 戊 for 7 damage)]
+  END players=["甲:11/30", "乙:12/26", "丙:22/22", "丁:11/26"] enemies=["E1:30/36", "E2:28/28", "E3:13/24", "E4:32/32"]
+  PHI_RAW vs02 C_focus_affinity attacker=1 target=8 phi=-1
+SWEEP vs02 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=4 player_attacks=6 enemies_killed=1/5 players_alive=4/5 first_down=[E3 is defeated]
+RESULT vs02 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=6 seeded_links=2 phi_calls=6 phi_nonzero=4 first_down=[E3 is defeated (after: R4 PLAYER: 丁 attacks E3 for 11 damage)]
+  END players=["甲:21/39", "乙:22/34", "丁:12/34", "戊:21/39"] enemies=["E1:30/36", "E2:13/28", "E4:32/32", "E5:36/41"]
+SWEEP vs03 base outcome=DEFEAT rounds=2 player_attacks=1 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs03 base outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=1 seeded_links=2 phi_calls=1 phi_nonzero=0 first_down=[甲 is defeated (after: R2 ENEMY: E5 attacks 甲 for 14 damage)]
+  END players=["乙:26/26", "丙:22/22", "丁:26/26", "戊:30/30"] enemies=["E1:36/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:36/41"]
+  PHI_RAW vs03 C_focus_affinity attacker=4 target=10 phi=2
+SWEEP vs03 eATK_x0.8 outcome=DEFEAT rounds=4 player_attacks=8 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs03 eATK_x0.8 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=8 seeded_links=2 phi_calls=8 phi_nonzero=6 first_down=[E2 is defeated (after: R4 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:11/30", "丙:12/22", "丁:14/26", "戊:12/30"] enemies=["E1:33/36", "E3:24/24", "E4:24/32", "E5:26/41"]
+  PHI_RAW vs03 C_focus_affinity attacker=1 target=9 phi=-1
+SWEEP vs03 eATK_x0.7 outcome=DEFEAT rounds=4 player_attacks=10 enemies_killed=1/5 players_alive=4/5 first_down=[E5 is defeated]
+RESULT vs03 eATK_x0.7 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=10 seeded_links=2 phi_calls=10 phi_nonzero=8 first_down=[E5 is defeated (after: R4 PLAYER: 丁 attacks E5 for 5 damage)]
+  END players=["甲:5/30", "乙:26/26", "丙:22/22", "丁:26/26"] enemies=["E1:27/36", "E2:28/28", "E3:24/24", "E4:25/32"]
+  PHI_RAW vs03 C_focus_affinity attacker=1 target=9 phi=-1
+SWEEP vs03 eATK_x0.6 outcome=DEFEAT rounds=6 player_attacks=22 enemies_killed=4/5 players_alive=4/5 first_down=[E5 is defeated]
+RESULT vs03 eATK_x0.6 outcome=DEFEAT rounds=6 aborted=false reason= player_attacks=22 seeded_links=2 phi_calls=22 phi_nonzero=15 first_down=[E5 is defeated (after: R4 PLAYER: 丙 attacks E5 for 11 damage)]
+  END players=["甲:11/30", "丙:22/22", "丁:11/26", "戊:21/30"] enemies=["E1:12/36"]
+  PHI_RAW vs03 C_focus_affinity attacker=4 target=10 phi=2
+SWEEP vs03 pHP_x1.3 outcome=DEFEAT rounds=4 player_attacks=8 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs03 pHP_x1.3 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=8 seeded_links=2 phi_calls=8 phi_nonzero=6 first_down=[E2 is defeated (after: R4 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:3/39", "丙:16/29", "丁:18/34", "戊:39/39"] enemies=["E1:33/36", "E3:24/24", "E4:24/32", "E5:26/41"]
+  PHI_RAW vs03 C_focus_affinity attacker=4 target=10 phi=2
+SWEEP vs03 pHP_x1.5 outcome=DEFEAT rounds=4 player_attacks=8 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs03 pHP_x1.5 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=8 seeded_links=2 phi_calls=8 phi_nonzero=6 first_down=[E2 is defeated (after: R4 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:18/45", "丙:20/33", "丁:23/39", "戊:17/45"] enemies=["E1:33/36", "E3:24/24", "E4:24/32", "E5:26/41"]
+  PHI_RAW vs03 C_focus_affinity attacker=2 target=6 phi=-1
+SWEEP vs03 enemy_minus_1 outcome=DEFEAT rounds=3 player_attacks=5 enemies_killed=1/4 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs03 enemy_minus_1 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=5 seeded_links=2 phi_calls=5 phi_nonzero=4 first_down=[E2 is defeated (after: R3 PLAYER: 丙 attacks E2 for 15 damage)]
+  END players=["甲:30/30", "丙:22/22", "丁:15/26", "戊:8/30"] enemies=["E1:33/36", "E3:24/24", "E4:24/32"]
+  PHI_RAW vs03 C_focus_affinity attacker=1 target=9 phi=-1
+SWEEP vs03 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=4 player_attacks=11 enemies_killed=1/5 players_alive=4/5 first_down=[E5 is defeated]
+RESULT vs03 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=8 first_down=[E5 is defeated (after: R4 PLAYER: 丙 attacks E5 for 11 damage)]
+  END players=["甲:1/39", "乙:34/34", "丙:29/29", "丁:34/34"] enemies=["E1:30/36", "E2:28/28", "E3:24/24", "E4:17/32"]
+  PHI_RAW vs04 C_focus_affinity attacker=1 target=6 phi=3
+SWEEP vs04 base outcome=DEFEAT rounds=2 player_attacks=1 enemies_killed=0/5 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs04 base outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=1 seeded_links=2 phi_calls=1 phi_nonzero=1 first_down=[乙 is defeated (after: R2 ENEMY: E5 attacks 乙 for 16 damage)]
+  END players=["甲:4/30", "丙:22/22", "丁:26/26", "戊:30/30"] enemies=["E1:27/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+SWEEP vs04 eATK_x0.8 outcome=DEFEAT rounds=2 player_attacks=0 enemies_killed=0/5 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs04 eATK_x0.8 outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=0 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[乙 is defeated (after: R2 ENEMY: E5 attacks 乙 for 12 damage)]
+  END players=["甲:5/30", "丙:22/22", "丁:26/26", "戊:30/30"] enemies=["E1:36/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs04 C_focus_affinity attacker=3 target=6 phi=-1
+SWEEP vs04 eATK_x0.7 outcome=DEFEAT rounds=4 player_attacks=7 enemies_killed=1/5 players_alive=4/5 first_down=[E1 is defeated]
+RESULT vs04 eATK_x0.7 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=7 seeded_links=2 phi_calls=7 phi_nonzero=4 first_down=[E1 is defeated (after: R4 PLAYER: 丙 attacks E1 for 12 damage)]
+  END players=["甲:1/30", "乙:21/26", "丙:22/22", "戊:8/30"] enemies=["E2:19/28", "E3:13/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs04 C_focus_affinity attacker=4 target=10 phi=2
+SWEEP vs04 eATK_x0.6 outcome=DEFEAT rounds=4 player_attacks=4 enemies_killed=0/5 players_alive=4/5 first_down=[戊 is defeated]
+RESULT vs04 eATK_x0.6 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=2 first_down=[戊 is defeated (after: R4 ENEMY: E5 attacks 戊 for 5 damage)]
+  END players=["甲:10/30", "乙:26/26", "丙:22/22", "丁:19/26"] enemies=["E1:17/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:36/41"]
+  PHI_RAW vs04 C_focus_affinity attacker=1 target=6 phi=3
+SWEEP vs04 pHP_x1.3 outcome=DEFEAT rounds=3 player_attacks=4 enemies_killed=0/5 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs04 pHP_x1.3 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=4 seeded_links=2 phi_calls=4 phi_nonzero=4 first_down=[乙 is defeated (after: R3 ENEMY: E1 attacks 乙 for 14 damage)]
+  END players=["甲:13/39", "丙:29/29", "丁:34/34", "戊:32/39"] enemies=["E1:12/36", "E2:28/28", "E3:24/24", "E4:24/32", "E5:41/41"]
+SWEEP vs04 pHP_x1.5 outcome=DEFEAT rounds=2 player_attacks=0 enemies_killed=0/5 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs04 pHP_x1.5 outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=0 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[乙 is defeated (after: R2 ENEMY: E5 attacks 乙 for 16 damage)]
+  END players=["甲:8/45", "丙:33/33", "丁:39/39", "戊:45/45"] enemies=["E1:36/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs04 C_focus_affinity attacker=1 target=6 phi=3
+SWEEP vs04 enemy_minus_1 outcome=DEFEAT rounds=3 player_attacks=5 enemies_killed=0/4 players_alive=4/5 first_down=[乙 is defeated]
+RESULT vs04 enemy_minus_1 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=5 seeded_links=2 phi_calls=5 phi_nonzero=3 first_down=[乙 is defeated (after: R3 ENEMY: E2 attacks 乙 for 9 damage)]
+  END players=["甲:5/30", "丙:6/22", "丁:15/26", "戊:30/30"] enemies=["E1:15/36", "E2:28/28", "E3:24/24", "E4:4/32"]
+SWEEP vs04 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=2 player_attacks=1 enemies_killed=0/5 players_alive=4/5 first_down=[甲 is defeated]
+RESULT vs04 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=1 seeded_links=2 phi_calls=1 phi_nonzero=0 first_down=[甲 is defeated (after: R2 ENEMY: E1 attacks 甲 for 8 damage)]
+  END players=["乙:34/34", "丙:29/29", "丁:34/34", "戊:39/39"] enemies=["E1:30/36", "E2:28/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=2 target=7 phi=3
+SWEEP vs05 base outcome=DEFEAT rounds=3 player_attacks=2 enemies_killed=0/5 players_alive=4/5 first_down=[丙 is defeated]
+RESULT vs05 base outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=2 seeded_links=2 phi_calls=2 phi_nonzero=2 first_down=[丙 is defeated (after: R3 ENEMY: E1 attacks 丙 for 16 damage)]
+  END players=["甲:30/30", "乙:17/26", "丁:26/26", "戊:30/30"] enemies=["E1:36/36", "E2:3/28", "E3:24/24", "E4:32/32", "E5:41/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=7 phi=3
+SWEEP vs05 eATK_x0.8 outcome=DEFEAT rounds=5 player_attacks=8 enemies_killed=1/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs05 eATK_x0.8 outcome=DEFEAT rounds=5 aborted=false reason= player_attacks=8 seeded_links=2 phi_calls=8 phi_nonzero=8 first_down=[E2 is defeated (after: R4 PLAYER: 甲 attacks E2 for 12 damage)]
+  END players=["乙:20/26", "丙:2/22", "丁:18/26", "戊:9/30"] enemies=["E1:16/36", "E3:24/24", "E4:16/32", "E5:41/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=8 phi=-1
+SWEEP vs05 eATK_x0.7 outcome=DEFEAT rounds=6 player_attacks=15 enemies_killed=2/5 players_alive=4/5 first_down=[E1 is defeated]
+RESULT vs05 eATK_x0.7 outcome=DEFEAT rounds=6 aborted=false reason= player_attacks=15 seeded_links=2 phi_calls=15 phi_nonzero=12 first_down=[E1 is defeated (after: R5 PLAYER: 乙 attacks E1 for 3 damage)]
+  END players=["乙:1/26", "丙:1/22", "丁:20/26", "戊:5/30"] enemies=["E2:20/28", "E4:8/32", "E5:17/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=4 target=9 phi=2
+SWEEP vs05 eATK_x0.6 outcome=DEFEAT rounds=6 player_attacks=20 enemies_killed=4/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs05 eATK_x0.6 outcome=DEFEAT rounds=6 aborted=false reason= player_attacks=20 seeded_links=2 phi_calls=20 phi_nonzero=15 first_down=[E2 is defeated (after: R4 PLAYER: 甲 attacks E2 for 12 damage)]
+  END players=["甲:28/30", "乙:6/26", "丁:8/26", "戊:16/30"] enemies=["E5:18/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=7 phi=3
+SWEEP vs05 pHP_x1.3 outcome=DEFEAT rounds=5 player_attacks=9 enemies_killed=2/5 players_alive=4/5 first_down=[E2 is defeated]
+RESULT vs05 pHP_x1.3 outcome=DEFEAT rounds=5 aborted=false reason= player_attacks=9 seeded_links=2 phi_calls=9 phi_nonzero=8 first_down=[E2 is defeated (after: R4 PLAYER: 甲 attacks E2 for 12 damage)]
+  END players=["乙:25/34", "丙:2/29", "丁:23/34", "戊:8/39"] enemies=["E1:28/36", "E3:24/24", "E5:41/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=7 phi=3
+SWEEP vs05 pHP_x1.5 outcome=DEFEAT rounds=4 player_attacks=7 enemies_killed=1/5 players_alive=4/5 first_down=[E4 is defeated]
+RESULT vs05 pHP_x1.5 outcome=DEFEAT rounds=4 aborted=false reason= player_attacks=7 seeded_links=2 phi_calls=7 phi_nonzero=5 first_down=[E4 is defeated (after: R4 PLAYER: 戊 attacks E4 for 8 damage)]
+  END players=["甲:24/45", "丙:33/33", "丁:39/39", "戊:1/45"] enemies=["E1:36/36", "E2:1/28", "E3:24/24", "E5:37/41"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=7 phi=3
+SWEEP vs05 enemy_minus_1 outcome=DEFEAT rounds=3 player_attacks=2 enemies_killed=0/4 players_alive=4/5 first_down=[丙 is defeated]
+RESULT vs05 enemy_minus_1 outcome=DEFEAT rounds=3 aborted=false reason= player_attacks=2 seeded_links=2 phi_calls=2 phi_nonzero=2 first_down=[丙 is defeated (after: R3 ENEMY: E1 attacks 丙 for 16 damage)]
+  END players=["甲:30/30", "乙:17/26", "丁:26/26", "戊:30/30"] enemies=["E1:36/36", "E2:1/28", "E3:24/24", "E4:32/32"]
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=8 phi=-1
+SWEEP vs05 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=6 player_attacks=15 enemies_killed=2/5 players_alive=4/5 first_down=[E1 is defeated]
+RESULT vs05 eATK_x0.8+pHP_x1.3 outcome=DEFEAT rounds=6 aborted=false reason= player_attacks=15 seeded_links=2 phi_calls=15 phi_nonzero=10 first_down=[E1 is defeated (after: R5 PLAYER: 乙 attacks E1 for 3 damage)]
+  END players=["甲:5/39", "丙:3/29", "丁:26/34", "戊:5/39"] enemies=["E2:11/28", "E3:14/24", "E5:25/41"]
