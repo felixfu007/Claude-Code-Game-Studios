@@ -95,11 +95,14 @@ func test_ready_without_override_at_mission_1_resolves_to_existing_constants() -
 func test_ready_at_mission_not_in_sequence_table_falls_back_to_existing_constants() -> void:
 	# Arrange
 	CampaignProgress.reset_for_test()
-	CampaignProgress.advance_on_victory(5)
-	CampaignProgress.advance_on_victory(5)
+	# 2026-10-28 story-007(管理者裁決「兩支照建議改」):序列表已有 5 列,第 3 場不再「查不到」;
+	# 改為推進到「總場數 + 1」(讀序列表,不寫死),斷言不放寬。
+	var absent_mission: int = BattleScreen.campaign_total_missions() + 1
+	for i: int in absent_mission - 1:
+		CampaignProgress.advance_on_victory(absent_mission)
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
-		"precondition:應已推進到第 3 場,否則下面的斷言證明不了「查不到」這個情境"
-	).is_equal(3)
+		"precondition:應已推進到總場數+1,否則下面的斷言證明不了「查不到」這個情境"
+	).is_equal(absent_mission)
 
 	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
 
@@ -217,8 +220,10 @@ func test_card_text_path_override_wins_and_unknown_mission_falls_back_to_constan
 	remove_child(with_override)
 
 	# Arrange —— 場次 3 不在序列表:回退 CARD_TEXT_PATH
-	CampaignProgress.advance_on_victory(5)
-	CampaignProgress.advance_on_victory(5)
+	# 2026-10-28 story-007(管理者裁決「兩支照建議改」):同上,改為推進到「總場數 + 1」。
+	var absent_mission: int = BattleScreen.campaign_total_missions() + 1
+	for i: int in absent_mission - 1:
+		CampaignProgress.advance_on_victory(absent_mission)
 	var fallback: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
 
 	# Act

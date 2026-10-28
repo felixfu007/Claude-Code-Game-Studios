@@ -1,0 +1,19 @@
+# vs03 技能卡牌表(好感度對話卡牌)— 固定欄位順序:
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
+#
+# 本場沿用 vs02_cards.txt(即 vs01_cards.txt)的同一批 8 張卡,內容逐列相同,只有本檔頭不同。
+# 沒有設計理由要換:card_07/card_08(丙類,永久好感度寫入)引用的配對 (1,2) / (3,4)
+# 與 vs03_affinity_links.txt 的兩條關係線一致,仍合法有效。
+#
+# 🔴 欄位的完整定義、各類別規則、丙類合法配對清單、設計裁量紀錄,一律以 vs01_cards.txt
+# 檔頭為權威來源,本檔不重複——複製一份完整說明只會開出第二個會漂移的複本。
+#
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
+card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0
+card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0
+card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0
+card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0
+card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0
+card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0
+card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2
+card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2

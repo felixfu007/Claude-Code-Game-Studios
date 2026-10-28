@@ -1,0 +1,10 @@
+# 測試夾具:勝利且我方 id 1~4 都存活 —— 供 game-shell story-007 AC4 的對話可達測試使用
+# (tests/integration/ui/shell/support_conversation_transition_flow_test.gd)。
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+# SC-02 = 甲(1)×丙(3)、SC-03 = 乙(2)×丁(4),故四人必須都活著。id 1 在 (0,0) 打倒 (1,0) 的敵方 id 6。
+# 搭配 test_fixture_terrain_duel.txt(5x3 全空地)。
+1,TESTHERO,PLAYER,999,99,0,1,1,1,0,0
+2,TESTALLY2,PLAYER,999,0,0,1,1,1,0,1
+3,TESTALLY3,PLAYER,999,0,0,1,1,1,0,2
+4,TESTALLY4,PLAYER,999,0,0,1,1,1,1,2
+6,TESTDUMMY,ENEMY,1,0,0,1,1,1,1,0

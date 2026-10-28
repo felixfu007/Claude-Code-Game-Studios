@@ -7,18 +7,19 @@
 #
 # 檔案存取:只有被測程式自己讀的、已進版控的 assets/data 資料檔(甲類例外);本檔不做 I/O。
 #
-# 🔴 揭露:
-#   - AC2 字面是「第 4 場勝利 -> 第 5 場」,但真實 campaign_sequence.txt 只有 2 列,第 4 場
-#     不可達。本檔以「勝利、非最後一場、本槽位無對話」的等價分支驅動 AC2:見
-#     test_ac2_*(直接設定分流狀態,證明「無對話 -> 直接進下一場」這個分支),
-#     以及 AC3 的真實流程(對話被略過 -> 直接進下一場)。第 4 槽位無記錄這件事本身由資料表
-#     決定,未在本檔驗證(未驗證)。
+# 🔴 揭露(2026-10-28 story-007 更新):
+#   - 序列表現為 5 列。AC2「第 4 場勝利 -> 第 5 場」改為真實第 4 場(CampaignProgress 推進到
+#     第 4 場、不手動清空播放清單),分流由「第 4 槽位在 support_conversations.txt 無記錄」決定。
+#   - 戰鬥內容用夾具(duel 地形 + 勝利名冊),不是 vs03~vs05 真實關卡;真實關卡載入由
+#     campaign_all_missions_load_test.gd 負責。本檔證明的是「第 N 場勝利 -> 分流」,
+#     不證明在真實 vs0N 關卡上能打贏(未驗證)。
 extends GdUnitTestSuite
 
 
 const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 const _TERRAIN_DUEL_PATH: String = "res://assets/data/levels/test_fixture_terrain_duel.txt"
 const _ROSTER_VICTORY_ALLY_PATH: String = "res://assets/data/units/test_fixture_roster_victory_with_ally.txt"
+const _ROSTER_FOUR_ALLIES_PATH: String = "res://assets/data/units/test_fixture_roster_victory_with_four_allies.txt"
 const _ROSTER_DUEL_PATH: String = "res://assets/data/units/test_fixture_roster_duel.txt"
 const _ROSTER_DOOMED_PATH: String = "res://assets/data/units/test_fixture_roster_doomed.txt"
 
@@ -119,10 +120,12 @@ func test_ac1_victory_with_triggered_conversation_goes_to_conversation_then_next
 # ── AC2(等價分支,見檔頭揭露)──────────────────────────────────────────────
 func test_ac2_victory_without_conversation_goes_straight_to_next_battle() -> void:
 	var original: Node = get_tree().current_scene
-	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_VICTORY_ALLY_PATH)
+	for i: int in 3:
+		CampaignProgress.advance_on_victory(BattleScreen.campaign_total_missions())
+	assert_int(CampaignProgress.current_mission()).is_equal(4)
+	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_FOUR_ALLIES_PATH)
 	_win(battle)
-	# 模擬「本槽位沒有對話」:清空實際觸發清單(分流狀態,非資料表)
-	battle._completed_support_conversation_ids.clear()
+	# 2026-10-28:原本手動清空播放清單模擬;現為真實第 4 場(槽位 4 無對話記錄)
 
 	battle._on_result_display_finished()
 	await _wait_swap()
@@ -133,6 +136,7 @@ func test_ac2_victory_without_conversation_goes_straight_to_next_battle() -> voi
 	assert_bool(get_tree().current_scene is BattleScreen).append_failure_message(
 		"AC2: 應直接進下一場戰鬥,實得 %s" % _scene_name()
 	).is_true()
+	assert_int(CampaignProgress.current_mission()).is_equal(5)
 
 	await _release_current(original)
 
@@ -173,8 +177,8 @@ func test_ac4_defeat_returns_to_title() -> void:
 
 func test_ac4_campaign_complete_returns_to_title() -> void:
 	var original: Node = get_tree().current_scene
-	# 推進到最後一場(序列表共 2 場)再打贏
-	CampaignProgress.advance_on_victory(BattleScreen.campaign_total_missions())
+	# 推進到最後一場(序列表共 5 場)再打贏
+	_advance_to_mission(BattleScreen.campaign_total_missions())  # 2026-10-28:原為單次 advance(序列表 2 場時等於最後一場)
 	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_VICTORY_ALLY_PATH)
 	_win(battle)
 
@@ -186,6 +190,51 @@ func test_ac4_campaign_complete_returns_to_title() -> void:
 	).is_equal("TitleScreen")
 	await _release_current(original)
 
+
+
+# ── story-007 AC4:第 2、3 場勝利 -> 對應支援對話 ────────────────────────────
+func _advance_to_mission(n: int) -> void:
+	for i: int in n - 1:
+		CampaignProgress.advance_on_victory(BattleScreen.campaign_total_missions())
+	assert_int(CampaignProgress.current_mission()).is_equal(n)
+
+
+func test_story007_ac4_mission_2_victory_plays_sc02() -> void:
+	var original: Node = get_tree().current_scene
+	_advance_to_mission(2)
+	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_FOUR_ALLIES_PATH)
+	_win(battle)
+	battle._on_result_display_finished()
+	await _wait_swap()
+	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
+	assert_object(screen).append_failure_message("第 2 場勝利應切到對話畫面,實得 %s" % _scene_name()).is_not_null()
+	assert_array(screen.conversation_ids).is_equal(["SC-02"])
+	await _release_current(original)
+
+
+func test_story007_ac4_mission_3_victory_plays_sc03() -> void:
+	var original: Node = get_tree().current_scene
+	_advance_to_mission(3)
+	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_FOUR_ALLIES_PATH)
+	_win(battle)
+	battle._on_result_display_finished()
+	await _wait_swap()
+	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
+	assert_object(screen).append_failure_message("第 3 場勝利應切到對話畫面,實得 %s" % _scene_name()).is_not_null()
+	assert_array(screen.conversation_ids).is_equal(["SC-03"])
+	await _release_current(original)
+
+
+func test_story007_ac4_mission_5_victory_is_campaign_complete_back_to_title() -> void:
+	var original: Node = get_tree().current_scene
+	_advance_to_mission(5)
+	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_FOUR_ALLIES_PATH)
+	_win(battle)
+	battle._on_result_display_finished()
+	await _wait_swap()
+	assert_bool(get_tree().current_scene is SupportConversationScreen).is_false()
+	assert_str(_scene_name()).is_equal("TitleScreen")
+	await _release_current(original)
 
 # ── 敏感度證明(常駐)────────────────────────────────────────────────────────
 func test_sensitivity_proof_always_title_mutant_fails_ac1_expectation() -> void:

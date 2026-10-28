@@ -32,6 +32,13 @@
 # ✅ 2026-10-27(技術債):已補第 6 欄 card_text_path,BattleScreen 依場次讀對應的卡面文字表;
 # 解析順序 override -> 本欄 -> CARD_TEXT_PATH。上一行原文保留作決策紀錄。
 #
+# ✅ 2026-10-28(game-shell story-007):第 3~5 列已補上(vs03~vs05 十五個資料檔,
+# level-designer 當日交件),序列表自此共 5 場。支援對話 SC-02(第 2 場後)與 SC-03(第 3 場後)
+# 在正式遊玩中因此可達。上面各段原文保留作決策紀錄(「本表目前只有第 1 列」等已過時)。
+#
 # mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
 1,res://assets/data/levels/vs01_terrain.txt,res://assets/data/units/vs01_roster.txt,res://assets/data/affinity/vs01_affinity_links.txt,res://assets/data/cards/vs01_cards.txt,res://assets/data/cards/vs01_card_text.txt
 2,res://assets/data/levels/vs02_terrain.txt,res://assets/data/units/vs02_roster.txt,res://assets/data/affinity/vs02_affinity_links.txt,res://assets/data/cards/vs02_cards.txt,res://assets/data/cards/vs02_card_text.txt
+3,res://assets/data/levels/vs03_terrain.txt,res://assets/data/units/vs03_roster.txt,res://assets/data/affinity/vs03_affinity_links.txt,res://assets/data/cards/vs03_cards.txt,res://assets/data/cards/vs03_card_text.txt
+4,res://assets/data/levels/vs04_terrain.txt,res://assets/data/units/vs04_roster.txt,res://assets/data/affinity/vs04_affinity_links.txt,res://assets/data/cards/vs04_cards.txt,res://assets/data/cards/vs04_card_text.txt
+5,res://assets/data/levels/vs05_terrain.txt,res://assets/data/units/vs05_roster.txt,res://assets/data/affinity/vs05_affinity_links.txt,res://assets/data/cards/vs05_cards.txt,res://assets/data/cards/vs05_card_text.txt

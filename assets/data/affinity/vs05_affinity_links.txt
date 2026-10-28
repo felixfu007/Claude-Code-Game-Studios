@@ -1,0 +1,18 @@
+# 🔴 戰役模式下第 2 場以後不讀本檔(管理者 2026-10-27 裁決「只有第 1 場灌,之後靠累積」,
+# production/epics/support-conversation/story-004-single-source-affinity-seeding.md);
+# 非戰役路徑(未注入累積記錄的 BattleScreen)仍讀本檔。
+#
+# vs05 好感度配對表 — 固定欄位順序:
+# unit_a,unit_b,polarity,amp
+#
+# 內容逐列沿用 vs02_affinity_links.txt,原樣不變——「誰跟誰有關係、是正是負」是角色設定
+# (design/narrative/characters.md 第三節,Canon level: Established),不是 level-designer 的職權。
+# unit id:1=甲 2=乙 3=丙 4=丁 5=戊。polarity:POSITIVE / NEGATIVE。amp 目前一律 1。
+#
+#   甲乙合作(正)→ 1,2,POSITIVE
+#   丙丁對立(負)→ 3,4,NEGATIVE
+#
+# ⚠️ 戊沒有任何配對,是刻意的(同 vs01/vs02,見 characters.md 第三節「戊中立」)。
+#
+1,2,POSITIVE,1
+3,4,NEGATIVE,1

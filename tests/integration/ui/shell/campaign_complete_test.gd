@@ -80,14 +80,23 @@ func _text_of(battle: BattleScreen) -> String:
 	return battle._result_label.text
 
 
+# 2026-10-28 story-007(管理者裁決「兩支照建議改」):序列表由 2 列變 5 列,改為動態推到最後一場,斷言不放寬。
+## 推進到序列表最後一場並回傳總場數。
+func _advance_to_last_mission() -> int:
+	var total: int = BattleScreen.campaign_total_missions()
+	for i: int in total - 1:
+		CampaignProgress.advance_on_victory(total)
+	return total
+
+
 func test_final_mission_victory_shows_campaign_complete_and_resets() -> void:
-	# Arrange —— 推到第 2 場(序列表 2 列 = 最後一場)
+	# Arrange —— 推到最後一場(動態讀序列表總場數)
 	var original: Node = get_tree().current_scene
-	CampaignProgress.advance_on_victory(2)
+	var last_mission: int = _advance_to_last_mission()
 	var battle: BattleScreen = await _enter_battle_via_router()
 	assert_object(battle).is_not_null()
 	var ledger: CampaignAffinityLedger = battle.campaign_ledger_override
-	assert_int(CampaignProgress.current_mission()).is_equal(2)
+	assert_int(CampaignProgress.current_mission()).is_equal(last_mission)
 
 	# Act
 	battle._on_battle_ended(BattleState.Outcome.VICTORY)
@@ -130,7 +139,7 @@ func test_victory_without_injected_ledger_shows_victory_and_leaves_progress() ->
 	)
 	add_child(instance)
 	assert_object(instance.campaign_ledger_override).is_null()
-	CampaignProgress.advance_on_victory(2)
+	var last_mission: int = _advance_to_last_mission()
 
 	# Act
 	instance._on_battle_ended(BattleState.Outcome.VICTORY)
@@ -142,13 +151,13 @@ func test_victory_without_injected_ledger_shows_victory_and_leaves_progress() ->
 	).is_equal(Loc.localize(&"battle.hud.result_victory"))
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
 		"AC3:未注入時不得碰 CampaignProgress"
-	).is_equal(2)
+	).is_equal(last_mission)
 
 
 func test_sensitivity_proof_mutant_without_reset_leaves_mission_unreset() -> void:
 	# Arrange
 	var original: Node = get_tree().current_scene
-	CampaignProgress.advance_on_victory(2)
+	var last_mission: int = _advance_to_last_mission()
 	var battle: BattleScreen = await _enter_mutant_battle()
 
 	# Act
@@ -156,8 +165,8 @@ func test_sensitivity_proof_mutant_without_reset_leaves_mission_unreset() -> voi
 
 	# Assert —— 變種不歸零也不改文字;證明上面第一條測試的斷言偵測得到這兩個缺陷
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
-		"變種(拿掉歸零)場次應仍為 2"
-	).is_equal(2)
+		"變種(拿掉歸零)場次應仍為最後一場"
+	).is_equal(last_mission)
 	assert_str(_text_of(battle)).is_not_equal(Loc.localize(&"battle.hud.result_campaign_complete"))
 
 	await _cleanup(original)

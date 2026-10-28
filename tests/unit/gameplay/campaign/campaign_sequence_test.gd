@@ -92,7 +92,7 @@ func test_real_campaign_sequence_file_parses_with_at_least_mission_one() -> void
 			"生產資料檔 %s 解析失敗或為空 —— 查核一已知現況是只有第 1 場有真實" +
 			"資料,本表至少應能解析出這一列"
 		) % _CAMPAIGN_SEQUENCE_PATH
-	).has_size(2)
+	).has_size(5)  # 2026-10-28 story-007:序列表補上第 3~5 場(原 2)
 	assert_int(records[0].mission_index).is_equal(1)
 	assert_str(records[0].terrain_path).is_equal("res://assets/data/levels/vs01_terrain.txt")
 	# 2026-10-27 story-005 AC4:第 2 場補進序列表(原斷言 has_size(1))
@@ -103,3 +103,12 @@ func test_real_campaign_sequence_file_parses_with_at_least_mission_one() -> void
 	assert_str(records[0].cards_path).is_equal("res://assets/data/cards/vs01_cards.txt")
 	assert_str(records[0].card_text_path).is_equal("res://assets/data/cards/vs01_card_text.txt")
 	assert_str(records[1].card_text_path).is_equal("res://assets/data/cards/vs02_card_text.txt")
+	# 2026-10-28 story-007:第 3~5 列的五個欄位逐一指向同編號的 vs0N 檔
+	for n: int in [3, 4, 5]:
+		var r: CampaignSequence = records[n - 1]
+		assert_int(r.mission_index).is_equal(n)
+		assert_str(r.terrain_path).is_equal("res://assets/data/levels/vs0%d_terrain.txt" % n)
+		assert_str(r.roster_path).is_equal("res://assets/data/units/vs0%d_roster.txt" % n)
+		assert_str(r.affinity_path).is_equal("res://assets/data/affinity/vs0%d_affinity_links.txt" % n)
+		assert_str(r.cards_path).is_equal("res://assets/data/cards/vs0%d_cards.txt" % n)
+		assert_str(r.card_text_path).is_equal("res://assets/data/cards/vs0%d_card_text.txt" % n)
