@@ -25,6 +25,8 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 | 2 | **畫面簽核回饋** | 支援對話(字型霞鶩文楷是暫定,字級公式也是暫行)、猜測選擇器、「猜中 M/N」、關係圖(R) |
 | 3 | 教學關:剩 Q2(展示站位到什麼程度)、Q7(戰友情定位)、Q3(等數值) | Q1/Q4/Q5/Q6 已於 15:55 裁決(見下);Q8 不適用(無存檔)。🔴 **接法未定**:戰役場次編號綁著支援對話觸發點,教學**不能**插成新的第 1 場,要做獨立序列 + 標題「略過教學」 |
 | 4 | 查 AI_IMG | 家用端今天無動作 |
+| 5 | 🔴 **滑鼠缺三個入口**(收工後管理者問「一定要用鍵盤嗎」時查出):滑鼠**無法開戰鬥選單**(故無法結束回合)、**無法開手牌/出牌**(出牌期間 `_handle_mouse_button` 早退)、**無取消**(無右鍵)。違反 technical-preferences「滑鼠與手把同等支援」。既存缺口,非今日造成。請管理者裁決是否補 | 查法:`grep -n "Button.new()\|pressed.connect" src/ui/battle/battle_screen.gd`、`grep -n "func _handle_mouse_button" -A5 src/ui/battle/battle_screen.gd` |
+| — | `PLAY.bat` 已改從標題啟動 + 先匯入(`56d68b8`);視窗本身未在公司實測 | — |
 
 **今日全套(協調者最後一次重跑)**:`ENGINE EXIT = 0` / `1559 test cases | 0 errors | 0 failures | 0 orphans` / `(140/140)`。全部已推送 origin/main。
 
