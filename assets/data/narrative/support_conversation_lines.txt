@@ -1,0 +1,58 @@
+# 支援對話台詞順序表(系統 #8 UI)— 固定欄位順序:
+# conversation_id,seq,speaker_roster_id,text_key
+#
+# conversation_id   對話識別碼,必須存在於 assets/data/narrative/support_conversations.txt。
+#
+# seq               該段內的台詞順序,從 1 起算、逐列加 1、不得跳號。
+#
+# speaker_roster_id 說話者,與 support_conversations.txt 同一套名冊 id
+#                   (1=甲 2=乙 3=丙 4=丁 5=戊,見 assets/data/units/vs01_roster.txt)。
+#
+# text_key          台詞文字在 assets/data/locales/strings.csv 的鍵(support.scNN.lineNN)。
+#                   台詞本文不放在本檔 —— 專案規則:玩家可見文字一律走在地化。
+#
+# ── 內容來源 ────────────────────────────────────────────────────
+# design/narrative/support-conversations-script.md(Provisional 初稿,管理者 2026-10-28
+# 「先照初稿用」)。〔〕舞台指示刻意不轉入。句數:SC-01 12、SC-02 14、SC-03 13。
+# 解析器:src/gameplay/narrative/support_conversation_script.gd
+#
+# conversation_id,seq,speaker_roster_id,text_key
+SC-01,1,1,support.sc01.line01
+SC-01,2,2,support.sc01.line02
+SC-01,3,1,support.sc01.line03
+SC-01,4,2,support.sc01.line04
+SC-01,5,1,support.sc01.line05
+SC-01,6,2,support.sc01.line06
+SC-01,7,1,support.sc01.line07
+SC-01,8,2,support.sc01.line08
+SC-01,9,1,support.sc01.line09
+SC-01,10,2,support.sc01.line10
+SC-01,11,1,support.sc01.line11
+SC-01,12,2,support.sc01.line12
+SC-02,1,1,support.sc02.line01
+SC-02,2,3,support.sc02.line02
+SC-02,3,1,support.sc02.line03
+SC-02,4,3,support.sc02.line04
+SC-02,5,1,support.sc02.line05
+SC-02,6,1,support.sc02.line06
+SC-02,7,3,support.sc02.line07
+SC-02,8,1,support.sc02.line08
+SC-02,9,3,support.sc02.line09
+SC-02,10,1,support.sc02.line10
+SC-02,11,3,support.sc02.line11
+SC-02,12,1,support.sc02.line12
+SC-02,13,3,support.sc02.line13
+SC-02,14,1,support.sc02.line14
+SC-03,1,4,support.sc03.line01
+SC-03,2,2,support.sc03.line02
+SC-03,3,4,support.sc03.line03
+SC-03,4,2,support.sc03.line04
+SC-03,5,4,support.sc03.line05
+SC-03,6,2,support.sc03.line06
+SC-03,7,4,support.sc03.line07
+SC-03,8,2,support.sc03.line08
+SC-03,9,4,support.sc03.line09
+SC-03,10,2,support.sc03.line10
+SC-03,11,4,support.sc03.line11
+SC-03,12,2,support.sc03.line12
+SC-03,13,4,support.sc03.line13

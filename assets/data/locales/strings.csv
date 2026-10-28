@@ -103,3 +103,47 @@ battle.hud.guess_match,✓ 符合
 battle.hud.guess_mismatch,✕ 不符合
 battle.hud.guess_result_format,%s　猜%s　%s
 battle.hud.consistency_counter_format,猜中 %d/%d
+character.name.1,藍亭萱
+character.name.2,徐培恩
+character.name.3,董振豪
+character.name.4,秦亦柔
+character.name.5,麥子健
+support.sc01.line01,"今天北路那段,你站的位置剛剛好。"
+support.sc01.line02,"妳衝進去的時候,我就知道該站哪裡了。"
+support.sc01.line03,我們明明才認識沒幾天。
+support.sc01.line04,"嗯。但有些事不用認識很久,身體自己會懂。"
+support.sc01.line05,"我衝得太前面,你不會覺得煩嗎?"
+support.sc01.line06,"不會。妳往前,我就有地方可以補。"
+support.sc01.line07,……那我繼續衝了喔。
+support.sc01.line08,"可以。只是受傷了要說,不要硬撐。"
+support.sc01.line09,"知道啦。你這種叮嚀,聽起來很像在上班。"
+support.sc01.line10,"本來就是上班。只是現在,沒有人付薪水。"
+support.sc01.line11,"哈。那這份工,我也接了。"
+support.sc01.line12,"好。明天也是,妳破門,我在後面。"
+support.sc02.line01,"董振豪,我有話問你。"
+support.sc02.line02,……問。
+support.sc02.line03,"這片林子,你怎麼每一步都知道往哪走?"
+support.sc02.line04,走過。
+support.sc02.line05,"今天那些人追的痕跡,你也先看出來了。"
+support.sc02.line06,"你是不是早就知道,會有人追上來?"
+support.sc02.line07,"我只是認得痕跡。其他的,我不想說。"
+support.sc02.line08,"不想說,就是有事。我不喜歡背後有人瞞我。"
+support.sc02.line09,"妳在最前面,背後本來就看不到。"
+support.sc02.line10,"所以我才要問清楚。你讓我背對你,我怎麼放心?"
+support.sc02.line11,"……放不放心,是妳的事。我不求妳信。"
+support.sc02.line12,好。那我就不問了——但我會一直看著你。
+support.sc02.line13,"隨便妳。明天的路,我還是會帶。"
+support.sc02.line14,……路要帶好。我也沒打算把你丟下。
+support.sc03.line01,你的手法很穩。受傷的人都安靜下來了。
+support.sc03.line02,"先讓他們知道有人在,就不會慌。"
+support.sc03.line03,"我們那邊也講,先控制現場,再處理人。"
+support.sc03.line04,"順序一樣。只是我收的是傷,妳收的是事。"
+support.sc03.line05,"今天這場,收的事比我想的多。"
+support.sc03.line06,"妳這樣一直扛著,不累嗎?"
+support.sc03.line07,"累。但沒有人收,就沒有人記得發生過什麼。"
+support.sc03.line08,"那至少今晚,有人記得妳也在場。"
+support.sc03.line09,"……你這句,比長官的慰勞有用。"
+support.sc03.line10,先別動。妳左手也在流血。
+support.sc03.line11,……我沒發現。
+support.sc03.line12,"收殘局的人,常常最後才收自己。"
+support.sc03.line13,"那以後,換你提醒我。我也提醒你。"
