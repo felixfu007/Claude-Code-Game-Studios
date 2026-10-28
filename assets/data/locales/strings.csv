@@ -20,7 +20,7 @@ battle.load_error.reason_unreadable,"資料檔案存在,但無法讀取。"
 battle.load_error.reason_empty_content,資料檔案是空的。
 battle.load_error.reason_parsed_empty,資料檔案沒有可用的內容。
 battle.load_error.reason_parse_error,"資料檔案內容格式錯誤,其中一列資料無法辨識。"
-battle.hud.controls_hint,"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B
+battle.hud.controls_hint,"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B/右鍵
 開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start　結束單位 Q/Back"
 battle.hand_bar.count_format,%d/%d
 battle.hand_bar.unavailable,不可用
@@ -155,5 +155,7 @@ support.ui.skip_confirm_no,取消
 battle.hud.relation_map_title,關係圖
 battle.hud.relation_map_dead,(陣亡)
 battle.hud.relation_map_toggle,關係圖 [R]
+battle.hud.hand_button,手牌 %d/%d
+battle.hud.menu_button,選單
 battle.hud.result_defeat_reason_format,戰敗——%s倒下了
 battle.hud.result_defeat_reason_separator,、

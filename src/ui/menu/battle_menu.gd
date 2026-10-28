@@ -1000,6 +1000,9 @@ func _on_end_phase_row_pressed() -> void:
 		return
 	if not can_end_faction_phase(controller):
 		return
+	# 2026-10-28 管理者試玩回饋第 3 點:「從選單選擇結束回合的時候,應該要順便關閉選單」。
+	# 先關再送出 —— 敵方回合要在選單已收起、樹已解除暫停的畫面上播。
+	close()
 	controller.end_faction_phase()
 	end_faction_phase_confirmed.emit()
 
@@ -1016,6 +1019,22 @@ func _on_end_phase_row_pressed() -> void:
 ## [constant Node.PROCESS_MODE_ALWAYS] (U-009) — that override applies to
 ## every per-node engine callback gated by process_mode, not only
 ## [method _process].
+## 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠):選單開著時右鍵 = 取消 ——
+## 離開確認框開著就關確認框,否則等同「返回戰鬥」關閉選單。放在 [method _input]
+## 而非 [method _unhandled_input]:面板上的按鈕會先吃掉滑鼠事件,到不了後者。
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	var mouse: InputEventMouseButton = event as InputEventMouseButton
+	if mouse == null or mouse.button_index != MOUSE_BUTTON_RIGHT or not mouse.pressed:
+		return
+	if _leave_confirm.visible:
+		close_leave_confirm()
+	else:
+		close()
+	get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _leave_confirm.visible:
 		return

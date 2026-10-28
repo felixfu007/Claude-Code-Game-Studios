@@ -116,6 +116,10 @@ const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_at
 ## fill survives any hue confusion between yellow and orange.
 const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_threat.png"
 
+## 攻擊範圍的半透明紅底與斜線染色,見 [method set_threat_highlights]。
+const THREAT_FILL_COLOR: Color = Color(0.85, 0.15, 0.1, 0.3)
+const THREAT_STRIPE_TINT: Color = Color(1.0, 0.45, 0.4, 1.0)
+
 const CURSOR_PATH: String = "res://assets/art/placeholder/cursor_outline.png"
 
 ## Story 014 — move-range unreachable-state markers consumed by [method
@@ -628,6 +632,19 @@ func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
 ## highlight kinds never overlap on screen.
 func set_threat_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_threat_highlight_layer, cells, THREAT_HIGHLIGHT_PATH)
+	# 2026-10-28 管理者試玩回饋:「腳色移動前,看不出攻擊範圍。選擇腳色後要用視覺呈現攻擊範圍」。
+	# 原本只有細黃斜線,疊在黃褐色地面上幾乎看不見。每格再墊一層半透明紅底、斜線改染紅。
+	# 斜線形狀保留 —— 它是「不靠顏色也分得出」的那個通道(見 THREAT_HIGHLIGHT_PATH 說明)。
+	# 紅底透明度刻意低,這一層畫在棋子上方,不可把敵方棋子蓋掉。
+	for sprite: Node in _threat_highlight_layer.get_children():
+		(sprite as Sprite2D).modulate = THREAT_STRIPE_TINT
+		var fill: ColorRect = ColorRect.new()
+		fill.color = THREAT_FILL_COLOR
+		fill.size = Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE)
+		fill.position = (sprite as Sprite2D).position - fill.size / 2.0
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_threat_highlight_layer.add_child(fill)
+		_threat_highlight_layer.move_child(fill, 0)
 
 
 ## Story 014 — replaces the move-range THREE unreachable states from [method

@@ -75,6 +75,9 @@ enum IconShape { SQUARE, DIAMOND }
 const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
 
 ## Z1 `Layout Zones` row, verbatim: "單卡 2×3 fpx,間距 0.5 fpx(合計 12 fpx 寬)".
+## 收合態(Z1)整組的縮放倍率,見 [method _apply_layout]。展開(Z2)時線性回到 1.0。
+const COLLAPSED_SCALE: float = 0.5
+
 const SLOT_WIDTH_FPX_MULTIPLIER: float = 2.0
 const SLOT_HEIGHT_FPX_MULTIPLIER: float = 3.0
 const SLOT_GAP_FPX_MULTIPLIER: float = 0.5
@@ -785,6 +788,11 @@ func _apply_layout() -> void:
 	var rect: Rect2 = _lerp_rect(collapsed_rect, expanded_rect, _expand_progress)
 	position = rect.position
 	size = rect.size
+	# 2026-10-28 管理者試玩回饋:「手牌不見了,縮小就好,不是要你隱藏」。收合態(Z1)整組
+	# 等比縮小(卡格、背板、張數一起),以底邊中點為軸,貼著說明列往下縮;展開時回到原尺寸。
+	# 用節點 scale 而不改各 rect 函式:那些函式是版面規格的推導結果,各自有測試釘住。
+	pivot_offset = Vector2(size.x / 2.0, size.y)
+	scale = Vector2.ONE * lerpf(COLLAPSED_SCALE, 1.0, _expand_progress)
 
 	var fpx: float = float(HudLayout.font_size(window_size))
 	_position_slots(window_size, fpx)
@@ -930,6 +938,19 @@ func _position_slots(window_size: Vector2i, fpx: float) -> void:
 			var icon_margin: float = ICON_MARK_MARGIN_FPX_MULTIPLIER * fpx
 			icon_mark.size = Vector2(icon_size, icon_size)
 			icon_mark.position = Vector2(icon_margin, icon_margin)
+
+
+## 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠):回傳 [param window_pos] 落在哪一張
+## 【有牌的】卡格上,沒有則 -1。菱形卡格是旋轉 45° 的 Panel,[method Control.get_global_rect]
+## 不含旋轉,故改以卡格中心點為準、取與未旋轉同尺寸的方框判定。
+func slot_index_at(window_pos: Vector2) -> int:
+	for i in range(mini(_slot_nodes.size(), _slot_kinds.size())):
+		var panel: Panel = _slot_nodes[i]
+		var center: Vector2 = panel.get_global_transform() * (panel.size / 2.0)
+		var half: Vector2 = panel.size / 2.0
+		if absf(window_pos.x - center.x) <= half.x and absf(window_pos.y - center.y) <= half.y:
+			return i
+	return -1
 
 
 func _position_count_label(fpx: float) -> void:

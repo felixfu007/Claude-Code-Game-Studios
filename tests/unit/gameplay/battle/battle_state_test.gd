@@ -133,21 +133,23 @@ func test_resolve_attack_enemy_attacker_forces_phi_zero_player_attacker_keeps_ph
 	# Arrange
 	var state: BattleState = _load_state()
 
-	# Act 1 — 敵方 6（E1，atk=20）打玩家 1（甲，def=8），傳入 phi=999
-	# 應被強制視為 0：20-8+0=12，phi 完全不生效
+	# Act 1 — 敵方 6（E1，atk=14）打玩家 1（甲，def=8），傳入 phi=999
+	# 應被強制視為 0：14-8+0=6，phi 完全不生效
+	# (2026-10-28 管理者試玩後裁決:敵 ATK 下修,E1 20→14,原值 12 隨之改為 6)
 	var enemy_damage: int = state.resolve_attack(6, 1, 999)
 
 	# Assert 1
-	assert_int(enemy_damage).is_equal(12)
-	assert_int(state.unit_by_id(1).hp).is_equal(30 - 12)
+	assert_int(enemy_damage).is_equal(6)
+	assert_int(state.unit_by_id(1).hp).is_equal(30 - 6)
 
-	# Act 2 — 對照組：玩家 1（甲，atk=16）打敵方 6（E1，def=10），phi=5 正常生效
-	# 16-10+5=11
+	# Act 2 — 對照組：玩家 1（甲，atk=16）打敵方 6（E1，def=6），phi=5 正常生效
+	# 16-6+5=15
+	# (2026-10-28 管理者第二輪試玩裁決:敵人被打 2~3 下就倒,E1 HP 36→23、DEF 10→6)
 	var player_damage: int = state.resolve_attack(1, 6, 5)
 
 	# Assert 2
-	assert_int(player_damage).is_equal(11)
-	assert_int(state.unit_by_id(6).hp).is_equal(36 - 11)
+	assert_int(player_damage).is_equal(15)
+	assert_int(state.unit_by_id(6).hp).is_equal(23 - 15)
 
 
 # ---- preview_damage() — must never drift from resolve_attack() -------------

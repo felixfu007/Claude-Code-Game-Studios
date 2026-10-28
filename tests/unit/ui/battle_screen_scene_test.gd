@@ -206,7 +206,12 @@ func test_set_threat_highlights_renders_one_sprite_per_cell_and_clears_on_empty(
 
 	# Act
 	board_view.set_threat_highlights(cells)
-	var drawn_count: int = layer.get_child_count()
+	# 2026-10-28 管理者試玩回饋(攻擊範圍看不出來):每格另墊一層半透明紅底 ColorRect,
+	# 故改數 Sprite2D(斜線)本身;紅底由 battle_screen_playtest_feedback_2026_10_28_test.gd 另測。
+	var drawn_count: int = 0
+	for child: Node in layer.get_children():
+		if child is Sprite2D:
+			drawn_count += 1
 	board_view.set_threat_highlights([])
 	var cleared_count: int = layer.get_child_count()
 

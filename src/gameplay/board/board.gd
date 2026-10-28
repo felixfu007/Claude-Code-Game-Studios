@@ -308,8 +308,15 @@ func reachable_tiles(
 	origin: Vector2i,
 	mp: int,
 	ignore_occupancy: bool = false,
-	ignore_passability: bool = false
+	ignore_passability: bool = false,
+	stop_cells: Dictionary = {},
+	parent_out: Dictionary = {},
+	ignore_occupant_at: Vector2i = Vector2i(-1, -1)
 ) -> Array[Vector2i]:
+	# [param stop_cells](Vector2i -> true):可以走進、但不能從那裡再往外走的格子
+	# (阻擋區,見 BattleState.legal_moves)。起點不受限。預設空 = 原行為。
+	# [param parent_out]:若傳入,填入每個可達格「最便宜路徑上的前一格」,供 [method path_to] 還原路線。
+	# [param ignore_occupant_at]:把這一格當成無人佔據(path_to 用:移動完成後,移動者本人就站在終點)。
 	var result: Array[Vector2i] = []
 	if not is_in_bounds(origin):
 		return result
@@ -328,11 +335,13 @@ func reachable_tiles(
 			continue
 		visited[current] = true
 		_on_tile_visited(current)
+		if current != origin and stop_cells.has(current):
+			continue
 
 		for neighbor: Vector2i in _get_orthogonal_neighbors(current):
 			if not is_in_bounds(neighbor):
 				continue
-			if not ignore_occupancy and has_occupant(neighbor):
+			if not ignore_occupancy and has_occupant(neighbor) and neighbor != ignore_occupant_at:
 				continue
 			if not ignore_passability and not passable(neighbor):
 				continue
@@ -353,12 +362,30 @@ func reachable_tiles(
 				continue
 			if not best_cost.has(neighbor) or candidate_cost < best_cost[neighbor]:
 				best_cost[neighbor] = candidate_cost
+				parent_out[neighbor] = current
 				frontier.append(neighbor)
 
 	for pos: Vector2i in best_cost:
 		if pos != origin:
 			result.append(pos)
 	return result
+
+
+## 2026-10-28 管理者試玩回饋(敵方逐格移動動畫):從 [param origin] 走到 [param dest] 的
+## 一條最便宜路線,依序列出途經格子(不含起點、含終點);走不到回傳空陣列。
+## 規則與 [method reachable_tiles] 完全相同(同一次搜尋),只多還原路線 ——
+## 畫面播放的路線因此不可能穿過規則不允許的格子。[param dest] 視為無人佔據
+## (呼叫時移動者本人已站在終點)。只讀,不改任何狀態。
+func path_to(origin: Vector2i, dest: Vector2i, mp: int, stop_cells: Dictionary = {}) -> Array[Vector2i]:
+	var path: Array[Vector2i] = []
+	var parents: Dictionary = {}
+	if not reachable_tiles(origin, mp, false, false, stop_cells, parents, dest).has(dest):
+		return path
+	var cell: Vector2i = dest
+	while cell != origin:
+		path.push_front(cell)
+		cell = parents[cell]
+	return path
 
 
 # Returns the four orthogonal neighbors of pos. Neighbors may be out of

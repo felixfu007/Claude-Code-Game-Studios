@@ -20,5 +20,5 @@
 #
 # id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
 1,甲,PLAYER,30,16,8,6,1,1,0,2
-3,丙,PLAYER,22,20,4,3,2,4,0,4
-7,E2,ENEMY,28,15,7,5,1,2,9,3
+3,丙,PLAYER,22,20,7,3,2,4,0,4
+7,E2,ENEMY,20,13,5,5,1,2,9,3

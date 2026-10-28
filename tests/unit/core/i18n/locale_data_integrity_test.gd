@@ -174,6 +174,7 @@ func test_csv_parser_treats_quoted_multiline_field_as_single_record() -> void:
 	var data_rows: Array[PackedStringArray] = _parse_csv_rows(fixture).slice(1)
 
 	# Assert — 若解析器錯把續行當成新 key，這裡會量到 3 列而不是 2 列
+	# 2026-10-28 管理者試玩回饋第 4/5 點:新增 battle.hud.hand_button / menu_button 兩列,150 → 152。
 	assert_int(data_rows.size()).append_failure_message(
 		"逐行解析（不追蹤引號狀態）會把雙引號欄位內的換行誤判成新的一列，預期 2 列" +
 		"（a.b 一列、a.c 一列），實得 %d 列：%s" % [data_rows.size(), str(data_rows)]
@@ -285,10 +286,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 150（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 152（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(150)
+	).is_equal(152)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

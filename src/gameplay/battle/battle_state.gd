@@ -324,9 +324,39 @@ func units_of(faction: Unit.Faction) -> Array[Unit]:
 
 ## Returns every tile the unit with the given id can move to this turn,
 ## given its current position and [member Unit.mp].
+##
+## 2026-10-28 管理者試玩回饋:「敵方不可穿越我方腳色移動」(選項「兩個都做」:阻擋規則 +
+## 逐格移動動畫)。敵方單位套用阻擋區:走進任一我方存活單位上下左右緊鄰的格子就必須停下,
+## 不能從那一格再往外走(起點本身例外,否則開場就貼著我方的敵人會動彈不得)。
+## 我方單位不受敵方阻擋 —— 裁決只要求擋敵人。
 func legal_moves(id: int) -> Array[Vector2i]:
 	var unit: Unit = unit_by_id(id)
-	return board.reachable_tiles(position_of(id), unit.mp)
+	var stop_cells: Dictionary = {}
+	if unit.faction == Unit.Faction.ENEMY:
+		stop_cells = zone_of_control_cells(Unit.Faction.PLAYER)
+	return board.reachable_tiles(position_of(id), unit.mp, false, false, stop_cells)
+
+
+## 單位 [param id] 剛從 [param from] 移到目前位置之後,畫面要播放的逐格路線
+## (不含起點、含終點)。阻擋區規則與 [method legal_moves] 相同。只讀。
+func move_path(id: int, from: Vector2i) -> Array[Vector2i]:
+	var unit: Unit = unit_by_id(id)
+	var stop_cells: Dictionary = {}
+	if unit.faction == Unit.Faction.ENEMY:
+		stop_cells = zone_of_control_cells(Unit.Faction.PLAYER)
+	return board.path_to(from, position_of(id), unit.mp, stop_cells)
+
+
+## 阻擋區:[param faction] 每個存活單位上下左右緊鄰、且在棋盤內的格子(Vector2i -> true)。
+## 見 [method legal_moves]。
+func zone_of_control_cells(faction: Unit.Faction) -> Dictionary:
+	var cells: Dictionary = {}
+	for unit: Unit in units_of(faction):
+		var pos: Vector2i = position_of(unit.id)
+		for offset: Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			if board.is_in_bounds(pos + offset):
+				cells[pos + offset] = true
+	return cells
 
 
 ## story-007-movement-range-four-state-query.md: returns every tile the unit

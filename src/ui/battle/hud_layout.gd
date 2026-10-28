@@ -82,6 +82,14 @@ const RESULT_LABEL_HEIGHT_MULTIPLIER: float = 2.2
 ## relation-minimap story-001: panel height in font-size units (see relation_minimap_rect).
 const RELATION_MINIMAP_HEIGHT_MULTIPLIER: float = 10.0
 
+## 關係圖開關按鈕的寬高,以 [method small_font_size] 為單位(「關係圖 [R]」約 5 字寬加留白)。
+const RELATION_TOGGLE_WIDTH_MULTIPLIER: float = 6.5
+const RELATION_TOGGLE_HEIGHT_MULTIPLIER: float = 1.6
+
+## 底部滑鼠按鈕(見 [method hud_action_button_rect])的寬與內縮,皆為字級倍數。
+const HUD_ACTION_BUTTON_WIDTH_MULTIPLIER: float = 5.0
+const HUD_ACTION_BUTTON_PAD_MULTIPLIER: float = 0.2
+
 
 ## HUD font size in pixels for [param window_size], per the A ruling
 ## (story-002-adaptive-font-scale.md, 2026-09-04 manager ruling): 11 times the
@@ -167,6 +175,21 @@ static func controls_hint_bg_rect(window_size: Vector2i) -> Rect2:
 	return Rect2(Vector2(safe.position.x, top), Vector2(safe.size.x, height))
 
 
+## 2026-10-28 管理者試玩回饋第 4 點「全程應該要可以只用滑鼠完成遊玩」——
+## 底部說明列右端的滑鼠按鈕(「手牌」「選單」),上下疊兩顆:[param index] 0 在下、1 在上。
+## 放在說明列內(說明文字右側的空白),不蓋棋盤;寬高全以字級倍數算,
+## 與說明文字同比例縮放,故各解析度下說明文字與按鈕的相對位置不變。
+static func hud_action_button_rect(window_size: Vector2i, index: int) -> Rect2:
+	var bg: Rect2 = controls_hint_bg_rect(window_size)
+	var fpx: float = float(font_size(window_size))
+	var width: float = fpx * HUD_ACTION_BUTTON_WIDTH_MULTIPLIER
+	var pad: float = fpx * HUD_ACTION_BUTTON_PAD_MULTIPLIER
+	var height: float = (bg.size.y - 3.0 * pad) / 2.0
+	var left: float = bg.position.x + bg.size.x - pad - width
+	var top: float = bg.position.y + bg.size.y - pad - height - float(index) * (height + pad)
+	return Rect2(Vector2(left, top), Vector2(width, height))
+
+
 ## [code]LoadErrorLabel[/code] box — "近全螢幕錯誤訊息" (near-fullscreen
 ## failure message) per the story's table, taken to mean exactly
 ## [method safe_rect]: the largest box guaranteed to satisfy AC-S002-c by
@@ -216,14 +239,25 @@ static func consistency_counter_rect(window_size: Vector2i) -> Rect2:
 ## relation-minimap story-001 -- the always-visible toggle button ("關係圖")
 ## under [method consistency_counter_rect]: same left edge, same width, one
 ## gap below it. Overlay on the board, no side column.
+##
+## 2026-10-28 管理者試玩回饋:「會一直不小心按到關係圖,把按鈕做小一點」。
+## 原本與一致率計數器同寬(安全區 30%)、同高;改為以小一級字級
+## ([method small_font_size])為基準的小按鈕,左上角位置不變。
 static func relation_minimap_toggle_rect(window_size: Vector2i) -> Rect2:
 	var counter: Rect2 = consistency_counter_rect(window_size)
 	var fpx: float = float(font_size(window_size))
+	var small: float = float(small_font_size(window_size))
 	var gap: float = fpx * LABEL_GAP_MULTIPLIER
 	return Rect2(
 		Vector2(counter.position.x, counter.position.y + counter.size.y + gap),
-		Vector2(counter.size.x, counter.size.y)
+		Vector2(small * RELATION_TOGGLE_WIDTH_MULTIPLIER, small * RELATION_TOGGLE_HEIGHT_MULTIPLIER)
 	)
+
+
+## 比 HUD 字級小一級:少一個像素字型基準 [constant GLYPH_PX],仍是它的整數倍(像素字不糊),
+## 最小不低於 1 倍。右上格位資訊框與關係圖按鈕共用。
+static func small_font_size(window_size: Vector2i) -> int:
+	return maxi(GLYPH_PX, font_size(window_size) - GLYPH_PX)
 
 
 ## relation-minimap story-001 -- the panel itself, directly under
@@ -235,9 +269,11 @@ static func relation_minimap_toggle_rect(window_size: Vector2i) -> Rect2:
 ## no-overlap claim is asserted by test against the real rect functions.
 static func relation_minimap_rect(window_size: Vector2i) -> Rect2:
 	var toggle: Rect2 = relation_minimap_toggle_rect(window_size)
+	var counter: Rect2 = consistency_counter_rect(window_size)
 	var fpx: float = float(font_size(window_size))
 	var gap: float = fpx * LABEL_GAP_MULTIPLIER
+	# 寬度取計數器寬(按鈕縮小後不再與面板同寬,面板維持原寬)。
 	return Rect2(
 		Vector2(toggle.position.x, toggle.position.y + toggle.size.y + gap),
-		Vector2(toggle.size.x, fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER)
+		Vector2(counter.size.x, fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER)
 	)

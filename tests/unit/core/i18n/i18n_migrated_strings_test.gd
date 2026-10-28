@@ -73,8 +73,9 @@ const _EXPECTED_BATTLE_SCREEN: Dictionary[StringName, String] = {
 	# Q/Back」）——這不是遷移時漏改，是內容本身在遷移完成之後被正常地改了。本檔的斷言
 	# 目的是「查出來的內容跟『遷移前』的字面值一樣」，而遷移前的字面值本來就不包含這段
 	# 新文字，故以下期望值對齊到變更後的現況，不是追溯竄改遷移歷史。
+	# 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠):取消加註「右鍵」。
 	&"battle.hud.controls_hint": (
-		"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start　結束單位 Q/Back"
+		"移動 方向鍵/十字鍵/滑鼠　確認 Enter/A/左鍵　取消 Esc/B/右鍵\n開/收手牌 C/X　跳目標 Tab/RB　選單 M/Start　結束單位 Q/Back"
 	),
 }
 

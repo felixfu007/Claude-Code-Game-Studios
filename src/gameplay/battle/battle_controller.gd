@@ -244,6 +244,19 @@ func selectable_units() -> Array[int]:
 	return result
 
 
+## 2026-10-28 管理者試玩回饋:「腳色都移動後,還是沒有自動結束回合」。目前陣營是否還有
+## 任何單位「做得了有意義的事」:還能移動,或還能攻擊且射程內真的有敵人。
+## 只剩攻擊旗標、但射程內沒有任何敵人的單位不算 —— 它旗標還在,但沒事可做。
+## 只讀查詢,不改任何狀態;PLAYER_INPUT 以外一律 false。
+func has_unit_with_available_action() -> bool:
+	for id: int in selectable_units():
+		if _order.can_move(id):
+			return true
+		if not _attack_targets_for(id).is_empty():
+			return true
+	return false
+
+
 ## story-004-unit-action-four-state-getter.md / M1 audit: forwards to
 ## [method TurnOrder.unit_action_state] for any [param id] — no prior
 ## [method select_unit] call is required, and this is not gated on
@@ -781,6 +794,11 @@ func click_tile(pos: Vector2i) -> Dictionary:
 		return {"action": &"blocked_pending_discard"}
 
 	var occupant: Unit = _state.unit_at(pos)
+	# 2026-10-28 管理者試玩回饋:「腳色無法原地移動」。再點一次已選中單位自己的格子 =
+	# 原地移動(用掉移動旗標、位置不變)。移動預覽本來就把自己的格子當成合法選項
+	# (BattleScreen._is_move_preview_cell:「stay put is a real option」),只是點下去沒有效果。
+	if occupant != null and occupant.id == _selected_unit_id and _order.can_move(occupant.id):
+		return _apply_stay(occupant.id)
 	if occupant != null and occupant.faction == _current_faction_as_unit_faction():
 		if _select_unit_internal(occupant.id):
 			return {"action": &"selected", "unit_id": occupant.id}
@@ -1519,6 +1537,17 @@ func _apply_move(unit_id: int, dest: Vector2i) -> Dictionary:
 # attacker regardless, and the project decision is that Φ never applies to
 # enemy attacks in the first place, so there is nothing for the provider to
 # contribute on this path.
+## 原地移動:只用掉移動旗標,不改位置。仍發 [signal unit_moved](from == to),
+## 讓所有聽「移動完成」的下游(畫面重繪、好感度站位結算)與一般移動走同一條路。
+func _apply_stay(unit_id: int) -> Dictionary:
+	var pos: Vector2i = _state.position_of(unit_id)
+	_state.commit_authoritative_change(func() -> void:
+		_order.use_move(unit_id)
+	)
+	unit_moved.emit(unit_id, pos, pos)
+	return {"action": &"moved", "unit_id": unit_id, "from": pos, "to": pos}
+
+
 func _process_enemy_unit(id: int, log: Array[String]) -> void:
 	var actor: Unit = _state.unit_by_id(id)
 	var can_move_flag: bool = _order.can_move(id)

@@ -366,6 +366,14 @@ const _HAND_DIRECTION_DELTAS: Dictionary = {
 ## one constant, nothing in [BattleController].
 const ENEMY_STEP_PAUSE_SECONDS: float = 0.3
 
+## 2026-10-28 管理者試玩回饋(「敵方不可穿越我方腳色移動」,選項「兩個都做」之二):
+## 敵方移動逐格播放時,每走一格停多久。純表現層時間,與 [constant ENEMY_STEP_PAUSE_SECONDS] 同性質。
+const ENEMY_MOVE_CELL_SECONDS: float = 0.12
+
+## 逐格播放期間,畫面上棋子暫時畫在哪一格(unit id -> 格子),覆蓋 BattleState 的真實位置。
+## 只影響 [method _refresh_view] 畫棋子的位置;遊戲狀態在播放前就已經是終點。
+var _display_cell_override: Dictionary = {}
+
 ## production/epics/game-shell/story-001-title-screen-and-scene-switching.md
 ## (AC5) —— 戰鬥結束後,結果文字(TEXT_RESULT_VICTORY/TEXT_RESULT_DEFEAT)顯示
 ## 這麼多秒,再切回標題畫面。見 [method _on_battle_ended] / [method
@@ -1259,10 +1267,110 @@ func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
 	_relation_toggle_button.position = trect.position
 	_relation_toggle_button.size = trect.size
-	_relation_toggle_button.add_theme_font_size_override(&"font_size", fpx)
+	_relation_toggle_button.add_theme_font_size_override(&"font_size", HudLayout.small_font_size(window_size))
 
 func _mouse_over_relation_toggle(window_pos: Vector2) -> bool:
 	return _relation_toggle_button != null and _relation_toggle_button.get_global_rect().has_point(window_pos)
+
+
+# ---- 2026-10-28 管理者試玩回饋第 4 點:全程只用滑鼠 -------------------------------
+# 選項逐字:「全程應該要可以只用滑鼠完成遊玩,不需要用到鍵盤」。
+# 做法:(1) 底部說明列右端加「手牌」「選單」兩顆按鈕,走與 C/M 鍵同一個處理函式;
+# (2) 右鍵 = battle_cancel;(3) 出牌、棄牌、選目標、兩個確認框期間的左鍵,
+# 換算成與鍵盤 battle_confirm 相同的動作,經 [method _dispatch_mouse_action] 送進
+# [method _input] 的同一條分派路徑 —— 不另寫一套平行的狀態轉移。
+const TEXT_HAND_BUTTON: StringName = &"battle.hud.hand_button"
+const TEXT_MENU_BUTTON: StringName = &"battle.hud.menu_button"
+
+var _hand_button: Button = null
+var _menu_button: Button = null
+
+
+func _build_hud_action_buttons() -> void:
+	_hand_button = _make_hud_action_button("HandButton", TEXT_HAND_BUTTON, _handle_open_hand_pressed)
+	_menu_button = _make_hud_action_button("MenuButton", TEXT_MENU_BUTTON, _handle_battle_menu_pressed)
+
+
+func _make_hud_action_button(node_name: String, text_key: StringName, on_pressed: Callable) -> Button:
+	var button: Button = Button.new()
+	button.name = node_name
+	button.focus_mode = Control.FOCUS_NONE
+	button.text = Loc.localize(text_key)
+	button.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	button.pressed.connect(func() -> void:
+		if _controller.phase() == BattleController.Phase.PLAYER_INPUT and not _attack_confirming:
+			on_pressed.call()
+	)
+	$UILayer.add_child(button)
+	return button
+
+
+func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
+	if _hand_button == null:
+		return
+	var fpx: int = HudLayout.font_size(window_size)
+	for pair: Array in [[_menu_button, 0], [_hand_button, 1]]:
+		var button: Button = pair[0]
+		var rect: Rect2 = HudLayout.hud_action_button_rect(window_size, pair[1])
+		button.position = rect.position
+		button.size = rect.size
+		button.add_theme_font_size_override(&"font_size", fpx)
+
+
+func _mouse_over_hud_action_buttons(window_pos: Vector2) -> bool:
+	for button: Button in [_hand_button, _menu_button]:
+		if button != null and button.visible and button.get_global_rect().has_point(window_pos):
+			return true
+	return false
+
+
+## 選牌/棄牌時,滑鼠移到哪張卡上,手牌游標就跟到哪張 —— 說明框(Z3)跟著游標顯示
+## 那張卡的效果,與方向鍵移動游標是同一個狀態。
+func _hover_hand_card(window_pos: Vector2) -> void:
+	if not (_card_selecting_from_hand or _controller.has_pending_discard()):
+		return
+	var index: int = _hand_bar.slot_index_at(window_pos)
+	if index < 0 or index == _hand_bar.diagnostic_cursor_index():
+		return
+	_hand_bar.move_cursor(index - _hand_bar.diagnostic_cursor_index())
+	_refresh_view()
+
+
+## 把滑鼠點擊轉成與鍵盤相同的動作事件,直接交給本畫面的 [method _input]。
+## 刻意不經 [method Input.parse_input_event]:那會讓 CursorStateHost 也收到一個
+## 非滑鼠事件,把裝置權威切離滑鼠,游標就不再跟著指標走。
+func _dispatch_mouse_action(action: StringName) -> void:
+	var synthetic: InputEventAction = InputEventAction.new()
+	synthetic.action = action
+	synthetic.pressed = true
+	_input(synthetic)
+
+
+## 出牌/棄牌/選目標/確認框期間的左鍵。回傳 true 表示已處理(呼叫端不再當成點棋盤)。
+func _handle_mouse_click_in_card_or_confirm_state(window_pos: Vector2) -> bool:
+	if _controller.has_pending_discard() or _card_selecting_from_hand:
+		var index: int = _hand_bar.slot_index_at(window_pos)
+		if index >= 0:
+			_hand_bar.move_cursor(index - _hand_bar.diagnostic_cursor_index())
+			_dispatch_mouse_action(&"battle_confirm")
+		return true
+	if _card_selecting_target:
+		var cell: Vector2i = _window_pos_to_cell(window_pos)
+		if BoardCoords.is_in_bounds(cell):
+			CursorStateHost.set_target(
+				CursorTarget.make(CursorTypes.SurfaceType.BOARD_TILE, CursorTypes.encode_tile(cell, BoardCoords.BOARD_COLS))
+			)
+			_dispatch_mouse_action(&"battle_confirm")
+		return true
+	if _card_confirming:
+		if CardConfirmPanel.panel_rect(get_window().size).has_point(window_pos):
+			_dispatch_mouse_action(&"battle_confirm")
+		return true
+	if _attack_confirming:
+		if AttackConfirmPanel.panel_rect(get_window().size).has_point(window_pos):
+			_dispatch_mouse_action(&"battle_confirm")
+		return true
+	return _controller.is_card_play_in_progress()
 
 
 # ---- battle-hud story-003:一致率計數器 -----------------------------------------
@@ -1457,6 +1565,7 @@ func _ready() -> void:
 
 	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
 	_build_relation_minimap()
+	_build_hud_action_buttons()
 
 	# story-003 下一輪接線 —— 四個資料路徑共用同一次查表結果,不逐一重新讀檔/
 	# 解析序列表。解析順序見 [member terrain_path_override] 文件註解。
@@ -2051,6 +2160,25 @@ func _process(_delta: float) -> void:
 		_attack_confirm_pending_press = false
 		_apply_pending_attack_confirm()
 
+	_auto_end_faction_phase_if_no_unit_can_act()
+
+
+## 2026-10-28 管理者試玩回饋第 2 點:「當我方沒有可移動角色的時候,應該要自動結束回合,
+## 輪到對手移動」。我方階段中,只要沒有任何我方單位還做得了有意義的事
+## ([method BattleController.has_unit_with_available_action] —— 第二輪回饋「腳色都移動後,
+## 還是沒有自動結束回合」後,從「全員旗標用完」放寬為「移動已用、射程內無敵人也算完」),
+## 就走與選單「結束回合」同一個驅動 [method _end_faction_phase_pressed]。
+## 出牌中、強制棄牌中、攻擊確認框開著時不觸發 —— 這三種狀態都還在等玩家輸入。
+## 選單開著時樹是暫停的,本方法根本不會被呼叫。
+func _auto_end_faction_phase_if_no_unit_can_act() -> void:
+	if _controller.phase() != BattleController.Phase.PLAYER_INPUT:
+		return
+	if _controller.is_card_play_in_progress() or _controller.has_pending_discard() or _attack_confirming:
+		return
+	if _controller.has_unit_with_available_action():
+		return
+	_end_faction_phase_pressed()
+
 
 func _input(event: InputEvent) -> void:
 	if _load_failed:
@@ -2073,6 +2201,7 @@ func _input(event: InputEvent) -> void:
 		if _controller.phase() != BattleController.Phase.ENEMY_ACTING \
 				and not _guess_mouse_over_selector((event as InputEventMouseMotion).position):
 			_last_mouse_window_pos = (event as InputEventMouseMotion).position
+		_hover_hand_card((event as InputEventMouseMotion).position)
 		return
 
 	if event is InputEventMouseButton:
@@ -2085,11 +2214,13 @@ func _input(event: InputEvent) -> void:
 			# battle-hud story-002:點在猜測選擇器按鈕上的點擊歸按鈕自己處理
 			# (Button.pressed),不得同時當成棋盤點擊。
 			if not _guess_mouse_over_selector((event as InputEventMouseButton).position) \
-					and not _mouse_over_relation_toggle((event as InputEventMouseButton).position):
+					and not _mouse_over_relation_toggle((event as InputEventMouseButton).position) \
+					and not _mouse_over_hud_action_buttons((event as InputEventMouseButton).position):
 				_handle_mouse_button(event as InputEventMouseButton)
 		return
 
-	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+	# InputEventAction:只會來自 [method _dispatch_mouse_action](滑鼠點擊換算的確認/取消)。
+	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion or event is InputEventAction:
 		# relation-minimap story-001:開/關關係圖,管理者 2026-10-28 裁決「我方階段隨時可開」,
 		# 故放在攻擊確認面板與強制棄牌這兩個吞鍵分支【之前】—— 否則那兩種情況按不到。
 		# 切換後 return,R 不會再傳給那兩個分支。僅顯示,不暫停棋盤;開著時其餘輸入照常。
@@ -2237,6 +2368,12 @@ func _input(event: InputEvent) -> void:
 			# duplicate here.
 			if event.is_action_pressed(&"battle_end_unit_turn"):
 				_handle_end_unit_turn_result(_controller.end_unit_turn(_controller.selected_unit()))
+				return
+			# 2026-10-28 管理者試玩回饋:「選了腳色後,按滑鼠右鍵,應該要能取消選取」。
+			# 右鍵經 _dispatch_mouse_action 變成 battle_cancel,Esc/B 同一條路。
+			if event.is_action_pressed(&"battle_cancel") and _controller.selected_unit() != -1:
+				_controller.deselect()
+				_refresh_view()
 				return
 			# Story U-016 — the battle_end_phase keypress dispatch that used to
 			# live here is removed (project.godot's battle_end_phase action
@@ -2967,6 +3104,9 @@ func _fail_load(failures: Dictionary[String, LoadFailure]) -> void:
 	_status_label.visible = false
 	_info_label.visible = false
 	_controls_hint_bg.visible = false
+	for button: Button in [_hand_button, _menu_button]:
+		if button != null:
+			button.visible = false
 
 	_load_failed = true
 	set_process(false)
@@ -3008,9 +3148,18 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	# guards: mouse is not wired for any interaction while the T2' attack
 	# confirm panel is open (same "do nothing" rule this guard already applies
 	# to card play / forced discard — see this method's own doc comment).
-	if _controller.is_card_play_in_progress() or _controller.has_pending_discard() or _attack_confirming:
+	#
+	# 🔴 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠)取代了上面幾段的「什麼都不做」:
+	# 右鍵 = 取消;那幾種狀態下的左鍵改由
+	# [method _handle_mouse_click_in_card_or_confirm_state] 換算成確認。上面原文保留作決策紀錄。
+	if not event.pressed:
 		return
-	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		_dispatch_mouse_action(&"battle_cancel")
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if _handle_mouse_click_in_card_or_confirm_state(event.position):
 		return
 	var cell: Vector2i = _window_pos_to_cell(event.position)
 	if not BoardCoords.is_in_bounds(cell):
@@ -4047,8 +4196,14 @@ func _end_faction_phase_pressed() -> void:
 	_diagnostic_step_enemy_phase_call_count = 0
 
 	while _controller.phase() == BattleController.Phase.ENEMY_ACTING:
+		var positions_before: Dictionary = {}
+		for enemy: Unit in _state.units_of(Unit.Faction.ENEMY):
+			positions_before[enemy.id] = _state.position_of(enemy.id)
 		_controller.step_enemy_phase()
 		_diagnostic_step_enemy_phase_call_count += 1
+		await _play_enemy_moves_cell_by_cell(positions_before)
+		if not is_instance_valid(self):
+			return
 		# story-018: rebuild after EVERY step, not once at the end — otherwise
 		# the cross-frame pause below has nothing new to show and the whole
 		# point of stepping is lost. _refresh_view()'s own doc comment already
@@ -4061,6 +4216,27 @@ func _end_faction_phase_pressed() -> void:
 		await get_tree().create_timer(ENEMY_STEP_PAUSE_SECONDS).timeout
 		if not is_instance_valid(self):
 			return
+
+
+## 逐格播放這一步裡移動過的敵人:沿 [method BattleState.move_path](與移動規則同一次
+## 搜尋,不會穿過我方)一格一格畫過去,最後清掉覆蓋、回到真實位置。
+func _play_enemy_moves_cell_by_cell(positions_before: Dictionary) -> void:
+	for id: int in positions_before:
+		var unit: Unit = _state.unit_by_id(id)
+		if unit == null or not unit.is_alive():
+			continue
+		var from: Vector2i = positions_before[id]
+		if _state.position_of(id) == from:
+			continue
+		var path: Array[Vector2i] = _state.move_path(id, from)
+		for cell: Vector2i in path.slice(0, path.size() - 1):
+			_display_cell_override[id] = cell
+			_refresh_view()
+			await get_tree().create_timer(ENEMY_MOVE_CELL_SECONDS).timeout
+			if not is_instance_valid(self):
+				return
+		_display_cell_override.erase(id)
+	_refresh_view()
 
 
 # Repositions/toggles the self-drawn cursor sprite based on current device
@@ -4279,7 +4455,7 @@ func _refresh_view() -> void:
 		})
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		pieces.append({
-			"cell": _state.position_of(unit.id),
+			"cell": _display_cell_override.get(unit.id, _state.position_of(unit.id)),
 			"faction": "ENEMY",
 			"sprite_index": 0,
 			"hp": unit.hp,
@@ -4454,14 +4630,30 @@ func _refresh_view() -> void:
 	# expanded" comment), but passing it explicitly here keeps this call site
 	# honest about what state it is actually asking for, rather than relying
 	# on a callee-side correction the reader would have to go find.
+	# 2026-10-28 管理者試玩回饋:「滑鼠移到卡片上時,說明框要顯示卡片效果」——
+	# 補上一直留空的 card_faces(上方 U-013 註解寫的「out of scope for whichever story
+	# picks it up next」就是這裡),Z3 說明框因此有卡面文字與效果摘要可顯示。
+	var card_faces: Array[Dictionary] = []
+	for card: Card in hand:
+		card_faces.append({
+			"flavor_text": _card_flavor_texts.get(card.id, ""),
+			"delta_atk": card.delta_atk,
+			"delta_def": card.delta_def,
+			"duration_rounds": card.duration_rounds,
+		})
 	_hand_bar.render(
 		hand_bar_slot_kinds(hand),
 		CardDeck.HAND_SIZE_LIMIT,
 		availability_for(_controller.phase()),
 		_card_selecting_from_hand or _controller.has_pending_discard(),
-		[],
+		card_faces,
 		_controller.has_pending_discard()
 	)
+	# 2026-10-28 管理者試玩回饋第 5 點「手牌擋到地圖了」:張數同時顯示在底部「手牌」按鈕上。
+	# (第一版曾把收合態整個隱藏;管理者第二輪回饋「縮小就好,不是要你隱藏」,
+	# 改為 HandBar 收合時等比縮小,見 HandBar.COLLAPSED_SCALE。)
+	if _hand_button != null:
+		_hand_button.text = Loc.localize(TEXT_HAND_BUTTON) % [hand.size(), CardDeck.HAND_SIZE_LIMIT]
 
 	_update_status_label()
 	_update_tile_info_panel()
@@ -4566,7 +4758,8 @@ func _update_tile_info_panel() -> void:
 ## own placeholder judgment call, not a pixel-measured spike result[/b] like
 ## [constant HudLayout.STATUS_LABEL_WIDTH_FRACTION]'s own spike-backed
 ## constant — disclosed rather than presented as measured.
-const _TILE_INFO_PANEL_WIDTH_FRACTION: float = 0.4
+## 最長一列約 7 個全形字(如「武器射程:1–1」)加左右留白。
+const _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER: float = 8.0
 const _TILE_INFO_PANEL_LINE_COUNT: int = 8
 const _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER: float = 1.2
 const _TILE_INFO_PANEL_PADDING_MULTIPLIER: float = 0.8
@@ -4575,9 +4768,13 @@ func _apply_tile_info_panel_layout() -> void:
 	var window_size: Vector2i = get_window().size
 	var safe: Rect2 = HudLayout.safe_rect(window_size)
 	var status: Rect2 = HudLayout.status_label_rect(window_size)
-	var fpx: float = float(HudLayout.font_size(window_size))
-	var gap: float = fpx
-	var width: float = safe.size.x * _TILE_INFO_PANEL_WIDTH_FRACTION
+	var hud_fpx: float = float(HudLayout.font_size(window_size))
+	var gap: float = hud_fpx
+	# 2026-10-28 管理者試玩回饋:「右上角的說明框太大了」。字級改為比 HUD 小一級
+	# (少一個像素字型基準 GLYPH_PX,仍為其整數倍,像素字不糊),寬度改跟字級走,
+	# 不再佔安全區 40% 寬。
+	var fpx: float = float(HudLayout.small_font_size(window_size))
+	var width: float = fpx * _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER
 	var height: float = fpx * (
 		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * _TILE_INFO_PANEL_LINE_COUNT
 		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
@@ -4594,6 +4791,7 @@ func _apply_tile_info_panel_layout() -> void:
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
 	_apply_consistency_counter_layout(window_size)
 	_apply_relation_minimap_layout(window_size)
+	_apply_hud_action_buttons_layout(window_size)
 
 
 ## Story 015 -- tree_exited handler: cursor handoff, then unregister.
