@@ -401,57 +401,136 @@ func test_exempt_shell_lines_would_otherwise_be_flagged_by_the_matcher_alone() -
 ## register/unregister-pairing tests, not by this file.
 
 
-## Narrower successor to the retired test above — the part of the original
-## claim that is STILL true today: no [enum CursorTypes.SurfaceType] tag
-## OTHER THAN [constant CursorTypes.SurfaceType.BOARD_TILE] is registered
-## anywhere in [code]res://src[/code] yet (RELATION_MINIMAP_NODE / CARD_SLOT /
-## DIALOGUE_CHOICE all still have zero registrations — a player cannot see a
-## highlight move on the relationship minimap, a card slot, or a dialogue
-## choice yet, regardless of how correct 機制六③'s Option E mechanism is).
+## 🔴 [b]NARROWED AGAIN 2026-10-28 (support-conversation-ui story-003)[/b] —
+## this used to be
+## [code]test_gap_no_surface_other_than_board_tile_is_registered_anywhere_in_src_yet[/code].
+## It went red as intended: [code]src/ui/shell/support_conversation_screen.gd[/code]
+## now registers [constant CursorTypes.SurfaceType.DIALOGUE_CHOICE] for real
+## (ADR-0005 enum comment: "DIALOGUE_CHOICE, # 支援對話選項"). Per the retired
+## test's own rule ("narrow/retire for that tag, never widen the exemption to
+## force green"), this is a NARROWING, not a path exemption: the exemption is
+## keyed on the TAG ([method _is_claimed_tag_call]), never on a file path.
+## [b]Manager ruling 2026-10-28, option text verbatim: 「照它的說明收窄(推薦)」[/b]
+## (skipped options: 「整支退休」、「先不動,紅燈留著」).
 ##
-## [b]Filters by the literal substring "BOARD_TILE" on the matched LINE
-## text[/b], not by parsing the [enum CursorTypes.SurfaceType] argument out of
-## each call — [method _files_matching_surface_registration_calls] returns raw
-## source lines, and every real call site in this codebase (as of this story)
-## spells the tag out literally as [code]CursorTypes.SurfaceType.BOARD_TILE[/code]
-## rather than through an indirection that would hide the substring. This is a
-## narrower, weaker parse than a real argument extractor would be — flagged,
-## not hidden — but it costs nothing extra today (zero call sites this story
-## adds spell the tag any other way) and avoids building an argument parser
-## for a scanner this file's own history already shows is easy to get subtly
-## wrong (see this file's own "SECOND PASS" correction note above).
+## What is STILL true and still asserted: no tag other than BOARD_TILE and
+## DIALOGUE_CHOICE (i.e. RELATION_MINIMAP_NODE / CARD_SLOT) is registered
+## anywhere in [code]res://src[/code] yet.
 ##
-## 🔴 [b]This assertion WILL go red the moment ANY of the other three
-## [enum CursorTypes.SurfaceType] tags is registered for real[/b] — same
-## discipline as the retired test: that is the correct, intended outcome
-## (the gap it tracks has closed for that tag), and the correct response is
-## the same — narrow/retire, never widen the exemption to force green.
-func test_gap_no_surface_other_than_board_tile_is_registered_anywhere_in_src_yet() -> void:
+## [b]Why the tag is resolved over the whole call, not the matched line[/b]:
+## support_conversation_screen.gd writes the call across lines
+## ([code]CursorStateHost.register_surface([/code] on one line, the tag on the
+## next). The scanner returns only the first line, which carries no tag, so a
+## plain per-line substring filter would flag the legitimate DIALOGUE_CHOICE
+## call. [method _call_text_at] joins the call's lines (paren-balanced, max 4).
+## Still a text parse, not an argument extractor — flagged, not hidden. A call
+## whose tag is passed via a variable/indirection would NOT be claimed and
+## would be reported (fail-loud direction).
+##
+## 🔴 [b]Goes red the moment RELATION_MINIMAP_NODE or CARD_SLOT is registered
+## for real[/b] — correct, intended; narrow/retire for that tag, never widen.
+func test_gap_relation_minimap_and_card_slot_not_registered_anywhere_in_src_yet() -> void:
 	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
-	var non_board_tile_matches: Array[String] = []
+	var unclaimed: Array[String] = []
+	var line_regex: RegEx = RegEx.create_from_string("^(.*?):(\\d+): ")
 	for matched_line: String in matches:
-		if not matched_line.contains("BOARD_TILE"):
-			non_board_tile_matches.append(matched_line)
+		var m: RegExMatch = line_regex.search(matched_line)
+		if m == null:
+			# Cannot resolve the call; fail loud rather than silently exempt.
+			unclaimed.append(matched_line)
+			continue
+		var lines: PackedStringArray = FileAccess.get_file_as_string(m.get_string(1)).split("\n")
+		var idx: int = m.get_string(2).to_int() - 1
+		if not _is_claimed_tag_call(_call_text_at(lines, idx)):
+			unclaimed.append(matched_line)
 
-	assert_array(non_board_tile_matches).append_failure_message(
-		"EXPECTED EMPTY. Only CursorTypes.SurfaceType.BOARD_TILE is registered "
-		+ "anywhere in src/ as of U-013 (battle_screen.gd's target-selection "
-		+ "wiring) — RELATION_MINIMAP_NODE/CARD_SLOT/DIALOGUE_CHOICE should "
-		+ "still have zero registrations. If this assertion now FAILS because "
-		+ "a real caller registered one of those: GOOD — narrow/retire this "
-		+ "test for that tag, do not widen the filter to hide it. "
-		+ "Non-BOARD_TILE matches: %s (all matches, for context: %s)"
-		% [str(non_board_tile_matches), str(matches)]
+	assert_array(unclaimed).append_failure_message(
+		"EXPECTED EMPTY. Only BOARD_TILE (battle_screen.gd) and DIALOGUE_CHOICE "
+		+ "(support_conversation_screen.gd) are registered anywhere in src/ — "
+		+ "RELATION_MINIMAP_NODE/CARD_SLOT should still have zero registrations. "
+		+ "If this now FAILS because a real caller registered one of those: GOOD "
+		+ "— narrow/retire this test for that tag, do not widen the filter. "
+		+ "Unclaimed matches: %s (all matches, for context: %s)"
+		% [str(unclaimed), str(matches)]
 	).is_empty()
 
 
-## Companion presence check for the narrower test above — without this, an
-## unrelated bug that made [method _files_matching_surface_registration_calls]
-## return NOTHING at all (e.g. a broken [DirAccess] path) would make the
-## narrower test above pass VACUOUSLY, indistinguishable from "correctly
-## found BOARD_TILE-only registrations". Asserts the scan actually found
-## battle_screen.gd's real calls — a positive-presence proof that the scanner
-## still runs and still sees this codebase's one real registration path.
+## Joins the source lines of the call starting at [param idx] until its
+## parentheses balance (max 4 lines). Pure string in / string out.
+func _call_text_at(lines: PackedStringArray, idx: int) -> String:
+	var text: String = ""
+	var depth: int = 0
+	var last: int = mini(idx + 4, lines.size())
+	for i: int in range(idx, last):
+		text += lines[i] + "\n"
+		depth += lines[i].count("(") - lines[i].count(")")
+		if depth <= 0:
+			break
+	return text
+
+
+## True when the call text names one of the two tags that have a real
+## registration today. Keyed on the TAG, never on a file path.
+func _is_claimed_tag_call(call_text: String) -> bool:
+	return call_text.contains("BOARD_TILE") or call_text.contains("DIALOGUE_CHOICE")
+
+
+## Sensitivity proof (pure strings, no I/O): a multi-line CARD_SLOT or
+## RELATION_MINIMAP_NODE registration is NOT claimed (so the gap test above
+## would go red), while the real multi-line DIALOGUE_CHOICE shape is claimed.
+func test_sensitivity_proof_gap_scan_flags_card_slot_and_minimap_but_claims_dialogue_choice() -> void:
+	var card_slot: PackedStringArray = [
+		"var r = CursorStateHost.register_surface(",
+		"\tCursorTypes.SurfaceType.CARD_SLOT, self",
+		")",
+	]
+	var minimap: PackedStringArray = [
+		"CursorStateHost.register_surface(CursorTypes.SurfaceType.RELATION_MINIMAP_NODE, self)",
+	]
+	var dialogue: PackedStringArray = [
+		"var result = CursorStateHost.register_surface(",
+		"\tCursorTypes.SurfaceType.DIALOGUE_CHOICE, self",
+		")",
+	]
+	assert_bool(_is_claimed_tag_call(_call_text_at(card_slot, 0))).is_false()
+	assert_bool(_is_claimed_tag_call(_call_text_at(minimap, 0))).is_false()
+	assert_bool(_is_claimed_tag_call(_call_text_at(dialogue, 0))).is_true()
+	# The per-line view alone would have missed the tag (the reason for joining):
+	assert_bool(_is_claimed_tag_call(dialogue[0])).is_false()
+
+
+## Companion presence check for the gap test above (otherwise it could pass
+## vacuously). Asserts support_conversation_screen.gd has a register_surface
+## and an unregister_surface call, each naming DIALOGUE_CHOICE (paired).
+func test_dialogue_choice_registration_in_support_conversation_screen_is_found_and_paired() -> void:
+	var path: String = "res://src/ui/shell/support_conversation_screen.gd"
+	var regs: int = 0
+	var unregs: int = 0
+	var line_regex: RegEx = RegEx.create_from_string("^(.*?):(\\d+): ")
+	var lines: PackedStringArray = FileAccess.get_file_as_string(path).split("\n")
+	for matched_line: String in _files_matching_surface_registration_calls("res://src"):
+		var m: RegExMatch = line_regex.search(matched_line)
+		if m == null or m.get_string(1) != path:
+			continue
+		var call_text: String = _call_text_at(lines, m.get_string(2).to_int() - 1)
+		if not call_text.contains("DIALOGUE_CHOICE"):
+			continue
+		if matched_line.contains(".unregister_surface("):
+			unregs += 1
+		elif matched_line.contains(".register_surface("):
+			regs += 1
+	assert_int(regs).append_failure_message(
+		"expected >= 1 register_surface(DIALOGUE_CHOICE) in %s, found %d" % [path, regs]
+	).is_greater_equal(1)
+	assert_int(unregs).append_failure_message(
+		"expected >= 1 unregister_surface(DIALOGUE_CHOICE) in %s, found %d" % [path, unregs]
+	).is_greater_equal(1)
+
+
+## Companion presence check for the BOARD_TILE half — see the DIALOGUE_CHOICE
+## twin above. Without these, an unrelated bug that made
+## [method _files_matching_surface_registration_calls] return NOTHING would
+## make the gap test pass VACUOUSLY.
 func test_board_tile_registration_in_battle_screen_is_found_by_the_scanner() -> void:
 	var matches: Array[String] = _files_matching_surface_registration_calls("res://src")
 	var board_tile_matches: Array[String] = []
@@ -460,12 +539,11 @@ func test_board_tile_registration_in_battle_screen_is_found_by_the_scanner() -> 
 			board_tile_matches.append(matched_line)
 
 	assert_int(board_tile_matches.size()).append_failure_message(
-		"PRECONDITION for the narrower test above: expected the scanner to "
+		"PRECONDITION for the gap test: expected the scanner to "
 		+ "find battle_screen.gd's real register_surface()/unregister_surface() "
 		+ "BOARD_TILE calls (at least 1 register + 1 unregister call site). "
-		+ "Found: %s -- if this is 0, the narrower test above is passing "
-		+ "VACUOUSLY (scanner found nothing at all), not because BOARD_TILE is "
-		+ "the only registered tag." % str(board_tile_matches)
+		+ "Found: %s -- if this is 0, the gap test is passing "
+		+ "VACUOUSLY (scanner found nothing at all)." % str(board_tile_matches)
 	).is_greater_equal(2)
 
 

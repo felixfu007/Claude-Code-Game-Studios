@@ -29,6 +29,25 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 | 08:41 前 | 套用裁決 1(85→95);新建 `battle-hud/story-003-consistency-counter-display.md`(裁決 3) | — |
 | 08:41 | 派 ui-programmer 做 story-003;派 qa-tester 替 story-002 的 21 條補敏感度證明(交件時欠著) | 進行中 |
 
+| 09:23 | ✅ 提交並推送:`b2bc057`(story-015 補測試)、`025c36d`(HUD story-002+003)、`82fc6ea`(六處文件,管理者核准)。全套 1471 全綠 | 完成 |
+| 09:30 | 支援對話畫面開工(裁決 5):並行派 writer(`design/narrative/support-conversations-script.md`)、art-director(`docs/reviews/dialogue-font-shortlist-2026-10-28.md`)、ux-designer(`design/ux/support-conversation-screen.md`) | 進行中 |
+
+| ~10:00 | 三份到齊(劇本 39 句、字型候選 3 套、UX 規格 167 行)。協調者查證:Q2/AC-15 存檔不適用(全專案無存檔)。新建 `production/epics/support-conversation-ui/`(EPIC + story-001~003);派 godot-specialist(001 字型)、gameplay-programmer(002 台詞資料) | 進行中 |
+
+| 10:08 | ✅ `afba826`(劇本/UX/字型候選/epic/字型入庫)、`20f3c34`(story-002 台詞資料;協調者 node 逐字比對 39 句 0 差異)。1487 全綠 | 完成 |
+| 10:41 | ✅ `e49f888` story-003 第一段(播放核心)+ 字型 README(核准)。1499 全綠。覆核:敏感度對照表欠交(12 條只 1 條有證明)→ 第二段補 | 完成 |
+| 10:45 | 派 story-003 第二段(同一 ui-programmer 續做:跳過確認/回看/游標義務/補表);派 gameplay-programmer 做 story-004(轉場接線) | 進行中 |
+
+| 9 | 對話播完去哪 | **「對話播完直接進下一場(推薦)」** | 回標題(維持現狀) |
+| 10 | 字型 README 新增一段 | **「可以加(推薦)」** | 等確定用這套再加 |
+📌 協調者在 README「尚未取得的字型」節多加一行「已暫定,原句保留」—— 超出核准範圍,已向管理者揭露。
+
+| 6 | 能否整段略過支援對話 | **「可以略過,要先確認(推薦)」** | 不能整段略過 |
+| 7 | 對話正文字型 | **「先用霞鶩文楷做,回家看實際畫面再決定(推薦)」** | 三套並排 / 回家上網看 |
+| 8 | 劇本 6 個假設 | **「先照初稿用,我回家在遊戲裡看(推薦)」** | 逐一列給我 / 我先自己讀 |
+| 4 | 六處文件修改 | **「六處照套用(推薦)」** | 先看逐字差異 / 只套 B~F |
+| 5 | HUD 之後做哪個 MVP | **「支援對話畫面＋對話文字(推薦)」** | 關係圖迷你地圖 / 第 3~5 場與教學關 |
+
 **今日管理者裁決**(逐字選項):
 | # | 問題 | 選的 | 被跳過的 |
 |---|---|---|---|
