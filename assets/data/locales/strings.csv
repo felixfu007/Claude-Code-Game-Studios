@@ -147,3 +147,8 @@ support.sc03.line10,先別動。妳左手也在流血。
 support.sc03.line11,……我沒發現。
 support.sc03.line12,"收殘局的人,常常最後才收自己。"
 support.sc03.line13,"那以後,換你提醒我。我也提醒你。"
+support.ui.prev,上一句
+support.ui.skip,跳過整段
+support.ui.skip_confirm_body,"跳過後這段對話會視為已看完，沒讀過的句子無法再重看。確定要跳過嗎？"
+support.ui.skip_confirm_yes,確定跳過
+support.ui.skip_confirm_no,取消
