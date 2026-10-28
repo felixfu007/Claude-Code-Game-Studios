@@ -16,6 +16,26 @@
 🔴 **釘在發布標籤 `v1.500`,不是 `main`。** 任何人重跑上面那個網址都會拿到位元組相同的檔案;
 抓 `main` 會隨上游變動,而本專案已為「不同人拿到不同版本」付過代價(見 GdUnit4 的 vendoring 理由)。
 
+## LXGW WenKai TC(霞鶩文楷 繁體中文版)Regular
+
+| 欄位 | 值 |
+|---|---|
+| **檔案** | `LXGWWenKaiTC-Regular.ttf`(15,341,148 bytes) |
+| **來源** | https://github.com/lxgw/LxgwWenkaiTC |
+| **版本** | **v1.530**(2026-10-17 發布) |
+| **取得路徑** | `https://github.com/lxgw/LxgwWenkaiTC/releases/download/v1.530/LXGWWenKaiTC-Regular.ttf` |
+| **SHA256** | `6662480a3f95b4a90c80b189c679617a48adce3a505118a6af63ce5a482b83fa` |
+| **授權** | SIL Open Font License 1.1,版權人 The LXGW WenKai Project Authors,無 Reserved Font Name 宣告(全文見同目錄 `LXGWWenKaiTC-OFL.txt`,內容與 release zip 內 `OFL.txt` 位元組相同) |
+| **納入日期** | 2026-10-28(support-conversation-ui Story 001) |
+| **用途** | 支援對話畫面的對話正文(管理者 2026-10-28 裁決:先用霞鶩文楷,看實際畫面再決定;候選資料 `docs/reviews/dialogue-font-shortlist-2026-10-28.md`) |
+
+🔴 **單檔 15.3 MB。** 尚未子集化,也尚未量過匯入後與匯出後的實際體積。
+🔴 **向量字型,不適用 HUD 點陣字的整數倍字級規則**(見 `design/art/screen-architecture.md`),對話正文字級規則另訂。
+⚠️ **同樣適用下方「OFL 的散布義務」**:`LXGWWenKaiTC-OFL.txt` 不得刪除,匯出打包同樣未驗證。
+
+引擎缺字檢查(2026-10-28):`prototypes/dialogue-font-glyph-check-2026-10-28/glyph_check.gd`,
+原始輸出 `run_output.txt`。劇本 39 行台詞、五位角色姓名與「體識籲」共 213 個相異字元,`Font.has_char()` 缺字 = 0。
+
 ## 🔴 OFL 的散布義務
 
 **SIL OFL 1.1 要求散布時一併包含授權全文。** `OFL.txt` 與字型檔放在同一目錄,**不得刪除**。
@@ -58,6 +78,8 @@ Cubic 11 是**外框對齊 11px 網格的 TTF**,不是內嵌點陣圖(bitmap str
 🔴 **因此 Story 002 的 AC-S002-b(整數倍)必須靠測試或審查執行,不能指望引擎把關。**
 
 ## 尚未取得的字型
+
+✅ **2026-10-28:已暫定霞鶩文楷 TC**(見上方該字型一節;管理者裁決「先用,回家看實際畫面再決定」)。以下原句保留。
 
 **對話正文字型尚未選定。** `design/art/art-direction.md` 只寫「一般繁體中文字型(非像素字型)」,
 那是一個**類別,不是一個決定** —— 沒有指名是哪一套,也沒有檔案。
