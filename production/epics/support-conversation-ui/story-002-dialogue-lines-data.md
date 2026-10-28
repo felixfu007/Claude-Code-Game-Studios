@@ -1,7 +1,7 @@
 # Story 002:台詞資料檔與解析
 
 > **Epic**: `production/epics/support-conversation-ui/EPIC.md`
-> **Status**: Ready(2026-10-28)
+> **Status**: ✅ **Done(2026-10-28)** —— commit `20f3c34`;協調者另以 node 逐字比對 39 句 0 差異。原狀態:Ready(2026-10-28)
 > **Type**: Logic
 > **依據**: 劇本 `design/narrative/support-conversations-script.md`(管理者 2026-10-28「先照初稿用」);UX 規格 `design/ux/support-conversation-screen.md` 第 6、8 節與 AC-12、AC-13
 

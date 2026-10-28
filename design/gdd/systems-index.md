@@ -55,7 +55,7 @@
 | 8 | 支援對話系統 | Narrative | MVP | Not Started | — | 好感度數值池、章節/戰役結構。⚠️ **2026-08-25 範圍降級的連帶處置**:章節/戰役結構已自 MVP 降級,本系統的上游因此在 MVP 階段懸空。**MVP 解法**:3 段支援對話以寫死的觸發點掛在 5 場手工關卡之間,不需要排程系統;對「排程於戰鬥之間」的完整依賴在垂直切片階段才回來。**設計本系統時不得因此去等章節/戰役結構定案。** |
 | 9 | 好感度視覺呈現 UI | UI | MVP | 🔴 **部分已建(2026-10-16 對帳更正,原寫 `Not Started`)** —— 棋盤好感度連線已實作(`board_view.gd` 的 `AffinityLineLayer` / `enum LineTone` / `set_affinity_lines()`),未建的是**關係圖迷你地圖**。⚠️ 游標系統已替它預留表面型別 `RELATION_MINIMAP_NODE` 與專屬門檻值,**故動工不是「從零開始」,是「接上一個已經開好的孔」**。逐條證據與查法:`docs/reviews/mvp-systems-vs-disk-inventory-2026-10-16.md`。**本次只更正事實欄位,未改動範圍、層級或優先序(2026-10-16 管理者裁決)** | — | 好感度—位置連鎖系統、單一游標/高亮狀態系統 |
 | 10 | 戰鬥 HUD | UI | MVP(**範圍收窄 2026-08-25**:MVP 只需驗收協議 1 要求的「預判標記」互動,其餘 HUD 元件留待垂直切片) | 🔴 **設計已定、實作進行中(2026-10-16 對帳更正,原寫 `Not Started`)** —— 輕量規格 `design/quick-specs/battle-hud-prediction-marker.md`(208 行、14 條 AC、開放問題全結案);`production/epics/battle-hud/` story-001(純邏輯)✅ Done、story-002(畫面與輸入)Ready。🔴 **開工前必讀**:本系統的前提曾經失效 —— 遊戲已先顯示好感度預覽,玩家不是在預判是在讀字;2026-10-16 管理者裁決「先下注再揭曉」。**本次只更正事實欄位,未改動範圍(範圍收窄仍為 2026-08-25 那次裁決)** | — | 戰棋移動與交戰系統、單一游標/高亮狀態系統 |
-| 11 | 支援對話 UI | UI | MVP | Not Started | — | 支援對話系統、單一游標/高亮狀態系統 |
+| 11 | 支援對話 UI | UI | MVP | ✅ **已實作,待管理者畫面簽核(2026-10-28)** —— `production/epics/support-conversation-ui/`(story-001~004);原寫 `Not Started` | `design/ux/support-conversation-screen.md`(輕量 UX 規格) | 支援對話系統、單一游標/高亮狀態系統 |
 | 12 | 教學/上手引導系統 | Meta | **Vertical Slice**(2026-08-25 自 MVP 降級,見檔頭裁決)。⚠️ **MVP 仍需一張手工教學關卡** —— 驗收協議 1 明文要求「新手測試者在教學關卡後的前 2-3 場戰鬥」;降級的是「引導系統」這套程式,不是那張關卡,關卡屬內容製作項而非系統 | Not Started | — | 戰棋移動與交戰系統、好感度—位置連鎖系統、技能卡牌系統、單一游標/高亮狀態系統 |
 | 13 | 敘事解鎖與結局分支系統 | Narrative | Vertical Slice | Not Started | — | 好感度數值池、章節/戰役結構 |
 | 14 | 活棋盤地形演變系統 | Gameplay | Vertical Slice | Not Started | — | 戰棋移動與交戰系統、章節/戰役結構 |

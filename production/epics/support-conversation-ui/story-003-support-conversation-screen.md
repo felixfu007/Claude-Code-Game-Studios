@@ -1,7 +1,7 @@
 # Story 003:支援對話畫面
 
 > **Epic**: `production/epics/support-conversation-ui/EPIC.md`
-> **Status**: 等 001/002(2026-10-28 建立)
+> **Status**: ✅ **Done-pending-visual(2026-10-28)** —— commit `e49f888`(播放核心)+ `6c06f3e`(跳過確認、回看、游標交接);27 條測試。畫面待管理者簽核。原狀態:等 001/002(2026-10-28 建立)
 > **Type**: UI
 > **規格權威**: `design/ux/support-conversation-screen.md` 第 2~9 節、AC-3~AC-14、AC-16~AC-18(**AC-1/AC-2 屬 story-004;AC-15 不適用,見 EPIC 處置**)
 

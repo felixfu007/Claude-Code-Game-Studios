@@ -33,7 +33,9 @@
 
 | # | 標題 | Type | Status |
 |---|---|---|---|
-| 001 | 對話正文字型入庫與引擎缺字檢查 | Config/Data | Ready |
-| 002 | 台詞資料檔與解析 | Logic | Ready |
-| 003 | 支援對話畫面 | UI | 等 001/002 |
-| 004 | 接進轉場流程(勝利 → 對話 → 下一場) | Integration | 等 003 |
+| 001 | 對話正文字型入庫與引擎缺字檢查 | Config/Data | ✅ Done |
+| 002 | 台詞資料檔與解析 | Logic | ✅ Done |
+| 003 | 支援對話畫面 | UI | ✅ Done-pending-visual |
+| 004 | 接進轉場流程(勝利 → 對話 → 下一場) | Integration | ✅ Done-pending-visual |
+
+⚠️ **2026-10-28 事實**:`assets/data/levels/campaign_sequence.txt` 目前只有 2 列,故 SC-02、SC-03 在正式遊玩中**播不到**(第 2 場之後即戰役完成)。要等第 3~5 場資料接上。

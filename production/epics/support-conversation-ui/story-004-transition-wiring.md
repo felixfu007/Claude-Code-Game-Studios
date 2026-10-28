@@ -1,7 +1,7 @@
 # Story 004:接進轉場流程(勝利 → 對話 → 下一場)
 
 > **Epic**: `production/epics/support-conversation-ui/EPIC.md`
-> **Status**: Ready(2026-10-28)
+> **Status**: ✅ **Done-pending-visual(2026-10-28)** —— commit `6a0cb51`;7 條測試。實際流程待管理者在家走一次。原狀態:Ready(2026-10-28)
 > **Type**: Integration
 > **規格權威**: `design/ux/support-conversation-screen.md` 第 1 節、AC-1、AC-2
 

@@ -1,7 +1,7 @@
 # Story 001:對話正文字型入庫與引擎缺字檢查
 
 > **Epic**: `production/epics/support-conversation-ui/EPIC.md`
-> **Status**: Ready(2026-10-28)
+> **Status**: ✅ **Done(2026-10-28)** —— commit `afba826`;缺字檢查 213 字缺 0。原狀態:Ready(2026-10-28)
 > **Type**: Config/Data
 > **依據**: 管理者 2026-10-28 裁決「先用霞鶩文楷做,回家看實際畫面再決定」;候選資料 `docs/reviews/dialogue-font-shortlist-2026-10-28.md`
 

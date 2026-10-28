@@ -66,6 +66,7 @@
   **測試直接呼叫公開方法(例如 `start_battle()`),不模擬 `InputEvent`** ——
   headless 不送 `InputEvent`(`coding-standards.md` CI 節已登記)。
 - **AC5**:戰鬥結束(`BattleScreen` 收到 `battle_ended`)之後,**回到標題畫面**。
+  ✅ **2026-10-28 部分取代**:**勝利且非最後一場**時,已改為「支援對話畫面(若有)→ 直接進下一場」(管理者裁決「對話播完直接進下一場」,`production/epics/support-conversation-ui/story-004-transition-wiring.md`)。戰敗與戰役完成仍回標題。原句保留。
   🔴 **呈現時序交由實作者決定並寫下理由**(例:先顯示勝敗文字 N 秒再切、或等玩家按鍵)——
   但**必須可被測試驅動**,不得只能靠真人等待。
 - **AC6**:來回切換(標題 → 戰鬥 → 標題 → 戰鬥)**零 `SCRIPT ERROR`**,
