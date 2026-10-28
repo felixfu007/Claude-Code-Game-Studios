@@ -152,3 +152,6 @@ support.ui.skip,跳過整段
 support.ui.skip_confirm_body,"跳過後這段對話會視為已看完，沒讀過的句子無法再重看。確定要跳過嗎？"
 support.ui.skip_confirm_yes,確定跳過
 support.ui.skip_confirm_no,取消
+battle.hud.relation_map_title,關係圖
+battle.hud.relation_map_dead,(陣亡)
+battle.hud.relation_map_toggle,關係圖 [R]

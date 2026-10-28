@@ -79,6 +79,9 @@ const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 3.2
 const RESULT_LABEL_WIDTH_MULTIPLIER: float = 6.0
 const RESULT_LABEL_HEIGHT_MULTIPLIER: float = 2.2
 
+## relation-minimap story-001: panel height in font-size units (see relation_minimap_rect).
+const RELATION_MINIMAP_HEIGHT_MULTIPLIER: float = 10.0
+
 
 ## HUD font size in pixels for [param window_size], per the A ruling
 ## (story-002-adaptive-font-scale.md, 2026-09-04 manager ruling): 11 times the
@@ -207,4 +210,34 @@ static func consistency_counter_rect(window_size: Vector2i) -> Rect2:
 	return Rect2(
 		Vector2(status.position.x, status.position.y + status.size.y + gap),
 		Vector2(status.size.x, status.size.y)
+	)
+
+
+## relation-minimap story-001 -- the always-visible toggle button ("關係圖")
+## under [method consistency_counter_rect]: same left edge, same width, one
+## gap below it. Overlay on the board, no side column.
+static func relation_minimap_toggle_rect(window_size: Vector2i) -> Rect2:
+	var counter: Rect2 = consistency_counter_rect(window_size)
+	var fpx: float = float(font_size(window_size))
+	var gap: float = fpx * LABEL_GAP_MULTIPLIER
+	return Rect2(
+		Vector2(counter.position.x, counter.position.y + counter.size.y + gap),
+		Vector2(counter.size.x, counter.size.y)
+	)
+
+
+## relation-minimap story-001 -- the panel itself, directly under
+## [method relation_minimap_toggle_rect]. Height is a fixed multiple of the
+## font size (RELATION_MINIMAP_HEIGHT_MULTIPLIER) rather than equal to the
+## width: at the 960x540 minimum a width-equal square would run into
+## [method controls_hint_bg_rect]. Left column, so it cannot meet the tile
+## info panel (right-aligned) and sits left of the centred hand bar; the
+## no-overlap claim is asserted by test against the real rect functions.
+static func relation_minimap_rect(window_size: Vector2i) -> Rect2:
+	var toggle: Rect2 = relation_minimap_toggle_rect(window_size)
+	var fpx: float = float(font_size(window_size))
+	var gap: float = fpx * LABEL_GAP_MULTIPLIER
+	return Rect2(
+		Vector2(toggle.position.x, toggle.position.y + toggle.size.y + gap),
+		Vector2(toggle.size.x, fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER)
 	)

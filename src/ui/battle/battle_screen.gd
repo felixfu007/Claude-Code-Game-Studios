@@ -1182,6 +1182,81 @@ func _click_tile_with_egm(cell: Vector2i) -> Dictionary:
 	return result
 
 
+# ---- relation-minimap story-001:關係圖迷你地圖 ---------------------------------
+const TEXT_RELATION_MAP_TOGGLE: StringName = &"battle.hud.relation_map_toggle"
+
+## 關係圖面板與常駐開關按鈕(滑鼠用)。預設關閉。唯讀顯示,不持有好感度。
+var _relation_minimap: RelationMinimap = null
+var _relation_toggle_button: Button = null
+
+## 唯讀診斷:面板目前是否開著。
+func diagnostic_relation_minimap_visible() -> bool:
+	return _relation_minimap != null and _relation_minimap.visible
+
+## 唯讀診斷:面板上畫出的線與其狀態(與棋盤連線同一份 line_statuses)。
+func diagnostic_relation_minimap_lines() -> Array[Dictionary]:
+	if _relation_minimap == null:
+		return []
+	return _relation_minimap.diagnostic_lines()
+
+func _build_relation_minimap() -> void:
+	_relation_minimap = RelationMinimap.new()
+	_relation_minimap.name = "RelationMinimap"
+	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, HudLayout.GLYPH_PX)
+	$UILayer.add_child(_relation_minimap)
+	_relation_toggle_button = Button.new()
+	_relation_toggle_button.name = "RelationMinimapToggle"
+	_relation_toggle_button.focus_mode = Control.FOCUS_NONE
+	_relation_toggle_button.text = Loc.localize(TEXT_RELATION_MAP_TOGGLE)
+	_relation_toggle_button.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_relation_toggle_button.pressed.connect(_toggle_relation_minimap)
+	$UILayer.add_child(_relation_toggle_button)
+
+## 可開條件(規格 s2):我方行動階段、無手牌/強制棄牌/攻擊確認/戰鬥選單。關閉永遠允許。
+func _relation_minimap_can_open() -> bool:
+	return _controller.phase() == BattleController.Phase.PLAYER_INPUT \
+		and not _controller.is_card_play_in_progress() \
+		and not _controller.has_pending_discard() \
+		and not _attack_confirming \
+		and not _battle_menu.visible
+
+func _toggle_relation_minimap() -> void:
+	if _relation_minimap == null or _load_failed:
+		return
+	if _relation_minimap.visible:
+		_relation_minimap.set_open(false)
+	elif _relation_minimap_can_open():
+		_relation_minimap.set_open(true)
+
+## 與棋盤連線同一個觸發點呼叫,吃同一份 [param line_statuses](單一來源)。
+func _update_relation_minimap(line_statuses: Array[AffinityLineStatus], positions: Dictionary[int, Vector2i]) -> void:
+	if _relation_minimap == null:
+		return
+	# 規格 s2:不可開的情境下不得留半開殘留 —— 階段/手牌/棄牌/確認面板一進來就收起。
+	if _relation_minimap.visible and not _relation_minimap_can_open():
+		_relation_minimap.set_open(false)
+	var alive: Array[int] = []
+	for id: int in positions.keys():
+		alive.append(id)
+	_relation_minimap.set_lines(line_statuses, alive)
+
+func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
+	if _relation_minimap == null:
+		return
+	var rect: Rect2 = HudLayout.relation_minimap_rect(window_size)
+	_relation_minimap.position = rect.position
+	_relation_minimap.size = rect.size
+	var fpx: int = HudLayout.font_size(window_size)
+	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx)
+	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
+	_relation_toggle_button.position = trect.position
+	_relation_toggle_button.size = trect.size
+	_relation_toggle_button.add_theme_font_size_override(&"font_size", fpx)
+
+func _mouse_over_relation_toggle(window_pos: Vector2) -> bool:
+	return _relation_toggle_button != null and _relation_toggle_button.get_global_rect().has_point(window_pos)
+
+
 # ---- battle-hud story-003:一致率計數器 -----------------------------------------
 const TEXT_CONSISTENCY_COUNTER_FORMAT: StringName = &"battle.hud.consistency_counter_format"
 
@@ -1373,6 +1448,7 @@ func _ready() -> void:
 		_build_consistency_counter()
 
 	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
+	_build_relation_minimap()
 
 	# story-003 下一輪接線 —— 四個資料路徑共用同一次查表結果,不逐一重新讀檔/
 	# 解析序列表。解析順序見 [member terrain_path_override] 文件註解。
@@ -1999,7 +2075,8 @@ func _input(event: InputEvent) -> void:
 		if _controller.phase() != BattleController.Phase.ENEMY_ACTING:
 			# battle-hud story-002:點在猜測選擇器按鈕上的點擊歸按鈕自己處理
 			# (Button.pressed),不得同時當成棋盤點擊。
-			if not _guess_mouse_over_selector((event as InputEventMouseButton).position):
+			if not _guess_mouse_over_selector((event as InputEventMouseButton).position) \
+					and not _mouse_over_relation_toggle((event as InputEventMouseButton).position):
 				_handle_mouse_button(event as InputEventMouseButton)
 		return
 
@@ -2088,6 +2165,15 @@ func _input(event: InputEvent) -> void:
 		if _controller.has_pending_discard():
 			_handle_forced_discard_input(event)
 			return
+
+		# relation-minimap story-001:開/關關係圖。僅顯示,不暫停棋盤 ——
+		# 開著時其餘輸入照常往下走。鍵盤 echo 一律忽略;不可開的情境按了無反應。
+		if event.is_action(&"battle_toggle_relation_map"):
+			if event is InputEventKey and (event as InputEventKey).echo:
+				return
+			if event.is_pressed():
+				_toggle_relation_minimap()
+				return
 
 		# Story U-013 — `battle_open_hand` (S0<->S1) is checked before anything
 		# else regardless of card-play state, mirroring the Interaction Map's
@@ -4130,6 +4216,7 @@ func _refresh_view() -> void:
 		_update_guess_selector_ui(guess_state == GuessCellState.PENDING)
 		_update_consistency_counter()
 	_board_view.set_affinity_lines(affinity_line_dicts(line_statuses, line_positions))
+	_update_relation_minimap(line_statuses, positions)
 
 	# 只有「選取中的單位」與「游標指著的那一格」會顯示精確數字,其餘只有血條。
 	# 理由是量出來的,不是偏好:五名我方單位開局全部直向並排在第 0 欄,
@@ -4495,6 +4582,7 @@ func _apply_tile_info_panel_layout() -> void:
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
 	_apply_consistency_counter_layout(window_size)
+	_apply_relation_minimap_layout(window_size)
 
 
 ## Story 015 -- tree_exited handler: cursor handoff, then unregister.
