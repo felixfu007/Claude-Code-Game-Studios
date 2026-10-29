@@ -79,6 +79,26 @@ const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 3.2
 const RESULT_LABEL_WIDTH_MULTIPLIER: float = 6.0
 const RESULT_LABEL_HEIGHT_MULTIPLIER: float = 2.2
 
+## Story 028 G:小視窗(倍率 N 不大於 [constant COMPACT_HINT_MAX_SCALE])時底部說明列縮成一行。
+## 兩行的列高 3.2 倍字級,在 960x540 會蓋住棋盤最下一列(實測蓋 19px);一行 2.0 倍則不會。
+## N 一律來自 [method WorldLayout.compute_scale],不另算。
+const COMPACT_HINT_MAX_SCALE: int = 2
+const COMPACT_HINT_BG_HEIGHT_MULTIPLIER: float = 2.0
+## 單行模式只保留說明文字以全形空白分隔的前幾段(其餘功能有按鈕/選單可達)。
+const COMPACT_HINT_SEGMENT_COUNT: int = 2
+
+
+static func is_compact_hint_bar(window_size: Vector2i) -> bool:
+	return WorldLayout.compute_scale(window_size) <= COMPACT_HINT_MAX_SCALE
+
+
+## 單行模式用的說明文字:取 [param full_text] 第一行,只留前 [constant COMPACT_HINT_SEGMENT_COUNT] 段。
+static func compact_hint_text(full_text: String) -> String:
+	var first_line: String = full_text.split("\n")[0]
+	var segments: PackedStringArray = first_line.split("　", false)
+	return "　".join(segments.slice(0, COMPACT_HINT_SEGMENT_COUNT))
+
+
 ## Story 025:結果文字字級相對 HUD 字級的整數倍,與結果框可容納行數。
 const RESULT_FONT_MULTIPLIER: int = 2
 const RESULT_LABEL_LINES: float = 2.0
@@ -174,7 +194,11 @@ static func info_label_rect(window_size: Vector2i) -> Rect2:
 static func controls_hint_bg_rect(window_size: Vector2i) -> Rect2:
 	var safe: Rect2 = safe_rect(window_size)
 	var fpx: float = float(font_size(window_size))
-	var height: float = fpx * CONTROLS_HINT_BG_HEIGHT_MULTIPLIER
+	var multiplier: float = (
+		COMPACT_HINT_BG_HEIGHT_MULTIPLIER if is_compact_hint_bar(window_size)
+		else CONTROLS_HINT_BG_HEIGHT_MULTIPLIER
+	)
+	var height: float = fpx * multiplier
 	var top: float = safe.position.y + safe.size.y - height
 	return Rect2(Vector2(safe.position.x, top), Vector2(safe.size.x, height))
 
@@ -188,6 +212,11 @@ static func hud_action_button_rect(window_size: Vector2i, index: int) -> Rect2:
 	var fpx: float = float(font_size(window_size))
 	var width: float = fpx * HUD_ACTION_BUTTON_WIDTH_MULTIPLIER
 	var pad: float = fpx * HUD_ACTION_BUTTON_PAD_MULTIPLIER
+	if is_compact_hint_bar(window_size):
+		# Story 028 G:單行說明列放不下上下兩顆,改左右並排([param index] 0 在右、1 在左)。
+		var c_height: float = bg.size.y - 2.0 * pad
+		var c_left: float = bg.position.x + bg.size.x - pad - width - float(index) * (width + pad)
+		return Rect2(Vector2(c_left, bg.position.y + pad), Vector2(width, c_height))
 	var height: float = (bg.size.y - 3.0 * pad) / 2.0
 	var left: float = bg.position.x + bg.size.x - pad - width
 	var top: float = bg.position.y + bg.size.y - pad - height - float(index) * (height + pad)

@@ -120,6 +120,10 @@ const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_th
 const THREAT_FILL_COLOR: Color = Color(0.85, 0.15, 0.1, 0.3)
 const THREAT_STRIPE_TINT: Color = Color(1.0, 0.45, 0.4, 1.0)
 
+## 移動範圍的亮藍半透明底與框線染色,見 [method set_move_highlights](Story 028 I)。
+const MOVE_FILL_COLOR: Color = Color(0.2, 0.55, 1.0, 0.4)
+const MOVE_FRAME_TINT: Color = Color(0.5, 0.8, 1.0, 1.0)
+
 const CURSOR_PATH: String = "res://assets/art/placeholder/cursor_outline.png"
 
 ## Story 014 — move-range unreachable-state markers consumed by [method
@@ -591,6 +595,17 @@ func set_affinity_lines(lines: Array[Dictionary]) -> void:
 ## clear all move highlights.
 func set_move_highlights(cells: Array[Vector2i]) -> void:
 	_render_highlight_layer(_move_highlight_layer, cells, MOVE_HIGHLIGHT_PATH)
+	# Story 028 I:移動範圍改亮藍半透明,與攻擊範圍紅底形成「藍=走、紅=打」。
+	# 貼圖(美術資源)保留,只用 modulate 染亮藍,另墊一層半透明藍底(同 set_threat_highlights 手法)。
+	for sprite: Node in _move_highlight_layer.get_children():
+		(sprite as Sprite2D).modulate = MOVE_FRAME_TINT
+		var fill: ColorRect = ColorRect.new()
+		fill.color = MOVE_FILL_COLOR
+		fill.size = Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE)
+		fill.position = (sprite as Sprite2D).position - fill.size / 2.0
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_move_highlight_layer.add_child(fill)
+		_move_highlight_layer.move_child(fill, 0)
 
 
 ## Replaces the set of highlighted attack-range cells. Pass an empty array

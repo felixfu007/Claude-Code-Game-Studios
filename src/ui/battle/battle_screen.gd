@@ -1258,12 +1258,37 @@ func _build_hud_action_buttons() -> void:
 	_menu_button = _make_hud_action_button("MenuButton", TEXT_MENU_BUTTON, _handle_battle_menu_pressed)
 
 
+## Story 028 M:底部按鈕的常駐底色/外框(顏色具名;hover/pressed 只加亮底色,外框不變)。
+const HUD_BUTTON_BG_COLOR: Color = Color(0.2, 0.28, 0.4, 1.0)
+const HUD_BUTTON_BG_HOVER_COLOR: Color = Color(0.3, 0.4, 0.55, 1.0)
+const HUD_BUTTON_BG_PRESSED_COLOR: Color = Color(0.12, 0.18, 0.28, 1.0)
+const HUD_BUTTON_BORDER_COLOR: Color = Color(0.85, 0.9, 1.0, 1.0)
+const HUD_BUTTON_BORDER_WIDTH: int = 2
+
+
+func _make_hud_button_style(style_name: StringName) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	match style_name:
+		&"hover":
+			style.bg_color = HUD_BUTTON_BG_HOVER_COLOR
+		&"pressed":
+			style.bg_color = HUD_BUTTON_BG_PRESSED_COLOR
+		_:
+			style.bg_color = HUD_BUTTON_BG_COLOR
+	style.set_border_width_all(HUD_BUTTON_BORDER_WIDTH)
+	style.border_color = HUD_BUTTON_BORDER_COLOR
+	return style
+
+
 func _make_hud_action_button(node_name: String, text_key: StringName, on_pressed: Callable) -> Button:
 	var button: Button = Button.new()
 	button.name = node_name
 	button.focus_mode = Control.FOCUS_NONE
 	button.text = Loc.localize(text_key)
 	button.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	# Story 028 M:平常就畫底色與外框(不必滑鼠移上去才看得出能按)。
+	for style_name: StringName in [&"normal", &"hover", &"pressed", &"disabled"]:
+		button.add_theme_stylebox_override(style_name, _make_hud_button_style(style_name))
 	button.pressed.connect(func() -> void:
 		if _controller.phase() == BattleController.Phase.PLAYER_INPUT:
 			on_pressed.call()
@@ -1273,6 +1298,12 @@ func _make_hud_action_button(node_name: String, text_key: StringName, on_pressed
 
 
 func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
+	# Story 028 G:小視窗單行說明列用精簡文字,其餘視窗還原完整兩行文字。
+	var full_hint: String = Loc.localize(TEXT_CONTROLS_HINT)
+	_controls_hint_label.text = (
+		HudLayout.compact_hint_text(full_hint) if HudLayout.is_compact_hint_bar(window_size)
+		else full_hint
+	)
 	if _hand_button == null:
 		return
 	var fpx: int = HudLayout.font_size(window_size)
@@ -4098,6 +4129,13 @@ func _play_enemy_moves_cell_by_cell(positions_before: Dictionary) -> void:
 # rather than keep showing a projection for a tile the player is no longer
 # pointing at.
 func _update_cursor_visual() -> void:
+	# Story 028 O:敵方回合/戰鬥結束時不畫游標框(截圖 08、09 左側殘留空白方框)。
+	if _controller.phase() != BattleController.Phase.PLAYER_INPUT:
+		_cursor_active = false
+		_board_view.clear_cursor()
+		if _cursor_active != _rendered_cursor_active:
+			_refresh_view()
+		return
 	# Story 009 — gate switched from this screen's own (now-retired)
 	# DeviceAuthority tracker to CursorStateHost's equivalent query. Each
 	# branch's BODY is unchanged: this one still independently recomputes the
