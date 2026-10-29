@@ -1,7 +1,7 @@
 # Story 023:攻擊不再跳確認框(鍵盤與滑鼠皆直接攻擊)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-29)
+> **Status**: ✅ Done(2026-10-29,提交 `560207b`;協調者獨立重跑 1587 條全綠)(原狀態:Ready(2026-10-29))
 > **Type**: UI / Integration
 > **Estimate**: S
 > **依據**: 管理者 2026-10-29 裁決,選項逐字「**鍵盤也拿掉確認框**」(非推薦項);
