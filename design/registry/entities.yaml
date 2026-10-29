@@ -362,6 +362,9 @@ constants:
       義務見 tactical-combat-system.md Tuning Knobs #1 與「跨系統校準義務」。"
     added: 2026-08-17
     revised: ""
+    # 🔴 2026-10-29 加註(管理者裁決「兩項都照加註(推薦)」;數值裁決「登記為「暫行例外」,設到期日(推薦)」):
+    # 現行名冊的敵方數值【不是】依本值算出,而且全部低於我方基準(等效優勢為負)。本值與公式二暫不支配資料,
+    # 見 design/quick-specs/unit-stats-provisional.md 檔頭「暫行例外表」(含到期條件)。本條目 value 原文保留。
 
   - name: base_mp
     status: active
