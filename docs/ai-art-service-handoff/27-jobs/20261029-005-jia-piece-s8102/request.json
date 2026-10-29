@@ -1,0 +1,26 @@
+{
+  "bookkeeping": {
+    "asset_category": "sprite",
+    "character_id": "jia",
+    "note": "27-first-candidate-batch jia piece variant 2/3",
+    "output_filename": "candidate_jia_piece_s8102.png"
+  },
+  "created_at": "2026-10-29T10:00:00+08:00",
+  "created_by": "claude-code",
+  "generation": {
+    "batch_size": 1,
+    "cfg_scale": 4,
+    "height": 1152,
+    "loras": [],
+    "model": "arthemy-comics-v2.0",
+    "negative_prompt": "chibi, cute, cheerful smile, bright vivid colors, pastel colors, pristine spotless clothes, multiple people, extra limbs, extra fingers, deformed hands, bad anatomy, text, watermark, logo, signature, scenery, complex background, gradient background, patterned background, shadow on background, reference sheet, multiple views, revealing clothing, dark tanned skin, orange skin, gripping the blade, tool held by its head, reversed tool, upside down tool, floating tool, cropped, out of frame, close-up, bust only, photograph, photorealistic, soft shading, gradient shading, detailed linework, cross-hatching, internal outlines, soft shadows, axe held backwards, axe blade facing the wrong way, gripping the axe head, upside down axe, axe floating",
+    "prompt": "single adult character, solo, full body standing idle pose, front-facing three-quarter view, young adult Taiwanese woman, athletic build, black hair in a tight ponytail, determined weary expression, navy blue firefighter jacket and trousers with faded reflective stripes, fingerless tactical gloves with worn-white knuckles, sturdy scuffed boots, chest gear harness straps, standing with both hands resting on top of the end of the handle of a long straight wooden-handled fire axe, the small steel axe head at one end of the handle with a cutting blade on one side and a pointed pick spike on the opposite side of the head, the axe head planted on the ground in front of her, blade facing forward, hand-drawn comic illustration, not photographic, not a real person, adult body proportions about five heads tall, not chibi, flat cel shading with three tone steps, hard-edged flat color shapes, no soft gradient, bold dark outline around the outer silhouette only, no internal outlines, simplified bold shapes that stay readable at 32x40 pixels, few small details, natural East Asian skin tone, light warm complexion, muted desaturated colors, weary guarded posture, plain flat neutral gray background, no scenery, no background shadow",
+    "sampler": "dpmpp_2m",
+    "seed": 8102,
+    "steps": 30,
+    "upscale_mode": "native_only",
+    "width": 896
+  },
+  "job_id": "20261029-005-jia-piece-s8102",
+  "schema_version": "1.0"
+}
