@@ -40,7 +40,15 @@ static func switch_to(tree: SceneTree, scene_path: String, configure: Callable =
 ## `CampaignProgress.start_mission_affinity_ledger()` 自己會先呼叫 begin_mission(),
 ## 不要在這裡另外呼叫。
 static func enter_battle(tree: SceneTree) -> Node:
+	# game-shell story-008:進戰役 = 教學狀態結束(結構保證戰役戰鬥不會在教學模式下跑)。
+	TutorialProgress.end()
 	return switch_to(tree, BATTLE_SCENE_PATH, _inject_campaign_ledger)
+
+
+## game-shell story-008:進入【教學場】戰鬥。刻意不注入戰役累積記錄、不碰
+## [CampaignProgress](AC5);教學第幾場由 [TutorialProgress] 決定(戰敗重打同一場也走這裡)。
+static func enter_tutorial_battle(tree: SceneTree) -> Node:
+	return switch_to(tree, BATTLE_SCENE_PATH)
 
 
 ## 進入支援對話畫面(support-conversation-ui story-004)。

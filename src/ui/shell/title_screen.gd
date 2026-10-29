@@ -35,6 +35,7 @@ extends Control
 ## AC8 —— 三個可見文字的在地化 key,對應 `assets/data/locales/strings.csv`
 ## 新增的三列。全文字一律經 [method Loc.localize],不得硬編中文字面值。
 const TEXT_START_BATTLE: StringName = &"shell.title.start_battle"
+const TEXT_SKIP_TUTORIAL: StringName = &"shell.title.skip_tutorial"
 const TEXT_SETTINGS: StringName = &"shell.title.settings"
 const TEXT_QUIT: StringName = &"shell.title.quit"
 
@@ -82,12 +83,14 @@ const TEXT_QUIT: StringName = &"shell.title.quit"
 const AUTO_START_BATTLE_FLAG: String = "--capture-battle"
 
 @onready var _start_battle_row: Button = $Panel/ContentMargin/Rows/StartBattleRow
+@onready var _skip_tutorial_row: Button = $Panel/ContentMargin/Rows/SkipTutorialRow
 @onready var _settings_row: Button = $Panel/ContentMargin/Rows/SettingsRow
 @onready var _quit_row: Button = $Panel/ContentMargin/Rows/QuitRow
 
 
 func _ready() -> void:
 	_start_battle_row.text = Loc.localize(TEXT_START_BATTLE)
+	_skip_tutorial_row.text = Loc.localize(TEXT_SKIP_TUTORIAL)
 	_settings_row.text = Loc.localize(TEXT_SETTINGS)
 	_quit_row.text = Loc.localize(TEXT_QUIT)
 
@@ -98,16 +101,21 @@ func _ready() -> void:
 	# AC5(本 story)/ AC7(story-001)—— 比照 battle_menu.gd:FOCUS_ALL + 手動
 	# focus_neighbor,做出有界(不環繞)的三項清單。
 	_start_battle_row.focus_mode = Control.FOCUS_ALL
+	_skip_tutorial_row.focus_mode = Control.FOCUS_ALL
 	_settings_row.focus_mode = Control.FOCUS_ALL
 	_quit_row.focus_mode = Control.FOCUS_ALL
 	_start_battle_row.focus_neighbor_top = _start_battle_row.get_path_to(_start_battle_row)
-	_start_battle_row.focus_neighbor_bottom = _start_battle_row.get_path_to(_settings_row)
-	_settings_row.focus_neighbor_top = _settings_row.get_path_to(_start_battle_row)
+	_start_battle_row.focus_neighbor_bottom = _start_battle_row.get_path_to(_skip_tutorial_row)
+	_skip_tutorial_row.focus_neighbor_top = _skip_tutorial_row.get_path_to(_start_battle_row)
+	_skip_tutorial_row.focus_neighbor_bottom = _skip_tutorial_row.get_path_to(_settings_row)
+	_settings_row.focus_neighbor_top = _settings_row.get_path_to(_skip_tutorial_row)
 	_settings_row.focus_neighbor_bottom = _settings_row.get_path_to(_quit_row)
 	_quit_row.focus_neighbor_top = _quit_row.get_path_to(_settings_row)
 	_quit_row.focus_neighbor_bottom = _quit_row.get_path_to(_quit_row)
 
-	_start_battle_row.pressed.connect(start_battle)
+	# story-008:「開始」-> 教學第 1 場;「略過教學」-> 戰役第 1 場(即原本「開始」的行為)。
+	_start_battle_row.pressed.connect(start_tutorial)
+	_skip_tutorial_row.pressed.connect(start_battle)
 	_settings_row.pressed.connect(open_settings)
 	_quit_row.pressed.connect(_on_quit_pressed)
 
@@ -137,6 +145,12 @@ static func should_auto_start_battle(args: PackedStringArray) -> bool:
 ## 交換延後到空閒時執行,所以在 [method Node._ready] 期間呼叫(--capture-battle 路徑)也安全。
 func start_battle() -> void:
 	SceneRouter.enter_battle(get_tree())
+
+
+## story-008 AC1:「開始」—— 從教學第 1 場開始。
+func start_tutorial() -> void:
+	TutorialProgress.begin()
+	SceneRouter.enter_tutorial_battle(get_tree())
 
 
 ## Story-002(AC4)—— 測試直接呼叫本方法,不模擬 [InputEvent],與

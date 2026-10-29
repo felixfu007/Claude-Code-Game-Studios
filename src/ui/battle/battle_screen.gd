@@ -107,6 +107,9 @@ const CARD_TEXT_PATH: String = "res://assets/data/cards/vs01_card_text.txt"
 ## (src/gameplay/campaign/campaign_sequence.gd),本檔不重新實作一份。
 const CAMPAIGN_SEQUENCE_PATH: String = "res://assets/data/levels/campaign_sequence.txt"
 
+## game-shell story-008:教學序列表,解析沿用 [CampaignSequence](不另寫解析器)。
+const TUTORIAL_SEQUENCE_PATH: String = "res://assets/data/levels/tutorial_sequence.txt"
+
 ## game-shell story-005 AC4:支援對話資料表(系統 #8),勝利時依場次編號觸發。
 ## 解析沿用 [SupportConversationRecord.records_from_text]。
 const SUPPORT_CONVERSATIONS_PATH: String = "res://assets/data/narrative/support_conversations.txt"
@@ -1563,8 +1566,12 @@ func _ready() -> void:
 
 	# story-003 下一輪接線 —— 四個資料路徑共用同一次查表結果,不逐一重新讀檔/
 	# 解析序列表。解析順序見 [member terrain_path_override] 文件註解。
+	# game-shell story-008:教學進行中改查教學序列表(同一個 CampaignSequence 型別,
+	# 含明確的空卡/空連線檔,見 tutorial_sequence.txt),不碰戰役場次編號。
 	var campaign_sequence_entry: CampaignSequence = (
-		_campaign_sequence_entry_for(CampaignProgress.current_mission())
+		_tutorial_sequence_entry_for(TutorialProgress.current_index())
+		if TutorialProgress.is_active()
+		else _campaign_sequence_entry_for(CampaignProgress.current_mission())
 	)
 
 	var terrain_text: String = ""
@@ -2895,6 +2902,39 @@ static func _campaign_sequence_entry_for(mission_index: int) -> CampaignSequence
 	var sequence: Array[CampaignSequence] = parsed
 	for entry: CampaignSequence in sequence:
 		if entry.mission_index == mission_index:
+			return entry
+	return null
+
+
+## game-shell story-008:教學序列表的場次總數。與 [method campaign_total_missions]
+## 同一個失敗語意(0 = 讀取/解析失敗,已 push_error)。解析走 [CampaignSequence]。
+static func tutorial_total_missions() -> int:
+	var failure: LoadFailure = classify_file_access(TUTORIAL_SEQUENCE_PATH)
+	if failure != LoadFailure.NONE:
+		push_error(_LOG_LOAD_FAILURE_FORMAT % [TUTORIAL_SEQUENCE_PATH, LoadFailure.find_key(failure)])
+		return 0
+	var parsed: Variant = CampaignSequence.sequence_from_text(
+		FileAccess.get_file_as_string(TUTORIAL_SEQUENCE_PATH)
+	)
+	if parsed == null:
+		push_error("BattleScreen.tutorial_total_missions: parse failed for %s" % TUTORIAL_SEQUENCE_PATH)
+		return 0
+	var sequence: Array[CampaignSequence] = parsed
+	return sequence.size()
+
+
+## game-shell story-008:教學序列表第 [param index] 列;查不到回 null(呼叫端退回既有常數)。
+static func _tutorial_sequence_entry_for(index: int) -> CampaignSequence:
+	if classify_file_access(TUTORIAL_SEQUENCE_PATH) != LoadFailure.NONE:
+		return null
+	var parsed: Variant = CampaignSequence.sequence_from_text(
+		FileAccess.get_file_as_string(TUTORIAL_SEQUENCE_PATH)
+	)
+	if parsed == null:
+		return null
+	var sequence: Array[CampaignSequence] = parsed
+	for entry: CampaignSequence in sequence:
+		if entry.mission_index == index:
 			return entry
 	return null
 
@@ -4808,7 +4848,11 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	#
 	# production 的接線:src/ui/shell/scene_router.gd 的 enter_battle() 在新實例進樹
 	# 之前注入 ledger(game-shell story-005),所以這段在真正遊玩時會執行。
-	if campaign_ledger_override != null:
+	if TutorialProgress.is_active():
+		# game-shell story-008 AC3/AC4/AC5:教學場的結果分流。🔴 與戰役區塊是 if/elif
+		# 互斥 —— 教學場結構上不會碰 CampaignProgress / 戰役累積記錄 / 支援對話。
+		_resolve_tutorial_outcome(outcome)
+	elif campaign_ledger_override != null:
 		if outcome == BattleState.Outcome.VICTORY:
 			# game-shell story-005 AC4 —— 勝利時觸發支援對話。
 			# 🔴 必須在 advance_on_victory() 之【前】:場次編號推進後,
@@ -4881,6 +4925,16 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 func _on_result_display_finished() -> void:
 	if not is_inside_tree():
 		return
+	# game-shell story-008:教學場的去向(下一場教學 / 重打同一場 / 進戰役第 1 場)。
+	match _tutorial_next:
+		TutorialNext.TUTORIAL_BATTLE:
+			SceneRouter.enter_tutorial_battle(get_tree())
+			return
+		TutorialNext.CAMPAIGN:
+			SceneRouter.enter_battle(get_tree())
+			return
+		_:
+			pass
 	if not _proceed_to_next_mission:
 		return_to_title_screen()
 		return
@@ -4920,6 +4974,8 @@ func return_to_title_screen() -> void:
 func abandon_mission_to_title() -> void:
 	if not is_inside_tree():
 		return
+	if TutorialProgress.is_active():
+		TutorialProgress.end()
 	if campaign_ledger_override != null:
 		CampaignProgress.rollback_on_defeat()
 	SceneRouter.go_to_title(get_tree())
@@ -4968,6 +5024,28 @@ func _trigger_support_conversations_for_finished_mission() -> void:
 var _completed_support_conversation_ids: Array[String] = []
 ## story-004:勝利且非最後一場時為 true(結果顯示後接下一場而非回標題)。
 var _proceed_to_next_mission: bool = false
+
+## game-shell story-008:教學場結果後的去向。NONE = 非教學(或教學資料讀取失敗 -> 回標題)。
+enum TutorialNext { NONE, TUTORIAL_BATTLE, CAMPAIGN }
+var _tutorial_next: TutorialNext = TutorialNext.NONE
+
+
+## game-shell story-008 AC3/AC4:教學場勝利 -> 下一場教學;第 4 場勝利 -> 戰役第 1 場
+## (由 [method SceneRouter.enter_battle] 結束教學狀態);戰敗 -> 重載同一場。
+## 讀不到教學序列表(總數 0)時不前進、結束教學、回標題(響亮:已 push_error)。
+func _resolve_tutorial_outcome(outcome: BattleState.Outcome) -> void:
+	if outcome != BattleState.Outcome.VICTORY:
+		_tutorial_next = TutorialNext.TUTORIAL_BATTLE
+		return
+	var total: int = tutorial_total_missions()
+	if total <= 0:
+		TutorialProgress.end()
+		_tutorial_next = TutorialNext.NONE
+		return
+	if TutorialProgress.advance_on_victory(total) == TutorialProgress.AdvanceResult.ADVANCED:
+		_tutorial_next = TutorialNext.TUTORIAL_BATTLE
+	else:
+		_tutorial_next = TutorialNext.CAMPAIGN
 
 
 ## story-u016-unbind-end-phase-and-hint-bar.md (AC-M16) — see

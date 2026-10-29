@@ -1,0 +1,2 @@
+# 教學場專用空牌面文字表(game-shell story-008 AC6)—— 與 tutorial_cards.txt 配對,零列。
+# id,flavor_text

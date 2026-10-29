@@ -255,6 +255,7 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# battle.menu.egm_status_on / battle.menu.egm_status_off 五列)。延續前三次的
 	# 同一處理方式(直接更新數字),不是對檔尾「待裁決」重新下裁決。
 	# 🔴 2026-10-27 第五次更新:83 → 84(game-shell story-005 新增 battle.menu.leave_confirm_return_to_title 一列)。
+	# 🔴 2026-10-29 game-shell story-008:152 → 153(新增 shell.title.skip_tutorial 一列;依工作單 Affected Files)。
 	# 🔴 2026-10-28 再續四:148 → 150(tactical-combat story-022 新增 battle.hud.result_defeat_reason_format / _separator 共 2 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續三:145 → 148(relation-minimap story-001 新增 battle.hud.relation_map_* 共 3 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續二:140 → 145(support-conversation-ui story-003 第二段新增 support.ui.* 共 5 列;依工作單 Affected Files,延續同日同一處理方式)。
@@ -286,10 +287,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 152（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 153（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(152)
+	).is_equal(153)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

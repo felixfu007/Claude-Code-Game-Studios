@@ -1,0 +1,3 @@
+# 教學第 1~3 場的好感度連線表(game-shell story-008 AC6)—— 刻意零條連線。
+# 欄位格式同 vs01_affinity_links.txt:unit_a,unit_b,polarity,amp
+# 零條連線是合法狀態(誰都沒配對);路徑為空字串會退回 vs01 的連線表,所以必須有這個檔。

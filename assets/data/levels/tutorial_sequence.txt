@@ -1,0 +1,13 @@
+# 教學關序列表(game-shell story-008 AC2)—— 欄位與 campaign_sequence.txt 完全相同,
+# 解析沿用 src/gameplay/campaign/campaign_sequence.gd 的 CampaignSequence(不另寫解析器):
+# mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
+#
+# 教學是【獨立序列】,不佔用戰役場次編號(支援對話依 CampaignProgress.current_mission() 觸發)。
+# 教學場無技能卡:四列都指向 tutorial_cards.txt(只有註解、零張卡)。
+# 教學第 1~3 場無好感度連線檔:指向 tutorial_no_links.txt(合法的零連線表);第 4 場用 tut04_affinity_links.txt。
+#
+# mission_index,terrain_path,roster_path,affinity_path,cards_path,card_text_path
+1,res://assets/data/levels/tut01_terrain.txt,res://assets/data/units/tut01_roster.txt,res://assets/data/affinity/tutorial_no_links.txt,res://assets/data/cards/tutorial_cards.txt,res://assets/data/cards/tutorial_card_text.txt
+2,res://assets/data/levels/tut02_terrain.txt,res://assets/data/units/tut02_roster.txt,res://assets/data/affinity/tutorial_no_links.txt,res://assets/data/cards/tutorial_cards.txt,res://assets/data/cards/tutorial_card_text.txt
+3,res://assets/data/levels/tut03_terrain.txt,res://assets/data/units/tut03_roster.txt,res://assets/data/affinity/tutorial_no_links.txt,res://assets/data/cards/tutorial_cards.txt,res://assets/data/cards/tutorial_card_text.txt
+4,res://assets/data/levels/tut04_terrain.txt,res://assets/data/units/tut04_roster.txt,res://assets/data/affinity/tut04_affinity_links.txt,res://assets/data/cards/tutorial_cards.txt,res://assets/data/cards/tutorial_card_text.txt
