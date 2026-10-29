@@ -82,6 +82,8 @@ func _apply_layout() -> void:
 	for label: Label in [_status_label, _info_label, _controls_hint_label, _load_error_label, _result_label]:
 		label.add_theme_font_override(&"font", HUD_FONT)
 		label.add_theme_font_size_override(&"font_size", font_px)
+	# Story 025:結果文字用較大的整數倍字級(覆寫上面迴圈對它設的 HUD 字級)。
+	_result_label.add_theme_font_size_override(&"font_size", HudLayout.result_font_size(window_size))
 
 
 # Assigns [param rect]'s four components directly to [param control]'s

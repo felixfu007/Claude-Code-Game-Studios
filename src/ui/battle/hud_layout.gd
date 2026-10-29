@@ -79,6 +79,10 @@ const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 3.2
 const RESULT_LABEL_WIDTH_MULTIPLIER: float = 6.0
 const RESULT_LABEL_HEIGHT_MULTIPLIER: float = 2.2
 
+## Story 025:結果文字字級相對 HUD 字級的整數倍,與結果框可容納行數。
+const RESULT_FONT_MULTIPLIER: int = 2
+const RESULT_LABEL_LINES: float = 2.0
+
 ## relation-minimap story-001: panel height in font-size units (see relation_minimap_rect).
 const RELATION_MINIMAP_HEIGHT_MULTIPLIER: float = 10.0
 
@@ -214,10 +218,22 @@ static func load_error_label_rect(window_size: Vector2i) -> Rect2:
 ## do — for a 0.5-anchored [Control], [code]offset_left[/code] IS the
 ## distance left of the anchor point, so a negative [code]position.x[/code]
 ## here is exactly that distance.
+##
+## Story 025:結果文字改為畫面中央大字(字級見 [method result_font_size]),
+## 框寬 = 安全區全寬(戰敗原因文字較長,靠 autowrap 換行)、高 = 兩行。
+## 仍以安全區為界,所以既有「不超出安全區半徑」的回歸測試照舊成立。
 static func result_label_offset_rect(window_size: Vector2i) -> Rect2:
-	var fpx: float = float(font_size(window_size))
-	var size: Vector2 = Vector2(fpx * RESULT_LABEL_WIDTH_MULTIPLIER, fpx * RESULT_LABEL_HEIGHT_MULTIPLIER)
+	var rpx: float = float(result_font_size(window_size))
+	var width: float = safe_rect(window_size).size.x
+	var size: Vector2 = Vector2(width, rpx * RESULT_LABEL_HEIGHT_MULTIPLIER * RESULT_LABEL_LINES)
 	return Rect2(-(size / 2.0), size)
+
+
+## Story 025:結果文字字級 = [method font_size] 的整數倍([constant RESULT_FONT_MULTIPLIER]),
+## 倍率 N 仍唯一出自 [method WorldLayout.compute_scale](經 [method font_size]),
+## 整數倍保持點陣字不糊。
+static func result_font_size(window_size: Vector2i) -> int:
+	return font_size(window_size) * RESULT_FONT_MULTIPLIER
 
 
 ## battle-hud story-003 -- EGM consistency counter ("猜中 6/8") box. Sits

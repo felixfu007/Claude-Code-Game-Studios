@@ -60,20 +60,6 @@ mouse_filter = 2
 vertical_alignment = 0
 autowrap_mode = 0
 
-[node name="ResultLabel" type="Label" parent="UILayer"]
-visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -80.0
-offset_top = -20.0
-offset_right = 80.0
-offset_bottom = 20.0
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="ControlsHintBg" type="ColorRect" parent="UILayer"]
 offset_left = 0.0
 offset_top = 231.0
@@ -111,3 +97,27 @@ autowrap_mode = 3
 [node name="AttackConfirmPanel" parent="UILayer" instance=ExtResource("8_attack_confirm_panel")]
 
 [node name="BattleMenu" parent="UILayer" instance=ExtResource("7_battle_menu")]
+
+
+[node name="ResultMask" type="ColorRect" parent="UILayer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+color = Color(0, 0, 0, 0.6)
+
+[node name="ResultLabel" type="Label" parent="UILayer"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -20.0
+offset_right = 80.0
+offset_bottom = 20.0
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 1

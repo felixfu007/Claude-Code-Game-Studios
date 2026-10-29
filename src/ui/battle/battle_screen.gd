@@ -411,6 +411,8 @@ const RESULT_DISPLAY_SECONDS: float = 3.0
 @onready var _tile_info_panel_bg: ColorRect = $UILayer/TileInfoPanelBg
 @onready var _tile_info_panel_label: Label = $UILayer/TileInfoPanelBg/TileInfoPanelLabel
 @onready var _result_label: Label = $UILayer/ResultLabel
+## Story 025:結果文字底下的滿版半透明遮罩(錨點 0~1,蓋住整個視窗含非 16:9 的四角)。
+@onready var _result_mask: ColorRect = $UILayer/ResultMask
 @onready var _controls_hint_label: Label = $UILayer/ControlsHintBg/ControlsHintLabel
 ## Backing bar for [member _controls_hint_label] — only referenced directly
 ## (rather than through the label) so [method _fail_load] can hide the whole
@@ -4690,6 +4692,9 @@ func _defeat_result_text() -> String:
 
 
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
+	# Story 025:遮罩 + 中央大字;狀態列(「第 N 回合・我方行動」)隱藏,因為戰鬥已結束。
+	_result_mask.visible = true
+	_status_label.visible = false
 	_result_label.visible = true
 	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else _defeat_result_text()
 
