@@ -4583,12 +4583,27 @@ func _update_tile_info_panel() -> void:
 	)
 
 	if not resolved:
+		_set_tile_info_preview_mode(false)
 		_tile_info_panel_label.text = Loc.localize(TEXT_TILE_INFO_UNRESOLVED)
 		return
 
 	var terrain_char: String = _state.board.get_terrain(_cursor_cell)
 	var cost: int = _state.board.get_move_cost(_cursor_cell)
 	var blocks_sight: bool = _state.board.blocks_sight(_cursor_cell)
+
+	# Story 026(2026-10-29 管理者裁決):已選定單位、游標停在其攻擊範圍內的敵人上 →
+	# 顯示傷害拆解(取代已刪除的攻擊確認框)。判定沿用 _cursor_attack_target_id()
+	# (即 BattleController.attack_targets()),不自己重寫射程;非目標一律落回下面 story-024 的行為。
+	var preview_target_id: int = -1
+	var preview_attacker_id: int = _controller.selected_unit()
+	if occupant != null and preview_attacker_id != -1:
+		preview_target_id = _cursor_attack_target_id()
+	_set_tile_info_preview_mode(preview_target_id != -1)
+	if preview_target_id != -1:
+		var preview_text: String = _build_attack_preview_text(preview_attacker_id, preview_target_id)
+		if preview_text != "":
+			_tile_info_panel_label.text = preview_text
+			return
 
 	if occupant != null:
 		_tile_info_panel_label.text = build_tile_info_text(
@@ -4602,6 +4617,49 @@ func _update_tile_info_panel() -> void:
 			terrain_char, cost, blocks_sight,
 			false, Unit.Faction.PLAYER, 0, 0, TurnOrder.ActionState.NOT_FOUND, 0, 0, 0
 		)
+
+
+## Story 026 — 資訊框目前是否為傷害預覽版面(比單位資訊寬,容納「目標血量：10 → 10」)。
+var _tile_info_preview_mode: bool = false
+
+## Story 026 — 預覽版面寬度(HUD 小字級的倍數);單位資訊版面仍用 [constant _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER]。
+const _TILE_INFO_PREVIEW_WIDTH_FPX_MULTIPLIER: float = 12.0
+
+
+func _set_tile_info_preview_mode(active: bool) -> void:
+	if _tile_info_preview_mode == active:
+		return
+	_tile_info_preview_mode = active
+	_apply_tile_info_panel_layout()
+
+
+## Story 026 — 組傷害預覽文字。數字一律取自 [method BattleState.preview_damage_breakdown]
+## (與實際結算同一批函式),Φ 取自 [member _phi](與 BattleController 結算用的是同一個提供者)。
+## 欄位:標題、ATK、DEF、Φ(帶號,0 也顯示)、結果傷害、目標血量預估。
+## 回傳空字串代表拆解無法取得(單位 id 無法解析),呼叫端落回單位資訊,不顯示假資料。
+## 每次 [method _update_tile_info_panel] 都重新呼叫,不快取(AC5)。
+## 🔴 揭露:Φ 欄顯示的是夾限後實際進入公式的值(breakdown["phi"]);原始值與夾限值不同時,
+## 本版面【不】另列夾限說明列(舊確認框有),因為該列文字約 17 字,放不進這個框的寬度。
+func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
+	var attacker: Unit = _state.unit_by_id(attacker_id)
+	var target: Unit = _state.unit_by_id(target_id)
+	if attacker == null or target == null:
+		return ""
+	var phi: int = _phi.phi(attacker_id, target_id)
+	var result: DamageBreakdownResult = _state.preview_damage_breakdown(attacker_id, target_id, phi)
+	if result == null:
+		return ""
+	var bd: Dictionary = result.breakdown
+	var lines: PackedStringArray = PackedStringArray([
+		Loc.localize(&"battle.attack_confirm.header_format") % [attacker.code_name, target.code_name],
+		Loc.localize(&"battle.attack_confirm.atk_format") % int(bd["atk"]),
+		Loc.localize(&"battle.attack_confirm.def_format") % int(bd["def"]),
+		Loc.localize(&"battle.attack_confirm.phi_format") % ("%+d" % int(bd["phi"])),
+		Loc.localize(&"battle.attack_confirm.damage_format") % int(bd["damage"]),
+		Loc.localize(&"battle.attack_confirm.target_hp_format") % [target.hp, int(bd["target_hp_after"])],
+	])
+	return "
+".join(lines)
 
 
 ## Story 012 — positions/sizes [member _tile_info_panel_bg] (and, via its
@@ -4637,7 +4695,10 @@ func _apply_tile_info_panel_layout() -> void:
 	# (少一個像素字型基準 GLYPH_PX,仍為其整數倍,像素字不糊),寬度改跟字級走,
 	# 不再佔安全區 40% 寬。
 	var fpx: float = float(HudLayout.small_font_size(window_size))
-	var width: float = fpx * _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER
+	var width: float = fpx * (
+		_TILE_INFO_PREVIEW_WIDTH_FPX_MULTIPLIER if _tile_info_preview_mode
+		else _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER
+	)
 	var height: float = fpx * (
 		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * _TILE_INFO_PANEL_LINE_COUNT
 		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
