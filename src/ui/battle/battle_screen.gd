@@ -1301,7 +1301,7 @@ func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
 	# Story 028 G:小視窗單行說明列用精簡文字,其餘視窗還原完整兩行文字。
 	var full_hint: String = Loc.localize(TEXT_CONTROLS_HINT)
 	_controls_hint_label.text = (
-		HudLayout.compact_hint_text(full_hint) if HudLayout.is_compact_hint_bar(window_size)
+		HudLayout.compact_hint_text(full_hint, window_size) if HudLayout.is_compact_hint_bar(window_size)
 		else full_hint
 	)
 	if _hand_button == null:

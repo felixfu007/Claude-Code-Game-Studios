@@ -122,7 +122,7 @@ func test_min_window_buttons_stay_inside_bar_and_do_not_overlap_each_other() -> 
 func test_min_window_compact_hint_text_fits_left_of_buttons() -> void:
 	var instance: BattleScreen = _fresh_instance()
 	var full: String = Loc.localize(BattleScreen.TEXT_CONTROLS_HINT)
-	var compact: String = HudLayout.compact_hint_text(full)
+	var compact: String = HudLayout.compact_hint_text(full, _MIN_WINDOW)
 	assert_bool(compact.is_empty() or compact.contains("\n")).append_failure_message("單行文字不得含換行且非空").is_false()
 	var font: Font = HudLayoutScaler.HUD_FONT
 	var width: float = font.get_string_size(compact, HORIZONTAL_ALIGNMENT_LEFT, -1, HudLayout.font_size(_MIN_WINDOW)).x
@@ -130,6 +130,68 @@ func test_min_window_compact_hint_text_fits_left_of_buttons() -> void:
 	var left_button: Rect2 = HudLayout.hud_action_button_rect(_MIN_WINDOW, 1)
 	assert_float(bar.position.x + width).is_less(left_button.position.x)
 	assert_object(instance).is_not_null()
+
+
+# ---- G 補(story-029):單行模式依實際可用寬度決定兩項或四項 --------------------------
+
+func _hint_text_width(text: String, window_size: Vector2i) -> float:
+	return HudLayoutScaler.HUD_FONT.get_string_size(
+		text, HORIZONTAL_ALIGNMENT_LEFT, -1, HudLayout.font_size(window_size)).x
+
+
+func _hint_segment_count(text: String) -> int:
+	return text.split("　", false).size()
+
+
+func test_compact_hint_two_items_at_min_window_and_within_available_width() -> void:
+	var full: String = Loc.localize(BattleScreen.TEXT_CONTROLS_HINT)
+	assert_bool(HudLayout.is_compact_hint_bar(_MIN_WINDOW)).append_failure_message("PRECONDITION: 960x540 為單行模式").is_true()
+	var wide: String = _wide_hint(full)
+	assert_float(_hint_text_width(wide, _MIN_WINDOW)).append_failure_message(
+		"PRECONDITION: 四項在 960x540 應放不下").is_greater(HudLayout.compact_hint_available_width(_MIN_WINDOW))
+
+	var text: String = HudLayout.compact_hint_text(full, _MIN_WINDOW)
+
+	assert_int(_hint_segment_count(text)).is_equal(HudLayout.COMPACT_HINT_SEGMENT_COUNT)
+	assert_float(_hint_text_width(text, _MIN_WINDOW)).is_less_equal(HudLayout.compact_hint_available_width(_MIN_WINDOW))
+
+
+func test_compact_hint_four_items_when_they_fit_at_1280_and_1366() -> void:
+	var full: String = Loc.localize(BattleScreen.TEXT_CONTROLS_HINT)
+	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1366, 768)]:
+		assert_bool(HudLayout.is_compact_hint_bar(window_size)).append_failure_message(
+			"PRECONDITION: %s 為單行模式" % window_size).is_true()
+
+		var text: String = HudLayout.compact_hint_text(full, window_size)
+
+		assert_int(_hint_segment_count(text)).append_failure_message("%s 應為四項" % window_size).is_equal(
+			HudLayout.COMPACT_HINT_WIDE_SEGMENT_COUNT + 1)
+		assert_bool(text.contains("\n")).is_false()
+		assert_float(_hint_text_width(text, window_size)).append_failure_message(
+			"%s 文字寬超出可用寬度" % window_size).is_less_equal(HudLayout.compact_hint_available_width(window_size))
+
+
+func test_large_window_still_uses_full_two_line_hint() -> void:
+	assert_bool(HudLayout.is_compact_hint_bar(_BIG_WINDOW)).append_failure_message("PRECONDITION: 1920x1080 不是單行模式").is_false()
+	var instance: BattleScreen = _fresh_instance()
+	instance._apply_hud_action_buttons_layout(_BIG_WINDOW)
+	assert_str(instance._controls_hint_label.text).is_equal(Loc.localize(BattleScreen.TEXT_CONTROLS_HINT))
+
+
+# 偵測器:「永遠四項」的缺陷版本在 960x540 會超出可用寬度。
+func test_sensitivity_proof_always_four_items_overflows_at_min_window() -> void:
+	var full: String = Loc.localize(BattleScreen.TEXT_CONTROLS_HINT)
+	var always_wide: String = _wide_hint(full)
+	assert_float(_hint_text_width(always_wide, _MIN_WINDOW)).is_greater(HudLayout.compact_hint_available_width(_MIN_WINDOW))
+	assert_str(HudLayout.compact_hint_text(full, _MIN_WINDOW)).is_not_equal(always_wide)
+
+
+# 依段落位置重組四項(與被測函式同一規則,僅供測試產生對照)。
+func _wide_hint(full: String) -> String:
+	var lines: PackedStringArray = full.split("\n")
+	var segs: PackedStringArray = lines[0].split("　", false).slice(0, HudLayout.COMPACT_HINT_WIDE_SEGMENT_COUNT)
+	segs.append(lines[1].split("　", false)[HudLayout.COMPACT_HINT_WIDE_EXTRA_INDEX])
+	return "　".join(segs)
 
 
 func test_large_window_keeps_two_line_hint_bar_and_stacked_buttons() -> void:

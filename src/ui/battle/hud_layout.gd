@@ -92,11 +92,46 @@ static func is_compact_hint_bar(window_size: Vector2i) -> bool:
 	return WorldLayout.compute_scale(window_size) <= COMPACT_HINT_MAX_SCALE
 
 
-## 單行模式用的說明文字:取 [param full_text] 第一行,只留前 [constant COMPACT_HINT_SEGMENT_COUNT] 段。
-static func compact_hint_text(full_text: String) -> String:
-	var first_line: String = full_text.split("\n")[0]
-	var segments: PackedStringArray = first_line.split("　", false)
-	return "　".join(segments.slice(0, COMPACT_HINT_SEGMENT_COUNT))
+## Story 029 G 補:四項版 = 第一行前 [constant COMPACT_HINT_WIDE_SEGMENT_COUNT] 段
+## + 第二行第 [constant COMPACT_HINT_WIDE_EXTRA_INDEX] 段(選單)。依段落位置取,不寫死文字。
+const COMPACT_HINT_WIDE_SEGMENT_COUNT: int = 3
+const COMPACT_HINT_WIDE_EXTRA_INDEX: int = 2
+## ControlsHintLabel 在 BattleScreen.tscn 相對說明列的左側內縮(offset_left = 4,固定像素)。
+const COMPACT_HINT_LABEL_INSET_PX: float = 4.0
+
+
+## 單行模式可用於說明文字的寬度:說明列左緣到左側按鈕([code]index 1[/code])左緣,再扣標籤內縮。
+static func compact_hint_available_width(window_size: Vector2i) -> float:
+	var bar: Rect2 = controls_hint_bg_rect(window_size)
+	var left_button: Rect2 = hud_action_button_rect(window_size, 1)
+	return left_button.position.x - bar.position.x - COMPACT_HINT_LABEL_INSET_PX
+
+
+## 單行模式用的說明文字。先組四項版(第一行前 3 段 + 第二行選單段);
+## 若以 HUD 字型實際量到的寬度超過 [method compact_hint_available_width],退回兩項版
+## (第一行前 [constant COMPACT_HINT_SEGMENT_COUNT] 段)。
+## [param window_size] 為 ZERO 時取目前主視窗尺寸(相容舊呼叫端)。
+static func compact_hint_text(full_text: String, window_size: Vector2i = Vector2i.ZERO) -> String:
+	var lines: PackedStringArray = full_text.split("\n")
+	var first: PackedStringArray = lines[0].split("　", false)
+	var narrow: String = "　".join(first.slice(0, COMPACT_HINT_SEGMENT_COUNT))
+	if lines.size() < 2:
+		return narrow
+	var second: PackedStringArray = lines[1].split("　", false)
+	if second.size() <= COMPACT_HINT_WIDE_EXTRA_INDEX:
+		return narrow
+	var wide_segments: PackedStringArray = first.slice(0, COMPACT_HINT_WIDE_SEGMENT_COUNT)
+	wide_segments.append(second[COMPACT_HINT_WIDE_EXTRA_INDEX])
+	var wide: String = "　".join(wide_segments)
+	var size: Vector2i = window_size
+	if size == Vector2i.ZERO:
+		var tree: SceneTree = Engine.get_main_loop() as SceneTree
+		if tree == null:
+			return narrow
+		size = tree.root.size
+	var width: float = HudLayoutScaler.HUD_FONT.get_string_size(
+		wide, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size(size)).x
+	return wide if width <= compact_hint_available_width(size) else narrow
 
 
 ## Story 025:結果文字字級相對 HUD 字級的整數倍,與結果框可容納行數。
