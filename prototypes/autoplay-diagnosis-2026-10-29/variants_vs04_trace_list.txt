@@ -1,0 +1,4 @@
+# label,terrain,roster
+V0_base,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_base_vs04.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_base_vs04.txt
+S1_stagger,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_base_vs04.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_stagger.txt
+T1_terrain_vs03,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs03.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_base_vs04.txt

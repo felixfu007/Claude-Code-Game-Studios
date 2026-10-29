@@ -1,0 +1,15 @@
+# label,terrain,roster
+W_vs02_base,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base.txt
+W_vs02_base_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base_flip.txt
+W_vs02_e1back,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_e1back.txt
+W_vs02_e1back_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_e1back_flip.txt
+W_vs02_drop_e5,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e5.txt
+W_vs02_drop_e5_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e5_flip.txt
+W_vs02_drop_e3,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e3.txt
+W_vs02_drop_e3_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e3_flip.txt
+W_vs02_drop_e4,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e4.txt
+W_vs02_drop_e4_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs02_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_drop_e4_flip.txt
+W_vs02_base_terr_vs03,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs03.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base.txt
+W_vs02_base_terr_vs03_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_vs03_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base_flip.txt
+W_vs02_base_terr_bushband,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_bushband.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base.txt
+W_vs02_base_terr_bushband_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_bushband_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_vs02_base_flip.txt

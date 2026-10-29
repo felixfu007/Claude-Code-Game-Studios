@@ -1,0 +1,484 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+  DECIDE vs03 A_greedy 甲(P) hp=30/30 at=(0, 1)
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(0, 2)
+  DECIDE vs03 A_greedy 丙(P) hp=22/22 at=(0, 3)
+  DECIDE vs03 A_greedy 丁(P) hp=26/26 at=(0, 4)
+  DECIDE vs03 A_greedy 戊(P) hp=30/30 at=(0, 5)
+  DECIDE vs03 A_greedy 甲(P) hp=30/30 at=(3, 2)
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs03 A_greedy 丙(P) hp=22/22 at=(2, 2)
+  DECIDE vs03 A_greedy 丁(P) hp=26/26 at=(2, 3)
+  DECIDE vs03 A_greedy 戊(P) hp=30/30 at=(3, 4)
+  DECIDE vs03 A_greedy E1(E) hp=23/23 at=(7, 2)
+  DECIDE vs03 A_greedy E2(E) hp=20/20 at=(8, 1)
+  DECIDE vs03 A_greedy E3(E) hp=18/18 at=(9, 5)
+  DECIDE vs03 A_greedy E4(E) hp=22/22 at=(8, 4)
+  DECIDE vs03 A_greedy E5(E) hp=24/24 at=(7, 3)
+  DECIDE vs03 A_greedy E1(E) hp=23/23 at=(5, 1)
+  DECIDE vs03 A_greedy E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs03 A_greedy E3(E) hp=18/18 at=(7, 4)
+  DECIDE vs03 A_greedy E4(E) hp=22/22 at=(6, 2)
+  DECIDE vs03 A_greedy E5(E) hp=24/24 at=(4, 3)
+  DECIDE vs03 A_greedy 甲(P) hp=30/30 at=(3, 2)
+  PHI_RAW vs03 A_greedy attacker=1 target=6 phi=3
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs03 A_greedy 丙(P) hp=22/22 at=(2, 2)
+  DECIDE vs03 A_greedy 丁(P) hp=26/26 at=(2, 3)
+  DECIDE vs03 A_greedy 戊(P) hp=30/30 at=(3, 4)
+  DECIDE vs03 A_greedy 丁(P) hp=26/26 at=(3, 0)
+  DECIDE vs03 A_greedy 戊(P) hp=30/30 at=(5, 3)
+  DECIDE vs03 A_greedy E1(E) hp=10/23 at=(5, 1)
+  DECIDE vs03 A_greedy E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs03 A_greedy E3(E) hp=18/18 at=(7, 4)
+  DECIDE vs03 A_greedy E4(E) hp=22/22 at=(6, 2)
+  DECIDE vs03 A_greedy 甲(P) hp=25/30 at=(4, 1)
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(4, 2)
+  DECIDE vs03 A_greedy 丙(P) hp=22/22 at=(3, 1)
+  DECIDE vs03 A_greedy 丁(P) hp=18/26 at=(3, 0)
+  DECIDE vs03 A_greedy 戊(P) hp=19/30 at=(5, 3)
+  DECIDE vs03 A_greedy 甲(P) hp=25/30 at=(4, 1)
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(4, 2)
+  DECIDE vs03 A_greedy E3(E) hp=18/18 at=(7, 3)
+  DECIDE vs03 A_greedy 甲(P) hp=25/30 at=(5, 2)
+  DECIDE vs03 A_greedy 乙(P) hp=26/26 at=(5, 3)
+  LOG vs03 A_greedy R1 PLAYER: 甲 moves to (3, 2)
+  LOG vs03 A_greedy R1 PLAYER: 乙 moves to (3, 1)
+  LOG vs03 A_greedy R1 PLAYER: 丙 moves to (2, 2)
+  LOG vs03 A_greedy R1 PLAYER: 丁 moves to (2, 3)
+  LOG vs03 A_greedy R1 PLAYER: 戊 moves to (3, 4)
+  LOG vs03 A_greedy R1 PLAYER: 甲 ends turn without acting
+  LOG vs03 A_greedy R1 PLAYER: 乙 ends turn without acting
+  LOG vs03 A_greedy R1 PLAYER: 丙 ends turn without acting
+  LOG vs03 A_greedy R1 PLAYER: 丁 ends turn without acting
+  LOG vs03 A_greedy R1 PLAYER: 戊 ends turn without acting
+  LOG vs03 A_greedy R1 ENEMY: E1 moves to (5, 1)
+  LOG vs03 A_greedy R1 ENEMY: E2 moves to (6, 1)
+  LOG vs03 A_greedy R1 ENEMY: E3 moves to (7, 4)
+  LOG vs03 A_greedy R1 ENEMY: E4 moves to (6, 2)
+  LOG vs03 A_greedy R1 ENEMY: E5 moves to (4, 3)
+  LOG vs03 A_greedy R1 ENEMY: E1 ends turn without acting
+  LOG vs03 A_greedy R1 ENEMY: E2 ends turn without acting
+  LOG vs03 A_greedy R1 ENEMY: E3 ends turn without acting
+  LOG vs03 A_greedy R1 ENEMY: E4 ends turn without acting
+  LOG vs03 A_greedy R1 ENEMY: E5 ends turn without acting
+  LOG vs03 A_greedy R2 PLAYER: 甲 moves to (4, 1)
+  LOG vs03 A_greedy R2 PLAYER: 甲 attacks E1 for 13 damage
+  LOG vs03 A_greedy R2 PLAYER: 乙 moves to (4, 2)
+  LOG vs03 A_greedy R2 PLAYER: 乙 attacks E5 for 11 damage
+  LOG vs03 A_greedy R2 PLAYER: 丙 moves to (3, 1)
+  LOG vs03 A_greedy R2 PLAYER: 丙 attacks E5 for 16 damage
+  LOG vs03 A_greedy E5 is defeated
+  LOG vs03 A_greedy R2 PLAYER: 丁 moves to (3, 0)
+  LOG vs03 A_greedy R2 PLAYER: 戊 moves to (5, 3)
+  LOG vs03 A_greedy R2 PLAYER: 丁 ends turn without acting
+  LOG vs03 A_greedy R2 PLAYER: 戊 ends turn without acting
+  LOG vs03 A_greedy R2 ENEMY: E1 moves to (4, 0)
+  LOG vs03 A_greedy R2 ENEMY: E1 attacks 丁 for 8 damage
+  LOG vs03 A_greedy R2 ENEMY: E2 moves to (5, 1)
+  LOG vs03 A_greedy R2 ENEMY: E2 attacks 甲 for 5 damage
+  LOG vs03 A_greedy R2 ENEMY: E3 moves to (7, 3)
+  LOG vs03 A_greedy R2 ENEMY: E3 attacks 戊 for 6 damage
+  LOG vs03 A_greedy R2 ENEMY: E4 moves to (5, 2)
+  LOG vs03 A_greedy R2 ENEMY: E4 attacks 戊 for 5 damage
+  LOG vs03 A_greedy R3 PLAYER: 甲 attacks E1 for 13 damage
+  LOG vs03 A_greedy E1 is defeated
+  LOG vs03 A_greedy R3 PLAYER: 乙 attacks E4 for 12 damage
+  LOG vs03 A_greedy R3 PLAYER: 丙 moves to (3, 2)
+  LOG vs03 A_greedy R3 PLAYER: 丙 attacks E4 for 15 damage
+  LOG vs03 A_greedy E4 is defeated
+  LOG vs03 A_greedy R3 PLAYER: 丁 moves to (5, 0)
+  LOG vs03 A_greedy R3 PLAYER: 丁 attacks E2 for 11 damage
+  LOG vs03 A_greedy R3 PLAYER: 戊 moves to (6, 1)
+  LOG vs03 A_greedy R3 PLAYER: 戊 attacks E2 for 11 damage
+  LOG vs03 A_greedy E2 is defeated
+  LOG vs03 A_greedy R3 PLAYER: 甲 moves to (5, 2)
+  LOG vs03 A_greedy R3 PLAYER: 乙 moves to (5, 3)
+  LOG vs03 A_greedy R3 ENEMY: E3 moves to (7, 1)
+  LOG vs03 A_greedy R3 ENEMY: E3 attacks 丁 for 8 damage
+  LOG vs03 A_greedy R4 PLAYER: 甲 moves to (8, 1)
+  LOG vs03 A_greedy R4 PLAYER: 甲 attacks E3 for 12 damage
+  LOG vs03 A_greedy R4 PLAYER: 乙 moves to (7, 2)
+  LOG vs03 A_greedy R4 PLAYER: 乙 attacks E3 for 11 damage
+  LOG vs03 A_greedy E3 is defeated
+RESULT vs03 A_greedy outcome=VICTORY rounds=4 aborted=false reason= player_attacks=10 seeded_links=2 phi_calls=10 phi_nonzero=7 first_down=[E5 is defeated (after: R2 PLAYER: 丙 attacks E5 for 16 damage)]
+  END players=["甲:25/30", "乙:26/26", "丙:22/22", "丁:10/26", "戊:19/30"] enemies=[]
+  DECIDE vs03 C_focus_affinity 甲(P) hp=30/30 at=(0, 1)
+  DECIDE vs03 C_focus_affinity 乙(P) hp=26/26 at=(0, 2)
+  DECIDE vs03 C_focus_affinity 丙(P) hp=22/22 at=(0, 3)
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(0, 4)
+  DECIDE vs03 C_focus_affinity 戊(P) hp=30/30 at=(0, 5)
+  DECIDE vs03 C_focus_affinity 甲(P) hp=30/30 at=(3, 2)
+  DECIDE vs03 C_focus_affinity 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs03 C_focus_affinity 丙(P) hp=22/22 at=(2, 2)
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs03 C_focus_affinity 戊(P) hp=30/30 at=(2, 3)
+  DECIDE vs03 C_focus_affinity E1(E) hp=23/23 at=(7, 2)
+  DECIDE vs03 C_focus_affinity E2(E) hp=20/20 at=(8, 1)
+  DECIDE vs03 C_focus_affinity E3(E) hp=18/18 at=(9, 5)
+  DECIDE vs03 C_focus_affinity E4(E) hp=22/22 at=(8, 4)
+  DECIDE vs03 C_focus_affinity E5(E) hp=24/24 at=(7, 3)
+  DECIDE vs03 C_focus_affinity E1(E) hp=23/23 at=(5, 1)
+  DECIDE vs03 C_focus_affinity E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs03 C_focus_affinity E3(E) hp=18/18 at=(7, 4)
+  DECIDE vs03 C_focus_affinity E4(E) hp=22/22 at=(6, 2)
+  DECIDE vs03 C_focus_affinity E5(E) hp=24/24 at=(4, 3)
+  DECIDE vs03 C_focus_affinity 甲(P) hp=30/30 at=(3, 2)
+  DECIDE vs03 C_focus_affinity 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs03 C_focus_affinity 丙(P) hp=22/22 at=(2, 2)
+  PHI_RAW vs03 C_focus_affinity attacker=3 target=10 phi=2
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs03 C_focus_affinity 戊(P) hp=30/30 at=(2, 3)
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(4, 4)
+  DECIDE vs03 C_focus_affinity 戊(P) hp=30/30 at=(3, 1)
+  DECIDE vs03 C_focus_affinity E1(E) hp=23/23 at=(5, 1)
+  DECIDE vs03 C_focus_affinity E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs03 C_focus_affinity E3(E) hp=18/18 at=(7, 4)
+  DECIDE vs03 C_focus_affinity E4(E) hp=22/22 at=(6, 2)
+  DECIDE vs03 C_focus_affinity 甲(P) hp=19/30 at=(4, 2)
+  DECIDE vs03 C_focus_affinity 乙(P) hp=26/26 at=(3, 3)
+  DECIDE vs03 C_focus_affinity 丙(P) hp=16/22 at=(2, 1)
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(4, 4)
+  DECIDE vs03 C_focus_affinity 戊(P) hp=24/30 at=(3, 1)
+  DECIDE vs03 C_focus_affinity E1(E) hp=23/23 at=(3, 0)
+  DECIDE vs03 C_focus_affinity E4(E) hp=11/22 at=(5, 2)
+  DECIDE vs03 C_focus_affinity E4(E) hp=11/22 at=(5, 2)
+  DECIDE vs03 C_focus_affinity 甲(P) hp=14/30 at=(6, 3)
+  DECIDE vs03 C_focus_affinity 乙(P) hp=26/26 at=(5, 3)
+  DECIDE vs03 C_focus_affinity 丙(P) hp=9/22 at=(1, 0)
+  DECIDE vs03 C_focus_affinity 丁(P) hp=26/26 at=(4, 2)
+  LOG vs03 C_focus_affinity R1 PLAYER: 甲 moves to (3, 2)
+  LOG vs03 C_focus_affinity R1 PLAYER: 乙 moves to (3, 1)
+  LOG vs03 C_focus_affinity R1 PLAYER: 丙 moves to (2, 2)
+  LOG vs03 C_focus_affinity R1 PLAYER: 丁 moves to (3, 4)
+  LOG vs03 C_focus_affinity R1 PLAYER: 戊 moves to (2, 3)
+  LOG vs03 C_focus_affinity R1 PLAYER: 甲 ends turn without acting
+  LOG vs03 C_focus_affinity R1 PLAYER: 乙 ends turn without acting
+  LOG vs03 C_focus_affinity R1 PLAYER: 丙 ends turn without acting
+  LOG vs03 C_focus_affinity R1 PLAYER: 丁 ends turn without acting
+  LOG vs03 C_focus_affinity R1 PLAYER: 戊 ends turn without acting
+  LOG vs03 C_focus_affinity R1 ENEMY: E1 moves to (5, 1)
+  LOG vs03 C_focus_affinity R1 ENEMY: E2 moves to (6, 1)
+  LOG vs03 C_focus_affinity R1 ENEMY: E3 moves to (7, 4)
+  LOG vs03 C_focus_affinity R1 ENEMY: E4 moves to (6, 2)
+  LOG vs03 C_focus_affinity R1 ENEMY: E5 moves to (4, 3)
+  LOG vs03 C_focus_affinity R1 ENEMY: E1 ends turn without acting
+  LOG vs03 C_focus_affinity R1 ENEMY: E2 ends turn without acting
+  LOG vs03 C_focus_affinity R1 ENEMY: E3 ends turn without acting
+  LOG vs03 C_focus_affinity R1 ENEMY: E4 ends turn without acting
+  LOG vs03 C_focus_affinity R1 ENEMY: E5 ends turn without acting
+  LOG vs03 C_focus_affinity R2 PLAYER: 甲 moves to (4, 2)
+  LOG vs03 C_focus_affinity R2 PLAYER: 甲 attacks E5 for 10 damage
+  LOG vs03 C_focus_affinity R2 PLAYER: 乙 moves to (3, 3)
+  LOG vs03 C_focus_affinity R2 PLAYER: 乙 attacks E5 for 8 damage
+  LOG vs03 C_focus_affinity R2 PLAYER: 丙 moves to (2, 1)
+  LOG vs03 C_focus_affinity R2 PLAYER: 丙 attacks E5 for 16 damage
+  LOG vs03 C_focus_affinity E5 is defeated
+  LOG vs03 C_focus_affinity R2 PLAYER: 丁 moves to (4, 4)
+  LOG vs03 C_focus_affinity R2 PLAYER: 戊 moves to (3, 1)
+  LOG vs03 C_focus_affinity R2 PLAYER: 丁 ends turn without acting
+  LOG vs03 C_focus_affinity R2 PLAYER: 戊 ends turn without acting
+  LOG vs03 C_focus_affinity R2 ENEMY: E1 moves to (3, 0)
+  LOG vs03 C_focus_affinity R2 ENEMY: E1 attacks 戊 for 6 damage
+  LOG vs03 C_focus_affinity R2 ENEMY: E2 moves to (4, 1)
+  LOG vs03 C_focus_affinity R2 ENEMY: E2 attacks 丙 for 6 damage
+  LOG vs03 C_focus_affinity R2 ENEMY: E3 moves to (6, 4)
+  LOG vs03 C_focus_affinity R2 ENEMY: E3 attacks 甲 for 6 damage
+  LOG vs03 C_focus_affinity R2 ENEMY: E4 moves to (5, 2)
+  LOG vs03 C_focus_affinity R2 ENEMY: E4 attacks 甲 for 5 damage
+  LOG vs03 C_focus_affinity R3 PLAYER: 甲 moves to (6, 3)
+  LOG vs03 C_focus_affinity R3 PLAYER: 甲 attacks E3 for 12 damage
+  LOG vs03 C_focus_affinity R3 PLAYER: 乙 moves to (5, 3)
+  LOG vs03 C_focus_affinity R3 PLAYER: 乙 attacks E3 for 14 damage
+  LOG vs03 C_focus_affinity E3 is defeated
+  LOG vs03 C_focus_affinity R3 PLAYER: 丙 moves to (1, 0)
+  LOG vs03 C_focus_affinity R3 PLAYER: 丙 attacks E2 for 17 damage
+  LOG vs03 C_focus_affinity R3 PLAYER: 丁 moves to (4, 2)
+  LOG vs03 C_focus_affinity R3 PLAYER: 丁 attacks E2 for 11 damage
+  LOG vs03 C_focus_affinity E2 is defeated
+  LOG vs03 C_focus_affinity R3 PLAYER: 戊 moves to (5, 1)
+  LOG vs03 C_focus_affinity R3 PLAYER: 戊 attacks E4 for 11 damage
+  LOG vs03 C_focus_affinity R3 ENEMY: E1 moves to (2, 0)
+  LOG vs03 C_focus_affinity R3 ENEMY: E1 attacks 丙 for 7 damage
+  LOG vs03 C_focus_affinity R3 ENEMY: E4 attacks 甲 for 5 damage
+  LOG vs03 C_focus_affinity R3 ENEMY: E4 ends turn without acting
+  LOG vs03 C_focus_affinity R4 PLAYER: 甲 moves to (6, 2)
+  LOG vs03 C_focus_affinity R4 PLAYER: 甲 attacks E4 for 11 damage
+  LOG vs03 C_focus_affinity E4 is defeated
+  LOG vs03 C_focus_affinity R4 PLAYER: 乙 moves to (3, 3)
+  LOG vs03 C_focus_affinity R4 PLAYER: 丙 moves to (0, 0)
+  LOG vs03 C_focus_affinity R4 PLAYER: 丙 attacks E1 for 16 damage
+  LOG vs03 C_focus_affinity R4 PLAYER: 丁 moves to (2, 1)
+  LOG vs03 C_focus_affinity R4 PLAYER: 丁 attacks E1 for 10 damage
+  LOG vs03 C_focus_affinity E1 is defeated
+RESULT vs03 C_focus_affinity outcome=VICTORY rounds=4 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=7 first_down=[E5 is defeated (after: R2 PLAYER: 丙 attacks E5 for 16 damage)]
+  END players=["甲:14/30", "乙:26/26", "丙:9/22", "丁:26/26", "戊:24/30"] enemies=[]
+  DECIDE vs05 A_greedy 甲(P) hp=30/30 at=(0, 1)
+  DECIDE vs05 A_greedy 乙(P) hp=26/26 at=(0, 2)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(0, 3)
+  DECIDE vs05 A_greedy 丁(P) hp=26/26 at=(0, 4)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(0, 5)
+  DECIDE vs05 A_greedy 甲(P) hp=30/30 at=(3, 1)
+  DECIDE vs05 A_greedy 乙(P) hp=26/26 at=(2, 1)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(1, 1)
+  DECIDE vs05 A_greedy 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(2, 4)
+  DECIDE vs05 A_greedy E1(E) hp=23/23 at=(8, 1)
+  DECIDE vs05 A_greedy E2(E) hp=20/20 at=(9, 2)
+  DECIDE vs05 A_greedy E3(E) hp=18/18 at=(10, 2)
+  DECIDE vs05 A_greedy E4(E) hp=22/22 at=(9, 3)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(8, 4)
+  DECIDE vs05 A_greedy E1(E) hp=23/23 at=(5, 1)
+  DECIDE vs05 A_greedy E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs05 A_greedy E3(E) hp=18/18 at=(8, 1)
+  DECIDE vs05 A_greedy E4(E) hp=22/22 at=(7, 4)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(7, 1)
+  DECIDE vs05 A_greedy 甲(P) hp=30/30 at=(3, 1)
+  PHI_RAW vs05 A_greedy attacker=1 target=6 phi=-1
+  DECIDE vs05 A_greedy 乙(P) hp=26/26 at=(2, 1)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(1, 1)
+  DECIDE vs05 A_greedy 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(2, 4)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(2, 1)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(4, 3)
+  DECIDE vs05 A_greedy E1(E) hp=6/23 at=(5, 1)
+  DECIDE vs05 A_greedy E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs05 A_greedy E3(E) hp=18/18 at=(8, 1)
+  DECIDE vs05 A_greedy E4(E) hp=11/22 at=(7, 4)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(7, 1)
+  DECIDE vs05 A_greedy E1(E) hp=6/23 at=(5, 1)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(7, 0)
+  DECIDE vs05 A_greedy 甲(P) hp=25/30 at=(5, 0)
+  DECIDE vs05 A_greedy 乙(P) hp=18/26 at=(4, 1)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(2, 1)
+  DECIDE vs05 A_greedy 丁(P) hp=11/26 at=(5, 4)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(4, 3)
+  DECIDE vs05 A_greedy 甲(P) hp=25/30 at=(5, 0)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(5, 1)
+  DECIDE vs05 A_greedy E3(E) hp=18/18 at=(8, 4)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(7, 0)
+  DECIDE vs05 A_greedy E5(E) hp=24/24 at=(7, 0)
+  DECIDE vs05 A_greedy 甲(P) hp=19/30 at=(6, 0)
+  DECIDE vs05 A_greedy 乙(P) hp=10/26 at=(6, 1)
+  DECIDE vs05 A_greedy 丙(P) hp=22/22 at=(2, 0)
+  DECIDE vs05 A_greedy 丁(P) hp=11/26 at=(6, 3)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(5, 1)
+  DECIDE vs05 A_greedy 甲(P) hp=19/30 at=(6, 0)
+  DECIDE vs05 A_greedy 丁(P) hp=11/26 at=(6, 3)
+  DECIDE vs05 A_greedy 戊(P) hp=30/30 at=(6, 2)
+  DECIDE vs05 A_greedy E3(E) hp=5/18 at=(6, 4)
+  DECIDE vs05 A_greedy E3(E) hp=5/18 at=(6, 4)
+  DECIDE vs05 A_greedy 甲(P) hp=13/30 at=(6, 1)
+  LOG vs05 A_greedy R1 PLAYER: 甲 moves to (3, 1)
+  LOG vs05 A_greedy R1 PLAYER: 乙 moves to (2, 1)
+  LOG vs05 A_greedy R1 PLAYER: 丙 moves to (1, 1)
+  LOG vs05 A_greedy R1 PLAYER: 丁 moves to (3, 4)
+  LOG vs05 A_greedy R1 PLAYER: 戊 moves to (2, 4)
+  LOG vs05 A_greedy R1 PLAYER: 甲 ends turn without acting
+  LOG vs05 A_greedy R1 PLAYER: 乙 ends turn without acting
+  LOG vs05 A_greedy R1 PLAYER: 丙 ends turn without acting
+  LOG vs05 A_greedy R1 PLAYER: 丁 ends turn without acting
+  LOG vs05 A_greedy R1 PLAYER: 戊 ends turn without acting
+  LOG vs05 A_greedy R1 ENEMY: E1 moves to (5, 1)
+  LOG vs05 A_greedy R1 ENEMY: E2 moves to (6, 1)
+  LOG vs05 A_greedy R1 ENEMY: E3 moves to (8, 1)
+  LOG vs05 A_greedy R1 ENEMY: E4 moves to (7, 4)
+  LOG vs05 A_greedy R1 ENEMY: E5 moves to (7, 1)
+  LOG vs05 A_greedy R1 ENEMY: E1 ends turn without acting
+  LOG vs05 A_greedy R1 ENEMY: E2 ends turn without acting
+  LOG vs05 A_greedy R1 ENEMY: E3 ends turn without acting
+  LOG vs05 A_greedy R1 ENEMY: E4 ends turn without acting
+  LOG vs05 A_greedy R1 ENEMY: E5 ends turn without acting
+  LOG vs05 A_greedy R2 PLAYER: 甲 moves to (5, 0)
+  LOG vs05 A_greedy R2 PLAYER: 甲 attacks E1 for 9 damage
+  LOG vs05 A_greedy R2 PLAYER: 乙 moves to (4, 1)
+  LOG vs05 A_greedy R2 PLAYER: 乙 attacks E1 for 8 damage
+  LOG vs05 A_greedy R2 PLAYER: 丙 moves to (2, 1)
+  LOG vs05 A_greedy R2 PLAYER: 丁 moves to (5, 4)
+  LOG vs05 A_greedy R2 PLAYER: 丁 attacks E4 for 11 damage
+  LOG vs05 A_greedy R2 PLAYER: 戊 moves to (4, 3)
+  LOG vs05 A_greedy R2 PLAYER: 丙 ends turn without acting
+  LOG vs05 A_greedy R2 PLAYER: 戊 ends turn without acting
+  LOG vs05 A_greedy R2 ENEMY: E1 attacks 乙 for 8 damage
+  LOG vs05 A_greedy R2 ENEMY: E2 moves to (6, 0)
+  LOG vs05 A_greedy R2 ENEMY: E2 attacks 甲 for 5 damage
+  LOG vs05 A_greedy R2 ENEMY: E3 moves to (8, 4)
+  LOG vs05 A_greedy R2 ENEMY: E3 attacks 丁 for 8 damage
+  LOG vs05 A_greedy R2 ENEMY: E4 moves to (6, 4)
+  LOG vs05 A_greedy R2 ENEMY: E4 attacks 丁 for 7 damage
+  LOG vs05 A_greedy R2 ENEMY: E5 moves to (7, 0)
+  LOG vs05 A_greedy R2 ENEMY: E1 ends turn without acting
+  LOG vs05 A_greedy R2 ENEMY: E5 ends turn without acting
+  LOG vs05 A_greedy R3 PLAYER: 甲 attacks E1 for 10 damage
+  LOG vs05 A_greedy E1 is defeated
+  LOG vs05 A_greedy R3 PLAYER: 乙 moves to (6, 1)
+  LOG vs05 A_greedy R3 PLAYER: 乙 attacks E2 for 9 damage
+  LOG vs05 A_greedy R3 PLAYER: 丙 moves to (2, 0)
+  LOG vs05 A_greedy R3 PLAYER: 丙 attacks E2 for 17 damage
+  LOG vs05 A_greedy E2 is defeated
+  LOG vs05 A_greedy R3 PLAYER: 丁 moves to (6, 3)
+  LOG vs05 A_greedy R3 PLAYER: 丁 attacks E4 for 11 damage
+  LOG vs05 A_greedy E4 is defeated
+  LOG vs05 A_greedy R3 PLAYER: 戊 moves to (5, 1)
+  LOG vs05 A_greedy R3 PLAYER: 甲 moves to (6, 0)
+  LOG vs05 A_greedy R3 PLAYER: 戊 ends turn without acting
+  LOG vs05 A_greedy R3 ENEMY: E3 moves to (6, 4)
+  LOG vs05 A_greedy R3 ENEMY: E3 attacks 乙 for 8 damage
+  LOG vs05 A_greedy R3 ENEMY: E5 attacks 甲 for 6 damage
+  LOG vs05 A_greedy R3 ENEMY: E5 ends turn without acting
+  LOG vs05 A_greedy R4 PLAYER: 甲 attacks E5 for 13 damage
+  LOG vs05 A_greedy R4 PLAYER: 乙 moves to (8, 0)
+  LOG vs05 A_greedy R4 PLAYER: 乙 attacks E5 for 8 damage
+  LOG vs05 A_greedy R4 PLAYER: 丙 moves to (3, 0)
+  LOG vs05 A_greedy R4 PLAYER: 丙 attacks E5 for 16 damage
+  LOG vs05 A_greedy E5 is defeated
+  LOG vs05 A_greedy R4 PLAYER: 丁 attacks E3 for 13 damage
+  LOG vs05 A_greedy R4 PLAYER: 戊 moves to (6, 2)
+  LOG vs05 A_greedy R4 PLAYER: 甲 moves to (6, 1)
+  LOG vs05 A_greedy R4 PLAYER: 丁 ends turn without acting
+  LOG vs05 A_greedy R4 PLAYER: 戊 ends turn without acting
+  LOG vs05 A_greedy R4 ENEMY: E3 attacks 甲 for 6 damage
+  LOG vs05 A_greedy R4 ENEMY: E3 ends turn without acting
+  LOG vs05 A_greedy R5 PLAYER: 甲 moves to (7, 4)
+  LOG vs05 A_greedy R5 PLAYER: 甲 attacks E3 for 12 damage
+  LOG vs05 A_greedy E3 is defeated
+RESULT vs05 A_greedy outcome=VICTORY rounds=5 aborted=false reason= player_attacks=12 seeded_links=2 phi_calls=12 phi_nonzero=8 first_down=[E1 is defeated (after: R3 PLAYER: 甲 attacks E1 for 10 damage)]
+  END players=["甲:13/30", "乙:10/26", "丙:22/22", "丁:11/26", "戊:30/30"] enemies=[]
+  DECIDE vs05 C_focus_affinity 甲(P) hp=30/30 at=(0, 1)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=26/26 at=(0, 2)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(0, 3)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(0, 4)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=30/30 at=(0, 5)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=30/30 at=(3, 1)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=26/26 at=(2, 1)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(1, 1)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=30/30 at=(2, 4)
+  DECIDE vs05 C_focus_affinity E1(E) hp=23/23 at=(8, 1)
+  DECIDE vs05 C_focus_affinity E2(E) hp=20/20 at=(9, 2)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(10, 2)
+  DECIDE vs05 C_focus_affinity E4(E) hp=22/22 at=(9, 3)
+  DECIDE vs05 C_focus_affinity E5(E) hp=24/24 at=(8, 4)
+  DECIDE vs05 C_focus_affinity E1(E) hp=23/23 at=(5, 1)
+  DECIDE vs05 C_focus_affinity E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(8, 1)
+  DECIDE vs05 C_focus_affinity E4(E) hp=22/22 at=(7, 4)
+  DECIDE vs05 C_focus_affinity E5(E) hp=24/24 at=(7, 1)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=30/30 at=(3, 1)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=26/26 at=(2, 1)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(1, 1)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=30/30 at=(2, 4)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(2, 1)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(4, 3)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=30/30 at=(4, 4)
+  DECIDE vs05 C_focus_affinity E1(E) hp=13/23 at=(5, 1)
+  DECIDE vs05 C_focus_affinity E2(E) hp=20/20 at=(6, 1)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(8, 1)
+  DECIDE vs05 C_focus_affinity E4(E) hp=22/22 at=(7, 4)
+  DECIDE vs05 C_focus_affinity E5(E) hp=24/24 at=(7, 1)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(8, 1)
+  DECIDE vs05 C_focus_affinity E5(E) hp=24/24 at=(5, 0)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=13/30 at=(4, 1)
+  PHI_RAW vs05 C_focus_affinity attacker=1 target=6 phi=3
+  DECIDE vs05 C_focus_affinity 乙(P) hp=26/26 at=(3, 1)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(2, 1)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(4, 3)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=25/30 at=(4, 4)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=13/30 at=(4, 1)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(6, 1)
+  DECIDE vs05 C_focus_affinity E4(E) hp=22/22 at=(5, 4)
+  DECIDE vs05 C_focus_affinity E5(E) hp=8/24 at=(5, 0)
+  DECIDE vs05 C_focus_affinity E5(E) hp=8/24 at=(5, 0)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=13/30 at=(3, 0)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=10/26 at=(4, 0)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(2, 0)
+  DECIDE vs05 C_focus_affinity 丁(P) hp=26/26 at=(3, 4)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=20/30 at=(5, 2)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=10/26 at=(3, 1)
+  DECIDE vs05 C_focus_affinity 丙(P) hp=22/22 at=(2, 0)
+  DECIDE vs05 C_focus_affinity 戊(P) hp=20/30 at=(5, 2)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(5, 1)
+  DECIDE vs05 C_focus_affinity E3(E) hp=18/18 at=(5, 1)
+  DECIDE vs05 C_focus_affinity 甲(P) hp=13/30 at=(3, 0)
+  DECIDE vs05 C_focus_affinity 乙(P) hp=10/26 at=(3, 1)
+  LOG vs05 C_focus_affinity R1 PLAYER: 甲 moves to (3, 1)
+  LOG vs05 C_focus_affinity R1 PLAYER: 乙 moves to (2, 1)
+  LOG vs05 C_focus_affinity R1 PLAYER: 丙 moves to (1, 1)
+  LOG vs05 C_focus_affinity R1 PLAYER: 丁 moves to (3, 4)
+  LOG vs05 C_focus_affinity R1 PLAYER: 戊 moves to (2, 4)
+  LOG vs05 C_focus_affinity R1 PLAYER: 甲 ends turn without acting
+  LOG vs05 C_focus_affinity R1 PLAYER: 乙 ends turn without acting
+  LOG vs05 C_focus_affinity R1 PLAYER: 丙 ends turn without acting
+  LOG vs05 C_focus_affinity R1 PLAYER: 丁 ends turn without acting
+  LOG vs05 C_focus_affinity R1 PLAYER: 戊 ends turn without acting
+  LOG vs05 C_focus_affinity R1 ENEMY: E1 moves to (5, 1)
+  LOG vs05 C_focus_affinity R1 ENEMY: E2 moves to (6, 1)
+  LOG vs05 C_focus_affinity R1 ENEMY: E3 moves to (8, 1)
+  LOG vs05 C_focus_affinity R1 ENEMY: E4 moves to (7, 4)
+  LOG vs05 C_focus_affinity R1 ENEMY: E5 moves to (7, 1)
+  LOG vs05 C_focus_affinity R1 ENEMY: E1 ends turn without acting
+  LOG vs05 C_focus_affinity R1 ENEMY: E2 ends turn without acting
+  LOG vs05 C_focus_affinity R1 ENEMY: E3 ends turn without acting
+  LOG vs05 C_focus_affinity R1 ENEMY: E4 ends turn without acting
+  LOG vs05 C_focus_affinity R1 ENEMY: E5 ends turn without acting
+  LOG vs05 C_focus_affinity R2 PLAYER: 甲 moves to (4, 1)
+  LOG vs05 C_focus_affinity R2 PLAYER: 甲 attacks E1 for 10 damage
+  LOG vs05 C_focus_affinity R2 PLAYER: 乙 moves to (3, 1)
+  LOG vs05 C_focus_affinity R2 PLAYER: 丙 moves to (2, 1)
+  LOG vs05 C_focus_affinity R2 PLAYER: 丁 moves to (4, 3)
+  LOG vs05 C_focus_affinity R2 PLAYER: 戊 moves to (4, 4)
+  LOG vs05 C_focus_affinity R2 PLAYER: 乙 ends turn without acting
+  LOG vs05 C_focus_affinity R2 PLAYER: 丙 ends turn without acting
+  LOG vs05 C_focus_affinity R2 PLAYER: 丁 ends turn without acting
+  LOG vs05 C_focus_affinity R2 PLAYER: 戊 ends turn without acting
+  LOG vs05 C_focus_affinity R2 ENEMY: E1 moves to (4, 0)
+  LOG vs05 C_focus_affinity R2 ENEMY: E1 attacks 甲 for 6 damage
+  LOG vs05 C_focus_affinity R2 ENEMY: E2 moves to (5, 1)
+  LOG vs05 C_focus_affinity R2 ENEMY: E2 attacks 甲 for 5 damage
+  LOG vs05 C_focus_affinity R2 ENEMY: E3 attacks 甲 for 6 damage
+  LOG vs05 C_focus_affinity R2 ENEMY: E4 moves to (5, 4)
+  LOG vs05 C_focus_affinity R2 ENEMY: E4 attacks 戊 for 5 damage
+  LOG vs05 C_focus_affinity R2 ENEMY: E5 moves to (5, 0)
+  LOG vs05 C_focus_affinity R2 ENEMY: E3 moves to (6, 1)
+  LOG vs05 C_focus_affinity R2 ENEMY: E5 ends turn without acting
+  LOG vs05 C_focus_affinity R3 PLAYER: 甲 attacks E1 for 13 damage
+  LOG vs05 C_focus_affinity E1 is defeated
+  LOG vs05 C_focus_affinity R3 PLAYER: 乙 moves to (4, 0)
+  LOG vs05 C_focus_affinity R3 PLAYER: 乙 attacks E2 for 12 damage
+  LOG vs05 C_focus_affinity R3 PLAYER: 丙 moves to (2, 0)
+  LOG vs05 C_focus_affinity R3 PLAYER: 丙 attacks E5 for 16 damage
+  LOG vs05 C_focus_affinity R3 PLAYER: 丁 moves to (3, 4)
+  LOG vs05 C_focus_affinity R3 PLAYER: 戊 moves to (5, 2)
+  LOG vs05 C_focus_affinity R3 PLAYER: 戊 attacks E2 for 11 damage
+  LOG vs05 C_focus_affinity E2 is defeated
+  LOG vs05 C_focus_affinity R3 PLAYER: 甲 moves to (3, 0)
+  LOG vs05 C_focus_affinity R3 PLAYER: 丁 ends turn without acting
+  LOG vs05 C_focus_affinity R3 ENEMY: E3 moves to (5, 1)
+  LOG vs05 C_focus_affinity R3 ENEMY: E3 attacks 乙 for 8 damage
+  LOG vs05 C_focus_affinity R3 ENEMY: E4 moves to (5, 3)
+  LOG vs05 C_focus_affinity R3 ENEMY: E4 attacks 戊 for 5 damage
+  LOG vs05 C_focus_affinity R3 ENEMY: E5 attacks 乙 for 8 damage
+  LOG vs05 C_focus_affinity R3 ENEMY: E5 ends turn without acting
+  LOG vs05 C_focus_affinity R4 PLAYER: 甲 ends turn without acting
+  LOG vs05 C_focus_affinity R4 PLAYER: 乙 moves to (3, 1)
+  LOG vs05 C_focus_affinity R4 PLAYER: 丙 attacks E5 for 16 damage
+  LOG vs05 C_focus_affinity E5 is defeated
+  LOG vs05 C_focus_affinity R4 PLAYER: 丁 moves to (4, 3)
+  LOG vs05 C_focus_affinity R4 PLAYER: 丁 attacks E4 for 11 damage
+  LOG vs05 C_focus_affinity R4 PLAYER: 戊 attacks E4 for 11 damage
+  LOG vs05 C_focus_affinity E4 is defeated
+  LOG vs05 C_focus_affinity R4 PLAYER: 乙 ends turn without acting
+  LOG vs05 C_focus_affinity R4 PLAYER: 丙 moves to (2, 1)
+  LOG vs05 C_focus_affinity R4 PLAYER: 戊 moves to (4, 1)
+  LOG vs05 C_focus_affinity R4 ENEMY: E3 attacks 丁 for 8 damage
+  LOG vs05 C_focus_affinity R4 ENEMY: E3 ends turn without acting
+  LOG vs05 C_focus_affinity R5 PLAYER: 甲 moves to (5, 0)
+  LOG vs05 C_focus_affinity R5 PLAYER: 甲 attacks E3 for 12 damage
+  LOG vs05 C_focus_affinity R5 PLAYER: 乙 moves to (4, 0)
+  LOG vs05 C_focus_affinity R5 PLAYER: 乙 attacks E3 for 14 damage
+  LOG vs05 C_focus_affinity E3 is defeated
+RESULT vs05 C_focus_affinity outcome=VICTORY rounds=5 aborted=false reason= player_attacks=10 seeded_links=2 phi_calls=10 phi_nonzero=7 first_down=[E1 is defeated (after: R3 PLAYER: 甲 attacks E1 for 13 damage)]
+  END players=["甲:13/30", "乙:10/26", "丙:22/22", "丁:18/26", "戊:20/30"] enemies=[]
