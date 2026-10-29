@@ -264,16 +264,17 @@ class _SpyDiscardInput extends BattleScreen:
 		super(event)
 
 
-func test_toggle_works_during_attack_confirm_and_is_not_forwarded() -> void:
+## 2026-10-29 管理者裁決(story-023)取代 story-013:攻擊確認框已不存在,原「確認框開著時 R 仍可切換」
+## 改為「游標停在可攻擊敵人上時 R 只切換關係圖,不被當成確認、不觸發攻擊」。
+func test_toggle_does_not_act_as_attack_confirm() -> void:
 	var instance: BattleScreen = _instance()
-	# 直接設旗標(不走完整點擊流程):吞鍵分支的判斷條件就是這個旗標。
-	instance._attack_confirming = true
+	var version_before: int = instance._state.combat_state_version
 	instance._input(_key(&"battle_toggle_relation_map"))
 	assert_bool(instance.diagnostic_relation_minimap_visible()).is_true()
-	assert_bool(instance._attack_confirm_pending_press).append_failure_message("R 不得被當成確認").is_false()
-	assert_bool(instance._attack_confirming).append_failure_message("切換不得改變確認面板狀態").is_true()
+	assert_int(instance._state.combat_state_version).append_failure_message("R 不得觸發任何結算").is_equal(version_before)
 	instance._input(_pad(&"battle_toggle_relation_map"))
 	assert_bool(instance.diagnostic_relation_minimap_visible()).is_false()
+	assert_int(instance._state.combat_state_version).is_equal(version_before)
 
 
 func test_toggle_works_during_forced_discard_and_is_not_forwarded() -> void:

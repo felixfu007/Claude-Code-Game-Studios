@@ -1,6 +1,8 @@
 # Story 013（`production/epics/tactical-combat/story-013-attack-confirm-panel.md`）
 # —— 攻擊確認面板（二段確認）。
 #
+# 🔴 2026-10-29 管理者裁決(story-023)取代 story-013 的二段確認:攻擊直接結算,不再開面板;
+# 本檔原二段確認測試已改寫為直接攻擊測試(見「2026-10-29 管理者裁決」節),面板元件自身測試保留。
 # 🔴 涵蓋範圍的誠實揭露（不用「全部涵蓋」蓋過缺口，同 card_confirm_panel_test.gd
 # 的既有慣例）：
 #
@@ -136,185 +138,129 @@ func _setup_attacker_in_range(instance: BattleScreen) -> Dictionary:
 	return {"attacker": attacker, "enemy": nearest}
 
 
-## 開到 T2'（攻擊確認面板開啟），游標落在敵方目標格上，面板確認鍵觸發
-## _confirm_at_cursor() -> _open_attack_confirm_panel()。回傳 setup 字典。
-func _open_attack_confirm(instance: BattleScreen) -> Dictionary:
-	var setup: Dictionary = _setup_attacker_in_range(instance)
-	var enemy: Unit = setup["enemy"]
-	instance._cursor_cell = instance._state.position_of(enemy.id)
-	instance._cursor_active = true
-	instance._input(_real_pressed_event(&"battle_confirm"))
-	assert_bool(instance._attack_confirming).append_failure_message(
-		"PRECONDITION: 按下確認鍵後應進入 T2'（攻擊確認面板開啟）"
-	).is_true()
-	return setup
+# ─── 2026-10-29 管理者裁決取代 story-013 的二段確認(story-023)──────────────────
+# 攻擊不再跳確認框:鍵盤/手把/滑鼠一律立即結算,且走同一條路徑
+# _handle_click_tile_result(_click_tile_with_egm(cell))。
+# 取代的舊測試(原 story-013):test_attack_confirm_open_is_zero_write_and_matches_breakdown、
+# test_second_confirm_applies_attack_and_matches_preview、test_cancel_returns_to_t2_zero_write、
+# test_panel_open_rejects_hand_menu_and_mouse、
+# test_second_confirm_same_frame_keyboard_and_gamepad_applies_once。
 
 
-# ─── 二段確認第一次：開面板零寫入，欄位與 preview_damage_breakdown() 一致 ─────
+## 敏感度證明用變種(2026-10-29):把「直接結算」改回「開確認框」。
+class _MutantKeyboardOpensPanel extends BattleScreen:
+	func _confirm_at_cursor() -> void:
+		if _cursor_attack_target_id() != -1:
+			_attack_confirm_panel.show_attack_confirmation("a", "b", 1, 1, 0, 0, 1, 2, 1)
+			return
+		super()
 
 
-func test_attack_confirm_open_is_zero_write_and_matches_breakdown() -> void:
-	# Arrange
-	var instance: BattleScreen = _fresh_instance()
+class _MutantMouseOpensPanel extends BattleScreen:
+	func _handle_mouse_button(event: InputEventMouseButton) -> void:
+		var cell: Vector2i = _window_pos_to_cell(event.position)
+		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT \
+				and BoardCoords.is_in_bounds(cell) and _controller.attack_targets().cells.has(cell):
+			_attack_confirm_panel.show_attack_confirmation("a", "b", 1, 1, 0, 0, 1, 2, 1)
+			return
+		super(event)
+
+
+func _fresh_instance_with_script(script: Script) -> BattleScreen:
+	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+	if script != null:
+		instance.set_script(script)  # 進樹前換腳本(Case A)
+	add_child(instance)
+	return instance
+
+
+func _click_event_on_cell(instance: BattleScreen, cell: Vector2i) -> InputEventMouseButton:
+	var transform: Transform2D = WorldLayout.canvas_to_window_transform(instance.get_window().size)
+	var event: InputEventMouseButton = InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	event.position = BoardCoords.grid_to_window(cell, transform, Vector2.ZERO)
+	return event
+
+
+## 觀察一次攻擊動作:回傳 {version_delta, panel_visible, hp_delta, expected_damage}。
+## [param how] = "keyboard" / "gamepad" / "mouse"。
+func _observe_attack(instance: BattleScreen, how: String) -> Dictionary:
 	var setup: Dictionary = _setup_attacker_in_range(instance)
 	var attacker: Unit = setup["attacker"]
 	var enemy: Unit = setup["enemy"]
-	instance._cursor_cell = instance._state.position_of(enemy.id)
-	instance._cursor_active = true
-	var version_before: int = instance._state.combat_state_version
-	var phi: int = instance._phi.phi(attacker.id, enemy.id)
-	var expected: Dictionary = instance._state.preview_damage_breakdown(
-		attacker.id, enemy.id, phi
-	).breakdown
-
-	# Act
-	instance._input(_real_pressed_event(&"battle_confirm"))
-
-	# Assert — 零寫入
-	assert_bool(instance._attack_confirming).is_true()
-	assert_bool(instance._attack_confirm_panel.visible).append_failure_message(
-		"面板應該已經可見"
-	).is_true()
-	assert_int(instance._state.combat_state_version).append_failure_message(
-		"開啟攻擊確認面板必須零寫入，開啟前 %d、開啟後 %d"
-		% [version_before, instance._state.combat_state_version]
-	).is_equal(version_before)
-
-	# Assert — 欄位與同一份 preview_damage_breakdown() 一致，不是另外算的
-	var panel: AttackConfirmPanel = instance._attack_confirm_panel
-	assert_str(panel.diagnostic_atk_text()).contains(str(expected["atk"]))
-	assert_str(panel.diagnostic_def_text()).contains(str(expected["def"]))
-	assert_str(panel.diagnostic_phi_text()).contains(AttackConfirmPanel.format_signed(int(expected["phi"])))
-	assert_str(panel.diagnostic_damage_text()).contains(str(expected["damage"]))
-	assert_str(panel.diagnostic_target_hp_text()).contains(str(expected["target_hp_after"]))
-
-
-# ─── 二段確認第二次：真正觸發 click_tile()/_apply_attack()，與預覽一致 ────────
-
-
-func test_second_confirm_applies_attack_and_matches_preview() -> void:
-	# Arrange
-	var instance: BattleScreen = _fresh_instance()
-	var setup: Dictionary = _open_attack_confirm(instance)
-	var attacker: Unit = setup["attacker"]
-	var enemy: Unit = setup["enemy"]
+	var enemy_cell: Vector2i = instance._state.position_of(enemy.id)
 	var phi: int = instance._phi.phi(attacker.id, enemy.id)
 	var expected_damage: int = instance._state.preview_damage_breakdown(
 		attacker.id, enemy.id, phi
 	).breakdown["damage"]
 	var hp_before: int = enemy.hp
 	var version_before: int = instance._state.combat_state_version
-
-	# Act — 面板上再次確認
-	instance._input(_real_pressed_event(&"battle_confirm"))
+	if how == "mouse":
+		var click: InputEventMouseButton = _click_event_on_cell(instance, enemy_cell)
+		assert_vector(Vector2(instance._window_pos_to_cell(click.position))).append_failure_message(
+			"PRECONDITION: 滑鼠座標應換算回敵方格"
+		).is_equal(Vector2(enemy_cell))
+		instance._handle_mouse_button(click)
+	else:
+		instance._cursor_cell = enemy_cell
+		instance._cursor_active = true
+		if how == "gamepad":
+			instance._input(_real_gamepad_pressed_event(&"battle_confirm"))
+		else:
+			instance._input(_real_pressed_event(&"battle_confirm"))
 	instance._process(0.0)
-
-	# Assert
-	assert_bool(instance._attack_confirming).append_failure_message(
-		"第二次確認後應離開 T2'"
-	).is_false()
-	assert_bool(instance._attack_confirm_panel.visible).is_false()
-	assert_int(instance._state.combat_state_version).append_failure_message(
-		"第二次確認應觸發權威寫入，combat_state_version 應該遞增，開啟前 %d、確認後 %d"
-		% [version_before, instance._state.combat_state_version]
-	).is_greater(version_before)
-	assert_int(enemy.hp).append_failure_message(
-		"結算後血量應與面板顯示的預覽傷害一致，預覽傷害 %d，血量 %d -> %d"
-		% [expected_damage, hp_before, enemy.hp]
-	).is_equal(maxi(0, hp_before - expected_damage))
+	return {
+		"version_delta": instance._state.combat_state_version - version_before,
+		"panel_visible": instance._attack_confirm_panel.visible,
+		"hp_delta": hp_before - enemy.hp,
+		"expected_damage": mini(expected_damage, hp_before),
+	}
 
 
-# ─── 取消回上一步：零寫入，選取不受影響 ──────────────────────────────────────
+func _assert_direct_attack(result: Dictionary, label: String) -> void:
+	assert_bool(result["panel_visible"]).append_failure_message("%s:不得開啟 AttackConfirmPanel" % label).is_false()
+	assert_int(result["version_delta"]).append_failure_message(
+		"%s:一次確認應恰好結算一次攻擊(combat_state_version +1),實得 +%d" % [label, result["version_delta"]]
+	).is_equal(1)
+	assert_int(result["hp_delta"]).append_failure_message("%s:扣血應等於預覽傷害" % label).is_equal(result["expected_damage"])
 
 
-func test_cancel_returns_to_t2_zero_write() -> void:
-	# Arrange
-	var instance: BattleScreen = _fresh_instance()
-	var setup: Dictionary = _open_attack_confirm(instance)
-	var attacker: Unit = setup["attacker"]
-	var enemy: Unit = setup["enemy"]
-	var version_before: int = instance._state.combat_state_version
-	var hp_before: int = enemy.hp
-
-	# Act
-	instance._input(_real_pressed_event(&"battle_cancel"))
-
-	# Assert
-	assert_bool(instance._attack_confirming).append_failure_message(
-		"取消後應離開 T2'"
-	).is_false()
-	assert_bool(instance._attack_confirm_panel.visible).is_false()
-	assert_int(instance._state.combat_state_version).append_failure_message(
-		"取消必須零寫入，取消前 %d、取消後 %d" % [version_before, instance._state.combat_state_version]
-	).is_equal(version_before)
-	assert_int(enemy.hp).is_equal(hp_before)
-	assert_int(instance._controller.selected_unit()).append_failure_message(
-		"取消只回到 T2（攻擊目標可視），攻擊方的選取不應被清除"
-	).is_equal(attacker.id)
+# AC1 + AC4
+func test_keyboard_confirm_on_attack_target_attacks_immediately() -> void:
+	_assert_direct_attack(_observe_attack(_fresh_instance(), "keyboard"), "鍵盤")
 
 
-# ─── 面板開啟期間：開手牌/開選單/滑鼠點擊皆被拒絕 ─────────────────────────────
+# AC3
+func test_gamepad_confirm_on_attack_target_attacks_immediately() -> void:
+	_assert_direct_attack(_observe_attack(_fresh_instance(), "gamepad"), "手把")
 
 
-func test_panel_open_rejects_hand_menu_and_mouse() -> void:
-	# Arrange
-	var instance: BattleScreen = _fresh_instance()
-	_open_attack_confirm(instance)
-
-	# Act / Assert — 開手牌
-	instance._input(_real_pressed_event(&"battle_open_hand"))
-	assert_bool(instance._controller.is_card_play_in_progress()).append_failure_message(
-		"T2' 期間按開手牌鍵不應該真的開啟手牌"
-	).is_false()
-	assert_bool(instance._attack_confirming).is_true()
-
-	# Act / Assert — 開選單
-	instance._input(_real_pressed_event(&"battle_menu"))
-	assert_bool(instance._battle_menu.is_open()).append_failure_message(
-		"T2' 期間按開選單鍵不應該真的開啟選單"
-	).is_false()
-	assert_bool(instance._attack_confirming).is_true()
-
-	# Act / Assert — 滑鼠點擊（任意位置）不應改變面板狀態或觸發攻擊
-	var version_before: int = instance._state.combat_state_version
-	var click: InputEventMouseButton = InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	click.position = Vector2(10.0, 10.0)
-	instance._input(click)
-	assert_bool(instance._attack_confirming).append_failure_message(
-		"T2' 期間滑鼠點擊不應該改變面板狀態"
-	).is_true()
-	assert_int(instance._state.combat_state_version).is_equal(version_before)
+# AC2 + AC4
+func test_mouse_click_on_attack_target_attacks_immediately() -> void:
+	_assert_direct_attack(_observe_attack(_fresh_instance(), "mouse"), "滑鼠")
 
 
-# ─── 同幀鍵盤+手把各一次確認，只提交一次 ─────────────────────────────────────
+# AC2:鍵盤與滑鼠結果一致(同一條結算路徑)
+func test_keyboard_and_mouse_attack_produce_same_outcome() -> void:
+	var k: Dictionary = _observe_attack(_fresh_instance(), "keyboard")
+	var m: Dictionary = _observe_attack(_fresh_instance(), "mouse")
+	assert_int(m["hp_delta"]).is_equal(k["hp_delta"])
+	assert_int(m["version_delta"]).is_equal(k["version_delta"])
 
 
-func test_second_confirm_same_frame_keyboard_and_gamepad_applies_once() -> void:
-	# Arrange
-	var instance: BattleScreen = _fresh_instance()
-	_open_attack_confirm(instance)
-	var version_before: int = instance._state.combat_state_version
+# 敏感度證明 AC1:變種把鍵盤攻擊改回開面板 → 偵測用斷言條件確實成立(面板可見、版本不動)
+func test_sensitivity_proof_keyboard_panel_regression_is_detected() -> void:
+	var result: Dictionary = _observe_attack(_fresh_instance_with_script(_MutantKeyboardOpensPanel), "keyboard")
+	assert_bool(result["panel_visible"]).append_failure_message("變種應被偵測到:面板可見").is_true()
+	assert_int(result["version_delta"]).append_failure_message("變種應被偵測到:未結算").is_equal(0)
 
-	# Act —— 同一幀內鍵盤與手把各送一次確認
-	instance._input(_real_pressed_event(&"battle_confirm"))
-	var gamepad_confirm: InputEventJoypadButton = _real_gamepad_pressed_event(&"battle_confirm")
-	assert_object(gamepad_confirm).append_failure_message(
-		"battle_confirm 應該有手把綁定（project.godot [input]）"
-	).is_not_null()
-	instance._input(gamepad_confirm)
-	instance._process(0.0)
 
-	# Assert —— 只提交一次（版本只 +1）
-	assert_int(instance._state.combat_state_version).append_failure_message(
-		"同幀兩次確認應該只套用一次攻擊，實得版本 %d（預期 %d）"
-		% [instance._state.combat_state_version, version_before + 1]
-	).is_equal(version_before + 1)
-
-	# 再跑一次 _process() 確認沒有殘留的 pending press 會造成第二次套用
-	instance._process(0.0)
-	assert_int(instance._state.combat_state_version).is_equal(version_before + 1)
+# 敏感度證明 AC2
+func test_sensitivity_proof_mouse_panel_regression_is_detected() -> void:
+	var result: Dictionary = _observe_attack(_fresh_instance_with_script(_MutantMouseOpensPanel), "mouse")
+	assert_bool(result["panel_visible"]).append_failure_message("變種應被偵測到:面板可見").is_true()
+	assert_int(result["version_delta"]).append_failure_message("變種應被偵測到:未結算").is_equal(0)
 
 
 # ─── Φ=0 仍顯示；夾限時面板能表達「原始值 != 結算值」(協調者補件要求) ─────────

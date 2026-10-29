@@ -453,13 +453,9 @@ const RESULT_DISPLAY_SECONDS: float = 3.0
 ## already is for [BoardView]/[HandBar].
 @onready var _card_confirm_panel: CardConfirmPanel = $UILayer/CardConfirmPanel
 
-## Story 013（攻擊確認面板,二段確認)— fed by [method _open_attack_confirm_panel]
-## from [method BattleController.selected_unit] + the cursor's attack target
-## (via [method _cursor_attack_target_id]) and [method
-## BattleState.preview_damage_breakdown]. [AttackConfirmPanel] itself has zero
-## [Unit]/[BattleState]/[BattleController] dependency (see its own class doc
-## comment) — this screen is the one class allowed to know both, exactly as
-## it already is for [BoardView]/[HandBar]/[CardConfirmPanel].
+## Story 013 的攻擊確認面板節點。🔴 2026-10-29 管理者裁決(story-023)取代二段確認:
+## 戰鬥畫面不再開啟它,本欄位僅保留對場景節點的參照(BattleScreen.tscn 的節點刪除
+## 不在 story-023 範圍,另案處理)。
 @onready var _attack_confirm_panel: AttackConfirmPanel = $UILayer/AttackConfirmPanel
 
 ## Injectable override for [constant TERRAIN_PATH]. Empty string (the
@@ -776,37 +772,6 @@ var _card_confirm_pending_press: bool = false
 ## prove the table loads cleanly, then discarded — "no screen in this slice
 ## consumes flavor text yet"). This story is the first consumer.
 var _card_flavor_texts: Dictionary[String, String] = {}
-
-## Story 013（攻擊確認面板,T2')— true while the attack confirm panel is open:
-## a [code]battle_confirm[/code] press at a legal attack target opens this
-## panel INSTEAD OF calling [method BattleController.click_tile] immediately
-## (ADR-0001: opening the panel is a read-only operation — zero write, must
-## not bump [member BattleState.combat_state_version]). Mirrors [member
-## _card_confirming]'s own "written only from this screen's own call sites"
-## discipline. Gates [method _input]'s keyboard/gamepad dispatch (highest
-## priority — see that method's own comment) and [method _handle_mouse_button]
-## (mouse clicks do nothing while this is true).
-var _attack_confirming: bool = false
-
-## Story 013 — deferred confirm-press flag, same shape as [member
-## _card_confirm_pending_press] (see that field's own doc comment for the
-## general pattern: a [code]battle_confirm[/code] press while [member
-## _attack_confirming] is true is captured here, never acted on inside
-## [method _input], so N input events dispatched within the SAME frame
-## collapse into exactly one [method BattleController.click_tile] call in
-## [method _process] — AC「同幀鍵盤+手把各送一次確認的去重保護」).
-var _attack_confirm_pending_press: bool = false
-
-## Story 013 — the exact board cell [method _confirm_at_cursor] was pointed
-## at when the attack confirm panel opened, captured once at open time rather
-## than re-read from [member _cursor_cell] at confirm time. Cursor movement is
-## already rejected while T2' is open (see [method _input]'s
-## [member _attack_confirming] branch, checked before [method
-## _handle_directional] can run), but freezing this explicitly removes any
-## dependency on that other guard staying correct — the write this field
-## feeds ([method BattleController.click_tile]) is the one ADR-0001 obligation
-## this whole story exists to gate correctly.
-var _attack_confirm_target_cell: Vector2i = Vector2i(-1, -1)
 
 ## Story U-014 — injectable seam for the confirm panel's 丙類「好感度數值
 ## (現值 → 打完後)」欄位(`skill-card-play.md` UX-13:`combat_strength_read`
@@ -1298,7 +1263,7 @@ func _make_hud_action_button(node_name: String, text_key: StringName, on_pressed
 	button.text = Loc.localize(text_key)
 	button.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	button.pressed.connect(func() -> void:
-		if _controller.phase() == BattleController.Phase.PLAYER_INPUT and not _attack_confirming:
+		if _controller.phase() == BattleController.Phase.PLAYER_INPUT:
 			on_pressed.call()
 	)
 	$UILayer.add_child(button)
@@ -1364,10 +1329,6 @@ func _handle_mouse_click_in_card_or_confirm_state(window_pos: Vector2) -> bool:
 		return true
 	if _card_confirming:
 		if CardConfirmPanel.panel_rect(get_window().size).has_point(window_pos):
-			_dispatch_mouse_action(&"battle_confirm")
-		return true
-	if _attack_confirming:
-		if AttackConfirmPanel.panel_rect(get_window().size).has_point(window_pos):
 			_dispatch_mouse_action(&"battle_confirm")
 		return true
 	return _controller.is_card_play_in_progress()
@@ -2151,15 +2112,6 @@ func _process(_delta: float) -> void:
 		_card_confirm_pending_press = false
 		_apply_pending_card_confirm()
 
-	# Story 013 — same deferred-to-_process discipline as the two blocks
-	# above, for the exact same reason (AC「同幀鍵盤+手把各送一次確認的去重
-	# 保護」): collapse every battle_confirm press dispatched within this one
-	# frame into a single BattleController.click_tile() call. See
-	# _attack_confirm_pending_press's own doc comment.
-	if _attack_confirm_pending_press:
-		_attack_confirm_pending_press = false
-		_apply_pending_attack_confirm()
-
 	_auto_end_faction_phase_if_no_unit_can_act()
 
 
@@ -2173,7 +2125,7 @@ func _process(_delta: float) -> void:
 func _auto_end_faction_phase_if_no_unit_can_act() -> void:
 	if _controller.phase() != BattleController.Phase.PLAYER_INPUT:
 		return
-	if _controller.is_card_play_in_progress() or _controller.has_pending_discard() or _attack_confirming:
+	if _controller.is_card_play_in_progress() or _controller.has_pending_discard():
 		return
 	if _controller.has_unit_with_available_action():
 		return
@@ -2231,31 +2183,6 @@ func _input(event: InputEvent) -> void:
 			if event.is_pressed():
 				_toggle_relation_minimap()
 				return
-
-		# Story 013（T2' 攻擊確認面板)— highest priority among every
-		# keyboard/gamepad branch below, including battle_menu: the story's AC
-		# requires "面板開啟期間,游標移動/開手牌/開選單皆須被拒絕". This
-		# screen's allowed-file list for this story does not include
-		# battle_menu.gd, so there is no in_progress_check Callable this story
-		# can wire for an OBSERVABLE rejection message the way Story U-016 did
-		# for battle_menu during forced discard — instead this uses the same
-		# "swallow everything" shape _controller.phase() == ENEMY_ACTING
-		# already uses below. The panel's own continued visibility is the
-		# observable trace of the rejection (same "persistent trace beats a
-		# one-off message" judgment this file already applies in
-		# _handle_forced_discard_input()'s own doc comment for
-		# battle_cancel during S4).
-		if _attack_confirming:
-			if event.is_action_pressed(&"battle_confirm"):
-				# Captured as a pending flag ONLY — see
-				# _apply_pending_attack_confirm()'s own doc comment for where
-				# this is actually read (never here).
-				_attack_confirm_pending_press = true
-				return
-			if event.is_action_pressed(&"battle_cancel"):
-				_handle_attack_confirm_cancel_transition()
-				return
-			return
 
 		# Story U-016 — battle_menu is checked BEFORE even the S4 (forced
 		# discard) branch below, deliberately: AC-M16 requires that pressing
@@ -3981,99 +3908,13 @@ func _handle_target_selection_cancel_transition() -> void:
 func _confirm_at_cursor() -> void:
 	if not BoardCoords.is_in_bounds(_cursor_cell):
 		return
-	# Story 013（攻擊確認面板,二段確認)— a press that would resolve to an
-	# attack opens the confirm panel (T2', zero write) instead of calling
-	# click_tile() immediately. _cursor_attack_target_id() is the EXISTING
-	# public-query-backed helper _refresh_view() already uses to answer this
-	# same "is the cursor on a legal attack target" question for the
-	# damage-preview text (BattleController.attack_targets(), not a private
-	# method) — reused here rather than re-deriving range/LOS legality a
-	# second time in this UI layer, per this project's registered "same rule
-	# implemented twice, only coincidentally agreeing today" failure mode.
-	var attack_target_id: int = _cursor_attack_target_id()
-	if attack_target_id != -1:
-		_open_attack_confirm_panel(attack_target_id)
-		return
+	# 2026-10-29 管理者裁決(story-023,取代 story-013 的二段確認):攻擊不再跳確認框。
+	# 鍵盤/手把按確認 → 直接走與滑鼠點擊(_handle_mouse_button)同一條結算路徑
+	# _handle_click_tile_result(_click_tile_with_egm(cell)),不得另寫第二份。
 	# Story 011 (U-T7, M1 audit 2026-09-29) — same gap and same fix as the
 	# matching call in _handle_mouse_button(): the return value used to be
 	# discarded. See _handle_click_tile_result()'s own doc comment.
 	_handle_click_tile_result(_click_tile_with_egm(_cursor_cell))
-
-
-## Story 013 — builds every value the T2' attack confirm panel needs, reading
-## ATK/DEF/Φ/damage from the SAME breakdown query the settlement path itself
-## is built on ([method BattleState.preview_damage_breakdown] — see that
-## method's own doc comment: delegates to the same private helper
-## [method BattleState._compute_attack_damage] uses, a structural guarantee
-## against "same formula implemented twice, only coincidentally agreeing
-## today" drift, not merely a convention followed today). Called from
-## [method _confirm_at_cursor] the moment a press resolves to a legal attack
-## target. Zero write — no [method BattleState.commit_authoritative_change]
-## call anywhere on this path, matching ADR-0001's requirement that opening
-## this panel must not bump [member BattleState.combat_state_version].
-func _open_attack_confirm_panel(target_id: int) -> void:
-	var attacker_id: int = _controller.selected_unit()
-	var attacker: Unit = _state.unit_by_id(attacker_id)
-	var target: Unit = _state.unit_by_id(target_id)
-	# Φ 一律經由 _phi.phi() 取得,與 _refresh_view() Mode C 的既有呼叫點相同
-	# （見該方法自己的註解)——傷害預覽與這裡的確認面板不可能對 Φ 的輸入值有分歧。
-	var phi: int = _phi.phi(attacker_id, target_id)
-	var breakdown_result: DamageBreakdownResult = _state.preview_damage_breakdown(
-		attacker_id, target_id, phi
-	)
-	# preview_damage_breakdown() 回傳 null(非歸零拆解)時代表 attacker_id/
-	# target_id 有一個無法解析——依該方法自己的 doc comment,這是刻意的區分設計
-	# （全零的拆解會跟「真的造成 0 傷害的攻擊」無法分辨)。結構上應該不可達
-	# （attack_target_id 來自 _cursor_attack_target_id(),已先核對過
-	# attack_targets().cells 與 faction),但比照 _open_card_confirm_panel() 的
-	# 既有防禦性判斷紀律,仍然檢查並拒絕開面板,而非讓面板顯示假資料。
-	if breakdown_result == null:
-		push_error(
-			"BattleScreen: _open_attack_confirm_panel() could not resolve attacker_id=%d/target_id=%d -- preview_damage_breakdown() returned null. Panel not opened."
-			% [attacker_id, target_id]
-		)
-		return
-	var breakdown: Dictionary = breakdown_result.breakdown
-
-	_attack_confirming = true
-	_attack_confirm_target_cell = _cursor_cell
-	_attack_confirm_panel.show_attack_confirmation(
-		attacker.code_name, target.code_name,
-		int(breakdown["atk"]), int(breakdown["def"]),
-		int(breakdown["phi"]), int(breakdown["phi_input"]),
-		int(breakdown["damage"]),
-		target.hp, int(breakdown["target_hp_after"])
-	)
-
-
-## Story 013（同 AC-U11 的去重紀律)— consumed once per frame from [method
-## _process], never from [method _input] (see [member
-## _attack_confirm_pending_press]'s own doc comment). No-op if [member
-## _attack_confirming] is already false — e.g. a same-frame confirm-then-
-## cancel race. Calls the EXISTING [method BattleController.click_tile] /
-## [method _handle_click_tile_result] path at the frozen target cell captured
-## when the panel opened ([member _attack_confirm_target_cell]) — this is the
-## single authoritative write this story's whole ADR-0001 obligation exists to
-## gate the TIMING of, not the call shape of (`click_tile()`/`_apply_attack()`
-## themselves are unchanged — UX spec "不影響 battle_controller.gd 的公開介面").
-func _apply_pending_attack_confirm() -> void:
-	if not _attack_confirming:
-		return
-	_attack_confirming = false
-	var cell: Vector2i = _attack_confirm_target_cell
-	_attack_confirm_target_cell = Vector2i(-1, -1)
-	_attack_confirm_panel.hide_panel()
-	_handle_click_tile_result(_controller.click_tile(cell))
-
-
-## Story 013 — cancel out of T2' back to T2 (attack target still visible),
-## zero write (mirrors `P-N3` / [method _handle_card_confirm_cancel_transition]'s
-## own shape — no [BattleController] call at all, since nothing was ever
-## written while the panel was open).
-func _handle_attack_confirm_cancel_transition() -> void:
-	_attack_confirming = false
-	_attack_confirm_target_cell = Vector2i(-1, -1)
-	_attack_confirm_panel.hide_panel()
 
 
 # "End my faction phase" — invoked via
