@@ -1201,7 +1201,7 @@ static func leave_confirm_rect(window_size: Vector2i) -> Rect2:
 
 ## Story-002(`production/epics/game-shell/story-002-minimal-settings-screen.md`
 ## AC8)— readonly EGM status line, positioned directly below the M1 panel,
-## horizontally centered, same width as the panel.
+## horizontally centered, same width as the panel(Story 029 N 後改在面板正上方).
 ##
 ## 🔴 Deliberately NOT placed inside [member _rows] (M2's [VBoxContainer]) —
 ## [constant PANEL_HEIGHT_FPX_MULTIPLIER] (9 fpx) is a `battle-menu.md`
@@ -1218,5 +1218,9 @@ static func egm_status_rect(window_size: Vector2i) -> Rect2:
 	var fpx: float = float(HudLayout.font_size(window_size))
 	var panel_r: Rect2 = panel_rect(window_size)
 	var height: float = fpx * REASON_FONT_FPX_MULTIPLIER * 1.6
-	var pos: Vector2 = Vector2(panel_r.position.x, panel_r.end.y + fpx * ROW_SEPARATION_FPX_MULTIPLIER)
+	# Story 029 N:原本在面板正下方,會疊在手牌背板上;改到面板正上方
+	# (面板置中於安全區,上方是棋盤中段,不與底部手牌/說明列相交)。
+	var pos: Vector2 = Vector2(
+		panel_r.position.x, panel_r.position.y - fpx * ROW_SEPARATION_FPX_MULTIPLIER - height
+	)
 	return Rect2(pos, Vector2(panel_r.size.x, height))

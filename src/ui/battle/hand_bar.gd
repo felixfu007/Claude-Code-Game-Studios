@@ -771,6 +771,52 @@ static func backing_rect(max_slots: int, window_size: Vector2i) -> Rect2:
 	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top))
 
 
+## Story 029 E1:展開態(Z2)背板的本地矩形。與 [method backing_rect] 同一座標系,
+## 涵蓋展開後全部卡片([param slot_count] 張,強制棄牌時可超過 max_slots)與其上方說明列。
+## 左界只留內距(展開時鎖頭/張數不顯示),上界沿用收合背板上界(涵蓋說明列),
+## 下界、右界依展開卡格尺寸([constant EXPANDED_SLOT_WIDTH_FPX_MULTIPLIER] 等)加內距。
+static func expanded_backing_rect(slot_count: int, window_size: Vector2i) -> Rect2:
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var padding: float = HAND_BAR_BACKING_PADDING_FPX_MULTIPLIER
+	var left: float = -padding * fpx
+	var top: float = -(CAPTION_GAP_FPX_MULTIPLIER + CAPTION_HEIGHT_FPX_MULTIPLIER + padding) * fpx
+	var right: float = (_expanded_slots_total_width_fpx(slot_count) + padding) * fpx
+	var bottom: float = (EXPANDED_SLOT_HEIGHT_FPX_MULTIPLIER + padding) * fpx
+	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top))
+
+
+## 展開態(進度 1.0)背板在視窗座標的矩形:容器位置為 [method expanded_slot_bar_rect]、倍率 1。
+static func expanded_backing_window_rect(slot_count: int, window_size: Vector2i, max_slots: int) -> Rect2:
+	var bar: Rect2 = expanded_slot_bar_rect(window_size, max_slots)
+	var local: Rect2 = expanded_backing_rect(slot_count, window_size)
+	return Rect2(bar.position + local.position, local.size)
+
+
+## Story 029 F:收合態(Z1)整組往右貼齊的水平位移。
+## 原置中的收合手牌壓在棋盤最下一列中間的格子上;改為貼齊安全區右緣
+## (左欄是關係圖面板,小視窗下展開會與置中/靠左的手牌相撞;右欄只有頂部的格位資訊框)。
+## 位移量由收合背板「縮放後的實際視覺右緣」對齊 [method HudLayout.safe_rect] 右緣算出,
+## 縮放以 [member Control.pivot_offset](容器底邊中點)為軸,與 [method _apply_layout] 一致。
+static func collapsed_x_shift(window_size: Vector2i, max_slots: int) -> float:
+	var safe: Rect2 = HudLayout.safe_rect(window_size)
+	return safe.end.x - _collapsed_backing_window_rect_unshifted(window_size, max_slots).end.x
+
+
+## 收合態背板縮放後、位移後,在視窗座標的視覺矩形(測試與版面共用的唯一出處)。
+static func collapsed_backing_window_rect(window_size: Vector2i, max_slots: int) -> Rect2:
+	var r: Rect2 = _collapsed_backing_window_rect_unshifted(window_size, max_slots)
+	r.position.x += collapsed_x_shift(window_size, max_slots)
+	return r
+
+
+static func _collapsed_backing_window_rect_unshifted(window_size: Vector2i, max_slots: int) -> Rect2:
+	var bar: Rect2 = slot_bar_rect(window_size, max_slots)
+	var local: Rect2 = backing_rect(max_slots, window_size)
+	var pivot: Vector2 = bar.position + Vector2(bar.size.x / 2.0, bar.size.y)
+	var top_left: Vector2 = pivot + (bar.position + local.position - pivot) * COLLAPSED_SCALE
+	return Rect2(top_left, local.size * COLLAPSED_SCALE)
+
+
 # ─── node mutation — never called from a pure/static context ──────────────
 
 
@@ -786,7 +832,7 @@ func _apply_layout() -> void:
 	var collapsed_rect: Rect2 = slot_bar_rect(window_size, _max_slots)
 	var expanded_rect: Rect2 = expanded_slot_bar_rect(window_size, _max_slots)
 	var rect: Rect2 = _lerp_rect(collapsed_rect, expanded_rect, _expand_progress)
-	position = rect.position
+	position = rect.position + Vector2(collapsed_x_shift(window_size, _max_slots) * (1.0 - _expand_progress), 0.0)
 	size = rect.size
 	# 2026-10-28 管理者試玩回饋:「手牌不見了,縮小就好,不是要你隱藏」。收合態(Z1)整組
 	# 等比縮小(卡格、背板、張數一起),以底邊中點為軸,貼著說明列往下縮;展開時回到原尺寸。
@@ -841,7 +887,12 @@ func _apply_layout() -> void:
 func _position_backing(window_size: Vector2i) -> void:
 	if _backing == null:
 		return
-	var r: Rect2 = backing_rect(_max_slots, window_size)
+	# Story 029 E1:背板隨展開進度由收合 footprint 過渡到涵蓋全部展開卡片的矩形。
+	var r: Rect2 = _lerp_rect(
+		backing_rect(_max_slots, window_size),
+		expanded_backing_rect(maxi(_max_slots, _slot_kinds.size()), window_size),
+		_expand_progress
+	)
 	_backing.position = r.position
 	_backing.size = r.size
 
@@ -930,7 +981,9 @@ func _position_slots(window_size: Vector2i, fpx: float) -> void:
 
 		var filled: bool = i < _slot_kinds.size()
 		var is_diamond: bool = filled and icon_shape_for(_slot_kinds[i]) == IconShape.DIAMOND
-		panel.rotation_degrees = 45.0 if is_diamond else 0.0
+		# Story 029 E2:卡格本身永不旋轉(旋轉 45° 的整張卡會與相鄰卡片重疊);
+		# 類別(丙=永久寫入)改由卡面圖示旋轉 45° 的菱形表達,形狀通道不變。
+		panel.rotation_degrees = 0.0
 
 		if panel.get_child_count() > 0:
 			var icon_mark: ColorRect = panel.get_child(0)
@@ -938,11 +991,13 @@ func _position_slots(window_size: Vector2i, fpx: float) -> void:
 			var icon_margin: float = ICON_MARK_MARGIN_FPX_MULTIPLIER * fpx
 			icon_mark.size = Vector2(icon_size, icon_size)
 			icon_mark.position = Vector2(icon_margin, icon_margin)
+			icon_mark.pivot_offset = icon_mark.size / 2.0
+			icon_mark.rotation_degrees = 45.0 if is_diamond else 0.0
 
 
 ## 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠):回傳 [param window_pos] 落在哪一張
-## 【有牌的】卡格上,沒有則 -1。菱形卡格是旋轉 45° 的 Panel,[method Control.get_global_rect]
-## 不含旋轉,故改以卡格中心點為準、取與未旋轉同尺寸的方框判定。
+## 【有牌的】卡格上,沒有則 -1。以卡格中心點為準、取與未旋轉同尺寸的方框判定
+## (story 029 E2 後卡格不再旋轉,此寫法仍成立,且已含節點縮放)。
 func slot_index_at(window_pos: Vector2) -> int:
 	for i in range(mini(_slot_nodes.size(), _slot_kinds.size())):
 		var panel: Panel = _slot_nodes[i]
