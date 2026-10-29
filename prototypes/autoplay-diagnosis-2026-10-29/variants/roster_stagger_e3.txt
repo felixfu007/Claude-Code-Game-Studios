@@ -1,0 +1,11 @@
+# throwaway variant roster (fields: id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y)
+1,甲,PLAYER,30,16,8,6,1,1,0,1
+2,乙,PLAYER,26,14,6,5,1,2,0,2
+3,丙,PLAYER,22,20,7,3,2,4,0,3
+4,丁,PLAYER,26,14,6,5,1,2,0,4
+5,戊,PLAYER,30,16,8,6,1,1,0,5
+6,E1,ENEMY,23,14,6,6,1,1,8,2
+7,E2,ENEMY,20,13,5,5,1,2,12,0
+8,E3,ENEMY,18,14,3,3,2,4,11,4
+9,E4,ENEMY,22,13,5,5,1,2,11,3
+10,E5,ENEMY,24,14,6,6,1,1,12,2

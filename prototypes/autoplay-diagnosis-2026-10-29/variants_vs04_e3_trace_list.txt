@@ -1,0 +1,2 @@
+# label,terrain,roster
+S1E3_stagger_flip,res://prototypes/autoplay-diagnosis-2026-10-29/variants/terrain_base_vs04_flip.txt,res://prototypes/autoplay-diagnosis-2026-10-29/variants/roster_stagger_e3_flip.txt

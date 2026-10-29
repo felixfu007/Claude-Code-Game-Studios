@@ -1,0 +1,46 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+  PHI_RAW S1_stagger A_greedy attacker=1 target=6 phi=-1
+RESULT S1_stagger A_greedy outcome=VICTORY rounds=4 aborted=false reason= player_attacks=13 seeded_links=2 phi_calls=13 phi_nonzero=5 first_down=[E1 is defeated (after: R2 PLAYER: 丙 attacks E1 for 14 damage)]
+  END players=["甲:7/30", "乙:26/26", "丙:15/22", "丁:26/26", "戊:19/30"] enemies=[]
+  PHI_RAW S1_stagger B_cautious_fixed attacker=3 target=6 phi=-1
+RESULT S1_stagger B_cautious_fixed outcome=VICTORY rounds=4 aborted=false reason= player_attacks=12 seeded_links=2 phi_calls=12 phi_nonzero=7 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:2/30", "乙:26/26", "丙:22/22", "丁:26/26", "戊:24/30"] enemies=[]
+  PHI_RAW S1_stagger C_focus_affinity attacker=3 target=6 phi=2
+RESULT S1_stagger C_focus_affinity outcome=VICTORY rounds=5 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=6 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:14/30", "乙:18/26", "丙:22/22", "丁:26/26", "戊:2/30"] enemies=[]
+RESULT S1_stagger C_focus_phi0 outcome=VICTORY rounds=5 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:14/30", "乙:26/26", "丙:16/22", "丁:26/26", "戊:2/30"] enemies=[]
+  PHI_RAW S1_stagger_flip A_greedy attacker=1 target=9 phi=-1
+RESULT S1_stagger_flip A_greedy outcome=VICTORY rounds=4 aborted=false reason= player_attacks=13 seeded_links=2 phi_calls=13 phi_nonzero=8 first_down=[E4 is defeated (after: R2 PLAYER: 丙 attacks E4 for 14 damage)]
+  END players=["甲:7/30", "乙:26/26", "丙:15/22", "丁:10/26", "戊:30/30"] enemies=[]
+  PHI_RAW S1_stagger_flip B_cautious_fixed attacker=1 target=9 phi=-1
+RESULT S1_stagger_flip B_cautious_fixed outcome=VICTORY rounds=4 aborted=false reason= player_attacks=12 seeded_links=2 phi_calls=12 phi_nonzero=7 first_down=[E4 is defeated (after: R2 PLAYER: 丙 attacks E4 for 14 damage)]
+  END players=["甲:25/30", "乙:26/26", "丙:22/22", "丁:2/26", "戊:7/30"] enemies=[]
+  PHI_RAW S1_stagger_flip C_focus_affinity attacker=1 target=9 phi=-1
+RESULT S1_stagger_flip C_focus_affinity outcome=VICTORY rounds=4 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=6 first_down=[E4 is defeated (after: R2 PLAYER: 丙 attacks E4 for 14 damage)]
+  END players=["甲:19/30", "乙:26/26", "丙:22/22", "丁:2/26", "戊:19/30"] enemies=[]
+RESULT S1_stagger_flip C_focus_phi0 outcome=VICTORY rounds=4 aborted=false reason= player_attacks=12 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[E4 is defeated (after: R2 PLAYER: 丙 attacks E4 for 15 damage)]
+  END players=["甲:25/30", "乙:26/26", "丙:22/22", "丁:2/26", "戊:13/30"] enemies=[]
+  PHI_RAW S1E3_stagger A_greedy attacker=1 target=6 phi=-1
+RESULT S1E3_stagger A_greedy outcome=VICTORY rounds=4 aborted=false reason= player_attacks=13 seeded_links=2 phi_calls=13 phi_nonzero=5 first_down=[E1 is defeated (after: R2 PLAYER: 丙 attacks E1 for 14 damage)]
+  END players=["甲:7/30", "乙:26/26", "丙:15/22", "丁:26/26", "戊:19/30"] enemies=[]
+  PHI_RAW S1E3_stagger B_cautious_fixed attacker=3 target=6 phi=-1
+RESULT S1E3_stagger B_cautious_fixed outcome=VICTORY rounds=5 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=7 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:18/30", "乙:26/26", "丙:9/22", "丁:18/26", "戊:14/30"] enemies=[]
+  PHI_RAW S1E3_stagger C_focus_affinity attacker=3 target=6 phi=2
+RESULT S1E3_stagger C_focus_affinity outcome=VICTORY rounds=6 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=7 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:18/30", "乙:26/26", "丙:16/22", "丁:10/26", "戊:2/30"] enemies=[]
+RESULT S1E3_stagger C_focus_phi0 outcome=VICTORY rounds=6 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[E1 is defeated (after: R2 PLAYER: 戊 attacks E1 for 10 damage)]
+  END players=["甲:18/30", "乙:26/26", "丙:16/22", "丁:10/26", "戊:2/30"] enemies=[]
+  PHI_RAW S1E3_stagger_flip A_greedy attacker=1 target=6 phi=-1
+RESULT S1E3_stagger_flip A_greedy outcome=DEFEAT rounds=2 aborted=false reason= player_attacks=3 seeded_links=2 phi_calls=3 phi_nonzero=2 first_down=[E1 is defeated (after: R2 PLAYER: 丙 attacks E1 for 13 damage)]
+  END players=["甲:30/30", "乙:26/26", "丙:22/22", "戊:30/30"] enemies=["E2:20/20", "E3:18/18", "E4:22/22", "E5:24/24"]
+  PHI_RAW S1E3_stagger_flip B_cautious_fixed attacker=1 target=6 phi=-1
+RESULT S1E3_stagger_flip B_cautious_fixed outcome=VICTORY rounds=6 aborted=false reason= player_attacks=13 seeded_links=2 phi_calls=13 phi_nonzero=9 first_down=[E1 is defeated (after: R2 PLAYER: 丁 attacks E1 for 8 damage)]
+  END players=["甲:4/30", "乙:18/26", "丙:22/22", "丁:10/26", "戊:8/30"] enemies=[]
+  PHI_RAW S1E3_stagger_flip C_focus_affinity attacker=1 target=6 phi=3
+RESULT S1E3_stagger_flip C_focus_affinity outcome=VICTORY rounds=6 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=11 phi_nonzero=9 first_down=[E1 is defeated (after: R2 PLAYER: 丙 attacks E1 for 16 damage)]
+  END players=["甲:14/30", "乙:18/26", "丙:16/22", "丁:3/26", "戊:8/30"] enemies=[]
+RESULT S1E3_stagger_flip C_focus_phi0 outcome=VICTORY rounds=6 aborted=false reason= player_attacks=11 seeded_links=2 phi_calls=0 phi_nonzero=0 first_down=[E1 is defeated (after: R2 PLAYER: 丙 attacks E1 for 14 damage)]
+  END players=["甲:14/30", "乙:18/26", "丙:16/22", "丁:3/26", "戊:8/30"] enemies=[]
