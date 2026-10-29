@@ -1,7 +1,7 @@
 # Story 029:試玩次要問題(手牌列)—— E / F
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-29)—— 🔴 **須在 story-028 交付後才開工**(兩者都會碰 `hud_layout.gd`)
+> **Status**: ✅ Done-pending-visual(2026-10-29,提交 `1420179` + G 補 `1e4bff5`;協調者重跑 1643 條全綠)—— F 仍壓最下列右端 3 格(1080p 滿版)(原狀態:Ready(2026-10-29)—— 🔴 **須在 story-028 交付後才開工**(兩者都會碰 `hud_layout.gd`))
 > **Type**: UI
 > **Estimate**: S
 > **依據**: 同 story-028,管理者 2026-10-29 裁決「**E/F/G/I/M/N/O 照建議做,K/L 先不動(推薦)**」。

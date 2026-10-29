@@ -1,7 +1,7 @@
 # Story 025:勝利/戰敗改為畫面中央大字 + 半透明遮罩
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-29)—— 🔴 **須在 story-024 交付後才開工**(同一個檔)
+> **Status**: ✅ Done-pending-visual(2026-10-29,提交 `568f3f7`;協調者重跑 1597 條全綠)—— 截圖 AC 延後,待管理者在家目視(原狀態:Ready(2026-10-29)—— 🔴 **須在 story-024 交付後才開工**(同一個檔))
 > **Type**: UI
 > **Estimate**: S
 > **依據**: `production/qa/playtest-report-2026-10-28.md` 第四節問題 C 的建議;管理者 10/28 明言「明天開工我會照你這份報告修復跟調整」。

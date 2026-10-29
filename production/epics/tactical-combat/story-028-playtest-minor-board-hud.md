@@ -1,7 +1,7 @@
 # Story 028:試玩次要問題(棋盤與 HUD)—— I / M / G / N / O
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-29)
+> **Status**: ✅ Done-pending-visual(2026-10-29,提交 `42ef85a`;協調者重跑 1628 條全綠)—— I/M/G/O 完成;N 併入 story-029(原狀態:Ready(2026-10-29))
 > **Type**: UI
 > **Estimate**: M
 > **依據**: 管理者 2026-10-29 裁決,選項逐字「**E/F/G/I/M/N/O 照建議做,K/L 先不動(推薦)**」;

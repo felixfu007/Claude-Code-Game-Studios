@@ -1,7 +1,7 @@
 # Story 027:阻擋規則補測試(ZoC-5~9)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-29)
+> **Status**: ✅ Done(2026-10-29,提交 `aea9bc1`;協調者重跑 1617 條全綠)—— ZoC-9 查證 move_unit 拒絕穿越(原狀態:Ready(2026-10-29))
 > **Type**: Logic
 > **Estimate**: S
 > **依據**: 管理者 2026-10-29 裁決,選項逐字「**照提案寫進去,並補上缺的測試(推薦)**」。

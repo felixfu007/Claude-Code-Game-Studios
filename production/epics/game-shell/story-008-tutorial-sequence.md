@@ -1,7 +1,7 @@
 # Story 008:教學關接進遊戲(按「開始」先打教學 4 場,標題另有「略過教學」)
 
 > **Epic**: `production/epics/game-shell/EPIC.md`
-> **Status**: Ready(2026-10-29)
+> **Status**: ✅ Done-pending-visual(2026-10-29,提交 `5d20edf`;協調者重跑 1653 條全綠)(原狀態:Ready(2026-10-29))
 > **Type**: Integration
 > **Estimate**: M
 > **依據**(管理者裁決逐字):

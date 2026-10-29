@@ -135,6 +135,14 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 016 | story-016-terrain-load-time-validation.md | M2 | Logic | 地形載入時驗證(`Board.from_ascii()` 結構性+組成性檢查)+ `reachable_tiles()` 哨兵 `-1` 防護 | 001, 002 |
 | 003c | story-003c-player-turn-start-commit-wrapping.md | M3a | Logic | 玩家回合開始鉤子的提交覆蓋(`begin_player_turn()` / `tick_all_modifiers()`,路徑⑥⑦) | 003b |
 | 017 | story-017-unit-combat-field-setters.md | M3a | Logic | `Unit` 戰鬥數值欄位加 setter + 寫入守衛(ADR-0001 硬性義務第 2 條) | 003b |
+| 023 | story-023-attack-without-confirm.md | — | UI | 攻擊不再跳確認框(2026-10-29 加入索引;018~022 尚未補列) | — |
+| 024 | story-024-tile-info-panel-on-unit-only.md | — | UI | 右上資訊框只在游標指到單位時出現 | 023 |
+| 025 | story-025-result-overlay.md | — | UI | 勝利/戰敗中央大字 + 遮罩 | 024 |
+| 026 | story-026-attack-preview-in-info-panel.md | — | UI | 傷害拆解(ATK/DEF/Φ)進右上資訊框 | 025 |
+| 027 | story-027-zone-of-control-missing-tests.md | — | Logic | 阻擋規則補測試 ZoC-5~9 | — |
+| 028 | story-028-playtest-minor-board-hud.md | — | UI | 試玩次要問題 I/M/G/O | — |
+| 029 | story-029-playtest-minor-hand-bar.md | — | UI | 試玩次要問題 E/F + N + 說明列四項 | 028 |
+| 030 | story-030-phi-clamp-disclosure-in-preview.md | — | UI | ❌ 已關閉(前提不成立) | — |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)
 
