@@ -4546,6 +4546,15 @@ func _update_status_label() -> void:
 	_status_label.text = Loc.localize(TEXT_STATUS_FORMAT) % [_order.round_number(), faction_text]
 
 
+## Story 024 — 資訊框顯示與否的唯一判斷(純函式,可直接單測)。
+## [param cursor_resolved] 游標在棋盤上且目標有效;[param has_occupant] 游標格有單位;
+## [param enemy_acting] 敵方回合播放中。
+static func tile_info_panel_should_show(
+	cursor_resolved: bool, has_occupant: bool, enemy_acting: bool
+) -> bool:
+	return cursor_resolved and has_occupant and not enemy_acting
+
+
 ## Story 012 (格位資訊面板) — writes [member _tile_info_panel_label] every
 ## [method _refresh_view] call. Gates on BOTH [member _cursor_active] AND
 ## [member _tile_info_cursor_valid] before showing anything resolved:
@@ -4558,15 +4567,26 @@ func _update_status_label() -> void:
 ## own doc comment). Either being false means an explicit, distinct
 ## unresolved state — never the previous tile's leftover content (Player
 ## Fantasy's named failure mode "狀態轉換造成的資訊斷裂").
+##
+## Story 024(2026-10-29 管理者裁決):框只在游標指到【單位】時顯示;空地、游標不在棋盤上、
+## 敵方回合播放中一律隱藏(避免蓋住棋盤右上角,也避免殘留上一個單位的內容)。
+## 手牌懸停的卡面說明是 [HandBar] 自己的 Z3 面板,不經過本框,不受此函式影響。
 func _update_tile_info_panel() -> void:
-	if not _cursor_active or not _tile_info_cursor_valid:
+	var resolved: bool = _cursor_active and _tile_info_cursor_valid
+	var occupant: Unit = null
+	if resolved:
+		occupant = _state.unit_at(_cursor_cell)
+	_tile_info_panel_bg.visible = tile_info_panel_should_show(
+		resolved, occupant != null, _controller.phase() == BattleController.Phase.ENEMY_ACTING
+	)
+
+	if not resolved:
 		_tile_info_panel_label.text = Loc.localize(TEXT_TILE_INFO_UNRESOLVED)
 		return
 
 	var terrain_char: String = _state.board.get_terrain(_cursor_cell)
 	var cost: int = _state.board.get_move_cost(_cursor_cell)
 	var blocks_sight: bool = _state.board.blocks_sight(_cursor_cell)
-	var occupant: Unit = _state.unit_at(_cursor_cell)
 
 	if occupant != null:
 		_tile_info_panel_label.text = build_tile_info_text(
