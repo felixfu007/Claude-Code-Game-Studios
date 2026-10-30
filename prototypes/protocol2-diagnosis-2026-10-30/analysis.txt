@@ -1,0 +1,39 @@
+== player attacks per round (did_attack=true on P lines) ==
+-- ignore v=0
+      4 R2       3 R3       3 R4       2 R5 
+-- use v=0
+      1 R2       3 R3       4 R4 
+-- ignore v=4
+      1 R2       2 R3 
+-- use v=4
+      3 R3       2 R4 
+
+== R1 end-of-player-phase positions (EFFECT 'after=' on first-call P lines R1, can_move lines are first of each unit) ==
+-- ignore v=0
+甲 (4, 4);乙 (3, 3);丙 (3, 4);丁 (4, 5);戊 (3, 5);
+-- use v=0
+甲 (0, 2);乙 (0, 3);丙 (3, 4);丁 (1, 5);戊 (4, 5);
+-- ignore v=4
+甲 (4, 4);乙 (3, 3);丙 (2, 5);丁 (2, 4);戊 (1, 5);
+-- use v=4
+甲 (0, 2);乙 (0, 3);丙 (2, 5);丁 (3, 3);戊 (4, 4);
+
+== damage taken per player unit (sum of enemy-side hp_changes) ==
+-- ignore v=0
+丙=13 乙=16 丁=15 甲=27 
+-- use v=0
+戊=30 丙=13 丁=16 甲=6 
+-- ignore v=4
+丙=22 乙=8 甲=22 
+-- use v=4
+戊=30 丙=20 丁=16 
+
+== step-2 filter effect (use arm, v=0 and v=4), first-call P lines: pool_before -> pool_after_step2 and attackable counts ==
+-- use v=0
+units-turns=20 avg_pool_before=12.6 avg_pool_after=6.2 turns_with_attackable_tile_before= lost_all_attackable_by_step2=3
+-- use v=4
+units-turns=20 avg_pool_before=5.65 avg_pool_after=3.55 turns_with_attackable_tile_before= lost_all_attackable_by_step2=
+ignore v=0   unit-turns(first call)=23  can_attack_from_some_reachable_tile=17  ...still_in_safe_pool(before step2)=0  step2_removed_ALL_of_them=0  declared_attack=12  could_but_no_attack=5
+use v=0      unit-turns(first call)=20  can_attack_from_some_reachable_tile=14  ...still_in_safe_pool(before step2)=0  step2_removed_ALL_of_them=0  declared_attack=8  could_but_no_attack=6
+ignore v=4   unit-turns(first call)=15  can_attack_from_some_reachable_tile=10  ...still_in_safe_pool(before step2)=0  step2_removed_ALL_of_them=0  declared_attack=3  could_but_no_attack=7
+use v=4      unit-turns(first call)=20  can_attack_from_some_reachable_tile=15  ...still_in_safe_pool(before step2)=0  step2_removed_ALL_of_them=0  declared_attack=5  could_but_no_attack=10

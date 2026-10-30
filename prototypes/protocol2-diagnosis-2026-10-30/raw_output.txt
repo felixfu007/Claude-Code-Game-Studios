@@ -1,0 +1,613 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER build_commit=51deb1388fa4afd876d36ab67c87ccd206b90955 engine=4.7.1-stable (official) level=1 terrain=res://assets/data/levels/vs01_terrain.txt roster=res://assets/data/units/vs01_roster.txt affinity=res://assets/data/affinity/vs01_affinity_links.txt max_rounds=12
+TRACE ignore v=0 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 25, "pool_attackable_after_step2": 0, "pool_after_step3": 25, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=(4, 4) attack=-1
+TRACE ignore v=0 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 15, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE ignore v=0 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 16, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=(3, 4) attack=-1
+TRACE ignore v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 19, "pool_step1": 19, "cand_attackable": 0, "pool_before_step2": 19, "pool_attackable_before_step2": 0, "pool_after_step2": 19, "pool_attackable_after_step2": 0, "pool_after_step3": 19, "focus": -1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=(4, 5) attack=-1
+TRACE ignore v=0 R1 P 丁 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 19, "pool_step1": 19, "cand_attackable": 0, "pool_before_step2": 19, "pool_attackable_before_step2": 0, "pool_after_step2": 19, "pool_attackable_after_step2": 0, "pool_after_step3": 19, "focus": -1, "chosen": (3, 5), "chosen_attackable": false } | decision move_to=(3, 5) attack=-1
+TRACE ignore v=0 R1 P 戊 EFFECT after=(3, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 甲 hp=30 from=(4, 4) can_move=false can_attack=true | { "origin": (4, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 乙 hp=26 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 丙 hp=22 from=(3, 4) can_move=false can_attack=true | { "origin": (3, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 丁 hp=26 from=(4, 5) can_move=false can_attack=true | { "origin": (4, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 P 丁 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 P 戊 hp=30 from=(3, 5) can_move=false can_attack=true | { "origin": (3, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 P 戊 EFFECT after=(3, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE ignore v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE ignore v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=3
+TRACE ignore v=0 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=7 hp_changes=[丙 22->15]
+TRACE ignore v=0 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=3
+TRACE ignore v=0 R1 E E4 EFFECT after=(5, 4) did_attack=false  dmg=6 hp_changes=[丙 15->9]
+TRACE ignore v=0 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=4
+TRACE ignore v=0 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=8 hp_changes=[丁 26->18]
+TRACE ignore v=0 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R2 P 甲 hp=30 from=(4, 4) can_move=true can_attack=true | { "origin": (4, 4), "cands": 8, "pool_step1": 8, "cand_attackable": 3, "pool_before_step2": 8, "pool_attackable_before_step2": 3, "pool_after_step2": 8, "pool_attackable_after_step2": 3, "pool_after_step3": 2, "focus": 9, "chosen": (5, 3), "chosen_attackable": true } | decision move_to=(5, 3) attack=9
+TRACE ignore v=0 R2 P 甲 EFFECT after=(5, 3) did_attack=true phi=0(1->9) dmg=11 hp_changes=[E4 22->11]
+TRACE ignore v=0 R2 P 乙 hp=26 from=(3, 3) can_move=true can_attack=true | { "origin": (3, 3), "cands": 26, "pool_step1": 18, "cand_attackable": 8, "pool_before_step2": 18, "pool_attackable_before_step2": 3, "pool_after_step2": 18, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 6, "chosen": (3, 0), "chosen_attackable": true } | decision move_to=(3, 0) attack=6
+TRACE ignore v=0 R2 P 乙 EFFECT after=(3, 0) did_attack=true phi=-1(2->6) dmg=7 hp_changes=[E1 23->16]
+TRACE ignore v=0 R2 P 丙 hp=9 from=(3, 4) can_move=true can_attack=true | { "origin": (3, 4), "cands": 14, "pool_step1": 1, "cand_attackable": 12, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=(0, 4) attack=-1
+TRACE ignore v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R2 P 丁 hp=18 from=(4, 5) can_move=true can_attack=true | { "origin": (4, 5), "cands": 15, "pool_step1": 7, "cand_attackable": 6, "pool_before_step2": 7, "pool_attackable_before_step2": 1, "pool_after_step2": 7, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 6, "chosen": (3, 1), "chosen_attackable": true } | decision move_to=(3, 1) attack=6
+TRACE ignore v=0 R2 P 丁 EFFECT after=(3, 1) did_attack=true phi=2(4->6) dmg=10 hp_changes=[E1 16->6]
+TRACE ignore v=0 R2 P 戊 hp=30 from=(3, 5) can_move=true can_attack=true | { "origin": (3, 5), "cands": 23, "pool_step1": 23, "cand_attackable": 3, "pool_before_step2": 23, "pool_attackable_before_step2": 3, "pool_after_step2": 23, "pool_attackable_after_step2": 3, "pool_after_step3": 1, "focus": 6, "chosen": (4, 1), "chosen_attackable": true } | decision move_to=(4, 1) attack=6
+TRACE ignore v=0 R2 P 戊 EFFECT after=(4, 1) did_attack=true phi=0(5->6) dmg=6 hp_changes=[E1 6->0]
+TRACE ignore v=0 R2 P 丙 hp=9 from=(0, 4) can_move=false can_attack=true | { "origin": (0, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 3) attack=1
+TRACE ignore v=0 R2 E E2 EFFECT after=(6, 3) did_attack=false  dmg=5 hp_changes=[甲 30->25]
+TRACE ignore v=0 R2 E E3 hp=18 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 4) attack=1
+TRACE ignore v=0 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=6 hp_changes=[甲 25->19]
+TRACE ignore v=0 R2 E E4 hp=11 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 2) attack=4
+TRACE ignore v=0 R2 E E4 EFFECT after=(3, 2) did_attack=false  dmg=7 hp_changes=[丁 18->11]
+TRACE ignore v=0 R2 E E5 hp=24 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 3) attack=1
+TRACE ignore v=0 R2 E E5 EFFECT after=(4, 3) did_attack=false  dmg=6 hp_changes=[甲 19->13]
+TRACE ignore v=0 R3 P 甲 hp=13 from=(5, 3) can_move=true can_attack=true | { "origin": (5, 3), "cands": 21, "pool_step1": 3, "cand_attackable": 8, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (5, 2), "chosen_attackable": false } | decision move_to=(5, 2) attack=-1
+TRACE ignore v=0 R3 P 甲 EFFECT after=(5, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R3 P 乙 hp=26 from=(3, 0) can_move=true can_attack=true | { "origin": (3, 0), "cands": 22, "pool_step1": 16, "cand_attackable": 6, "pool_before_step2": 16, "pool_attackable_before_step2": 4, "pool_after_step2": 16, "pool_attackable_after_step2": 4, "pool_after_step3": 4, "focus": 9, "chosen": (2, 2), "chosen_attackable": true } | decision move_to=(2, 2) attack=9
+TRACE ignore v=0 R3 P 乙 EFFECT after=(2, 2) did_attack=true phi=-1(2->9) dmg=8 hp_changes=[E4 11->3]
+TRACE ignore v=0 R3 P 丙 hp=9 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 13, "pool_step1": 4, "cand_attackable": 10, "pool_before_step2": 4, "pool_attackable_before_step2": 4, "pool_after_step2": 4, "pool_attackable_after_step2": 4, "pool_after_step3": 4, "focus": 9, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=(1, 2) attack=9
+TRACE ignore v=0 R3 P 丙 EFFECT after=(1, 2) did_attack=true phi=2(3->9) dmg=3 hp_changes=[E4 3->0]
+TRACE ignore v=0 R3 P 丁 hp=11 from=(3, 1) can_move=true can_attack=true | { "origin": (3, 1), "cands": 27, "pool_step1": 9, "cand_attackable": 7, "pool_before_step2": 9, "pool_attackable_before_step2": 0, "pool_after_step2": 9, "pool_attackable_after_step2": 0, "pool_after_step3": 9, "focus": -1, "chosen": (3, 0), "chosen_attackable": false } | decision move_to=(3, 0) attack=-1
+TRACE ignore v=0 R3 P 丁 EFFECT after=(3, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R3 P 戊 hp=30 from=(4, 1) can_move=true can_attack=true | { "origin": (4, 1), "cands": 32, "pool_step1": 32, "cand_attackable": 3, "pool_before_step2": 32, "pool_attackable_before_step2": 3, "pool_after_step2": 32, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 10, "chosen": (4, 2), "chosen_attackable": true } | decision move_to=(4, 2) attack=10
+TRACE ignore v=0 R3 P 戊 EFFECT after=(4, 2) did_attack=true phi=0(5->10) dmg=10 hp_changes=[E5 24->14]
+TRACE ignore v=0 R3 P 甲 hp=13 from=(5, 2) can_move=false can_attack=true | { "origin": (5, 2), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (5, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R3 P 甲 EFFECT after=(5, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R3 P 丁 hp=11 from=(3, 0) can_move=false can_attack=true | { "origin": (3, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R3 P 丁 EFFECT after=(3, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R3 E E2 hp=20 from=(6, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 2) attack=1
+TRACE ignore v=0 R3 E E2 EFFECT after=(6, 2) did_attack=false  dmg=5 hp_changes=[甲 13->8]
+TRACE ignore v=0 R3 E E3 hp=18 from=(6, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 4) attack=2
+TRACE ignore v=0 R3 E E3 EFFECT after=(4, 4) did_attack=false  dmg=8 hp_changes=[乙 26->18]
+TRACE ignore v=0 R3 E E5 hp=14 from=(4, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 2) attack=2
+TRACE ignore v=0 R3 E E5 EFFECT after=(3, 2) did_attack=false  dmg=8 hp_changes=[乙 18->10]
+TRACE ignore v=0 R4 P 甲 hp=8 from=(5, 2) can_move=true can_attack=true | { "origin": (5, 2), "cands": 21, "pool_step1": 1, "cand_attackable": 7, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (8, 1), "chosen_attackable": false } | decision move_to=(8, 1) attack=-1
+TRACE ignore v=0 R4 P 甲 EFFECT after=(8, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R4 P 乙 hp=10 from=(2, 2) can_move=true can_attack=true | { "origin": (2, 2), "cands": 27, "pool_step1": 1, "cand_attackable": 12, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=(0, 0) attack=-1
+TRACE ignore v=0 R4 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R4 P 丙 hp=9 from=(1, 2) can_move=true can_attack=true | { "origin": (1, 2), "cands": 17, "pool_step1": 12, "cand_attackable": 17, "pool_before_step2": 12, "pool_attackable_before_step2": 12, "pool_after_step2": 12, "pool_attackable_after_step2": 12, "pool_after_step3": 10, "focus": 10, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=<null> attack=10
+TRACE ignore v=0 R4 P 丙 EFFECT after=(1, 2) did_attack=true phi=2(3->10) dmg=14 hp_changes=[E5 14->0]
+TRACE ignore v=0 R4 P 丁 hp=11 from=(3, 0) can_move=true can_attack=true | { "origin": (3, 0), "cands": 26, "pool_step1": 13, "cand_attackable": 9, "pool_before_step2": 13, "pool_attackable_before_step2": 5, "pool_after_step2": 13, "pool_attackable_after_step2": 5, "pool_after_step3": 3, "focus": 8, "chosen": (3, 4), "chosen_attackable": true } | decision move_to=(3, 4) attack=8
+TRACE ignore v=0 R4 P 丁 EFFECT after=(3, 4) did_attack=true phi=2(4->8) dmg=13 hp_changes=[E3 18->5]
+TRACE ignore v=0 R4 P 戊 hp=30 from=(4, 2) can_move=true can_attack=true | { "origin": (4, 2), "cands": 33, "pool_step1": 33, "cand_attackable": 3, "pool_before_step2": 33, "pool_attackable_before_step2": 3, "pool_after_step2": 33, "pool_attackable_after_step2": 3, "pool_after_step3": 1, "focus": 8, "chosen": (4, 3), "chosen_attackable": true } | decision move_to=(4, 3) attack=8
+TRACE ignore v=0 R4 P 戊 EFFECT after=(4, 3) did_attack=true phi=0(5->8) dmg=5 hp_changes=[E3 5->0]
+TRACE ignore v=0 R4 P 甲 hp=8 from=(8, 1) can_move=false can_attack=true | { "origin": (8, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (8, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R4 P 甲 EFFECT after=(8, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R4 P 乙 hp=10 from=(0, 0) can_move=false can_attack=true | { "origin": (0, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=0 R4 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R4 P 丙 hp=9 from=(1, 2) can_move=true can_attack=false | { "origin": (1, 2), "cands": 18, "pool_step1": 18, "cand_attackable": 0, "pool_before_step2": 18, "pool_attackable_before_step2": 0, "pool_after_step2": 18, "pool_attackable_after_step2": 0, "pool_after_step3": 18, "focus": -1, "chosen": (3, 2), "chosen_attackable": false } | decision move_to=(3, 2) attack=-1
+TRACE ignore v=0 R4 P 丙 EFFECT after=(3, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R4 E E2 hp=20 from=(6, 2) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 0) attack=1
+TRACE ignore v=0 R4 E E2 EFFECT after=(8, 0) did_attack=false  dmg=5 hp_changes=[甲 8->3]
+TRACE ignore v=0 R5 P 甲 hp=3 from=(8, 1) can_move=true can_attack=true | { "origin": (8, 1), "cands": 42, "pool_step1": 42, "cand_attackable": 3, "pool_before_step2": 42, "pool_attackable_before_step2": 3, "pool_after_step2": 42, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 7, "chosen": (7, 0), "chosen_attackable": true } | decision move_to=(7, 0) attack=7
+TRACE ignore v=0 R5 P 甲 EFFECT after=(7, 0) did_attack=true phi=-1(1->7) dmg=10 hp_changes=[E2 20->10]
+TRACE ignore v=0 R5 P 乙 hp=10 from=(0, 0) can_move=true can_attack=true | { "origin": (0, 0), "cands": 20, "pool_step1": 20, "cand_attackable": 0, "pool_before_step2": 20, "pool_attackable_before_step2": 0, "pool_after_step2": 20, "pool_attackable_after_step2": 0, "pool_after_step3": 20, "focus": -1, "chosen": (5, 0), "chosen_attackable": false } | decision move_to=(5, 0) attack=-1
+TRACE ignore v=0 R5 P 乙 EFFECT after=(5, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=0 R5 P 丙 hp=9 from=(3, 2) can_move=true can_attack=true | { "origin": (3, 2), "cands": 16, "pool_step1": 16, "cand_attackable": 1, "pool_before_step2": 16, "pool_attackable_before_step2": 1, "pool_after_step2": 16, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 7, "chosen": (4, 0), "chosen_attackable": true } | decision move_to=(4, 0) attack=7
+TRACE ignore v=0 R5 P 丙 EFFECT after=(4, 0) did_attack=true phi=2(3->7) dmg=10 hp_changes=[E2 10->0]
+KNOBCOUNT ignore v=0 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY ignore v=0 p_actions=34 p_could_attack_at_decision=12 p_actual_attacks=12 p_decisions_could_but_did_not=5 p_dmg_dealt=107 sum_phi_on_attacks=7 enemy_damaging_actions=11 enemy_dmg_dealt=71 first_player_fall=[none] first_enemy_fall=[R2 E1 felled by 戊]
+RESULT arm=ignore v=0 outcome=VICTORY rounds=5 neardeath=1 phi_avg=1.200 raw_outcome=VICTORY aborted=false reason= phi_samples=5
+TRACE use v=0 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R1 P 甲 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R1 P 乙 EFFECT after=(0, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 15, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 11, "pool_attackable_after_step2": 0, "pool_after_step3": 11, "focus": -1, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=(3, 4) attack=-1
+TRACE use v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 17, "pool_step1": 17, "cand_attackable": 0, "pool_before_step2": 17, "pool_attackable_before_step2": 0, "pool_after_step2": 9, "pool_attackable_after_step2": 0, "pool_after_step3": 9, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=(1, 5) attack=-1
+TRACE use v=0 R1 P 丁 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 17, "pool_step1": 17, "cand_attackable": 0, "pool_before_step2": 17, "pool_attackable_before_step2": 0, "pool_after_step2": 17, "pool_attackable_after_step2": 0, "pool_after_step3": 17, "focus": -1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=(4, 5) attack=-1
+TRACE use v=0 R1 P 戊 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 丙 hp=22 from=(3, 4) can_move=false can_attack=true | { "origin": (3, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 丁 hp=26 from=(1, 5) can_move=false can_attack=true | { "origin": (1, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R1 P 丁 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 P 戊 hp=30 from=(4, 5) can_move=false can_attack=true | { "origin": (4, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R1 P 戊 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE use v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE use v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=3
+TRACE use v=0 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=7 hp_changes=[丙 22->15]
+TRACE use v=0 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=5
+TRACE use v=0 R1 E E4 EFFECT after=(5, 5) did_attack=false  dmg=5 hp_changes=[戊 30->25]
+TRACE use v=0 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 5) attack=-1
+TRACE use v=0 R1 E E5 EFFECT after=(6, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R1 E E5 hp=24 from=(6, 5) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=0 R1 E E5 EFFECT after=(6, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 24, "pool_step1": 24, "cand_attackable": 2, "pool_before_step2": 24, "pool_attackable_before_step2": 2, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R2 P 甲 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 21, "pool_step1": 16, "cand_attackable": 3, "pool_before_step2": 16, "pool_attackable_before_step2": 2, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=(0, 1) attack=-1
+TRACE use v=0 R2 P 乙 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 丙 hp=15 from=(3, 4) can_move=true can_attack=true | { "origin": (3, 4), "cands": 15, "pool_step1": 1, "cand_attackable": 11, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=(0, 4) attack=-1
+TRACE use v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 丁 hp=26 from=(1, 5) can_move=true can_attack=true | { "origin": (1, 5), "cands": 18, "pool_step1": 12, "cand_attackable": 2, "pool_before_step2": 12, "pool_attackable_before_step2": 0, "pool_after_step2": 7, "pool_attackable_after_step2": 0, "pool_after_step3": 7, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=(1, 0) attack=-1
+TRACE use v=0 R2 P 丁 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 戊 hp=25 from=(4, 5) can_move=true can_attack=true | { "origin": (4, 5), "cands": 25, "pool_step1": 20, "cand_attackable": 5, "pool_before_step2": 20, "pool_attackable_before_step2": 3, "pool_after_step2": 20, "pool_attackable_after_step2": 3, "pool_after_step3": 1, "focus": 8, "chosen": (6, 4), "chosen_attackable": true } | decision move_to=(6, 4) attack=8
+TRACE use v=0 R2 P 戊 EFFECT after=(6, 4) did_attack=true phi=0(5->8) dmg=13 hp_changes=[E3 18->5]
+TRACE use v=0 R2 P 乙 hp=26 from=(0, 1) can_move=false can_attack=true | { "origin": (0, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R2 P 乙 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 丙 hp=15 from=(0, 4) can_move=false can_attack=true | { "origin": (0, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 P 丁 hp=26 from=(1, 0) can_move=false can_attack=true | { "origin": (1, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R2 P 丁 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R2 E E1 hp=23 from=(4, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(2, 0) attack=4
+TRACE use v=0 R2 E E1 EFFECT after=(2, 0) did_attack=false  dmg=8 hp_changes=[丁 26->18]
+TRACE use v=0 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 3) attack=5
+TRACE use v=0 R2 E E2 EFFECT after=(6, 3) did_attack=false  dmg=5 hp_changes=[戊 25->20]
+TRACE use v=0 R2 E E3 hp=5 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 3) attack=5
+TRACE use v=0 R2 E E3 EFFECT after=(7, 3) did_attack=false  dmg=6 hp_changes=[戊 20->14]
+TRACE use v=0 R2 E E4 hp=22 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(1, 4) attack=3
+TRACE use v=0 R2 E E4 EFFECT after=(1, 4) did_attack=false  dmg=6 hp_changes=[丙 15->9]
+TRACE use v=0 R2 E E5 hp=24 from=(6, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=5
+TRACE use v=0 R2 E E5 EFFECT after=(5, 4) did_attack=false  dmg=6 hp_changes=[戊 14->8]
+TRACE use v=0 R3 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 22, "pool_step1": 22, "cand_attackable": 6, "pool_before_step2": 22, "pool_attackable_before_step2": 6, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (1, 1), "chosen_attackable": false } | decision move_to=(1, 1) attack=-1
+TRACE use v=0 R3 P 甲 EFFECT after=(1, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 P 乙 hp=26 from=(0, 1) can_move=true can_attack=true | { "origin": (0, 1), "cands": 13, "pool_step1": 8, "cand_attackable": 9, "pool_before_step2": 8, "pool_attackable_before_step2": 6, "pool_after_step2": 3, "pool_attackable_after_step2": 2, "pool_after_step3": 1, "focus": 9, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=(1, 2) attack=9
+TRACE use v=0 R3 P 乙 EFFECT after=(1, 2) did_attack=true phi=3(2->9) dmg=12 hp_changes=[E4 22->10]
+TRACE use v=0 R3 P 丙 hp=9 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 9, "pool_step1": 1, "cand_attackable": 7, "pool_before_step2": 1, "pool_attackable_before_step2": 1, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 9, "chosen": (0, 1), "chosen_attackable": true } | decision move_to=(0, 1) attack=9
+TRACE use v=0 R3 P 丙 EFFECT after=(0, 1) did_attack=true phi=0(3->9) dmg=10 hp_changes=[E4 10->0]
+TRACE use v=0 R3 P 丁 hp=18 from=(1, 0) can_move=true can_attack=true | { "origin": (1, 0), "cands": 2, "pool_step1": 2, "cand_attackable": 2, "pool_before_step2": 2, "pool_attackable_before_step2": 2, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 6, "chosen": (1, 0), "chosen_attackable": true } | decision move_to=<null> attack=6
+TRACE use v=0 R3 P 丁 EFFECT after=(1, 0) did_attack=true phi=0(4->6) dmg=8 hp_changes=[E1 23->15]
+TRACE use v=0 R3 P 戊 hp=8 from=(6, 4) can_move=true can_attack=true | { "origin": (6, 4), "cands": 35, "pool_step1": 1, "cand_attackable": 6, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (12, 4), "chosen_attackable": false } | decision move_to=(12, 4) attack=-1
+TRACE use v=0 R3 P 戊 EFFECT after=(12, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 P 甲 hp=30 from=(1, 1) can_move=false can_attack=true | { "origin": (1, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R3 P 甲 EFFECT after=(1, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 P 丁 hp=18 from=(1, 0) can_move=true can_attack=false | { "origin": (1, 0), "cands": 2, "pool_step1": 2, "cand_attackable": 2, "pool_before_step2": 2, "pool_attackable_before_step2": 2, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": -1, "chosen": (1, 0), "chosen_attackable": true } | decision move_to=<null> attack=-1
+TRACE use v=0 R3 P 丁 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 P 戊 hp=8 from=(12, 4) can_move=false can_attack=true | { "origin": (12, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (12, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R3 P 戊 EFFECT after=(12, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 E E1 hp=15 from=(2, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=<null> attack=4
+TRACE use v=0 R3 E E1 EFFECT after=(2, 0) did_attack=false  dmg=8 hp_changes=[丁 18->10]
+TRACE use v=0 R3 E E2 hp=20 from=(6, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(9, 4) attack=-1
+TRACE use v=0 R3 E E2 EFFECT after=(9, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 E E3 hp=5 from=(7, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(10, 3) attack=5
+TRACE use v=0 R3 E E3 EFFECT after=(10, 3) did_attack=false  dmg=6 hp_changes=[戊 8->2]
+TRACE use v=0 R3 E E5 hp=24 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(2, 1) attack=1
+TRACE use v=0 R3 E E5 EFFECT after=(2, 1) did_attack=false  dmg=6 hp_changes=[甲 30->24]
+TRACE use v=0 R3 E E1 hp=15 from=(2, 0) can_move=true can_attack=false | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=0 R3 E E1 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R3 E E2 hp=20 from=(9, 4) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=0 R3 E E2 EFFECT after=(9, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R4 P 甲 hp=24 from=(1, 1) can_move=true can_attack=true | { "origin": (1, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 1, "pool_before_step2": 1, "pool_attackable_before_step2": 1, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 10, "chosen": (1, 1), "chosen_attackable": true } | decision move_to=<null> attack=10
+TRACE use v=0 R4 P 甲 EFFECT after=(1, 1) did_attack=true phi=3(1->10) dmg=13 hp_changes=[E5 24->11]
+TRACE use v=0 R4 P 乙 hp=26 from=(1, 2) can_move=true can_attack=true | { "origin": (1, 2), "cands": 23, "pool_step1": 22, "cand_attackable": 8, "pool_before_step2": 22, "pool_attackable_before_step2": 8, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 10, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=<null> attack=10
+TRACE use v=0 R4 P 乙 EFFECT after=(1, 2) did_attack=true phi=3(2->10) dmg=11 hp_changes=[E5 11->0]
+TRACE use v=0 R4 P 丙 hp=9 from=(0, 1) can_move=true can_attack=true | { "origin": (0, 1), "cands": 6, "pool_step1": 6, "cand_attackable": 4, "pool_before_step2": 6, "pool_attackable_before_step2": 4, "pool_after_step2": 4, "pool_attackable_after_step2": 2, "pool_after_step3": 2, "focus": 6, "chosen": (0, 2), "chosen_attackable": true } | decision move_to=(0, 2) attack=6
+TRACE use v=0 R4 P 丙 EFFECT after=(0, 2) did_attack=true phi=2(3->6) dmg=15 hp_changes=[E1 15->0]
+TRACE use v=0 R4 P 丁 hp=10 from=(1, 0) can_move=true can_attack=true | { "origin": (1, 0), "cands": 17, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 12, "pool_attackable_after_step2": 0, "pool_after_step3": 12, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE use v=0 R4 P 丁 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R4 P 戊 hp=2 from=(12, 4) can_move=true can_attack=true | { "origin": (12, 4), "cands": 25, "pool_step1": 25, "cand_attackable": 6, "pool_before_step2": 25, "pool_attackable_before_step2": 6, "pool_after_step2": 25, "pool_attackable_after_step2": 6, "pool_after_step3": 4, "focus": 8, "chosen": (10, 2), "chosen_attackable": true } | decision move_to=(10, 2) attack=8
+TRACE use v=0 R4 P 戊 EFFECT after=(10, 2) did_attack=true phi=0(5->8) dmg=5 hp_changes=[E3 5->0]
+TRACE use v=0 R4 P 甲 hp=24 from=(1, 1) can_move=true can_attack=false | { "origin": (1, 1), "cands": 27, "pool_step1": 27, "cand_attackable": 0, "pool_before_step2": 27, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (2, 2), "chosen_attackable": false } | decision move_to=(2, 2) attack=-1
+TRACE use v=0 R4 P 甲 EFFECT after=(2, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R4 P 乙 hp=26 from=(1, 2) can_move=true can_attack=false | { "origin": (1, 2), "cands": 24, "pool_step1": 24, "cand_attackable": 0, "pool_before_step2": 24, "pool_attackable_before_step2": 0, "pool_after_step2": 4, "pool_attackable_after_step2": 0, "pool_after_step3": 4, "focus": -1, "chosen": (3, 2), "chosen_attackable": false } | decision move_to=(3, 2) attack=-1
+TRACE use v=0 R4 P 乙 EFFECT after=(3, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R4 P 丁 hp=10 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=0 R4 P 丁 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=0 R4 E E2 hp=20 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(9, 2) attack=5
+TRACE use v=0 R4 E E2 EFFECT after=(9, 2) did_attack=false  dmg=2 hp_changes=[戊 2->0]
+KNOBCOUNT use v=0 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY use v=0 p_actions=32 p_could_attack_at_decision=9 p_actual_attacks=8 p_decisions_could_but_did_not=6 p_dmg_dealt=87 sum_phi_on_attacks=11 enemy_damaging_actions=11 enemy_dmg_dealt=65 first_player_fall=[R4 戊 felled by E2] first_enemy_fall=[R3 E4 felled by 丙]
+RESULT arm=use v=0 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=9.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+TRACE use_tb v=0 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 25, "pool_attackable_after_step2": 0, "pool_after_step3": 25, "focus": -1, "tiebreak_equiv": 2, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=(4, 4) attack=-1
+TRACE use_tb v=0 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 15, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "tiebreak_equiv": 2, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE use_tb v=0 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 16, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "tiebreak_equiv": 2, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=(3, 4) attack=-1
+TRACE use_tb v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 19, "pool_step1": 19, "cand_attackable": 0, "pool_before_step2": 19, "pool_attackable_before_step2": 0, "pool_after_step2": 19, "pool_attackable_after_step2": 0, "pool_after_step3": 19, "focus": -1, "tiebreak_equiv": 1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=(4, 5) attack=-1
+TRACE use_tb v=0 R1 P 丁 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 19, "pool_step1": 19, "cand_attackable": 0, "pool_before_step2": 19, "pool_attackable_before_step2": 0, "pool_after_step2": 19, "pool_attackable_after_step2": 0, "pool_after_step3": 19, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 5), "chosen_attackable": false } | decision move_to=(3, 5) attack=-1
+TRACE use_tb v=0 R1 P 戊 EFFECT after=(3, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 甲 hp=30 from=(4, 4) can_move=false can_attack=true | { "origin": (4, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 乙 hp=26 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 丙 hp=22 from=(3, 4) can_move=false can_attack=true | { "origin": (3, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 P 丙 EFFECT after=(3, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 丁 hp=26 from=(4, 5) can_move=false can_attack=true | { "origin": (4, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (4, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 P 丁 EFFECT after=(4, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 P 戊 hp=30 from=(3, 5) can_move=false can_attack=true | { "origin": (3, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 P 戊 EFFECT after=(3, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE use_tb v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE use_tb v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=3
+TRACE use_tb v=0 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=7 hp_changes=[丙 22->15]
+TRACE use_tb v=0 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=3
+TRACE use_tb v=0 R1 E E4 EFFECT after=(5, 4) did_attack=false  dmg=6 hp_changes=[丙 15->9]
+TRACE use_tb v=0 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=4
+TRACE use_tb v=0 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=8 hp_changes=[丁 26->18]
+TRACE use_tb v=0 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R2 P 甲 hp=30 from=(4, 4) can_move=true can_attack=true | { "origin": (4, 4), "cands": 8, "pool_step1": 8, "cand_attackable": 3, "pool_before_step2": 8, "pool_attackable_before_step2": 3, "pool_after_step2": 8, "pool_attackable_after_step2": 3, "pool_after_step3": 2, "focus": 9, "tiebreak_equiv": 2, "chosen": (5, 3), "chosen_attackable": true } | decision move_to=(5, 3) attack=9
+TRACE use_tb v=0 R2 P 甲 EFFECT after=(5, 3) did_attack=true phi=0(1->9) dmg=11 hp_changes=[E4 22->11]
+TRACE use_tb v=0 R2 P 乙 hp=26 from=(3, 3) can_move=true can_attack=true | { "origin": (3, 3), "cands": 26, "pool_step1": 18, "cand_attackable": 8, "pool_before_step2": 18, "pool_attackable_before_step2": 3, "pool_after_step2": 18, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 6, "tiebreak_equiv": 1, "chosen": (3, 0), "chosen_attackable": true } | decision move_to=(3, 0) attack=6
+TRACE use_tb v=0 R2 P 乙 EFFECT after=(3, 0) did_attack=true phi=-1(2->6) dmg=7 hp_changes=[E1 23->16]
+TRACE use_tb v=0 R2 P 丙 hp=9 from=(3, 4) can_move=true can_attack=true | { "origin": (3, 4), "cands": 14, "pool_step1": 1, "cand_attackable": 12, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=(0, 4) attack=-1
+TRACE use_tb v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R2 P 丁 hp=18 from=(4, 5) can_move=true can_attack=true | { "origin": (4, 5), "cands": 15, "pool_step1": 7, "cand_attackable": 6, "pool_before_step2": 7, "pool_attackable_before_step2": 1, "pool_after_step2": 7, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 6, "tiebreak_equiv": 1, "chosen": (3, 1), "chosen_attackable": true } | decision move_to=(3, 1) attack=6
+TRACE use_tb v=0 R2 P 丁 EFFECT after=(3, 1) did_attack=true phi=2(4->6) dmg=10 hp_changes=[E1 16->6]
+TRACE use_tb v=0 R2 P 戊 hp=30 from=(3, 5) can_move=true can_attack=true | { "origin": (3, 5), "cands": 23, "pool_step1": 23, "cand_attackable": 3, "pool_before_step2": 23, "pool_attackable_before_step2": 3, "pool_after_step2": 23, "pool_attackable_after_step2": 3, "pool_after_step3": 1, "focus": 6, "tiebreak_equiv": 1, "chosen": (4, 1), "chosen_attackable": true } | decision move_to=(4, 1) attack=6
+TRACE use_tb v=0 R2 P 戊 EFFECT after=(4, 1) did_attack=true phi=0(5->6) dmg=6 hp_changes=[E1 6->0]
+TRACE use_tb v=0 R2 P 丙 hp=9 from=(0, 4) can_move=false can_attack=true | { "origin": (0, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R2 P 丙 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 3) attack=1
+TRACE use_tb v=0 R2 E E2 EFFECT after=(6, 3) did_attack=false  dmg=5 hp_changes=[甲 30->25]
+TRACE use_tb v=0 R2 E E3 hp=18 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 4) attack=1
+TRACE use_tb v=0 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=6 hp_changes=[甲 25->19]
+TRACE use_tb v=0 R2 E E4 hp=11 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 2) attack=4
+TRACE use_tb v=0 R2 E E4 EFFECT after=(3, 2) did_attack=false  dmg=7 hp_changes=[丁 18->11]
+TRACE use_tb v=0 R2 E E5 hp=24 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 3) attack=1
+TRACE use_tb v=0 R2 E E5 EFFECT after=(4, 3) did_attack=false  dmg=6 hp_changes=[甲 19->13]
+TRACE use_tb v=0 R3 P 甲 hp=13 from=(5, 3) can_move=true can_attack=true | { "origin": (5, 3), "cands": 21, "pool_step1": 3, "cand_attackable": 8, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "tiebreak_equiv": 1, "chosen": (5, 2), "chosen_attackable": false } | decision move_to=(5, 2) attack=-1
+TRACE use_tb v=0 R3 P 甲 EFFECT after=(5, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R3 P 乙 hp=26 from=(3, 0) can_move=true can_attack=true | { "origin": (3, 0), "cands": 22, "pool_step1": 16, "cand_attackable": 6, "pool_before_step2": 16, "pool_attackable_before_step2": 4, "pool_after_step2": 16, "pool_attackable_after_step2": 4, "pool_after_step3": 4, "focus": 9, "tiebreak_equiv": 1, "chosen": (2, 2), "chosen_attackable": true } | decision move_to=(2, 2) attack=9
+TRACE use_tb v=0 R3 P 乙 EFFECT after=(2, 2) did_attack=true phi=-1(2->9) dmg=8 hp_changes=[E4 11->3]
+TRACE use_tb v=0 R3 P 丙 hp=9 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 13, "pool_step1": 4, "cand_attackable": 10, "pool_before_step2": 4, "pool_attackable_before_step2": 4, "pool_after_step2": 4, "pool_attackable_after_step2": 4, "pool_after_step3": 4, "focus": 9, "tiebreak_equiv": 1, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=(1, 2) attack=9
+TRACE use_tb v=0 R3 P 丙 EFFECT after=(1, 2) did_attack=true phi=2(3->9) dmg=3 hp_changes=[E4 3->0]
+TRACE use_tb v=0 R3 P 丁 hp=11 from=(3, 1) can_move=true can_attack=true | { "origin": (3, 1), "cands": 27, "pool_step1": 9, "cand_attackable": 7, "pool_before_step2": 9, "pool_attackable_before_step2": 0, "pool_after_step2": 9, "pool_attackable_after_step2": 0, "pool_after_step3": 9, "focus": -1, "tiebreak_equiv": 3, "chosen": (3, 0), "chosen_attackable": false } | decision move_to=(3, 0) attack=-1
+TRACE use_tb v=0 R3 P 丁 EFFECT after=(3, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R3 P 戊 hp=30 from=(4, 1) can_move=true can_attack=true | { "origin": (4, 1), "cands": 32, "pool_step1": 32, "cand_attackable": 3, "pool_before_step2": 32, "pool_attackable_before_step2": 3, "pool_after_step2": 32, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 10, "tiebreak_equiv": 3, "chosen": (4, 2), "chosen_attackable": true } | decision move_to=(4, 2) attack=10
+TRACE use_tb v=0 R3 P 戊 EFFECT after=(4, 2) did_attack=true phi=0(5->10) dmg=10 hp_changes=[E5 24->14]
+TRACE use_tb v=0 R3 P 甲 hp=13 from=(5, 2) can_move=false can_attack=true | { "origin": (5, 2), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (5, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R3 P 甲 EFFECT after=(5, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R3 P 丁 hp=11 from=(3, 0) can_move=false can_attack=true | { "origin": (3, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R3 P 丁 EFFECT after=(3, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R3 E E2 hp=20 from=(6, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 2) attack=1
+TRACE use_tb v=0 R3 E E2 EFFECT after=(6, 2) did_attack=false  dmg=5 hp_changes=[甲 13->8]
+TRACE use_tb v=0 R3 E E3 hp=18 from=(6, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 4) attack=2
+TRACE use_tb v=0 R3 E E3 EFFECT after=(4, 4) did_attack=false  dmg=8 hp_changes=[乙 26->18]
+TRACE use_tb v=0 R3 E E5 hp=14 from=(4, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 2) attack=2
+TRACE use_tb v=0 R3 E E5 EFFECT after=(3, 2) did_attack=false  dmg=8 hp_changes=[乙 18->10]
+TRACE use_tb v=0 R4 P 甲 hp=8 from=(5, 2) can_move=true can_attack=true | { "origin": (5, 2), "cands": 21, "pool_step1": 1, "cand_attackable": 7, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (8, 1), "chosen_attackable": false } | decision move_to=(8, 1) attack=-1
+TRACE use_tb v=0 R4 P 甲 EFFECT after=(8, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R4 P 乙 hp=10 from=(2, 2) can_move=true can_attack=true | { "origin": (2, 2), "cands": 27, "pool_step1": 1, "cand_attackable": 12, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=(0, 0) attack=-1
+TRACE use_tb v=0 R4 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R4 P 丙 hp=9 from=(1, 2) can_move=true can_attack=true | { "origin": (1, 2), "cands": 17, "pool_step1": 12, "cand_attackable": 17, "pool_before_step2": 12, "pool_attackable_before_step2": 12, "pool_after_step2": 12, "pool_attackable_after_step2": 12, "pool_after_step3": 10, "focus": 10, "tiebreak_equiv": 3, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=<null> attack=10
+TRACE use_tb v=0 R4 P 丙 EFFECT after=(1, 2) did_attack=true phi=2(3->10) dmg=14 hp_changes=[E5 14->0]
+TRACE use_tb v=0 R4 P 丁 hp=11 from=(3, 0) can_move=true can_attack=true | { "origin": (3, 0), "cands": 26, "pool_step1": 13, "cand_attackable": 9, "pool_before_step2": 13, "pool_attackable_before_step2": 5, "pool_after_step2": 13, "pool_attackable_after_step2": 5, "pool_after_step3": 3, "focus": 8, "tiebreak_equiv": 1, "chosen": (3, 4), "chosen_attackable": true } | decision move_to=(3, 4) attack=8
+TRACE use_tb v=0 R4 P 丁 EFFECT after=(3, 4) did_attack=true phi=2(4->8) dmg=13 hp_changes=[E3 18->5]
+TRACE use_tb v=0 R4 P 戊 hp=30 from=(4, 2) can_move=true can_attack=true | { "origin": (4, 2), "cands": 33, "pool_step1": 33, "cand_attackable": 3, "pool_before_step2": 33, "pool_attackable_before_step2": 3, "pool_after_step2": 33, "pool_attackable_after_step2": 3, "pool_after_step3": 1, "focus": 8, "tiebreak_equiv": 1, "chosen": (4, 3), "chosen_attackable": true } | decision move_to=(4, 3) attack=8
+TRACE use_tb v=0 R4 P 戊 EFFECT after=(4, 3) did_attack=true phi=0(5->8) dmg=5 hp_changes=[E3 5->0]
+TRACE use_tb v=0 R4 P 甲 hp=8 from=(8, 1) can_move=false can_attack=true | { "origin": (8, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (8, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R4 P 甲 EFFECT after=(8, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R4 P 乙 hp=10 from=(0, 0) can_move=false can_attack=true | { "origin": (0, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=0 R4 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R4 P 丙 hp=9 from=(1, 2) can_move=true can_attack=false | { "origin": (1, 2), "cands": 18, "pool_step1": 18, "cand_attackable": 0, "pool_before_step2": 18, "pool_attackable_before_step2": 0, "pool_after_step2": 18, "pool_attackable_after_step2": 0, "pool_after_step3": 18, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 2), "chosen_attackable": false } | decision move_to=(3, 2) attack=-1
+TRACE use_tb v=0 R4 P 丙 EFFECT after=(3, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R4 E E2 hp=20 from=(6, 2) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 0) attack=1
+TRACE use_tb v=0 R4 E E2 EFFECT after=(8, 0) did_attack=false  dmg=5 hp_changes=[甲 8->3]
+TRACE use_tb v=0 R5 P 甲 hp=3 from=(8, 1) can_move=true can_attack=true | { "origin": (8, 1), "cands": 42, "pool_step1": 42, "cand_attackable": 3, "pool_before_step2": 42, "pool_attackable_before_step2": 3, "pool_after_step2": 42, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 7, "tiebreak_equiv": 3, "chosen": (7, 0), "chosen_attackable": true } | decision move_to=(7, 0) attack=7
+TRACE use_tb v=0 R5 P 甲 EFFECT after=(7, 0) did_attack=true phi=-1(1->7) dmg=10 hp_changes=[E2 20->10]
+TRACE use_tb v=0 R5 P 乙 hp=10 from=(0, 0) can_move=true can_attack=true | { "origin": (0, 0), "cands": 20, "pool_step1": 20, "cand_attackable": 0, "pool_before_step2": 20, "pool_attackable_before_step2": 0, "pool_after_step2": 20, "pool_attackable_after_step2": 0, "pool_after_step3": 20, "focus": -1, "tiebreak_equiv": 1, "chosen": (5, 0), "chosen_attackable": false } | decision move_to=(5, 0) attack=-1
+TRACE use_tb v=0 R5 P 乙 EFFECT after=(5, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=0 R5 P 丙 hp=9 from=(3, 2) can_move=true can_attack=true | { "origin": (3, 2), "cands": 16, "pool_step1": 16, "cand_attackable": 1, "pool_before_step2": 16, "pool_attackable_before_step2": 1, "pool_after_step2": 16, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 7, "tiebreak_equiv": 1, "chosen": (4, 0), "chosen_attackable": true } | decision move_to=(4, 0) attack=7
+TRACE use_tb v=0 R5 P 丙 EFFECT after=(4, 0) did_attack=true phi=2(3->7) dmg=10 hp_changes=[E2 10->0]
+KNOBCOUNT use_tb v=0 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY use_tb v=0 p_actions=34 p_could_attack_at_decision=12 p_actual_attacks=12 p_decisions_could_but_did_not=5 p_dmg_dealt=107 sum_phi_on_attacks=7 enemy_damaging_actions=11 enemy_dmg_dealt=71 first_player_fall=[none] first_enemy_fall=[R2 E1 felled by 戊]
+RESULT arm=use_tb v=0 outcome=VICTORY rounds=5 neardeath=1 phi_avg=1.200 raw_outcome=VICTORY aborted=false reason= phi_samples=5
+TRACE ignore v=4 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 25, "pool_attackable_after_step2": 0, "pool_after_step3": 25, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=(4, 4) attack=-1
+TRACE ignore v=4 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 15, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE ignore v=4 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 16, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=(2, 5) attack=-1
+TRACE ignore v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 19, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "chosen": (2, 4), "chosen_attackable": false } | decision move_to=(2, 4) attack=-1
+TRACE ignore v=4 R1 P 丁 EFFECT after=(2, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 16, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=(1, 5) attack=-1
+TRACE ignore v=4 R1 P 戊 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 甲 hp=30 from=(4, 4) can_move=false can_attack=true | { "origin": (4, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 乙 hp=26 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 丙 hp=22 from=(2, 5) can_move=false can_attack=true | { "origin": (2, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 丁 hp=26 from=(2, 4) can_move=false can_attack=true | { "origin": (2, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (2, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 P 丁 EFFECT after=(2, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 P 戊 hp=30 from=(1, 5) can_move=false can_attack=true | { "origin": (1, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 P 戊 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE ignore v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE ignore v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=1
+TRACE ignore v=4 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=6 hp_changes=[甲 30->24]
+TRACE ignore v=4 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=1
+TRACE ignore v=4 R1 E E4 EFFECT after=(5, 4) did_attack=false  dmg=5 hp_changes=[甲 24->19]
+TRACE ignore v=4 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=-1
+TRACE ignore v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R1 E E5 hp=24 from=(5, 5) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 甲 hp=19 from=(4, 4) can_move=true can_attack=true | { "origin": (4, 4), "cands": 11, "pool_step1": 3, "cand_attackable": 4, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (3, 1), "chosen_attackable": false } | decision move_to=(3, 1) attack=-1
+TRACE ignore v=4 R2 P 甲 EFFECT after=(3, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 乙 hp=26 from=(3, 3) can_move=true can_attack=true | { "origin": (3, 3), "cands": 25, "pool_step1": 2, "cand_attackable": 10, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=(1, 0) attack=-1
+TRACE ignore v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 丙 hp=22 from=(2, 5) can_move=true can_attack=true | { "origin": (2, 5), "cands": 6, "pool_step1": 3, "cand_attackable": 6, "pool_before_step2": 3, "pool_attackable_before_step2": 3, "pool_after_step2": 3, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 9, "chosen": (3, 4), "chosen_attackable": true } | decision move_to=(3, 4) attack=9
+TRACE ignore v=4 R2 P 丙 EFFECT after=(3, 4) did_attack=true phi=-1(3->9) dmg=14 hp_changes=[E4 22->8]
+TRACE ignore v=4 R2 P 丁 hp=26 from=(2, 4) can_move=true can_attack=true | { "origin": (2, 4), "cands": 23, "pool_step1": 1, "cand_attackable": 7, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=(0, 1) attack=-1
+TRACE ignore v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 戊 hp=30 from=(1, 5) can_move=true can_attack=true | { "origin": (1, 5), "cands": 21, "pool_step1": 5, "cand_attackable": 2, "pool_before_step2": 5, "pool_attackable_before_step2": 0, "pool_after_step2": 5, "pool_attackable_after_step2": 0, "pool_after_step3": 5, "focus": -1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=(2, 0) attack=-1
+TRACE ignore v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 甲 hp=19 from=(3, 1) can_move=false can_attack=true | { "origin": (3, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R2 P 甲 EFFECT after=(3, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 乙 hp=26 from=(1, 0) can_move=false can_attack=true | { "origin": (1, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 丁 hp=26 from=(0, 1) can_move=false can_attack=true | { "origin": (0, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 P 戊 hp=30 from=(2, 0) can_move=false can_attack=true | { "origin": (2, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 E E1 hp=23 from=(4, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 0) attack=1
+TRACE ignore v=4 R2 E E1 EFFECT after=(3, 0) did_attack=false  dmg=6 hp_changes=[甲 19->13]
+TRACE ignore v=4 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 1) attack=-1
+TRACE ignore v=4 R2 E E2 EFFECT after=(6, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R2 E E3 hp=18 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 4) attack=3
+TRACE ignore v=4 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=7 hp_changes=[丙 22->15]
+TRACE ignore v=4 R2 E E4 hp=8 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 4) attack=3
+TRACE ignore v=4 R2 E E4 EFFECT after=(4, 4) did_attack=false  dmg=6 hp_changes=[丙 15->9]
+TRACE ignore v=4 R2 E E5 hp=24 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 5) attack=3
+TRACE ignore v=4 R2 E E5 EFFECT after=(3, 5) did_attack=false  dmg=7 hp_changes=[丙 9->2]
+TRACE ignore v=4 R2 E E2 hp=20 from=(6, 1) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE ignore v=4 R2 E E2 EFFECT after=(6, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 甲 hp=13 from=(3, 1) can_move=true can_attack=true | { "origin": (3, 1), "cands": 27, "pool_step1": 6, "cand_attackable": 7, "pool_before_step2": 6, "pool_attackable_before_step2": 2, "pool_after_step2": 6, "pool_attackable_after_step2": 2, "pool_after_step3": 2, "focus": 7, "chosen": (6, 0), "chosen_attackable": true } | decision move_to=(6, 0) attack=7
+TRACE ignore v=4 R3 P 甲 EFFECT after=(6, 0) did_attack=true phi=-1(1->7) dmg=10 hp_changes=[E2 20->10]
+TRACE ignore v=4 R3 P 乙 hp=26 from=(1, 0) can_move=true can_attack=true | { "origin": (1, 0), "cands": 19, "pool_step1": 1, "cand_attackable": 9, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=(0, 0) attack=-1
+TRACE ignore v=4 R3 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 丙 hp=2 from=(3, 4) can_move=true can_attack=true | { "origin": (3, 4), "cands": 13, "pool_step1": 6, "cand_attackable": 13, "pool_before_step2": 6, "pool_attackable_before_step2": 6, "pool_after_step2": 6, "pool_attackable_after_step2": 6, "pool_after_step3": 6, "focus": 9, "chosen": (2, 5), "chosen_attackable": true } | decision move_to=(2, 5) attack=9
+TRACE ignore v=4 R3 P 丙 EFFECT after=(2, 5) did_attack=true phi=2(3->9) dmg=8 hp_changes=[E4 8->0]
+TRACE ignore v=4 R3 P 丁 hp=26 from=(0, 1) can_move=true can_attack=true | { "origin": (0, 1), "cands": 20, "pool_step1": 3, "cand_attackable": 9, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=(0, 5) attack=-1
+TRACE ignore v=4 R3 P 丁 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 戊 hp=30 from=(2, 0) can_move=true can_attack=true | { "origin": (2, 0), "cands": 26, "pool_step1": 2, "cand_attackable": 5, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=(0, 2) attack=-1
+TRACE ignore v=4 R3 P 戊 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 乙 hp=26 from=(0, 0) can_move=false can_attack=true | { "origin": (0, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R3 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 丁 hp=26 from=(0, 5) can_move=false can_attack=true | { "origin": (0, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R3 P 丁 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 P 戊 hp=30 from=(0, 2) can_move=false can_attack=true | { "origin": (0, 2), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE ignore v=4 R3 P 戊 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE ignore v=4 R3 E E1 hp=23 from=(3, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(1, 0) attack=2
+TRACE ignore v=4 R3 E E1 EFFECT after=(1, 0) did_attack=false  dmg=8 hp_changes=[乙 26->18]
+TRACE ignore v=4 R3 E E2 hp=10 from=(6, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 0) attack=1
+TRACE ignore v=4 R3 E E2 EFFECT after=(5, 0) did_attack=false  dmg=5 hp_changes=[甲 13->8]
+TRACE ignore v=4 R3 E E3 hp=18 from=(6, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 5) attack=3
+TRACE ignore v=4 R3 E E3 EFFECT after=(4, 5) did_attack=false  dmg=2 hp_changes=[丙 2->0]
+KNOBCOUNT ignore v=4 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY ignore v=4 p_actions=27 p_could_attack_at_decision=3 p_actual_attacks=3 p_decisions_could_but_did_not=7 p_dmg_dealt=32 sum_phi_on_attacks=0 enemy_damaging_actions=9 enemy_dmg_dealt=52 first_player_fall=[R3 丙 felled by E3] first_enemy_fall=[R3 E4 felled by 丙]
+RESULT arm=ignore v=4 outcome=DEFEAT rounds=3 neardeath=5 phi_avg=-0.667 raw_outcome=DEFEAT aborted=false reason= phi_samples=3
+TRACE use v=4 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R1 P 甲 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R1 P 乙 EFFECT after=(0, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 15, "pool_step1": 14, "cand_attackable": 0, "pool_before_step2": 14, "pool_attackable_before_step2": 0, "pool_after_step2": 10, "pool_attackable_after_step2": 0, "pool_after_step3": 10, "focus": -1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=(2, 5) attack=-1
+TRACE use v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 18, "pool_step1": 14, "cand_attackable": 0, "pool_before_step2": 14, "pool_attackable_before_step2": 0, "pool_after_step2": 10, "pool_attackable_after_step2": 0, "pool_after_step3": 10, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE use v=4 R1 P 丁 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 18, "pool_step1": 17, "cand_attackable": 0, "pool_before_step2": 17, "pool_attackable_before_step2": 0, "pool_after_step2": 17, "pool_attackable_after_step2": 0, "pool_after_step3": 17, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=(4, 4) attack=-1
+TRACE use v=4 R1 P 戊 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 丙 hp=22 from=(2, 5) can_move=false can_attack=true | { "origin": (2, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 丁 hp=26 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R1 P 丁 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 P 戊 hp=30 from=(4, 4) can_move=false can_attack=true | { "origin": (4, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R1 P 戊 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE use v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE use v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=5
+TRACE use v=4 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=6 hp_changes=[戊 30->24]
+TRACE use v=4 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=5
+TRACE use v=4 R1 E E4 EFFECT after=(5, 4) did_attack=false  dmg=5 hp_changes=[戊 24->19]
+TRACE use v=4 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=-1
+TRACE use v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R1 E E5 hp=24 from=(5, 5) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 23, "pool_step1": 8, "cand_attackable": 2, "pool_before_step2": 8, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=(0, 4) attack=-1
+TRACE use v=4 R2 P 甲 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 20, "pool_step1": 3, "cand_attackable": 4, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=(1, 0) attack=-1
+TRACE use v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 丙 hp=22 from=(2, 5) can_move=true can_attack=true | { "origin": (2, 5), "cands": 11, "pool_step1": 1, "cand_attackable": 9, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=(0, 5) attack=-1
+TRACE use v=4 R2 P 丙 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 丁 hp=26 from=(3, 3) can_move=true can_attack=true | { "origin": (3, 3), "cands": 26, "pool_step1": 1, "cand_attackable": 11, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=(0, 1) attack=-1
+TRACE use v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 戊 hp=19 from=(4, 4) can_move=true can_attack=true | { "origin": (4, 4), "cands": 25, "pool_step1": 3, "cand_attackable": 5, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=(2, 0) attack=-1
+TRACE use v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 甲 hp=30 from=(0, 4) can_move=false can_attack=true | { "origin": (0, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R2 P 甲 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 乙 hp=26 from=(1, 0) can_move=false can_attack=true | { "origin": (1, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 丙 hp=22 from=(0, 5) can_move=false can_attack=true | { "origin": (0, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R2 P 丙 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 丁 hp=26 from=(0, 1) can_move=false can_attack=true | { "origin": (0, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 P 戊 hp=19 from=(2, 0) can_move=false can_attack=true | { "origin": (2, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 E E1 hp=23 from=(4, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 0) attack=5
+TRACE use v=4 R2 E E1 EFFECT after=(3, 0) did_attack=false  dmg=6 hp_changes=[戊 19->13]
+TRACE use v=4 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 0) attack=-1
+TRACE use v=4 R2 E E2 EFFECT after=(6, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 E E3 hp=18 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 4) attack=-1
+TRACE use v=4 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 E E4 hp=22 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(1, 4) attack=3
+TRACE use v=4 R2 E E4 EFFECT after=(1, 4) did_attack=false  dmg=6 hp_changes=[丙 22->16]
+TRACE use v=4 R2 E E5 hp=24 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(1, 5) attack=3
+TRACE use v=4 R2 E E5 EFFECT after=(1, 5) did_attack=false  dmg=7 hp_changes=[丙 16->9]
+TRACE use v=4 R2 E E2 hp=20 from=(6, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R2 E E2 EFFECT after=(6, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R2 E E3 hp=18 from=(6, 4) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 P 甲 hp=30 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 18, "pool_step1": 2, "cand_attackable": 5, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (0, 3), "chosen_attackable": false } | decision move_to=(0, 3) attack=-1
+TRACE use v=4 R3 P 甲 EFFECT after=(0, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 P 乙 hp=26 from=(1, 0) can_move=true can_attack=true | { "origin": (1, 0), "cands": 15, "pool_step1": 1, "cand_attackable": 10, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=(0, 2) attack=-1
+TRACE use v=4 R3 P 乙 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 P 丙 hp=9 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 2, "pool_step1": 1, "cand_attackable": 2, "pool_before_step2": 1, "pool_attackable_before_step2": 1, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 9, "chosen": (0, 5), "chosen_attackable": true } | decision move_to=<null> attack=9
+TRACE use v=4 R3 P 丙 EFFECT after=(0, 5) did_attack=true phi=2(3->9) dmg=17 hp_changes=[E4 22->5]
+TRACE use v=4 R3 P 丁 hp=26 from=(0, 1) can_move=true can_attack=true | { "origin": (0, 1), "cands": 15, "pool_step1": 7, "cand_attackable": 10, "pool_before_step2": 7, "pool_attackable_before_step2": 4, "pool_after_step2": 7, "pool_attackable_after_step2": 4, "pool_after_step3": 1, "focus": 9, "chosen": (1, 2), "chosen_attackable": true } | decision move_to=(1, 2) attack=9
+TRACE use v=4 R3 P 丁 EFFECT after=(1, 2) did_attack=true phi=2(4->9) dmg=5 hp_changes=[E4 5->0]
+TRACE use v=4 R3 P 戊 hp=13 from=(2, 0) can_move=true can_attack=true | { "origin": (2, 0), "cands": 25, "pool_step1": 2, "cand_attackable": 6, "pool_before_step2": 2, "pool_attackable_before_step2": 1, "pool_after_step2": 2, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 7, "chosen": (5, 0), "chosen_attackable": true } | decision move_to=(5, 0) attack=7
+TRACE use v=4 R3 P 戊 EFFECT after=(5, 0) did_attack=true phi=0(5->7) dmg=11 hp_changes=[E2 20->9]
+TRACE use v=4 R3 P 甲 hp=30 from=(0, 3) can_move=false can_attack=true | { "origin": (0, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R3 P 甲 EFFECT after=(0, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 P 乙 hp=26 from=(0, 2) can_move=false can_attack=true | { "origin": (0, 2), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R3 P 乙 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 P 丙 hp=9 from=(0, 5) can_move=true can_attack=false | { "origin": (0, 5), "cands": 5, "pool_step1": 1, "cand_attackable": 3, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R3 P 丙 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R3 E E1 hp=23 from=(3, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=5
+TRACE use v=4 R3 E E1 EFFECT after=(4, 0) did_attack=false  dmg=6 hp_changes=[戊 13->7]
+TRACE use v=4 R3 E E2 hp=9 from=(6, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=<null> attack=5
+TRACE use v=4 R3 E E2 EFFECT after=(6, 0) did_attack=false  dmg=5 hp_changes=[戊 7->2]
+TRACE use v=4 R3 E E3 hp=18 from=(6, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 5) attack=3
+TRACE use v=4 R3 E E3 EFFECT after=(4, 5) did_attack=false  dmg=7 hp_changes=[丙 9->2]
+TRACE use v=4 R3 E E5 hp=24 from=(1, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(2, 2) attack=4
+TRACE use v=4 R3 E E5 EFFECT after=(2, 2) did_attack=false  dmg=8 hp_changes=[丁 26->18]
+TRACE use v=4 R3 E E2 hp=9 from=(6, 0) can_move=true can_attack=false | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use v=4 R3 E E2 EFFECT after=(6, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 甲 hp=30 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 19, "pool_step1": 2, "cand_attackable": 7, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=(0, 4) attack=-1
+TRACE use v=4 R4 P 甲 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 乙 hp=26 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 20, "pool_step1": 1, "cand_attackable": 14, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=(1, 5) attack=-1
+TRACE use v=4 R4 P 乙 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 丙 hp=2 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 1, "pool_before_step2": 1, "pool_attackable_before_step2": 1, "pool_after_step2": 1, "pool_attackable_after_step2": 1, "pool_after_step3": 1, "focus": 8, "chosen": (0, 5), "chosen_attackable": true } | decision move_to=<null> attack=8
+TRACE use v=4 R4 P 丙 EFFECT after=(0, 5) did_attack=true phi=2(3->8) dmg=18 hp_changes=[E3 18->0]
+TRACE use v=4 R4 P 丁 hp=18 from=(1, 2) can_move=true can_attack=true | { "origin": (1, 2), "cands": 23, "pool_step1": 7, "cand_attackable": 13, "pool_before_step2": 7, "pool_attackable_before_step2": 3, "pool_after_step2": 4, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 10, "chosen": (0, 2), "chosen_attackable": true } | decision move_to=(0, 2) attack=10
+TRACE use v=4 R4 P 丁 EFFECT after=(0, 2) did_attack=true phi=2(4->10) dmg=10 hp_changes=[E5 24->14]
+TRACE use v=4 R4 P 戊 hp=2 from=(5, 0) can_move=true can_attack=true | { "origin": (5, 0), "cands": 16, "pool_step1": 2, "cand_attackable": 7, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "chosen": (7, 1), "chosen_attackable": false } | decision move_to=(7, 1) attack=-1
+TRACE use v=4 R4 P 戊 EFFECT after=(7, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 甲 hp=30 from=(0, 4) can_move=false can_attack=true | { "origin": (0, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R4 P 甲 EFFECT after=(0, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 乙 hp=26 from=(1, 5) can_move=false can_attack=true | { "origin": (1, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R4 P 乙 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 丙 hp=2 from=(0, 5) can_move=true can_attack=false | { "origin": (0, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R4 P 丙 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 P 戊 hp=2 from=(7, 1) can_move=false can_attack=true | { "origin": (7, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "chosen": (7, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use v=4 R4 P 戊 EFFECT after=(7, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use v=4 R4 E E1 hp=23 from=(4, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(0, 1) attack=4
+TRACE use v=4 R4 E E1 EFFECT after=(0, 1) did_attack=false  dmg=8 hp_changes=[丁 18->10]
+TRACE use v=4 R4 E E2 hp=9 from=(6, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 0) attack=5
+TRACE use v=4 R4 E E2 EFFECT after=(7, 0) did_attack=false  dmg=2 hp_changes=[戊 2->0]
+KNOBCOUNT use v=4 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY use v=4 p_actions=35 p_could_attack_at_decision=5 p_actual_attacks=5 p_decisions_could_but_did_not=10 p_dmg_dealt=61 sum_phi_on_attacks=8 enemy_damaging_actions=11 enemy_dmg_dealt=66 first_player_fall=[R4 戊 felled by E2] first_enemy_fall=[R3 E4 felled by 丁]
+RESULT arm=use v=4 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=6.500 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+TRACE use_tb v=4 R1 P 甲 hp=30 from=(0, 2) can_move=true can_attack=true | { "origin": (0, 2), "cands": 25, "pool_step1": 25, "cand_attackable": 0, "pool_before_step2": 25, "pool_attackable_before_step2": 0, "pool_after_step2": 25, "pool_attackable_after_step2": 0, "pool_after_step3": 25, "focus": -1, "tiebreak_equiv": 2, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=(4, 4) attack=-1
+TRACE use_tb v=4 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 乙 hp=26 from=(0, 3) can_move=true can_attack=true | { "origin": (0, 3), "cands": 15, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "tiebreak_equiv": 2, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=(3, 3) attack=-1
+TRACE use_tb v=4 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 丙 hp=22 from=(1, 3) can_move=true can_attack=true | { "origin": (1, 3), "cands": 16, "pool_step1": 15, "cand_attackable": 0, "pool_before_step2": 15, "pool_attackable_before_step2": 0, "pool_after_step2": 15, "pool_attackable_after_step2": 0, "pool_after_step3": 15, "focus": -1, "tiebreak_equiv": 1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=(2, 5) attack=-1
+TRACE use_tb v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 丁 hp=26 from=(0, 4) can_move=true can_attack=true | { "origin": (0, 4), "cands": 19, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "tiebreak_equiv": 2, "chosen": (2, 4), "chosen_attackable": false } | decision move_to=(2, 4) attack=-1
+TRACE use_tb v=4 R1 P 丁 EFFECT after=(2, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 戊 hp=30 from=(0, 5) can_move=true can_attack=true | { "origin": (0, 5), "cands": 16, "pool_step1": 16, "cand_attackable": 0, "pool_before_step2": 16, "pool_attackable_before_step2": 0, "pool_after_step2": 16, "pool_attackable_after_step2": 0, "pool_after_step3": 16, "focus": -1, "tiebreak_equiv": 1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=(1, 5) attack=-1
+TRACE use_tb v=4 R1 P 戊 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 甲 hp=30 from=(4, 4) can_move=false can_attack=true | { "origin": (4, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (4, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 P 甲 EFFECT after=(4, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 乙 hp=26 from=(3, 3) can_move=false can_attack=true | { "origin": (3, 3), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 3), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 P 乙 EFFECT after=(3, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 丙 hp=22 from=(2, 5) can_move=false can_attack=true | { "origin": (2, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (2, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 P 丙 EFFECT after=(2, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 丁 hp=26 from=(2, 4) can_move=false can_attack=true | { "origin": (2, 4), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (2, 4), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 P 丁 EFFECT after=(2, 4) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 P 戊 hp=30 from=(1, 5) can_move=false can_attack=true | { "origin": (1, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (1, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 P 戊 EFFECT after=(1, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E1 hp=23 from=(10, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 0) attack=-1
+TRACE use_tb v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E2 hp=20 from=(11, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(8, 3) attack=-1
+TRACE use_tb v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E3 hp=18 from=(9, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(7, 4) attack=1
+TRACE use_tb v=4 R1 E E3 EFFECT after=(7, 4) did_attack=false  dmg=6 hp_changes=[甲 30->24]
+TRACE use_tb v=4 R1 E E4 hp=22 from=(7, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 4) attack=1
+TRACE use_tb v=4 R1 E E4 EFFECT after=(5, 4) did_attack=false  dmg=5 hp_changes=[甲 24->19]
+TRACE use_tb v=4 R1 E E5 hp=24 from=(11, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 5) attack=-1
+TRACE use_tb v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E1 hp=23 from=(4, 0) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 E E1 EFFECT after=(4, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E2 hp=20 from=(8, 3) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 E E2 EFFECT after=(8, 3) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R1 E E5 hp=24 from=(5, 5) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R1 E E5 EFFECT after=(5, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 甲 hp=19 from=(4, 4) can_move=true can_attack=true | { "origin": (4, 4), "cands": 11, "pool_step1": 3, "cand_attackable": 4, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 1), "chosen_attackable": false } | decision move_to=(3, 1) attack=-1
+TRACE use_tb v=4 R2 P 甲 EFFECT after=(3, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 乙 hp=26 from=(3, 3) can_move=true can_attack=true | { "origin": (3, 3), "cands": 25, "pool_step1": 2, "cand_attackable": 10, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "tiebreak_equiv": 1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=(1, 0) attack=-1
+TRACE use_tb v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 丙 hp=22 from=(2, 5) can_move=true can_attack=true | { "origin": (2, 5), "cands": 6, "pool_step1": 3, "cand_attackable": 6, "pool_before_step2": 3, "pool_attackable_before_step2": 3, "pool_after_step2": 3, "pool_attackable_after_step2": 3, "pool_after_step3": 3, "focus": 9, "tiebreak_equiv": 1, "chosen": (3, 4), "chosen_attackable": true } | decision move_to=(3, 4) attack=9
+TRACE use_tb v=4 R2 P 丙 EFFECT after=(3, 4) did_attack=true phi=-1(3->9) dmg=14 hp_changes=[E4 22->8]
+TRACE use_tb v=4 R2 P 丁 hp=26 from=(2, 4) can_move=true can_attack=true | { "origin": (2, 4), "cands": 23, "pool_step1": 1, "cand_attackable": 7, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=(0, 1) attack=-1
+TRACE use_tb v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 戊 hp=30 from=(1, 5) can_move=true can_attack=true | { "origin": (1, 5), "cands": 21, "pool_step1": 5, "cand_attackable": 2, "pool_before_step2": 5, "pool_attackable_before_step2": 0, "pool_after_step2": 5, "pool_attackable_after_step2": 0, "pool_after_step3": 5, "focus": -1, "tiebreak_equiv": 1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=(2, 0) attack=-1
+TRACE use_tb v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 甲 hp=19 from=(3, 1) can_move=false can_attack=true | { "origin": (3, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (3, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R2 P 甲 EFFECT after=(3, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 乙 hp=26 from=(1, 0) can_move=false can_attack=true | { "origin": (1, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (1, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R2 P 乙 EFFECT after=(1, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 丁 hp=26 from=(0, 1) can_move=false can_attack=true | { "origin": (0, 1), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 1), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R2 P 丁 EFFECT after=(0, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 P 戊 hp=30 from=(2, 0) can_move=false can_attack=true | { "origin": (2, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (2, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R2 P 戊 EFFECT after=(2, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 E E1 hp=23 from=(4, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 0) attack=1
+TRACE use_tb v=4 R2 E E1 EFFECT after=(3, 0) did_attack=false  dmg=6 hp_changes=[甲 19->13]
+TRACE use_tb v=4 R2 E E2 hp=20 from=(8, 3) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 1) attack=-1
+TRACE use_tb v=4 R2 E E2 EFFECT after=(6, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R2 E E3 hp=18 from=(7, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(6, 4) attack=3
+TRACE use_tb v=4 R2 E E3 EFFECT after=(6, 4) did_attack=false  dmg=7 hp_changes=[丙 22->15]
+TRACE use_tb v=4 R2 E E4 hp=8 from=(5, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 4) attack=3
+TRACE use_tb v=4 R2 E E4 EFFECT after=(4, 4) did_attack=false  dmg=6 hp_changes=[丙 15->9]
+TRACE use_tb v=4 R2 E E5 hp=24 from=(5, 5) can_move=true can_attack=true | (greedy enemy) | decision move_to=(3, 5) attack=3
+TRACE use_tb v=4 R2 E E5 EFFECT after=(3, 5) did_attack=false  dmg=7 hp_changes=[丙 9->2]
+TRACE use_tb v=4 R2 E E2 hp=20 from=(6, 1) can_move=false can_attack=true | (greedy enemy) | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R2 E E2 EFFECT after=(6, 1) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 甲 hp=13 from=(3, 1) can_move=true can_attack=true | { "origin": (3, 1), "cands": 27, "pool_step1": 6, "cand_attackable": 7, "pool_before_step2": 6, "pool_attackable_before_step2": 2, "pool_after_step2": 6, "pool_attackable_after_step2": 2, "pool_after_step3": 2, "focus": 7, "tiebreak_equiv": 2, "chosen": (6, 0), "chosen_attackable": true } | decision move_to=(6, 0) attack=7
+TRACE use_tb v=4 R3 P 甲 EFFECT after=(6, 0) did_attack=true phi=-1(1->7) dmg=10 hp_changes=[E2 20->10]
+TRACE use_tb v=4 R3 P 乙 hp=26 from=(1, 0) can_move=true can_attack=true | { "origin": (1, 0), "cands": 19, "pool_step1": 1, "cand_attackable": 9, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=(0, 0) attack=-1
+TRACE use_tb v=4 R3 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 丙 hp=2 from=(3, 4) can_move=true can_attack=true | { "origin": (3, 4), "cands": 13, "pool_step1": 6, "cand_attackable": 13, "pool_before_step2": 6, "pool_attackable_before_step2": 6, "pool_after_step2": 6, "pool_attackable_after_step2": 6, "pool_after_step3": 6, "focus": 9, "tiebreak_equiv": 1, "chosen": (2, 5), "chosen_attackable": true } | decision move_to=(2, 5) attack=9
+TRACE use_tb v=4 R3 P 丙 EFFECT after=(2, 5) did_attack=true phi=2(3->9) dmg=8 hp_changes=[E4 8->0]
+TRACE use_tb v=4 R3 P 丁 hp=26 from=(0, 1) can_move=true can_attack=true | { "origin": (0, 1), "cands": 20, "pool_step1": 3, "cand_attackable": 9, "pool_before_step2": 3, "pool_attackable_before_step2": 0, "pool_after_step2": 3, "pool_attackable_after_step2": 0, "pool_after_step3": 3, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=(0, 5) attack=-1
+TRACE use_tb v=4 R3 P 丁 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 戊 hp=30 from=(2, 0) can_move=true can_attack=true | { "origin": (2, 0), "cands": 26, "pool_step1": 2, "cand_attackable": 5, "pool_before_step2": 2, "pool_attackable_before_step2": 0, "pool_after_step2": 2, "pool_attackable_after_step2": 0, "pool_after_step3": 2, "focus": -1, "tiebreak_equiv": 2, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=(0, 2) attack=-1
+TRACE use_tb v=4 R3 P 戊 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 乙 hp=26 from=(0, 0) can_move=false can_attack=true | { "origin": (0, 0), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 0), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R3 P 乙 EFFECT after=(0, 0) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 丁 hp=26 from=(0, 5) can_move=false can_attack=true | { "origin": (0, 5), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 5), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R3 P 丁 EFFECT after=(0, 5) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 P 戊 hp=30 from=(0, 2) can_move=false can_attack=true | { "origin": (0, 2), "cands": 1, "pool_step1": 1, "cand_attackable": 0, "pool_before_step2": 1, "pool_attackable_before_step2": 0, "pool_after_step2": 1, "pool_attackable_after_step2": 0, "pool_after_step3": 1, "focus": -1, "tiebreak_equiv": 1, "chosen": (0, 2), "chosen_attackable": false } | decision move_to=<null> attack=-1
+TRACE use_tb v=4 R3 P 戊 EFFECT after=(0, 2) did_attack=false  dmg=0 hp_changes=[]
+TRACE use_tb v=4 R3 E E1 hp=23 from=(3, 0) can_move=true can_attack=true | (greedy enemy) | decision move_to=(1, 0) attack=2
+TRACE use_tb v=4 R3 E E1 EFFECT after=(1, 0) did_attack=false  dmg=8 hp_changes=[乙 26->18]
+TRACE use_tb v=4 R3 E E2 hp=10 from=(6, 1) can_move=true can_attack=true | (greedy enemy) | decision move_to=(5, 0) attack=1
+TRACE use_tb v=4 R3 E E2 EFFECT after=(5, 0) did_attack=false  dmg=5 hp_changes=[甲 13->8]
+TRACE use_tb v=4 R3 E E3 hp=18 from=(6, 4) can_move=true can_attack=true | (greedy enemy) | decision move_to=(4, 5) attack=3
+TRACE use_tb v=4 R3 E E3 EFFECT after=(4, 5) did_attack=false  dmg=2 hp_changes=[丙 2->0]
+KNOBCOUNT use_tb v=4 k2_tie_hits=0 k3_order_dependent=0
+SUMMARY use_tb v=4 p_actions=27 p_could_attack_at_decision=3 p_actual_attacks=3 p_decisions_could_but_did_not=7 p_dmg_dealt=32 sum_phi_on_attacks=0 enemy_damaging_actions=9 enemy_dmg_dealt=52 first_player_fall=[R3 丙 felled by E3] first_enemy_fall=[R3 E4 felled by 丙]
+RESULT arm=use_tb v=4 outcome=DEFEAT rounds=3 neardeath=5 phi_avg=-0.667 raw_outcome=DEFEAT aborted=false reason= phi_samples=3
+DONE
+ENGINE_EXIT_A=0
