@@ -140,6 +140,10 @@ var _existing_modifiers_label: Label
 var _effective_label: Label
 var _permanent_warning_label: Label
 var _strength_label: Label
+
+## story-032 AC3②:true 時丙類(永久寫入)的「好感度:」列不顯示(隱藏好感度設定)。
+## 由 battle_screen.gd 在 _ready() 依設定寫入;在 show_*_confirmation() 之前設定才會生效。
+var hide_strength_row: bool = false
 var _narrative_label: Label
 
 ## Every label built by [method _ensure_nodes], populated once — iterated by
@@ -462,7 +466,7 @@ func _set_row_visibility(is_temporary_modifier: bool) -> void:
 	_existing_modifiers_label.visible = is_temporary_modifier
 	_effective_label.visible = is_temporary_modifier
 	_permanent_warning_label.visible = not is_temporary_modifier
-	_strength_label.visible = not is_temporary_modifier
+	_strength_label.visible = (not is_temporary_modifier) and not hide_strength_row
 	_narrative_label.visible = not is_temporary_modifier
 
 
@@ -547,3 +551,8 @@ static func panel_rect(window_size: Vector2i) -> Rect2:
 	var size: Vector2 = Vector2(fpx * PANEL_WIDTH_FPX_MULTIPLIER, fpx * PANEL_HEIGHT_FPX_MULTIPLIER)
 	var pos: Vector2 = safe.position + (safe.size - size) / 2.0
 	return Rect2(pos, size)
+
+
+## story-032 AC3② —— 「好感度:」列目前是否可見(丙類)。唯讀診斷。
+func diagnostic_strength_row_visible() -> bool:
+	return _strength_label.visible

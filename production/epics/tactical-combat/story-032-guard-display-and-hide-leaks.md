@@ -1,7 +1,7 @@
 # Story 032:減傷顯示(指到我方角色 + 移動預覽)+ 隱藏好感度設定補漏
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-30)
+> **Status**: ✅ Done-pending-visual(2026-10-30;協調者重跑 1731 條全綠 / ENGINE EXIT 0)。AC1 獨行段讀實況出手旗標;AC2 移動預覽為「若不出手」值(雙值顯示未裁決)。範圍外舊測試 egm_guess_selector 三處改用 `_expected_info_line`,維持 is_equal(裁決 17;第二、三處協調者視為同裁決範圍)(原狀態:Ready(2026-10-30))
 > **Type**: UI
 > **Estimate**: M
 > **依據**(管理者裁決逐字,2026-10-30):

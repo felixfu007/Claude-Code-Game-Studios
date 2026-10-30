@@ -1565,6 +1565,8 @@ func _ready() -> void:
 	# [member _egm_enabled_for_this_battle] 的 doc comment。
 	_egm_enabled_for_this_battle = GameSettings.is_egm_enabled()
 	_hide_affinity_display_for_this_battle = GameSettings.is_hide_affinity_display()
+	# story-032 AC3②:卡牌確認面板的「好感度:」列同樣受隱藏設定管(預判模式不動)。
+	_card_confirm_panel.hide_strength_row = _hide_affinity_display_for_this_battle
 	# battle-hud story-002:EGM 關閉時 _guess_tracker 維持 null,本檔所有 EGM 路徑短路。
 	if _egm_enabled_for_this_battle:
 		_guess_tracker = EffectGuessTracker.new()
@@ -2708,6 +2710,52 @@ static func format_affinity_preview(current_bonus: int, preview_bonus: int) -> S
 ## progress.
 static func format_affinity_current(bonus: int) -> String:
 	return Loc.localize(TEXT_AFFINITY_CURRENT_FORMAT) % bonus
+
+
+## story-032 —— 畫面上實際顯示的減傷值。[param phi_def] 為該單位(或假設位置)的好感度 Φ,
+## [param lone] 為戊獨行減傷;兩者組合一律走 [method CombatRules.guard] /
+## [method CombatRules.guard_total](不在 UI 重寫公式)。隱藏好感度時只算獨行部分
+## (管理者 2026-10-30 裁決:獨行不是好感度)。
+static func displayed_guard(phi_def: int, lone: int, hide_affinity: bool) -> int:
+	if hide_affinity:
+		return CombatRules.guard_total(0, lone)
+	return CombatRules.guard_total(CombatRules.guard(phi_def), lone)
+
+
+## story-032 AC1 —— 單一減傷值的文字;0 回傳空字串。沿用 story-031 AC6 的兩個字串鍵。
+static func format_guard_value(shown: int) -> String:
+	if shown > 0:
+		return Loc.localize(&"battle.attack_confirm.guard_format") % shown
+	if shown < 0:
+		return Loc.localize(&"battle.attack_confirm.guard_penalty_format") % absi(shown)
+	return ""
+
+
+## story-032 AC2 —— 「減傷 x→y」;移動前後皆為 0 時回傳空字串。
+static func format_guard_move(current: int, preview: int) -> String:
+	if current == 0 and preview == 0:
+		return ""
+	return Loc.localize(&"battle.hud.guard_move_format") % [current, preview]
+
+
+## story-032 AC2/AC3 —— 左下資訊列:好感度文字(可能因隱藏而為空)與減傷文字(可能為空)以雙空白相接。
+static func compose_info_line(affinity_text: String, guard_text: String) -> String:
+	if affinity_text == "":
+		return guard_text
+	if guard_text == "":
+		return affinity_text
+	return affinity_text + "  " + guard_text
+
+
+## story-032 —— 我方單位 [param unit_id] 站在 [param tile] 時的顯示減傷。
+## [param hypo_positions] 為「該單位站在 tile 時」的位置表(現況就傳 [method AffinityPhiProvider.positions])。
+## Φ 取 [method AffinityRules.bonus_for_at],獨行取 [method BattleState.lone_guard_if_at]。
+func _displayed_guard_at(
+		unit_id: int, tile: Vector2i, hypo_positions: Dictionary[int, Vector2i], will_attack: bool = false
+) -> int:
+	var phi_def: int = AffinityRules.bonus_for_at(unit_id, tile, hypo_positions, _phi.links())
+	var lone: int = _state.lone_guard_if_at(unit_id, tile, will_attack)
+	return displayed_guard(phi_def, lone, _hide_affinity_display_for_this_battle)
 
 
 ## Formats [constant TEXT_DAMAGE_PREVIEW_FORMAT] for Mode C of
@@ -4297,10 +4345,19 @@ func _refresh_view() -> void:
 		line_statuses = AffinityRules.board_lines(hypo, links)
 		var current_bonus: int = AffinityRules.bonus_for(selected, positions, links)
 		var preview_bonus: int = AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
-		info_text = format_affinity_preview(current_bonus, preview_bonus)
+		var affinity_text: String = format_affinity_preview(current_bonus, preview_bonus)
 		if guess_state == GuessCellState.LOCKED:
+			# 預判模式不動(story-032):維持原本「未隱藏」的好感度文字。
 			info_text = format_guess_result(
-				info_text, _guess_tracker.get_locked_guess(_cursor_cell), preview_bonus - current_bonus
+				affinity_text, _guess_tracker.get_locked_guess(_cursor_cell), preview_bonus - current_bonus
+			)
+		else:
+			# story-032 AC2/AC3:隱藏設定開啟時好感度文字不顯示;旁邊加「減傷 x→y」(皆 0 不顯示)。
+			var guard_now: int = _displayed_guard_at(selected, positions[selected], positions)
+			var guard_after: int = _displayed_guard_at(selected, _cursor_cell, hypo)
+			info_text = compose_info_line(
+				"" if _hide_affinity_display_for_this_battle else affinity_text,
+				format_guard_move(guard_now, guard_after)
 			)
 	elif attack_target_id != -1:
 		# Φ 一律經由 _phi.phi() 取得,傷害本身一律經由 _state.preview_damage()
@@ -4328,7 +4385,7 @@ func _refresh_view() -> void:
 		info_text = format_damage_preview(damage, target.hp, preview_target_hp)
 	elif _cursor_active:
 		var hovered: Unit = _state.unit_at(_cursor_cell)
-		if hovered != null and _unit_has_link(hovered.id, links):
+		if hovered != null and not _hide_affinity_display_for_this_battle and _unit_has_link(hovered.id, links):
 			info_text = format_affinity_current(
 				AffinityRules.bonus_for(hovered.id, positions, links)
 			)
@@ -4702,17 +4759,40 @@ func _update_tile_info_panel() -> void:
 			return
 
 	if occupant != null:
-		_tile_info_panel_label.text = build_tile_info_text(
+		var unit_text: String = build_tile_info_text(
 			terrain_char, cost, blocks_sight,
 			true, occupant.faction, occupant.hp, occupant.hp_max,
 			_controller.unit_action_state(occupant.id),
 			occupant.min_range, occupant.max_range, occupant.mp
 		)
+		# story-032 AC1/AC3:指到我方單位 → 加一列「目前所在格」的減傷(0 不顯示)。
+		var guard_text: String = ""
+		if occupant.faction == Unit.Faction.PLAYER:
+			var here: Vector2i = _state.position_of(occupant.id)
+			guard_text = format_guard_value(_displayed_guard_at(
+				occupant.id, here, _phi.positions(), _state.attacked_this_phase(occupant.id)
+			))
+		_set_tile_info_extra_line(guard_text != "")
+		if guard_text != "":
+			unit_text += "\n" + guard_text
+		_tile_info_panel_label.text = unit_text
 	else:
+		_set_tile_info_extra_line(false)
 		_tile_info_panel_label.text = build_tile_info_text(
 			terrain_char, cost, blocks_sight,
 			false, Unit.Faction.PLAYER, 0, 0, TurnOrder.ActionState.NOT_FOUND, 0, 0, 0
 		)
+
+
+## story-032 —— 單位資訊多一列減傷時,資訊框高度多算一列(8 → 9)。
+var _tile_info_extra_line: bool = false
+
+
+func _set_tile_info_extra_line(active: bool) -> void:
+	if _tile_info_extra_line == active:
+		return
+	_tile_info_extra_line = active
+	_apply_tile_info_panel_layout()
 
 
 ## Story 026 — 資訊框目前是否為傷害預覽版面(比單位資訊寬,容納「目標血量：10 → 10」)。
@@ -4726,6 +4806,8 @@ func _set_tile_info_preview_mode(active: bool) -> void:
 	if _tile_info_preview_mode == active:
 		return
 	_tile_info_preview_mode = active
+	if active:
+		_tile_info_extra_line = false
 	_apply_tile_info_panel_layout()
 
 
@@ -4819,7 +4901,7 @@ func _apply_tile_info_panel_layout() -> void:
 		else _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER
 	)
 	var height: float = fpx * (
-		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * _TILE_INFO_PANEL_LINE_COUNT
+		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * (_TILE_INFO_PANEL_LINE_COUNT + (1 if _tile_info_extra_line else 0))
 		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
 	)
 	var left: float = safe.position.x + safe.size.x - width

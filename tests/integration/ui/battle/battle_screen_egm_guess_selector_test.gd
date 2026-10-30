@@ -285,6 +285,19 @@ func _preview_text(instance: BattleScreen, unit_id: int, cell: Vector2i) -> Stri
 	)
 
 
+## story-032:左下列完整期望值 = 好感度預覽 + 減傷「x→y」段(與正式程式同一組函式)。
+func _expected_info_line(instance: BattleScreen, unit_id: int, cell: Vector2i) -> String:
+	var cur_pos: Dictionary[int, Vector2i] = instance._phi.positions()
+	var hypo_pos: Dictionary[int, Vector2i] = instance._phi.positions_with(unit_id, cell)
+	return BattleScreen.compose_info_line(
+		_preview_text(instance, unit_id, cell),
+		BattleScreen.format_guard_move(
+			instance._displayed_guard_at(unit_id, cur_pos[unit_id], cur_pos),
+			instance._displayed_guard_at(unit_id, cell, hypo_pos)
+		)
+	)
+
+
 # ---- AC1 迴歸安全 ------------------------------------------------------------
 
 func test_ac01_egm_off_preview_shown_immediately_no_selector() -> void:
@@ -298,9 +311,10 @@ func test_ac01_egm_off_preview_shown_immediately_no_selector() -> void:
 	assert_object(instance.diagnostic_guess_tracker()).append_failure_message(
 		"AC1:EGM 關閉時不應建立追蹤器(所有 EGM 路徑短路)").is_null()
 	assert_bool(instance.diagnostic_guess_selector_visible()).is_false()
+	# story-032:左下列 = 好感度預覽 + 減傷「x→y」段(同一組正式函式組出,維持完全相等)。
 	assert_str(instance._info_label.text).append_failure_message(
-		"AC1:EGM 關閉時預覽文字須立即顯示,且與改動前相同(format_affinity_preview 的輸出)"
-	).is_equal(_preview_text(instance, unit.id, setup["a"]))
+		"AC1:EGM 關閉時預覽文字須立即顯示,且等於好感度預覽 + 減傷段(story-032 起)"
+	).is_equal(_expected_info_line(instance, unit.id, setup["a"]))
 
 
 func test_ac01_egm_off_guess_cycle_key_does_nothing() -> void:
@@ -545,7 +559,7 @@ func test_ac12_skipped_cell_shows_preview_like_egm_off() -> void:
 
 	assert_str(instance._info_label.text).append_failure_message(
 		"AC12:跳過後預覽比照 EGM 關閉時立即顯示,不得繼續隱藏"
-	).is_equal(_preview_text(instance, unit.id, setup["a"]))
+	).is_equal(_expected_info_line(instance, unit.id, setup["a"]))
 	assert_bool(instance.diagnostic_guess_selector_visible()).is_false()
 
 
@@ -651,7 +665,7 @@ func test_sensitivity_proof_pending_revealed_early_is_caught_by_ac02_ac04_detect
 	var setup: Dictionary = _ready_setup(instance)
 	_park(instance, setup["a"])
 	# AC2/AC4 偵測器斷言「鎖定前 info_label == ''、選擇器顯示」;變種下兩者都被打破。
-	assert_str(instance._info_label.text).is_equal(_preview_text(instance, (setup["unit"] as Unit).id, setup["a"]))
+	assert_str(instance._info_label.text).is_equal(_expected_info_line(instance, (setup["unit"] as Unit).id, setup["a"]))
 	assert_bool(instance.diagnostic_guess_selector_visible()).is_false()
 
 

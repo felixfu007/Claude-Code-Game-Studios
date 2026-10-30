@@ -1,7 +1,7 @@
 # Story 031:好感度減傷(guard)+ 戊獨行減傷
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: 🟡 進行中(2026-10-30)—— AC1~5、7、8 完成(規則程式提交 = attempt-2 登記的 S;協調者重跑 1695 條全綠 / ENGINE EXIT 0)。**AC6(畫面「減傷 N」列)未做**。⚠️ 技術債:`GUARD_MIN/MAX`、獨行常數為程式常數(同既有 `PHI_MIN/MAX` 慣例),字面違反 gameplay-code「數值資料驅動」。⚠️ 防守方 Φ 需 `attach_defense_phi_provider()`,**未接即靜默為 0**(遊戲本體 battle_screen 已接)(原狀態:Ready(2026-10-30))
+> **Status**: ✅ Done-pending-visual(2026-10-30;AC6 `23acffc`,其「我方攻擊時才出現」缺陷由 story-032 補上顯示位置)。以下為前一狀態:🟡 進行中(2026-10-30)—— AC1~5、7、8 完成(規則程式提交 = attempt-2 登記的 S;協調者重跑 1695 條全綠 / ENGINE EXIT 0)。**AC6(畫面「減傷 N」列)未做**。⚠️ 技術債:`GUARD_MIN/MAX`、獨行常數為程式常數(同既有 `PHI_MIN/MAX` 慣例),字面違反 gameplay-code「數值資料驅動」。⚠️ 防守方 Φ 需 `attach_defense_phi_provider()`,**未接即靜默為 0**(遊戲本體 battle_screen 已接)(原狀態:Ready(2026-10-30))
 > **Type**: Logic + Integration
 > **Estimate**: L
 > **權威規格**:`docs/reviews/affinity-core-redesign-spec-2026-10-30.md` 第 1、2 節(公式、值域、算例、同步點)。**本單不複述公式,以該檔為準。** GDD 正在同步改寫(另派),衝突時以規格檔為準並回報。
