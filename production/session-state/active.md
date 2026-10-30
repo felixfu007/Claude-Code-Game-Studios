@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十批(2026-10-30)收工。** 協議 2(停損考試)首次執行:門檻鎖定 H `20e0854` → attempt-1 未通過 → 好感度減傷 → attempt-2/3 通過(壓線)→ 戊機制三改 → **attempt-4 未通過(現行判定)**。測試 1653 → **1749,全綠**,協調者每批重跑。
+Feature: 🔴 **管理者今天 25 項裁決**(逐字見第九十批節)。非推薦選擇:「重新設計核心,美術照常」「交設計師重想戊的機制」「現在做雙值」。🔴 **attempt-4 未通過不得回頭採用 attempt-3**(管理者知情同意)。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG;第二件:讀 attempt-4 敗因診斷 `prototypes/protocol2-diagnosis-attempt4-2026-10-30/README.md`(收工時已派出,可能已完成),據此請管理者裁決戊的下一步(裁決 25「下次先診斷敗因再決定(推薦)」);第三件:問管理者在家目視與 27 號選圖。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。乾淨量測 worktree:`C:/tmp/p2run_v`(`git checkout -f --detach <commit>` + `--import`)。
+以下為第八十九批原狀態列。
 Epic: **第八十九批(2026-10-29)收工。** 試玩報告 A/B/C/E/F/G/H/I/M/N/O 全部改完(tactical story-023~029)、傷害預覽進資訊框(026)、阻擋規則補測試(027)、教學關接線(game-shell story-008)、SC-01 改 2 句、vs04 改分批站位、AI_IMG 27 號 30 張已產出。測試 1586 → **1653,全綠**,協調者每批重跑。
 Feature: 🔴 **管理者今天 27 項裁決**(逐字總表見第八十九批節)。兩項為非推薦選擇:攻擊「鍵盤也拿掉確認框」、vs04「現在就套 S1」。協調者疏失兩次:開工沒 pull、問確認框時沒揭露它是唯一的 Φ 顯示處。
 Task: 🔴 **下次第一件:git pull;第二件:問管理者在家目視結果(清單見第八十九批「收工交接」);第三件:查 AI_IMG 27 號後製。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`(公司機:Downloads 路徑;家機:`C:\Godot\`)。
@@ -21,10 +25,29 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第九十批 收工交接(16:40)
+- **協議 2 全鏈**:H `20e0854` → R `6835840` 未通過 → H2 `1275bfa`/S `908708a`/S' `b3a7aa7`/V2 `7412fa1`/R2 `7aef129` 通過壓線 → H3 `286a313`/S3 `e7751fc`/V3 `47465aa`/R3 `136f600` 通過壓線 → 診斷戊 +2 生效 0/28 → H4 `2355c6a`/S4 `ace389b`/V3 不變/R4 `1addfba` **未通過**(勝 6 vs 6、中位數 5 vs 5、瀕死 13≤15)。
+- **今日後段裁決**:17「可以,但維持「完全相等」(推薦)」/18「可以,原文保留加註(推薦)」(game-concept+one-year-plan 加註)/19 索引全部補齊/20「現在做雙值」(非推薦)/21 第 1 場加註實測 4~7 回合/22「交設計師重想戊的機制」(非推薦)/23「騎牆,先給創意總監審再做(推薦)」/24「騎牆+留一手(推薦)」/25「今天做到哪算哪,未完下次接(推薦)」/26「下次先診斷敗因再決定(推薦)」。(編號以本節為準;上方今日裁決表只列到 4,其餘在派工表內)
+- **未完 / 下次**:①attempt-4 診斷(收工時派 ai-programmer,含 attempt-3 規則對照,新 worktree 於 `e7751fc`)②戊下一步裁決 ③GDD 第四批差異(amend2 第 5 節 8 項,**規則未定案前不做**)④死碼清理單:移動預覽雙值、`will_attack`、`attacked_this_phase`、`lone_guard_effective`、字串鍵 `battle.hud.guard_move_dual_format` ⑤`battle_state.gd` 陳舊註解(6 keys、hold_back)⑥story-021 檔頭仍寫 Ready ⑦技術債:guard/lone/hold_back 常數未資料驅動 ⑧協議 2 工具無逐單位紀錄(判定揭露)⑨基準無效重測上限計數歸屬(協調者判讀:只管基準無效,本日四次皆基準有效)
+- **覆核停損計數**:今天每批都有收穫(Φ_avg 搬組偏誤、運用臂平手鍵、攻擊過濾只套一臂、guard 靜默為 0、減傷列永不顯示、刪 K2/K3 會毀 8 組定義、推薦方案對不上敗因)→ 連續零收穫 = 0。
+- **協調者疏失**:選項文字兩次誤植「戊」為「戈/戰」;story-031 AC6 假設預覽會在我方受擊時出現(錯)。
+
 ## 🧭 第九十批 現在位置(13:50,compact 後先讀這段)
 - 協議 2 鏈:H `20e0854`(門檻)→ attempt-1 R `6835840` **未通過** → 診斷 → 重設計(好感度減傷+戊獨行)→ H2 `1275bfa` → S `908708a` / S' `b3a7aa7` → V2 `7412fa1` → R2 `7aef129` **通過(壓線)** → 創意總監判戊獨行邊緣違反支柱四 → 裁決 16 補代價重測 → 修訂規格 `docs/reviews/affinity-core-redesign-spec-amend1-2026-10-30.md` + story-033(`7f67e8f`)。
 - **進行中**:qa-lead 寫 `docs/reviews/protocol2-attempt3-registration-2026-10-30.md`(H3);ui-programmer 續做 story-032(減傷顯示 + 隱藏補漏,撞過一次上限)。
-- **待派**:story-033 實作(等 story-032 交件,避免同改 battle_state.gd)→ 提交 S3(須在 H3 後)→ ai-programmer V3(最小改動)+ vs02 旋鈕再驗 → 協調者在乾淨 worktree `C:/tmp/p2run_v`(`git checkout -f --detach <V3>` + `--import`)跑 `--level=1 --r2=yes` → 提交 R3 → qa-lead 判定。
+- ✅ H3 `286a313`;✅ **S3 `e7751fc`**(乾淨 worktree 1721 全綠)。裁決 17「可以,但維持「完全相等」(推薦)」(egm 舊測試;協調者把同檔第二條 ac12 視為同一裁決範圍放行,已註記)。派:ui-programmer 收尾 story-032(+AC1 獨行改讀實況旗標);ai-programmer V3(寫好先不跑 vs02,V3 提交後才驗)。
+- ✅ V3 `47465aa`(協調者審 diff 8 行)→ 旋鈕再驗於已提交 V3 乾淨 worktree(8/8)→ **R3 `136f600`** → **attempt-3 通過(壓線,同 attempt-2 形狀:勝 7 vs 6、勝局中位數 5→4、瀕死 6≤15)**;戊獨行生效次數不可得
+- ✅ story-032 `下一筆` 提交(1731 全綠);裁決 18「可以,原文保留加註(推薦)」→ producer 加註 game-concept 協議 2 + one-year-plan 第五節;game-designer diff3(取代 diff2)→ 協調者驗 12+3 錨點套用 `38b3c52`(100 行,只插入)
+- 14:30 派 ai-programmer 事後診斷戊獨行生效次數 `prototypes/protocol2-diagnosis-attempt3-2026-10-30/`(不改判定)
+- ✅ 戊診斷 提交:戊獨行 +2 生效 **0/28**;−1 生效 10;通過靠甲乙丙丁(運用 +21 / 忽視 −9)
+- 14:50 裁決 19「可以,全部補齊(推薦)」(索引)/20「**現在做雙值**」(非推薦,移動預覽)/21「不必,加註「實測 4~7 回合」即可(推薦)」→ 派 producer(索引+vs01 加註差異稿)、ui-programmer(雙值)
+- 14:55 裁決 22「**交設計師重想戊的機制**」(非推薦;推薦維持等真人)→ 派 game-designer `docs/reviews/lone-wolf-redesign-options-2026-10-30.md`。⚠️ 將導致 attempt-4;**若 attempt-4 未通過不得回頭用 attempt-3**(已向管理者說明,提案時再提醒)
+- 15:30 ✅ 索引補列+第1場加註+戊提案 `388dad0`(裁決 19/21)。⚠️ story-021 檔頭仍寫 Ready(producer 發現)
+- 15:45 創意總監:騎牆「邊緣偏符合」,建議加「留一手」。裁決 24「騎牆+留一手(推薦)」/25「今天做到哪算哪,未完下次接(推薦)」
+- 16:00 ✅ 雙值顯示 `bef3b39`(1735 全綠,核對測試未遺失)+ amend2 規格 + story-034。派 gameplay-programmer story-034(不提交)、qa-lead H4 登記
+- **attempt-4 下一步**:H4 提交 → S4 提交(在 H4 後)→ V4(或 V3 不變)→ vs02 旋鈕再驗(乾淨 worktree)→ vs01 R4 → qa-lead 判定。**若 attempt-4 未通過不得回頭用 attempt-3。** GDD 第四批差異(amend2 第 5 節 8 項)待規則定案後
+- (舊)- 收工前待問:索引補列(tactical story-index 018~022、031~033;game-shell EPIC 006/007/009)、移動預覽雙值顯示、vertical-slice-level-01 預期回合數重估、guard 常數資料驅動技術債
+- (舊)- **待派**:story-033 實作(等 story-032 交件,避免同改 battle_state.gd)→ 提交 S3(須在 H3 後)→ ai-programmer V3(最小改動)+ vs02 旋鈕再驗 → 協調者在乾淨 worktree `C:/tmp/p2run_v`(`git checkout -f --detach <V3>` + `--import`)跑 `--level=1 --r2=yes` → 提交 R3 → qa-lead 判定。
 - **暫緩**:GDD diff2(`docs/reviews/affinity-core-gdd-diff2-2026-10-30.md`)待 attempt-3 規則定案後由 game-designer 依修訂規格第 5 節改寫再套用。
 - 測試慣例:協調者每批自己重跑;計時測試 real_level_battle 在並行負載下會超 30 秒(單跑 16 秒),非真失敗。
 - 收工(17:00)要做:PROJECT-STATUS.md 重寫、active.md STATUS 區塊更新、提交推送。AI_IMG 28 號等管理者在家看圖(美術照常,裁決 7)。
