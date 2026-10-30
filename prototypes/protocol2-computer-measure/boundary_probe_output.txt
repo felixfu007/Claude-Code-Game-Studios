@@ -1,0 +1,19 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE enemy_hp=1 max=30 -> outcome=VICTORY rounds=3 aborted=false
+PROBE   victory_round=3 run(4) -> outcome=VICTORY rounds=3 aborted=false reason=
+PROBE   victory_round=3 run(3) -> outcome=VICTORY rounds=3 aborted=false reason=
+PROBE   victory_round=3 run(2) -> outcome=ONGOING rounds=2 aborted=true reason=max_rounds_reached
+PROBE enemy_hp=15 max=30 -> outcome=VICTORY rounds=3 aborted=false
+PROBE   victory_round=3 run(4) -> outcome=VICTORY rounds=3 aborted=false reason=
+PROBE   victory_round=3 run(3) -> outcome=VICTORY rounds=3 aborted=false reason=
+PROBE   victory_round=3 run(2) -> outcome=ONGOING rounds=2 aborted=true reason=max_rounds_reached
+PROBE enemy_hp=40 max=30 -> outcome=VICTORY rounds=5 aborted=false
+PROBE   victory_round=5 run(6) -> outcome=VICTORY rounds=5 aborted=false reason=
+PROBE   victory_round=5 run(5) -> outcome=VICTORY rounds=5 aborted=false reason=
+PROBE   victory_round=5 run(4) -> outcome=ONGOING rounds=4 aborted=true reason=max_rounds_reached
+PROBE enemy_hp=80 max=30 -> outcome=VICTORY rounds=7 aborted=false
+PROBE   victory_round=7 run(8) -> outcome=VICTORY rounds=7 aborted=false reason=
+PROBE   victory_round=7 run(7) -> outcome=VICTORY rounds=7 aborted=false reason=
+PROBE   victory_round=7 run(6) -> outcome=ONGOING rounds=6 aborted=true reason=max_rounds_reached
+DONE

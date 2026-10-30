@@ -1,0 +1,20 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER build_commit=20e0854d5c3067a2c1762c06107e0dd9f0c2bd59 engine=4.7.1-stable (official) level=2 terrain=res://assets/data/levels/vs02_terrain.txt roster=res://assets/data/units/vs02_roster.txt affinity=res://assets/data/affinity/vs02_affinity_links.txt max_rounds=12
+RESULT arm=ignore v=0 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=-0.800 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=use v=0 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=10.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=ignore v=1 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=-0.800 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=use v=1 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=10.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=ignore v=2 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=-0.800 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=use v=2 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=10.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=ignore v=3 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=-0.800 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=use v=3 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=10.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=ignore v=4 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=-2.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=use v=4 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=ignore v=5 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=-2.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=use v=5 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=ignore v=6 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=-2.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=use v=6 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+RESULT arm=ignore v=7 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=-2.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4
+RESULT arm=use v=7 outcome=DEFEAT rounds=5 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=5
+DONE
