@@ -1,0 +1,40 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER build_commit=b3a7aa78be2951e2d9e48c3af8da0c67ad4af7ad engine=4.7.1-stable (official) level=2 terrain=res://assets/data/levels/test_fixture_terrain.txt roster=res://assets/data/units/test_fixture_roster.txt affinity= max_rounds=4
+TRACE arm=ignore v=0 round=1 unit=1 can_move=true cm2=true at=(0, 0) move_to=(1, 0) attack=-1
+TRACE arm=ignore v=0 round=1 unit=1 can_move=false cm2=false at=(1, 0) move_to=<null> attack=-1
+TRACE arm=ignore v=0 round=2 unit=1 can_move=true cm2=true at=(1, 0) move_to=(2, 0) attack=-1
+TRACE arm=ignore v=0 round=2 unit=1 can_move=false cm2=false at=(2, 0) move_to=<null> attack=-1
+TRACE arm=ignore v=0 round=3 unit=1 can_move=true cm2=true at=(2, 0) move_to=(3, 0) attack=2
+TRACE arm=ignore v=0 round=4 unit=1 can_move=true cm2=true at=(3, 0) move_to=<null> attack=2
+TRACE arm=ignore v=0 round=4 unit=1 can_move=true cm2=true at=(3, 0) move_to=<null> attack=-1
+RESULT arm=ignore v=0 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+TRACE arm=use v=0 round=1 unit=1 can_move=true cm2=true at=(0, 0) move_to=(1, 0) attack=-1
+TRACE arm=use v=0 round=1 unit=1 can_move=false cm2=false at=(1, 0) move_to=<null> attack=-1
+TRACE arm=use v=0 round=2 unit=1 can_move=true cm2=true at=(1, 0) move_to=(2, 0) attack=-1
+TRACE arm=use v=0 round=2 unit=1 can_move=false cm2=false at=(2, 0) move_to=<null> attack=-1
+TRACE arm=use v=0 round=3 unit=1 can_move=true cm2=true at=(2, 0) move_to=(3, 0) attack=2
+TRACE arm=use v=0 round=4 unit=1 can_move=true cm2=true at=(3, 0) move_to=<null> attack=2
+TRACE arm=use v=0 round=4 unit=1 can_move=true cm2=true at=(3, 0) move_to=<null> attack=-1
+RESULT arm=use v=0 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+TRACE arm=ignore v=1 round=1 unit=1 can_move=true cm2=false at=(0, 0) move_to=<null> attack=-1
+TRACE arm=ignore v=1 round=2 unit=1 can_move=true cm2=true at=(0, 0) move_to=(1, 0) attack=-1
+TRACE arm=ignore v=1 round=2 unit=1 can_move=false cm2=false at=(1, 0) move_to=<null> attack=-1
+TRACE arm=ignore v=1 round=3 unit=1 can_move=true cm2=true at=(1, 0) move_to=(2, 0) attack=-1
+TRACE arm=ignore v=1 round=3 unit=1 can_move=false cm2=false at=(2, 0) move_to=<null> attack=-1
+TRACE arm=ignore v=1 round=4 unit=1 can_move=true cm2=true at=(2, 0) move_to=<null> attack=2
+TRACE arm=ignore v=1 round=4 unit=1 can_move=true cm2=true at=(2, 0) move_to=<null> attack=-1
+RESULT arm=ignore v=1 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+TRACE arm=use v=1 round=1 unit=1 can_move=true cm2=false at=(0, 0) move_to=<null> attack=-1
+TRACE arm=use v=1 round=2 unit=1 can_move=true cm2=true at=(0, 0) move_to=(1, 0) attack=-1
+TRACE arm=use v=1 round=2 unit=1 can_move=false cm2=false at=(1, 0) move_to=<null> attack=-1
+TRACE arm=use v=1 round=3 unit=1 can_move=true cm2=true at=(1, 0) move_to=(2, 0) attack=-1
+TRACE arm=use v=1 round=3 unit=1 can_move=false cm2=false at=(2, 0) move_to=<null> attack=-1
+TRACE arm=use v=1 round=4 unit=1 can_move=true cm2=true at=(2, 0) move_to=<null> attack=2
+TRACE arm=use v=1 round=4 unit=1 can_move=true cm2=true at=(2, 0) move_to=<null> attack=-1
+RESULT arm=use v=1 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+SIGSUM arm=ignore distinct=1 of 2
+SIGSUM arm=use distinct=1 of 2
+GUARDSUM guard_events=8 guard_nonzero=0
+FATAL guard never applied
+DONE
