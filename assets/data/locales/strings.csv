@@ -164,3 +164,4 @@ battle.hud.result_defeat_reason_format,戰敗——%s倒下了
 battle.hud.result_defeat_reason_separator,、
 shell.title.skip_tutorial,略過教學
 battle.hud.guard_move_format,減傷 %d→%d
+battle.hud.guard_move_dual_format,減傷 %d→%d(出手則 %d)

@@ -2738,6 +2738,13 @@ static func format_guard_move(current: int, preview: int) -> String:
 	return Loc.localize(&"battle.hud.guard_move_format") % [current, preview]
 
 
+## 2026-10-30 雙值:移動預覽時「站到該格」的減傷在 [param no_attack] 與 [param attack] 兩種情況不同才顯示「若出手」值;相同則同 [method format_guard_move]。
+static func format_guard_move_dual(current: int, no_attack: int, attack: int) -> String:
+	if no_attack == attack:
+		return format_guard_move(current, no_attack)
+	return Loc.localize(&"battle.hud.guard_move_dual_format") % [current, no_attack, attack]
+
+
 ## story-032 AC2/AC3 —— 左下資訊列:好感度文字(可能因隱藏而為空)與減傷文字(可能為空)以雙空白相接。
 static func compose_info_line(affinity_text: String, guard_text: String) -> String:
 	if affinity_text == "":
@@ -4355,9 +4362,10 @@ func _refresh_view() -> void:
 			# story-032 AC2/AC3:隱藏設定開啟時好感度文字不顯示;旁邊加「減傷 x→y」(皆 0 不顯示)。
 			var guard_now: int = _displayed_guard_at(selected, positions[selected], positions)
 			var guard_after: int = _displayed_guard_at(selected, _cursor_cell, hypo)
+			var guard_after_attack: int = _displayed_guard_at(selected, _cursor_cell, hypo, true)
 			info_text = compose_info_line(
 				"" if _hide_affinity_display_for_this_battle else affinity_text,
-				format_guard_move(guard_now, guard_after)
+				format_guard_move_dual(guard_now, guard_after, guard_after_attack)
 			)
 	elif attack_target_id != -1:
 		# Φ 一律經由 _phi.phi() 取得,傷害本身一律經由 _state.preview_damage()
