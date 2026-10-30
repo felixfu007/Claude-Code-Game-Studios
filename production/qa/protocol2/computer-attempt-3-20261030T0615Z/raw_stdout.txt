@@ -1,0 +1,23 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER tool=protocol2-computer-measure-v3 build_commit=47465aac8057926286e8b26482ee4f31d313f308 engine=4.7.1-stable (official) level=1 terrain=res://assets/data/levels/vs01_terrain.txt roster=res://assets/data/units/vs01_roster.txt affinity=res://assets/data/affinity/vs01_affinity_links.txt max_rounds=12
+RESULT arm=ignore v=0 outcome=VICTORY rounds=5 neardeath=2 phi_avg=2.800 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=1,17,2,12,30 first_round=1 guard_events=11 guard_nonzero=7
+RESULT arm=use v=0 outcome=VICTORY rounds=4 neardeath=0 phi_avg=4.000 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=23,9,11,12,25 first_round=1 guard_events=8 guard_nonzero=7
+RESULT arm=ignore v=1 outcome=VICTORY rounds=5 neardeath=1 phi_avg=1.600 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=17,17,9,26,7 first_round=1 guard_events=9 guard_nonzero=6
+RESULT arm=use v=1 outcome=VICTORY rounds=4 neardeath=1 phi_avg=5.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,17,11,26,7 first_round=1 guard_events=7 guard_nonzero=4
+RESULT arm=ignore v=2 outcome=VICTORY rounds=5 neardeath=1 phi_avg=0.400 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=10,26,8,26,14 first_round=1 guard_events=8 guard_nonzero=3
+RESULT arm=use v=2 outcome=VICTORY rounds=4 neardeath=0 phi_avg=8.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=19,26,10,12,25 first_round=1 guard_events=7 guard_nonzero=4
+RESULT arm=ignore v=3 outcome=VICTORY rounds=5 neardeath=0 phi_avg=2.800 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=15,26,22,19,17 first_round=1 guard_events=6 guard_nonzero=4
+RESULT arm=use v=3 outcome=VICTORY rounds=4 neardeath=0 phi_avg=9.000 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=26,26,22,26,17 first_round=1 guard_events=3 guard_nonzero=3
+RESULT arm=ignore v=4 outcome=DEFEAT rounds=3 neardeath=5 phi_avg=-0.667 raw_outcome=DEFEAT aborted=false reason= phi_samples=3 final_hp=6,17,26,30 first_round=1 guard_events=9 guard_nonzero=6
+RESULT arm=use v=4 outcome=VICTORY rounds=4 neardeath=0 phi_avg=8.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=16,26,17,26,30 first_round=1 guard_events=5 guard_nonzero=5
+RESULT arm=ignore v=5 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=0.500 raw_outcome=DEFEAT aborted=false reason= phi_samples=4 final_hp=23,26,26,24 first_round=1 guard_events=6 guard_nonzero=4
+RESULT arm=use v=5 outcome=VICTORY rounds=5 neardeath=0 phi_avg=2.800 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=23,26,11,26,18 first_round=1 guard_events=5 guard_nonzero=4
+RESULT arm=ignore v=6 outcome=VICTORY rounds=5 neardeath=0 phi_avg=2.000 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=17,19,8,26,13 first_round=1 guard_events=9 guard_nonzero=4
+RESULT arm=use v=6 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=4 final_hp=11,16,26,19 first_round=1 guard_events=9 guard_nonzero=7
+RESULT arm=ignore v=7 outcome=VICTORY rounds=7 neardeath=1 phi_avg=0.000 raw_outcome=VICTORY aborted=false reason= phi_samples=7 final_hp=4,10,22,26,18 first_round=1 guard_events=8 guard_nonzero=6
+RESULT arm=use v=7 outcome=VICTORY rounds=5 neardeath=0 phi_avg=9.200 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=19,26,11,26,24 first_round=1 guard_events=6 guard_nonzero=6
+SIGSUM arm=ignore distinct=8 of 8
+SIGSUM arm=use distinct=8 of 8
+GUARDSUM guard_events=116 guard_nonzero=80
+DONE
