@@ -656,6 +656,8 @@ func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dic
 	var guard_total: int = 0
 	if target.faction == Unit.Faction.PLAYER:
 		guard_total = CombatRules.guard_total(guard_phi, lone)
+	# story-034 (amend2 §2) 留一手: only a flagged PLAYER attacker, from its CURRENT cell.
+	var hold_back: int = _hold_back_of(attacker)
 	return {
 		"atk": atk,
 		"def": def,
@@ -665,7 +667,8 @@ func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dic
 		"guard_phi": guard_phi,
 		"lone_guard": lone,
 		"guard": guard_total,
-		"damage": CombatRules.damage(atk, def, effective_phi, guard_total),
+		"hold_back": hold_back,
+		"damage": CombatRules.damage(atk, def, effective_phi, guard_total, hold_back),
 	}
 
 
@@ -698,7 +701,28 @@ func _lone_guard_of(target: Unit) -> int:
 	# for units that cannot have a lone-guard.
 	if target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
-	return lone_guard_if_at(target.id, position_of(target.id), attacked_this_phase(target.id))
+	return lone_guard_if_at(target.id, position_of(target.id))
+
+
+# story-034 (amend2 §2): 留一手 of [param attacker] at its current cell. 0 unless a
+# flagged ([member Unit.lone_guard]) PLAYER unit. Shares the single d_min loop.
+func _hold_back_of(attacker: Unit) -> int:
+	if attacker.faction != Unit.Faction.PLAYER or not attacker.lone_guard:
+		return 0
+	return CombatRules.hold_back(true, _nearest_ally_distance(attacker, position_of(attacker.id)))
+
+
+# Manhattan distance from [param tile] to the nearest living PLAYER ally of
+# [param unit] (other than itself); [constant CombatRules.NO_ALLY] if none.
+func _nearest_ally_distance(unit: Unit, tile: Vector2i) -> int:
+	var d_min: int = CombatRules.NO_ALLY
+	for ally: Unit in units_of(Unit.Faction.PLAYER):
+		if ally.id == unit.id:
+			continue
+		var d: int = AffinityRules.manhattan_distance(tile, position_of(ally.id))
+		if d_min == CombatRules.NO_ALLY or d < d_min:
+			d_min = d
+	return d_min
 
 
 ## story-033 (spec amend1 §1): units that settled at least one attack
@@ -710,7 +734,7 @@ func _lone_guard_of(target: Unit) -> int:
 var _attacked_this_phase: Dictionary = {}
 
 
-## story-033: true if [param unit_id] attacked during the current/just-finished
+## story-033: (story-034: 旗標寫入暫留、不再被讀取 -- 已棄用,忽略) true if [param unit_id] attacked during the current/just-finished
 ## player phase. Enemy-first battles: false before any player phase (empty dict).
 func attacked_this_phase(unit_id: int) -> bool:
 	return _attacked_this_phase.has(unit_id)
@@ -718,25 +742,16 @@ func attacked_this_phase(unit_id: int) -> bool:
 
 ## story-031/033: lone-guard value unit [param unit_id] WOULD have if it stood on
 ## [param tile] (other units at their current positions) and
-## [param will_attack] says whether it attacked this player phase (attempt-3
-## registration: the caller supplies the assumption explicitly; the live flag is
-## NOT read here, so 2-arg callers get the full un-cancelled value). Returns 0
+## [param will_attack] -- 已棄用,忽略 (story-034 / amend2 §1: 出手條件取消; the
+## parameter no longer affects the result, kept only so existing callers compile). Returns 0
 ## for an unknown id, a non-PLAYER unit, or a unit not flagged
 ## [member Unit.lone_guard]. [method preview_damage_breakdown] calls this with
-## the real position and the real flag ([method attacked_this_phase]), so
-## there is exactly one d_min loop and one conditional
-## ([method CombatRules.lone_guard_effective]).
+## the real position, so there is exactly one d_min loop ([method _nearest_ally_distance]).
 func lone_guard_if_at(unit_id: int, tile: Vector2i, will_attack: bool = false) -> int:
 	var target: Unit = unit_by_id(unit_id)
 	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
-	var d_min: int = CombatRules.NO_ALLY
-	for ally: Unit in units_of(Unit.Faction.PLAYER):
-		if ally.id == target.id:
-			continue
-		var d: int = AffinityRules.manhattan_distance(tile, position_of(ally.id))
-		if d_min == CombatRules.NO_ALLY or d < d_min:
-			d_min = d
+	var d_min: int = _nearest_ally_distance(target, tile)
 	return CombatRules.lone_guard_effective(CombatRules.lone_guard(d_min), will_attack)
 
 

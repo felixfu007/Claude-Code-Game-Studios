@@ -1,7 +1,7 @@
 # Story 034:戊「騎牆 + 留一手」
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-30)
+> **Status**: ✅ Done(2026-10-30;協調者重跑 1749 條全綠 / ENGINE EXIT 0)。⚠️ 移動預覽雙值程式與 `will_attack`/`attacked_this_phase`/`lone_guard_effective` 已成死碼(標已棄用),待清理單;`battle_state.gd` 兩處陳舊註解(6 keys、hold_back 未列)(原狀態:Ready(2026-10-30))
 > **Type**: Logic + UI
 > **Estimate**: M
 > **權威規格**:`docs/reviews/affinity-core-redesign-spec-amend2-2026-10-30.md`(相對 amend1 的修訂;本單不複述規則)。

@@ -216,12 +216,15 @@ func _dual_case(hide: bool, want_differ: bool, mutant: Script = null) -> Array:
 	return [instance, found]
 
 
-func test_move_preview_shows_dual_when_attack_changes_guard() -> void:
-	for hide: bool in [false, true]:
-		var r: Array = _dual_case(hide, true)
-		var f: Array = r[1]
-		assert_str(r[0]._info_label.text).contains(
-			Loc.localize(&"battle.hud.guard_move_dual_format") % [f[1], f[2], f[3]])
+# story-034 (amend2 §3):舊測試 test_move_preview_shows_dual_when_attack_changes_guard 作廢
+# (舊斷言:出手與否減傷不同的格必顯示雙值;新:出手條件取消,不存在這種格,故不再出現雙值)。
+func test_move_preview_has_no_attack_dependent_cell_after_amend2() -> void:
+	var instance: BattleScreen = _battle(false)
+	var u: Unit = _player(instance, 0)
+	u.lone_guard = true
+	assert_bool(instance._controller.select_unit(u.id)).is_true()
+	assert_bool(_find_dual_cell(instance, u, true).is_empty()).append_failure_message(
+		"出手條件取消後,不應存在「出手與否減傷不同」的格").is_true()
 
 
 func test_move_preview_shows_single_when_attack_does_not_change_guard() -> void:
@@ -235,30 +238,8 @@ func test_move_preview_shows_single_when_attack_does_not_change_guard() -> void:
 
 # ---- 敏感度證明 -----------------------------------------------------------------
 
-## 變種:忽略 will_attack(永遠當作不出手)→ 雙值永遠退化為單值。
-class _MutantIgnoresWillAttack extends BattleScreen:
-	func _displayed_guard_at(
-			unit_id: int, tile: Vector2i, hypo_positions: Dictionary[int, Vector2i], _will_attack: bool = false
-	) -> int:
-		return super(unit_id, tile, hypo_positions, false)
-
-
-func test_sensitivity_proof_ignoring_will_attack_loses_dual() -> void:
-	var instance: BattleScreen = _battle(false, _MutantIgnoresWillAttack)
-	var u: Unit = _player(instance, 0)
-	u.lone_guard = true
-	assert_bool(instance._controller.select_unit(u.id)).is_true()
-	# 以正式(未被變種覆寫的)規則找出「出手與否不同」的格,再讓變種畫面去顯示它。
-	var cell: Vector2i = Vector2i(-1, -1)
-	for c: Vector2i in instance._state.legal_moves(u.id):
-		if instance._state.lone_guard_if_at(u.id, c, false) != instance._state.lone_guard_if_at(u.id, c, true):
-			cell = c
-			break
-	assert_bool(cell != Vector2i(-1, -1)).append_failure_message("PRECONDITION: 需有出手與否獨行段不同的格").is_true()
-	_hover(instance, cell)
-	assert_str(instance._info_label.text).append_failure_message(
-		"變種忽略 will_attack → 不應出現雙值(偵測器抓到:正常版本此格必含「出手則」字樣)"
-	).not_contains(Loc.localize(&"battle.hud.guard_move_dual_format").get_slice("%d", 2))
+# story-034:test_sensitivity_proof_ignoring_will_attack_loses_dual 與其變種 _MutantIgnoresWillAttack
+# 作廢 —— will_attack 已棄用、忽略,變種與正式行為相同,證明不再有可偵測的差異。
 
 
 func test_sensitivity_proof_ignoring_hide_is_detected() -> void:
@@ -270,25 +251,47 @@ func test_sensitivity_proof_ignoring_hide_is_detected() -> void:
 	).is_true()
 
 
-# ---- story-033 銜接:戊出手後 AC1 的獨行段為 0 -------------------------------------
+# ---- story-034:戊出手後獨行段不再歸零(取代 story-033 AC1 的舊斷言)-----------------
+# 舊斷言:出手旗標為真 → 該格不顯示獨行減傷;新斷言:出手條件取消 → 仍然顯示。
 
-func test_ac1_lone_guard_part_is_zero_after_unit_attacked() -> void:
+func test_lone_guard_part_still_shown_after_unit_attacked() -> void:
 	var instance: BattleScreen = _battle(true)   # 隱藏好感度 → 只剩獨行段,隔離變因
 	var u: Unit = _player(instance, 0)
 	u.lone_guard = true
-	# 移到一個獨行減傷為正的格(未出手值 > 0;出手後正值歸零,負值維持由規則決定)。
 	var cell: Vector2i = Vector2i(-1, -1)
 	for c: Vector2i in instance._state.legal_moves(u.id):
-		if instance._state.lone_guard_if_at(u.id, c, false) > 0:
+		if instance._state.lone_guard_if_at(u.id, c) > 0:
 			cell = c
 			break
-	assert_bool(cell != Vector2i(-1, -1)).append_failure_message("PRECONDITION: 需有一格獨行減傷 > 0").is_true()
+	assert_bool(cell != Vector2i(-1, -1)).append_failure_message("PRECONDITION: 需有一格獨行減傷 > 0(d=2)").is_true()
 	instance._state.move_unit(u.id, cell)
-	var full: int = instance._state.lone_guard_if_at(u.id, cell, false)
+	var full: int = instance._state.lone_guard_if_at(u.id, cell)
+	instance._state._attacked_this_phase[u.id] = true
 	_hover(instance, cell)
 	assert_str(instance._tile_info_panel_label.text).contains(BattleScreen.format_guard_value(full))
-	# 出手旗標為真(經 BattleState 內部表,與 attacked_this_phase() 讀同一份):獨行段不顯示。
-	instance._state._attacked_this_phase[u.id] = true
-	assert_bool(instance._state.attacked_this_phase(u.id)).is_true()
-	_hover(instance, cell)
-	assert_str(instance._tile_info_panel_label.text).not_contains(BattleScreen.format_guard_value(full))
+
+
+# ---- story-034 AC4:攻擊預覽「留一手 −N」列 ------------------------------------------
+# 戊(旗標單位)站在 d=2 的格 → 預覽含該列;站在 d!=2 的格 → 不含。
+func _hold_back_text_at(instance: BattleScreen, u: Unit, want_d2: bool) -> String:
+	for c: Vector2i in instance._state.legal_moves(u.id):
+		var is_d2: bool = instance._state.lone_guard_if_at(u.id, c) == CombatRules.LONE_MID_GUARD
+		if is_d2 == want_d2:
+			instance._state.move_unit(u.id, c)
+			var enemy: Unit = instance._state.units_of(Unit.Faction.ENEMY)[0]
+			return instance._build_attack_preview_text(u.id, enemy.id)
+	return "NO_CELL"
+
+
+func test_attack_preview_shows_hold_back_row_only_at_d2() -> void:
+	var row: String = Loc.localize(&"battle.attack_confirm.hold_back_format") % 1
+	var a: BattleScreen = _battle(false)
+	var ua: Unit = _player(a, 0)
+	ua.lone_guard = true
+	assert_str(_hold_back_text_at(a, ua, true)).contains(row)
+	var b: BattleScreen = _battle(false)
+	var ub: Unit = _player(b, 0)
+	ub.lone_guard = true
+	var other: String = _hold_back_text_at(b, ub, false)
+	assert_str(other).is_not_equal("NO_CELL")
+	assert_str(other).not_contains(row)

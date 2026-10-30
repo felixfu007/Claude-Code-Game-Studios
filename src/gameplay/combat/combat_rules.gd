@@ -22,8 +22,8 @@ const GUARD_MAX: int = 3
 ## Computes damage dealt: attack minus defense plus a flat modifier
 ## [param phi] minus [param guard_total_value] (story-031; default 0 keeps the
 ## pre-story-031 behavior), floored at 0 (damage never goes negative).
-static func damage(atk: int, def: int, phi: int, guard_total_value: int = 0) -> int:
-	return max(0, atk - def + phi - guard_total_value)
+static func damage(atk: int, def: int, phi: int, guard_total_value: int = 0, hold_back_value: int = 0) -> int:
+	return max(0, atk - def + phi - guard_total_value - hold_back_value)
 
 
 ## story-031/033 spec (affinity-core-redesign-spec-amend1 §2): damage reduction
@@ -38,8 +38,12 @@ static func guard(phi_def: int) -> int:
 
 
 ## story-031 spec §2.2 (candidate X): lone-guard knobs.
-const LONE_FAR_DISTANCE: int = 3      # d_min >= this -> LONE_FAR_GUARD
-const LONE_FAR_GUARD: int = 2
+## story-034 (spec amend2 §1): d_min >= LONE_FAR_DISTANCE or no ally -> LONE_FAR_GUARD (now 0);
+## d_min == LONE_MID_DISTANCE -> LONE_MID_GUARD (+2).
+const LONE_FAR_DISTANCE: int = 3
+const LONE_FAR_GUARD: int = 0
+const LONE_MID_DISTANCE: int = 2
+const LONE_MID_GUARD: int = 2
 const LONE_NEAR_DISTANCE: int = 1     # d_min == this -> LONE_NEAR_GUARD
 const LONE_NEAR_GUARD: int = -1
 ## Sentinel for "no living ally" passed as d_min.
@@ -48,20 +52,35 @@ const NO_ALLY: int = -1
 
 ## story-031 spec §2.2: lone-guard for a unit flagged lone ([member Unit.lone_guard]),
 ## given the Manhattan distance [param d_min] to its NEAREST living ally
-## ([constant NO_ALLY] if none). d_min>=3 -> +2; 2 -> 0; 1 -> -1; none -> +2.
+## ([constant NO_ALLY] if none). story-034 (amend2 §1) table: d_min 1 -> -1; 2 -> +2;
+## d_min>=3 or none -> 0.
 static func lone_guard(d_min: int) -> int:
 	if d_min == NO_ALLY or d_min >= LONE_FAR_DISTANCE:
 		return LONE_FAR_GUARD
 	if d_min <= LONE_NEAR_DISTANCE:
 		return LONE_NEAR_GUARD
+	return LONE_MID_GUARD
+
+
+## story-033 (amend1) conditional rule -- 已棄用,忽略 (story-034 / amend2 §1:出手條件取消).
+## [param attacked] no longer affects the result; always returns [param lone].
+## Kept only so existing callers still compile; a follow-up story removes it.
+static func lone_guard_effective(lone: int, _attacked: bool) -> int:
+	return lone
+
+
+## story-034 (spec amend2 §2) 留一手 knobs.
+const HOLD_BACK_DISTANCE: int = 2
+const HOLD_BACK_PENALTY: int = 1
+
+
+## story-034 (amend2 §2): final-damage reduction for a straddler (flagged unit)
+## attacking from a cell whose nearest-living-ally distance is exactly
+## [constant HOLD_BACK_DISTANCE]. Pure, no RNG.
+static func hold_back(is_straddler: bool, d_min: int) -> int:
+	if is_straddler and d_min == HOLD_BACK_DISTANCE:
+		return HOLD_BACK_PENALTY
 	return 0
-
-
-## story-033 (spec amend1 §1): lone-guard after the conditional rule. If the unit
-## attacked during the just-finished player phase ([param attacked]) the POSITIVE
-## part is cancelled: min(lone, 0) (+2 -> 0, 0 -> 0, -1 stays -1); otherwise full value.
-static func lone_guard_effective(lone: int, attacked: bool) -> int:
-	return mini(lone, 0) if attacked else lone
 
 
 ## story-031 spec §1.2: sum of Φ-guard and lone-guard, clamped to

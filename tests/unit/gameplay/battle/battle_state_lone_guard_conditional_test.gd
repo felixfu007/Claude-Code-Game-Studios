@@ -27,7 +27,7 @@ func _enemy_dmg_on_5(state: BattleState) -> int:
 func test_flag_initially_false_enemy_first_battle_counts_as_not_attacked() -> void:
 	var s: BattleState = _build(4)
 	assert_bool(s.attacked_this_phase(5)).is_false()
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 - 2)  # 未出手 d=4 -> +2
+	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)  # story-034 (amend2): 舊值 14-8-2(d=4 +2)→ 新值 14-8(d>=3 為 0)
 
 
 func test_flag_set_when_lone_unit_resolves_attack_as_attacker() -> void:
@@ -49,7 +49,7 @@ func test_flag_cleared_when_new_player_phase_begins() -> void:
 	assert_bool(s.attacked_this_phase(5)).is_true()
 	s.begin_player_turn()
 	assert_bool(s.attacked_this_phase(5)).is_false()
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 - 2)  # 又回到 +2
+	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)  # 舊值 14-8-2(又回到 +2)→ 新值 14-8
 
 
 func test_flag_write_goes_through_commit_window_version_bumps_once() -> void:
@@ -62,11 +62,12 @@ func test_flag_write_goes_through_commit_window_version_bumps_once() -> void:
 
 # ---- 條件化的減傷值 -----------------------------------------------------------
 
-func test_not_attacked_d3_plus_2_attacked_d3_zero() -> void:
+# story-034 (amend2): 舊:未出手 14-8-2、出手後 14-8;新:d=3 為 0,出手與否皆 14-8
+func test_d3_zero_regardless_of_attacking() -> void:
 	var s: BattleState = _build(3)
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 - 2)
+	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)
 	s.resolve_attack(5, 6, 0)
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)  # +2 被取消 -> 6
+	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)
 	assert_int(int(s.preview_damage_breakdown(6, 5, 0).breakdown["lone_guard"])).is_equal(0)
 
 
@@ -77,10 +78,11 @@ func test_attacked_d1_minus_1_is_kept() -> void:
 	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 + 1)  # 不受旗標影響 -> 7
 
 
-func test_attacked_d2_stays_zero() -> void:
+# 舊值 14-8(d=2 為 0)→ 新值 14-8-2(d=2 為 +2,出手後仍有)
+func test_attacked_d2_keeps_plus_2() -> void:
 	var s: BattleState = _build(2)
 	s.resolve_attack(5, 6, 0)
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)
+	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 - 2)
 
 
 func test_other_units_not_affected_by_lone_units_flag() -> void:
@@ -91,16 +93,17 @@ func test_other_units_not_affected_by_lone_units_flag() -> void:
 
 # ---- 查詢介面:lone_guard_if_at(unit_id, tile, will_attack) -----------------
 
-func test_lone_guard_if_at_will_attack_param_is_hypothetical_and_ignores_live_flag() -> void:
+# story-034 (amend2): will_attack 已棄用,忽略:true/false 結果相同(舊值 (5,2,true)→0 / (2,0,true)→0 → 新值 0 / 2)
+func test_lone_guard_if_at_will_attack_param_is_ignored() -> void:
 	var s: BattleState = _build(1)  # 戊 (1,0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2), false)).is_equal(2)
+	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2), false)).is_equal(0)
 	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2), true)).is_equal(0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), true)).is_equal(0)
+	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), true)).is_equal(2)
+	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), false)).is_equal(2)
 	assert_int(s.lone_guard_if_at(5, Vector2i(0, 1), true)).is_equal(-1)
 	assert_int(s.lone_guard_if_at(5, Vector2i(0, 1), false)).is_equal(-1)
-	# 兩參數呼叫 = will_attack=false(完整值),即使真實旗標為真
 	s.resolve_attack(5, 6, 0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2))).is_equal(2)
+	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2))).is_equal(0)
 	# 無副作用
 	assert_that(s.position_of(5)).is_equal(Vector2i(1, 0))
 

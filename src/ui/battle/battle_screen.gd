@@ -4850,6 +4850,10 @@ func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
 	var guard_line: String = _guard_line_text(bd, _hide_affinity_display_for_this_battle)
 	if guard_line != "":
 		lines.insert(lines.size() - 2, guard_line)
+	# story-034 AC4 (amend2 §3): 留一手 row, only when the breakdown says hold_back != 0.
+	var hold_back: int = int(bd.get("hold_back", 0))
+	if hold_back != 0:
+		lines.insert(lines.size() - 2, Loc.localize(&"battle.attack_confirm.hold_back_format") % hold_back)
 	return "
 ".join(lines)
 

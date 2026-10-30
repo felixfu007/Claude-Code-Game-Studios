@@ -61,9 +61,10 @@ func test_spec_example_3_ding_takes_8() -> void:
 	assert_int(CombatRules.damage(14, 6, 0, g)).is_equal(9)
 
 
-# story-033 AC3:lone_guard_effective(出手過 → min(lone, 0))
-func test_lone_guard_effective_cancels_positive_keeps_negative() -> void:
-	assert_int(CombatRules.lone_guard_effective(2, true)).is_equal(0)
+# story-034 (amend2): 原 story-033 AC3(出手過 → min(lone, 0))作廢:舊值 (2,true)→0 / (0,true)→0
+# 新值 (2,true)→2 / (0,true)→0;該參數已棄用,忽略,兩種取值結果相同。
+func test_lone_guard_effective_ignores_attacked_flag() -> void:
+	assert_int(CombatRules.lone_guard_effective(2, true)).is_equal(2)
 	assert_int(CombatRules.lone_guard_effective(0, true)).is_equal(0)
 	assert_int(CombatRules.lone_guard_effective(-1, true)).is_equal(-1)
 	assert_int(CombatRules.lone_guard_effective(2, false)).is_equal(2)

@@ -82,24 +82,28 @@ func test_guard_clamped_to_guard_max() -> void:
 
 # ---- AC2:戊獨行(旗標驅動)---------------------------------------------------
 
-func test_lone_guard_far_ally_distance_4_gives_plus_2() -> void:
-	assert_int(_enemy_dmg_on(_build(4), 5)).is_equal(14 - 8 - 2)
+# story-034 (amend2): 舊值 14-8-2(=4,d>=3 為 +2)→ 新值 14-8(=6,d>=3 為 0)
+func test_lone_guard_far_ally_distance_4_gives_zero() -> void:
+	assert_int(_enemy_dmg_on(_build(4), 5)).is_equal(14 - 8)
 
 
-func test_lone_guard_distance_3_is_threshold_gives_plus_2() -> void:
-	assert_int(_enemy_dmg_on(_build(3), 5)).is_equal(14 - 8 - 2)
+# 舊值 14-8-2 → 新值 14-8
+func test_lone_guard_distance_3_is_threshold_gives_zero() -> void:
+	assert_int(_enemy_dmg_on(_build(3), 5)).is_equal(14 - 8)
 
 
-func test_lone_guard_distance_2_is_dead_zone() -> void:
-	assert_int(_enemy_dmg_on(_build(2), 5)).is_equal(14 - 8)
+# 舊值 14-8(=6,d=2 為 0)→ 新值 14-8-2(=4,d=2 為 +2)
+func test_lone_guard_distance_2_gives_plus_2() -> void:
+	assert_int(_enemy_dmg_on(_build(2), 5)).is_equal(14 - 8 - 2)
 
 
 func test_lone_guard_distance_1_is_minus_1() -> void:
 	assert_int(_enemy_dmg_on(_build(1), 5)).is_equal(14 - 8 + 1)
 
 
-func test_lone_guard_no_living_ally_gives_plus_2() -> void:
-	assert_int(_enemy_dmg_on(_build(4, false), 5)).is_equal(14 - 8 - 2)
+# 舊值 14-8-2 → 新值 14-8
+func test_lone_guard_no_living_ally_gives_zero() -> void:
+	assert_int(_enemy_dmg_on(_build(4, false), 5)).is_equal(14 - 8)
 
 
 func test_lone_guard_unflagged_unit_gets_nothing() -> void:

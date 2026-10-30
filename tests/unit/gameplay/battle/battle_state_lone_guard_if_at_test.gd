@@ -23,13 +23,13 @@ func _breakdown_lone(state: BattleState) -> int:
 func test_lone_guard_if_at_real_position_matches_breakdown_far() -> void:
 	var s: BattleState = _build(4)
 	assert_int(s.lone_guard_if_at(5, s.position_of(5))).is_equal(_breakdown_lone(s))
-	assert_int(_breakdown_lone(s)).is_equal(2)
+	assert_int(_breakdown_lone(s)).is_equal(0)  # story-034 (amend2): 舊值 2 → 新值 0
 
 
 func test_lone_guard_if_at_real_position_matches_breakdown_dead_zone() -> void:
 	var s: BattleState = _build(2)
 	assert_int(s.lone_guard_if_at(5, s.position_of(5))).is_equal(_breakdown_lone(s))
-	assert_int(_breakdown_lone(s)).is_equal(0)
+	assert_int(_breakdown_lone(s)).is_equal(2)  # 舊值 0 → 新值 2
 
 
 func test_lone_guard_if_at_real_position_matches_breakdown_adjacent() -> void:
@@ -41,15 +41,15 @@ func test_lone_guard_if_at_real_position_matches_breakdown_adjacent() -> void:
 func test_lone_guard_if_at_real_position_matches_breakdown_no_ally() -> void:
 	var s: BattleState = _build(4, false)
 	assert_int(s.lone_guard_if_at(5, s.position_of(5))).is_equal(_breakdown_lone(s))
-	assert_int(_breakdown_lone(s)).is_equal(2)
+	assert_int(_breakdown_lone(s)).is_equal(0)  # 舊值 2 → 新值 0
 
 
 # ② 假設位置(戊實際在 (1,0),甲在 (0,0))
 func test_lone_guard_if_at_hypothetical_tiles_follow_spec() -> void:
 	var s: BattleState = _build(1)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2))).is_equal(2)   # d=7 >=3
-	assert_int(s.lone_guard_if_at(5, Vector2i(3, 0))).is_equal(2)   # d=3 門檻
-	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0))).is_equal(0)   # d=2
+	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2))).is_equal(0)   # d=7 >=3(舊 2 → 新 0)
+	assert_int(s.lone_guard_if_at(5, Vector2i(3, 0))).is_equal(0)   # d=3 門檻(舊 2 → 新 0)
+	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0))).is_equal(2)   # d=2(舊 0 → 新 2)
 	assert_int(s.lone_guard_if_at(5, Vector2i(0, 1))).is_equal(-1)  # d=1
 	# 查詢不得移動單位
 	assert_that(s.position_of(5)).is_equal(Vector2i(1, 0))
