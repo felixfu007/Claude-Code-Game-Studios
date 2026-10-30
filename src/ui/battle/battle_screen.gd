@@ -4756,8 +4756,29 @@ func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
 	# story-009:Φ 列只在未隱藏好感度時插入(第 4 列,ATK/DEF 之後);傷害數字照常。
 	if not _hide_affinity_display_for_this_battle:
 		lines.insert(3, Loc.localize(&"battle.attack_confirm.phi_format") % ("%+d" % int(bd["phi"])))
+	# story-031 AC6: guard line, inserted before the target-HP and damage rows.
+	var guard_line: String = _guard_line_text(bd, _hide_affinity_display_for_this_battle)
+	if guard_line != "":
+		lines.insert(lines.size() - 2, guard_line)
 	return "
 ".join(lines)
+
+
+## story-031 AC6 — 傷害拆解的「減傷」列文字;無需顯示時回傳空字串。
+## 顯示的值 = 實際進入傷害公式的 guard(bd["guard"],已夾限);> 0 顯示「減傷：N」,
+## < 0 顯示「額外受傷：N」(N 取絕對值,與實際多扣的血一致);== 0 不顯示。
+## 隱藏好感度顯示時:好感度造成的部分(bd["guard_phi"])不顯示,只顯示戊獨行部分
+## (bd["lone_guard"],單獨判斷正負/零;未經裁決的暫定,見 story-031 回報)。
+## 兩者並存且未隱藏時合併為單一列(總 guard),不拆成兩列(框的行數上限 8)。
+static func _guard_line_text(bd: Dictionary, hide_affinity: bool) -> String:
+	var shown: int = int(bd.get("guard", 0))
+	if hide_affinity:
+		shown = int(bd.get("lone_guard", 0))
+	if shown > 0:
+		return Loc.localize(&"battle.attack_confirm.guard_format") % shown
+	if shown < 0:
+		return Loc.localize(&"battle.attack_confirm.guard_penalty_format") % absi(shown)
+	return ""
 
 
 ## Story 012 — positions/sizes [member _tile_info_panel_bg] (and, via its

@@ -50,6 +50,8 @@ battle.attack_confirm.atk_format,ATK：%d
 battle.attack_confirm.def_format,DEF：%d
 battle.attack_confirm.phi_format,Φ：%s
 battle.attack_confirm.phi_clamped_format,（好感度原始值 %s，結算夾限為 %s）
+battle.attack_confirm.guard_format,減傷：%d
+battle.attack_confirm.guard_penalty_format,額外受傷：%d
 battle.attack_confirm.damage_format,結果傷害：%d
 battle.attack_confirm.target_hp_format,目標血量：%d → %d
 battle.hand_bar.temporary_effect_summary_format,ATK%s · DEF%s · 剩%d回合
