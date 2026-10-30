@@ -143,6 +143,14 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 028 | story-028-playtest-minor-board-hud.md | — | UI | 試玩次要問題 I/M/G/O | — |
 | 029 | story-029-playtest-minor-hand-bar.md | — | UI | 試玩次要問題 E/F + N + 說明列四項 | 028 |
 | 030 | story-030-phi-clamp-disclosure-in-preview.md | — | UI | ❌ 已關閉(前提不成立) | — |
+| 018 | story-018-battle-outcome-end-to-end.md | — | Integration | 整場戰鬥端到端結算(畫面側第一條防線)。✅ Done(2026-10-16)(2026-10-30 補列) | — |
+| 019 | story-019-real-level-battle-terminates.md | — | Integration | 真實關卡打完一整場(5 對 5、真實地形、真實 AI)。✅ Done(2026-10-16)(2026-10-30 補列) | — |
+| 020 | story-020-test-policy-survives-multiple-rounds.md | — | Integration | 讓測試的我方打法不自殺,跑進多回合。✅ Done(2026-10-16)(2026-10-30 補列) | — |
+| 021 | story-021-battle-loop-phi-provider.md | — | Logic | 自動對戰迴圈接上好感度加成。Ready(2026-10-28)(依檔頭;2026-10-30 補列) | — |
+| 022 | story-022-defeat-reason-text.md | — | UI | 戰敗畫面顯示「誰倒下了」。✅ Done-pending-visual(2026-10-28)(2026-10-30 補列) | — |
+| 031 | story-031-affinity-guard-and-lone-guard.md | — | Logic + Integration | 好感度減傷(guard)+ 戊獨行減傷。✅ Done-pending-visual(2026-10-30) | — |
+| 032 | story-032-guard-display-and-hide-leaks.md | — | UI | 減傷顯示(指到我方角色 + 移動預覽)+ 隱藏好感度設定補漏。✅ Done-pending-visual(2026-10-30) | 031 |
+| 033 | story-033-lone-guard-conditional-and-negative-ceil.md | — | Logic | 戊獨行減傷條件化(本回合未出手才有)+ 負向 Φ 減傷改進位。✅ Done(依提交 `e7751fc`,檔頭待改;檔頭現寫 Ready(2026-10-30)) | 031 |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)
 

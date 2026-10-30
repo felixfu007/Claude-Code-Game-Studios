@@ -1,7 +1,7 @@
 # Story 033:戊獨行減傷條件化(本回合未出手才有)+ 負向 Φ 減傷改進位
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-10-30)
+> **Status**: ✅ Done(2026-10-30,提交 `e7751fc`;乾淨 worktree 全套 1721 全綠;attempt-3 已用此規則判定通過)。⚠️ 事後診斷戊 +2 生效 0/28 → 管理者裁決重想戊機制(騎牆,創意總監審查中)(原狀態:Ready(2026-10-30))
 > **Type**: Logic
 > **Estimate**: M
 > **權威規格**:`docs/reviews/affinity-core-redesign-spec-amend1-2026-10-30.md` 第 1、2 節(修訂),其餘沿用 `docs/reviews/affinity-core-redesign-spec-2026-10-30.md`。本單不複述規則。
