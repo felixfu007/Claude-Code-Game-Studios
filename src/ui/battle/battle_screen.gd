@@ -922,6 +922,14 @@ func diagnostic_resolved_data_paths() -> Dictionary:
 ## 它會怎麼被消費。
 var _egm_enabled_for_this_battle: bool = false
 
+## story-009:本場戰鬥是否隱藏好感度顯示(棋盤連線、關係圖、傷害拆解 Φ 列)。
+## 同 EGM,只在 _ready() 讀一次。🔴 只影響顯示;好感度照常計算,結算不變。
+var _hide_affinity_display_for_this_battle: bool = false
+
+## 本場戰鬥「隱藏好感度顯示」的快取值(唯讀診斷)。
+func is_hide_affinity_display_for_this_battle() -> bool:
+	return _hide_affinity_display_for_this_battle
+
 ## 本場戰鬥的 EGM 開關快取值。見 [member _egm_enabled_for_this_battle] 的 doc
 ## comment。
 func is_egm_enabled_for_this_battle() -> bool:
@@ -1192,6 +1200,8 @@ func _build_relation_minimap() -> void:
 	_relation_toggle_button.text = Loc.localize(TEXT_RELATION_MAP_TOGGLE)
 	_relation_toggle_button.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_relation_toggle_button.pressed.connect(_toggle_relation_minimap)
+	# story-009:隱藏好感度顯示開啟時,開關按鈕隱藏、鍵盤/手把/按鈕的開啟一律無效。
+	_relation_toggle_button.visible = not _hide_affinity_display_for_this_battle
 	$UILayer.add_child(_relation_toggle_button)
 
 ## 可開條件 —— 管理者 2026-10-28 裁決,選項逐字:
@@ -1207,7 +1217,7 @@ func _relation_minimap_can_open() -> bool:
 	return _controller.phase() == BattleController.Phase.PLAYER_INPUT
 
 func _toggle_relation_minimap() -> void:
-	if _relation_minimap == null or _load_failed:
+	if _relation_minimap == null or _load_failed or _hide_affinity_display_for_this_battle:
 		return
 	if _relation_minimap.visible:
 		_relation_minimap.set_open(false)
@@ -1554,6 +1564,7 @@ func _ready() -> void:
 	# Story-002(AC2)— 讀取一次,整場戰鬥不再重讀。見
 	# [member _egm_enabled_for_this_battle] 的 doc comment。
 	_egm_enabled_for_this_battle = GameSettings.is_egm_enabled()
+	_hide_affinity_display_for_this_battle = GameSettings.is_hide_affinity_display()
 	# battle-hud story-002:EGM 關閉時 _guess_tracker 維持 null,本檔所有 EGM 路徑短路。
 	if _egm_enabled_for_this_battle:
 		_guess_tracker = EffectGuessTracker.new()
@@ -4323,7 +4334,11 @@ func _refresh_view() -> void:
 	if _guess_tracker != null:
 		_update_guess_selector_ui(guess_state == GuessCellState.PENDING)
 		_update_consistency_counter()
-	_board_view.set_affinity_lines(affinity_line_dicts(line_statuses, line_positions))
+	# story-009:隱藏好感度顯示時棋盤不畫連線(線仍照常算,只是不畫)。
+	var shown_line_dicts: Array[Dictionary] = []
+	if not _hide_affinity_display_for_this_battle:
+		shown_line_dicts = affinity_line_dicts(line_statuses, line_positions)
+	_board_view.set_affinity_lines(shown_line_dicts)
 	_update_relation_minimap(line_statuses, positions)
 
 	# 只有「選取中的單位」與「游標指著的那一格」會顯示精確數字,其餘只有血條。
@@ -4732,10 +4747,12 @@ func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
 		Loc.localize(&"battle.attack_confirm.header_format") % [attacker.code_name, target.code_name],
 		Loc.localize(&"battle.attack_confirm.atk_format") % int(bd["atk"]),
 		Loc.localize(&"battle.attack_confirm.def_format") % int(bd["def"]),
-		Loc.localize(&"battle.attack_confirm.phi_format") % ("%+d" % int(bd["phi"])),
 		Loc.localize(&"battle.attack_confirm.damage_format") % int(bd["damage"]),
 		Loc.localize(&"battle.attack_confirm.target_hp_format") % [target.hp, int(bd["target_hp_after"])],
 	])
+	# story-009:Φ 列只在未隱藏好感度時插入(第 4 列,ATK/DEF 之後);傷害數字照常。
+	if not _hide_affinity_display_for_this_battle:
+		lines.insert(3, Loc.localize(&"battle.attack_confirm.phi_format") % ("%+d" % int(bd["phi"])))
 	return "
 ".join(lines)
 

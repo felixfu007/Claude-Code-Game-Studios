@@ -32,4 +32,6 @@ offset_bottom = 80.0
 
 [node name="EgmToggleRow" type="CheckButton" parent="Panel/ContentMargin/Rows"]
 
+[node name="HideAffinityRow" type="CheckButton" parent="Panel/ContentMargin/Rows"]
+
 [node name="BackRow" type="Button" parent="Panel/ContentMargin/Rows"]

@@ -37,33 +37,41 @@ extends Control
 ## 三個可見文字的在地化 key,對應 `assets/data/locales/strings.csv` 新增的列。
 ## 全文字一律經 [method Loc.localize],不得硬編中文字面值(AC7)。
 const TEXT_EGM_TOGGLE: StringName = &"shell.settings.egm_toggle"
+const TEXT_HIDE_AFFINITY_TOGGLE: StringName = &"shell.settings.hide_affinity_toggle"
 const TEXT_BACK: StringName = &"shell.settings.back"
 
 ## 場景路徑的單一出處是 [SceneRouter](story-005),本檔不再持有任何場景路徑常數。
 
 @onready var _egm_toggle_row: CheckButton = $Panel/ContentMargin/Rows/EgmToggleRow
+@onready var _hide_affinity_row: CheckButton = $Panel/ContentMargin/Rows/HideAffinityRow
 @onready var _back_row: Button = $Panel/ContentMargin/Rows/BackRow
 
 
 func _ready() -> void:
 	_egm_toggle_row.text = Loc.localize(TEXT_EGM_TOGGLE)
+	_hide_affinity_row.text = Loc.localize(TEXT_HIDE_AFFINITY_TOGGLE)
 	_back_row.text = Loc.localize(TEXT_BACK)
 
 	# AC1/AC4 —— 進畫面時把開關顯示值同步成 GameSettings 目前的真實值,而不是
 	# CheckButton 節點宣告時的預設 false。只在這裡讀一次;之後的任何改動一律由
 	# _on_egm_toggled() 寫回 GameSettings,畫面本身不持有第二份狀態。
 	_egm_toggle_row.button_pressed = GameSettings.is_egm_enabled()
+	_hide_affinity_row.button_pressed = GameSettings.is_hide_affinity_display()
 
 	# AC5 —— 比照 title_screen.gd:FOCUS_ALL + 手動 focus_neighbor,做出有界
 	# (不環繞)的二項清單。
 	_egm_toggle_row.focus_mode = Control.FOCUS_ALL
+	_hide_affinity_row.focus_mode = Control.FOCUS_ALL
 	_back_row.focus_mode = Control.FOCUS_ALL
 	_egm_toggle_row.focus_neighbor_top = _egm_toggle_row.get_path_to(_egm_toggle_row)
-	_egm_toggle_row.focus_neighbor_bottom = _egm_toggle_row.get_path_to(_back_row)
-	_back_row.focus_neighbor_top = _back_row.get_path_to(_egm_toggle_row)
+	_egm_toggle_row.focus_neighbor_bottom = _egm_toggle_row.get_path_to(_hide_affinity_row)
+	_hide_affinity_row.focus_neighbor_top = _hide_affinity_row.get_path_to(_egm_toggle_row)
+	_hide_affinity_row.focus_neighbor_bottom = _hide_affinity_row.get_path_to(_back_row)
+	_back_row.focus_neighbor_top = _back_row.get_path_to(_hide_affinity_row)
 	_back_row.focus_neighbor_bottom = _back_row.get_path_to(_back_row)
 
 	_egm_toggle_row.toggled.connect(_on_egm_toggled)
+	_hide_affinity_row.toggled.connect(_on_hide_affinity_toggled)
 	_back_row.pressed.connect(back_to_title)
 
 	_egm_toggle_row.grab_focus()
@@ -74,6 +82,11 @@ func _ready() -> void:
 ## 不會重讀這裡剛寫入的新值;新值只對下一場尚未開始的戰鬥生效。
 func _on_egm_toggled(button_pressed: bool) -> void:
 	GameSettings.set_egm_enabled(button_pressed)
+
+
+## story-009 —— 「隱藏好感度顯示」寫回點(同 EGM:進行中的戰鬥不受影響)。
+func _on_hide_affinity_toggled(button_pressed: bool) -> void:
+	GameSettings.set_hide_affinity_display(button_pressed)
 
 
 ## AC6 —— 測試直接呼叫本方法,不模擬 [InputEvent](headless 不送 InputEvent,

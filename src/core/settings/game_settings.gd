@@ -40,6 +40,11 @@ extends RefCounted
 ## 行為必須與現狀完全相同。
 static var _egm_enabled: bool = false
 
+## 隱藏好感度顯示(story-009,驗收協議 2 忽視組用)。預設關閉 = 現行行為。
+## 只影響【顯示】:好感度照常計算,戰鬥結算不變。BattleScreen 同 EGM,
+## 只在 _ready() 讀一次。
+static var _hide_affinity_display: bool = false
+
 
 ## 讀取 EGM 目前設定值。[BattleScreen] 依 AC2 在 [method Node._ready] 只呼叫一次
 ## 並快取結果,整場戰鬥不再重讀 —— 這是規格「不支援戰鬥中途熱切換」的落地點
@@ -56,8 +61,19 @@ static func set_egm_enabled(value: bool) -> void:
 	_egm_enabled = value
 
 
+## 讀取「隱藏好感度顯示」目前設定值(預設 false)。
+static func is_hide_affinity_display() -> bool:
+	return _hide_affinity_display
+
+
+## 寫入「隱藏好感度顯示」設定值。設定畫面切換時呼叫;進行中的戰鬥不受影響。
+static func set_hide_affinity_display(value: bool) -> void:
+	_hide_affinity_display = value
+
+
 ## 測試專用:將本類別的靜態狀態重置回預設值。任何呼叫 [method set_egm_enabled] 的
 ## 測試都必須在收尾呼叫本方法,避免污染同一次 headless 執行期間的其他測試
 ## (見本檔類別文件註解「已知代價」第 2 點)。
 static func reset_for_test() -> void:
 	_egm_enabled = false
+	_hide_affinity_display = false
