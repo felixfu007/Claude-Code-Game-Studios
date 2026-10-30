@@ -28,7 +28,8 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 ## 🔴 第九十批 收工交接(16:40)
 - **協議 2 全鏈**:H `20e0854` → R `6835840` 未通過 → H2 `1275bfa`/S `908708a`/S' `b3a7aa7`/V2 `7412fa1`/R2 `7aef129` 通過壓線 → H3 `286a313`/S3 `e7751fc`/V3 `47465aa`/R3 `136f600` 通過壓線 → 診斷戊 +2 生效 0/28 → H4 `2355c6a`/S4 `ace389b`/V3 不變/R4 `1addfba` **未通過**(勝 6 vs 6、中位數 5 vs 5、瀕死 13≤15)。
 - **今日後段裁決**:17「可以,但維持「完全相等」(推薦)」/18「可以,原文保留加註(推薦)」(game-concept+one-year-plan 加註)/19 索引全部補齊/20「現在做雙值」(非推薦)/21 第 1 場加註實測 4~7 回合/22「交設計師重想戊的機制」(非推薦)/23「騎牆,先給創意總監審再做(推薦)」/24「騎牆+留一手(推薦)」/25「今天做到哪算哪,未完下次接(推薦)」/26「下次先診斷敗因再決定(推薦)」。(編號以本節為準;上方今日裁決表只列到 4,其餘在派工表內)
-- **未完 / 下次**:①attempt-4 診斷(收工時派 ai-programmer,含 attempt-3 規則對照,新 worktree 於 `e7751fc`)②戊下一步裁決 ③GDD 第四批差異(amend2 第 5 節 8 項,**規則未定案前不做**)④死碼清理單:移動預覽雙值、`will_attack`、`attacked_this_phase`、`lone_guard_effective`、字串鍵 `battle.hud.guard_move_dual_format` ⑤`battle_state.gd` 陳舊註解(6 keys、hold_back)⑥story-021 檔頭仍寫 Ready ⑦技術債:guard/lone/hold_back 常數未資料驅動 ⑧協議 2 工具無逐單位紀錄(判定揭露)⑨基準無效重測上限計數歸屬(協調者判讀:只管基準無效,本日四次皆基準有效)
+- ✅ **attempt-4 診斷已完成(16:40,已提交)** `prototypes/protocol2-diagnosis-attempt4-2026-10-30/README.md`:運用臂 v0/v6 敗因皆為**丙被孤立集火**(丙 guard 僅 1);戊 +2 現會觸發(運用臂 11 次)、甲乙丙丁淨減傷增加;v0 為真回歸(R1 戊落點變 → 全隊擠上排、丙獨留),v6 在 attempt-3 也敗(協調者收工前說法錯誤,已更正)。因果僅座標支持,未做單變因實驗。另一 worktree `C:/tmp/p2diag_s3` 未移除。
+- **未完 / 下次**:①(已完成,見上)②戊下一步裁決 ③GDD 第四批差異(amend2 第 5 節 8 項,**規則未定案前不做**)④死碼清理單:移動預覽雙值、`will_attack`、`attacked_this_phase`、`lone_guard_effective`、字串鍵 `battle.hud.guard_move_dual_format` ⑤`battle_state.gd` 陳舊註解(6 keys、hold_back)⑥story-021 檔頭仍寫 Ready ⑦技術債:guard/lone/hold_back 常數未資料驅動 ⑧協議 2 工具無逐單位紀錄(判定揭露)⑨基準無效重測上限計數歸屬(協調者判讀:只管基準無效,本日四次皆基準有效)
 - **覆核停損計數**:今天每批都有收穫(Φ_avg 搬組偏誤、運用臂平手鍵、攻擊過濾只套一臂、guard 靜默為 0、減傷列永不顯示、刪 K2/K3 會毀 8 組定義、推薦方案對不上敗因)→ 連續零收穫 = 0。
 - **協調者疏失**:選項文字兩次誤植「戊」為「戈/戰」;story-031 AC6 假設預覽會在我方受擊時出現(錯)。
 
