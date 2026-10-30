@@ -1877,6 +1877,9 @@ func _ready() -> void:
 	# legality, GDD 界線 3/4) -- a completely separate concern from Φ's
 	# numeric strength data, which now lives in _affinity_pool instead.
 	_phi = AffinityPhiProvider.new(_state, _affinity_pool)
+	# story-031: defender-side Φ for guard (spec §1.5). _phi is a member, so the
+	# bound Callable stays valid for this screen's lifetime.
+	_state.attach_defense_phi_provider(Callable(_phi, "phi_of"))
 
 	# Story U-003 — the two halves this story's merge exists to wire: a real
 	# CardDeck (rng=null here means production, time-seeded

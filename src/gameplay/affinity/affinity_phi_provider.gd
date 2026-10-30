@@ -237,4 +237,14 @@ func positions_with(unit_id: int, origin: Vector2i) -> Dictionary[int, Vector2i]
 ## and the parameter exists only so this method's signature matches the
 ## [Callable] contract [member BattleController._phi_provider] requires.
 func phi(attacker_id: int, _target_id: int) -> int:
-	return AffinityRules.bonus_for(attacker_id, positions(), links())
+	return phi_of(attacker_id)
+
+
+## story-031 AC3: a unit's own cell Φ (same value [method phi] returns for it
+## as attacker). Used as the DEFENDER's Φ_def; verified that
+## [method AffinityRules.bonus_for] depends only on the unit's own position
+## and the links, never on a target, so no reverse-call hack is needed.
+## Signature [code]func(unit_id: int) -> int[/code] matches
+## [member BattleState._defense_phi_provider].
+func phi_of(unit_id: int) -> int:
+	return AffinityRules.bonus_for(unit_id, positions(), links())

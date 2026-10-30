@@ -643,13 +643,64 @@ func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dic
 	var effective_phi: int = phi
 	if attacker.faction == Unit.Faction.ENEMY:
 		effective_phi = 0
+	# story-031 (docs/reviews/affinity-core-redesign-spec-2026-10-30.md §1.5):
+	# the DEFENDER's guard is computed here regardless of who attacks -- an
+	# ENEMY attacker's Φ is zeroed above, but its PLAYER target still guards.
+	var phi_def: int = _defender_phi(target)
+	var guard_phi: int = CombatRules.guard(phi_def)
+	var lone: int = _lone_guard_of(target)
+	var guard_total: int = 0
+	if target.faction == Unit.Faction.PLAYER:
+		guard_total = CombatRules.guard_total(guard_phi, lone)
 	return {
 		"atk": atk,
 		"def": def,
 		"phi": effective_phi,
 		"phi_input": phi,
-		"damage": CombatRules.damage(atk, def, effective_phi),
+		"phi_def": phi_def,
+		"guard_phi": guard_phi,
+		"lone_guard": lone,
+		"guard": guard_total,
+		"damage": CombatRules.damage(atk, def, effective_phi, guard_total),
 	}
+
+
+## story-031: optional hook returning a unit's own cell Φ ([code]func(unit_id: int) -> int[/code],
+## e.g. [method AffinityPhiProvider.phi_of]). Selective mount (like the write
+## guards): unset -> every defender's Φ_def is 0, so guard_phi is 0.
+## The owner must keep the provider alive (see [AffinityPhiProvider]'s header).
+var _defense_phi_provider: Callable = Callable()
+
+
+## Attaches the defender-Φ hook; see [member _defense_phi_provider].
+func attach_defense_phi_provider(provider: Callable) -> void:
+	_defense_phi_provider = provider
+
+
+# Φ_def for [param target]: only PLAYER units have Φ; enemies are always 0.
+func _defender_phi(target: Unit) -> int:
+	if target.faction != Unit.Faction.PLAYER:
+		return 0
+	if not _defense_phi_provider.is_valid():
+		return 0
+	return int(_defense_phi_provider.call(target.id))
+
+
+# Lone-guard of [param target] (spec §2.2): 0 unless the unit is flagged
+# ([member Unit.lone_guard], roster-data driven) and PLAYER. Uses the nearest
+# living PLAYER ally's Manhattan distance via AffinityRules.manhattan_distance().
+func _lone_guard_of(target: Unit) -> int:
+	if target.faction != Unit.Faction.PLAYER or not target.lone_guard:
+		return 0
+	var d_min: int = CombatRules.NO_ALLY
+	var here: Vector2i = position_of(target.id)
+	for ally: Unit in units_of(Unit.Faction.PLAYER):
+		if ally.id == target.id:
+			continue
+		var d: int = AffinityRules.manhattan_distance(here, position_of(ally.id))
+		if d_min == CombatRules.NO_ALLY or d < d_min:
+			d_min = d
+	return CombatRules.lone_guard(d_min)
 
 
 # Shared by resolve_attack() and preview_damage(): computes the damage a

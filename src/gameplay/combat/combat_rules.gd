@@ -13,10 +13,53 @@ class_name CombatRules
 extends RefCounted
 
 
+## story-031 (docs/reviews/affinity-core-redesign-spec-2026-10-30.md §1.2):
+## clamp bounds for the total damage reduction. Tunable knobs.
+const GUARD_MIN: int = -2
+const GUARD_MAX: int = 3
+
+
 ## Computes damage dealt: attack minus defense plus a flat modifier
-## [param phi], floored at 0 (damage never goes negative).
-static func damage(atk: int, def: int, phi: int) -> int:
-	return max(0, atk - def + phi)
+## [param phi] minus [param guard_total_value] (story-031; default 0 keeps the
+## pre-story-031 behavior), floored at 0 (damage never goes negative).
+static func damage(atk: int, def: int, phi: int, guard_total_value: int = 0) -> int:
+	return max(0, atk - def + phi - guard_total_value)
+
+
+## story-031 spec §1.2/§1.3: damage reduction from the DEFENDER's cell Φ.
+## Φ>0 -> ceil(Φ/2); Φ=0 -> 0; Φ<0 -> -floor(|Φ|/2) (negative = extra damage).
+static func guard(phi_def: int) -> int:
+	if phi_def > 0:
+		return (phi_def + 1) / 2
+	if phi_def < 0:
+		return -((-phi_def) / 2)
+	return 0
+
+
+## story-031 spec §2.2 (candidate X): lone-guard knobs.
+const LONE_FAR_DISTANCE: int = 3      # d_min >= this -> LONE_FAR_GUARD
+const LONE_FAR_GUARD: int = 2
+const LONE_NEAR_DISTANCE: int = 1     # d_min == this -> LONE_NEAR_GUARD
+const LONE_NEAR_GUARD: int = -1
+## Sentinel for "no living ally" passed as d_min.
+const NO_ALLY: int = -1
+
+
+## story-031 spec §2.2: lone-guard for a unit flagged lone ([member Unit.lone_guard]),
+## given the Manhattan distance [param d_min] to its NEAREST living ally
+## ([constant NO_ALLY] if none). d_min>=3 -> +2; 2 -> 0; 1 -> -1; none -> +2.
+static func lone_guard(d_min: int) -> int:
+	if d_min == NO_ALLY or d_min >= LONE_FAR_DISTANCE:
+		return LONE_FAR_GUARD
+	if d_min <= LONE_NEAR_DISTANCE:
+		return LONE_NEAR_GUARD
+	return 0
+
+
+## story-031 spec §1.2: sum of Φ-guard and lone-guard, clamped to
+## [GUARD_MIN, GUARD_MAX].
+static func guard_total(guard_phi: int, lone_guard: int) -> int:
+	return clampi(guard_phi + lone_guard, GUARD_MIN, GUARD_MAX)
 
 
 ## Derives an enemy stat from a player baseline scaled by

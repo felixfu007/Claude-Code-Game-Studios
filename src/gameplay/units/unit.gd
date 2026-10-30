@@ -18,6 +18,14 @@ enum Faction { PLAYER, ENEMY }
 ## id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
 const FIELD_COUNT: int = 11
 
+## story-031: an optional 12th column [code]lone_guard[/code] (value [code]1[/code] = flagged,
+## empty/absent/[code]0[/code] = not) marks a unit that receives the lone-guard
+## effect (spec §2.2). Data-driven: no unit id or code name is hard-coded anywhere.
+const FIELD_COUNT_WITH_LONE_FLAG: int = 12
+
+## story-031: true if the roster row carried lone_guard=1. Read by [BattleState].
+var lone_guard: bool = false
+
 var id: int
 var code_name: String
 var faction: Faction
@@ -182,9 +190,9 @@ var _modifiers: Array[CardModifier] = []
 static func from_csv_line(line: String) -> Unit:
 	var fields: PackedStringArray = line.split(",")
 	assert(
-		fields.size() == FIELD_COUNT,
-		"Unit.from_csv_line: expected %d fields, got %d in line: %s"
-		% [FIELD_COUNT, fields.size(), line]
+		fields.size() == FIELD_COUNT or fields.size() == FIELD_COUNT_WITH_LONE_FLAG,
+		"Unit.from_csv_line: expected %d or %d fields, got %d in line: %s"
+		% [FIELD_COUNT, FIELD_COUNT_WITH_LONE_FLAG, fields.size(), line]
 	)
 
 	var unit: Unit = Unit.new()
@@ -205,6 +213,8 @@ static func from_csv_line(line: String) -> Unit:
 	unit.min_range = int(fields[7])
 	unit.max_range = int(fields[8])
 	unit.start_pos = Vector2i(int(fields[9]), int(fields[10]))
+	if fields.size() == FIELD_COUNT_WITH_LONE_FLAG:
+		unit.lone_guard = fields[11].strip_edges() == "1"
 	return unit
 
 
