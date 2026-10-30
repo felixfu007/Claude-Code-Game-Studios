@@ -690,14 +690,28 @@ func _defender_phi(target: Unit) -> int:
 # ([member Unit.lone_guard], roster-data driven) and PLAYER. Uses the nearest
 # living PLAYER ally's Manhattan distance via AffinityRules.manhattan_distance().
 func _lone_guard_of(target: Unit) -> int:
+	# Early-out keeps the pre-refactor behavior: position_of() is never touched
+	# for units that cannot have a lone-guard.
 	if target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
+	return lone_guard_if_at(target.id, position_of(target.id))
+
+
+## story-031: lone-guard value unit [param unit_id] WOULD have if it stood on
+## [param tile] (other units at their current positions). Returns 0 for an
+## unknown id, a non-PLAYER unit, or a unit not flagged [member Unit.lone_guard].
+## With [param tile] == the unit's real position this equals the [code]lone_guard[/code]
+## key of [method preview_damage_breakdown]; that path calls this method, so
+## there is exactly one d_min loop.
+func lone_guard_if_at(unit_id: int, tile: Vector2i) -> int:
+	var target: Unit = unit_by_id(unit_id)
+	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
+		return 0
 	var d_min: int = CombatRules.NO_ALLY
-	var here: Vector2i = position_of(target.id)
 	for ally: Unit in units_of(Unit.Faction.PLAYER):
 		if ally.id == target.id:
 			continue
-		var d: int = AffinityRules.manhattan_distance(here, position_of(ally.id))
+		var d: int = AffinityRules.manhattan_distance(tile, position_of(ally.id))
 		if d_min == CombatRules.NO_ALLY or d < d_min:
 			d_min = d
 	return CombatRules.lone_guard(d_min)
