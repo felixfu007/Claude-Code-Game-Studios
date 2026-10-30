@@ -26,13 +26,14 @@ static func damage(atk: int, def: int, phi: int, guard_total_value: int = 0) -> 
 	return max(0, atk - def + phi - guard_total_value)
 
 
-## story-031 spec §1.2/§1.3: damage reduction from the DEFENDER's cell Φ.
-## Φ>0 -> ceil(Φ/2); Φ=0 -> 0; Φ<0 -> -floor(|Φ|/2) (negative = extra damage).
+## story-031/033 spec (affinity-core-redesign-spec-amend1 §2): damage reduction
+## from the DEFENDER's cell Φ. Symmetric rounding-up:
+## guard = sign(Φ) × ceil(|Φ|/2). Φ=-1 -> -1, -2 -> -1, -3 -> -2 (negative = extra damage).
 static func guard(phi_def: int) -> int:
 	if phi_def > 0:
 		return (phi_def + 1) / 2
 	if phi_def < 0:
-		return -((-phi_def) / 2)
+		return -((-phi_def + 1) / 2)
 	return 0
 
 
@@ -54,6 +55,13 @@ static func lone_guard(d_min: int) -> int:
 	if d_min <= LONE_NEAR_DISTANCE:
 		return LONE_NEAR_GUARD
 	return 0
+
+
+## story-033 (spec amend1 §1): lone-guard after the conditional rule. If the unit
+## attacked during the just-finished player phase ([param attacked]) the POSITIVE
+## part is cancelled: min(lone, 0) (+2 -> 0, 0 -> 0, -1 stays -1); otherwise full value.
+static func lone_guard_effective(lone: int, attacked: bool) -> int:
+	return mini(lone, 0) if attacked else lone
 
 
 ## story-031 spec §1.2: sum of Φ-guard and lone-guard, clamped to

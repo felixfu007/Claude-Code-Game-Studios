@@ -16,10 +16,12 @@ func test_guard_positive_phi_rounds_up() -> void:
 	assert_int(CombatRules.guard(12)).is_equal(6)
 
 
-func test_guard_negative_phi_is_extra_damage_floor_abs_half() -> void:
-	assert_int(CombatRules.guard(-1)).is_equal(0)
+# story-033 AC1 (amend1 §2): negative side rounds UP symmetrically: -ceil(|Φ|/2).
+# old -> new: -1: 0 -> -1; -2: -1 -> -1 (unchanged); -3: -1 -> -2; -4: -2 -> -2 (unchanged).
+func test_guard_negative_phi_is_extra_damage_ceil_abs_half() -> void:
+	assert_int(CombatRules.guard(-1)).is_equal(-1)
 	assert_int(CombatRules.guard(-2)).is_equal(-1)
-	assert_int(CombatRules.guard(-3)).is_equal(-1)
+	assert_int(CombatRules.guard(-3)).is_equal(-2)
 	assert_int(CombatRules.guard(-4)).is_equal(-2)
 
 
@@ -52,10 +54,20 @@ func test_spec_example_2_bing_takes_5() -> void:
 	assert_int(CombatRules.damage(13, 7, 0, g)).is_equal(5)
 
 
-# 算例 3:丁 DEF 6、Φ_def=-1,被 ATK 13 打 → 7(舊 7)
-func test_spec_example_3_ding_takes_7() -> void:
+# 算例 3(story-033 修訂):丁 DEF 6、Φ_def=-1,被 ATK 13 打 → 8(舊 7)、ATK 14 → 9(舊 8)
+func test_spec_example_3_ding_takes_8() -> void:
 	var g: int = CombatRules.guard_total(CombatRules.guard(-1), 0)
-	assert_int(CombatRules.damage(13, 6, 0, g)).is_equal(7)
+	assert_int(CombatRules.damage(13, 6, 0, g)).is_equal(8)
+	assert_int(CombatRules.damage(14, 6, 0, g)).is_equal(9)
+
+
+# story-033 AC3:lone_guard_effective(出手過 → min(lone, 0))
+func test_lone_guard_effective_cancels_positive_keeps_negative() -> void:
+	assert_int(CombatRules.lone_guard_effective(2, true)).is_equal(0)
+	assert_int(CombatRules.lone_guard_effective(0, true)).is_equal(0)
+	assert_int(CombatRules.lone_guard_effective(-1, true)).is_equal(-1)
+	assert_int(CombatRules.lone_guard_effective(2, false)).is_equal(2)
+	assert_int(CombatRules.lone_guard_effective(-1, false)).is_equal(-1)
 
 
 func test_damage_default_guard_matches_old_rule() -> void:

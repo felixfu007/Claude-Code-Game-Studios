@@ -511,6 +511,10 @@ func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 	var dealt: int = _compute_attack_damage(attacker_id, target_id, phi)
 	var target: Unit = unit_by_id(target_id)
 	commit_authoritative_change(func() -> void:
+		# story-033: record "this attacker settled an attack this player phase"
+		# INSIDE the commit window (ADR-0001). Both drivers' attack paths
+		# (BattleController._apply_attack / enemy step, BattleLoop) funnel here.
+		_attacked_this_phase[attacker_id] = true
 		target.take_damage(dealt)
 		if not target.is_alive():
 			board._clear_occupant(position_of(target_id))
@@ -694,16 +698,35 @@ func _lone_guard_of(target: Unit) -> int:
 	# for units that cannot have a lone-guard.
 	if target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
-	return lone_guard_if_at(target.id, position_of(target.id))
+	return lone_guard_if_at(target.id, position_of(target.id), attacked_this_phase(target.id))
 
 
-## story-031: lone-guard value unit [param unit_id] WOULD have if it stood on
-## [param tile] (other units at their current positions). Returns 0 for an
-## unknown id, a non-PLAYER unit, or a unit not flagged [member Unit.lone_guard].
-## With [param tile] == the unit's real position this equals the [code]lone_guard[/code]
-## key of [method preview_damage_breakdown]; that path calls this method, so
-## there is exactly one d_min loop.
-func lone_guard_if_at(unit_id: int, tile: Vector2i) -> int:
+## story-033 (spec amend1 §1): units that settled at least one attack
+## ([method resolve_attack] as attacker) since the current player phase began.
+## Kept for the whole following enemy phase; cleared by [method begin_player_turn].
+## Belongs to the tactical battle state (NOT the affinity system). Written only
+## inside [method commit_authoritative_change] (resolve_attack / begin_player_turn
+## both run inside a commit window in every driver).
+var _attacked_this_phase: Dictionary = {}
+
+
+## story-033: true if [param unit_id] attacked during the current/just-finished
+## player phase. Enemy-first battles: false before any player phase (empty dict).
+func attacked_this_phase(unit_id: int) -> bool:
+	return _attacked_this_phase.has(unit_id)
+
+
+## story-031/033: lone-guard value unit [param unit_id] WOULD have if it stood on
+## [param tile] (other units at their current positions) and
+## [param will_attack] says whether it attacked this player phase (attempt-3
+## registration: the caller supplies the assumption explicitly; the live flag is
+## NOT read here, so 2-arg callers get the full un-cancelled value). Returns 0
+## for an unknown id, a non-PLAYER unit, or a unit not flagged
+## [member Unit.lone_guard]. [method preview_damage_breakdown] calls this with
+## the real position and the real flag ([method attacked_this_phase]), so
+## there is exactly one d_min loop and one conditional
+## ([method CombatRules.lone_guard_effective]).
+func lone_guard_if_at(unit_id: int, tile: Vector2i, will_attack: bool = false) -> int:
 	var target: Unit = unit_by_id(unit_id)
 	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
@@ -714,7 +737,7 @@ func lone_guard_if_at(unit_id: int, tile: Vector2i) -> int:
 		var d: int = AffinityRules.manhattan_distance(tile, position_of(ally.id))
 		if d_min == CombatRules.NO_ALLY or d < d_min:
 			d_min = d
-	return CombatRules.lone_guard(d_min)
+	return CombatRules.lone_guard_effective(CombatRules.lone_guard(d_min), will_attack)
 
 
 # Shared by resolve_attack() and preview_damage(): computes the damage a
@@ -839,6 +862,9 @@ func deal_opening_hand() -> void:
 ## surfaces that as a loud [method CardDeck.draw_for_turn] assert failure
 ## instead of silently skipping the draw — deliberate, not an oversight.
 func begin_player_turn() -> void:
+	# story-033: new player phase -> nobody has attacked yet (inside the commit
+	# window both drivers wrap this call in).
+	_attacked_this_phase.clear()
 	tick_all_modifiers()
 	if _card_deck != null:
 		_card_deck.draw_for_turn()
