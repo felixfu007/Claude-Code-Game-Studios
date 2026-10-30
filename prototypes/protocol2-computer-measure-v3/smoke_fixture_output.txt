@@ -1,0 +1,12 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER tool=protocol2-computer-measure-v3 build_commit=e7751fc7a182dc378ac8da9513c1a82618f56ee2 engine=4.7.1-stable (official) level=2 terrain=res://assets/data/levels/test_fixture_terrain.txt roster=res://assets/data/units/test_fixture_roster.txt affinity= max_rounds=4
+RESULT arm=ignore v=0 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+RESULT arm=use v=0 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+RESULT arm=ignore v=1 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+RESULT arm=use v=1 outcome=TIMEOUT rounds=4 neardeath=1 phi_avg=0.000 raw_outcome=ONGOING aborted=true reason=max_rounds_reached phi_samples=4 final_hp=999 first_round=1 guard_events=2 guard_nonzero=0
+SIGSUM arm=ignore distinct=1 of 2
+SIGSUM arm=use distinct=1 of 2
+GUARDSUM guard_events=8 guard_nonzero=0
+FATAL guard never applied
+DONE
