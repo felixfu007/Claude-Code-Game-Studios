@@ -772,6 +772,11 @@ interfaces:
       The R3 constants are UNCHANGED. The cross-calibration re-verification obligation now
       covers BOTH channels (output: Phi >= enemy DEF gap; damage-taken: guard vs enemy ATK gap);
       it has NOT been re-measured as of this note. Spec: docs/reviews/affinity-core-redesign-spec-2026-10-30.md.
+      AMENDED 2026-10-30 (amend1, docs/reviews/affinity-core-redesign-spec-amend1-2026-10-30.md):
+      negative Phi now ALSO symmetric: guard = -ceil(|Phi|/2) (Phi=-1 -> -1); the lone-guard
+      of 戊 is conditional on 戊 NOT having attacked in the preceding player phase
+      (positive part cancelled once 戊 attacks). Re-measurement of the cross-calibration
+      remains outstanding. Single definition: design/gdd/affinity-position-chain.md formulas 4 and 5.
       WHEN TO REVISIT — this row does NOT own the trigger. tactical-combat-system.md's
       OQ-14 and OQ-15 already own it ("首次可玩建置後的平衡校準" — after the first playable
       build; owner 使用者 + systems-designer). Added 2026-08-31 round-2: this row was
