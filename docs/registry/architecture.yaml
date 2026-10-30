@@ -765,6 +765,13 @@ interfaces:
       2-3 pts). The DAMAGE-TAKEN channel (enemy ATK inflation, gap up to 6 pts) is NOT
       covered by Phi at all — Phi is an attacker-side one-way bonus. Players can hit harder;
       they cannot take less.
+      SUPERSEDED 2026-10-30 (manager ruling "好感度減傷+戊獨行機制"): the "Phi is attacker-side
+      only / players cannot take less" statement above no longer holds. Phi > 0 now ALSO
+      reduces damage taken by ceil(Phi/2) (cap +3), and 戊 gets a lone-guard from distance to
+      allies. Single definition: design/gdd/affinity-position-chain.md formulas 4 and 5.
+      The R3 constants are UNCHANGED. The cross-calibration re-verification obligation now
+      covers BOTH channels (output: Phi >= enemy DEF gap; damage-taken: guard vs enemy ATK gap);
+      it has NOT been re-measured as of this note. Spec: docs/reviews/affinity-core-redesign-spec-2026-10-30.md.
       WHEN TO REVISIT — this row does NOT own the trigger. tactical-combat-system.md's
       OQ-14 and OQ-15 already own it ("首次可玩建置後的平衡校準" — after the first playable
       build; owner 使用者 + systems-designer). Added 2026-08-31 round-2: this row was
