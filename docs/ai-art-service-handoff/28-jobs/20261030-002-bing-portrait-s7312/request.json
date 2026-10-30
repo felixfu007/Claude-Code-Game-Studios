@@ -1,0 +1,26 @@
+{
+  "bookkeeping": {
+    "asset_category": "portrait",
+    "character_id": "bing",
+    "note": "28-second-candidate-batch bing portrait",
+    "output_filename": "candidate28_bing_portrait_s7312.png"
+  },
+  "created_at": "2026-10-30T17:00:00+08:00",
+  "created_by": "claude-code",
+  "generation": {
+    "batch_size": 1,
+    "cfg_scale": 3.5,
+    "height": 1024,
+    "loras": [],
+    "model": "ronghua-v4.5",
+    "negative_prompt": "chibi, cute, cheerful smile, bright vivid colors, pastel colors, pristine spotless clothes, multiple people, extra limbs, extra fingers, deformed hands, bad anatomy, text, watermark, logo, signature, scenery, complex background, gradient background, patterned background, shadow on background, reference sheet, multiple views, revealing clothing, dark tanned skin, orange skin, gripping the blade, tool held by its head, reversed tool, upside down tool, floating tool, blood, wounds, cuts, scars, injuries, bruises, flag, american flag, stars and stripes, fire, flames, smoke, letters, numbers, emblem lettering, full body, wide shot, cropped head, top of head cut off, extreme close-up, face close-up, photograph, 3d render, doll, plastic skin, t-shirt, topknot, hair bun on top of head, white collar",
+    "prompt": "half body portrait from the waist up, slight three-quarter view, single adult character, solo, the whole head including the top of the hair fully inside the frame with empty space above the head, adult Taiwanese man in his thirties, thin wiry build, weathered tired face with stubble, wary guarded gaze, worn dark brown work jacket with mud stains, coil of rope over one shoulder, mountain forest survivor look, semi-realistic character illustration, clear facial structure, natural East Asian skin tone, light warm complexion, not tanned, soft rendered shading with gentle gradients, dim low-key lighting from a single hard-edged source, large shadow areas, muted desaturated cool palette, weary guarded expression, worn clothing with subtle dust and scuff marks, plain flat neutral gray background, no scenery, no background shadow, strong clear silhouette, generous padding around the character on all sides",
+    "sampler": "dpmpp_2m",
+    "seed": 7312,
+    "steps": 30,
+    "upscale_mode": "native_only",
+    "width": 1024
+  },
+  "job_id": "20261030-002-bing-portrait-s7312",
+  "schema_version": "1.0"
+}

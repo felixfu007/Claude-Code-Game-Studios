@@ -1,0 +1,26 @@
+{
+  "bookkeeping": {
+    "asset_category": "sprite",
+    "character_id": "jia",
+    "note": "28-second-candidate-batch jia piece",
+    "output_filename": "candidate28_jia_piece_s8113.png"
+  },
+  "created_at": "2026-10-30T17:00:00+08:00",
+  "created_by": "claude-code",
+  "generation": {
+    "batch_size": 1,
+    "cfg_scale": 4,
+    "height": 1152,
+    "loras": [],
+    "model": "arthemy-comics-v2.0",
+    "negative_prompt": "chibi, cute, cheerful smile, bright vivid colors, pastel colors, pristine spotless clothes, multiple people, extra limbs, extra fingers, deformed hands, bad anatomy, text, watermark, logo, signature, scenery, complex background, gradient background, patterned background, shadow on background, reference sheet, multiple views, revealing clothing, dark tanned skin, orange skin, gripping the blade, tool held by its head, reversed tool, upside down tool, floating tool, blood, wounds, cuts, scars, injuries, bruises, flag, american flag, stars and stripes, fire, flames, smoke, letters, numbers, emblem lettering, cropped, out of frame, feet cut off, close-up, bust only, photograph, photorealistic, soft shading, gradient shading, detailed linework, cross-hatching, internal outlines, soft shadows, axe held backwards, axe blade facing the wrong way, gripping the axe head, upside down axe, axe floating",
+    "prompt": "single adult character, solo, full body from head to feet including shoes, feet fully visible, standing idle pose, front-facing three-quarter view, young adult Taiwanese woman, athletic build, black hair in a tight ponytail, determined weary expression, navy blue firefighter jacket and trousers with bright silver-white reflective stripes on arms and legs, fingerless tactical gloves, sturdy scuffed boots, chest gear harness straps, holding a long straight wooden-handled fire axe, the small steel axe head at one end of the handle with a cutting blade on one side and a pointed pick spike on the opposite side of the head low at her side in one hand, her hand gripping the very end of the handle, the axe head hanging down toward the floor, hand near the hip, hand-drawn comic illustration, not photographic, not a real person, short stocky stylized proportions about four heads tall, slightly large head for readability, adult face, not chibi, not cute, flat cel shading with three tone steps, hard-edged flat color shapes, no soft gradient, bold dark outline around the outer silhouette only, no internal outlines, simplified bold shapes that stay readable at 32x40 pixels, few small details, natural East Asian skin tone, light warm complexion, muted desaturated colors, weary guarded posture, plain flat neutral gray background, no scenery, no background shadow",
+    "sampler": "dpmpp_2m",
+    "seed": 8113,
+    "steps": 30,
+    "upscale_mode": "native_only",
+    "width": 896
+  },
+  "job_id": "20261030-010-jia-piece-s8113",
+  "schema_version": "1.0"
+}

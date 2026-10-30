@@ -1,0 +1,26 @@
+{
+  "bookkeeping": {
+    "asset_category": "sprite",
+    "character_id": "wu",
+    "note": "28-second-candidate-batch wu piece",
+    "output_filename": "candidate28_wu_piece_s8512.png"
+  },
+  "created_at": "2026-10-30T17:00:00+08:00",
+  "created_by": "claude-code",
+  "generation": {
+    "batch_size": 1,
+    "cfg_scale": 4,
+    "height": 1152,
+    "loras": [],
+    "model": "arthemy-comics-v2.0",
+    "negative_prompt": "chibi, cute, cheerful smile, bright vivid colors, pastel colors, pristine spotless clothes, multiple people, extra limbs, extra fingers, deformed hands, bad anatomy, text, watermark, logo, signature, scenery, complex background, gradient background, patterned background, shadow on background, reference sheet, multiple views, revealing clothing, dark tanned skin, orange skin, gripping the blade, tool held by its head, reversed tool, upside down tool, floating tool, blood, wounds, cuts, scars, injuries, bruises, flag, american flag, stars and stripes, fire, flames, smoke, letters, numbers, emblem lettering, cropped, out of frame, feet cut off, close-up, bust only, photograph, photorealistic, soft shading, gradient shading, detailed linework, cross-hatching, internal outlines, soft shadows, katana, sword, samurai sword, curved blade, crossguard, long blade",
+    "prompt": "single adult character, solo, full body from head to feet including shoes, feet fully visible, standing idle pose, front-facing three-quarter view, adult Taiwanese man in his thirties, wiry build, slicked-back black hair, calm calculating half-lidded gaze, brown open-collar jacket with a red inner lining over a dark shirt, loose dark trousers, worn leather shoes, holding a machete low in one hand at his side: a short wide single-edged straight blade with a plain wooden handle and no guard, the blade pointing down along his leg, hand-drawn comic illustration, not photographic, not a real person, short stocky stylized proportions about four heads tall, slightly large head for readability, adult face, not chibi, not cute, flat cel shading with three tone steps, hard-edged flat color shapes, no soft gradient, bold dark outline around the outer silhouette only, no internal outlines, simplified bold shapes that stay readable at 32x40 pixels, few small details, natural East Asian skin tone, light warm complexion, muted desaturated colors, weary guarded posture, plain flat neutral gray background, no scenery, no background shadow",
+    "sampler": "dpmpp_2m",
+    "seed": 8512,
+    "steps": 30,
+    "upscale_mode": "native_only",
+    "width": 896
+  },
+  "job_id": "20261030-021-wu-piece-s8512",
+  "schema_version": "1.0"
+}
