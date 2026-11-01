@@ -481,6 +481,9 @@ const DISABLED_ROW_PREFIX_GLYPH: StringName = &"battle.menu.disabled_row_prefix_
 ## [member controller]'s live state, so a manual disable here would race that
 ## per-frame refresh and could be silently overwritten while M4 is still open.
 @onready var _leave_confirm: Control = $LeaveConfirm
+
+## [method open] 成功時的處理幀號;[method _unhandled_input] 用它略過「開選單那一下」按鍵。
+var _opened_on_frame: int = -1
 @onready var _leave_confirm_blocker: ColorRect = $LeaveConfirm/Blocker
 @onready var _leave_confirm_panel: PanelContainer = $LeaveConfirm/Panel
 @onready var _leave_confirm_content_margin: MarginContainer = $LeaveConfirm/Panel/ContentMargin
@@ -682,6 +685,7 @@ func open() -> OpenResult:
 		return OpenResult.REJECTED_FORCED_DISCARD
 
 	visible = true
+	_opened_on_frame = Engine.get_process_frames()
 	get_tree().paused = true
 	CursorStateHost.suspend_arbitration()
 	# Story U-010 — force M4 CLOSED on every fresh open, the same "never leak
@@ -1036,10 +1040,20 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _leave_confirm.visible:
+	if not visible:
 		return
-	if event.is_action_pressed(&"battle_cancel"):
-		close_leave_confirm()
+	if _leave_confirm.visible:
+		if event.is_action_pressed(&"battle_cancel"):
+			close_leave_confirm()
+			get_viewport().set_input_as_handled()
+		return
+	# 2026-10-29 管理者裁決:落實 battle-menu.md「離開」表 —— battle_cancel(Esc/B)
+	# 或再按一次 battle_menu 關閉整個選單(先前只有右鍵與「回到遊戲」列能關)。
+	# 開啟選單的那一下按鍵會在同一幀繼續流到這裡,不擋的話選單一開就被關掉。
+	if Engine.get_process_frames() == _opened_on_frame:
+		return
+	if event.is_action_pressed(&"battle_cancel") or event.is_action_pressed(&"battle_menu"):
+		close()
 		get_viewport().set_input_as_handled()
 
 
@@ -1128,7 +1142,14 @@ func _apply_layout() -> void:
 		&"font_size", int(fpx * REASON_FONT_FPX_MULTIPLIER)
 	)
 
+	# 2026-10-29 試玩:確認框疊在選單上時,選單文字從後面透出來;三顆按鈕擠在一起沒有間距。
+	# 擋板改為與 M1 遮罩同色(把後面的選單再壓暗一層),按鈕之間留半個字寬並等寬排開。
+	_leave_confirm_blocker.color = MASK_COLOR
+	(_leave_cancel_button.get_parent() as HBoxContainer).add_theme_constant_override(
+		&"separation", int(fpx * 0.5)
+	)
 	for m4_button: Button in [_leave_cancel_button, _leave_return_to_title_button, _leave_quit_button]:
+		m4_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		m4_button.custom_minimum_size = Vector2(0, row_h)
 		m4_button.add_theme_font_override(&"font", HUD_FONT)
 		m4_button.add_theme_font_size_override(&"font_size", int(fpx))

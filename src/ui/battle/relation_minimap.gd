@@ -72,11 +72,13 @@ func diagnostic_lines() -> Array[Dictionary]:
 
 
 ## Fixed pentagon slot for roster id 1..5, inside [param area].
+## 2026-10-29 試玩:原本用同一個半徑畫正五邊形,面板偏扁時底下兩點靠太近、名字疊在一起;
+## 改為依面板寬高各自取半徑(橢圓),把點攤開到整個面板。
 static func node_position(roster_id: int, area: Rect2) -> Vector2:
 	var center: Vector2 = area.position + area.size / 2.0
-	var radius: float = minf(area.size.x, area.size.y) * 0.32
+	var radius: Vector2 = Vector2(area.size.x * 0.34, area.size.y * 0.30)
 	var angle: float = -PI / 2.0 + TAU * float(roster_id - 1) / 5.0
-	return center + Vector2(cos(angle), sin(angle)) * radius
+	return center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y)
 
 
 static func symbol_for(state: AffinityLineStatus.State) -> String:
@@ -109,6 +111,7 @@ func _draw() -> void:
 		var mid: Vector2 = (from + to) / 2.0
 		draw_string(_font, mid - Vector2(_font_size * 0.25, -_font_size * 0.35), symbol_for(s.state),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size, color.lightened(0.2))
+	var body_center_y: float = body.position.y + body.size.y / 2.0
 	for id: int in ROSTER_IDS:
 		var p: Vector2 = node_position(id, body)
 		var alive: bool = id in _alive_ids
@@ -117,7 +120,10 @@ func _draw() -> void:
 		var label: String = Loc.localize(StringName(NAME_KEY_FORMAT % id))
 		if not alive:
 			label += Loc.localize(TEXT_DEAD)
-		draw_string(_font, p + Vector2(-_font_size * 1.0, -_font_size * 0.7), label,
+		# 名字以點為中心水平置中;下半部的點把名字畫在點的下方,避免與上方的線和符號擠在一起。
+		var label_w: float = _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size).x
+		var baseline_y: float = p.y + _font_size * 1.4 if p.y > body_center_y else p.y - _font_size * 0.7
+		draw_string(_font, Vector2(p.x - label_w / 2.0, baseline_y), label,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size, color)
 
 

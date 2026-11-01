@@ -110,7 +110,8 @@ const _EXPECTED_CARD_CONFIRM_PANEL: Dictionary[StringName, String] = {
 	&"battle.card_confirm.delta_def_format": "ΔDEF：%s",
 	&"battle.card_confirm.duration_format": "存續回合：%d",
 	&"battle.card_confirm.existing_modifier_line_format": "%s：ATK %s／DEF %s，剩 %d 回合",
-	&"battle.card_confirm.effective_format": "合併後：ATK_eff %d／DEF_eff %d",
+	# 2026-10-29 試玩:「ATK_eff」是開發用變數名,玩家看不懂,改為「ATK/DEF」。
+	&"battle.card_confirm.effective_format": "合併後：ATK %d／DEF %d",
 	&"battle.card_confirm.target_format_pair": "作用對象：%s ↔ %s",
 	&"battle.card_confirm.strength_label_format": "好感度：%s",
 }

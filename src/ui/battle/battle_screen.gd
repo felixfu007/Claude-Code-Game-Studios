@@ -1245,9 +1245,11 @@ func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	var fpx: int = HudLayout.font_size(window_size)
 	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx)
 	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
+	# 先換字級再設尺寸(理由同 _apply_hud_action_buttons_layout)。
+	_relation_toggle_button.add_theme_font_size_override(&"font_size", HudLayout.small_font_size(window_size))
+	_relation_toggle_button.update_minimum_size()
 	_relation_toggle_button.position = trect.position
 	_relation_toggle_button.size = trect.size
-	_relation_toggle_button.add_theme_font_size_override(&"font_size", HudLayout.small_font_size(window_size))
 
 func _mouse_over_relation_toggle(window_pos: Vector2) -> bool:
 	return _relation_toggle_button != null and _relation_toggle_button.get_global_rect().has_point(window_pos)
@@ -1323,9 +1325,12 @@ func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
 	for pair: Array in [[_menu_button, 0], [_hand_button, 1]]:
 		var button: Button = pair[0]
 		var rect: Rect2 = HudLayout.hud_action_button_rect(window_size, pair[1])
+		# 先換字級再設尺寸:視窗縮小時若先設尺寸,舊的大字級會把按鈕撐寬且縮不回來,
+		# 「手牌 4/5」被右邊的「選單」蓋掉一截(2026-10-29 試玩,960x540)。
+		button.add_theme_font_size_override(&"font_size", fpx)
+		button.update_minimum_size()
 		button.position = rect.position
 		button.size = rect.size
-		button.add_theme_font_size_override(&"font_size", fpx)
 
 
 func _mouse_over_hud_action_buttons(window_pos: Vector2) -> bool:
@@ -1358,7 +1363,47 @@ func _dispatch_mouse_action(action: StringName) -> void:
 
 
 ## 出牌/棄牌/選目標/確認框期間的左鍵。回傳 true 表示已處理(呼叫端不再當成點棋盤)。
+## 2026-10-29 管理者裁決(強制棄牌防誤觸,不加確認框):棄牌畫面在回合開頭自動蓋住棋盤下半部,
+## 而一次左鍵就會棄牌。滑鼠棄牌須同時滿足兩條才算數:
+## ① 畫面出現後已過 [constant DISCARD_CLICK_GRACE_MSEC](擋「正要點棋盤、畫面剛好跳出來」那一下);
+## ② 畫面出現後滑鼠曾移到某張卡片上(擋「沒看到畫面、原地連點」)。
+## 鍵盤/手把棄牌不受影響(它們本來就要先移動選取再按確認)。
+const DISCARD_CLICK_GRACE_MSEC: int = 500
+
+## 目前是否處於強制棄牌(由 [method _track_forced_discard_arming] 維護)。
+var _discard_armed: bool = false
+## 本次強制棄牌開始的時間(毫秒),[member _discard_armed] 為 true 時才有意義。
+var _discard_armed_since_msec: int = 0
+## 本次強制棄牌開始後,滑鼠是否曾移到某張卡片上。
+var _discard_card_hovered: bool = false
+
+
+## 每幀與每次滑鼠事件前呼叫:偵測強制棄牌的開始/結束,重設上面兩個欄位。
+func _track_forced_discard_arming() -> void:
+	if not _controller.has_pending_discard():
+		_discard_armed = false
+		_discard_card_hovered = false
+		return
+	if not _discard_armed:
+		_discard_armed = true
+		_discard_armed_since_msec = Time.get_ticks_msec()
+		_discard_card_hovered = false
+
+
+func _forced_discard_click_allowed() -> bool:
+	_track_forced_discard_arming()
+	return _discard_card_hovered \
+		and Time.get_ticks_msec() - _discard_armed_since_msec >= DISCARD_CLICK_GRACE_MSEC
+
+
+## 唯讀診斷:滑鼠點擊目前能否棄牌(測試用)。
+func diagnostic_forced_discard_click_allowed() -> bool:
+	return _forced_discard_click_allowed()
+
+
 func _handle_mouse_click_in_card_or_confirm_state(window_pos: Vector2) -> bool:
+	if _controller.has_pending_discard() and not _forced_discard_click_allowed():
+		return true
 	if _controller.has_pending_discard() or _card_selecting_from_hand:
 		var index: int = _hand_bar.slot_index_at(window_pos)
 		if index >= 0:
@@ -2117,6 +2162,7 @@ func _process(_delta: float) -> void:
 	# regardless of phase: see [member _tile_info_cursor_valid]'s own doc
 	# comment for why this read must happen here and nowhere else.
 	_tile_info_cursor_valid = CursorStateHost.is_current_target_valid()
+	_track_forced_discard_arming()
 
 	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_diagnostic_enemy_acting_process_frame_count += 1
@@ -2209,6 +2255,10 @@ func _input(event: InputEvent) -> void:
 		if _controller.phase() != BattleController.Phase.ENEMY_ACTING \
 				and not _guess_mouse_over_selector((event as InputEventMouseMotion).position):
 			_last_mouse_window_pos = (event as InputEventMouseMotion).position
+		# 須在 _hover_hand_card() 之前判斷:它會 _refresh_view() 重建卡格,重建當下卡格尺寸還沒排好。
+		_track_forced_discard_arming()
+		if _discard_armed and _hand_bar.slot_index_at((event as InputEventMouseMotion).position) >= 0:
+			_discard_card_hovered = true
 		_hover_hand_card((event as InputEventMouseMotion).position)
 		return
 
@@ -2374,10 +2424,10 @@ func _input(event: InputEvent) -> void:
 			if event.is_action_pressed(&"battle_confirm"):
 				_confirm_selected_card()
 				return
+			# 2026-10-29 試玩實測:原本這裡自己呼叫 cancel(),漏了把 BOARD_TILE 登記回去,
+			# Esc/右鍵收手牌後方向鍵整場移不動游標。改走 C 鍵那條已正確的收手牌路徑。
 			if event.is_action_pressed(&"battle_cancel"):
-				if _controller.cancel():
-					_card_selecting_from_hand = false
-					_refresh_view()
+				_handle_open_hand_pressed()
 				return
 			return
 
@@ -4854,8 +4904,9 @@ func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
 	var hold_back: int = int(bd.get("hold_back", 0))
 	if hold_back != 0:
 		lines.insert(lines.size() - 2, Loc.localize(&"battle.attack_confirm.hold_back_format") % hold_back)
-	return "
-".join(lines)
+	# 2026-10-29 試玩:這裡原本在字串裡直接寫換行字元,CRLF 取出的檔案會變成 CR+LF,
+	# 標籤把兩個都當換行,行距變兩倍、文字跑出框外。一律用跳脫寫法。
+	return "\n".join(lines)
 
 
 ## story-031 AC6 — 傷害拆解的「減傷」列文字;無需顯示時回傳空字串。

@@ -359,10 +359,12 @@ static func _looks_like_signed_int(token: String) -> bool:
 	return trimmed.substr(1).is_valid_int()
 
 
+## 2026-10-29 試玩:卡片資料沒有「卡名」欄位,原本第一行印的是內部編號(例:card_06),
+## 玩家看不懂。有牌面文字就只顯示牌面文字;沒有時才退回編號,避免標題整列空白。
 static func _format_title(card_id: String, flavor_text: String) -> String:
 	if flavor_text.is_empty():
 		return card_id
-	return "%s\n%s" % [card_id, flavor_text]
+	return flavor_text
 
 
 ## Which category the panel is currently showing ([constant Category.NONE]

@@ -42,7 +42,7 @@ battle.card_confirm.delta_atk_format,ΔATK：%s
 battle.card_confirm.delta_def_format,ΔDEF：%s
 battle.card_confirm.duration_format,存續回合：%d
 battle.card_confirm.existing_modifier_line_format,%s：ATK %s／DEF %s，剩 %d 回合
-battle.card_confirm.effective_format,合併後：ATK_eff %d／DEF_eff %d
+battle.card_confirm.effective_format,合併後：ATK %d／DEF %d
 battle.card_confirm.target_format_pair,作用對象：%s ↔ %s
 battle.card_confirm.strength_label_format,好感度：%s
 battle.attack_confirm.header_format,%s ⚔ %s

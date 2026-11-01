@@ -102,6 +102,10 @@ const DETAIL_PANEL_HEIGHT_FPX_MULTIPLIER: float = 4.0
 ## Gap between Z3's bottom edge and Z2's top edge — this file's own
 ## placeholder judgment, same category as [constant CAPTION_GAP_FPX_MULTIPLIER].
 const DETAIL_PANEL_GAP_FPX_MULTIPLIER: float = 0.3
+## Z3 文字字級 = HUD 字級 × 此倍率(2026-10-29 試玩)。原本沿用引擎預設 16px、不隨視窗縮放:
+## 1440x810 剛好放得下,960x540 卡片變窄字卻沒變小,牌面文字折成五六行跑出框外。
+## 倍率取 16/33 = 1440x810(HUD 字級 33)下維持原本的 16px,其他解析度等比縮放。
+const DETAIL_TEXT_FONT_FPX_MULTIPLIER: float = 16.0 / 33.0
 
 ## Duration of the Z1<->Z2 expand/collapse transition, in seconds. This
 ## file's own judgment call: AC-U2 requires "Z2 完全可讀 ≤ 200ms"; 0.15s
@@ -910,6 +914,9 @@ func _position_detail_panel(window_size: Vector2i) -> void:
 	var r: Rect2 = detail_panel_rect(index, window_size)
 	_detail_panel.position = r.position
 	_detail_panel.size = r.size
+	var text_px: int = roundi(float(HudLayout.font_size(window_size)) * DETAIL_TEXT_FONT_FPX_MULTIPLIER)
+	_detail_text_label.add_theme_font_size_override(&"font_size", text_px)
+	_detail_effect_label.add_theme_font_size_override(&"font_size", text_px)
 
 
 # Shows/hides and fills [member _detail_panel] from [member _card_faces] at
