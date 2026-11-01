@@ -4,6 +4,10 @@
 Epic: **第九十批(2026-10-30)收工。** 協議 2(停損考試)首次執行:門檻鎖定 H `20e0854` → attempt-1 未通過 → 好感度減傷 → attempt-2/3 通過(壓線)→ 戊機制三改 → **attempt-4 未通過(現行判定)**。測試 1653 → **1749,全綠**,協調者每批重跑。
 Feature: 🔴 **管理者今天 25 項裁決**(逐字見第九十批節)。非推薦選擇:「重新設計核心,美術照常」「交設計師重想戊的機制」「現在做雙值」。🔴 **attempt-4 未通過不得回頭採用 attempt-3**(管理者知情同意)。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG;第二件:讀 attempt-4 敗因診斷 `prototypes/protocol2-diagnosis-attempt4-2026-10-30/README.md`(收工時已派出,可能已完成),據此請管理者裁決戊的下一步(裁決 25「下次先診斷敗因再決定(推薦)」);第三件:問管理者在家目視與 27 號選圖。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。乾淨量測 worktree:`C:/tmp/p2run_v`(`git checkout -f --detach <commit>` + `--import`)。
+以下為第八十九批・在家續(2026-10-29 晚)原狀態列 —— 🔴 本批與公司第九十批撞名,已改稱。
+Epic: **第八十九批・在家續(2026-10-29 晚,管理者在家)收工。** 協調者用開窗驅動腳本(載入真實 TitleScreen.tscn、合成滑鼠/鍵盤/手把事件)全流程試玩 + 自行截圖驗收;修 3 個操作 bug + 7 項畫面問題。測試 1653 → **1663,全綠**。🔴 **未提交;2026-10-30 晚已與公司第九十批合併(衝突已解),合併後全套見該節。**
+Feature: 🔴 **找到 2 個嚴重 bug,管理者裁決「不需畫面的留到公司修」**:①選單「回主選單」後樹仍 paused,標題按鈕全死;②手把 A 不在 `ui_accept`,所有 Button 按不下(標題進不了遊戲)。
+Task: 🔴 **仍待辦:①問管理者是否提交本批(檔案清單見「第八十九批・在家續」節);②修上述兩個嚴重 bug(10-30 合併時查過,公司端尚未修)。**
 以下為第八十九批原狀態列。
 Epic: **第八十九批(2026-10-29)收工。** 試玩報告 A/B/C/E/F/G/H/I/M/N/O 全部改完(tactical story-023~029)、傷害預覽進資訊框(026)、阻擋規則補測試(027)、教學關接線(game-shell story-008)、SC-01 改 2 句、vs04 改分批站位、AI_IMG 27 號 30 張已產出。測試 1586 → **1653,全綠**,協調者每批重跑。
 Feature: 🔴 **管理者今天 27 項裁決**(逐字總表見第八十九批節)。兩項為非推薦選擇:攻擊「鍵盤也拿掉確認框」、vs04「現在就套 S1」。協調者疏失兩次:開工沒 pull、問確認框時沒揭露它是唯一的 Φ 顯示處。
@@ -117,6 +121,48 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 | 10:06 | 派 game-designer 細化規格 `docs/reviews/affinity-core-redesign-spec-2026-10-30.md` → 之後 narrative-director 人設確認 → GDD 修改(要先問)→ 實作工單 | 進行中 |
 | 09:50 | 🔴 裁決 7「**重新設計核心,美術照常**」(**非推薦**;推薦為「重新設計核心+美術暫停」,協調者揭露「字面違反停損約定」)。被跳過:換聰明電腦重測 / 等在家實打 | — |
 ⚠️ 量測計畫第 3 節(真人為基準)已被鎖定文件取代,鎖定文件第 1 節明寫衝突以鎖定文件為準。
+
+## 🔴 第八十九批・在家續(2026-10-29 晚,管理者在家)
+
+> 🔴 **命名更正**:本節原標題寫「第九十批」,與公司端 2026-10-30 的「第九十批」(上方)撞名;
+> 兩邊在 10-30 晚合併時才發現,本節改稱「第八十九批・在家續」。內文其餘未改。
+> **合併紀錄**:`git stash` → `pull --ff-only` 到 `77069d5` → `stash pop`;衝突 3 檔
+> (`battle_screen.gd` 攻擊預覽:保留公司新增的減傷/留一手列 + 本批的 `"\n"` 換行修正;本檔與 `PROJECT-STATUS.md` 兩邊並存)。
+> 兩個嚴重 bug 合併時查過:公司端**尚未修**。
+> **合併後全套(協調者自跑,家機)**:`WRAPPER EXIT = 0` / `ENGINE EXIT = 0` /
+> `1759 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(159/159)`(= 公司 1749 + 本批 10)。
+> ⚠️ **未目視**:攻擊預覽框加上公司新增的「減傷」「留一手」列後最多 8 行,本批截圖驗收時只有 6 行;8 行在小視窗是否仍放得下**沒看過**。
+> 合併用的 stash `home-2026-10-29-visual-fixes` 保留未刪(`git stash list`),確認無誤後可 `git stash drop`。
+
+### 狀態
+- 開工時 `git pull` 拿到 26 筆(本機原本落後)。本機 `.import` 約 40 檔只有換行符差異,未動。
+- 🔴 **本批全部未提交。** 修改:`src/ui/battle/battle_screen.gd`、`card_confirm_panel.gd`、`hand_bar.gd`、`relation_minimap.gd`、`src/ui/menu/battle_menu.gd`、`assets/data/locales/strings.csv`、`tests/unit/core/i18n/i18n_migrated_strings_test.gd`;新增 `tests/integration/ui/battle/battle_screen_playtest_fixes_2026_10_29_test.gd`(10 條)。
+- 收工前最後一次全套(協調者自跑):`ENGINE EXIT = 0` / `1663 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(150/150)`。
+
+### 管理者本批裁決(逐字要點)
+1. 「1.要」—— 修 Esc 收手牌後 BOARD_TILE 未重新登記(方向鍵整場失靈)。
+2. 「不用確認，但是要想其他防止誤觸的機制」—— 強制棄牌防誤觸:畫面出現 500ms 內點擊不算 + 須先 hover 到卡片(`DISCARD_CLICK_GRACE_MSEC`)。鍵盤/手把不受影響。
+3. 「現在修」—— Esc/B/再按 M 關整個選單(`battle_menu.gd` `_unhandled_input`,以 `_opened_on_frame` 擋開選單那一下)。
+4. 「把需要用到畫面驗收的BUG都先修一修，其他不用畫面也能修的問題，留給明天到公司端再修」。
+
+### 本批修掉的(皆開窗截圖驗收過)
+- Esc/右鍵收手牌改走 `_handle_open_hand_pressed()`;常駐測試已做「改回舊寫法→變紅」驗證。
+- 攻擊預覽行距加倍:`_build_attack_preview_text` 的 join 字串原為**字面換行**,CRLF checkout 變 `"\r\n"`,Label 換兩次行。改 `"\n"`。⚠️ 同形狀全 `src/` 只此一處(`grep -rn '^"' src --include=*.gd`)。
+- 出牌確認框:標題不再印 card id(`_format_title` 只回 flavor);`effective_format` 改「合併後:ATK %d/DEF %d」(i18n 測試同步)。
+- 關係圖:節點改橢圓分布、名字置中、下半部名字畫在點下方。
+- HUD 按鈕/關係圖按鈕:先設字級 + `update_minimum_size()` 再設尺寸(視窗由大縮小時按鈕被舊字級撐寬)。
+- 手牌 Z3 說明文字字級改隨 HUD 字級縮放(`DETAIL_TEXT_FONT_FPX_MULTIPLIER = 16/33`,1440x810 維持原 16px)。
+- 離開確認框:擋板改 `MASK_COLOR`、三按鈕 `EXPAND_FILL` + 0.5fpx 間距。寬度 14fpx 由 `battle-menu.md` 表格釘住,**未改**。
+
+### 🔴 明天在公司修(不需畫面,已實測重現)
+1. **選單「回主選單」後樹仍 paused**:`battle_menu.gd` `_on_return_to_title_pressed()` 直接路由、未呼叫 `close()`(全 `src/` 只有 `close()` 會 `paused = false`,且它也負責 `resume_arbitration()`)。實測:回標題 `paused: true`,點「略過教學」120 幀後仍在標題。建議:路由前先 `close()`,補迴歸測試。
+2. **手把 A 不在 `ui_accept`**:`project.godot` 未覆寫 `ui_accept`,引擎預設只有 Enter/KP Enter/Space(實測 `InputMap.action_get_events`)。標題、選單列、設定、離開確認框的 Button 手把都按不下。戰鬥內走 `battle_confirm` 正常。建議:`ui_accept` 加手把 A(必要時 `ui_cancel` 加 B),注意 4.7 裝置 ID 重編號。
+
+### 待管理者決定(畫面擺放,非 bug)
+1080p/4K 棋盤滿版時:底部說明列蓋最下一列、收合手牌擋右下敵人、左上關係圖按鈕與「猜中」計數蓋我方(第 2/4/5 場)、右上資訊框指到右上角敵人時蓋住它。另:卡面文字點名角色(例「丙壓低身形」)但可指定給任何人。
+
+### 試玩驅動(拋棄式,在 scratchpad,未進專案)
+開窗、`change_scene_to_file` 載入真實 TitleScreen.tscn。⚠️ 兩個坑:①`-s` 腳本不可靜態引用依賴 Autoload 的類別(`BattleScreen`、`SceneRouter`…),否則編譯失敗,改用 `load()` 與名稱比對;②`InputEventAction` 開得了選單但不代表真人按鍵,驗按鍵行為要送 `InputEventKey`/`InputEventJoypadButton`。
 
 ## 🔴 接手第一件事(2026-10-29 **第八十九批**,進行中 —— 位階高於下方所有既有指示)
 
