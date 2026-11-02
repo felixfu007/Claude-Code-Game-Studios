@@ -1,0 +1,26 @@
+{
+  "bookkeeping": {
+    "asset_category": "portrait",
+    "character_id": "ding",
+    "note": "29-painted-portrait-batch ding",
+    "output_filename": "candidate29_ding_portrait_painted_s9412.png"
+  },
+  "created_at": "2026-11-02T16:00:00+08:00",
+  "created_by": "claude-code",
+  "generation": {
+    "batch_size": 1,
+    "cfg_scale": 4,
+    "height": 1024,
+    "loras": [],
+    "model": "cheyenne-v2.0",
+    "negative_prompt": "chibi, cute, cheerful smile, bright vivid colors, pastel colors, pristine spotless clothes, multiple people, extra limbs, extra fingers, deformed hands, bad anatomy, text, watermark, logo, signature, scenery, complex background, gradient background, patterned background, shadow on background, reference sheet, multiple views, revealing clothing, dark tanned skin, orange skin, blood, wounds, cuts, scars, injuries, bruises, flag, american flag, stars and stripes, fire, flames, smoke, letters, numbers, emblem lettering, writing, name tag, full body, wide shot, cropped head, top of head cut off, extreme close-up, face close-up, photograph, photorealistic, 3d render, doll, plastic skin, t-shirt, topknot, hair bun on top of head, white collar, gold braid, aiguillette, rope cord on shoulder, tactical vest, short hair",
+    "prompt": "bust portrait showing head and both shoulders, slight three-quarter view, single adult character, solo, the whole head including the top of the hair fully inside the frame with empty space above the head, young adult Taiwanese woman, slim build, black hair in a low neat bun at the nape under the cap, serious watchful expression, dark navy police peaked cap with a silver police badge, dark navy stand-collar police uniform jacket with a plain silver badge on the chest and shoulder patches, semi-realistic painted character illustration, visible painterly brushwork, illustrated not photographic, clear facial structure, natural East Asian skin tone, light warm complexion, not tanned, soft rendered shading with gentle gradients, dim low-key lighting from a single hard-edged source, large shadow areas, muted desaturated cool palette, weary guarded expression, worn clothing with subtle dust and scuff marks, plain flat neutral gray background, no scenery, no background shadow, strong clear silhouette, generous padding around the character on all sides",
+    "sampler": "dpmpp_2m",
+    "seed": 9412,
+    "steps": 30,
+    "upscale_mode": "native_only",
+    "width": 1024
+  },
+  "job_id": "20261102-011-ding-portrait-painted-s9412",
+  "schema_version": "1.0"
+}
