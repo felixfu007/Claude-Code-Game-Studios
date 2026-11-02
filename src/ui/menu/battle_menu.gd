@@ -796,7 +796,13 @@ func _on_leave_confirmed_pressed() -> void:
 
 ## 2026-10-27 game-shell story-005 — 「回主選單」。永遠經 [member return_to_title_callable];
 ## 未設定時才呼叫真的 [method SceneRouter.go_to_title](回傳的 Node 不需處理)。
+##
+## 2026-11-02 修正:路由前必須先 [method close] —— 選單開啟時 [member SceneTree.paused]
+## 為 true,全 src/ 只有 close() 會復原它(與仲裁恢復);原本直接路由會讓標題畫面
+## 在 paused 狀態下載入,全部點不動。close() 只寫 visible/paused/resume_arbitration,
+## 不發任何訊號,不會干擾路由。
 func _on_return_to_title_pressed() -> void:
+	close()
 	if return_to_title_callable.is_valid():
 		return_to_title_callable.call()
 	else:
