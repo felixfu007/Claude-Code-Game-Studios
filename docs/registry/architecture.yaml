@@ -777,6 +777,15 @@ interfaces:
       of 戊 is conditional on 戊 NOT having attacked in the preceding player phase
       (positive part cancelled once 戊 attacks). Re-measurement of the cross-calibration
       remains outstanding. Single definition: design/gdd/affinity-position-chain.md formulas 4 and 5.
+      AMENDED 2026-11-03 (amend2, docs/reviews/affinity-core-redesign-spec-amend2-2026-10-30.md):
+      the lone-guard of the flagged unit (戊) is now a "straddle" table by distance to the nearest
+      living ally: d=1 -> -1, d=2 -> +2, d>=3 or no ally -> 0; the attack-condition of amend1 is
+      CANCELLED (CombatRules.lone_guard_effective now always returns its input). NEW "hold back"
+      term: a flagged attacker whose current cell has d=2 deals 1 less final damage
+      (damage = max(0, ATK - DEF + Phi_att - guard_total - hold_back)); Phi_att for 戊 stays 0.
+      Re-measurement of the cross-calibration remains outstanding. Protocol-2 runs since:
+      attempt-4 (this rule) FAILED (1addfba); attempt-5 (bing range 4->6) PASSED marginally
+      (818c9e0). Single definition: design/gdd/affinity-position-chain.md formula 5.
       WHEN TO REVISIT — this row does NOT own the trigger. tactical-combat-system.md's
       OQ-14 and OQ-15 already own it ("首次可玩建置後的平衡校準" — after the first playable
       build; owner 使用者 + systems-designer). Added 2026-08-31 round-2: this row was
