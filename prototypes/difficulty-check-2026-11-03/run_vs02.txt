@@ -1,0 +1,14 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER tool=protocol2-computer-measure-v3 build_commit=c20ac96c8e6faa57fc2d7f42c8224fe83423ddeb engine=4.7.1-stable (official) level=2 terrain=res://assets/data/levels/vs02_terrain.txt roster=res://assets/data/units/vs02_roster.txt affinity=res://assets/data/affinity/vs02_affinity_links.txt max_rounds=12
+RESULT arm=use v=0 outcome=VICTORY rounds=4 neardeath=1 phi_avg=8.000 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,18,22,20,5 first_round=1 guard_events=7 guard_nonzero=4
+RESULT arm=use v=1 outcome=VICTORY rounds=4 neardeath=1 phi_avg=5.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=27,21,22,4,24 first_round=1 guard_events=6 guard_nonzero=4
+RESULT arm=use v=2 outcome=VICTORY rounds=5 neardeath=0 phi_avg=7.600 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=30,26,11,13,23 first_round=1 guard_events=5 guard_nonzero=5
+RESULT arm=use v=3 outcome=VICTORY rounds=4 neardeath=0 phi_avg=4.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,12,16,26,30 first_round=1 guard_events=3 guard_nonzero=3
+RESULT arm=use v=4 outcome=VICTORY rounds=6 neardeath=1 phi_avg=5.667 raw_outcome=VICTORY aborted=false reason= phi_samples=6 final_hp=24,18,2,19,22 first_round=1 guard_events=9 guard_nonzero=8
+RESULT arm=use v=5 outcome=VICTORY rounds=5 neardeath=1 phi_avg=4.000 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=6,26,22,19,22 first_round=1 guard_events=7 guard_nonzero=7
+RESULT arm=use v=6 outcome=VICTORY rounds=6 neardeath=0 phi_avg=4.333 raw_outcome=VICTORY aborted=false reason= phi_samples=6 final_hp=11,26,17,19,13 first_round=1 guard_events=8 guard_nonzero=5
+RESULT arm=use v=7 outcome=VICTORY rounds=5 neardeath=0 phi_avg=7.200 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=23,21,22,13,23 first_round=1 guard_events=6 guard_nonzero=6
+SIGSUM arm=use distinct=8 of 8
+GUARDSUM guard_events=51 guard_nonzero=42
+DONE
