@@ -1,0 +1,465 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER tool=difficulty-ai-retreat build_commit=9053ec411938553313f67401e6ebde6fdee4dea3 retreat=off engine=4.7.1-stable (official) level=3 terrain=res://assets/data/levels/vs03_terrain.txt roster=res://assets/data/units/vs03_roster.txt affinity=res://assets/data/affinity/vs03_affinity_links.txt max_rounds=12
+TPOS v=0 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=0 round=1 unit=甲(1) from=(0, 1) move_to=(1, 2) attack=-1
+TPACT v=0 round=1 unit=乙(2) from=(0, 2) move_to=(2, 2) attack=-1
+TPACT v=0 round=1 unit=丙(3) from=(0, 3) move_to=(2, 4) attack=10
+TDELTA v=0 round=1 last_actor=丙(3) last_actor_target=10 unit=E5(10) fac=1 hp 24->10
+TPACT v=0 round=1 unit=丁(4) from=(0, 4) move_to=(2, 1) attack=-1
+TPACT v=0 round=1 unit=戊(5) from=(0, 5) move_to=(3, 5) attack=-1
+TPACT v=0 round=1 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=0 round=1 unit=乙(2) from=(2, 2) move_to=<null> attack=-1
+TPACT v=0 round=1 unit=丁(4) from=(2, 1) move_to=<null> attack=-1
+TPACT v=0 round=1 unit=戊(5) from=(3, 5) move_to=<null> attack=-1
+TPOS v=0 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(2, 4):hp22 丁(4)@(2, 1):hp26 戊(5)@(3, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp10]
+TDELTA v=0 round=1 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 30->26
+TPOS v=0 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(2, 4):hp22 丁(4)@(2, 1):hp26 戊(5)@(3, 5):hp26] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 5):hp18 E4(9)@(6, 5):hp22 E5(10)@(5, 2):hp10]
+TPACT v=0 round=2 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=0 round=2 unit=乙(2) from=(2, 2) move_to=(3, 2) attack=10
+TDELTA v=0 round=2 last_actor=乙(2) last_actor_target=10 unit=E5(10) fac=1 hp 10->2
+TPACT v=0 round=2 unit=丙(3) from=(2, 4) move_to=(3, 4) attack=10
+TDEATH v=0 round=2 unit_id=10 hp_before=2 last_actor=丙(3) last_actor_target=10
+TPACT v=0 round=2 unit=丁(4) from=(2, 1) move_to=(4, 1) attack=7
+TDELTA v=0 round=2 last_actor=丁(4) last_actor_target=7 unit=E2(7) fac=1 hp 20->9
+TPACT v=0 round=2 unit=戊(5) from=(3, 5) move_to=(5, 5) attack=9
+TDELTA v=0 round=2 last_actor=戊(5) last_actor_target=9 unit=E4(9) fac=1 hp 22->11
+TPOS v=0 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(3, 2):hp26 丙(3)@(3, 4):hp22 丁(4)@(4, 1):hp26 戊(5)@(5, 5):hp26] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp9 E3(8)@(7, 5):hp18 E4(9)@(6, 5):hp11]
+TDELTA v=0 round=2 last_actor=E1(6) last_actor_target=4 unit=丁(4) fac=0 hp 26->19
+TDELTA v=0 round=2 last_actor=E2(7) last_actor_target=4 unit=丁(4) fac=0 hp 19->13
+TDELTA v=0 round=2 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 26->20
+TDELTA v=0 round=2 last_actor=E4(9) last_actor_target=5 unit=戊(5) fac=0 hp 20->15
+TPOS v=0 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(3, 2):hp26 丙(3)@(3, 4):hp22 丁(4)@(4, 1):hp13 戊(5)@(5, 5):hp15] ENEMIES[E1(6)@(4, 0):hp23 E2(7)@(5, 1):hp9 E3(8)@(6, 4):hp18 E4(9)@(6, 5):hp11]
+TPACT v=0 round=3 unit=甲(1) from=(1, 2) move_to=(3, 0) attack=6
+TDELTA v=0 round=3 last_actor=甲(1) last_actor_target=6 unit=E1(6) fac=1 hp 23->13
+TPACT v=0 round=3 unit=乙(2) from=(3, 2) move_to=(2, 0) attack=6
+TDELTA v=0 round=3 last_actor=乙(2) last_actor_target=6 unit=E1(6) fac=1 hp 13->2
+TPACT v=0 round=3 unit=丙(3) from=(3, 4) move_to=(2, 2) attack=6
+TDEATH v=0 round=3 unit_id=6 hp_before=2 last_actor=丙(3) last_actor_target=6
+TPACT v=0 round=3 unit=丁(4) from=(4, 1) move_to=(4, 0) attack=7
+TDEATH v=0 round=3 unit_id=7 hp_before=9 last_actor=丁(4) last_actor_target=7
+TPACT v=0 round=3 unit=戊(5) from=(5, 5) move_to=<null> attack=9
+TDEATH v=0 round=3 unit_id=9 hp_before=11 last_actor=戊(5) last_actor_target=9
+TPACT v=0 round=3 unit=戊(5) from=(5, 5) move_to=(2, 4) attack=-1
+TPOS v=0 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 0):hp30 乙(2)@(2, 0):hp26 丙(3)@(2, 2):hp22 丁(4)@(4, 0):hp13 戊(5)@(2, 4):hp15] ENEMIES[E3(8)@(6, 4):hp18]
+TDELTA v=0 round=3 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 15->11
+TPOS v=0 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 0):hp30 乙(2)@(2, 0):hp26 丙(3)@(2, 2):hp22 丁(4)@(4, 0):hp13 戊(5)@(2, 4):hp11] ENEMIES[E3(8)@(5, 4):hp18]
+TPACT v=0 round=4 unit=甲(1) from=(3, 0) move_to=<null> attack=-1
+TPACT v=0 round=4 unit=乙(2) from=(2, 0) move_to=(3, 1) attack=-1
+TPACT v=0 round=4 unit=丙(3) from=(2, 2) move_to=(3, 2) attack=8
+TDEATH v=0 round=4 unit_id=8 hp_before=18 last_actor=丙(3) last_actor_target=8
+RESULT arm=use v=0 outcome=VICTORY rounds=4 neardeath=0 phi_avg=8.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,26,22,13,11 first_round=1 guard_events=6 guard_nonzero=4
+TPOS v=1 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=1 round=1 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPACT v=1 round=1 unit=乙(2) from=(0, 2) move_to=<null> attack=-1
+TPACT v=1 round=1 unit=丙(3) from=(0, 3) move_to=<null> attack=-1
+TPACT v=1 round=1 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPACT v=1 round=1 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPOS v=1 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPOS v=1 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TPACT v=1 round=2 unit=甲(1) from=(0, 1) move_to=(1, 2) attack=-1
+TPACT v=1 round=2 unit=乙(2) from=(0, 2) move_to=(2, 2) attack=-1
+TPACT v=1 round=2 unit=丙(3) from=(0, 3) move_to=(2, 3) attack=-1
+TPACT v=1 round=2 unit=丁(4) from=(0, 4) move_to=(3, 4) attack=10
+TDELTA v=1 round=2 last_actor=丁(4) last_actor_target=10 unit=E5(10) fac=1 hp 24->16
+TPACT v=1 round=2 unit=戊(5) from=(0, 5) move_to=(4, 5) attack=-1
+TPACT v=1 round=2 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=1 round=2 unit=乙(2) from=(2, 2) move_to=<null> attack=-1
+TPACT v=1 round=2 unit=丙(3) from=(2, 3) move_to=<null> attack=-1
+TPACT v=1 round=2 unit=戊(5) from=(4, 5) move_to=<null> attack=-1
+TPOS v=1 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(2, 3):hp22 丁(4)@(3, 4):hp26 戊(5)@(4, 5):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp16]
+TDELTA v=1 round=2 last_actor=E1(6) last_actor_target=2 unit=乙(2) fac=0 hp 26->20
+TDELTA v=1 round=2 last_actor=E3(8) last_actor_target=4 unit=丁(4) fac=0 hp 26->18
+TDELTA v=1 round=2 last_actor=E4(9) last_actor_target=2 unit=乙(2) fac=0 hp 20->15
+TDELTA v=1 round=2 last_actor=E5(10) last_actor_target=4 unit=丁(4) fac=0 hp 18->10
+TPOS v=1 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp15 丙(3)@(2, 3):hp22 丁(4)@(3, 4):hp10 戊(5)@(4, 5):hp30] ENEMIES[E1(6)@(2, 1):hp23 E2(7)@(4, 1):hp20 E3(8)@(6, 5):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp16]
+TPACT v=1 round=3 unit=甲(1) from=(1, 2) move_to=(2, 0) attack=6
+TDELTA v=1 round=3 last_actor=甲(1) last_actor_target=6 unit=E1(6) fac=1 hp 23->13
+TPACT v=1 round=3 unit=乙(2) from=(2, 2) move_to=(0, 5) attack=-1
+TPACT v=1 round=3 unit=丙(3) from=(2, 3) move_to=(0, 4) attack=6
+TDEATH v=1 round=3 unit_id=6 hp_before=13 last_actor=丙(3) last_actor_target=6
+TPACT v=1 round=3 unit=丁(4) from=(3, 4) move_to=(3, 2) attack=10
+TDELTA v=1 round=3 last_actor=丁(4) last_actor_target=10 unit=E5(10) fac=1 hp 16->6
+TPACT v=1 round=3 unit=戊(5) from=(4, 5) move_to=(2, 3) attack=10
+TDEATH v=1 round=3 unit_id=10 hp_before=6 last_actor=戊(5) last_actor_target=10
+TPACT v=1 round=3 unit=乙(2) from=(0, 5) move_to=<null> attack=-1
+TPOS v=1 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(2, 0):hp30 乙(2)@(0, 5):hp15 丙(3)@(0, 4):hp22 丁(4)@(3, 2):hp10 戊(5)@(2, 3):hp30] ENEMIES[E2(7)@(4, 1):hp20 E3(8)@(6, 5):hp18 E4(9)@(4, 2):hp22]
+TDELTA v=1 round=3 last_actor=E2(7) last_actor_target=4 unit=丁(4) fac=0 hp 10->4
+TDEATH v=1 round=3 unit_id=4 hp_before=4 last_actor=E4(9) last_actor_target=4
+RESULT arm=use v=1 outcome=DEFEAT rounds=3 neardeath=5 phi_avg=4.000 raw_outcome=DEFEAT aborted=false reason= phi_samples=3 final_hp=30,15,22,30 first_round=1 guard_events=6 guard_nonzero=4
+TPOS v=2 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=2 round=1 unit=戊(5) from=(0, 5) move_to=(2, 2) attack=-1
+TPACT v=2 round=1 unit=丁(4) from=(0, 4) move_to=(3, 4) attack=-1
+TPACT v=2 round=1 unit=丙(3) from=(0, 3) move_to=(2, 4) attack=10
+TDELTA v=2 round=1 last_actor=丙(3) last_actor_target=10 unit=E5(10) fac=1 hp 24->11
+TPACT v=2 round=1 unit=乙(2) from=(0, 2) move_to=(1, 1) attack=-1
+TPACT v=2 round=1 unit=甲(1) from=(0, 1) move_to=(2, 1) attack=-1
+TPACT v=2 round=1 unit=戊(5) from=(2, 2) move_to=<null> attack=-1
+TPACT v=2 round=1 unit=丁(4) from=(3, 4) move_to=<null> attack=-1
+TPACT v=2 round=1 unit=乙(2) from=(1, 1) move_to=<null> attack=-1
+TPACT v=2 round=1 unit=甲(1) from=(2, 1) move_to=<null> attack=-1
+TPOS v=2 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(2, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 4):hp22 丁(4)@(3, 4):hp26 戊(5)@(2, 2):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp11]
+TPOS v=2 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(2, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 4):hp22 丁(4)@(3, 4):hp26 戊(5)@(2, 2):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp11]
+TPACT v=2 round=2 unit=戊(5) from=(2, 2) move_to=(3, 3) attack=10
+TDELTA v=2 round=2 last_actor=戊(5) last_actor_target=10 unit=E5(10) fac=1 hp 11->1
+TPACT v=2 round=2 unit=丁(4) from=(3, 4) move_to=(4, 5) attack=10
+TDEATH v=2 round=2 unit_id=10 hp_before=1 last_actor=丁(4) last_actor_target=10
+TPACT v=2 round=2 unit=丙(3) from=(2, 4) move_to=(3, 5) attack=9
+TDELTA v=2 round=2 last_actor=丙(3) last_actor_target=9 unit=E4(9) fac=1 hp 22->8
+TPACT v=2 round=2 unit=乙(2) from=(1, 1) move_to=(2, 0) attack=-1
+TPACT v=2 round=2 unit=甲(1) from=(2, 1) move_to=(4, 1) attack=6
+TDELTA v=2 round=2 last_actor=甲(1) last_actor_target=6 unit=E1(6) fac=1 hp 23->14
+TPACT v=2 round=2 unit=乙(2) from=(2, 0) move_to=<null> attack=-1
+TPOS v=2 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(4, 1):hp30 乙(2)@(2, 0):hp26 丙(3)@(3, 5):hp22 丁(4)@(4, 5):hp26 戊(5)@(3, 3):hp30] ENEMIES[E1(6)@(5, 1):hp14 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp8]
+TDELTA v=2 round=2 last_actor=E1(6) last_actor_target=1 unit=甲(1) fac=0 hp 30->23
+TDELTA v=2 round=2 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 23->17
+TDELTA v=2 round=2 last_actor=E3(8) last_actor_target=3 unit=丙(3) fac=0 hp 22->14
+TDELTA v=2 round=2 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 17->11
+TPOS v=2 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(4, 1):hp11 乙(2)@(2, 0):hp26 丙(3)@(3, 5):hp14 丁(4)@(4, 5):hp26 戊(5)@(3, 3):hp30] ENEMIES[E1(6)@(4, 0):hp14 E2(7)@(5, 1):hp20 E3(8)@(6, 5):hp18 E4(9)@(4, 2):hp8]
+TPACT v=2 round=3 unit=戊(5) from=(3, 3) move_to=(3, 2) attack=9
+TDEATH v=2 round=3 unit_id=9 hp_before=8 last_actor=戊(5) last_actor_target=9
+TPACT v=2 round=3 unit=丁(4) from=(4, 5) move_to=(5, 4) attack=8
+TDELTA v=2 round=3 last_actor=丁(4) last_actor_target=8 unit=E3(8) fac=1 hp 18->5
+TPACT v=2 round=3 unit=丙(3) from=(3, 5) move_to=<null> attack=8
+TDEATH v=2 round=3 unit_id=8 hp_before=5 last_actor=丙(3) last_actor_target=8
+TPACT v=2 round=3 unit=乙(2) from=(2, 0) move_to=(3, 1) attack=6
+TDELTA v=2 round=3 last_actor=乙(2) last_actor_target=6 unit=E1(6) fac=1 hp 14->3
+TPACT v=2 round=3 unit=甲(1) from=(4, 1) move_to=<null> attack=6
+TDEATH v=2 round=3 unit_id=6 hp_before=3 last_actor=甲(1) last_actor_target=6
+TPACT v=2 round=3 unit=丙(3) from=(3, 5) move_to=(2, 3) attack=-1
+TPACT v=2 round=3 unit=甲(1) from=(4, 1) move_to=<null> attack=-1
+TPOS v=2 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(4, 1):hp11 乙(2)@(3, 1):hp26 丙(3)@(2, 3):hp14 丁(4)@(5, 4):hp26 戊(5)@(3, 2):hp30] ENEMIES[E2(7)@(5, 1):hp20]
+TDELTA v=2 round=3 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 11->8
+TPOS v=2 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(4, 1):hp8 乙(2)@(3, 1):hp26 丙(3)@(2, 3):hp14 丁(4)@(5, 4):hp26 戊(5)@(3, 2):hp30] ENEMIES[E2(7)@(4, 0):hp20]
+TPACT v=2 round=4 unit=戊(5) from=(3, 2) move_to=(3, 0) attack=7
+TDELTA v=2 round=4 last_actor=戊(5) last_actor_target=7 unit=E2(7) fac=1 hp 20->9
+TPACT v=2 round=4 unit=丁(4) from=(5, 4) move_to=(5, 2) attack=-1
+TPACT v=2 round=4 unit=丙(3) from=(2, 3) move_to=(2, 0) attack=7
+TDEATH v=2 round=4 unit_id=7 hp_before=9 last_actor=丙(3) last_actor_target=7
+RESULT arm=use v=2 outcome=VICTORY rounds=4 neardeath=1 phi_avg=5.000 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=8,26,14,26,30 first_round=1 guard_events=5 guard_nonzero=5
+TPOS v=3 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=3 round=1 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPACT v=3 round=1 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPACT v=3 round=1 unit=丙(3) from=(0, 3) move_to=<null> attack=-1
+TPACT v=3 round=1 unit=乙(2) from=(0, 2) move_to=<null> attack=-1
+TPACT v=3 round=1 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPOS v=3 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPOS v=3 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TPACT v=3 round=2 unit=戊(5) from=(0, 5) move_to=(2, 3) attack=-1
+TPACT v=3 round=2 unit=丁(4) from=(0, 4) move_to=(3, 4) attack=10
+TDELTA v=3 round=2 last_actor=丁(4) last_actor_target=10 unit=E5(10) fac=1 hp 24->14
+TPACT v=3 round=2 unit=丙(3) from=(0, 3) move_to=(2, 2) attack=-1
+TPACT v=3 round=2 unit=乙(2) from=(0, 2) move_to=(1, 1) attack=-1
+TPACT v=3 round=2 unit=甲(1) from=(0, 1) move_to=(2, 1) attack=-1
+TPACT v=3 round=2 unit=戊(5) from=(2, 3) move_to=<null> attack=-1
+TPACT v=3 round=2 unit=丙(3) from=(2, 2) move_to=<null> attack=-1
+TPACT v=3 round=2 unit=乙(2) from=(1, 1) move_to=<null> attack=-1
+TPACT v=3 round=2 unit=甲(1) from=(2, 1) move_to=<null> attack=-1
+TPOS v=3 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(2, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 2):hp22 丁(4)@(3, 4):hp26 戊(5)@(2, 3):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp14]
+TDELTA v=3 round=2 last_actor=E1(6) last_actor_target=1 unit=甲(1) fac=0 hp 30->26
+TDELTA v=3 round=2 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 26->23
+TDELTA v=3 round=2 last_actor=E3(8) last_actor_target=4 unit=丁(4) fac=0 hp 26->19
+TDELTA v=3 round=2 last_actor=E4(9) last_actor_target=3 unit=丙(3) fac=0 hp 22->17
+TDELTA v=3 round=2 last_actor=E5(10) last_actor_target=4 unit=丁(4) fac=0 hp 19->12
+TPOS v=3 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(2, 1):hp23 乙(2)@(1, 1):hp26 丙(3)@(2, 2):hp17 丁(4)@(3, 4):hp12 戊(5)@(2, 3):hp30] ENEMIES[E1(6)@(3, 1):hp23 E2(7)@(4, 1):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp14]
+TPACT v=3 round=3 unit=戊(5) from=(2, 3) move_to=<null> attack=10
+TDELTA v=3 round=3 last_actor=戊(5) last_actor_target=10 unit=E5(10) fac=1 hp 14->4
+TPACT v=3 round=3 unit=丁(4) from=(3, 4) move_to=(0, 5) attack=-1
+TPACT v=3 round=3 unit=丙(3) from=(2, 2) move_to=(1, 3) attack=10
+TDEATH v=3 round=3 unit_id=10 hp_before=4 last_actor=丙(3) last_actor_target=10
+TPACT v=3 round=3 unit=乙(2) from=(1, 1) move_to=(2, 0) attack=6
+TDELTA v=3 round=3 last_actor=乙(2) last_actor_target=6 unit=E1(6) fac=1 hp 23->12
+TPACT v=3 round=3 unit=甲(1) from=(2, 1) move_to=<null> attack=6
+TDEATH v=3 round=3 unit_id=6 hp_before=12 last_actor=甲(1) last_actor_target=6
+TPACT v=3 round=3 unit=戊(5) from=(2, 3) move_to=(3, 2) attack=-1
+TPACT v=3 round=3 unit=丁(4) from=(0, 5) move_to=<null> attack=-1
+TPACT v=3 round=3 unit=甲(1) from=(2, 1) move_to=(3, 0) attack=-1
+TPOS v=3 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 0):hp23 乙(2)@(2, 0):hp26 丙(3)@(1, 3):hp17 丁(4)@(0, 5):hp12 戊(5)@(3, 2):hp30] ENEMIES[E2(7)@(4, 1):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22]
+TDELTA v=3 round=3 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 23->20
+TDELTA v=3 round=3 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 30->26
+TDELTA v=3 round=3 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 20->17
+TPOS v=3 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 0):hp17 乙(2)@(2, 0):hp26 丙(3)@(1, 3):hp17 丁(4)@(0, 5):hp12 戊(5)@(3, 2):hp26] ENEMIES[E2(7)@(4, 0):hp20 E3(8)@(5, 3):hp18 E4(9)@(3, 1):hp22]
+TPACT v=3 round=4 unit=戊(5) from=(3, 2) move_to=(4, 1) attack=7
+TDELTA v=3 round=4 last_actor=戊(5) last_actor_target=7 unit=E2(7) fac=1 hp 20->10
+TPACT v=3 round=4 unit=丁(4) from=(0, 5) move_to=<null> attack=-1
+TPACT v=3 round=4 unit=丙(3) from=(1, 3) move_to=(2, 1) attack=7
+TDEATH v=3 round=4 unit_id=7 hp_before=10 last_actor=丙(3) last_actor_target=7
+TPACT v=3 round=4 unit=乙(2) from=(2, 0) move_to=<null> attack=9
+TDELTA v=3 round=4 last_actor=乙(2) last_actor_target=9 unit=E4(9) fac=1 hp 22->10
+TPACT v=3 round=4 unit=甲(1) from=(3, 0) move_to=<null> attack=9
+TDEATH v=3 round=4 unit_id=9 hp_before=10 last_actor=甲(1) last_actor_target=9
+TPACT v=3 round=4 unit=乙(2) from=(2, 0) move_to=<null> attack=-1
+TPACT v=3 round=4 unit=甲(1) from=(3, 0) move_to=<null> attack=-1
+TPOS v=3 round=4 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 0):hp17 乙(2)@(2, 0):hp26 丙(3)@(2, 1):hp17 丁(4)@(0, 5):hp12 戊(5)@(4, 1):hp26] ENEMIES[E3(8)@(5, 3):hp18]
+TDELTA v=3 round=4 last_actor=E3(8) last_actor_target=3 unit=丙(3) fac=0 hp 17->11
+TPOS v=3 round=5 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 0):hp17 乙(2)@(2, 0):hp26 丙(3)@(2, 1):hp11 丁(4)@(0, 5):hp12 戊(5)@(4, 1):hp26] ENEMIES[E3(8)@(5, 2):hp18]
+TPACT v=3 round=5 unit=戊(5) from=(4, 1) move_to=(5, 1) attack=8
+TDELTA v=3 round=5 last_actor=戊(5) last_actor_target=8 unit=E3(8) fac=1 hp 18->5
+TPACT v=3 round=5 unit=丁(4) from=(0, 5) move_to=(3, 4) attack=-1
+TPACT v=3 round=5 unit=丙(3) from=(2, 1) move_to=(2, 2) attack=8
+TDEATH v=3 round=5 unit_id=8 hp_before=5 last_actor=丙(3) last_actor_target=8
+RESULT arm=use v=3 outcome=VICTORY rounds=5 neardeath=0 phi_avg=8.800 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=17,26,11,12,26 first_round=1 guard_events=9 guard_nonzero=9
+TPOS v=4 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=4 round=1 unit=甲(1) from=(0, 1) move_to=(1, 2) attack=-1
+TPACT v=4 round=1 unit=乙(2) from=(0, 2) move_to=(2, 2) attack=-1
+TPACT v=4 round=1 unit=丙(3) from=(0, 3) move_to=(2, 4) attack=10
+TDELTA v=4 round=1 last_actor=丙(3) last_actor_target=10 unit=E5(10) fac=1 hp 24->10
+TPACT v=4 round=1 unit=丁(4) from=(0, 4) move_to=(2, 1) attack=-1
+TPACT v=4 round=1 unit=戊(5) from=(0, 5) move_to=(3, 5) attack=-1
+TPACT v=4 round=1 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=4 round=1 unit=乙(2) from=(2, 2) move_to=<null> attack=-1
+TPACT v=4 round=1 unit=丁(4) from=(2, 1) move_to=<null> attack=-1
+TPACT v=4 round=1 unit=戊(5) from=(3, 5) move_to=<null> attack=-1
+TPOS v=4 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(2, 4):hp22 丁(4)@(2, 1):hp26 戊(5)@(3, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp10]
+TDELTA v=4 round=1 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 30->26
+TPOS v=4 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(2, 4):hp22 丁(4)@(2, 1):hp26 戊(5)@(3, 5):hp26] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 5):hp18 E4(9)@(6, 5):hp22 E5(10)@(5, 2):hp10]
+TPACT v=4 round=2 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=4 round=2 unit=乙(2) from=(2, 2) move_to=<null> attack=-1
+TPACT v=4 round=2 unit=丙(3) from=(2, 4) move_to=(0, 3) attack=10
+TDEATH v=4 round=2 unit_id=10 hp_before=10 last_actor=丙(3) last_actor_target=10
+TPACT v=4 round=2 unit=丁(4) from=(2, 1) move_to=(2, 0) attack=-1
+TPACT v=4 round=2 unit=戊(5) from=(3, 5) move_to=(3, 3) attack=-1
+TPACT v=4 round=2 unit=丁(4) from=(2, 0) move_to=<null> attack=-1
+TPACT v=4 round=2 unit=戊(5) from=(3, 3) move_to=<null> attack=-1
+TPOS v=4 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(2, 0):hp26 戊(5)@(3, 3):hp26] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 5):hp18 E4(9)@(6, 5):hp22]
+TDELTA v=4 round=2 last_actor=E1(6) last_actor_target=4 unit=丁(4) fac=0 hp 26->19
+TDELTA v=4 round=2 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 26->22
+TPOS v=4 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(2, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(2, 0):hp19 戊(5)@(3, 3):hp22] ENEMIES[E1(6)@(3, 0):hp23 E2(7)@(5, 0):hp20 E3(8)@(7, 3):hp18 E4(9)@(6, 3):hp22]
+TPACT v=4 round=3 unit=甲(1) from=(1, 2) move_to=(3, 1) attack=6
+TDELTA v=4 round=3 last_actor=甲(1) last_actor_target=6 unit=E1(6) fac=1 hp 23->13
+TPACT v=4 round=3 unit=乙(2) from=(2, 2) move_to=(0, 1) attack=-1
+TPACT v=4 round=3 unit=丙(3) from=(0, 3) move_to=(1, 2) attack=6
+TDEATH v=4 round=3 unit_id=6 hp_before=13 last_actor=丙(3) last_actor_target=6
+TPACT v=4 round=3 unit=丁(4) from=(2, 0) move_to=<null> attack=-1
+TPACT v=4 round=3 unit=戊(5) from=(3, 3) move_to=(5, 3) attack=9
+TDELTA v=4 round=3 last_actor=戊(5) last_actor_target=9 unit=E4(9) fac=1 hp 22->11
+TPACT v=4 round=3 unit=乙(2) from=(0, 1) move_to=<null> attack=-1
+TPOS v=4 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 1):hp30 乙(2)@(0, 1):hp26 丙(3)@(1, 2):hp22 丁(4)@(2, 0):hp19 戊(5)@(5, 3):hp22] ENEMIES[E2(7)@(5, 0):hp20 E3(8)@(7, 3):hp18 E4(9)@(6, 3):hp11]
+TDELTA v=4 round=3 last_actor=E2(7) last_actor_target=4 unit=丁(4) fac=0 hp 19->13
+TDELTA v=4 round=3 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 22->16
+TDELTA v=4 round=3 last_actor=E4(9) last_actor_target=5 unit=戊(5) fac=0 hp 16->11
+TPOS v=4 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 1):hp30 乙(2)@(0, 1):hp26 丙(3)@(1, 2):hp22 丁(4)@(2, 0):hp13 戊(5)@(5, 3):hp11] ENEMIES[E2(7)@(3, 0):hp20 E3(8)@(6, 2):hp18 E4(9)@(6, 3):hp11]
+TPACT v=4 round=4 unit=甲(1) from=(3, 1) move_to=(4, 0) attack=7
+TDELTA v=4 round=4 last_actor=甲(1) last_actor_target=7 unit=E2(7) fac=1 hp 20->10
+TPACT v=4 round=4 unit=乙(2) from=(0, 1) move_to=(3, 1) attack=7
+TDELTA v=4 round=4 last_actor=乙(2) last_actor_target=7 unit=E2(7) fac=1 hp 10->1
+TPACT v=4 round=4 unit=丙(3) from=(1, 2) move_to=(0, 1) attack=7
+TDEATH v=4 round=4 unit_id=7 hp_before=1 last_actor=丙(3) last_actor_target=7
+TPACT v=4 round=4 unit=丁(4) from=(2, 0) move_to=(2, 3) attack=-1
+TPACT v=4 round=4 unit=戊(5) from=(5, 3) move_to=(4, 2) attack=-1
+TPACT v=4 round=4 unit=丁(4) from=(2, 3) move_to=<null> attack=-1
+TPACT v=4 round=4 unit=戊(5) from=(4, 2) move_to=<null> attack=-1
+TPOS v=4 round=4 ENEMY_PHASE_START PLAYERS[甲(1)@(4, 0):hp30 乙(2)@(3, 1):hp26 丙(3)@(0, 1):hp22 丁(4)@(2, 3):hp13 戊(5)@(4, 2):hp11] ENEMIES[E3(8)@(6, 2):hp18 E4(9)@(6, 3):hp11]
+TDELTA v=4 round=4 last_actor=E3(8) last_actor_target=1 unit=甲(1) fac=0 hp 30->24
+TDELTA v=4 round=4 last_actor=E4(9) last_actor_target=5 unit=戊(5) fac=0 hp 11->8
+TPOS v=4 round=5 PLAYER_PHASE_START PLAYERS[甲(1)@(4, 0):hp24 乙(2)@(3, 1):hp26 丙(3)@(0, 1):hp22 丁(4)@(2, 3):hp13 戊(5)@(4, 2):hp8] ENEMIES[E3(8)@(6, 2):hp18 E4(9)@(5, 2):hp11]
+TPACT v=4 round=5 unit=甲(1) from=(4, 0) move_to=(5, 1) attack=9
+TDEATH v=4 round=5 unit_id=9 hp_before=11 last_actor=甲(1) last_actor_target=9
+TPACT v=4 round=5 unit=乙(2) from=(3, 1) move_to=(4, 1) attack=-1
+TPACT v=4 round=5 unit=丙(3) from=(0, 1) move_to=(2, 0) attack=-1
+TPACT v=4 round=5 unit=丁(4) from=(2, 3) move_to=<null> attack=-1
+TPACT v=4 round=5 unit=戊(5) from=(4, 2) move_to=(1, 1) attack=-1
+TPACT v=4 round=5 unit=乙(2) from=(4, 1) move_to=<null> attack=-1
+TPACT v=4 round=5 unit=丙(3) from=(2, 0) move_to=<null> attack=-1
+TPACT v=4 round=5 unit=戊(5) from=(1, 1) move_to=<null> attack=-1
+TPOS v=4 round=5 ENEMY_PHASE_START PLAYERS[甲(1)@(5, 1):hp24 乙(2)@(4, 1):hp26 丙(3)@(2, 0):hp22 丁(4)@(2, 3):hp13 戊(5)@(1, 1):hp8] ENEMIES[E3(8)@(6, 2):hp18]
+TDELTA v=4 round=5 last_actor=E3(8) last_actor_target=2 unit=乙(2) fac=0 hp 26->20
+TPOS v=4 round=6 PLAYER_PHASE_START PLAYERS[甲(1)@(5, 1):hp24 乙(2)@(4, 1):hp20 丙(3)@(2, 0):hp22 丁(4)@(2, 3):hp13 戊(5)@(1, 1):hp8] ENEMIES[E3(8)@(6, 1):hp18]
+TPACT v=4 round=6 unit=甲(1) from=(5, 1) move_to=<null> attack=8
+TDELTA v=4 round=6 last_actor=甲(1) last_actor_target=8 unit=E3(8) fac=1 hp 18->2
+TPACT v=4 round=6 unit=乙(2) from=(4, 1) move_to=(5, 0) attack=8
+TDEATH v=4 round=6 unit_id=8 hp_before=2 last_actor=乙(2) last_actor_target=8
+RESULT arm=use v=4 outcome=VICTORY rounds=6 neardeath=1 phi_avg=7.667 raw_outcome=VICTORY aborted=false reason= phi_samples=6 final_hp=24,20,22,13,8 first_round=1 guard_events=9 guard_nonzero=6
+TPOS v=5 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=5 round=1 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPACT v=5 round=1 unit=乙(2) from=(0, 2) move_to=<null> attack=-1
+TPACT v=5 round=1 unit=丙(3) from=(0, 3) move_to=<null> attack=-1
+TPACT v=5 round=1 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPACT v=5 round=1 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPOS v=5 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPOS v=5 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TPACT v=5 round=2 unit=甲(1) from=(0, 1) move_to=(1, 2) attack=-1
+TPACT v=5 round=2 unit=乙(2) from=(0, 2) move_to=(1, 1) attack=-1
+TPACT v=5 round=2 unit=丙(3) from=(0, 3) move_to=(2, 3) attack=-1
+TPACT v=5 round=2 unit=丁(4) from=(0, 4) move_to=(1, 0) attack=-1
+TPACT v=5 round=2 unit=戊(5) from=(0, 5) move_to=(3, 4) attack=-1
+TPACT v=5 round=2 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPACT v=5 round=2 unit=乙(2) from=(1, 1) move_to=<null> attack=-1
+TPACT v=5 round=2 unit=丙(3) from=(2, 3) move_to=<null> attack=-1
+TPACT v=5 round=2 unit=丁(4) from=(1, 0) move_to=<null> attack=-1
+TPACT v=5 round=2 unit=戊(5) from=(3, 4) move_to=<null> attack=-1
+TPOS v=5 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 3):hp22 丁(4)@(1, 0):hp26 戊(5)@(3, 4):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TDELTA v=5 round=2 last_actor=E1(6) last_actor_target=2 unit=乙(2) fac=0 hp 26->20
+TDELTA v=5 round=2 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 30->26
+TDELTA v=5 round=2 last_actor=E5(10) last_actor_target=3 unit=丙(3) fac=0 hp 22->16
+TPOS v=5 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp30 乙(2)@(1, 1):hp20 丙(3)@(2, 3):hp16 丁(4)@(1, 0):hp26 戊(5)@(3, 4):hp26] ENEMIES[E1(6)@(2, 1):hp23 E2(7)@(4, 1):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp24]
+TPACT v=5 round=3 unit=甲(1) from=(1, 2) move_to=(0, 1) attack=-1
+TPACT v=5 round=3 unit=乙(2) from=(1, 1) move_to=(0, 5) attack=-1
+TPACT v=5 round=3 unit=丙(3) from=(2, 3) move_to=(0, 4) attack=6
+TDELTA v=5 round=3 last_actor=丙(3) last_actor_target=6 unit=E1(6) fac=1 hp 23->7
+TPACT v=5 round=3 unit=丁(4) from=(1, 0) move_to=(1, 5) attack=-1
+TPACT v=5 round=3 unit=戊(5) from=(3, 4) move_to=(5, 5) attack=-1
+TPACT v=5 round=3 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPACT v=5 round=3 unit=乙(2) from=(0, 5) move_to=<null> attack=-1
+TPACT v=5 round=3 unit=丁(4) from=(1, 5) move_to=<null> attack=-1
+TPACT v=5 round=3 unit=戊(5) from=(5, 5) move_to=<null> attack=-1
+TPOS v=5 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 5):hp20 丙(3)@(0, 4):hp16 丁(4)@(1, 5):hp26 戊(5)@(5, 5):hp26] ENEMIES[E1(6)@(2, 1):hp7 E2(7)@(4, 1):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp24]
+TDELTA v=5 round=3 last_actor=E1(6) last_actor_target=1 unit=甲(1) fac=0 hp 30->23
+TDELTA v=5 round=3 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 23->17
+TDELTA v=5 round=3 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 26->20
+TDELTA v=5 round=3 last_actor=E4(9) last_actor_target=3 unit=丙(3) fac=0 hp 16->10
+TDELTA v=5 round=3 last_actor=E5(10) last_actor_target=3 unit=丙(3) fac=0 hp 10->3
+TPOS v=5 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp17 乙(2)@(0, 5):hp20 丙(3)@(0, 4):hp3 丁(4)@(1, 5):hp26 戊(5)@(5, 5):hp20] ENEMIES[E1(6)@(0, 0):hp7 E2(7)@(1, 1):hp20 E3(8)@(6, 4):hp18 E4(9)@(0, 2):hp22 E5(10)@(0, 3):hp24]
+TPACT v=5 round=4 unit=甲(1) from=(0, 1) move_to=<null> attack=6
+TDEATH v=5 round=4 unit_id=6 hp_before=7 last_actor=甲(1) last_actor_target=6
+TPACT v=5 round=4 unit=乙(2) from=(0, 5) move_to=<null> attack=10
+TDELTA v=5 round=4 last_actor=乙(2) last_actor_target=10 unit=E5(10) fac=1 hp 24->17
+TPACT v=5 round=4 unit=丙(3) from=(0, 4) move_to=(1, 2) attack=10
+TDELTA v=5 round=4 last_actor=丙(3) last_actor_target=10 unit=E5(10) fac=1 hp 17->1
+TPACT v=5 round=4 unit=丁(4) from=(1, 5) move_to=(0, 4) attack=10
+TDEATH v=5 round=4 unit_id=10 hp_before=1 last_actor=丁(4) last_actor_target=10
+TPACT v=5 round=4 unit=戊(5) from=(5, 5) move_to=(5, 4) attack=8
+TDELTA v=5 round=4 last_actor=戊(5) last_actor_target=8 unit=E3(8) fac=1 hp 18->5
+TPACT v=5 round=4 unit=甲(1) from=(0, 1) move_to=(1, 0) attack=-1
+TPACT v=5 round=4 unit=乙(2) from=(0, 5) move_to=(0, 3) attack=-1
+TPOS v=5 round=4 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 0):hp17 乙(2)@(0, 3):hp20 丙(3)@(1, 2):hp3 丁(4)@(0, 4):hp26 戊(5)@(5, 4):hp20] ENEMIES[E2(7)@(1, 1):hp20 E3(8)@(6, 4):hp5 E4(9)@(0, 2):hp22]
+TDELTA v=5 round=4 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 17->11
+TDELTA v=5 round=4 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 20->14
+TDEATH v=5 round=4 unit_id=3 hp_before=3 last_actor=E4(9) last_actor_target=3
+RESULT arm=use v=5 outcome=DEFEAT rounds=4 neardeath=5 phi_avg=3.500 raw_outcome=DEFEAT aborted=false reason= phi_samples=4 final_hp=11,20,26,14 first_round=1 guard_events=11 guard_nonzero=7
+TPOS v=6 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=6 round=1 unit=戊(5) from=(0, 5) move_to=(2, 2) attack=-1
+TPACT v=6 round=1 unit=丁(4) from=(0, 4) move_to=(3, 4) attack=-1
+TPACT v=6 round=1 unit=丙(3) from=(0, 3) move_to=(2, 4) attack=10
+TDELTA v=6 round=1 last_actor=丙(3) last_actor_target=10 unit=E5(10) fac=1 hp 24->11
+TPACT v=6 round=1 unit=乙(2) from=(0, 2) move_to=(1, 1) attack=-1
+TPACT v=6 round=1 unit=甲(1) from=(0, 1) move_to=(2, 1) attack=-1
+TPACT v=6 round=1 unit=戊(5) from=(2, 2) move_to=<null> attack=-1
+TPACT v=6 round=1 unit=丁(4) from=(3, 4) move_to=<null> attack=-1
+TPACT v=6 round=1 unit=乙(2) from=(1, 1) move_to=<null> attack=-1
+TPACT v=6 round=1 unit=甲(1) from=(2, 1) move_to=<null> attack=-1
+TPOS v=6 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(2, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 4):hp22 丁(4)@(3, 4):hp26 戊(5)@(2, 2):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp11]
+TPOS v=6 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(2, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(2, 4):hp22 丁(4)@(3, 4):hp26 戊(5)@(2, 2):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp11]
+TPACT v=6 round=2 unit=戊(5) from=(2, 2) move_to=(1, 3) attack=-1
+TPACT v=6 round=2 unit=丁(4) from=(3, 4) move_to=(0, 5) attack=-1
+TPACT v=6 round=2 unit=丙(3) from=(2, 4) move_to=(2, 3) attack=-1
+TPACT v=6 round=2 unit=乙(2) from=(1, 1) move_to=(2, 0) attack=-1
+TPACT v=6 round=2 unit=甲(1) from=(2, 1) move_to=(3, 3) attack=10
+TDELTA v=6 round=2 last_actor=甲(1) last_actor_target=10 unit=E5(10) fac=1 hp 11->2
+TPACT v=6 round=2 unit=戊(5) from=(1, 3) move_to=<null> attack=-1
+TPACT v=6 round=2 unit=丁(4) from=(0, 5) move_to=<null> attack=-1
+TPACT v=6 round=2 unit=丙(3) from=(2, 3) move_to=<null> attack=-1
+TPACT v=6 round=2 unit=乙(2) from=(2, 0) move_to=<null> attack=-1
+TPOS v=6 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 3):hp30 乙(2)@(2, 0):hp26 丙(3)@(2, 3):hp22 丁(4)@(0, 5):hp26 戊(5)@(1, 3):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp2]
+TDELTA v=6 round=2 last_actor=E1(6) last_actor_target=2 unit=乙(2) fac=0 hp 26->17
+TDELTA v=6 round=2 last_actor=E3(8) last_actor_target=1 unit=甲(1) fac=0 hp 30->23
+TDELTA v=6 round=2 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 23->17
+TDELTA v=6 round=2 last_actor=E5(10) last_actor_target=1 unit=甲(1) fac=0 hp 17->10
+TPOS v=6 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 3):hp10 乙(2)@(2, 0):hp17 丙(3)@(2, 3):hp22 丁(4)@(0, 5):hp26 戊(5)@(1, 3):hp30] ENEMIES[E1(6)@(3, 0):hp23 E2(7)@(5, 0):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(4, 3):hp2]
+TPACT v=6 round=3 unit=戊(5) from=(1, 3) move_to=(0, 1) attack=-1
+TPACT v=6 round=3 unit=丁(4) from=(0, 5) move_to=<null> attack=-1
+TPACT v=6 round=3 unit=丙(3) from=(2, 3) move_to=<null> attack=6
+TDELTA v=6 round=3 last_actor=丙(3) last_actor_target=6 unit=E1(6) fac=1 hp 23->7
+TPACT v=6 round=3 unit=乙(2) from=(2, 0) move_to=(1, 0) attack=6
+TDEATH v=6 round=3 unit_id=6 hp_before=7 last_actor=乙(2) last_actor_target=6
+TPACT v=6 round=3 unit=甲(1) from=(3, 3) move_to=(1, 2) attack=-1
+TPACT v=6 round=3 unit=戊(5) from=(0, 1) move_to=<null> attack=-1
+TPACT v=6 round=3 unit=丙(3) from=(2, 3) move_to=(1, 3) attack=-1
+TPACT v=6 round=3 unit=甲(1) from=(1, 2) move_to=<null> attack=-1
+TPOS v=6 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(1, 2):hp10 乙(2)@(1, 0):hp17 丙(3)@(1, 3):hp22 丁(4)@(0, 5):hp26 戊(5)@(0, 1):hp30] ENEMIES[E2(7)@(5, 0):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(4, 3):hp2]
+TDELTA v=6 round=3 last_actor=E2(7) last_actor_target=2 unit=乙(2) fac=0 hp 17->10
+TDELTA v=6 round=3 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 10->5
+TDELTA v=6 round=3 last_actor=E5(10) last_actor_target=3 unit=丙(3) fac=0 hp 22->16
+TPOS v=6 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(1, 2):hp5 乙(2)@(1, 0):hp10 丙(3)@(1, 3):hp16 丁(4)@(0, 5):hp26 戊(5)@(0, 1):hp30] ENEMIES[E2(7)@(2, 0):hp20 E3(8)@(5, 3):hp18 E4(9)@(2, 2):hp22 E5(10)@(2, 3):hp2]
+TPACT v=6 round=4 unit=戊(5) from=(0, 1) move_to=(2, 4) attack=10
+TDEATH v=6 round=4 unit_id=10 hp_before=2 last_actor=戊(5) last_actor_target=10
+TPACT v=6 round=4 unit=丁(4) from=(0, 5) move_to=(0, 0) attack=7
+TDELTA v=6 round=4 last_actor=丁(4) last_actor_target=7 unit=E2(7) fac=1 hp 20->9
+TPACT v=6 round=4 unit=丙(3) from=(1, 3) move_to=(2, 3) attack=7
+TDEATH v=6 round=4 unit_id=7 hp_before=9 last_actor=丙(3) last_actor_target=7
+TPACT v=6 round=4 unit=乙(2) from=(1, 0) move_to=(1, 1) attack=9
+TDELTA v=6 round=4 last_actor=乙(2) last_actor_target=9 unit=E4(9) fac=1 hp 22->10
+TPACT v=6 round=4 unit=甲(1) from=(1, 2) move_to=(0, 1) attack=-1
+TPACT v=6 round=4 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPOS v=6 round=4 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp5 乙(2)@(1, 1):hp10 丙(3)@(2, 3):hp16 丁(4)@(0, 0):hp26 戊(5)@(2, 4):hp30] ENEMIES[E3(8)@(5, 3):hp18 E4(9)@(2, 2):hp10]
+TDELTA v=6 round=4 last_actor=E3(8) last_actor_target=5 unit=戊(5) fac=0 hp 30->23
+TDELTA v=6 round=4 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 5->2
+TPOS v=6 round=5 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp2 乙(2)@(1, 1):hp10 丙(3)@(2, 3):hp16 丁(4)@(0, 0):hp26 戊(5)@(2, 4):hp23] ENEMIES[E3(8)@(5, 3):hp18 E4(9)@(2, 1):hp10]
+TPACT v=6 round=5 unit=戊(5) from=(2, 4) move_to=(0, 3) attack=-1
+TPACT v=6 round=5 unit=丁(4) from=(0, 0) move_to=(2, 0) attack=9
+TDEATH v=6 round=5 unit_id=9 hp_before=10 last_actor=丁(4) last_actor_target=9
+TPACT v=6 round=5 unit=丙(3) from=(2, 3) move_to=(3, 3) attack=8
+TDEATH v=6 round=5 unit_id=8 hp_before=18 last_actor=丙(3) last_actor_target=8
+RESULT arm=use v=6 outcome=VICTORY rounds=5 neardeath=1 phi_avg=6.000 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=2,10,16,26,23 first_round=1 guard_events=9 guard_nonzero=7
+TPOS v=7 round=1 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPACT v=7 round=1 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPACT v=7 round=1 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPACT v=7 round=1 unit=丙(3) from=(0, 3) move_to=<null> attack=-1
+TPACT v=7 round=1 unit=乙(2) from=(0, 2) move_to=<null> attack=-1
+TPACT v=7 round=1 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPOS v=7 round=1 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(7, 2):hp23 E2(7)@(8, 1):hp20 E3(8)@(9, 5):hp18 E4(9)@(8, 4):hp22 E5(10)@(7, 3):hp24]
+TPOS v=7 round=2 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(0, 3):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TPACT v=7 round=2 unit=戊(5) from=(0, 5) move_to=(2, 3) attack=-1
+TPACT v=7 round=2 unit=丁(4) from=(0, 4) move_to=(2, 4) attack=-1
+TPACT v=7 round=2 unit=丙(3) from=(0, 3) move_to=(1, 2) attack=-1
+TPACT v=7 round=2 unit=乙(2) from=(0, 2) move_to=<null> attack=-1
+TPACT v=7 round=2 unit=甲(1) from=(0, 1) move_to=<null> attack=-1
+TPACT v=7 round=2 unit=戊(5) from=(2, 3) move_to=<null> attack=-1
+TPACT v=7 round=2 unit=丁(4) from=(2, 4) move_to=<null> attack=-1
+TPACT v=7 round=2 unit=丙(3) from=(1, 2) move_to=<null> attack=-1
+TPOS v=7 round=2 ENEMY_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(1, 2):hp22 丁(4)@(2, 4):hp26 戊(5)@(2, 3):hp30] ENEMIES[E1(6)@(5, 1):hp23 E2(7)@(6, 1):hp20 E3(8)@(7, 4):hp18 E4(9)@(6, 2):hp22 E5(10)@(4, 3):hp24]
+TDELTA v=7 round=2 last_actor=E5(10) last_actor_target=5 unit=戊(5) fac=0 hp 30->23
+TPOS v=7 round=3 PLAYER_PHASE_START PLAYERS[甲(1)@(0, 1):hp30 乙(2)@(0, 2):hp26 丙(3)@(1, 2):hp22 丁(4)@(2, 4):hp26 戊(5)@(2, 3):hp23] ENEMIES[E1(6)@(2, 1):hp23 E2(7)@(4, 1):hp20 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp24]
+TPACT v=7 round=3 unit=戊(5) from=(2, 3) move_to=(0, 5) attack=-1
+TPACT v=7 round=3 unit=丁(4) from=(2, 4) move_to=(0, 4) attack=-1
+TPACT v=7 round=3 unit=丙(3) from=(1, 2) move_to=(1, 5) attack=6
+TDELTA v=7 round=3 last_actor=丙(3) last_actor_target=6 unit=E1(6) fac=1 hp 23->9
+TPACT v=7 round=3 unit=乙(2) from=(0, 2) move_to=(1, 1) attack=6
+TDEATH v=7 round=3 unit_id=6 hp_before=9 last_actor=乙(2) last_actor_target=6
+TPACT v=7 round=3 unit=甲(1) from=(0, 1) move_to=(3, 1) attack=7
+TDELTA v=7 round=3 last_actor=甲(1) last_actor_target=7 unit=E2(7) fac=1 hp 20->9
+TPACT v=7 round=3 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPACT v=7 round=3 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPOS v=7 round=3 ENEMY_PHASE_START PLAYERS[甲(1)@(3, 1):hp30 乙(2)@(1, 1):hp26 丙(3)@(1, 5):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp23] ENEMIES[E2(7)@(4, 1):hp9 E3(8)@(6, 3):hp18 E4(9)@(4, 2):hp22 E5(10)@(3, 3):hp24]
+TDELTA v=7 round=3 last_actor=E2(7) last_actor_target=1 unit=甲(1) fac=0 hp 30->25
+TDELTA v=7 round=3 last_actor=E3(8) last_actor_target=1 unit=甲(1) fac=0 hp 25->19
+TDELTA v=7 round=3 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 19->14
+TDELTA v=7 round=3 last_actor=E5(10) last_actor_target=1 unit=甲(1) fac=0 hp 14->8
+TPOS v=7 round=4 PLAYER_PHASE_START PLAYERS[甲(1)@(3, 1):hp8 乙(2)@(1, 1):hp26 丙(3)@(1, 5):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp23] ENEMIES[E2(7)@(3, 0):hp9 E3(8)@(5, 3):hp18 E4(9)@(4, 1):hp22 E5(10)@(2, 1):hp24]
+TPACT v=7 round=4 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPACT v=7 round=4 unit=丁(4) from=(0, 4) move_to=<null> attack=-1
+TPACT v=7 round=4 unit=丙(3) from=(1, 5) move_to=<null> attack=8
+TDELTA v=7 round=4 last_actor=丙(3) last_actor_target=8 unit=E3(8) fac=1 hp 18->1
+TPACT v=7 round=4 unit=乙(2) from=(1, 1) move_to=(2, 0) attack=7
+TDEATH v=7 round=4 unit_id=7 hp_before=9 last_actor=乙(2) last_actor_target=7
+TPACT v=7 round=4 unit=甲(1) from=(3, 1) move_to=(4, 0) attack=9
+TDELTA v=7 round=4 last_actor=甲(1) last_actor_target=9 unit=E4(9) fac=1 hp 22->11
+TPACT v=7 round=4 unit=丙(3) from=(1, 5) move_to=<null> attack=-1
+TPOS v=7 round=4 ENEMY_PHASE_START PLAYERS[甲(1)@(4, 0):hp8 乙(2)@(2, 0):hp26 丙(3)@(1, 5):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp23] ENEMIES[E3(8)@(5, 3):hp1 E4(9)@(4, 1):hp11 E5(10)@(2, 1):hp24]
+TDELTA v=7 round=4 last_actor=E4(9) last_actor_target=1 unit=甲(1) fac=0 hp 8->3
+TDELTA v=7 round=4 last_actor=E5(10) last_actor_target=2 unit=乙(2) fac=0 hp 26->18
+TPOS v=7 round=5 PLAYER_PHASE_START PLAYERS[甲(1)@(4, 0):hp3 乙(2)@(2, 0):hp18 丙(3)@(1, 5):hp22 丁(4)@(0, 4):hp26 戊(5)@(0, 5):hp23] ENEMIES[E3(8)@(5, 2):hp1 E4(9)@(3, 0):hp11 E5(10)@(1, 0):hp24]
+TPACT v=7 round=5 unit=戊(5) from=(0, 5) move_to=<null> attack=-1
+TPACT v=7 round=5 unit=丁(4) from=(0, 4) move_to=(0, 0) attack=10
+TDELTA v=7 round=5 last_actor=丁(4) last_actor_target=10 unit=E5(10) fac=1 hp 24->14
+TPACT v=7 round=5 unit=丙(3) from=(1, 5) move_to=(0, 3) attack=8
+TDEATH v=7 round=5 unit_id=8 hp_before=1 last_actor=丙(3) last_actor_target=8
+TPACT v=7 round=5 unit=乙(2) from=(2, 0) move_to=<null> attack=9
+TDELTA v=7 round=5 last_actor=乙(2) last_actor_target=9 unit=E4(9) fac=1 hp 11->2
+TPACT v=7 round=5 unit=甲(1) from=(4, 0) move_to=(8, 0) attack=-1
+TPACT v=7 round=5 unit=乙(2) from=(2, 0) move_to=<null> attack=-1
+TPACT v=7 round=5 unit=甲(1) from=(8, 0) move_to=<null> attack=-1
+TPOS v=7 round=5 ENEMY_PHASE_START PLAYERS[甲(1)@(8, 0):hp3 乙(2)@(2, 0):hp18 丙(3)@(0, 3):hp22 丁(4)@(0, 0):hp26 戊(5)@(0, 5):hp23] ENEMIES[E4(9)@(3, 0):hp2 E5(10)@(1, 0):hp14]
+TDELTA v=7 round=5 last_actor=E4(9) last_actor_target=2 unit=乙(2) fac=0 hp 18->10
+TDELTA v=7 round=5 last_actor=E5(10) last_actor_target=2 unit=乙(2) fac=0 hp 10->1
+TPOS v=7 round=6 PLAYER_PHASE_START PLAYERS[甲(1)@(8, 0):hp3 乙(2)@(2, 0):hp1 丙(3)@(0, 3):hp22 丁(4)@(0, 0):hp26 戊(5)@(0, 5):hp23] ENEMIES[E4(9)@(3, 0):hp2 E5(10)@(1, 0):hp14]
+TPACT v=7 round=6 unit=戊(5) from=(0, 5) move_to=(1, 1) attack=10
+TDELTA v=7 round=6 last_actor=戊(5) last_actor_target=10 unit=E5(10) fac=1 hp 14->5
+TPACT v=7 round=6 unit=丁(4) from=(0, 0) move_to=(2, 1) attack=9
+TDEATH v=7 round=6 unit_id=9 hp_before=2 last_actor=丁(4) last_actor_target=9
+TPACT v=7 round=6 unit=丙(3) from=(0, 3) move_to=(0, 2) attack=10
+TDEATH v=7 round=6 unit_id=10 hp_before=5 last_actor=丙(3) last_actor_target=10
+RESULT arm=use v=7 outcome=VICTORY rounds=6 neardeath=2 phi_avg=3.000 raw_outcome=VICTORY aborted=false reason= phi_samples=6 final_hp=3,1,22,26,23 first_round=1 guard_events=9 guard_nonzero=3
+SIGSUM arm=use distinct=8 of 8
+GUARDSUM guard_events=64 guard_nonzero=45
+DONE
