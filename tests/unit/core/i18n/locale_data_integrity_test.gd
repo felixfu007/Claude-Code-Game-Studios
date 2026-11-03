@@ -259,6 +259,7 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# 🔴 2026-10-30 tactical-combat story-034:158 → 159(新增 battle.attack_confirm.hold_back_format 一列;依工作單 Affected Files)。
 	# 🔴 2026-10-30 tactical-combat story-032(移動預覽雙值):157 → 158(新增 battle.hud.guard_move_dual_format 一列;依工作單 Affected Files)。
 	# 🔴 2026-11-03 雙值清除(方案 C 步驟一,管理者裁決):159 → 158(刪 battle.hud.guard_move_dual_format 一列;docs/reviews/wu-dead-code-audit-2026-11-03.md)。
+	# 🔴 2026-11-03 game-shell story-010:158 → 159(新增 shell.title.game_name 一列;依工作單 Affected Files)。
 	# 🔴 2026-10-28 再續四:148 → 150(tactical-combat story-022 新增 battle.hud.result_defeat_reason_format / _separator 共 2 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續三:145 → 148(relation-minimap story-001 新增 battle.hud.relation_map_* 共 3 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續二:140 → 145(support-conversation-ui story-003 第二段新增 support.ui.* 共 5 列;依工作單 Affected Files,延續同日同一處理方式)。
@@ -290,10 +291,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 158（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 159（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(158)
+	).is_equal(159)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

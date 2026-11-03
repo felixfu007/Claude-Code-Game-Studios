@@ -30,6 +30,9 @@ offset_bottom = 100.0
 
 [node name="Rows" type="VBoxContainer" parent="Panel/ContentMargin"]
 
+[node name="GameNameLabel" type="Label" parent="Panel/ContentMargin/Rows"]
+horizontal_alignment = 1
+
 [node name="StartBattleRow" type="Button" parent="Panel/ContentMargin/Rows"]
 
 [node name="SkipTutorialRow" type="Button" parent="Panel/ContentMargin/Rows"]

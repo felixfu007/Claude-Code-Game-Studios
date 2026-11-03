@@ -82,6 +82,10 @@ const TEXT_QUIT: StringName = &"shell.title.quit"
 ## 會讓下一個人去找一段不存在的東西,而且沒有任何東西會報錯。**
 const AUTO_START_BATTLE_FLAG: String = "--capture-battle"
 
+## story-010 —— 遊戲名稱的在地化 key(不可寫死在場景裡)。
+const TEXT_GAME_NAME: StringName = &"shell.title.game_name"
+
+@onready var _game_name_label: Label = $Panel/ContentMargin/Rows/GameNameLabel
 @onready var _start_battle_row: Button = $Panel/ContentMargin/Rows/StartBattleRow
 @onready var _skip_tutorial_row: Button = $Panel/ContentMargin/Rows/SkipTutorialRow
 @onready var _settings_row: Button = $Panel/ContentMargin/Rows/SettingsRow
@@ -89,6 +93,14 @@ const AUTO_START_BATTLE_FLAG: String = "--capture-battle"
 
 
 func _ready() -> void:
+	# story-010 —— 遊戲名稱:HUD 點陣字 Cubic 11,字級 = HudLayout.font_size()
+	# (倍率唯一出自 WorldLayout.compute_scale(),不自行計算)。純顯示、不可聚焦,
+	# 不參與下方的焦點接線。
+	_game_name_label.text = Loc.localize(TEXT_GAME_NAME)
+	_game_name_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_apply_game_name_font_size()
+	get_viewport().size_changed.connect(_apply_game_name_font_size)
+
 	_start_battle_row.text = Loc.localize(TEXT_START_BATTLE)
 	_skip_tutorial_row.text = Loc.localize(TEXT_SKIP_TUTORIAL)
 	_settings_row.text = Loc.localize(TEXT_SETTINGS)
@@ -126,6 +138,12 @@ func _ready() -> void:
 	# 要不要立刻切走,不改變上面每一行原本的行為。
 	if should_auto_start_battle(OS.get_cmdline_args()):
 		start_battle()
+
+
+## story-010 —— 依目前視窗尺寸重設名稱字級。
+func _apply_game_name_font_size() -> void:
+	var window_size: Vector2i = Vector2i(get_viewport().get_visible_rect().size)
+	_game_name_label.add_theme_font_size_override(&"font_size", HudLayout.font_size(window_size))
 
 
 ## Story-004 —— 純函式:給定一組命令列參數,判斷是否應該自動跳過標題畫面直接
