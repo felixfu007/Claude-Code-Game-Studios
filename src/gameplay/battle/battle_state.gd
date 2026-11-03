@@ -601,7 +601,7 @@ func preview_damage(attacker_id: int, target_id: int, phi: int) -> PreviewDamage
 ## via [method @GlobalScope.push_error]). An all-zero result would be
 ## indistinguishable from "a real attack that happens to deal 0 damage";
 ## [code]null[/code] cannot be confused with any real result, since every
-## successful call always populates all 6 [member DamageBreakdownResult.breakdown]
+## successful call always populates all 11 [member DamageBreakdownResult.breakdown]
 ## keys. Per [code].claude/docs/coding-standards.md[/code]'s 2026-09-15 entry,
 ## this is deliberately NOT an [code]assert()[/code] guard.
 ##

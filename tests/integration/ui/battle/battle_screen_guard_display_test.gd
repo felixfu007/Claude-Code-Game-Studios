@@ -183,59 +183,6 @@ func test_ac5_hide_setting_does_not_change_damage_preview() -> void:
 	assert_int(int(rb.breakdown["damage"])).is_equal(int(ra.breakdown["damage"]))
 
 
-# ---- 雙值顯示(2026-10-30 管理者裁決「現在做雙值」)---------------------------------
-# 以「will_attack=false / true 兩次呼叫結果是否不同」為準,不寫死單位 id。
-
-func test_format_guard_move_dual_differs_and_same() -> void:
-	assert_str(BattleScreen.format_guard_move_dual(0, 2, 0)).is_equal(
-		Loc.localize(&"battle.hud.guard_move_dual_format") % [0, 2, 0])
-	assert_str(BattleScreen.format_guard_move_dual(0, 2, 2)).is_equal(BattleScreen.format_guard_move(0, 2))
-	assert_str(BattleScreen.format_guard_move_dual(0, 0, 0)).is_equal("")
-
-
-## 找一格:獨行段在「出手/不出手」兩種情況下顯示減傷不同;回傳 [cell, no_attack, attack] 或空陣列。
-func _find_dual_cell(instance: BattleScreen, u: Unit, want_differ: bool) -> Array:
-	var positions: Dictionary[int, Vector2i] = instance._phi.positions()
-	for cell: Vector2i in instance._state.legal_moves(u.id):
-		var hypo: Dictionary[int, Vector2i] = instance._phi.positions_with(u.id, cell)
-		var no_atk: int = instance._displayed_guard_at(u.id, cell, hypo, false)
-		var atk: int = instance._displayed_guard_at(u.id, cell, hypo, true)
-		if (no_atk != atk) == want_differ:
-			return [cell, instance._displayed_guard_at(u.id, positions[u.id], positions), no_atk, atk]
-	return []
-
-
-func _dual_case(hide: bool, want_differ: bool, mutant: Script = null) -> Array:
-	var instance: BattleScreen = _battle(hide, mutant)
-	var u: Unit = _player(instance, 0)
-	u.lone_guard = true
-	assert_bool(instance._controller.select_unit(u.id)).is_true()
-	var found: Array = _find_dual_cell(instance, u, want_differ)
-	assert_bool(not found.is_empty()).append_failure_message("PRECONDITION: 需有符合條件的一格").is_true()
-	_hover(instance, found[0])
-	return [instance, found]
-
-
-# story-034 (amend2 §3):舊測試 test_move_preview_shows_dual_when_attack_changes_guard 作廢
-# (舊斷言:出手與否減傷不同的格必顯示雙值;新:出手條件取消,不存在這種格,故不再出現雙值)。
-func test_move_preview_has_no_attack_dependent_cell_after_amend2() -> void:
-	var instance: BattleScreen = _battle(false)
-	var u: Unit = _player(instance, 0)
-	u.lone_guard = true
-	assert_bool(instance._controller.select_unit(u.id)).is_true()
-	assert_bool(_find_dual_cell(instance, u, true).is_empty()).append_failure_message(
-		"出手條件取消後,不應存在「出手與否減傷不同」的格").is_true()
-
-
-func test_move_preview_shows_single_when_attack_does_not_change_guard() -> void:
-	var r: Array = _dual_case(false, false)
-	var f: Array = r[1]
-	var text: String = r[0]._info_label.text
-	assert_str(text).not_contains(Loc.localize(&"battle.hud.guard_move_dual_format").get_slice("%d", 2))
-	if f[1] != f[2]:
-		assert_str(text).contains(Loc.localize(&"battle.hud.guard_move_format") % [f[1], f[2]])
-
-
 # ---- 敏感度證明 -----------------------------------------------------------------
 
 # story-034:test_sensitivity_proof_ignoring_will_attack_loses_dual 與其變種 _MutantIgnoresWillAttack
