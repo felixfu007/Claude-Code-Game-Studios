@@ -1,9 +1,9 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: **第九十一批(2026-11-02)收工。** 修兩個嚴重 bug(`2ad617e`)→ 丙射程 4→6(vs01~05 `2f82109`、tut03 本批收工提交)→ **協議 2 attempt-5 通過(壓線)`818c9e0`**(忽視 6/8、運用 8/8)。28 號美術審定、29 號已推 AI_IMG `38556ac`。測試 1759 → **1765,全綠**,協調者每批重跑。
-Feature: 🔴 管理者今天裁決逐字見第九十一批節。非推薦:「直接補強丙,考第五次」「先不要,等第五次考完再說」(後已改核准)。方案 C(丙減傷加倍)取消。
-Task: 🔴 **下次第一件:git pull + 查 AI_IMG 29 號(插畫立繪 15 張 + 棋子小實驗可行性;回來先交 art-director 代看);第二件:問管理者在家目視(手把 A/B、丙射程 6 手感、丙立繪 28-002);第三件:PROJECT-STATUS「仍未決」清單逐項推進(死碼清理:移動預覽雙值等 —— 規則已定案,可問)。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
+Epic: **第九十二批(2026-11-03)進行中。** 29 號美術審定(立繪全面改插畫)、30 號已推 AI_IMG `b6766f6`;死碼第一步 `95559b2`;介面遮擋 `539bc36`;點名卡限定 `90bb933`;標題名稱 `9217f20`。測試 1765 → **1800,全綠**,協調者每批重跑。
+Feature: 🔴 管理者今天裁決逐字見第九十二批節。非推薦:點名卡「限定只能給點名者」。規則 4 例外:skill-card GDD 第 5 次修訂(知情接受)。
+Task: 🔴 **進行中:game-designer 交 GDD 第四批 diff(戊機制三)→ 協調者錨點腳本套用。** 收工(17:00):PROJECT-STATUS 重寫、STATUS 更新、提交推送。在家目視清單見第九十二批節。
 以下為第九十批原狀態列。
 Epic: **第九十批(2026-10-30)收工。** 協議 2(停損考試)首次執行:門檻鎖定 H `20e0854` → attempt-1 未通過 → 好感度減傷 → attempt-2/3 通過(壓線)→ 戊機制三改 → **attempt-4 未通過(現行判定)**。測試 1653 → **1749,全綠**,協調者每批重跑。
 Feature: 🔴 **管理者今天 25 項裁決**(逐字見第九十批節)。非推薦選擇:「重新設計核心,美術照常」「交設計師重想戊的機制」「現在做雙值」。🔴 **attempt-4 未通過不得回頭採用 attempt-3**(管理者知情同意)。
@@ -41,7 +41,23 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決「改綠十字或生命之星(推薦)」(乙紅十字;被跳過:純紅布章 / 照用紅十字)。
 - ✅ **30 號已推 AI_IMG `b6766f6`**(15 added / 0 removed,推前 status 空):14 張(戊 4、甲 2、乙 3 綠十字、丙 3、丁 2)+ 後製請求(甲裁星章、乙擦胸章+紅十字改綠、丁擦 POLICE、既有乙棋子紅十字改綠)。產生器 `docs/ai-art-service-handoff/30-jobs/build-jobs.js`(協調者寫;非 prompt 欄位與 29-013 逐欄相同已驗)。問家用端:權重語法 `(x:1.3)` 是否解析、能否 img2img。
 - ✅ lead-programmer 死碼盤點 `docs/reviews/wu-dead-code-audit-2026-11-03.md`(協調者核:`lone_guard_effective` 本體 `return lone`,雙值必相等)。裁決「分兩步:先清雙值(推薦)」(被跳過:現在全清 / 只改註解)。第二步(`lone_guard_effective`、`will_attack`、`attacked_this_phase`)**等協議 2 結案**,會弄壞 5 支 prototypes 量測腳本。
-- 進行中:ui-programmer 清雙值(不提交;協調者重跑後提交)。
+- ✅ 雙值清除 `95559b2`(協調者讀 diff + 重跑:`ENGINE EXIT = 0` / `1762 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(161/161)`;−3 條)。prototypes 呼叫端未動。
+- 裁決(10:50):介面遮擋「指到才變淡+一鍵隱藏(推薦)」/點名卡「**限定只能給點名者**」(**非推薦**,推薦「給點名者有額外效果」;已揭露廢牌代價 = 9/10 否決過的做法)/標題「現在用現有字型顯示(推薦)」。說明列 1080p/4K 改單行 = art-director 自決 `docs/reviews/hint-bar-single-line-art-decision-2026-11-03.md`(推翻 story-028 G「大視窗不變」)。
+- 工單 `95edeb4`:battle-hud story-004、game-shell story-010、skill-card story-009。
+- 11:10 派:ui-programmer story-004(主目錄)/ gameplay-programmer story-009(**worktree 隔離**,交件後協調者合併)/ game-designer GDD diff `docs/reviews/skill-card-gdd-diff-named-target-2026-11-03.md`(套用前要問管理者)。story-010 等 story-004 後(同改 strings.csv)。
+- 11:15 兩位實作者皆撞 20 回合上限,已 SendMessage 續做(story-004 主目錄已有部分改動;story-009 worktree `.claude/worktrees/agent-a8c9296ddd1ce7373`)。
+- 🔴 協調者更正自己 10:50 的揭露:廢牌代價**被高估** —— `outcome()` 任一我方倒下即 DEFEAT + vs01~05 名冊皆五人 → 現行內容下廢牌不會發生。已告知管理者。
+- 裁決「知情接受第 5 次修訂(推薦)」(skill-card GDD;被跳過:整份重寫 / 只改程式)→ `259a274`(協調者錨點腳本套 D1~D9,更正 diff 原稿兩處推論)。⚠️ 未改:`design/ux/skill-card-play.md`(AC-U3、S2 甲類、「無合法對象」偶發)與一年計畫 §6② 例外登記 —— diff 檔第 2 節列為過時,待問。
+- 11:50 story-009 worktree 交件(1771/162 全綠;AC3 畫面未做 —— hand_bar 無「不可打出」呈現,現為點了無反應;協調者裁定暫不做,因現行內容下廢牌不發生)。🔴 **覆核收穫**:card_02/03 實作者設點名=乙,但牌面承受者是被乙鼓勵的隊友 → 裁決「**給乙以外的任何人(推薦)**」(被跳過:改牌面讓乙受惠 / 照現在給乙)→ 已請同一實作者加「排除點名者」模式。⚠️ 合併後 GDD 一之四要補一句「排除模式」(管理者已裁決內容)。
+- ✅ `539bc36` battle-hud story-004(變淡 0.35 + H/左搖桿按下隱藏 UILayer + 說明列全倍率單行,大視窗只放 2 項「移動/確認」;協調者重跑 1784/163 全綠;改 2 條 story-028 測試斷言)。
+- ✅ `90bb933` story-009(第 9 欄 named_unit_id、第 10 欄 named_mode ONLY/EXCLUDE;card_02/03 EXCLUDE 乙;worktree 合併)+ GDD 一之四補 EXCLUDE 段。AC3 畫面暫緩(點了無反應、無灰顯)。
+- ✅ `9217f20` story-010 標題名稱(Cubic 11,`HudLayout.font_size`)。協調者合併後全套:`ENGINE EXIT = 0` / `1800 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(165/165)`。
+- ⚠️ 協調者疏失:story-010 派工時我方測試仍在跑,雖令「前 5 分鐘只讀」,實作者照寫 → 那次全套 1 失敗(列數)作廢重跑。**下次:測試跑完才派會改檔的工作。**
+- 裁決「加註指向新規則,舊文保留(推薦)」→ `bbafa0d`(skill-card-play.md 3 處、story-028 G 1 處)。
+- 裁決「現在同步,舊文保留加註(推薦)」(amend2 第 5 節 1~6 項 GDD 第四批)→ 12:45 派 game-designer 交 `docs/reviews/affinity-core-gdd-diff4-2026-11-03.md`;**協調者以唯一錨點腳本套用**(比照 `259a274` 做法),並登記規則 4 例外。
+- 🔴 **在家目視清單(今晚)**:手把 A/B;丙射程 6 手感;變淡 35% 是否合適;H / 左搖桿按下隱藏介面;1080p/4K 單行說明列(只剩「移動/確認」兩項)是否好讀;標題名稱「盲目於微光」大小/是否放得進面板/Cubic 11 是否有這 5 個字;card_02/03 能否打給乙以外隊友。
+- 覆核收穫(本批):雙值必相等(確認)、card_02/03 承受者錯置、diff 原稿兩處推論不成立、我自己的廢牌代價高估。→ 連續零收穫 = 0。
+- 剩餘:第 4 場難度(需在家實打)、死碼第二步(等協議 2 結案)、常數資料驅動技術債、AI_IMG 30 號等家用端、worktree `.claude/worktrees/agent-a8c9296ddd1ce7373` 未移除。
 
 ## 🔴 第九十一批(2026-11-02,公司,13:50 開工)—— 位階高於下方
 管理者指示:推進到 17:00 收工;卡住出選項(列優缺點);每小時看時間;context 多就落檔 compact;查 AI_IMG。
