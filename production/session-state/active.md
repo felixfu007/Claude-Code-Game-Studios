@@ -65,6 +65,7 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ 30 號 14 張全成功 → art-director `8d5f389`:**立繪五張定案** 甲 29-001、乙 30-005(綠十字被裁半需補)、丙 30-008、丁 30-010、戊 30-013(駝色外套+紅襯衫,美術總監判可接受);不需新產圖 → **31 號(只後製)已推 AI_IMG `09e0ba3`**。負向詞 handwriting/red cross 擋不住,以後製為主。
 - 14:10 派 ai-programmer 量 vs02~vs05 現行難度 `prototypes/difficulty-check-2026-11-03/`(禁跑 vs01、禁讀協議 2 結果)。
 - ✅ `7cb2bc2` vs02~05 難度(運用臂 8 組):vs02 8/8、**vs03 6/8**(v1 第3回合、v5 第4回合敗)、vs04 8/8、vs05 8/8。協調者核原始 RESULT 行屬實。裁決「**查第 3 場敗因**」(非推薦;推薦等在家實打)→ 派 ai-programmer `prototypes/vs03-defeat-diagnosis-2026-11-03/`(複製版加逐單位紀錄,先驗逐局結果相同)。
+- ✅ `fe03a5e` vs03 敗因:v1 丁 R3、v5 丙 R4,皆 E4 補刀;電腦不讓低血撤退(協調者核 RESULT 逐局相同、TDEATH 行)。裁決「**讓電腦代打學會撤退**」(非推薦;推薦關卡不動等實打)。🔴 協調者決定:**不動協議 2 正式工具**,另做難度專用版 `prototypes/difficulty-ai-retreat-2026-11-03/`(14:20 派 ai-programmer;關閉撤退時須逐局重現原量測)。
 - 技術債(協調者決定延後):LONE_*/HOLD_BACK_*/GUARD_* 常數改資料檔 —— prototypes 零引用,不影響協議 2;中型重構,無玩家可見效果。
 - 剩餘:第 4 場難度(需在家實打)、死碼第二步(等協議 2 結案)、常數資料驅動技術債、AI_IMG 30 號等家用端、worktree `.claude/worktrees/agent-a8c9296ddd1ce7373` 未移除。
 
