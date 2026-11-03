@@ -1,7 +1,7 @@
 # Story 004:介面蓋到棋盤 —— 指到才變淡 + 一鍵隱藏 + 說明列一律單行
 
 > **Epic**: `production/epics/battle-hud/EPIC.md`
-> **Status**: Ready(2026-11-03)
+> **Status**: ✅ Done-pending-visual(2026-11-03;協調者重跑全套全綠)(原狀態:Ready(2026-11-03))
 > **Type**: UI
 > **Estimate**: M
 > **依據**:

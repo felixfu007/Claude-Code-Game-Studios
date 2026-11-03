@@ -1,7 +1,7 @@
 # Story 010:標題畫面顯示遊戲名稱「盲目於微光」
 
 > **Epic**: `production/epics/game-shell/EPIC.md`
-> **Status**: Ready(2026-11-03)
+> **Status**: ✅ Done-pending-visual(2026-11-03;協調者重跑全套全綠)(原狀態:Ready(2026-11-03))
 > **Type**: UI
 > **Estimate**: S
 > **依據**:管理者裁決逐字(2026-11-03):「現在用現有字型顯示(推薦)」(被跳過:等美術做標題字 / 名稱還沒定案)。名稱來源:`project.godot` 的 `config/name="盲目於微光"`。
