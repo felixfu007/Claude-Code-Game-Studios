@@ -45,6 +45,27 @@ enum Category { TEMPORARY_STAT_MODIFIER, PERMANENT_AFFINITY_WRITE }
 ## (the two existing constructors each take 4 of them, split by [enum Category]).
 const FIELD_COUNT: int = 8
 
+## Story 009: a line may carry one OPTIONAL 9th column, [code]named_unit_id[/code]
+## (甲類 only; see [member named_unit_id]). 8-column lines stay legal and mean
+## [constant UNRESTRICTED_TARGET].
+const FIELD_COUNT_WITH_NAMED_UNIT: int = 9
+
+## Story 009 (2026-11-03 ruling "給乙以外的任何人"): a line may carry one more
+## OPTIONAL 10th column, [code]named_mode[/code], the literal string
+## [code]ONLY[/code] or [code]EXCLUDE[/code] (see [enum NamedMode]). Omitted = ONLY.
+const FIELD_COUNT_WITH_NAMED_MODE: int = 10
+
+## How [member named_unit_id] restricts a 甲類 card's targets.
+## [constant ONLY]: only the named unit (card face: the named character is the
+## RECIPIENT, e.g. "丙壓低身形"). [constant EXCLUDE]: every alive PLAYER unit
+## EXCEPT the named one (card face: the named character is the GIVER, e.g.
+## "乙在耳邊喊了聲「我挺你」" -- the recipient is a teammate). Meaningless when
+## [member named_unit_id] is [constant UNRESTRICTED_TARGET].
+enum NamedMode { ONLY, EXCLUDE }
+
+## Sentinel for [member named_unit_id]: this card is not restricted to a unit.
+const UNRESTRICTED_TARGET: int = -1
+
 ## Stable identifier for this card's definition (e.g. a future card-table
 ## row key). Not yet tied to any card table format — GDD OQ-6 (卡表本體) is
 ## unresolved — but every [CardDeck] caller needs *some* way to refer to
@@ -110,12 +131,30 @@ var affinity_character_b: int = -1
 ## at card-authoring time.
 var affinity_magnitude: int = 0
 
+## 甲類 only — the roster id of the one unit this card's face names, and the
+## ONLY unit it may be played on (production/epics/skill-card-system/
+## story-009-named-card-target-restriction.md, manager ruling 2026-11-03
+## 「限定只能給點名者」). [constant UNRESTRICTED_TARGET] (-1) means "no
+## restriction" (any alive PLAYER unit, the pre-story-009 behaviour) — used by
+## test cards and by card-table lines that omit the optional 9th column. 丙類
+## cards ignore this field entirely (their target pair is chosen on the board).
+var named_unit_id: int = UNRESTRICTED_TARGET
+
+## 甲類 only — how [member named_unit_id] is applied; see [enum NamedMode].
+var named_mode: NamedMode = NamedMode.ONLY
+
 
 ## Builds a 甲類 (temporary stat modifier) card. [param p_duration_rounds]
 ## is not validated against [code]{1, 2}[/code] here — see the class doc
 ## comment on why this class does not enforce card-table-level legality.
+## [param p_named_unit_id] defaults to [constant UNRESTRICTED_TARGET].
 static func new_temporary_stat_modifier(
-	p_id: String, p_delta_atk: int, p_delta_def: int, p_duration_rounds: int
+	p_id: String,
+	p_delta_atk: int,
+	p_delta_def: int,
+	p_duration_rounds: int,
+	p_named_unit_id: int = UNRESTRICTED_TARGET,
+	p_named_mode: NamedMode = NamedMode.ONLY
 ) -> Card:
 	var card: Card = Card.new()
 	card.id = p_id
@@ -123,6 +162,8 @@ static func new_temporary_stat_modifier(
 	card.delta_atk = p_delta_atk
 	card.delta_def = p_delta_def
 	card.duration_rounds = p_duration_rounds
+	card.named_unit_id = p_named_unit_id
+	card.named_mode = p_named_mode
 	return card
 
 
@@ -172,9 +213,9 @@ static func new_permanent_affinity_write(
 static func from_csv_line(line: String) -> Card:
 	var fields: PackedStringArray = line.split(",")
 	assert(
-		fields.size() == FIELD_COUNT,
-		"Card.from_csv_line: expected %d fields, got %d in line: %s"
-		% [FIELD_COUNT, fields.size(), line]
+		fields.size() >= FIELD_COUNT and fields.size() <= FIELD_COUNT_WITH_NAMED_MODE,
+		"Card.from_csv_line: expected %d to %d fields, got %d in line: %s"
+		% [FIELD_COUNT, FIELD_COUNT_WITH_NAMED_MODE, fields.size(), line]
 	)
 
 	var id: String = fields[0]
@@ -185,7 +226,26 @@ static func from_csv_line(line: String) -> Card:
 		)
 		return null
 	if category == Category.TEMPORARY_STAT_MODIFIER:
-		return new_temporary_stat_modifier(id, int(fields[2]), int(fields[3]), int(fields[4]))
+		var named_unit: int = UNRESTRICTED_TARGET
+		if fields.size() >= FIELD_COUNT_WITH_NAMED_UNIT:
+			named_unit = int(fields[8])
+		var mode: NamedMode = NamedMode.ONLY
+		if fields.size() == FIELD_COUNT_WITH_NAMED_MODE:
+			match fields[9].strip_edges():
+				"ONLY":
+					mode = NamedMode.ONLY
+				"EXCLUDE":
+					mode = NamedMode.EXCLUDE
+				_:
+					# Loud null, not assert (see this method's doc comment).
+					push_error(
+						"Card.from_csv_line: unknown named_mode '%s' in line: %s"
+						% [fields[9], line]
+					)
+					return null
+		return new_temporary_stat_modifier(
+			id, int(fields[2]), int(fields[3]), int(fields[4]), named_unit, mode
+		)
 	return new_permanent_affinity_write(id, int(fields[5]), int(fields[6]), int(fields[7]))
 
 

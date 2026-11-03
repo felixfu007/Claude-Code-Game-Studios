@@ -1,5 +1,5 @@
 # vs01 技能卡牌表(好感度對話卡牌)— 固定欄位順序:
-# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,named_unit_id,named_mode
 #
 # 本檔是「先求能驗證流程,不求最終平衡」的第一批可用卡(2026-09-15 管理者裁決:
 # 「先出一小批可用的牌,讓畫面跑得起來」)。數值皆為起始值,之後可隨時改動,
@@ -51,6 +51,19 @@
 #                         ⚠️ 注意這是兩件不同的事:0 在甲類卡是合法的「未使用」,
 #                         在丙類卡是被拒絕的非法值 —— 不要把兩者混為一談。
 #
+# named_unit_id           【選填第 9 欄】甲類專用,對應 Card.named_unit_id(story-009,
+#                         管理者 2026-11-03 裁決「限定只能給點名者」)。牌面點名的我方
+#                         單位 id(1=甲 2=乙 3=丙 4=丁 5=戊),這張牌只能打在該單位身上;
+#                         該單位陣亡或不在本場 → 這張牌打不出(廢牌,管理者知情選擇)。
+#                         -1 = 不限定(丙類一律填 -1)。省略此欄 = 不限定。
+#
+# named_mode              【選填第 10 欄】字面字串 ONLY 或 EXCLUDE(其他字串 → 整張表
+#                         載入失敗)。ONLY = 只能打給 named_unit_id(牌面點名者是承受者,
+#                         例:「丙壓低身形」)。EXCLUDE = 只能打給「存活我方減去點名者」
+#                         (牌面點名者是出手鼓勵的人,承受者是隊友,例:「乙在耳邊喊了聲
+#                         我挺你」;管理者 2026-11-03 裁決「給乙以外的任何人」)。
+#                         省略此欄 = ONLY。丙類填 ONLY(無作用)。
+#
 # ── 丙類的合法配對(2026-09-15 撰寫時逐一查證) ─────────────────────────
 # 只有 vs01_affinity_links.txt 已登記的兩對是合法的:(1,2) 甲乙、(3,4) 丙丁。
 # 戊(5)沒有任何關係線,任何以 5 為 affinity_character_a/b 的丙類卡都無法通過
@@ -63,12 +76,12 @@
 # 目前沒有任何驗收條件可查證。已登記為已知缺口,見
 # design/gdd/skill-card-system.md Core Rules 一之三界線 1(2026-09-15 補述)。
 #
-# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude
-card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0
-card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0
-card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0
-card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0
-card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0
-card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0
-card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2
-card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,named_unit_id,named_mode
+card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0,1,ONLY
+card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0,2,EXCLUDE
+card_03,TEMPORARY_STAT_MODIFIER,0,2,2,-1,-1,0,2,EXCLUDE
+card_04,TEMPORARY_STAT_MODIFIER,0,3,1,-1,-1,0,4,ONLY
+card_05,TEMPORARY_STAT_MODIFIER,2,0,1,-1,-1,0,5,ONLY
+card_06,TEMPORARY_STAT_MODIFIER,0,1,2,-1,-1,0,3,ONLY
+card_07,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2,-1,ONLY
+card_08,PERMANENT_AFFINITY_WRITE,0,0,0,3,4,-2,-1,ONLY

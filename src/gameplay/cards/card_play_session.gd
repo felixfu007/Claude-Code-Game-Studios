@@ -206,9 +206,26 @@ func select_card(card: Card) -> bool:
 		return false
 	if not _deck.hand().has(card):
 		return false
+	# Story 009: a 甲類 card whose named unit is dead / not on the field is a
+	# dead card -- refuse here instead of entering SELECTING_TARGET with an empty
+	# legal set (BattleScreen reads "legal_targets() empty" as "CONFIRMING
+	# reached", so an empty set at S2 would be misread). The card stays in hand.
+	if not is_card_playable(card):
+		return false
 	_selected_card = card
 	_step = Step.SELECTING_TARGET
 	return true
+
+
+## Story 009: whether [param card] can currently be played at all. [code]false[/code]
+## only for a 甲類 card that names a unit ([member Card.named_unit_id]) which is
+## not alive on the PLAYER side right now. 丙類 and unrestricted 甲類 are always
+## [code]true[/code] here (丙類 pair legality is decided at target selection,
+## unchanged). Pure query; a UI may use it to render a card as unplayable.
+func is_card_playable(card: Card) -> bool:
+	if card.category != Card.Category.TEMPORARY_STAT_MODIFIER:
+		return true
+	return not _legal_targets_for_stat_card(card).is_empty()
 
 
 ## Returns the set of unit ids [method select_target] (at
@@ -217,8 +234,10 @@ func select_card(card: Card) -> bool:
 ## those two steps.
 ##
 ## For a [constant Card.Category.TEMPORARY_STAT_MODIFIER] card, this is every
-## currently-alive PLAYER unit (GDD Data Requirements: "甲類=我方單位") — no
-## further legality check exists for 甲類.
+## currently-alive PLAYER unit (GDD Data Requirements: "甲類=我方單位") — or,
+## if the card names a unit ([member Card.named_unit_id], story 009), ONLY that
+## unit when alive, else empty; with [constant Card.NamedMode.EXCLUDE], every
+## alive PLAYER unit except that one.
 ##
 ## For a [constant Card.Category.PERMANENT_AFFINITY_WRITE] card at
 ## [constant Step.SELECTING_TARGET] (S2p), this is every unit appearing in
@@ -230,7 +249,7 @@ func legal_targets() -> Array[int]:
 	match _step:
 		Step.SELECTING_TARGET:
 			if _selected_card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
-				return _alive_player_unit_ids()
+				return _legal_targets_for_stat_card(_selected_card)
 			return _s2p_legal_first_targets()
 		Step.SELECTING_TARGET_B:
 			return _s2q_legal_second_targets(_selected_target_a)
@@ -370,6 +389,23 @@ func _is_authoritative_write_in_progress() -> bool:
 	if not _authoritative_write_in_progress_check.is_valid():
 		return false
 	return bool(_authoritative_write_in_progress_check.call())
+
+
+func _legal_targets_for_stat_card(card: Card) -> Array[int]:
+	var alive: Array[int] = _alive_player_unit_ids()
+	if card.named_unit_id == Card.UNRESTRICTED_TARGET:
+		return alive
+	if card.named_mode == Card.NamedMode.EXCLUDE:
+		# 排除模式:存活我方 − 點名者。點名者倒下不影響其他人可選。
+		var others: Array[int] = []
+		for unit_id: int in alive:
+			if unit_id != card.named_unit_id:
+				others.append(unit_id)
+		return others
+	var restricted: Array[int] = []
+	if alive.has(card.named_unit_id):
+		restricted.append(card.named_unit_id)
+	return restricted
 
 
 func _alive_player_unit_ids() -> Array[int]:
