@@ -33,7 +33,17 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
-## 🔴 第九十一批(2026-11-02,公司,13:50 開工)—— 進行中,位階高於下方
+## 🔴 第九十二批(2026-11-03,公司,08:41 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
+- 開工:本倉庫無新提交;AI_IMG 29 號 15 張自動產出完成(11-02 15:15),**家用端尚無 29 號報告、棋子小實驗可行性未回**。
+- 管理者:在家目視「還沒試,今晚再試」(手把 A/B、丙射程 6 手感仍待辦)。
+- ✅ art-director 29 號審定 `docs/ai-art-service-handoff/29-art-director-review-2026-11-03.md`:**立繪全面改插畫版(美術總監自決)**;選甲 001、乙 005、丙 007、丁 010,戊 0/3。→ 丙 28-002 待看一題**作廢**(D5)。
+- 裁決「改綠十字或生命之星(推薦)」(乙紅十字;被跳過:純紅布章 / 照用紅十字)。
+- ✅ **30 號已推 AI_IMG `b6766f6`**(15 added / 0 removed,推前 status 空):14 張(戊 4、甲 2、乙 3 綠十字、丙 3、丁 2)+ 後製請求(甲裁星章、乙擦胸章+紅十字改綠、丁擦 POLICE、既有乙棋子紅十字改綠)。產生器 `docs/ai-art-service-handoff/30-jobs/build-jobs.js`(協調者寫;非 prompt 欄位與 29-013 逐欄相同已驗)。問家用端:權重語法 `(x:1.3)` 是否解析、能否 img2img。
+- ✅ lead-programmer 死碼盤點 `docs/reviews/wu-dead-code-audit-2026-11-03.md`(協調者核:`lone_guard_effective` 本體 `return lone`,雙值必相等)。裁決「分兩步:先清雙值(推薦)」(被跳過:現在全清 / 只改註解)。第二步(`lone_guard_effective`、`will_attack`、`attacked_this_phase`)**等協議 2 結案**,會弄壞 5 支 prototypes 量測腳本。
+- 進行中:ui-programmer 清雙值(不提交;協調者重跑後提交)。
+
+## 🔴 第九十一批(2026-11-02,公司,13:50 開工)—— 位階高於下方
 管理者指示:推進到 17:00 收工;卡住出選項(列優缺點);每小時看時間;context 多就落檔 compact;查 AI_IMG。
 - ✅ 開工:pull 2 筆(在家修正 `9531b42` 已提交,「要不要提交」一題作廢)。AI_IMG 有 28 號交付(`0a50af4`)。
 - ✅ **兩個嚴重 bug 修好 `2ad617e`**(godot-specialist):回主選單前先 `close()`;`ui_accept`+手把 A、`ui_cancel`+手把 B(device 0;鍵盤 16)。協調者讀 diff + 重跑:`ENGINE EXIT = 0` / `1765 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(161/161)`。⚠️ 未開窗接手把實測按鈕;敏感度只證各檔第一條。
