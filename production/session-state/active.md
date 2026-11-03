@@ -3,7 +3,7 @@
 <!-- STATUS -->
 Epic: **第九十二批(2026-11-03)收工。** 立繪五張定案(全插畫,31 號只後製已推 AI_IMG `09e0ba3`);介面遮擋 `539bc36`;點名卡 ONLY/EXCLUDE `90bb933`;標題名稱 `9217f20`;死碼第一步 `95559b2`;GDD 同步 `259a274`/`c20ac96`;vs02~05 難度三種打法量測。測試 1765 → **1800,全綠**,協調者每批重跑。
 Feature: 🔴 管理者今天裁決逐字見第九十二批節。非推薦:點名卡「限定只能給點名者」、「查第 3 場敗因」、「讓電腦代打學會撤退」、「再做提早撤退+保持隊形版」、「請關卡設計師出調整提案(不改檔)」。規則 4 例外:skill-card GDD + 好感度等 4 檔。
-Task: 🔴 **下次第一件:git pull + 查 AI_IMG(31 號後製、29 號棋子小實驗可行性、30 號兩個確認;回來先交 art-director);第二件:問管理者在家目視(清單見 PROJECT-STATUS 第 1 點,含實打第 3、4 場);第三件:讀 level-designer 提案 `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md`(收工時仍在寫,可能未完成 —— 先查檔案存在與否)並請管理者選。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(31 號後製、29 號棋子小實驗可行性、30 號兩個確認;回來先交 art-director);第二件:問管理者在家目視(清單見 PROJECT-STATUS 第 1 點,含實打第 3、4 場);第三件:依管理者實打第 3、4 場的感受,把 level-designer 提案 `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md` 做成選項請他選(已交件)。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
 以下為第九十一批原狀態列。
 Epic: **第九十一批(2026-11-02)收工。** 修兩個嚴重 bug(`2ad617e`)→ 丙射程 4→6(vs01~05 `2f82109`、tut03 本批收工提交)→ **協議 2 attempt-5 通過(壓線)`818c9e0`**(忽視 6/8、運用 8/8)。28 號美術審定、29 號已推 AI_IMG `38556ac`。測試 1759 → **1765,全綠**,協調者每批重跑。
 Feature: 🔴 管理者今天裁決逐字見第九十一批節。非推薦:「直接補強丙,考第五次」「先不要,等第五次考完再說」(後已改核准)。方案 C(丙減傷加倍)取消。
@@ -68,7 +68,7 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ `fe03a5e` vs03 敗因:v1 丁 R3、v5 丙 R4,皆 E4 補刀;電腦不讓低血撤退(協調者核 RESULT 逐局相同、TDEATH 行)。裁決「**讓電腦代打學會撤退**」(非推薦;推薦關卡不動等實打)。🔴 協調者決定:**不動協議 2 正式工具**,另做難度專用版 `prototypes/difficulty-ai-retreat-2026-11-03/`(14:20 派 ai-programmer;關閉撤退時須逐局重現原量測)。
 - ✅ `e18fb52` 撤退版(瀕死才撤):vs02~05 與原版逐局相同,RTRIG 11 次皆無更安全格(協調者核)。裁決「**再做「提早撤退+保持隊形」版**」(非推薦;推薦停下等實打)→ 14:45 派 ai-programmer `prototypes/difficulty-ai-formation-2026-11-03/`(要求回報「觸發且真的改變選擇」次數)。
 - ✅ `5204a7a` 提早撤退+隊形版:vs02 6/8、vs03 5/8、vs04 8/8、vs05 7/8(協調者核 W/L 與關閉==原量測);(a) 改選 28 次、(b) 約 120 次。三種打法 vs03 皆最難、vs04 皆最易。裁決「**請關卡設計師出調整提案(不改檔)**」(非推薦;推薦數字不動今晚實打)→ 15:50 派 level-designer `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md`,**明天給管理者選**。
-- 🔴 **17:00 收工**:PROJECT-STATUS 重寫;level-designer 提案收工時仍在寫(背景),未驗收、未提交 —— 下次先查。worktree `.claude/worktrees/agent-a8c9296ddd1ce7373` 未移除。
+- 🔴 **17:00 收工**:PROJECT-STATUS 重寫;level-designer 提案 17:05 交件並提交(協調者只核地形規則與第 12 欄,未逐案驗)。推薦「都不改,等真人實打」;若要動,最小組合為 3-B(E4/E5 延後)+ 4-A(E3 改 (11,4))。worktree `.claude/worktrees/agent-a8c9296ddd1ce7373` 未移除。
 - 技術債(協調者決定延後):LONE_*/HOLD_BACK_*/GUARD_* 常數改資料檔 —— prototypes 零引用,不影響協議 2;中型重構,無玩家可見效果。
 - 剩餘:第 4 場難度(需在家實打)、死碼第二步(等協議 2 結案)、常數資料驅動技術債、AI_IMG 30 號等家用端、worktree `.claude/worktrees/agent-a8c9296ddd1ce7373` 未移除。
 
