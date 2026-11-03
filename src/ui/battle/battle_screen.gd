@@ -1252,7 +1252,7 @@ func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	_relation_toggle_button.size = trect.size
 
 func _mouse_over_relation_toggle(window_pos: Vector2) -> bool:
-	return _relation_toggle_button != null and _relation_toggle_button.get_global_rect().has_point(window_pos)
+	return _relation_toggle_button != null and _relation_toggle_button.is_visible_in_tree() and _relation_toggle_button.get_global_rect().has_point(window_pos)
 
 
 # ---- 2026-10-28 管理者試玩回饋第 4 點:全程只用滑鼠 -------------------------------
@@ -1333,9 +1333,96 @@ func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
 		button.size = rect.size
 
 
+# ---- battle-hud story-004:介面蓋到棋盤 —— 指到才變淡(AC1)+ 一鍵隱藏(AC2)-------------
+# 依據:docs/reviews/hud-board-overlap-options-2026-11-03.md A 案 + B 案(管理者 2026-11-03 裁決)。
+# 🔴 變淡用整個 Color 賦值,不寫 modulate 的 alpha 分量單獨賦值:ADR-0005 R6-8 單一寫入者治理測試
+# 保留該寫法給游標節點;這裡改的是 HUD 節點(與游標節點不同顆)。
+
+## 一鍵隱藏全部戰鬥介面(UILayer)。棋盤游標與選取照常(游標在世界層與 Autoload 專屬圖層)。
+var _hud_hidden: bool = false
+
+
+func diagnostic_hud_hidden() -> bool:
+	return _hud_hidden
+
+
+func _set_hud_hidden(hidden: bool) -> void:
+	_hud_hidden = hidden
+	$UILayer.visible = not hidden
+
+
+func _toggle_hud_hidden() -> void:
+	_set_hud_hidden(not _hud_hidden)
+
+
+## 會開新面板的狀態一出現就自動恢復介面(開手牌、開選單另在各自入口恢復,因為選單開啟時樹會暫停)。
+func _restore_hud_if_new_panel_opened() -> void:
+	if not _hud_hidden:
+		return
+	if _controller.is_card_play_in_progress() or _controller.has_pending_discard() \
+			or _attack_confirm_panel.visible or diagnostic_guess_selector_visible() \
+			or _controller.phase() == BattleController.Phase.FINISHED:
+		_set_hud_hidden(false)
+
+
+func _set_frame_alpha(node: CanvasItem, alpha: float) -> void:
+	if node != null:
+		node.modulate = Color(1.0, 1.0, 1.0, alpha)
+
+
+## AC1:高亮格與某介面框重疊時,該框降到 [constant HudLayout.OVERLAP_FADE_ALPHA]。
+## 框矩形一律取自 HudLayout / HandBar 的真實矩形函式;重疊判斷是 [method HudLayout.frame_alpha_for_cell]。
+## 資訊框(右上)不在本 story 範圍。展開態手牌不變淡。
+## 上一次算變淡時的輸入(高亮格、視窗大小、手牌是否展開);輸入沒變就不重算(此函式每個 _process 都呼叫)。
+var _fade_key_cell: Vector2i = Vector2i(-2, -2)
+var _fade_key_size: Vector2i = Vector2i.ZERO
+var _fade_key_expanded: bool = false
+
+
+func _update_hud_overlap_fade() -> void:
+	var window_size: Vector2i = get_window().size
+	var has_cell: bool = _cursor_active and BoardCoords.is_in_bounds(_cursor_cell)
+	var key_cell: Vector2i = _cursor_cell if has_cell else Vector2i(-1, -1)
+	var expanded: bool = _hand_bar.diagnostic_is_expanded()
+	if key_cell == _fade_key_cell and window_size == _fade_key_size and expanded == _fade_key_expanded:
+		return
+	_fade_key_cell = key_cell
+	_fade_key_size = window_size
+	_fade_key_expanded = expanded
+	var cell_rect: Rect2 = HudLayout.cell_window_rect(_cursor_cell, window_size) if has_cell else Rect2()
+	var hint_alpha: float = HudLayout.frame_alpha_for_cell(has_cell, cell_rect, HudLayout.controls_hint_bg_rect(window_size))
+	_set_frame_alpha(_controls_hint_bg, hint_alpha)
+	_set_frame_alpha(_hand_button, hint_alpha)
+	_set_frame_alpha(_menu_button, hint_alpha)
+	_set_frame_alpha(_consistency_label, HudLayout.frame_alpha_for_cell(
+		has_cell, cell_rect, HudLayout.consistency_counter_rect(window_size)))
+	_set_frame_alpha(_relation_toggle_button, HudLayout.frame_alpha_for_cell(
+		has_cell, cell_rect, HudLayout.relation_minimap_toggle_rect(window_size)))
+	var hand_alpha: float = 1.0
+	if not expanded:
+		hand_alpha = HudLayout.frame_alpha_for_cell(has_cell, cell_rect,
+			HandBar.collapsed_backing_window_rect(window_size, CardDeck.HAND_SIZE_LIMIT))
+	_set_frame_alpha(_hand_bar, hand_alpha)
+
+
+## 供測試讀:目前各框的不透明度。
+func diagnostic_frame_alphas() -> Dictionary:
+	return {
+		"hint": _alpha_of(_controls_hint_bg),
+		"counter": _alpha_of(_consistency_label),
+		"toggle": _alpha_of(_relation_toggle_button),
+		"hand": _alpha_of(_hand_bar),
+	}
+
+
+## 節點尚未建立(例如 EGM 關閉時沒有計數標籤)視為不透明。
+func _alpha_of(node: CanvasItem) -> float:
+	return 1.0 if node == null else node.modulate.a
+
+
 func _mouse_over_hud_action_buttons(window_pos: Vector2) -> bool:
 	for button: Button in [_hand_button, _menu_button]:
-		if button != null and button.visible and button.get_global_rect().has_point(window_pos):
+		if button != null and button.is_visible_in_tree() and button.get_global_rect().has_point(window_pos):
 			return true
 	return false
 
@@ -2190,6 +2277,10 @@ func _process(_delta: float) -> void:
 	else:
 		_update_cursor_visual()
 
+	# battle-hud story-004:變淡依目前高亮格(鍵盤/手把/滑鼠共用的那一格);新面板出現則自動恢復隱藏的介面。
+	_restore_hud_if_new_panel_opened()
+	_update_hud_overlap_fade()
+
 	# Story U-013 (ADR-0005 機制六⑥, Implementation Note #1 quoted verbatim
 	# below) — this screen's own [member Node.process_priority] is 100 (see
 	# [method _init]), so this is the ONLY place in this file allowed to read
@@ -2283,6 +2374,15 @@ func _input(event: InputEvent) -> void:
 		# 故放在攻擊確認面板與強制棄牌這兩個吞鍵分支【之前】—— 否則那兩種情況按不到。
 		# 切換後 return,R 不會再傳給那兩個分支。僅顯示,不暫停棋盤;開著時其餘輸入照常。
 		# 鍵盤 echo 一律忽略;敵方回合只能關、不能開(見 _relation_minimap_can_open)。
+		# battle-hud story-004 AC2:一鍵隱藏/恢復全部戰鬥介面(鍵盤 H / 手把左搖桿按下)。
+		# 與關係圖鍵同理放在吞鍵分支之前;echo 忽略。
+		if event.is_action(&"battle_toggle_hud"):
+			if event is InputEventKey and (event as InputEventKey).echo:
+				return
+			if event.is_pressed():
+				_toggle_hud_hidden()
+				return
+
 		if event.is_action(&"battle_toggle_relation_map"):
 			if event is InputEventKey and (event as InputEventKey).echo:
 				return
@@ -3475,6 +3575,7 @@ func _direction_just_pressed(action: StringName, tracker: Dictionary) -> bool:
 func _handle_open_hand_pressed() -> void:
 	if not _controller.is_card_play_in_progress():
 		if _controller.open_hand():
+			_set_hud_hidden(false)  # story-004 AC2:開手牌自動恢復介面
 			# Story 008 — hands BOARD_TILE off to the card-play path the
 			# instant it opens (S0 -> S1), BEFORE _confirm_selected_card()
 			# tries to register it again later (S1 -> S2):
@@ -3515,6 +3616,7 @@ func _handle_open_hand_pressed() -> void:
 func _handle_battle_menu_pressed() -> void:
 	if _battle_menu.is_open():
 		return
+	_set_hud_hidden(false)  # story-004 AC2:開選單自動恢復介面(選單開啟時樹暫停,_process 不會跑)
 	_battle_menu.open()
 
 

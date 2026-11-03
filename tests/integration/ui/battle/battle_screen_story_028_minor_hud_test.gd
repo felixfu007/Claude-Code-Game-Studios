@@ -171,11 +171,16 @@ func test_compact_hint_four_items_when_they_fit_at_1280_and_1366() -> void:
 			"%s 文字寬超出可用寬度" % window_size).is_less_equal(HudLayout.compact_hint_available_width(window_size))
 
 
-func test_large_window_still_uses_full_two_line_hint() -> void:
-	assert_bool(HudLayout.is_compact_hint_bar(_BIG_WINDOW)).append_failure_message("PRECONDITION: 1920x1080 不是單行模式").is_false()
+# story-004 AC3 改斷言:原為「大視窗維持完整兩行」(story-028 G 的舊行為),
+# art-director 2026-11-03 決定推翻 —— 所有倍率一律單行。
+func test_large_window_also_uses_single_line_hint() -> void:
+	assert_bool(HudLayout.is_compact_hint_bar(_BIG_WINDOW)).append_failure_message("PRECONDITION: 1920x1080 現為單行模式").is_true()
 	var instance: BattleScreen = _fresh_instance()
 	instance._apply_hud_action_buttons_layout(_BIG_WINDOW)
-	assert_str(instance._controls_hint_label.text).is_equal(Loc.localize(BattleScreen.TEXT_CONTROLS_HINT))
+	assert_str(instance._controls_hint_label.text).is_equal(
+		HudLayout.compact_hint_text(Loc.localize(BattleScreen.TEXT_CONTROLS_HINT), _BIG_WINDOW))
+	assert_bool(instance._controls_hint_label.text.contains("
+")).is_false()
 
 
 # 偵測器:「永遠四項」的缺陷版本在 960x540 會超出可用寬度。
@@ -194,14 +199,15 @@ func _wide_hint(full: String) -> String:
 	return "　".join(segs)
 
 
-func test_large_window_keeps_two_line_hint_bar_and_stacked_buttons() -> void:
-	assert_bool(HudLayout.is_compact_hint_bar(_BIG_WINDOW)).append_failure_message("PRECONDITION: 1920x1080 不是單行模式").is_false()
+# story-004 AC3 改斷言:原為「大視窗兩行列高 + 上下疊兩顆按鈕」,現為單行列高 + 左右並排。
+func test_large_window_uses_single_line_hint_bar_and_side_by_side_buttons() -> void:
 	var bar: Rect2 = HudLayout.controls_hint_bg_rect(_BIG_WINDOW)
 	var fpx: float = float(HudLayout.font_size(_BIG_WINDOW))
-	assert_float(bar.size.y).is_equal_approx(fpx * HudLayout.CONTROLS_HINT_BG_HEIGHT_MULTIPLIER, 0.01)
+	assert_float(bar.size.y).is_equal_approx(fpx * HudLayout.COMPACT_HINT_BG_HEIGHT_MULTIPLIER, 0.01)
 	var a: Rect2 = HudLayout.hud_action_button_rect(_BIG_WINDOW, 0)
 	var b: Rect2 = HudLayout.hud_action_button_rect(_BIG_WINDOW, 1)
-	assert_float(a.position.x).is_equal_approx(b.position.x, 0.01)
+	assert_float(a.position.y).is_equal_approx(b.position.y, 0.01)
+	assert_bool(a.intersects(b)).is_false()
 
 
 func test_sensitivity_proof_overlap_detector_catches_two_line_bar_at_min_window() -> void:

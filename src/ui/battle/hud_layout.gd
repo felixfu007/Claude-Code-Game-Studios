@@ -79,17 +79,19 @@ const CONTROLS_HINT_BG_HEIGHT_MULTIPLIER: float = 3.2
 const RESULT_LABEL_WIDTH_MULTIPLIER: float = 6.0
 const RESULT_LABEL_HEIGHT_MULTIPLIER: float = 2.2
 
-## Story 028 G:小視窗(倍率 N 不大於 [constant COMPACT_HINT_MAX_SCALE])時底部說明列縮成一行。
+## Story 028 G → story-004 AC3:底部說明列一律單行(原本只在小視窗)。
 ## 兩行的列高 3.2 倍字級,在 960x540 會蓋住棋盤最下一列(實測蓋 19px);一行 2.0 倍則不會。
 ## N 一律來自 [method WorldLayout.compute_scale],不另算。
-const COMPACT_HINT_MAX_SCALE: int = 2
 const COMPACT_HINT_BG_HEIGHT_MULTIPLIER: float = 2.0
 ## 單行模式只保留說明文字以全形空白分隔的前幾段(其餘功能有按鈕/選單可達)。
 const COMPACT_HINT_SEGMENT_COUNT: int = 2
 
 
-static func is_compact_hint_bar(window_size: Vector2i) -> bool:
-	return WorldLayout.compute_scale(window_size) <= COMPACT_HINT_MAX_SCALE
+## battle-hud story-004 AC3(art-director 2026-11-03 決定,推翻 story-028 G 的「較大視窗行為不變」):
+## 說明列在【所有】倍率 N 一律單行 —— 兩行的 3.2 倍列高在 1080p/4K 會蓋到棋盤最下一列。
+## 函式保留是為了既有呼叫端;[param _window_size] 不再影響結果。
+static func is_compact_hint_bar(_window_size: Vector2i) -> bool:
+	return true
 
 
 ## Story 029 G 補:四項版 = 第一行前 [constant COMPACT_HINT_WIDE_SEGMENT_COUNT] 段
@@ -178,6 +180,40 @@ static func safe_rect(window_size: Vector2i) -> Rect2:
 	var size: Vector2 = Vector2(window_size)
 	var inset: Vector2 = size * TITLE_SAFE_INSET_FRACTION
 	return Rect2(inset, size - inset * 2.0)
+
+
+## battle-hud story-004 AC1 -- opacity a HUD frame fades to while the highlighted
+## board cell sits underneath it (spec: about 30~40%).
+const OVERLAP_FADE_ALPHA: float = 0.35
+
+
+## battle-hud story-004 AC1 -- pure overlap test between the highlighted cell's
+## on-screen rect and a HUD frame rect. Edge contact is NOT overlap (a cell
+## flush against a frame stays opaque); only a positive-area intersection counts.
+## Callers must pass frame rects taken from the real rect functions in this class
+## (or HandBar), never a re-derived copy.
+static func cell_overlaps_frame(cell_rect: Rect2, frame_rect: Rect2) -> bool:
+	return cell_rect.intersects(frame_rect, false)
+
+
+## Alpha a frame should currently show: [constant OVERLAP_FADE_ALPHA] while the
+## highlighted cell overlaps it, else 1.0. [param has_cell] false (no highlight)
+## always yields 1.0.
+static func frame_alpha_for_cell(has_cell: bool, cell_rect: Rect2, frame_rect: Rect2) -> float:
+	if has_cell and cell_overlaps_frame(cell_rect, frame_rect):
+		return OVERLAP_FADE_ALPHA
+	return 1.0
+
+
+## battle-hud story-004 AC1 -- on-screen (window-pixel) rect of board [param cell],
+## through the SAME [method WorldLayout.canvas_to_window_transform] the world
+## layer is placed with. Used to decide which HUD frames sit on top of the
+## highlighted cell.
+static func cell_window_rect(cell: Vector2i, window_size: Vector2i) -> Rect2:
+	var xf: Transform2D = WorldLayout.canvas_to_window_transform(window_size)
+	var top_left: Vector2 = xf * BoardCoords.grid_to_local(cell)
+	var scale: float = float(WorldLayout.compute_scale(window_size))
+	return Rect2(top_left, Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE) * scale)
 
 
 ## [code]StatusLabel[/code] box ("左上角回合狀態" per the story's own table):
