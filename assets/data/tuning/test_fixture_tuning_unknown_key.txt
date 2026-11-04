@@ -1,0 +1,2 @@
+# test fixture (story-001): unknown key -> must fail to parse (known-key list is empty in story-001)
+combat,no_such_knob,1

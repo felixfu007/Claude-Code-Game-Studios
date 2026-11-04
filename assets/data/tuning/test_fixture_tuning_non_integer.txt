@@ -1,0 +1,2 @@
+# test fixture (story-001): non-integer value -> must fail to parse
+combat,no_such_knob,abc

@@ -1,0 +1,4 @@
+# tuning_knobs -- fixed format: section,key,value
+# value must be an integer; a key may appear only once; unknown keys are a parse failure
+# (guards against typos silently doing nothing). Spec: production/epics/tuning-data/EPIC.md
+# story-001: skeleton only, no keys yet; later stories add one system's keys each.

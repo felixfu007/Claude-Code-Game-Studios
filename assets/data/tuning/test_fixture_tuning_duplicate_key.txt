@@ -1,0 +1,3 @@
+# test fixture (story-001): duplicate key -> must fail to parse (duplicate check precedes unknown-key check)
+combat,no_such_knob,1
+combat,no_such_knob,2

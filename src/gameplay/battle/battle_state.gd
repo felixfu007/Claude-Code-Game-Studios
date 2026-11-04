@@ -25,6 +25,10 @@ enum Outcome { ONGOING, VICTORY, DEFEAT }
 ## changes one updates the other in the same call.
 var board: Board
 
+## tuning-data story-001: injected tuning knobs (see [TuningKnobs]); set by
+## [method create]. No rule reads it yet in this story.
+var tuning: TuningKnobs = TuningKnobs.defaults()
+
 # id -> Unit. One entry per unit in the battle (both factions), populated
 # once in create() and never removed — dead units stay in this map so
 # unit_by_id() and units_of() keep working (and correctly excluding them)
@@ -192,8 +196,12 @@ func write_window_is_open() -> bool:
 ## an ALREADY-guarded [BattleState] (level reload, reinforcements, save
 ## restore) must route through [method commit_authoritative_change] — this
 ## vacuous-truth argument does not extend to that case.
-static func create(terrain_rows: PackedStringArray, roster_text: String) -> BattleState:
+static func create(
+	terrain_rows: PackedStringArray, roster_text: String, tuning_knobs: TuningKnobs = null
+) -> BattleState:
 	var state: BattleState = BattleState.new()
+	# tuning-data story-001: optional trailing parameter; null -> defaults().
+	state.tuning = tuning_knobs if tuning_knobs != null else TuningKnobs.defaults()
 	state.board = Board.from_ascii(terrain_rows)
 	var roster: Array[Unit] = Unit.roster_from_text(roster_text)
 	for unit: Unit in roster:

@@ -1,0 +1,2 @@
+# test fixture (story-001): valid, header-only. Distinct from tuning_knobs.txt so tests can tell which file was injected.
+# FIXTURE-VALID-MARKER

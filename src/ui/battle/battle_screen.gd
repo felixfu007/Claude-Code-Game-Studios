@@ -520,6 +520,14 @@ var cards_path_override: String = ""
 ## [member terrain_path_override] — see its doc comment.
 var card_text_path_override: String = ""
 
+## tuning-data story-001:[TuningKnobs] 資料檔路徑的注入點。空字串 -> [constant TUNING_PATH]。
+## 與 [member terrain_path_override] 同一契約(instantiate 之後、add_child 之前設定)。
+## 壞檔 -> [method _fail_load](push_error + 明確失敗,絕不靜默回預設)。
+var tuning_path_override: String = ""
+
+## tuning-data story-001:調整旋鈕資料檔。
+const TUNING_PATH: String = "res://assets/data/tuning/tuning_knobs.txt"
+
 ## 裁決①第二輪(production/epics/support-conversation/
 ## story-003-cross-mission-affinity-continuity.md)—— 讓戰役層累積記錄
 ## ([CampaignAffinityLedger])能透過與 [constant AFFINITY_PATH] 靜態灌入
@@ -1847,6 +1855,20 @@ func _ready() -> void:
 		# can show the confirm panel's "卡名與牌面文字" field.
 		_card_flavor_texts = CardText.flavor_texts_from_text(card_text_text)
 
+	# tuning-data story-001 —— 調整旋鈕:MISSING/UNREADABLE 與解析失敗(null)皆為載入失敗,
+	# 不靜默回預設。空檔(零鍵)為合法狀態。
+	var tuning_knobs: TuningKnobs = null
+	var tuning_path: String = tuning_path_override
+	if tuning_path.is_empty():
+		tuning_path = TUNING_PATH
+	var tuning_failure: LoadFailure = classify_file_access(tuning_path)
+	if tuning_failure == LoadFailure.NONE:
+		var parsed_tuning: Variant = TuningKnobs.from_text(FileAccess.get_file_as_string(tuning_path))
+		if parsed_tuning == null:
+			tuning_failure = LoadFailure.PARSE_ERROR
+		else:
+			tuning_knobs = parsed_tuning
+
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
 	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
 	# 快照正是診斷「解析到了哪個檔案」的第一手資料。
@@ -1856,6 +1878,7 @@ func _ready() -> void:
 		"affinity": affinity_path,
 		"cards": cards_path,
 		"card_text": card_text_path,
+		"tuning": tuning_path,
 	}
 
 	if (
@@ -1864,6 +1887,7 @@ func _ready() -> void:
 		or affinity_failure != LoadFailure.NONE
 		or cards_failure != LoadFailure.NONE
 		or card_text_failure != LoadFailure.NONE
+		or tuning_failure != LoadFailure.NONE
 	):
 		_fail_load({
 			terrain_path: terrain_failure,
@@ -1871,10 +1895,11 @@ func _ready() -> void:
 			affinity_path: affinity_failure,
 			cards_path: cards_failure,
 			card_text_path: card_text_failure,
+			tuning_path: tuning_failure,
 		})
 		return
 
-	_state = BattleState.create(terrain_rows, roster_text)
+	_state = BattleState.create(terrain_rows, roster_text, tuning_knobs)
 
 	var player_ids: Array[int] = []
 	var enemy_ids: Array[int] = []
