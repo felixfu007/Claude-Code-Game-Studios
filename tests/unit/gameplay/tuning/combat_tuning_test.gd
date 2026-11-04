@@ -74,6 +74,36 @@ func test_lone_near_not_less_than_far_returns_null_and_pushes_error() -> void:
 	assert_bool(result[0]).is_true()
 
 
+func test_lone_near_distance_below_one_returns_null_and_pushes_error() -> void:
+	var text: String = _with("combat,lone_near_distance,1", "combat,lone_near_distance,0")
+	var result: Array = [false]
+	await assert_error(func() -> void: result[0] = CombatTuning.from_text(text) == null) \
+		.is_push_error("CombatTuning: combat.lone_near_distance (0) must be >= 1 (distance between two distinct units is never < 1)")
+	assert_bool(result[0]).is_true()
+
+
+func test_hold_back_distance_below_one_returns_null_and_pushes_error() -> void:
+	var text: String = _with("combat,hold_back_distance,2", "combat,hold_back_distance,0")
+	var result: Array = [false]
+	await assert_error(func() -> void: result[0] = CombatTuning.from_text(text) == null) \
+		.is_push_error("CombatTuning: combat.hold_back_distance (0) must be >= 1 (distance between two distinct units is never < 1)")
+	assert_bool(result[0]).is_true()
+
+
+func test_hold_back_penalty_negative_returns_null_and_pushes_error() -> void:
+	var text: String = _with("combat,hold_back_penalty,1", "combat,hold_back_penalty,-1")
+	var result: Array = [false]
+	await assert_error(func() -> void: result[0] = CombatTuning.from_text(text) == null) \
+		.is_push_error("CombatTuning: combat.hold_back_penalty (-1) must be >= 0 (negative would increase damage)")
+	assert_bool(result[0]).is_true()
+
+
+func test_boundary_values_still_accepted() -> void:
+	# 邊界:near=1、hold_back_distance=1、penalty=0 皆合法。
+	var text: String = _with("combat,hold_back_distance,2", "combat,hold_back_distance,1").replace("combat,hold_back_penalty,1", "combat,hold_back_penalty,0")
+	assert_bool(CombatTuning.from_text(text) != null).is_true()
+
+
 func test_lone_guard_null_tuning_unchanged_for_d_min_range() -> void:
 	# 零行為變更:刪除 LONE_MID_DISTANCE 前後 d_min -1..4 的回傳值(舊實作:fallthrough 得中段)。
 	var expected: Dictionary = {-1: 0, 0: -1, 1: -1, 2: 2, 3: 0, 4: 0}

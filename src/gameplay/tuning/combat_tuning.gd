@@ -9,7 +9,8 @@
 # 驗證(失敗回 null 並 push_error,不用 assert()):
 #   - guard_min <= guard_max
 #   - lone_near_distance < lone_far_distance
-# 其餘七項無推導得出的不變式,不自行發明限制(見交付報告)。
+#   - lone_near_distance >= 1、hold_back_distance >= 1、hold_back_penalty >= 0(管理者 2026-11-04 裁決)
+# lone_*_guard 超出 guard_min/max 不擋(被 guard_total 夾住屬既有設計)。
 class_name CombatTuning
 extends RefCounted
 
@@ -49,6 +50,16 @@ static func from_knobs(knobs: TuningKnobs) -> Variant:
 		return null
 	if tuning._lone_near_distance >= tuning._lone_far_distance:
 		push_error("CombatTuning: combat.lone_near_distance (%d) must be < lone_far_distance (%d)" % [tuning._lone_near_distance, tuning._lone_far_distance])
+		return null
+	# 管理者 2026-11-04 裁決「擋住明顯不合理的」:這三條擋的是會讓規則靜默失效或反向的值。
+	if tuning._lone_near_distance < 1:
+		push_error("CombatTuning: combat.lone_near_distance (%d) must be >= 1 (distance between two distinct units is never < 1)" % tuning._lone_near_distance)
+		return null
+	if tuning._hold_back_distance < 1:
+		push_error("CombatTuning: combat.hold_back_distance (%d) must be >= 1 (distance between two distinct units is never < 1)" % tuning._hold_back_distance)
+		return null
+	if tuning._hold_back_penalty < 0:
+		push_error("CombatTuning: combat.hold_back_penalty (%d) must be >= 0 (negative would increase damage)" % tuning._hold_back_penalty)
 		return null
 	return tuning
 

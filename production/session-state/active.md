@@ -57,7 +57,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決「延伸(推薦)」:一次核准延伸至測試程式內既有的測試用設定文字(只補新系統的行)。
 - 🔴 覆核收穫:`BattleState.create()` 對 `CardModifierTuning.from_knobs` 失敗靜默退回 defaults → 要求 push_error + 測試。協調者核 src 內 effective_atk/def 呼叫端皆傳 tuning(battle_state 660/661、battle_screen 4090/4091)。14:07 SendMessage 續做。
 - ✅ story-003 `d6c6226`(已推)。重跑:`ENGINE EXIT = 0` / `1839 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(171/171)`。
-- 14:30 派 gameplay-programmer story-004(CombatRules 9 項 + 刪 LONE_MID_DISTANCE;要求貼 CombatRules 呼叫端 grep)。⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
+- 14:30 派 gameplay-programmer story-004(CombatRules 9 項 + 刪 LONE_MID_DISTANCE;要求貼 CombatRules 呼叫端 grep)。撞 20 回合上限一次,續做完成。
+- ✅ story-004 `194eac3`(已推)。協調者核 lone_guard/hold_back/guard_total 邏輯逐行等價;重跑:`ENGINE EXIT = 0` / `1853 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(173/173)`。
+- 裁決「擋住明顯不合理的(推薦)」(hold_back_penalty ≥0、hold_back_distance ≥1、lone_near_distance ≥1;被跳過:不擋)→ 14:50 同一實作者補驗證(只動 combat_tuning.gd + 測試)。**story-005 等它跑完測試再派。**⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
 
 ## 🔴 第九十二批(2026-11-03,公司,08:41 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
