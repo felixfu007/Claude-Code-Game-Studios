@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十三批(2026-11-04)收工。** 寫死數值搬資料檔 tuning-data story-001~005 全數完成(`27fadd0`~`be3f438`,文件 `aecaba7`):23 個旋鈕在 `assets/data/tuning/tuning_knobs.txt`,缺行/打錯一律載入失敗。零行為變更已用協議 2 工具前後對照證明。測試 1800 → **1866,全綠**,協調者每張重跑。
+Feature: 🔴 管理者今天裁決逐字見第九十三批節(全為推薦選項)。第 3、4 場「還沒打,先不動」;目視「還沒看」。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`,31 號後製、棋子小實驗可行性;回來先交 art-director);第二件:問管理者在家目視與實打第 3、4 場(清單見 PROJECT-STATUS);第三件:依實打感受把 `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md` 做成選項(現在調數字只需改資料檔/關卡檔)。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
+以下為第九十二批原狀態列。
 Epic: **第九十二批(2026-11-03)收工。** 立繪五張定案(全插畫,31 號只後製已推 AI_IMG `09e0ba3`);介面遮擋 `539bc36`;點名卡 ONLY/EXCLUDE `90bb933`;標題名稱 `9217f20`;死碼第一步 `95559b2`;GDD 同步 `259a274`/`c20ac96`;vs02~05 難度三種打法量測。測試 1765 → **1800,全綠**,協調者每批重跑。
 Feature: 🔴 管理者今天裁決逐字見第九十二批節。非推薦:點名卡「限定只能給點名者」、「查第 3 場敗因」、「讓電腦代打學會撤退」、「再做提早撤退+保持隊形版」、「請關卡設計師出調整提案(不改檔)」。規則 4 例外:skill-card GDD + 好感度等 4 檔。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG(31 號後製、29 號棋子小實驗可行性、30 號兩個確認;回來先交 art-director);第二件:問管理者在家目視(清單見 PROJECT-STATUS 第 1 點,含實打第 3、4 場);第三件:依管理者實打第 3、4 場的感受,把 level-designer 提案 `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md` 做成選項請他選(已交件)。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -59,7 +63,12 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ story-003 `d6c6226`(已推)。重跑:`ENGINE EXIT = 0` / `1839 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(171/171)`。
 - 14:30 派 gameplay-programmer story-004(CombatRules 9 項 + 刪 LONE_MID_DISTANCE;要求貼 CombatRules 呼叫端 grep)。撞 20 回合上限一次,續做完成。
 - ✅ story-004 `194eac3`(已推)。協調者核 lone_guard/hold_back/guard_total 邏輯逐行等價;重跑:`ENGINE EXIT = 0` / `1853 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(173/173)`。
-- 裁決「擋住明顯不合理的(推薦)」(hold_back_penalty ≥0、hold_back_distance ≥1、lone_near_distance ≥1;被跳過:不擋)→ 14:50 同一實作者補驗證(只動 combat_tuning.gd + 測試)。**story-005 等它跑完測試再派。**⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
+- 裁決「擋住明顯不合理的(推薦)」(hold_back_penalty ≥0、hold_back_distance ≥1、lone_near_distance ≥1;被跳過:不擋)→ 14:50 同一實作者補驗證(只動 combat_tuning.gd + 測試)。**story-005 等它跑完測試再派。**
+- ✅ 防呆 `18fb6f5`(重跑 1857/173 全綠)。✅ story-005 `be3f438`(撞上限一次續做;協調者自跑 AffinityRules 呼叫端 grep 逐一核皆傳 `_state.affinity_tuning`;直接讀 DELTA/PHI 常數處只剩註解;重跑 `ENGINE EXIT = 0` / `1866 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(175/175)`)。
+- 裁決(多選):「架構登記表那條(推薦)」「技術債登記表(推薦)」「五張工作單標完成(推薦)」;**未選**「舊註解『丙射程 2~4』」→ `aecaba7`。
+- ✅ 零行為變更物證 `prototypes/tuning-refactor-equivalence-2026-11-04/`:協議 2 工具 v3 vs01 於 `d6cb022` 與 `aecaba7` 各跑,21 行逐行相同;vs03 formation off 與昨日逐步紀錄相同。
+- 未做(已知):story-005 曲線端到端、BattleScreen 對 phi_min>phi_max 壞檔整合測試(單元層有);手感秒數、board 移動成本、距離門檻仍為常數(依裁決/建議)。
+- **收工(16:15 提早收,工作單全數完成、其餘待辦皆需管理者在家或家用端)**:PROJECT-STATUS 重寫。覆核收穫本批 3 件(缺鍵靜默、create 靜默退回 ×2 型)→ 連續零收穫 = 0。⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
 
 ## 🔴 第九十二批(2026-11-03,公司,08:41 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
