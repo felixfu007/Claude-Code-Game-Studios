@@ -47,6 +47,10 @@ const HAND_SIZE_LIMIT: int = 5
 ## hardcoding a single draw.
 const CARDS_DRAWN_PER_TURN: int = 1
 
+## tuning-data story-002:本戰鬥實際使用的三項旋鈕(注入;null -> [method DeckTuning.defaults])。
+## 上面三個常數只是 defaults() 的來源,方法一律讀這份,不再讀常數。
+var _tuning: DeckTuning
+
 # Cards not currently in the player's hand or the used pile. Order carries
 # no gameplay meaning — only membership does.
 var _pool: Array[Card] = []
@@ -78,8 +82,11 @@ var _pending_discard: bool = false
 ## fixed seed); if omitted, a freshly-constructed, unseeded
 ## [RandomNumberGenerator] is used, matching the engine's own default
 ## (time-seeded) behavior.
-func _init(cards: Array[Card], rng: RandomNumberGenerator = null) -> void:
+func _init(
+	cards: Array[Card], rng: RandomNumberGenerator = null, tuning: DeckTuning = null
+) -> void:
 	_pool.append_array(cards)
+	_tuning = tuning if tuning != null else DeckTuning.defaults()
 	_rng = rng if rng != null else RandomNumberGenerator.new()
 
 
@@ -87,7 +94,7 @@ func _init(cards: Array[Card], rng: RandomNumberGenerator = null) -> void:
 ## has fewer cards than that, deals as many as exist and stops — Edge Cases:
 ## "卡池張數少於開局手牌數" is legal and must not error.
 func deal_opening_hand() -> void:
-	for _i: int in range(OPENING_HAND_SIZE):
+	for _i: int in range(_tuning.opening_hand_size()):
 		if not _draw_one_into_hand():
 			break
 
@@ -110,9 +117,9 @@ func draw_for_turn() -> void:
 		"CardDeck.draw_for_turn: called while a forced discard is still " +
 		"pending -- resolve it with discard_card() first"
 	)
-	var was_full: bool = _hand.size() >= HAND_SIZE_LIMIT
+	var was_full: bool = _hand.size() >= _tuning.hand_size_limit()
 	var drew_any: bool = false
-	for _i: int in range(CARDS_DRAWN_PER_TURN):
+	for _i: int in range(_tuning.cards_drawn_per_turn()):
 		if _draw_one_into_hand():
 			drew_any = true
 	if drew_any and was_full:
@@ -187,6 +194,11 @@ func used() -> Array[Card]:
 	var copy: Array[Card] = []
 	copy.append_array(_used)
 	return copy
+
+
+## 本戰鬥的手牌上限(注入的 [DeckTuning];UI 排版與「n/上限」顯示讀這裡,不讀常數)。
+func hand_size_limit() -> int:
+	return _tuning.hand_size_limit()
 
 
 ## Number of cards currently in the pool.

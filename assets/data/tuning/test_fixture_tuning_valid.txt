@@ -1,2 +1,5 @@
 # test fixture (story-001): valid, header-only. Distinct from tuning_knobs.txt so tests can tell which file was injected.
 # FIXTURE-VALID-MARKER
+deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1

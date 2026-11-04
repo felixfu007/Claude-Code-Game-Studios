@@ -24,10 +24,18 @@ func test_tuning_knobs_valid_text_returns_object_with_values() -> void:
 	assert_bool(knobs.is_default).is_false()
 
 
-func test_tuning_knobs_empty_text_is_legal_and_empty() -> void:
-	var parsed: Variant = TuningKnobs.from_text("")
-	assert_bool(parsed != null).is_true()
-	assert_int((parsed as TuningKnobs).diagnostic_value_count()).is_equal(0)
+func test_tuning_knobs_empty_text_missing_keys_returns_null_and_pushes_error() -> void:
+	var result: Array = [TuningKnobs.defaults()]
+	await assert_error(func() -> void: result[0] = TuningKnobs.from_text("")) \
+		.is_push_error("TuningKnobs.from_text: missing required key 'deck.opening_hand_size'")
+	assert_bool(result[0] == null).is_true()
+
+
+func test_tuning_knobs_partial_file_names_the_missing_key() -> void:
+	var result: Array = [TuningKnobs.defaults()]
+	await assert_error(func() -> void: result[0] = TuningKnobs.from_text("combat,alpha,3\n", _TEST_KNOWN)) \
+		.is_push_error("TuningKnobs.from_text: missing required key 'combat.beta'")
+	assert_bool(result[0] == null).is_true()
 
 
 func test_tuning_knobs_missing_key_falls_back_to_known_default_only_via_defaults() -> void:
@@ -74,7 +82,7 @@ func test_tuning_knobs_real_data_file_parses() -> void:
 ## 若 from_text 不驗證未知鍵(把同一份文字餵給「不含該鍵」與「含該鍵」的清單),
 ## 結果必須不同 —— 證明驗證分支真的看清單。
 func test_sensitivity_proof_known_key_list_controls_acceptance() -> void:
-	var text: String = "combat,alpha,3\n"
+	var text: String = "combat,alpha,3\ncombat,beta,4\n"
 	assert_bool(TuningKnobs.from_text(text, _TEST_KNOWN) != null).is_true()
 	var result: Array = [true]
 	await assert_error(func() -> void: result[0] = TuningKnobs.from_text(text, {}) == null) \

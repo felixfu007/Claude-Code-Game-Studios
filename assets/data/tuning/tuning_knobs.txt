@@ -1,4 +1,8 @@
 # tuning_knobs -- fixed format: section,key,value
 # value must be an integer; a key may appear only once; unknown keys are a parse failure
 # (guards against typos silently doing nothing). Spec: production/epics/tuning-data/EPIC.md
-# story-001: skeleton only, no keys yet; later stories add one system's keys each.
+# production load path REQUIRES every known key (a deleted line is a load failure, not a silent default).
+# story-002: deck (CardDeck) -- values equal the old CardDeck constants.
+deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1

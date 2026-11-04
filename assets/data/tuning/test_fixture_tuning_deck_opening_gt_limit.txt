@@ -1,0 +1,4 @@
+# FIXTURE-DECK-OPENING-GT-LIMIT: invariant violation
+deck,opening_hand_size,5
+deck,hand_size_limit,3
+deck,cards_drawn_per_turn,1

@@ -528,6 +528,10 @@ var tuning_path_override: String = ""
 ## tuning-data story-001:調整旋鈕資料檔。
 const TUNING_PATH: String = "res://assets/data/tuning/tuning_knobs.txt"
 
+## tuning-data story-002:本場實際使用的 CardDeck 旋鈕。載入成功後由 [TuningKnobs] 建立並驗證;
+## 載入失敗時畫面不會進入戰鬥,故此預設值只是讓成員永遠非 null。
+var _deck_tuning: DeckTuning = DeckTuning.defaults()
+
 ## 裁決①第二輪(production/epics/support-conversation/
 ## story-003-cross-mission-affinity-continuity.md)—— 讓戰役層累積記錄
 ## ([CampaignAffinityLedger])能透過與 [constant AFFINITY_PATH] 靜態灌入
@@ -1409,7 +1413,7 @@ func _update_hud_overlap_fade() -> void:
 	var hand_alpha: float = 1.0
 	if not expanded:
 		hand_alpha = HudLayout.frame_alpha_for_cell(has_cell, cell_rect,
-			HandBar.collapsed_backing_window_rect(window_size, CardDeck.HAND_SIZE_LIMIT))
+			HandBar.collapsed_backing_window_rect(window_size, _deck_tuning.hand_size_limit()))
 	_set_frame_alpha(_hand_bar, hand_alpha)
 
 
@@ -1868,6 +1872,12 @@ func _ready() -> void:
 			tuning_failure = LoadFailure.PARSE_ERROR
 		else:
 			tuning_knobs = parsed_tuning
+			# story-002:deck 三項的跨鍵不變式驗證;失敗同樣是載入失敗(大聲報錯)。
+			var parsed_deck: Variant = DeckTuning.from_knobs(tuning_knobs)
+			if parsed_deck == null:
+				tuning_failure = LoadFailure.PARSE_ERROR
+			else:
+				_deck_tuning = parsed_deck
 
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
 	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
@@ -2049,7 +2059,7 @@ func _ready() -> void:
 	# substitute. _affinity_pool is this battle's single instance (ADR-0002
 	# mechanism one — see that member's own doc comment for why it is owned
 	# here).
-	var card_deck: CardDeck = _build_card_deck(cards)
+	var card_deck: CardDeck = _build_card_deck(cards, null, _deck_tuning)
 	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(_affinity_pool)
 
 	_controller = BattleController.new(
@@ -3242,8 +3252,10 @@ static func classify_card_parse(parsed: Variant) -> LoadFailure:
 ## randomness itself is legal here — the project's `rng_in_combat_settlement`
 ## ban covers the settlement path, not which card comes up on a draw (GDD
 ## Core Rules 三, [CardDeck]'s own class doc comment).
-static func _build_card_deck(cards: Array[Card], rng: RandomNumberGenerator = null) -> CardDeck:
-	return CardDeck.new(cards, rng)
+static func _build_card_deck(
+	cards: Array[Card], rng: RandomNumberGenerator = null, tuning: DeckTuning = null
+) -> CardDeck:
+	return CardDeck.new(cards, rng, tuning)
 
 
 ## Builds the on-screen message for [param failure] at [param path] from
@@ -4816,7 +4828,7 @@ func _refresh_view() -> void:
 		})
 	_hand_bar.render(
 		hand_bar_slot_kinds(hand),
-		CardDeck.HAND_SIZE_LIMIT,
+		_deck_tuning.hand_size_limit(),
 		availability_for(_controller.phase()),
 		_card_selecting_from_hand or _controller.has_pending_discard(),
 		card_faces,
@@ -4826,7 +4838,7 @@ func _refresh_view() -> void:
 	# (第一版曾把收合態整個隱藏;管理者第二輪回饋「縮小就好,不是要你隱藏」,
 	# 改為 HandBar 收合時等比縮小,見 HandBar.COLLAPSED_SCALE。)
 	if _hand_button != null:
-		_hand_button.text = Loc.localize(TEXT_HAND_BUTTON) % [hand.size(), CardDeck.HAND_SIZE_LIMIT]
+		_hand_button.text = Loc.localize(TEXT_HAND_BUTTON) % [hand.size(), _deck_tuning.hand_size_limit()]
 
 	_update_status_label()
 	_update_tile_info_panel()

@@ -12,15 +12,20 @@
 #   - 檔案格式 `section,key,value`,`#` 註解,空行略過。
 #   - 驗證:欄位數必為 3、值必為整數、重複鍵失敗、未知 section/key 失敗
 #     (防打錯字靜默失效)。
-#   - 🔴 [constant KNOWN_KEYS] 本張刻意為空 —— 後續各 story 各自增補一個系統的鍵。
+#   - story-002 起 [constant KNOWN_KEYS] 含 deck 三鍵;後續各 story 各自增補一個系統的鍵。
+#   - 🔴 一律嚴格:known_keys 每個鍵都必須出現,缺任一個即失敗(大聲報錯裁決:資料檔刪行不得靜默退回程式內舊值)。
 class_name TuningKnobs
 extends RefCounted
 
 
 ## 已知鍵清單:`"section.key"` -> 預設值(int)。預設值即 [method defaults] 的內容,
 ## 也是「零行為變更」的錨點:每個 story 搬常數時必須讓這裡的值等於舊常數。
-## 本張為空。
-const KNOWN_KEYS: Dictionary = {}
+## story-002:deck 三鍵(預設值指向 CardDeck 常數,數字只有一個來源)。
+const KNOWN_KEYS: Dictionary = {
+	"deck.opening_hand_size": CardDeck.OPENING_HAND_SIZE,
+	"deck.hand_size_limit": CardDeck.HAND_SIZE_LIMIT,
+	"deck.cards_drawn_per_turn": CardDeck.CARDS_DRAWN_PER_TURN,
+}
 
 ## 解析出的 `"section.key"` -> int。僅含實際在檔案中出現的鍵(defaults() 則含全部已知鍵)。
 var _values: Dictionary = {}
@@ -75,6 +80,10 @@ static func from_text(text: String, known_keys: Dictionary = KNOWN_KEYS) -> Vari
 			push_error("TuningKnobs.from_text: line %d: unknown key '%s'" % [line_no, composite])
 			return null
 		knobs._values[composite] = value_text.to_int()
+	for known: String in known_keys:
+		if not knobs._values.has(known):
+			push_error("TuningKnobs.from_text: missing required key '%s'" % known)
+			return null
 	return knobs
 
 

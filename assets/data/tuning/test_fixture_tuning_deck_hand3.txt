@@ -1,0 +1,4 @@
+# FIXTURE-DECK-HAND3: hand limit 3 (opening must be <= limit)
+deck,opening_hand_size,3
+deck,hand_size_limit,3
+deck,cards_drawn_per_turn,1
