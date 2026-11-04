@@ -37,6 +37,17 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第九十三批(2026-11-04,公司,08:34 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
+- 開工:本倉庫 pull 無新提交;AI_IMG(`C:/tmp/aiimg27`)fetch 後 HEAD 仍 `09e0ba3`(我方 31 號),**家用端無新交件**。
+- 管理者:第 3、4 場「還沒打,先不動」;其他目視項目「還沒看」→ 難度提案擱置,目視清單照舊。
+- ✅ 移除已合併 worktree `agent-a8c9296ddd1ce7373`(協調者先 cmp 8 個變更檔與 main 逐位元相同,其餘只有 .import/.uid)。
+- ✅ 補 `prototypes/bugfix-2026-11-02/README.md`(文件缺口 hook)。
+- 08:40 派 lead-programmer 規劃「寫死數值搬資料檔」`docs/reviews/tuning-knobs-data-driven-plan-2026-11-04.md`(只規劃,不改碼)。
+- 開工基準全套(協調者):`ENGINE EXIT = 0` / `1800 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(165/165)`。
+- ✅ 規劃交件(協調者核:10-12「登記為債,現在不搬」在 `docs/tech-debt-register.md` 屬實;`LONE_MID_DISTANCE` 只有宣告+註解;guard 測試第 31/37 行釘死 3/-2)。裁決:「現在搬(推薦)」/「大聲報錯(推薦)」(方案 B)/「距離留在程式(推薦)」/「刪掉(推薦)」(LONE_MID_DISTANCE)。手感秒數協調者依建議不搬。⚠️ 協調者題目又把「戊」誤植「戈」,已當場更正。
+- 派 lead-programmer 寫 `production/epics/tuning-data/` EPIC + story-001~005。⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
+
 ## 🔴 第九十二批(2026-11-03,公司,08:41 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
 - 開工:本倉庫無新提交;AI_IMG 29 號 15 張自動產出完成(11-02 15:15),**家用端尚無 29 號報告、棋子小實驗可行性未回**。
