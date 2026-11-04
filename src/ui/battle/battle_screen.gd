@@ -1881,6 +1881,9 @@ func _ready() -> void:
 			# story-003:card_modifier 四項夾限的 MIN<=MAX 驗證;失敗同樣是載入失敗(大聲報錯)。
 			if tuning_failure == LoadFailure.NONE and CardModifierTuning.from_knobs(tuning_knobs) == null:
 				tuning_failure = LoadFailure.PARSE_ERROR
+			# story-004:combat 九項的不變式驗證;失敗同樣是載入失敗(大聲報錯)。
+			if tuning_failure == LoadFailure.NONE and CombatTuning.from_knobs(tuning_knobs) == null:
+				tuning_failure = LoadFailure.PARSE_ERROR
 
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
 	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
@@ -2904,10 +2907,10 @@ static func format_affinity_current(bonus: int) -> String:
 ## [param lone] 為戊獨行減傷;兩者組合一律走 [method CombatRules.guard] /
 ## [method CombatRules.guard_total](不在 UI 重寫公式)。隱藏好感度時只算獨行部分
 ## (管理者 2026-10-30 裁決:獨行不是好感度)。
-static func displayed_guard(phi_def: int, lone: int, hide_affinity: bool) -> int:
+static func displayed_guard(phi_def: int, lone: int, hide_affinity: bool, tuning: CombatTuning = null) -> int:
 	if hide_affinity:
-		return CombatRules.guard_total(0, lone)
-	return CombatRules.guard_total(CombatRules.guard(phi_def), lone)
+		return CombatRules.guard_total(0, lone, tuning)
+	return CombatRules.guard_total(CombatRules.guard(phi_def), lone, tuning)
 
 
 ## story-032 AC1 —— 單一減傷值的文字;0 回傳空字串。沿用 story-031 AC6 的兩個字串鍵。
@@ -2943,7 +2946,7 @@ func _displayed_guard_at(
 ) -> int:
 	var phi_def: int = AffinityRules.bonus_for_at(unit_id, tile, hypo_positions, _phi.links())
 	var lone: int = _state.lone_guard_if_at(unit_id, tile, will_attack)
-	return displayed_guard(phi_def, lone, _hide_affinity_display_for_this_battle)
+	return displayed_guard(phi_def, lone, _hide_affinity_display_for_this_battle, _state.combat_tuning)
 
 
 ## Formats [constant TEXT_DAMAGE_PREVIEW_FORMAT] for Mode C of

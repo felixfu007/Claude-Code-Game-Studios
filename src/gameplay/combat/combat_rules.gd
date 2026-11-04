@@ -39,10 +39,11 @@ static func guard(phi_def: int) -> int:
 
 ## story-031 spec §2.2 (candidate X): lone-guard knobs.
 ## story-034 (spec amend2 §1): d_min >= LONE_FAR_DISTANCE or no ally -> LONE_FAR_GUARD (now 0);
-## d_min == LONE_MID_DISTANCE -> LONE_MID_GUARD (+2).
+## the middle band (between near and far) -> LONE_MID_GUARD (+2).
+## tuning-data story-004: these constants are now only the SOURCE of [method CombatTuning.defaults]
+## (via TuningKnobs.KNOWN_KEYS); live values come from an injected [CombatTuning].
 const LONE_FAR_DISTANCE: int = 3
 const LONE_FAR_GUARD: int = 0
-const LONE_MID_DISTANCE: int = 2
 const LONE_MID_GUARD: int = 2
 const LONE_NEAR_DISTANCE: int = 1     # d_min == this -> LONE_NEAR_GUARD
 const LONE_NEAR_GUARD: int = -1
@@ -54,12 +55,13 @@ const NO_ALLY: int = -1
 ## given the Manhattan distance [param d_min] to its NEAREST living ally
 ## ([constant NO_ALLY] if none). story-034 (amend2 §1) table: d_min 1 -> -1; 2 -> +2;
 ## d_min>=3 or none -> 0.
-static func lone_guard(d_min: int) -> int:
-	if d_min == NO_ALLY or d_min >= LONE_FAR_DISTANCE:
-		return LONE_FAR_GUARD
-	if d_min <= LONE_NEAR_DISTANCE:
-		return LONE_NEAR_GUARD
-	return LONE_MID_GUARD
+static func lone_guard(d_min: int, tuning: CombatTuning = null) -> int:
+	var t: CombatTuning = tuning if tuning != null else CombatTuning.defaults()
+	if d_min == NO_ALLY or d_min >= t.lone_far_distance():
+		return t.lone_far_guard()
+	if d_min <= t.lone_near_distance():
+		return t.lone_near_guard()
+	return t.lone_mid_guard()
 
 
 ## story-033 (amend1) conditional rule -- 已棄用,忽略 (story-034 / amend2 §1:出手條件取消).
@@ -77,16 +79,18 @@ const HOLD_BACK_PENALTY: int = 1
 ## story-034 (amend2 §2): final-damage reduction for a straddler (flagged unit)
 ## attacking from a cell whose nearest-living-ally distance is exactly
 ## [constant HOLD_BACK_DISTANCE]. Pure, no RNG.
-static func hold_back(is_straddler: bool, d_min: int) -> int:
-	if is_straddler and d_min == HOLD_BACK_DISTANCE:
-		return HOLD_BACK_PENALTY
+static func hold_back(is_straddler: bool, d_min: int, tuning: CombatTuning = null) -> int:
+	var t: CombatTuning = tuning if tuning != null else CombatTuning.defaults()
+	if is_straddler and d_min == t.hold_back_distance():
+		return t.hold_back_penalty()
 	return 0
 
 
 ## story-031 spec §1.2: sum of Φ-guard and lone-guard, clamped to
 ## [GUARD_MIN, GUARD_MAX].
-static func guard_total(guard_phi: int, lone_guard: int) -> int:
-	return clampi(guard_phi + lone_guard, GUARD_MIN, GUARD_MAX)
+static func guard_total(guard_phi: int, lone_guard: int, tuning: CombatTuning = null) -> int:
+	var t: CombatTuning = tuning if tuning != null else CombatTuning.defaults()
+	return clampi(guard_phi + lone_guard, t.guard_min(), t.guard_max())
 
 
 ## Derives an enemy stat from a player baseline scaled by

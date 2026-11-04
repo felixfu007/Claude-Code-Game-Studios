@@ -8,3 +8,13 @@ card_modifier,atk_delta_min,-1
 card_modifier,atk_delta_max,2
 card_modifier,def_delta_min,-1
 card_modifier,def_delta_max,1
+# story-004: combat (CombatRules) -- values equal the old constants.
+combat,guard_min,-2
+combat,guard_max,3
+combat,lone_far_distance,3
+combat,lone_far_guard,0
+combat,lone_near_distance,1
+combat,lone_near_guard,-1
+combat,lone_mid_guard,2
+combat,hold_back_distance,2
+combat,hold_back_penalty,1

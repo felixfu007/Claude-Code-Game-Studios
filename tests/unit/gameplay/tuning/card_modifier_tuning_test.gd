@@ -3,7 +3,9 @@
 extends GdUnitTestSuite
 
 
-const _DECK: String = "deck,opening_hand_size,5\ndeck,hand_size_limit,5\ndeck,cards_drawn_per_turn,1\n"
+# story-004:補上 combat 九行(只補行)。
+const _COMBAT: String = "combat,guard_min,-2\ncombat,guard_max,3\ncombat,lone_far_distance,3\ncombat,lone_far_guard,0\ncombat,lone_near_distance,1\ncombat,lone_near_guard,-1\ncombat,lone_mid_guard,2\ncombat,hold_back_distance,2\ncombat,hold_back_penalty,1\n"
+const _DECK: String = "deck,opening_hand_size,5\ndeck,hand_size_limit,5\ndeck,cards_drawn_per_turn,1\n" + _COMBAT
 const _NARROW: String = "card_modifier,atk_delta_min,-1\ncard_modifier,atk_delta_max,2\ncard_modifier,def_delta_min,-1\ncard_modifier,def_delta_max,1\n"
 
 

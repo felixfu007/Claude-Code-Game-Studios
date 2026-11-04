@@ -1,0 +1,18 @@
+# FIXTURE-COMBAT-GUARD-MAX1: combat.guard_max lowered to 1 (sensitivity proof); everything else equals defaults.
+deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1
+card_modifier,atk_delta_min,-4
+card_modifier,atk_delta_max,6
+card_modifier,def_delta_min,-3
+card_modifier,def_delta_max,4
+# story-004: combat (CombatRules) -- values equal the old constants.
+combat,guard_min,-2
+combat,guard_max,1
+combat,lone_far_distance,3
+combat,lone_far_guard,0
+combat,lone_near_distance,1
+combat,lone_near_guard,-1
+combat,lone_mid_guard,2
+combat,hold_back_distance,2
+combat,hold_back_penalty,1

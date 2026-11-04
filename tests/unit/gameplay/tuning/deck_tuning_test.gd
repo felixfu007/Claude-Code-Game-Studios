@@ -4,7 +4,9 @@
 extends GdUnitTestSuite
 
 
-const _CM: String = "card_modifier,atk_delta_min,-4\ncard_modifier,atk_delta_max,6\ncard_modifier,def_delta_min,-3\ncard_modifier,def_delta_max,4\n"
+# story-004:補上 combat 九行(只補行)。
+const _COMBAT: String = "combat,guard_min,-2\ncombat,guard_max,3\ncombat,lone_far_distance,3\ncombat,lone_far_guard,0\ncombat,lone_near_distance,1\ncombat,lone_near_guard,-1\ncombat,lone_mid_guard,2\ncombat,hold_back_distance,2\ncombat,hold_back_penalty,1\n"
+const _CM: String = "card_modifier,atk_delta_min,-4\ncard_modifier,atk_delta_max,6\ncard_modifier,def_delta_min,-3\ncard_modifier,def_delta_max,4\n" + _COMBAT
 const _VALID: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,4\ndeck,cards_drawn_per_turn,1\n" + _CM
 const _LIMIT3: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,3\ndeck,cards_drawn_per_turn,1\n" + _CM
 

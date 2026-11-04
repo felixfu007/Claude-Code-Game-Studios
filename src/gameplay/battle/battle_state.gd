@@ -34,6 +34,10 @@ var tuning: TuningKnobs = TuningKnobs.defaults()
 ## and the UI card-confirm preview read.
 var card_modifier_tuning: CardModifierTuning = CardModifierTuning.defaults()
 
+## tuning-data story-004: CombatRules nine knobs derived from [member tuning]. Single source for
+## settlement, preview breakdown and (via BattleScreen) the guard display.
+var combat_tuning: CombatTuning = CombatTuning.defaults()
+
 # id -> Unit. One entry per unit in the battle (both factions), populated
 # once in create() and never removed — dead units stay in this map so
 # unit_by_id() and units_of() keep working (and correctly excluding them)
@@ -213,6 +217,12 @@ static func create(
 		state.card_modifier_tuning = CardModifierTuning.defaults()
 	else:
 		state.card_modifier_tuning = parsed_cm
+	var parsed_combat: Variant = CombatTuning.from_knobs(state.tuning)
+	if parsed_combat == null:
+		push_error("BattleState.create: combat tuning invalid (see preceding CombatTuning error) -- falling back to CombatTuning.defaults(); production path (BattleScreen) validates first and never reaches here")
+		state.combat_tuning = CombatTuning.defaults()
+	else:
+		state.combat_tuning = parsed_combat
 	state.board = Board.from_ascii(terrain_rows)
 	var roster: Array[Unit] = Unit.roster_from_text(roster_text)
 	for unit: Unit in roster:
@@ -674,7 +684,7 @@ func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dic
 	var lone: int = _lone_guard_of(target)
 	var guard_total: int = 0
 	if target.faction == Unit.Faction.PLAYER:
-		guard_total = CombatRules.guard_total(guard_phi, lone)
+		guard_total = CombatRules.guard_total(guard_phi, lone, combat_tuning)
 	# story-034 (amend2 §2) 留一手: only a flagged PLAYER attacker, from its CURRENT cell.
 	var hold_back: int = _hold_back_of(attacker)
 	return {
@@ -728,7 +738,7 @@ func _lone_guard_of(target: Unit) -> int:
 func _hold_back_of(attacker: Unit) -> int:
 	if attacker.faction != Unit.Faction.PLAYER or not attacker.lone_guard:
 		return 0
-	return CombatRules.hold_back(true, _nearest_ally_distance(attacker, position_of(attacker.id)))
+	return CombatRules.hold_back(true, _nearest_ally_distance(attacker, position_of(attacker.id)), combat_tuning)
 
 
 # Manhattan distance from [param tile] to the nearest living PLAYER ally of
@@ -771,7 +781,7 @@ func lone_guard_if_at(unit_id: int, tile: Vector2i, will_attack: bool = false) -
 	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
 	var d_min: int = _nearest_ally_distance(target, tile)
-	return CombatRules.lone_guard_effective(CombatRules.lone_guard(d_min), will_attack)
+	return CombatRules.lone_guard_effective(CombatRules.lone_guard(d_min, combat_tuning), will_attack)
 
 
 # Shared by resolve_attack() and preview_damage(): computes the damage a

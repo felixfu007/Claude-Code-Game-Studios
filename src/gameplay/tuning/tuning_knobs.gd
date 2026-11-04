@@ -12,7 +12,7 @@
 #   - 檔案格式 `section,key,value`,`#` 註解,空行略過。
 #   - 驗證:欄位數必為 3、值必為整數、重複鍵失敗、未知 section/key 失敗
 #     (防打錯字靜默失效)。
-#   - story-002 起 [constant KNOWN_KEYS] 含 deck 三鍵;story-003 增 card_modifier 四鍵;後續各 story 各自增補一個系統的鍵。
+#   - story-002 起 [constant KNOWN_KEYS] 含 deck 三鍵;story-003 增 card_modifier 四鍵;story-004 增 combat 九鍵;後續各 story 各自增補一個系統的鍵。
 #   - 🔴 一律嚴格:known_keys 每個鍵都必須出現,缺任一個即失敗(大聲報錯裁決:資料檔刪行不得靜默退回程式內舊值)。
 class_name TuningKnobs
 extends RefCounted
@@ -30,6 +30,16 @@ const KNOWN_KEYS: Dictionary = {
 	"card_modifier.atk_delta_max": CardModifierRules.ATK_DELTA_MAX,
 	"card_modifier.def_delta_min": CardModifierRules.DEF_DELTA_MIN,
 	"card_modifier.def_delta_max": CardModifierRules.DEF_DELTA_MAX,
+	# story-004:combat 九鍵(預設值指向 CombatRules 常數)。
+	"combat.guard_min": CombatRules.GUARD_MIN,
+	"combat.guard_max": CombatRules.GUARD_MAX,
+	"combat.lone_far_distance": CombatRules.LONE_FAR_DISTANCE,
+	"combat.lone_far_guard": CombatRules.LONE_FAR_GUARD,
+	"combat.lone_near_distance": CombatRules.LONE_NEAR_DISTANCE,
+	"combat.lone_near_guard": CombatRules.LONE_NEAR_GUARD,
+	"combat.lone_mid_guard": CombatRules.LONE_MID_GUARD,
+	"combat.hold_back_distance": CombatRules.HOLD_BACK_DISTANCE,
+	"combat.hold_back_penalty": CombatRules.HOLD_BACK_PENALTY,
 }
 
 ## 解析出的 `"section.key"` -> int。僅含實際在檔案中出現的鍵(defaults() 則含全部已知鍵)。

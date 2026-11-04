@@ -25,16 +25,51 @@ func test_guard_negative_phi_is_extra_damage_ceil_abs_half() -> void:
 	assert_int(CombatRules.guard(-4)).is_equal(-2)
 
 
+# tuning-data story-004:原「CombatRules.GUARD_MAX/MIN 等於字面值」兩條斷言已刪除(資料驅動後等於把資料檔釘死);
+# 改為行為斷言,期望值取自 defaults() 或內聯 CombatTuning.from_text,並含一組非預設夾限。
 func test_guard_total_clamps_upper_bound() -> void:
-	assert_int(CombatRules.guard_total(6, 0)).is_equal(CombatRules.GUARD_MAX)
-	assert_int(CombatRules.guard_total(2, 2)).is_equal(CombatRules.GUARD_MAX)
-	assert_int(CombatRules.GUARD_MAX).is_equal(3)
+	var t: CombatTuning = CombatTuning.defaults()
+	assert_int(CombatRules.guard_total(6, 0)).is_equal(t.guard_max())
+	assert_int(CombatRules.guard_total(2, 2)).is_equal(t.guard_max())
+	assert_int(CombatRules.guard_total(6, 0, t)).is_equal(t.guard_max())
 
 
 func test_guard_total_clamps_lower_bound() -> void:
-	assert_int(CombatRules.guard_total(-2, -1)).is_equal(-2)
-	assert_int(CombatRules.guard_total(-5, 0)).is_equal(CombatRules.GUARD_MIN)
-	assert_int(CombatRules.GUARD_MIN).is_equal(-2)
+	var t: CombatTuning = CombatTuning.defaults()
+	assert_int(CombatRules.guard_total(-2, -1)).is_equal(t.guard_min())
+	assert_int(CombatRules.guard_total(-5, 0)).is_equal(t.guard_min())
+	assert_int(CombatRules.guard_total(-5, 0, t)).is_equal(t.guard_min())
+
+
+func test_guard_total_clamp_comes_from_injected_tuning_not_constants() -> void:
+	# 非預設夾限 [-1, 1]:Φ 極大 -> 1(預設會是 3);極小 -> -1(預設會是 -2)。
+	var t: CombatTuning = _tuning_with("combat,guard_min,-2", "combat,guard_min,-1", "combat,guard_max,3", "combat,guard_max,1")
+	assert_bool(t != null).is_true()
+	assert_int(CombatRules.guard_total(6, 0, t)).is_equal(1)
+	assert_int(CombatRules.guard_total(-5, 0, t)).is_equal(-1)
+	assert_int(CombatRules.guard_total(6, 0)).is_not_equal(1)
+
+
+# 以預設資料檔文字為底,逐項替換後解析(只換指定行)。
+func _tuning_with(from_a: String, to_a: String, from_b: String, to_b: String) -> CombatTuning:
+	var base: String = "deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1
+" 		+ "card_modifier,atk_delta_min,-4
+card_modifier,atk_delta_max,6
+card_modifier,def_delta_min,-3
+card_modifier,def_delta_max,4
+" 		+ "combat,guard_min,-2
+combat,guard_max,3
+combat,lone_far_distance,3
+combat,lone_far_guard,0
+combat,lone_near_distance,1
+" 		+ "combat,lone_near_guard,-1
+combat,lone_mid_guard,2
+combat,hold_back_distance,2
+combat,hold_back_penalty,1
+"
+	return CombatTuning.from_text(base.replace(from_a, to_a).replace(from_b, to_b)) as CombatTuning
 
 
 func test_guard_total_within_bounds_is_sum() -> void:
