@@ -4,8 +4,9 @@
 extends GdUnitTestSuite
 
 
-const _VALID: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,4\ndeck,cards_drawn_per_turn,1\n"
-const _LIMIT3: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,3\ndeck,cards_drawn_per_turn,1\n"
+const _CM: String = "card_modifier,atk_delta_min,-4\ncard_modifier,atk_delta_max,6\ncard_modifier,def_delta_min,-3\ncard_modifier,def_delta_max,4\n"
+const _VALID: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,4\ndeck,cards_drawn_per_turn,1\n" + _CM
+const _LIMIT3: String = "deck,opening_hand_size,3\ndeck,hand_size_limit,3\ndeck,cards_drawn_per_turn,1\n" + _CM
 
 
 func _cards(n: int) -> Array[Card]:
@@ -44,7 +45,7 @@ func test_from_text_valid_returns_values() -> void:
 func test_from_text_draw_two_returns_null_and_pushes_error() -> void:
 	var result: Array = [_VALID]
 	await assert_error(func() -> void:
-		result[0] = DeckTuning.from_text("deck,opening_hand_size,3\ndeck,hand_size_limit,4\ndeck,cards_drawn_per_turn,2\n")) \
+		result[0] = DeckTuning.from_text("deck,opening_hand_size,3\ndeck,hand_size_limit,4\ndeck,cards_drawn_per_turn,2\n" + _CM)) \
 		.is_push_error("DeckTuning: deck.cards_drawn_per_turn must be 1 (got 2): CardDeck tracks an owed discard with a single flag, so drawing more than 1 per turn needs a code change first")
 	assert_bool(result[0] == null).is_true()
 
@@ -60,7 +61,7 @@ func test_from_text_missing_key_returns_null_and_pushes_error() -> void:
 func test_from_text_non_integer_returns_null_and_pushes_error() -> void:
 	var result: Array = [_VALID]
 	await assert_error(func() -> void:
-		result[0] = DeckTuning.from_text("deck,opening_hand_size,3\ndeck,hand_size_limit,4.5\ndeck,cards_drawn_per_turn,1\n")) \
+		result[0] = DeckTuning.from_text("deck,opening_hand_size,3\ndeck,hand_size_limit,4.5\ndeck,cards_drawn_per_turn,1\n" + _CM)) \
 		.is_push_error("TuningKnobs.from_text: line 2: value '4.5' is not an integer")
 	assert_bool(result[0] == null).is_true()
 
@@ -68,7 +69,7 @@ func test_from_text_non_integer_returns_null_and_pushes_error() -> void:
 func test_from_text_hand_limit_zero_returns_null_and_pushes_error() -> void:
 	var result: Array = [_VALID]
 	await assert_error(func() -> void:
-		result[0] = DeckTuning.from_text("deck,opening_hand_size,1\ndeck,hand_size_limit,0\ndeck,cards_drawn_per_turn,1\n")) \
+		result[0] = DeckTuning.from_text("deck,opening_hand_size,1\ndeck,hand_size_limit,0\ndeck,cards_drawn_per_turn,1\n" + _CM)) \
 		.is_push_error("DeckTuning: all of deck.opening_hand_size / deck.hand_size_limit / deck.cards_drawn_per_turn must be >= 1 (got 1 / 0 / 1)")
 	assert_bool(result[0] == null).is_true()
 
@@ -76,7 +77,7 @@ func test_from_text_hand_limit_zero_returns_null_and_pushes_error() -> void:
 func test_from_text_opening_exceeds_limit_returns_null_and_pushes_error() -> void:
 	var result: Array = [_VALID]
 	await assert_error(func() -> void:
-		result[0] = DeckTuning.from_text("deck,opening_hand_size,5\ndeck,hand_size_limit,3\ndeck,cards_drawn_per_turn,1\n")) \
+		result[0] = DeckTuning.from_text("deck,opening_hand_size,5\ndeck,hand_size_limit,3\ndeck,cards_drawn_per_turn,1\n" + _CM)) \
 		.is_push_error("DeckTuning: deck.opening_hand_size (5) must be <= deck.hand_size_limit (3)")
 	assert_bool(result[0] == null).is_true()
 

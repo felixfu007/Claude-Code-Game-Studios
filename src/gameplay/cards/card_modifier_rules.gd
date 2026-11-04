@@ -40,20 +40,22 @@ const DEF_DELTA_MAX: int = 4
 ## file's and the story's doc comments: without it, a DEF-side floor
 ## violation elsewhere could let [code]ATK - DEF[/code] exceed [code]ATK[/code]
 ## itself, which is outside the damage formula's declared domain.
-static func effective_atk(base_atk: int, modifiers: Array[CardModifier]) -> int:
+static func effective_atk(base_atk: int, modifiers: Array[CardModifier], tuning: CardModifierTuning = null) -> int:
+	var bounds: CardModifierTuning = tuning if tuning != null else CardModifierTuning.defaults()
 	var total_delta: int = 0
 	for modifier: CardModifier in modifiers:
 		total_delta += modifier.atk_delta
-	var clamped_delta: int = clampi(total_delta, ATK_DELTA_MIN, ATK_DELTA_MAX)
+	var clamped_delta: int = clampi(total_delta, bounds.atk_delta_min(), bounds.atk_delta_max())
 	return maxi(0, base_atk + clamped_delta)
 
 
 ## Computes DEF_eff — see [method effective_atk] for the full rationale; the
 ## same shape applies symmetrically to DEF, using
 ## [member CardModifier.def_delta] and the DEF-side clamp bounds.
-static func effective_def(base_def: int, modifiers: Array[CardModifier]) -> int:
+static func effective_def(base_def: int, modifiers: Array[CardModifier], tuning: CardModifierTuning = null) -> int:
+	var bounds: CardModifierTuning = tuning if tuning != null else CardModifierTuning.defaults()
 	var total_delta: int = 0
 	for modifier: CardModifier in modifiers:
 		total_delta += modifier.def_delta
-	var clamped_delta: int = clampi(total_delta, DEF_DELTA_MIN, DEF_DELTA_MAX)
+	var clamped_delta: int = clampi(total_delta, bounds.def_delta_min(), bounds.def_delta_max())
 	return maxi(0, base_def + clamped_delta)

@@ -270,15 +270,15 @@ func is_alive() -> bool:
 ## The clamp-and-floor arithmetic is delegated to
 ## [method CardModifierRules.effective_atk] — see that method's doc comment
 ## for the formula (skill-card-system #6, story-001-modifier-model.md).
-func effective_atk() -> int:
-	return CardModifierRules.effective_atk(atk, _modifiers)
+func effective_atk(tuning: CardModifierTuning = null) -> int:
+	return CardModifierRules.effective_atk(atk, _modifiers, tuning)
 
 
 ## Returns this unit's currently effective DEF — see [method effective_atk]
 ## for the full rationale; the same seam applies symmetrically to DEF via
 ## [method CardModifierRules.effective_def].
-func effective_def() -> int:
-	return CardModifierRules.effective_def(def, _modifiers)
+func effective_def(tuning: CardModifierTuning = null) -> int:
+	return CardModifierRules.effective_def(def, _modifiers, tuning)
 
 
 ## story-006-atk-def-phi-breakdown-query.md (#6 skill-card-system's registered
@@ -344,10 +344,10 @@ func effective_def() -> int:
 ## not decide the application order of scaling vs. card modifiers for a
 ## future ENEMY-with-modifiers case — that is GDD's own registered open
 ## question, not resolved here.
-func stat_access_view() -> Dictionary:
+func stat_access_view(tuning: CardModifierTuning = null) -> Dictionary:
 	return {
-		"atk": {"base": atk, "effective": effective_atk()},
-		"def": {"base": def, "effective": effective_def()},
+		"atk": {"base": atk, "effective": effective_atk(tuning)},
+		"def": {"base": def, "effective": effective_def(tuning)},
 		"hp": {"base": hp_max, "effective": hp},
 		"mp": {"base": mp, "effective": mp},
 	}

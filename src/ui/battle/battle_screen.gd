@@ -1878,6 +1878,9 @@ func _ready() -> void:
 				tuning_failure = LoadFailure.PARSE_ERROR
 			else:
 				_deck_tuning = parsed_deck
+			# story-003:card_modifier 四項夾限的 MIN<=MAX 驗證;失敗同樣是載入失敗(大聲報錯)。
+			if tuning_failure == LoadFailure.NONE and CardModifierTuning.from_knobs(tuning_knobs) == null:
+				tuning_failure = LoadFailure.PARSE_ERROR
 
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
 	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
@@ -4084,8 +4087,8 @@ func _open_card_confirm_panel() -> void:
 		hypothetical.append(
 			CardModifier.new(card.id, card.delta_atk, card.delta_def, card.duration_rounds)
 		)
-		var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical)
-		var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical)
+		var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical, _state.card_modifier_tuning)
+		var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical, _state.card_modifier_tuning)
 		_card_confirm_panel.show_temporary_modifier_confirmation(
 			card.id, flavor_text, target.code_name,
 			card.delta_atk, card.delta_def, card.duration_rounds,

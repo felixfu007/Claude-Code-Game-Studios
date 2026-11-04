@@ -6,3 +6,8 @@
 deck,opening_hand_size,5
 deck,hand_size_limit,5
 deck,cards_drawn_per_turn,1
+# story-003: card_modifier (CardModifierRules clamp) -- values equal the old constants.
+card_modifier,atk_delta_min,-4
+card_modifier,atk_delta_max,6
+card_modifier,def_delta_min,-3
+card_modifier,def_delta_max,4

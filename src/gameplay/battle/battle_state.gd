@@ -29,6 +29,11 @@ var board: Board
 ## [method create]. No rule reads it yet in this story.
 var tuning: TuningKnobs = TuningKnobs.defaults()
 
+## tuning-data story-003: card-modifier clamp bounds derived from [member tuning]
+## in [method create]. The single source both combat settlement (Unit.effective_*)
+## and the UI card-confirm preview read.
+var card_modifier_tuning: CardModifierTuning = CardModifierTuning.defaults()
+
 # id -> Unit. One entry per unit in the battle (both factions), populated
 # once in create() and never removed — dead units stay in this map so
 # unit_by_id() and units_of() keep working (and correctly excluding them)
@@ -202,6 +207,12 @@ static func create(
 	var state: BattleState = BattleState.new()
 	# tuning-data story-001: optional trailing parameter; null -> defaults().
 	state.tuning = tuning_knobs if tuning_knobs != null else TuningKnobs.defaults()
+	var parsed_cm: Variant = CardModifierTuning.from_knobs(state.tuning)
+	if parsed_cm == null:
+		push_error("BattleState.create: card_modifier tuning invalid (see preceding CardModifierTuning error) -- falling back to CardModifierTuning.defaults(); production path (BattleScreen) validates first and never reaches here")
+		state.card_modifier_tuning = CardModifierTuning.defaults()
+	else:
+		state.card_modifier_tuning = parsed_cm
 	state.board = Board.from_ascii(terrain_rows)
 	var roster: Array[Unit] = Unit.roster_from_text(roster_text)
 	for unit: Unit in roster:
@@ -650,8 +661,8 @@ func preview_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dam
 func _attack_damage_breakdown(attacker_id: int, target_id: int, phi: int) -> Dictionary:
 	var attacker: Unit = unit_by_id(attacker_id)
 	var target: Unit = unit_by_id(target_id)
-	var atk: int = attacker.effective_atk()
-	var def: int = target.effective_def()
+	var atk: int = attacker.effective_atk(card_modifier_tuning)
+	var def: int = target.effective_def(card_modifier_tuning)
 	var effective_phi: int = phi
 	if attacker.faction == Unit.Faction.ENEMY:
 		effective_phi = 0

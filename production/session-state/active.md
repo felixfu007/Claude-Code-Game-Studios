@@ -50,7 +50,12 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ story-001 `27fadd0`(gameplay-programmer)。協調者讀 diff + 重跑:`ENGINE EXIT = 100` / `1813 test cases | 0 errors | 1 failures | ... | 0 orphans` / `(167/167)` —— 唯一失敗為計時測試 real_level_battle(46.5s;單跑 42.4s;同碼實作者 17s、今早基準 18s;本機有 qemu 3GB + 防毒,整套 6.5 分 vs 3 分)。**下一次全套要確認它回到 <30s。**
 - 🔴 覆核收穫:`get_int()` 缺鍵靜默回預設 → 列 story-002 必修(production 檔須含全部已知鍵)。連續零收穫 = 0。
 - 10:20 派 gameplay-programmer story-002(CardDeck 3 項)。11:00 交件:1822 / 1 failure(story-001 合法夾具缺 deck 三鍵),實作者依規停在範圍外。
-- 裁決:「核准,並一律嚴格(推薦)」(擴範圍到 story-001 的合法夾具 + 兩支 tuning 測試;`require_complete` 預設 true)/「只允許 1,寫別的就報錯(推薦)」(`cards_drawn_per_turn`;被跳過:現在就修成支援多張 / 只要求至少 1)。11:14 SendMessage 同一實作者續做。⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
+- 裁決:「核准,並一律嚴格(推薦)」(擴範圍到 story-001 的合法夾具 + 兩支 tuning 測試;`require_complete` 預設 true)/「只允許 1,寫別的就報錯(推薦)」(`cards_drawn_per_turn`;被跳過:現在就修成支援多張 / 只要求至少 1)。11:14 SendMessage 同一實作者續做。
+- ✅ story-002 `3441c61`(已推)。協調者核:src 內已無直接讀 deck 常數處(只剩 defaults 來源)。重跑:`ENGINE EXIT = 0` / `1827 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(169/169)`;計時測試 20.5s(早上失敗確認為負載)。
+- 裁決「一次核准(推薦)」:tuning-data 後續各張可在 `assets/data/tuning/` 既有夾具補新系統的行 + 改 tuning 測試鍵數斷言,只限這兩件(被跳過:每張個別問)。
+- 11:50 派 gameplay-programmer story-003(CardModifierRules 4 項)。交件 1830 / 1 failure(`deck_tuning_test.gd` 測試內字串缺新鍵,實作者依規停)。
+- 裁決「延伸(推薦)」:一次核准延伸至測試程式內既有的測試用設定文字(只補新系統的行)。
+- 🔴 覆核收穫:`BattleState.create()` 對 `CardModifierTuning.from_knobs` 失敗靜默退回 defaults → 要求 push_error + 測試。協調者核 src 內 effective_atk/def 呼叫端皆傳 tuning(battle_state 660/661、battle_screen 4090/4091)。14:07 SendMessage 續做。⚠️ 待辦:story-005 後請示改 `architecture.yaml` 的 `phi_clamp_treated_as_a_safety_net` 文字。
 
 ## 🔴 第九十二批(2026-11-03,公司,08:41 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。

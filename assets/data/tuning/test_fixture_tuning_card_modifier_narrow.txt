@@ -1,0 +1,10 @@
+# FIXTURE-CARD-MODIFIER-NARROW: card_modifier clamp narrowed (atk -1..2, def -1..1)
+# test fixture (story-001): valid, header-only. Distinct from tuning_knobs.txt so tests can tell which file was injected.
+# FIXTURE-VALID-MARKER
+deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1
+card_modifier,atk_delta_min,-1
+card_modifier,atk_delta_max,2
+card_modifier,def_delta_min,-1
+card_modifier,def_delta_max,1

@@ -328,7 +328,7 @@ func test_stat_access_view_returns_fresh_dictionary_each_call() -> void:
 # 間諜子類別 —— 重現本方法文件註解明文警告的錯誤:把 "hp" 的 effective 誤當成
 # 像 "atk"/"def" 一樣永遠等於 base(忽略 take_damage() 已造成的當前損耗)。
 class _MutantTreatsHpLikeAtkDef extends Unit:
-	func stat_access_view() -> Dictionary:
+	func stat_access_view(_tuning: CardModifierTuning = null) -> Dictionary:
 		return {
 			"atk": {"base": atk, "effective": effective_atk()},
 			"def": {"base": def, "effective": effective_def()},
