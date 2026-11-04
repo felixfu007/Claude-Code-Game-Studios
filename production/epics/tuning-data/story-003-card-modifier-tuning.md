@@ -1,6 +1,7 @@
 # Story 003:`CardModifierRules` 四項夾限資料驅動化
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
+> 提交:d6c6226(協調者重跑全套驗收)
 **Epic**: `production/epics/tuning-data/EPIC.md` · **Type**: Logic + Integration · **規劃檔步 2**
 **Depends On**: story-001
 

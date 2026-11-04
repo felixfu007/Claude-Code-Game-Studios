@@ -1,6 +1,7 @@
 # Story 002:`CardDeck` 三項旋鈕資料驅動化
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
+> 提交:3441c61(協調者重跑全套驗收)
 **Epic**: `production/epics/tuning-data/EPIC.md` · **Type**: Logic + Integration · **規劃檔步 1**
 **Depends On**: story-001
 

@@ -2669,6 +2669,16 @@ forbidden_patterns:
       constants, applying the clamp a second time, or shipping an out-of-range amp. This
       row buys discoverability, not enforcement — consistent with every other discipline
       rule in this repository.
+      LOCATION UPDATE 2026-11-04 (tuning-data story-005, be3f438; manager ruling "架構登記表那條(推薦)";
+      the text above is kept unchanged as the record): the live values now come from
+      assets/data/tuning/tuning_knobs.txt keys affinity.phi_min / affinity.phi_max, injected
+      as BattleState.affinity_tuning. AffinityRules.PHI_MIN / PHI_MAX remain only as the
+      source of AffinityTuning.defaults(). Wherever this row says "edit these two constants",
+      read "edit those two data-file lines" — editing the data file IS moving the combat power
+      ceiling and floor. The single clamp moved with the code: it is still applied once, to the
+      summed total, now inside AffinityRules.bonus_breakdown_for_at() (bonus_for_at delegates);
+      pinned by test_affinity_rules_clamp_applies_once_to_sum_not_per_line. Verify on the spot:
+      grep -rn "clampi" src/gameplay/affinity/
     adr: none
     verified_by: >
       Measured 2026-09-29 by technical-director, by reading the shipped source rather than

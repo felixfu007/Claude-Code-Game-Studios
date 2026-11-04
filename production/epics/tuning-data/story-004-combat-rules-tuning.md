@@ -1,6 +1,7 @@
 # Story 004:`CombatRules` 旋鈕資料驅動化 + 刪除 `LONE_MID_DISTANCE`
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
+> 提交:194eac3 + 18fb6f5(協調者重跑全套驗收)
 **Epic**: `production/epics/tuning-data/EPIC.md` · **Type**: Logic + Integration · **規劃檔步 3**
 **Depends On**: story-001
 **備註**:派工訊息稱此張為「story-003」,依步序編為 004,內容照派工要求(併入刪除 `LONE_MID_DISTANCE`)。

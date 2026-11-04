@@ -1,6 +1,7 @@
 # Story 005:`AffinityRules` 曲線與夾限資料驅動化(距離門檻不搬)
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
+> 提交:be3f438(協調者重跑全套驗收)
 **Epic**: `production/epics/tuning-data/EPIC.md` · **Type**: Logic + Integration · **規劃檔步 4**
 **Depends On**: story-001(建議排在 002~004 之後,最敏感)
 

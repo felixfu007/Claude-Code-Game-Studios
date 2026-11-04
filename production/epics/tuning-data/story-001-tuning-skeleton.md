@@ -1,6 +1,7 @@
 # Story 001:調整旋鈕共用骨架(不搬任何常數)
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
+> 提交:27fadd0(協調者重跑全套驗收)
 **Epic**: `production/epics/tuning-data/EPIC.md` · **Type**: Logic + Integration · **規劃檔步 0**
 **Depends On**: 無(其餘 story 依賴本張)
 

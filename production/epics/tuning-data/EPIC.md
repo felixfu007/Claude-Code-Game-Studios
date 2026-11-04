@@ -1,6 +1,6 @@
 # EPIC:調整旋鈕資料驅動化(tuning-data)
 
-**Status**: Ready
+**Status**: ✅ Done(2026-11-04;原為 Ready)
 **建立**: 2026-11-04 · 擁有者:lead-programmer
 **規劃來源**:`docs/reviews/tuning-knobs-data-driven-plan-2026-11-04.md`(盤點、查核、方案比較全文在該檔)
 **技術債來源**:`docs/tech-debt-register.md`(2026-10-12 第八十批,「約 17 個遊戲平衡數值硬編碼」)

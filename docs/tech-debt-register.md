@@ -74,6 +74,11 @@
   > **④ 擋著這一項的那個探針,條件沒有變:開窗非 headless + 真實手把。**
   > 本次兩支探針都是 headless,**沒有、也無法**回答「引擎會不會為握住的搖桿每幀重送事件」。
 - **2026-10-12**(第八十批,協調者查證 + 管理者裁決):
+  > ✅ **2026-11-04 已清償(本段原文保留作紀錄)。** 管理者裁決「現在搬(推薦)」;`production/epics/tuning-data/`
+  > story-001~005(`27fadd0` `3441c61` `d6c6226` `194eac3` `18fb6f5` `be3f438`)把牌庫 3、卡牌加減值 4、
+  > 戰鬥減傷 9、好感度 7 項搬到 `assets/data/tuning/tuning_knobs.txt`,缺行/打錯字一律載入失敗。
+  > **刻意未搬(依裁決,仍為程式常數)**:好感度距離門檻 `DISTANCE_ADJACENT`/`DISTANCE_FAR`(「距離留在程式(推薦)」)、
+  > 本段列的 `board.gd` 移動成本表、手感秒數(協調者依 lead-programmer 建議延後)。`LONE_MID_DISTANCE` 已刪(從未被讀)。
   🔴 **約 17 個遊戲平衡數值硬編碼在 `const` 裡,而 `coding-standards.md` 明文要求
   「Gameplay values must be data-driven (external config), never hardcoded」。**
   **不是孤例,是系統性的** —— 分佈在 4 個檔案:
