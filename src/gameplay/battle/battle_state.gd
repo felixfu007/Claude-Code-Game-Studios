@@ -38,6 +38,10 @@ var card_modifier_tuning: CardModifierTuning = CardModifierTuning.defaults()
 ## settlement, preview breakdown and (via BattleScreen) the guard display.
 var combat_tuning: CombatTuning = CombatTuning.defaults()
 
+## tuning-data story-005: AffinityRules seven knobs derived from [member tuning]. Single source for
+## settlement Φ (via AffinityPhiProvider), cursor preview and UI affinity readouts.
+var affinity_tuning: AffinityTuning = AffinityTuning.defaults()
+
 # id -> Unit. One entry per unit in the battle (both factions), populated
 # once in create() and never removed — dead units stay in this map so
 # unit_by_id() and units_of() keep working (and correctly excluding them)
@@ -223,6 +227,12 @@ static func create(
 		state.combat_tuning = CombatTuning.defaults()
 	else:
 		state.combat_tuning = parsed_combat
+	var parsed_affinity: Variant = AffinityTuning.from_knobs(state.tuning)
+	if parsed_affinity == null:
+		push_error("BattleState.create: affinity tuning invalid (see preceding AffinityTuning error) -- falling back to AffinityTuning.defaults(); production path (BattleScreen) validates first and never reaches here")
+		state.affinity_tuning = AffinityTuning.defaults()
+	else:
+		state.affinity_tuning = parsed_affinity
 	state.board = Board.from_ascii(terrain_rows)
 	var roster: Array[Unit] = Unit.roster_from_text(roster_text)
 	for unit: Unit in roster:

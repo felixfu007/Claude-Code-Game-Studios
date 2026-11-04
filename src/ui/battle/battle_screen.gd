@@ -1031,8 +1031,8 @@ func _guess_delta_for_cell(unit_id: int, cell: Vector2i) -> int:
 	var positions: Dictionary[int, Vector2i] = _phi.positions()
 	var links: Array[AffinityLink] = _phi.links()
 	var hypo: Dictionary[int, Vector2i] = _phi.positions_with(unit_id, cell)
-	return AffinityRules.bonus_for_at(unit_id, cell, hypo, links) \
-		- AffinityRules.bonus_for(unit_id, positions, links)
+	return AffinityRules.bonus_for_at(unit_id, cell, hypo, links, _state.affinity_tuning) \
+		- AffinityRules.bonus_for(unit_id, positions, links, _state.affinity_tuning)
 
 
 static func _guess_direction_text_key(direction: int) -> StringName:
@@ -1883,6 +1883,9 @@ func _ready() -> void:
 				tuning_failure = LoadFailure.PARSE_ERROR
 			# story-004:combat 九項的不變式驗證;失敗同樣是載入失敗(大聲報錯)。
 			if tuning_failure == LoadFailure.NONE and CombatTuning.from_knobs(tuning_knobs) == null:
+				tuning_failure = LoadFailure.PARSE_ERROR
+			# story-005:affinity 七項(phi_min<=phi_max)驗證;失敗同樣是載入失敗(大聲報錯)。
+			if tuning_failure == LoadFailure.NONE and AffinityTuning.from_knobs(tuning_knobs) == null:
 				tuning_failure = LoadFailure.PARSE_ERROR
 
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
@@ -2944,7 +2947,7 @@ static func compose_info_line(affinity_text: String, guard_text: String) -> Stri
 func _displayed_guard_at(
 		unit_id: int, tile: Vector2i, hypo_positions: Dictionary[int, Vector2i], will_attack: bool = false
 ) -> int:
-	var phi_def: int = AffinityRules.bonus_for_at(unit_id, tile, hypo_positions, _phi.links())
+	var phi_def: int = AffinityRules.bonus_for_at(unit_id, tile, hypo_positions, _phi.links(), _state.affinity_tuning)
 	var lone: int = _state.lone_guard_if_at(unit_id, tile, will_attack)
 	return displayed_guard(phi_def, lone, _hide_affinity_display_for_this_battle, _state.combat_tuning)
 
@@ -4514,7 +4517,7 @@ func _refresh_view() -> void:
 	var selected: int = _controller.selected_unit()
 
 	var line_positions: Dictionary[int, Vector2i] = positions
-	var line_statuses: Array[AffinityLineStatus] = AffinityRules.board_lines(positions, links)
+	var line_statuses: Array[AffinityLineStatus] = AffinityRules.board_lines(positions, links, _state.affinity_tuning)
 	var info_text: String = ""
 	var preview_target_id: int = -1
 	var preview_target_hp: int = -1
@@ -4537,9 +4540,9 @@ func _refresh_view() -> void:
 	elif selected != -1 and _cursor_active and _is_move_preview_cell(selected):
 		var hypo: Dictionary[int, Vector2i] = _phi.positions_with(selected, _cursor_cell)
 		line_positions = hypo
-		line_statuses = AffinityRules.board_lines(hypo, links)
-		var current_bonus: int = AffinityRules.bonus_for(selected, positions, links)
-		var preview_bonus: int = AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links)
+		line_statuses = AffinityRules.board_lines(hypo, links, _state.affinity_tuning)
+		var current_bonus: int = AffinityRules.bonus_for(selected, positions, links, _state.affinity_tuning)
+		var preview_bonus: int = AffinityRules.bonus_for_at(selected, _cursor_cell, hypo, links, _state.affinity_tuning)
 		var affinity_text: String = format_affinity_preview(current_bonus, preview_bonus)
 		if guess_state == GuessCellState.LOCKED:
 			# 預判模式不動(story-032):維持原本「未隱藏」的好感度文字。
@@ -4582,7 +4585,7 @@ func _refresh_view() -> void:
 		var hovered: Unit = _state.unit_at(_cursor_cell)
 		if hovered != null and not _hide_affinity_display_for_this_battle and _unit_has_link(hovered.id, links):
 			info_text = format_affinity_current(
-				AffinityRules.bonus_for(hovered.id, positions, links)
+				AffinityRules.bonus_for(hovered.id, positions, links, _state.affinity_tuning)
 			)
 
 	_info_label.text = info_text

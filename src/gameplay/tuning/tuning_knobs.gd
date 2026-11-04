@@ -40,6 +40,14 @@ const KNOWN_KEYS: Dictionary = {
 	"combat.lone_mid_guard": CombatRules.LONE_MID_GUARD,
 	"combat.hold_back_distance": CombatRules.HOLD_BACK_DISTANCE,
 	"combat.hold_back_penalty": CombatRules.HOLD_BACK_PENALTY,
+	# story-005:affinity 七鍵(預設值指向 AffinityRules 常數;距離門檻不搬)。phi_min/phi_max 為戰鬥力上下限(承重值)。
+	"affinity.delta_positive_adjacent": AffinityRules.DELTA_POSITIVE_ADJACENT,
+	"affinity.delta_positive_far": AffinityRules.DELTA_POSITIVE_FAR,
+	"affinity.delta_negative_adjacent": AffinityRules.DELTA_NEGATIVE_ADJACENT,
+	"affinity.delta_negative_far": AffinityRules.DELTA_NEGATIVE_FAR,
+	"affinity.delta_neutral": AffinityRules.DELTA_NEUTRAL,
+	"affinity.phi_min": AffinityRules.PHI_MIN,
+	"affinity.phi_max": AffinityRules.PHI_MAX,
 }
 
 ## 解析出的 `"section.key"` -> int。僅含實際在檔案中出現的鍵(defaults() 則含全部已知鍵)。

@@ -247,4 +247,4 @@ func phi(attacker_id: int, _target_id: int) -> int:
 ## Signature [code]func(unit_id: int) -> int[/code] matches
 ## [member BattleState._defense_phi_provider].
 func phi_of(unit_id: int) -> int:
-	return AffinityRules.bonus_for(unit_id, positions(), links())
+	return AffinityRules.bonus_for(unit_id, positions(), links(), _state.affinity_tuning)

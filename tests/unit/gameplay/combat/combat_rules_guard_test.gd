@@ -68,6 +68,13 @@ combat,lone_near_distance,1
 combat,lone_mid_guard,2
 combat,hold_back_distance,2
 combat,hold_back_penalty,1
+affinity,delta_positive_adjacent,3
+affinity,delta_positive_far,-1
+affinity,delta_negative_adjacent,-1
+affinity,delta_negative_far,2
+affinity,delta_neutral,0
+affinity,phi_min,-4
+affinity,phi_max,12
 "
 	return CombatTuning.from_text(base.replace(from_a, to_a).replace(from_b, to_b)) as CombatTuning
 

@@ -21,3 +21,14 @@ combat,lone_near_guard,-1
 combat,lone_mid_guard,2
 combat,hold_back_distance,2
 combat,hold_back_penalty,1
+# story-005: affinity (AffinityRules curve + phi clamp) -- values equal the old constants.
+# DISTANCE_ADJACENT/DISTANCE_FAR stay in code (manager ruling 2026-11-04).
+# WARNING: phi_min/phi_max are LOAD-BEARING: changing them directly changes the combat-strength floor/ceiling
+# (clamp applied once on the summed total in AffinityRules.bonus_breakdown_for_at).
+affinity,delta_positive_adjacent,3
+affinity,delta_positive_far,-1
+affinity,delta_negative_adjacent,-1
+affinity,delta_negative_far,2
+affinity,delta_neutral,0
+affinity,phi_min,-4
+affinity,phi_max,12

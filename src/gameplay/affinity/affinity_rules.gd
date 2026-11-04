@@ -71,6 +71,10 @@ const PHI_MIN: int = -4
 const PHI_MAX: int = 12
 
 
+## tuning-data story-005: the constants above are now only the SOURCE of [method AffinityTuning.defaults]
+## (via TuningKnobs.KNOWN_KEYS); live values come from an injected [AffinityTuning] (null -> defaults()).
+## [constant DISTANCE_ADJACENT]/[constant DISTANCE_FAR] stay code constants (manager ruling 2026-11-04).
+##
 ## Base affinity delta for one link at [param distance], multiplied by
 ## [param amp]. Ported verbatim from the prototype's
 ## [code]affinityDelta()[/code]:
@@ -78,18 +82,19 @@ const PHI_MAX: int = 12
 ## [br]- negative: distance 1 -> -1, distance 2 -> 0, distance 3+ -> +2
 ## [br]Distance 0 (two units on one cell, which the board disallows) is
 ## treated as the neutral case, as in the prototype.
-static func delta(polarity: AffinityLink.Polarity, distance: int, amp: int) -> int:
-	var base: int = DELTA_NEUTRAL
+static func delta(polarity: AffinityLink.Polarity, distance: int, amp: int, tuning: AffinityTuning = null) -> int:
+	var t: AffinityTuning = tuning if tuning != null else AffinityTuning.defaults()
+	var base: int = t.delta_neutral()
 	if polarity == AffinityLink.Polarity.POSITIVE:
 		if distance == DISTANCE_ADJACENT:
-			base = DELTA_POSITIVE_ADJACENT
+			base = t.delta_positive_adjacent()
 		elif distance >= DISTANCE_FAR:
-			base = DELTA_POSITIVE_FAR
+			base = t.delta_positive_far()
 	else:
 		if distance == DISTANCE_ADJACENT:
-			base = DELTA_NEGATIVE_ADJACENT
+			base = t.delta_negative_adjacent()
 		elif distance >= DISTANCE_FAR:
-			base = DELTA_NEGATIVE_FAR
+			base = t.delta_negative_far()
 	return base * amp
 
 
@@ -105,11 +110,12 @@ static func delta(polarity: AffinityLink.Polarity, distance: int, amp: int) -> i
 static func bonus_for(
 	unit_id: int,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> int:
 	if not positions.has(unit_id):
 		return 0
-	return bonus_for_at(unit_id, positions[unit_id], positions, links)
+	return bonus_for_at(unit_id, positions[unit_id], positions, links, tuning)
 
 
 ## Same as [method bonus_for] but evaluates the unit as if it were standing on
@@ -132,9 +138,10 @@ static func bonus_for_at(
 	unit_id: int,
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> int:
-	return bonus_breakdown_for_at(unit_id, origin, positions, links).clamped_sum
+	return bonus_breakdown_for_at(unit_id, origin, positions, links, tuning).clamped_sum
 
 
 ## Same as [method bonus_for_at] but discloses the pre-clamp raw sum and,
@@ -151,12 +158,15 @@ static func bonus_breakdown_for_at(
 	unit_id: int,
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> AffinityBonusBreakdown:
+	var t: AffinityTuning = tuning if tuning != null else AffinityTuning.defaults()
 	var raw_sum: int = 0
-	for status: AffinityLineStatus in lines_for_at(unit_id, origin, positions, links):
+	for status: AffinityLineStatus in lines_for_at(unit_id, origin, positions, links, t):
 		raw_sum += status.delta
-	var clamped_sum: int = clampi(raw_sum, PHI_MIN, PHI_MAX)
+	# 夾限只在此處、對加總後的總和夾一次(phi_clamp_treated_as_a_safety_net)。
+	var clamped_sum: int = clampi(raw_sum, t.phi_min(), t.phi_max())
 	return AffinityBonusBreakdown.create(raw_sum, clamped_sum)
 
 
@@ -171,11 +181,12 @@ static func bonus_breakdown_for_at(
 static func bonus_breakdown_for(
 	unit_id: int,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> AffinityBonusBreakdown:
 	if not positions.has(unit_id):
 		return AffinityBonusBreakdown.create(0, 0)
-	return bonus_breakdown_for_at(unit_id, positions[unit_id], positions, links)
+	return bonus_breakdown_for_at(unit_id, positions[unit_id], positions, links, tuning)
 
 
 ## Every affinity link touching [param unit_id], with its current distance,
@@ -187,11 +198,12 @@ static func bonus_breakdown_for(
 static func lines_for(
 	unit_id: int,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> Array[AffinityLineStatus]:
 	if not positions.has(unit_id):
 		return []
-	return lines_for_at(unit_id, positions[unit_id], positions, links)
+	return lines_for_at(unit_id, positions[unit_id], positions, links, tuning)
 
 
 ## Same as [method lines_for] but evaluates [param unit_id] as if it were
@@ -201,7 +213,8 @@ static func lines_for_at(
 	unit_id: int,
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> Array[AffinityLineStatus]:
 	var statuses: Array[AffinityLineStatus] = []
 	for link: AffinityLink in links:
@@ -217,7 +230,7 @@ static func lines_for_at(
 				partner,
 				link.polarity,
 				distance,
-				delta(link.polarity, distance, link.amp)
+				delta(link.polarity, distance, link.amp, tuning)
 			)
 		)
 	return statuses
@@ -236,7 +249,8 @@ static func lines_for_at(
 ## [member AffinityLineStatus.unit_id] on the returned entry.
 static func board_lines(
 	positions: Dictionary[int, Vector2i],
-	links: Array[AffinityLink]
+	links: Array[AffinityLink],
+	tuning: AffinityTuning = null
 ) -> Array[AffinityLineStatus]:
 	var statuses: Array[AffinityLineStatus] = []
 	for link: AffinityLink in links:
@@ -250,7 +264,7 @@ static func board_lines(
 				link.unit_b,
 				link.polarity,
 				distance,
-				delta(link.polarity, distance, link.amp)
+				delta(link.polarity, distance, link.amp, tuning)
 			)
 		)
 	return statuses

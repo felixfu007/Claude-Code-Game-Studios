@@ -1,0 +1,28 @@
+# test fixture (story-001): valid, header-only. Distinct from tuning_knobs.txt so tests can tell which file was injected.
+# FIXTURE-VALID-MARKER
+deck,opening_hand_size,5
+deck,hand_size_limit,5
+deck,cards_drawn_per_turn,1
+# story-003: card_modifier (CardModifierRules clamp) -- values equal the old constants.
+card_modifier,atk_delta_min,-4
+card_modifier,atk_delta_max,6
+card_modifier,def_delta_min,-3
+card_modifier,def_delta_max,4
+# story-004: combat (CombatRules) -- values equal the old constants.
+combat,guard_min,-2
+combat,guard_max,3
+combat,lone_far_distance,3
+combat,lone_far_guard,0
+combat,lone_near_distance,1
+combat,lone_near_guard,-1
+combat,lone_mid_guard,2
+combat,hold_back_distance,2
+combat,hold_back_penalty,1
+# story-005: affinity
+affinity,delta_positive_adjacent,3
+affinity,delta_positive_far,-1
+affinity,delta_negative_adjacent,-1
+affinity,delta_negative_far,2
+affinity,delta_neutral,0
+affinity,phi_min,-4
+affinity,phi_max,6
