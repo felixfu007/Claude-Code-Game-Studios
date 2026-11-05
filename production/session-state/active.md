@@ -76,7 +76,7 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決:局面集 B「**不量,人力轉去做友敵顯示(推薦)**」(鎖定草稿留檔不執行)。
 - ⏳ 14:05 派 ux-designer 規格修改草稿 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(協調者審後套用;線形畫法交 art-director;實作另派;最後需管理者在家目視)。
 - 🔴 **17:00 收工**:PROJECT-STATUS 重寫。覆核收穫本批:曲線測試沒測到畫面(改呼叫 production 預覽 + 協調者做 production 突變證明)、計時測試負載誤報辨識、producer 盤點過時三處(32 號已送等)、協調者自己兩次選項文字不實(「現成範本」、死碼只壞診斷腳本 —— 實際正式工具也用)已揭露 → 連續零收穫 = 0。⚠️ 協調者又一次把「戊」寫成「戰」。
-- 收工時仍在跑:ux-designer 規格草稿(未交件;下次先查檔案是否存在/完整)。
+- ✅ 16:55 ux-designer 規格草稿交件 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(R1~R7、AC-P1~P9、11 處修改;3 處改寫在 `design/ux/relation-minimap.md`)。⚠️ 錨點**未跑 grep 驗證**(該專家無 Bash),套用前逐條複驗。🔴 **明天要問管理者**:①關係圖距離 2 時:甲 全畫但不上色(ux 推薦,但不是字面照辦裁決)/ 乙 跟棋盤一樣不畫;②**新缺口**:線色只表效果後,正負效果又只靠紅綠,違反 `game-concept.md` 第 243 行「不得僅靠色彩」(協調者已核)→ 需第二通道(ux 傾向線中點 +/− 符號);③距離 2 無線靠游標預覽補,是否接受;④教學探針(`vertical-slice-level-01.md` AC-3)是否仍執行。**ux 建議先收 art-director 線形回答(草稿第三節 7 題)再一次套用規格**,避免改兩次。
 - 已知未做:極性顯示的線形畫法(交 art-director)、實作工單、管理者目視;協議 1 局面集 B 鎖定草稿留檔不執行。
 - 下一步候選(皆需管理者):無。剩餘待辦:第 3 階段要做什麼(對話卡牌已做?需 producer 盤點)、PROJECT-STATUS 收工重寫。
 - 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
