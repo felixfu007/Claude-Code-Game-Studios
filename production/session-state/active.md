@@ -60,6 +60,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決(揭露規則 4 後):「**計畫書永久不受此規則限制(推薦)**」/ 第 2 階段「**算完成,註明證據是電腦代打(推薦)**」/ EPIC 003「**一起加註(推薦)**」→ `1bd5772`(producer 草稿,協調者錨點腳本 12 處前後命中皆 1)。
 - 裁決(11:20):第 3 階段「**現在開始,日曆與停損日都不動(推薦)**」/ 協議 2 真人補充「**一併到第 4 階段陌生人試玩(推薦)**」/ story-035 標完成 + 5 支舊診斷 README 加註「**兩個都改(推薦)**」。🔴 **這三項尚未落檔**(計畫書加註 ×2、story-035 Status、5 個 README 各一行)。
 - ✅ qa-lead 協議 1 電腦半鎖定計畫 `docs/reviews/protocol1-computer-half-lock-plan-2026-11-05.md`(未提交)。🔴 發現:**畫面不顯示關係極性**(線色與小地圖都是「目前效果」+/−/0;協調者核 `battle_screen.gd` `line_tone_for`)。待管理者裁:整體核准、主集不含 vs01、vs03/04 調整前快照、第 3 階段退出條件、私有方法 `_guess_delta_for_cell` 可否呼叫(lead-programmer 表態)。
+- ✅ 11:20 三項裁決已落檔 `b8a10a9`(計畫書 2 處加註、story-035 Done、5 個 README 加註)。
+- ✅ 鎖定計畫裁決:「**核准,照計畫做(推薦)**」/「**現在跑,記錄用的是哪一版關卡(推薦)**」。協調者技術判定:prototypes 唯讀呼叫 `_guess_delta_for_cell` 可接受。**鎖定提交 `6dc9a82`**(結果提交須為其後代)。
+- ⏳ 11:40 派 godot-gdscript-specialist 實作+執行 `prototypes/protocol1-computer-baseline-2026-11-05/`(只寫新資料夾、不 commit、不得改計畫第 1~5 節、做不到就停)。**驗收:協調者讀原始輸出行、重跑一次並 cmp、核正解走真實 BattleScreen 宿主鏈、核 HEAD 是 6dc9a82 後代。**
+- 下一步候選(皆需管理者):無。剩餘待辦:第 3 階段要做什麼(對話卡牌已做?需 producer 盤點)、PROJECT-STATUS 收工重寫。
 - 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
 
 ## 🔴 第九十三批(2026-11-04,公司,08:34 開工)—— 進行中,位階高於下方
