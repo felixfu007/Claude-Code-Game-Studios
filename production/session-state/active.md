@@ -48,6 +48,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決:棋子實驗「先用底圖重畫試 10 張(推薦)」(被跳過:改契約 / 下載 ControlNet / 不做);美術文件「可以,加這一句(推薦)」(立繪以底緣為錨、寬度縮放、不假設正方形)。
 - 08:42 SendMessage art-director:改 art-direction.md(只插入)+ 起草 `docs/ai-art-service-handoff/32-request-draft-2026-11-05.md` → 協調者審後推 AI_IMG(推前 status 已確認 0 行)。
 - 08:50 派 gameplay-programmer 補 tuning story-005 兩條測試缺口(曲線端到端、BattleScreen 壞檔 phi_min>phi_max),新檔 `tests/integration/ui/battle/battle_screen_affinity_tuning_curve_and_badfile_test.gd`,不改 production。
+- ✅ art-direction.md 插入一句(協調者驗:舊行為新行前綴)+ 32 號草稿;🔴 art-director 發現 **AI_IMG 無四頭身底圖**(29 號要家用端準備,沒做)→ 32 號改為家用端先畫剪影。**協調者選項文字「現成的範本」不實,已向管理者揭露**。協調者更正草稿底模 cheyenne → `arthemy-comics-v2.0`(核 27/28 號 request.json)。✅ **32 號已推 AI_IMG `1eeca1e`**(推前 status 0、1 added);本倉庫 `fc4468b`。
+- 🔴 **覆核收穫**:曲線測試原在測試內自己呼叫 AffinityRules,證明不了畫面預覽有傳 tuning → 改呼叫 `_guess_delta_for_cell()`。實作者發現 vs01 開場甲乙已相鄰,改用 3 格外假想格(-4/-6)。**協調者自做 production 突變**(預覽兩處傳 null):1867 / 2 failures、唯一 FAILED 為新測試 → 還原(diff 空)。全套 `ENGINE EXIT = 0` / `1868 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)` → `9d4161a`。連續零收穫 = 0。
+- 📌 第九十三批末「待辦:請示改 architecture.yaml phi_clamp」**已過時** —— `aecaba7` 已加 LOCATION UPDATE。
+- 09:30 派 producer(只讀)列「公司可做」清單,含協議 2 是否已正式結案(決定死碼第二步能否動)。
 
 ## 🔴 第九十三批(2026-11-04,公司,08:34 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
