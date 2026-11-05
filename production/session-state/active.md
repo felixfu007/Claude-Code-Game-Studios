@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十四批(2026-11-05)收工。** 協議 2 結案(工具 v4 留作回歸檢查,story-035 `45a20de` 清死碼);第 2 階段判定完成、第 3 階段即日開始(計畫書 `1bd5772`/`b8a10a9`);協議 1 電腦半(開場)`f508090`;AI_IMG 32 號 `1eeca1e`。測試 1866 → **1860,全綠**(協調者每批重跑)。
+Feature: 🔴 管理者今天裁決逐字見第九十四批節。極性顯示:「丙,但灰線拿掉」(管理者自填)。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`,32 號:丁徽章、棋子 img2img 10 張;回來先交 art-director);第二件:收 ux-designer 規格草稿 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(17:00 時仍在寫;若未完成,用 SendMessage 續或重派),審後給管理者看,再交 art-director 定線形畫法、再派實作;第三件:問管理者在家目視與實打第 3、4 場。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
+以下為第九十三批原狀態列。
 Epic: **第九十三批(2026-11-04)收工。** 寫死數值搬資料檔 tuning-data story-001~005 全數完成(`27fadd0`~`be3f438`,文件 `aecaba7`):23 個旋鈕在 `assets/data/tuning/tuning_knobs.txt`,缺行/打錯一律載入失敗。零行為變更已用協議 2 工具前後對照證明。測試 1800 → **1866,全綠**,協調者每張重跑。
 Feature: 🔴 管理者今天裁決逐字見第九十三批節(全為推薦選項)。第 3、4 場「還沒打,先不動」;目視「還沒看」。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`,31 號後製、棋子小實驗可行性;回來先交 art-director);第二件:問管理者在家目視與實打第 3、4 場(清單見 PROJECT-STATUS);第三件:依實打感受把 `docs/reviews/vs03-vs04-difficulty-adjust-options-2026-11-03.md` 做成選項(現在調數字只需改資料檔/關卡檔)。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -71,6 +75,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ `7345841`:系統總表 #6/#10、骨架開放問題 #2 加註(錨點腳本 3 處 + 骨架第一部分指路 1 行);極性選項書、局面集 B 鎖定草稿一併提交。
 - 裁決:局面集 B「**不量,人力轉去做友敵顯示(推薦)**」(鎖定草稿留檔不執行)。
 - ⏳ 14:05 派 ux-designer 規格修改草稿 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(協調者審後套用;線形畫法交 art-director;實作另派;最後需管理者在家目視)。
+- 🔴 **17:00 收工**:PROJECT-STATUS 重寫。覆核收穫本批:曲線測試沒測到畫面(改呼叫 production 預覽 + 協調者做 production 突變證明)、計時測試負載誤報辨識、producer 盤點過時三處(32 號已送等)、協調者自己兩次選項文字不實(「現成範本」、死碼只壞診斷腳本 —— 實際正式工具也用)已揭露 → 連續零收穫 = 0。⚠️ 協調者又一次把「戊」寫成「戰」。
+- 收工時仍在跑:ux-designer 規格草稿(未交件;下次先查檔案是否存在/完整)。
+- 已知未做:極性顯示的線形畫法(交 art-director)、實作工單、管理者目視;協議 1 局面集 B 鎖定草稿留檔不執行。
 - 下一步候選(皆需管理者):無。剩餘待辦:第 3 階段要做什麼(對話卡牌已做?需 producer 盤點)、PROJECT-STATUS 收工重寫。
 - 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
 
