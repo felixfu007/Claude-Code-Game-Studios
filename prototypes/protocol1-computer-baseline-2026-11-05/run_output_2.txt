@@ -1,0 +1,173 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1837)
+=== LEVEL tut04 ===
+HOSTCHAIN tut04: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+TUNING tut04: delta_pos_adj=3 delta_pos_far=-1 delta_neg_adj=-1 delta_neg_far=2 delta_neutral=0 phi_min=-4 phi_max=12
+LINK tut04: 1-2 polarity=POSITIVE amp=1
+POS tut04: unit 1 at (0, 2)
+POS tut04: unit 2 at (0, 3)
+POS tut04: unit 7 at (9, 1)
+POS tut04: unit 9 at (9, 4)
+PHASE tut04: phase=0 selectable=[1, 2]
+DECISION tut04: unit 1 at (0, 2) links=1 candidate_cells=30
+DECISION tut04: unit 2 at (0, 3) links=1 candidate_cells=23
+=== LEVEL vs02 ===
+HOSTCHAIN vs02: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+TUNING vs02: delta_pos_adj=3 delta_pos_far=-1 delta_neg_adj=-1 delta_neg_far=2 delta_neutral=0 phi_min=-4 phi_max=12
+LINK vs02: 1-2 polarity=POSITIVE amp=1
+LINK vs02: 3-4 polarity=NEGATIVE amp=1
+POS vs02: unit 1 at (0, 1)
+POS vs02: unit 2 at (0, 2)
+POS vs02: unit 3 at (0, 3)
+POS vs02: unit 4 at (0, 4)
+POS vs02: unit 5 at (0, 5)
+POS vs02: unit 6 at (8, 1)
+POS vs02: unit 7 at (12, 0)
+POS vs02: unit 8 at (12, 5)
+POS vs02: unit 9 at (11, 3)
+POS vs02: unit 10 at (12, 2)
+PHASE vs02: phase=0 selectable=[1, 2, 3, 4, 5]
+DECISION vs02: unit 1 at (0, 1) links=1 candidate_cells=22
+DECISION vs02: unit 2 at (0, 2) links=1 candidate_cells=19
+DECISION vs02: unit 3 at (0, 3) links=1 candidate_cells=9
+DECISION vs02: unit 4 at (0, 4) links=1 candidate_cells=18
+EXCLUDED vs02: unit 5 (no live link)
+=== LEVEL vs03 ===
+HOSTCHAIN vs03: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+TUNING vs03: delta_pos_adj=3 delta_pos_far=-1 delta_neg_adj=-1 delta_neg_far=2 delta_neutral=0 phi_min=-4 phi_max=12
+LINK vs03: 1-2 polarity=POSITIVE amp=1
+LINK vs03: 3-4 polarity=NEGATIVE amp=1
+POS vs03: unit 1 at (0, 1)
+POS vs03: unit 2 at (0, 2)
+POS vs03: unit 3 at (0, 3)
+POS vs03: unit 4 at (0, 4)
+POS vs03: unit 5 at (0, 5)
+POS vs03: unit 6 at (7, 2)
+POS vs03: unit 7 at (8, 1)
+POS vs03: unit 8 at (9, 5)
+POS vs03: unit 9 at (8, 4)
+POS vs03: unit 10 at (7, 3)
+PHASE vs03: phase=0 selectable=[1, 2, 3, 4, 5]
+DECISION vs03: unit 1 at (0, 1) links=1 candidate_cells=16
+DECISION vs03: unit 2 at (0, 2) links=1 candidate_cells=15
+DECISION vs03: unit 3 at (0, 3) links=1 candidate_cells=8
+DECISION vs03: unit 4 at (0, 4) links=1 candidate_cells=13
+EXCLUDED vs03: unit 5 (no live link)
+=== LEVEL vs04 ===
+HOSTCHAIN vs04: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+TUNING vs04: delta_pos_adj=3 delta_pos_far=-1 delta_neg_adj=-1 delta_neg_far=2 delta_neutral=0 phi_min=-4 phi_max=12
+LINK vs04: 1-2 polarity=POSITIVE amp=1
+LINK vs04: 3-4 polarity=NEGATIVE amp=1
+POS vs04: unit 1 at (0, 1)
+POS vs04: unit 2 at (0, 2)
+POS vs04: unit 3 at (0, 3)
+POS vs04: unit 4 at (0, 4)
+POS vs04: unit 5 at (0, 5)
+POS vs04: unit 6 at (8, 2)
+POS vs04: unit 7 at (12, 0)
+POS vs04: unit 8 at (12, 5)
+POS vs04: unit 9 at (11, 3)
+POS vs04: unit 10 at (12, 2)
+PHASE vs04: phase=0 selectable=[1, 2, 3, 4, 5]
+DECISION vs04: unit 1 at (0, 1) links=1 candidate_cells=25
+DECISION vs04: unit 2 at (0, 2) links=1 candidate_cells=22
+DECISION vs04: unit 3 at (0, 3) links=1 candidate_cells=9
+DECISION vs04: unit 4 at (0, 4) links=1 candidate_cells=18
+EXCLUDED vs04: unit 5 (no live link)
+=== LEVEL vs05 ===
+HOSTCHAIN vs05: WorldViewportContainer.position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+TUNING vs05: delta_pos_adj=3 delta_pos_far=-1 delta_neg_adj=-1 delta_neg_far=2 delta_neutral=0 phi_min=-4 phi_max=12
+LINK vs05: 1-2 polarity=POSITIVE amp=1
+LINK vs05: 3-4 polarity=NEGATIVE amp=1
+POS vs05: unit 1 at (0, 1)
+POS vs05: unit 2 at (0, 2)
+POS vs05: unit 3 at (0, 3)
+POS vs05: unit 4 at (0, 4)
+POS vs05: unit 5 at (0, 5)
+POS vs05: unit 6 at (8, 1)
+POS vs05: unit 7 at (9, 2)
+POS vs05: unit 8 at (10, 2)
+POS vs05: unit 9 at (9, 3)
+POS vs05: unit 10 at (8, 4)
+PHASE vs05: phase=0 selectable=[1, 2, 3, 4, 5]
+DECISION vs05: unit 1 at (0, 1) links=1 candidate_cells=14
+DECISION vs05: unit 2 at (0, 2) links=1 candidate_cells=12
+DECISION vs05: unit 3 at (0, 3) links=1 candidate_cells=6
+DECISION vs05: unit 4 at (0, 4) links=1 candidate_cells=11
+EXCLUDED vs05: unit 5 (no live link)
+
+##### REPORT #####
+REPORT tut04: N_d=2 N_c=53 excluded_units=0 truth(正/負/無)=0.00%/92.45%/7.55% (0/49/4)
+REPORT tut04: P0-neutral=7.55 P0-positive=0.00 P0-negative=92.45 P0-cycle=33.96  P0(max)=92.45
+REPORT tut04: P1=100.00 P2-strict=100.00 P2-tie=100.00 U_cells=0.00% (0/53) U_decisions=0.00% (0/2) P2_decidable=53 P2_decidable_wrong=0
+RECALL tut04 p0n: 正 0/0  負 0/49  無 4/4
+RECALL tut04 p0p: 正 0/0  負 0/49  無 0/4
+RECALL tut04 p0g: 正 0/0  負 49/49  無 0/4
+RECALL tut04 p0c: 正 0/0  負 17/49  無 1/4
+RECALL tut04 p1: 正 0/0  負 49/49  無 4/4
+RECALL tut04 p2s: 正 0/0  負 49/49  無 4/4
+RECALL tut04 p2t: 正 0/0  負 49/49  無 4/4
+REPORT vs02: N_d=4 N_c=68 excluded_units=1 truth(正/負/無)=36.76%/55.88%/7.35% (25/38/5)
+REPORT vs02: P0-neutral=7.35 P0-positive=36.76 P0-negative=55.88 P0-cycle=29.41  P0(max)=55.88
+REPORT vs02: P1=100.00 P2-strict=100.00 P2-tie=100.00 U_cells=0.00% (0/68) U_decisions=0.00% (0/4) P2_decidable=68 P2_decidable_wrong=0
+RECALL vs02 p0n: 正 0/25  負 0/38  無 5/5
+RECALL vs02 p0p: 正 25/25  負 0/38  無 0/5
+RECALL vs02 p0g: 正 0/25  負 38/38  無 0/5
+RECALL vs02 p0c: 正 8/25  負 11/38  無 1/5
+RECALL vs02 p1: 正 25/25  負 38/38  無 5/5
+RECALL vs02 p2s: 正 25/25  負 38/38  無 5/5
+RECALL vs02 p2t: 正 25/25  負 38/38  無 5/5
+REPORT vs03: N_d=4 N_c=52 excluded_units=1 truth(正/負/無)=36.54%/53.85%/9.62% (19/28/5)
+REPORT vs03: P0-neutral=9.62 P0-positive=36.54 P0-negative=53.85 P0-cycle=36.54  P0(max)=53.85
+REPORT vs03: P1=100.00 P2-strict=100.00 P2-tie=100.00 U_cells=0.00% (0/52) U_decisions=0.00% (0/4) P2_decidable=52 P2_decidable_wrong=0
+RECALL vs03 p0n: 正 0/19  負 0/28  無 5/5
+RECALL vs03 p0p: 正 19/19  負 0/28  無 0/5
+RECALL vs03 p0g: 正 0/19  負 28/28  無 0/5
+RECALL vs03 p0c: 正 8/19  負 9/28  無 2/5
+RECALL vs03 p1: 正 19/19  負 28/28  無 5/5
+RECALL vs03 p2s: 正 19/19  負 28/28  無 5/5
+RECALL vs03 p2t: 正 19/19  負 28/28  無 5/5
+REPORT vs04: N_d=4 N_c=74 excluded_units=1 truth(正/負/無)=33.78%/59.46%/6.76% (25/44/5)
+REPORT vs04: P0-neutral=6.76 P0-positive=33.78 P0-negative=59.46 P0-cycle=29.73  P0(max)=59.46
+REPORT vs04: P1=100.00 P2-strict=100.00 P2-tie=100.00 U_cells=0.00% (0/74) U_decisions=0.00% (0/4) P2_decidable=74 P2_decidable_wrong=0
+RECALL vs04 p0n: 正 0/25  負 0/44  無 5/5
+RECALL vs04 p0p: 正 25/25  負 0/44  無 0/5
+RECALL vs04 p0g: 正 0/25  負 44/44  無 0/5
+RECALL vs04 p0c: 正 7/25  負 14/44  無 1/5
+RECALL vs04 p1: 正 25/25  負 44/44  無 5/5
+RECALL vs04 p2s: 正 25/25  負 44/44  無 5/5
+RECALL vs04 p2t: 正 25/25  負 44/44  無 5/5
+REPORT vs05: N_d=4 N_c=43 excluded_units=1 truth(正/負/無)=34.88%/53.49%/11.63% (15/23/5)
+REPORT vs05: P0-neutral=11.63 P0-positive=34.88 P0-negative=53.49 P0-cycle=32.56  P0(max)=53.49
+REPORT vs05: P1=100.00 P2-strict=100.00 P2-tie=100.00 U_cells=0.00% (0/43) U_decisions=0.00% (0/4) P2_decidable=43 P2_decidable_wrong=0
+RECALL vs05 p0n: 正 0/15  負 0/23  無 5/5
+RECALL vs05 p0p: 正 15/15  負 0/23  無 0/5
+RECALL vs05 p0g: 正 0/15  負 23/23  無 0/5
+RECALL vs05 p0c: 正 6/15  負 8/23  無 0/5
+RECALL vs05 p1: 正 15/15  負 23/23  無 5/5
+RECALL vs05 p2s: 正 15/15  負 23/23  無 5/5
+RECALL vs05 p2t: 正 15/15  負 23/23  無 5/5
+AVG(unweighted) PRIMARY: P0=67.39 P1=100.00 P2s=100.00 P2t=100.00 U=0.00
+AVG(unweighted) SECONDARY: P0=56.47 P1=100.00 P2s=100.00 P2t=100.00 U=0.00
+
+##### DIAGNOSIS (計畫第 4 節判讀表,逐關;無通過/未通過) #####
+DIAG [主要] tut04: P0=92.45 >= 80 -> 80% 門檻無鑑別力(不讀畫面也過線);發現,非失敗
+DIAG [主要] tut04: P2-strict=100.00>=80 且 U=0.00<=20 -> 畫面資訊邏輯上足以達 80%(僅上限,不代表人類做得到)
+DIAG [主要] tut04: P1=100.00 >= 80 -> 天真讀法已過線,80% 對略讀者可能偏易(非人類證據)
+DIAG [主要] vs02: P0=55.88 < 70 -> 門檻在這關有鑑別空間
+DIAG [主要] vs02: P2-strict=100.00>=80 且 U=0.00<=20 -> 畫面資訊邏輯上足以達 80%(僅上限,不代表人類做得到)
+DIAG [主要] vs02: P1=100.00 >= 80 -> 天真讀法已過線,80% 對略讀者可能偏易(非人類證據)
+DIAG [主要] vs03: P0=53.85 < 70 -> 門檻在這關有鑑別空間
+DIAG [主要] vs03: P2-strict=100.00>=80 且 U=0.00<=20 -> 畫面資訊邏輯上足以達 80%(僅上限,不代表人類做得到)
+DIAG [主要] vs03: P1=100.00 >= 80 -> 天真讀法已過線,80% 對略讀者可能偏易(非人類證據)
+DIAG [次要] vs04: P0=59.46 < 70 -> 門檻在這關有鑑別空間
+DIAG [次要] vs04: P2-strict=100.00>=80 且 U=0.00<=20 -> 畫面資訊邏輯上足以達 80%(僅上限,不代表人類做得到)
+DIAG [次要] vs04: P1=100.00 >= 80 -> 天真讀法已過線,80% 對略讀者可能偏易(非人類證據)
+DIAG [次要] vs05: P0=53.49 < 70 -> 門檻在這關有鑑別空間
+DIAG [次要] vs05: P2-strict=100.00>=80 且 U=0.00<=20 -> 畫面資訊邏輯上足以達 80%(僅上限,不代表人類做得到)
+DIAG [次要] vs05: P1=100.00 >= 80 -> 天真讀法已過線,80% 對略讀者可能偏易(非人類證據)
+ENGINE-SCRIPT-DONE
