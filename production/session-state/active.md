@@ -41,6 +41,14 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第九十四批(2026-11-05,公司,08:36 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;先查 AI_IMG)。
+- 開工:本倉庫 pull 無新提交;AI_IMG(`C:/tmp/aiimg27`)pull 到 `0ab5e78` = **家用端 31 號交付**(11-04 21:17;五張後製 + 乙棋子綠十字 + 棋子實驗可行性:img2img 可、ControlNet 需下載、工單無底圖欄位 → 問 A/B)。
+- ✅ art-director 審定 `docs/ai-art-service-handoff/31-art-director-review-2026-11-05.md`:五張全過、乙棋子兩張過;1024×1120 直接用不轉正方形(自決);丁胸前紅白徽章要擦(自決),乙領章/甲頭頂不處理。
+- 裁決:棋子實驗「先用底圖重畫試 10 張(推薦)」(被跳過:改契約 / 下載 ControlNet / 不做);美術文件「可以,加這一句(推薦)」(立繪以底緣為錨、寬度縮放、不假設正方形)。
+- 08:42 SendMessage art-director:改 art-direction.md(只插入)+ 起草 `docs/ai-art-service-handoff/32-request-draft-2026-11-05.md` → 協調者審後推 AI_IMG(推前 status 已確認 0 行)。
+- 08:50 派 gameplay-programmer 補 tuning story-005 兩條測試缺口(曲線端到端、BattleScreen 壞檔 phi_min>phi_max),新檔 `tests/integration/ui/battle/battle_screen_affinity_tuning_curve_and_badfile_test.gd`,不改 production。
+
 ## 🔴 第九十三批(2026-11-04,公司,08:34 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
 - 開工:本倉庫 pull 無新提交;AI_IMG(`C:/tmp/aiimg27`)fetch 後 HEAD 仍 `09e0ba3`(我方 31 號),**家用端無新交件**。
