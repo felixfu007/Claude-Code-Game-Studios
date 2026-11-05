@@ -104,6 +104,10 @@ awk '/^forbidden_patterns:/{f=1} f&&/^    adr:/{print $2}' docs/registry/archite
 | 3 | 架構文件(ADR)**只在跨系統契約時才寫** | 單一系統內部技術細節寫在該系統設計文件裡 |
 | 4 | 同一份文件**不做第三次以上修訂** | 要改第 3 次表示該重寫或該擱置,不是該再修 |
 
+🔴 **規則 4 有一項永久排除(2026-11-05 管理者裁決)**:**`production/milestones/one-year-plan.md` 這一份**不受規則 4 限制
+—— 該檔第九節規定每階段退出都要更新,兩條規則結構性衝突。**只限這一份,不得類推到其他文件。**
+裁決逐字、揭露紀錄(協調者首次請示時未揭露規則 4,本裁決為揭露後所做)與完整理由在該檔第六節②規則表下方。
+
 **規則 1 有三項明文例外(不拆)**:`affinity-position-chain.md`、`tactical-combat-system.md`
 (兩者 2026-08-31 裁決)與 `skill-card-system.md`(2026-09-08 裁決,第一輪 `/design-review`
 17 個叢集全部落在 native design,管理者裁決保留丙類;`creative-director` 事前估算

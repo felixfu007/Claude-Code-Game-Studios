@@ -2,6 +2,12 @@
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
 > **Status**: Ready(2026-10-28)
+> 🔴 **2026-11-05 加註(上一行原文未改):本張實際已交付,狀態欄當時未更新。**
+> 實作提交 `2ab702a`(2026-10-28,`feat(battle): story-021 自動對戰迴圈接上好感度加成`),新增測試
+> `tests/unit/gameplay/battle/battle_loop_phi_provider_test.gd`(6 條,含常駐變種 `_MutantZeroPhi`)。
+> 提交訊息自述的協調者重跑:`ENGINE EXIT = 0` / `1535 test cases | 0 errors | 0 failures | 0 orphans` / `(138/138)`。
+> **AC4 依本張自己的但書處理**:只在我方攻擊時詢問 provider、敵方恆為 0,照 `BattleController` 既有規則(見該提交訊息)。
+> ⚠️ 下方 AC 勾選框未勾;本加註**不補勾**(那是逐條驗收,不是狀態同步)。
 > **Type**: Logic
 > **Estimate**: S
 > **依據**: 管理者 2026-10-28 裁決,選項逐字「**改善自動對戰(開好感度、教它集火)再量一次**」;

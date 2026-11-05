@@ -2,6 +2,12 @@
 
 > **Epic**: 支援對話系統 —— `production/epics/support-conversation/EPIC.md`
 > **Status**: 🟡 **部分 Done(2026-10-27 更正)** —— AC1/AC3~AC6 有測試;🔴 **AC2(換掉暫代灌入)未做**,協調者 10/27 上午誤標整張 Done、同日更正;AC2 依管理者 10/27 裁決「只有第 1 場灌,之後靠累積」移交 story-004。誤標前的文字:✅ Done(2026-10-27)—— AC5 由 game-shell story-005 交付(端對端測試 `tests/integration/ui/shell/campaign_support_conversation_carryover_test.gd`)。原狀態:Ready
+> ✅ **2026-11-05 加註(上一行原文未改):本張已無未交付的驗收條件。**
+> 上一行唯一未做的 AC2 已移交 story-004,而 story-004 已於 2026-10-27 交付:提交 `cc57b79`
+> (`feat(affinity): story-004 關係單一來源`),新測試 `tests/integration/ui/shell/campaign_single_source_seeding_test.gd`;
+> 協調者重跑 `ENGINE EXIT = 0` / `1411 test cases | 0 errors | 0 failures | 0 orphans` / `(128/128)`
+> (見 `production/epics/support-conversation/story-004-single-source-affinity-seeding.md` 檔尾交付紀錄)。
+> ⚠️ story-004 交付紀錄登記了一條被放寬的斷言(C2_C5 由「精確 −3.0」改為「<0」),協調者當時覆核接受。
 > **Layer**: Domain + Integration
 > **Type**: Logic(**BLOCKING**)+ Integration
 > **Estimate**: L —— **比今天其他幾張都大,它要換掉一段既有的開局灌入**
