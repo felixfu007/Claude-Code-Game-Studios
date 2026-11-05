@@ -1,6 +1,7 @@
 # Story 035:戊舊機制死碼清理第二步(`lone_guard_effective` / `will_attack` / `attacked_this_phase`)
 
-> **Status**: Ready
+> **Status**: ✅ Done(2026-11-05;原為 Ready)
+> 提交:`45a20de`(協調者獨立複驗 A/B/C 等價 + 重跑全套 1860 全綠)。第 2 節 5 支 README 加註依管理者 2026-11-05「兩個都改(推薦)」另行提交。
 > **Type**: Logic(重構,零行為變更)
 > **Epic**: tactical-combat
 > **擁有者**: lead-programmer 派 `gameplay-programmer`(src/ 與 tests/)、`tools-programmer` 或同一人(prototypes v4)

@@ -69,3 +69,5 @@ diff <(grep ^RESULT run_vs03_traced.txt) <(grep ^RESULT ../difficulty-check-2026
 ## 沒做 / 限制
 - 只跑 vs03 use 臂 8 局(不含 ignore 臂)。無反事實(沒有改一個決策再重跑看會不會活)。
 - 勝局對照只看了 v0、v3、v7 的細節,其餘僅看死亡時序表。
+
+> 📌 **2026-11-05 加註**:自 `45a20de`(story-035)起,本資料夾腳本使用的舊版三參數介面已從正式程式碼移除,需在 `cbe811d` 或更早的提交上執行(預期如此,未驗證可重跑)。回歸檢查請改用 `prototypes/protocol2-computer-measure-v4/`。
