@@ -63,6 +63,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ 11:20 三項裁決已落檔 `b8a10a9`(計畫書 2 處加註、story-035 Done、5 個 README 加註)。
 - ✅ 鎖定計畫裁決:「**核准,照計畫做(推薦)**」/「**現在跑,記錄用的是哪一版關卡(推薦)**」。協調者技術判定:prototypes 唯讀呼叫 `_guess_delta_for_cell` 可接受。**鎖定提交 `6dc9a82`**(結果提交須為其後代)。
 - ⏳ 11:40 派 godot-gdscript-specialist 實作+執行 `prototypes/protocol1-computer-baseline-2026-11-05/`(只寫新資料夾、不 commit、不得改計畫第 1~5 節、做不到就停)。**驗收:協調者讀原始輸出行、重跑一次並 cmp、核正解走真實 BattleScreen 宿主鏈、核 HEAD 是 6dc9a82 後代。**
+- ✅ **協議 1 電腦半結果 `f508090`**(鎖定 `6dc9a82` 後代;兩次 cmp 相同;協調者第三次重跑與實作者相同)。主集 P0=67.39 P1=100 P2=100 U=0;tut04 P0=92.45(80% 門檻在該關無鑑別力)。**限制:只取開場決策**(局面集 B 未做)。
+- producer 第 3 階段盤點:四項交付皆已實作,缺的是在家目視;音效零;立繪成品仍在 AI_IMG。
+- 裁決(12:15):局面集 B「**做,先補鎖定再量(推薦)**」/ 極性顯示「**請創意總監查並給選項(推薦)**」/ 總表與骨架「**加註更新(推薦)**」。
+- ⏳ 12:20 平行派:qa-lead 補鎖定 `docs/reviews/protocol1-computer-half-lock-plan-B-2026-11-05.md` / creative-director `docs/reviews/affinity-polarity-display-options-2026-11-05.md` / producer 草稿 `docs/reviews/index-and-skeleton-annotations-draft-2026-11-05.md`(同上午格式,協調者用 scratchpad apply.js 改目標表套用)。
 - 下一步候選(皆需管理者):無。剩餘待辦:第 3 階段要做什麼(對話卡牌已做?需 producer 盤點)、PROJECT-STATUS 收工重寫。
 - 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
 
