@@ -67,6 +67,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - producer 第 3 階段盤點:四項交付皆已實作,缺的是在家目視;音效零;立繪成品仍在 AI_IMG。
 - 裁決(12:15):局面集 B「**做,先補鎖定再量(推薦)**」/ 極性顯示「**請創意總監查並給選項(推薦)**」/ 總表與骨架「**加註更新(推薦)**」。
 - ⏳ 12:20 平行派:qa-lead 補鎖定 `docs/reviews/protocol1-computer-half-lock-plan-B-2026-11-05.md` / creative-director `docs/reviews/affinity-polarity-display-options-2026-11-05.md` / producer 草稿 `docs/reviews/index-and-skeleton-annotations-draft-2026-11-05.md`(同上午格式,協調者用 scratchpad apply.js 改目標表套用)。
+- ✅ creative-director:極性**是漏掉的**(`game-concept.md` 第 244 行「全圖檢視模式僅顯示好感度極性與強度」;`design/ux/relation-minimap.md` 把「極性」誤用為目前效果)。🔴 裁決:「**丙,但我覺得灰線可以拿掉,沒效果就是什麼都沒有,加灰線反而畫面很髒**」(管理者自填:線形=關係、線色=效果、距離 2 不畫線)。後果(距離 2 棋盤上看不到關係)已告知,交 ux-designer 在規格處理。
+- ✅ `7345841`:系統總表 #6/#10、骨架開放問題 #2 加註(錨點腳本 3 處 + 骨架第一部分指路 1 行);極性選項書、局面集 B 鎖定草稿一併提交。
+- 裁決:局面集 B「**不量,人力轉去做友敵顯示(推薦)**」(鎖定草稿留檔不執行)。
+- ⏳ 14:05 派 ux-designer 規格修改草稿 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(協調者審後套用;線形畫法交 art-director;實作另派;最後需管理者在家目視)。
 - 下一步候選(皆需管理者):無。剩餘待辦:第 3 階段要做什麼(對話卡牌已做?需 producer 盤點)、PROJECT-STATUS 收工重寫。
 - 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
 
