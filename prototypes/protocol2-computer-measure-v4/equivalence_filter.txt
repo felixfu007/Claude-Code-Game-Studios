@@ -1,0 +1,3 @@
+過濾法(A/B/C 三檔共用):刪去 `^Godot Engine`、`^HEADER`、`^ENGINE EXIT`(執行後附加的行)與空行,其餘逐行 diff。
+  grep -v '^Godot Engine\|^HEADER\|^ENGINE EXIT\|^$' <file>
+過濾後兩邊 wc -l 必須相等且 > 0。

@@ -2945,10 +2945,10 @@ static func compose_info_line(affinity_text: String, guard_text: String) -> Stri
 ## [param hypo_positions] 為「該單位站在 tile 時」的位置表(現況就傳 [method AffinityPhiProvider.positions])。
 ## Φ 取 [method AffinityRules.bonus_for_at],獨行取 [method BattleState.lone_guard_if_at]。
 func _displayed_guard_at(
-		unit_id: int, tile: Vector2i, hypo_positions: Dictionary[int, Vector2i], will_attack: bool = false
+		unit_id: int, tile: Vector2i, hypo_positions: Dictionary[int, Vector2i]
 ) -> int:
 	var phi_def: int = AffinityRules.bonus_for_at(unit_id, tile, hypo_positions, _phi.links(), _state.affinity_tuning)
-	var lone: int = _state.lone_guard_if_at(unit_id, tile, will_attack)
+	var lone: int = _state.lone_guard_if_at(unit_id, tile)
 	return displayed_guard(phi_def, lone, _hide_affinity_display_for_this_battle, _state.combat_tuning)
 
 
@@ -4968,7 +4968,7 @@ func _update_tile_info_panel() -> void:
 		if occupant.faction == Unit.Faction.PLAYER:
 			var here: Vector2i = _state.position_of(occupant.id)
 			guard_text = format_guard_value(_displayed_guard_at(
-				occupant.id, here, _phi.positions(), _state.attacked_this_phase(occupant.id)
+				occupant.id, here, _phi.positions()
 			))
 		_set_tile_info_extra_line(guard_text != "")
 		if guard_text != "":

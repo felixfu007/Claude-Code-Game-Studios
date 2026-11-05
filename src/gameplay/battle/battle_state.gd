@@ -550,10 +550,6 @@ func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 	var dealt: int = _compute_attack_damage(attacker_id, target_id, phi)
 	var target: Unit = unit_by_id(target_id)
 	commit_authoritative_change(func() -> void:
-		# story-033: record "this attacker settled an attack this player phase"
-		# INSIDE the commit window (ADR-0001). Both drivers' attack paths
-		# (BattleController._apply_attack / enemy step, BattleLoop) funnel here.
-		_attacked_this_phase[attacker_id] = true
 		target.take_damage(dealt)
 		if not target.is_alive():
 			board._clear_occupant(position_of(target_id))
@@ -764,34 +760,17 @@ func _nearest_ally_distance(unit: Unit, tile: Vector2i) -> int:
 	return d_min
 
 
-## story-033 (spec amend1 §1): units that settled at least one attack
-## ([method resolve_attack] as attacker) since the current player phase began.
-## Kept for the whole following enemy phase; cleared by [method begin_player_turn].
-## Belongs to the tactical battle state (NOT the affinity system). Written only
-## inside [method commit_authoritative_change] (resolve_attack / begin_player_turn
-## both run inside a commit window in every driver).
-var _attacked_this_phase: Dictionary = {}
-
-
-## story-033: (story-034: 旗標寫入暫留、不再被讀取 -- 已棄用,忽略) true if [param unit_id] attacked during the current/just-finished
-## player phase. Enemy-first battles: false before any player phase (empty dict).
-func attacked_this_phase(unit_id: int) -> bool:
-	return _attacked_this_phase.has(unit_id)
-
-
 ## story-031/033: lone-guard value unit [param unit_id] WOULD have if it stood on
-## [param tile] (other units at their current positions) and
-## [param will_attack] -- 已棄用,忽略 (story-034 / amend2 §1: 出手條件取消; the
-## parameter no longer affects the result, kept only so existing callers compile). Returns 0
+## [param tile] (other units at their current positions). Returns 0
 ## for an unknown id, a non-PLAYER unit, or a unit not flagged
 ## [member Unit.lone_guard]. [method preview_damage_breakdown] calls this with
 ## the real position, so there is exactly one d_min loop ([method _nearest_ally_distance]).
-func lone_guard_if_at(unit_id: int, tile: Vector2i, will_attack: bool = false) -> int:
+func lone_guard_if_at(unit_id: int, tile: Vector2i) -> int:
 	var target: Unit = unit_by_id(unit_id)
 	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
 		return 0
 	var d_min: int = _nearest_ally_distance(target, tile)
-	return CombatRules.lone_guard_effective(CombatRules.lone_guard(d_min, combat_tuning), will_attack)
+	return CombatRules.lone_guard(d_min, combat_tuning)
 
 
 # Shared by resolve_attack() and preview_damage(): computes the damage a
@@ -916,9 +895,6 @@ func deal_opening_hand() -> void:
 ## surfaces that as a loud [method CardDeck.draw_for_turn] assert failure
 ## instead of silently skipping the draw — deliberate, not an oversight.
 func begin_player_turn() -> void:
-	# story-033: new player phase -> nobody has attacked yet (inside the commit
-	# window both drivers wrap this call in).
-	_attacked_this_phase.clear()
 	tick_all_modifiers()
 	if _card_deck != null:
 		_card_deck.draw_for_turn()

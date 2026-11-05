@@ -47,15 +47,6 @@ func test_enemy_damage_on_straddler_no_ally_is_6() -> void:
 	assert_int(_enemy_dmg_on_5(_build(4, false))).is_equal(6)
 
 
-func test_will_attack_param_is_ignored_same_result_true_false() -> void:
-	var s: BattleState = _build(2)
-	for tile: Vector2i in [Vector2i(2, 0), Vector2i(1, 0), Vector2i(5, 0), Vector2i(4, 2)]:
-		assert_int(s.lone_guard_if_at(5, tile, true)).is_equal(s.lone_guard_if_at(5, tile, false))
-	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), true)).is_equal(2)
-	assert_int(CombatRules.lone_guard_effective(2, true)).is_equal(2)
-	assert_int(CombatRules.lone_guard_effective(-1, true)).is_equal(-1)
-
-
 func test_attacking_no_longer_cancels_straddler_guard() -> void:
 	var s: BattleState = _build(2)
 	s.resolve_attack(5, 6, 0)

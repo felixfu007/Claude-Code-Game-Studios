@@ -185,9 +185,6 @@ func test_ac5_hide_setting_does_not_change_damage_preview() -> void:
 
 # ---- 敏感度證明 -----------------------------------------------------------------
 
-# story-034:test_sensitivity_proof_ignoring_will_attack_loses_dual 與其變種 _MutantIgnoresWillAttack
-# 作廢 —— will_attack 已棄用、忽略,變種與正式行為相同,證明不再有可偵測的差異。
-
 
 func test_sensitivity_proof_ignoring_hide_is_detected() -> void:
 	var instance: BattleScreen = _battle(true, _MutantIgnoresHide)
@@ -213,7 +210,6 @@ func test_lone_guard_part_still_shown_after_unit_attacked() -> void:
 	assert_bool(cell != Vector2i(-1, -1)).append_failure_message("PRECONDITION: 需有一格獨行減傷 > 0(d=2)").is_true()
 	instance._state.move_unit(u.id, cell)
 	var full: int = instance._state.lone_guard_if_at(u.id, cell)
-	instance._state._attacked_this_phase[u.id] = true
 	_hover(instance, cell)
 	assert_str(instance._tile_info_panel_label.text).contains(BattleScreen.format_guard_value(full))
 

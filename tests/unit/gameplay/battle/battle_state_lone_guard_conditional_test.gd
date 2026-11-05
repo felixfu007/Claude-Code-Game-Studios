@@ -1,8 +1,6 @@
-# story-033 AC2/AC3/AC4:戊獨行減傷條件化(本回合出手過才取消正向)。
+# story-033/034:戊獨行減傷(出手條件已於 story-034 取消;舊旗標機制於 story-035 移除)。
 # 規格:docs/reviews/affinity-core-redesign-spec-amend1-2026-10-30.md 第 1 節。
 # 全部用測試內聯迷你地形/名冊(不讀任何檔案、不載入 vs01 對局、不跑自動對戰)。
-# 旗標寫入點:BattleState.resolve_attack 的 commit_authoritative_change 內;
-# 清除點:BattleState.begin_player_turn(兩個 driver 皆包在提交窗內)。
 extends GdUnitTestSuite
 
 const _TERRAIN: PackedStringArray = ["......", "......", "......"]
@@ -20,44 +18,6 @@ func _build(lone_x: int) -> BattleState:
 
 func _enemy_dmg_on_5(state: BattleState) -> int:
 	return int(state.preview_damage_breakdown(6, 5, 0).breakdown["damage"])
-
-
-# ---- 旗標生命週期 -------------------------------------------------------------
-
-func test_flag_initially_false_enemy_first_battle_counts_as_not_attacked() -> void:
-	var s: BattleState = _build(4)
-	assert_bool(s.attacked_this_phase(5)).is_false()
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)  # story-034 (amend2): 舊值 14-8-2(d=4 +2)→ 新值 14-8(d>=3 為 0)
-
-
-func test_flag_set_when_lone_unit_resolves_attack_as_attacker() -> void:
-	var s: BattleState = _build(4)
-	s.resolve_attack(5, 6, 0)
-	assert_bool(s.attacked_this_phase(5)).is_true()
-	assert_bool(s.attacked_this_phase(1)).is_false()
-
-
-func test_flag_not_set_by_being_attacked_or_moving() -> void:
-	var s: BattleState = _build(4)
-	s.resolve_attack(6, 5, 0)  # 戊被打
-	assert_bool(s.attacked_this_phase(5)).is_false()
-
-
-func test_flag_cleared_when_new_player_phase_begins() -> void:
-	var s: BattleState = _build(4)
-	s.resolve_attack(5, 6, 0)
-	assert_bool(s.attacked_this_phase(5)).is_true()
-	s.begin_player_turn()
-	assert_bool(s.attacked_this_phase(5)).is_false()
-	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8)  # 舊值 14-8-2(又回到 +2)→ 新值 14-8
-
-
-func test_flag_write_goes_through_commit_window_version_bumps_once() -> void:
-	var s: BattleState = _build(4)
-	var v0: int = s.combat_state_version
-	s.resolve_attack(5, 6, 0)
-	assert_int(s.combat_state_version).is_equal(v0 + 1)
-	assert_bool(s.write_window_is_open()).is_false()
 
 
 # ---- 條件化的減傷值 -----------------------------------------------------------
@@ -85,32 +45,18 @@ func test_attacked_d2_keeps_plus_2() -> void:
 	assert_int(_enemy_dmg_on_5(s)).is_equal(14 - 8 - 2)
 
 
-func test_other_units_not_affected_by_lone_units_flag() -> void:
+func test_other_units_not_affected_by_lone_unit_attacking() -> void:
 	var s: BattleState = _build(4)
 	s.resolve_attack(5, 6, 0)
 	assert_int(int(s.preview_damage_breakdown(6, 1, 0).breakdown["lone_guard"])).is_equal(0)
 
 
-# ---- 查詢介面:lone_guard_if_at(unit_id, tile, will_attack) -----------------
-
-# story-034 (amend2): will_attack 已棄用,忽略:true/false 結果相同(舊值 (5,2,true)→0 / (2,0,true)→0 → 新值 0 / 2)
-func test_lone_guard_if_at_will_attack_param_is_ignored() -> void:
-	var s: BattleState = _build(1)  # 戊 (1,0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2), false)).is_equal(0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2), true)).is_equal(0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), true)).is_equal(2)
-	assert_int(s.lone_guard_if_at(5, Vector2i(2, 0), false)).is_equal(2)
-	assert_int(s.lone_guard_if_at(5, Vector2i(0, 1), true)).is_equal(-1)
-	assert_int(s.lone_guard_if_at(5, Vector2i(0, 1), false)).is_equal(-1)
-	s.resolve_attack(5, 6, 0)
-	assert_int(s.lone_guard_if_at(5, Vector2i(5, 2))).is_equal(0)
-	# 無副作用
-	assert_that(s.position_of(5)).is_equal(Vector2i(1, 0))
+# ---- 查詢介面:lone_guard_if_at(unit_id, tile) ----------------------------------
 
 
-func test_breakdown_equals_lone_guard_if_at_with_real_position_and_real_flag() -> void:
+func test_breakdown_equals_lone_guard_if_at_with_real_position() -> void:
 	var s: BattleState = _build(4)
 	s.resolve_attack(5, 6, 0)
 	var via_breakdown: int = int(s.preview_damage_breakdown(6, 5, 0).breakdown["lone_guard"])
-	assert_int(via_breakdown).is_equal(s.lone_guard_if_at(5, s.position_of(5), s.attacked_this_phase(5)))
+	assert_int(via_breakdown).is_equal(s.lone_guard_if_at(5, s.position_of(5)))
 	assert_int(via_breakdown).is_equal(0)

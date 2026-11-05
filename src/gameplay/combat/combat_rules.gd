@@ -64,13 +64,6 @@ static func lone_guard(d_min: int, tuning: CombatTuning = null) -> int:
 	return t.lone_mid_guard()
 
 
-## story-033 (amend1) conditional rule -- 已棄用,忽略 (story-034 / amend2 §1:出手條件取消).
-## [param attacked] no longer affects the result; always returns [param lone].
-## Kept only so existing callers still compile; a follow-up story removes it.
-static func lone_guard_effective(lone: int, _attacked: bool) -> int:
-	return lone
-
-
 ## story-034 (spec amend2 §2) 留一手 knobs.
 const HOLD_BACK_DISTANCE: int = 2
 const HOLD_BACK_PENALTY: int = 1
