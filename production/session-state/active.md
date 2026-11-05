@@ -52,6 +52,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 🔴 **覆核收穫**:曲線測試原在測試內自己呼叫 AffinityRules,證明不了畫面預覽有傳 tuning → 改呼叫 `_guess_delta_for_cell()`。實作者發現 vs01 開場甲乙已相鄰,改用 3 格外假想格(-4/-6)。**協調者自做 production 突變**(預覽兩處傳 null):1867 / 2 failures、唯一 FAILED 為新測試 → 還原(diff 空)。全套 `ENGINE EXIT = 0` / `1868 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)` → `9d4161a`。連續零收穫 = 0。
 - 📌 第九十三批末「待辦:請示改 architecture.yaml phi_clamp」**已過時** —— `aecaba7` 已加 LOCATION UPDATE。
 - 09:30 派 producer(只讀)列「公司可做」清單,含協議 2 是否已正式結案(決定死碼第二步能否動)。
+- ✅ producer 清單 6 項(協調者核:VERDICT 第 93 行「不自動授權」、計畫書無 attempt-4/5 字樣、story-021 仍寫 Ready、計畫最後修改 `38b3c52` 10-30)。
+- 🔴 **裁決(約 09:50)**:協議 2「**結案,但工具留著當安全檢查(推薦)**」(被跳過:結案但舊程式先留 / 不結案等真人);計畫書「**更新,舊文保留只加註(推薦)**」(被跳過:只改狀態欄 / 不動);協議 1「**目前無法找真人測試,看能不能用其他方法替代**」(管理者自填,非選項)。
+- ⚠️ 協調者題目又把「戊」誤植為「戰」,已更正。🔴 協調者選項文字漏了:**正式工具 `prototypes/protocol2-computer-measure-v3/p2_decision.gd` 也用死碼符號**(共 8 檔)→ 已揭露;處置:複製成 v4 改呼叫、v3 留歷史、前後逐行等價證明。
+- 派三件(平行,皆只寫新檔):lead-programmer 寫死碼第二步工單(tactical-combat 下一號)/ producer 起草計畫與狀態欄加註 `docs/reviews/plan-and-status-annotations-draft-2026-11-05.md`(協調者用錨點腳本套)/ game-designer 協議 1 替代法 `docs/reviews/protocol1-alternatives-2026-11-05.md`。
 
 ## 🔴 第九十三批(2026-11-04,公司,08:34 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
