@@ -2,6 +2,7 @@
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
 > **Status**: Ready(2026-10-28)
+> ✅ **2026-11-06 加註:實作已於 2026-10-28 提交 `2ab702a`(「feat(battle): story-021 自動對戰迴圈接上好感度加成」),本狀態欄未同步;以此為準視為完成。** 管理者 2026-11-06 核准加註。
 > 🔴 **2026-11-05 加註(上一行原文未改):本張實際已交付,狀態欄當時未更新。**
 > 實作提交 `2ab702a`(2026-10-28,`feat(battle): story-021 自動對戰迴圈接上好感度加成`),新增測試
 > `tests/unit/gameplay/battle/battle_loop_phi_provider_test.gd`(6 條,含常駐變種 `_MutantZeroPhi`)。

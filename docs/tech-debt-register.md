@@ -13,6 +13,12 @@
 
 ## Open
 
+- **2026-11-06**(relation-minimap story-002 第二段,協調者覆核):
+  **`BattleScreen` 與 `RelationMinimap` 現在互相靜態引用。** 關係圖改用 `BattleScreen.line_shape_for()` / `line_style_for()`(全專案單一轉換點,AC-P7),而 `BattleScreen` 本來就持有並設定關係圖。
+  現況不會壞(引擎無循環引用錯誤,全套與 CI 皆綠),但日後拆分 `BattleScreen`、或讓 `-s` 腳本靜態引用 `RelationMinimap` 時會被牽連(本專案已知:`-s` 腳本靜態引用依賴 Autoload 的類別會編譯失敗)。
+  **可能的清償**:把「狀態 → 形狀/色調/符號」轉換搬到一個不依賴場景的純類別,兩邊都引用它。**不阻擋任何工作,不排程。**
+  管理者 2026-11-06 核准登記。追蹤來源:`8bcbcea`
+
 - **2026-10-13**(`story-008` 單位 2,實作者 `ui-programmer` 發現 + 管理者裁決):
   🔴 **手把搖桿的方向輸入在游標系統端沒有去抖動機制,而鍵盤有。**
   ADR-0005 機制四之二只過濾 `InputEventKey.echo`,**而 `InputEventJoypadMotion` 根本沒有

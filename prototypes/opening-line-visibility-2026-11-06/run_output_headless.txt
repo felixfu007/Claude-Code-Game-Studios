@@ -1,0 +1,87 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+WARNING: BattleScreen: res://assets/data/affinity/tutorial_no_links.txt parsed to zero affinity links (PARSED_EMPTY) — proceeding with no pairings
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1809)
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1837)
+LEVEL TUT1 injected terrain=res://assets/data/levels/tut01_terrain.txt roster=res://assets/data/units/tut01_roster.txt affinity=res://assets/data/affinity/tutorial_no_links.txt
+  resolved={ "terrain": "res://assets/data/levels/tut01_terrain.txt", "roster": "res://assets/data/units/tut01_roster.txt", "affinity": "res://assets/data/affinity/tutorial_no_links.txt", "cards": "res://assets/data/cards/tutorial_cards.txt", "card_text": "res://assets/data/cards/tutorial_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  hide_affinity_flag=false board_Line2D_children=0 (=0 lines x2 strokes)
+  LEVEL_SUMMARY TUT1 pairs=0 undrawn=0 board_lines=0
+WARNING: BattleScreen: res://assets/data/affinity/tutorial_no_links.txt parsed to zero affinity links (PARSED_EMPTY) — proceeding with no pairings
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1809)
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1837)
+LEVEL TUT2 injected terrain=res://assets/data/levels/tut02_terrain.txt roster=res://assets/data/units/tut02_roster.txt affinity=res://assets/data/affinity/tutorial_no_links.txt
+  resolved={ "terrain": "res://assets/data/levels/tut02_terrain.txt", "roster": "res://assets/data/units/tut02_roster.txt", "affinity": "res://assets/data/affinity/tutorial_no_links.txt", "cards": "res://assets/data/cards/tutorial_cards.txt", "card_text": "res://assets/data/cards/tutorial_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  hide_affinity_flag=false board_Line2D_children=0 (=0 lines x2 strokes)
+  LEVEL_SUMMARY TUT2 pairs=0 undrawn=0 board_lines=0
+WARNING: BattleScreen: res://assets/data/affinity/tutorial_no_links.txt parsed to zero affinity links (PARSED_EMPTY) — proceeding with no pairings
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1809)
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1837)
+LEVEL TUT3 injected terrain=res://assets/data/levels/tut03_terrain.txt roster=res://assets/data/units/tut03_roster.txt affinity=res://assets/data/affinity/tutorial_no_links.txt
+  resolved={ "terrain": "res://assets/data/levels/tut03_terrain.txt", "roster": "res://assets/data/units/tut03_roster.txt", "affinity": "res://assets/data/affinity/tutorial_no_links.txt", "cards": "res://assets/data/cards/tutorial_cards.txt", "card_text": "res://assets/data/cards/tutorial_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  hide_affinity_flag=false board_Line2D_children=0 (=0 lines x2 strokes)
+  LEVEL_SUMMARY TUT3 pairs=0 undrawn=0 board_lines=0
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1837)
+LEVEL TUT4 injected terrain=res://assets/data/levels/tut04_terrain.txt roster=res://assets/data/units/tut04_roster.txt affinity=res://assets/data/affinity/tut04_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/tut04_terrain.txt", "roster": "res://assets/data/units/tut04_roster.txt", "affinity": "res://assets/data/affinity/tut04_affinity_links.txt", "cards": "res://assets/data/cards/tutorial_cards.txt", "card_text": "res://assets/data/cards/tutorial_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  hide_affinity_flag=false board_Line2D_children=2 (=1 lines x2 strokes)
+  LEVEL_SUMMARY TUT4 pairs=1 undrawn=0 board_lines=1
+LEVEL VS1 injected terrain=res://assets/data/levels/vs01_terrain.txt roster=res://assets/data/units/vs01_roster.txt affinity=res://assets/data/affinity/vs01_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/vs01_terrain.txt", "roster": "res://assets/data/units/vs01_roster.txt", "affinity": "res://assets/data/affinity/vs01_affinity_links.txt", "cards": "res://assets/data/cards/vs01_cards.txt", "card_text": "res://assets/data/cards/vs01_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  PAIR 3,4 dist=2 delta=0 state=NEUTRAL shape=ZIGZAG drawn=false (diag shape=1)
+  hide_affinity_flag=false board_Line2D_children=2 (=1 lines x2 strokes)
+  LEVEL_SUMMARY VS1 pairs=2 undrawn=1 board_lines=1
+LEVEL VS2 injected terrain=res://assets/data/levels/vs02_terrain.txt roster=res://assets/data/units/vs02_roster.txt affinity=res://assets/data/affinity/vs02_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/vs02_terrain.txt", "roster": "res://assets/data/units/vs02_roster.txt", "affinity": "res://assets/data/affinity/vs02_affinity_links.txt", "cards": "res://assets/data/cards/vs02_cards.txt", "card_text": "res://assets/data/cards/vs02_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  PAIR 3,4 dist=1 delta=-1 state=NEGATIVE shape=ZIGZAG drawn=true (diag shape=1)
+  hide_affinity_flag=false board_Line2D_children=4 (=2 lines x2 strokes)
+  LEVEL_SUMMARY VS2 pairs=2 undrawn=0 board_lines=2
+LEVEL VS3 injected terrain=res://assets/data/levels/vs03_terrain.txt roster=res://assets/data/units/vs03_roster.txt affinity=res://assets/data/affinity/vs03_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/vs03_terrain.txt", "roster": "res://assets/data/units/vs03_roster.txt", "affinity": "res://assets/data/affinity/vs03_affinity_links.txt", "cards": "res://assets/data/cards/vs03_cards.txt", "card_text": "res://assets/data/cards/vs03_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  PAIR 3,4 dist=1 delta=-1 state=NEGATIVE shape=ZIGZAG drawn=true (diag shape=1)
+  hide_affinity_flag=false board_Line2D_children=4 (=2 lines x2 strokes)
+  LEVEL_SUMMARY VS3 pairs=2 undrawn=0 board_lines=2
+LEVEL VS4 injected terrain=res://assets/data/levels/vs04_terrain.txt roster=res://assets/data/units/vs04_roster.txt affinity=res://assets/data/affinity/vs04_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/vs04_terrain.txt", "roster": "res://assets/data/units/vs04_roster.txt", "affinity": "res://assets/data/affinity/vs04_affinity_links.txt", "cards": "res://assets/data/cards/vs04_cards.txt", "card_text": "res://assets/data/cards/vs04_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  PAIR 3,4 dist=1 delta=-1 state=NEGATIVE shape=ZIGZAG drawn=true (diag shape=1)
+  hide_affinity_flag=false board_Line2D_children=4 (=2 lines x2 strokes)
+  LEVEL_SUMMARY VS4 pairs=2 undrawn=0 board_lines=2
+LEVEL VS5 injected terrain=res://assets/data/levels/vs05_terrain.txt roster=res://assets/data/units/vs05_roster.txt affinity=res://assets/data/affinity/vs05_affinity_links.txt
+  resolved={ "terrain": "res://assets/data/levels/vs05_terrain.txt", "roster": "res://assets/data/units/vs05_roster.txt", "affinity": "res://assets/data/affinity/vs05_affinity_links.txt", "cards": "res://assets/data/cards/vs05_cards.txt", "card_text": "res://assets/data/cards/vs05_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+  PAIR 1,2 dist=1 delta=3 state=POSITIVE shape=SOLID drawn=true (diag shape=0)
+  PAIR 3,4 dist=1 delta=-1 state=NEGATIVE shape=ZIGZAG drawn=true (diag shape=1)
+  hide_affinity_flag=false board_Line2D_children=4 (=2 lines x2 strokes)
+  LEVEL_SUMMARY VS5 pairs=2 undrawn=0 board_lines=2
+TOTAL pairs=11 undrawn=1
+SUMMARY TUT1 pairs=0 undrawn=0 board_lines=0
+SUMMARY TUT2 pairs=0 undrawn=0 board_lines=0
+SUMMARY TUT3 pairs=0 undrawn=0 board_lines=0
+SUMMARY TUT4 pairs=1 undrawn=0 board_lines=1
+SUMMARY VS1 pairs=2 undrawn=1 board_lines=1
+SUMMARY VS2 pairs=2 undrawn=0 board_lines=2
+SUMMARY VS3 pairs=2 undrawn=0 board_lines=2
+SUMMARY VS4 pairs=2 undrawn=0 board_lines=2
+SUMMARY VS5 pairs=2 undrawn=0 board_lines=2

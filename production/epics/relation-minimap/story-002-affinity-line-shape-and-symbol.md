@@ -2,6 +2,7 @@
 
 > **Epic**: `production/epics/relation-minimap/EPIC.md`
 > **Status**: Ready(2026-11-06 起草,待協調者核可後派工)
+> ✅ **2026-11-06 加註:程式完成,待在家實拍樣張與目視。** 棋盤 `d10c54e`、關係圖 `8bcbcea`、樣張驅動 `4a31fe4`(只經 headless 驗證)。樣張交 art-director 代看,最後管理者在家目視。
 > **Type**: UI(像素類 AC 為開窗截圖;結構類 AC 為 headless 自動測試)
 > **規格權威**: `design/ux/affinity-line-display.md`(2026-11-06 定案)。本工單**不新增任何設計決定**,AC 逐條引用該檔 AC-P1~P9,**不改寫內容**;規格與本工單有出入時以規格為準。
 > **指派**: `ui-programmer`(`.gd` 檔路由 `godot-gdscript-specialist`;`.tscn` 若動則 `godot-specialist`)
