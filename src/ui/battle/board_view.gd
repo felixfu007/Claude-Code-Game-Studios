@@ -645,11 +645,18 @@ func set_affinity_lines(lines: Array[Dictionary]) -> void:
 ## +-[constant AFFINITY_ZIGZAG_AMPLITUDE] perpendicular, alternating; both end
 ## vertices and (because n is odd) the exact midpoint have zero offset. Every
 ## vertex is rounded to whole pixels. Public + static so tests can call it.
-static func affinity_line_points(from_pos: Vector2, to_pos: Vector2, shape: LineShape) -> PackedVector2Array:
+static func affinity_line_points(
+	from_pos: Vector2,
+	to_pos: Vector2,
+	shape: LineShape,
+	amplitude: float = AFFINITY_ZIGZAG_AMPLITUDE,
+	half_period: float = AFFINITY_ZIGZAG_HALF_PERIOD,
+	round_vertices: bool = true
+) -> PackedVector2Array:
 	if shape == LineShape.SOLID:
 		return PackedVector2Array([from_pos, to_pos])
 	var length: float = from_pos.distance_to(to_pos)
-	var segments: int = 2 * roundi((length / AFFINITY_ZIGZAG_HALF_PERIOD - 1.0) / 2.0) + 1
+	var segments: int = 2 * roundi((length / half_period - 1.0) / 2.0) + 1
 	segments = maxi(segments, AFFINITY_ZIGZAG_MIN_SEGMENTS)
 	var dir: Vector2 = (to_pos - from_pos) / length
 	var normal: Vector2 = Vector2(-dir.y, dir.x)
@@ -658,8 +665,8 @@ static func affinity_line_points(from_pos: Vector2, to_pos: Vector2, shape: Line
 		var p: Vector2 = from_pos.lerp(to_pos, float(i) / float(segments))
 		if i > 0 and i < segments:
 			var sign_value: float = 1.0 if i % 2 == 0 else -1.0
-			p += normal * (sign_value * AFFINITY_ZIGZAG_AMPLITUDE)
-		points.append(p.round())
+			p += normal * (sign_value * amplitude)
+		points.append(p.round() if round_vertices else p)
 	return points
 
 

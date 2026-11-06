@@ -56,6 +56,13 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ 新規格 `design/ux/affinity-line-display.md`(協調者彙整,不新增決定)+ 4 檔 13 處只插入加註(裁決「**可以,照這樣加註(推薦)**」;驗證:移除插入文字後與 HEAD 逐位元相同)→ `f2159a4`。
 - 裁決「**現在開工,樣張交美術總監代看(推薦)**」(被跳過:先只畫樣張不改遊戲)。
 - ⏳ 10:10 派 lead-programmer 寫 `production/epics/relation-minimap/story-002-affinity-line-shape-and-symbol.md`(只寫新檔);同時協調者跑開工基準全套(log 在 scratchpad base.log)。
+- ✅ art-director 追加 4 題 `docs/reviews/polarity-line-art-answers-2-2026-11-06.md`:牌與線同層(被遮可接受)、同號中點一塊/異號左正右負 ±4、牌左上 mid−(3,3)、鋸齒段數最小 3、Line2D SHARP/CAP_NONE(列舉名待核)。協調者自決(不問管理者):共線重疊靠並排符號牌分辨 + 樣張 A/D 驗,看不清再出選項;關係圖符號牌 7×N,N 呼叫 `WorldLayout.compute_scale()`,樣張 E 驗。工單+回答 `87377f4`。
+- ⏳ 10:55 派 ui-programmer story-002 **第一段(棋盤)**,不碰 relation_minimap.gd、不 commit。第二段關係圖、第三段樣張(交 art-director 代看)。
+- ✅ **第一段 `d10c54e`**:`line_style_for()` 唯一轉換點(取代 line_tone_for、MUTED 移除)、鋸齒/符號牌/0 效果不畫,+18 測試。協調者讀 diff;疑點「ColorRect 預設攔滑鼠」已排除(棋盤輸入走 `_input`,HP 條同型一直正常);重跑 `ENGINE EXIT = 0` / `1878 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(178/178)`;協調者突變「形狀恆實線」→ `test_ac_p1` 紅 → 還原(標記 0)。實測開局 board_lines 只有 2 筆(真實關係表本就少數幾對,非缺陷)。本批覆核收穫 0(連續零收穫 = 1)。
+- 🔴 第三段樣張需開窗 → **上班時段不得開窗**(記憶 private_dev_at_work,2026-09-24 裁決「改在私人時間跑」)。公司只做:寫好截圖驅動腳本 + headless 驗證能載入真實 BattleScreen.tscn;實拍留在家。
+- ⏳ 11:00 SendMessage 同一實作者做**第二段(關係圖)**:改用 line_style_for、刪 symbol_for、0 效果 COLOR_NODE 0.6、色值引用 BoardView、牌 7×N(N 走 compute_scale)。
+- 第二段交件(未提交):拆出 `line_shape_for()`;relation_minimap 刪 symbol_for/虛線/自有色值;`affinity_line_points` 加 3 個帶預設參數(棋盤逐點不變有測試);+9 測試,實作者 1887/179 全綠。⚠️ 新增 BattleScreen↔RelationMinimap 雙向靜態相依(技術債候選,不阻擋)。協調者突變「hand_bar.gd 加第二個 line_shape_for」→ `test_ac_p7_whole_project…` 紅 → 還原(0 處)。
+- 協調者重跑 1887 / **1 failure = 計時測試 real_level_battle 30.1s(門檻 30s)**。A/B:第二段版本單跑 25.7/22.1s;**收起第二段 src 的第一段版本單跑 28.9/53.2s** → 判定機器負載(qemu 3GB),非回歸。背景重跑全套確認中。
 - 開工基準全套(協調者):`ENGINE EXIT = 0` / `1860 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)`。
 - ✅ story-002 工單交件(未提交)。10 個未決點分流:命名/色盲/筆數/命名守則 → 實作者照工單;詳情區 → 協調者核 `relation_minimap.gd` 無詳情區 + EPIC 裁決 5 不做地圖游標 = **不在範圍**;層次/中點重疊/取整/鋸齒邊界 → 10:35 SendMessage art-director 寫 `docs/reviews/polarity-line-art-answers-2-2026-11-06.md`。⚠️ 會紅測試:`battle_screen_relation_minimap_test.gd`(181 線層子節點=線數×2)、`battle_screen_preview_test.gd`、`battle_screen_hide_affinity_test.gd`(前提「開局有線」可能失效)。
 

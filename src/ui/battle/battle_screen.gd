@@ -1255,7 +1255,7 @@ func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	_relation_minimap.position = rect.position
 	_relation_minimap.size = rect.size
 	var fpx: int = HudLayout.font_size(window_size)
-	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx)
+	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx, WorldLayout.compute_scale(window_size))
 	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
 	# 先換字級再設尺寸(理由同 _apply_hud_action_buttons_layout)。
 	_relation_toggle_button.add_theme_font_size_override(&"font_size", HudLayout.small_font_size(window_size))
@@ -2797,12 +2797,18 @@ static func line_style_for(status: AffinityLineStatus) -> Dictionary:
 			symbol = BoardView.LineSymbol.MINUS
 		_:
 			return {}
-	var shape: BoardView.LineShape = (
-		BoardView.LineShape.SOLID
-		if status.polarity == AffinityLink.Polarity.POSITIVE
-		else BoardView.LineShape.ZIGZAG
-	)
-	return {"shape": shape, "tone": tone, "symbol": symbol}
+	return {"shape": line_shape_for(status), "tone": tone, "symbol": symbol}
+
+
+## The single RELATION -> shape conversion (R1): POSITIVE polarity = solid,
+## NEGATIVE = zigzag. Split out of [method line_style_for] because the relation
+## minimap also draws zero-effect lines (R4), for which [method line_style_for]
+## returns an empty dictionary — yet their shape must still come from this same
+## function, not a second copy. [method line_style_for] calls it too.
+static func line_shape_for(status: AffinityLineStatus) -> BoardView.LineShape:
+	if status.polarity == AffinityLink.Polarity.POSITIVE:
+		return BoardView.LineShape.SOLID
+	return BoardView.LineShape.ZIGZAG
 
 
 ## Story U-011 — maps [param category] to the display-only

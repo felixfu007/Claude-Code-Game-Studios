@@ -229,11 +229,24 @@ func test_ac13_minimap_source_never_touches_affinity_layer() -> void:
 
 # ---- 非色彩 / 在地化 / 版面 ------------------------------------------------------
 
-func test_symbols_differ_per_state_not_colour_only() -> void:
-	var p: String = RelationMinimap.symbol_for(AffinityLineStatus.State.POSITIVE)
-	var n: String = RelationMinimap.symbol_for(AffinityLineStatus.State.NEGATIVE)
-	var z: String = RelationMinimap.symbol_for(AffinityLineStatus.State.NEUTRAL)
-	assert_bool(p != n and n != z and p != z).is_true()  # 關係圖仍是舊畫法,下一段才改
+# 改前:斷言 RelationMinimap.symbol_for 三態兩兩不同(字元 + / - / 0)。
+# 改後(story-002 R4/R5):符號 0 與 symbol_for 皆已刪除;非色彩通道 = 形狀 + 符號牌,
+# 以 diagnostic 欄位斷言:好感/惡感形狀不同,效果 0 無符號牌、非 0 有。
+func test_shape_and_plaque_channels_replace_symbol_characters() -> void:
+	var pos_rel: AffinityLineStatus = AffinityLineStatus.create(1, 2, AffinityLink.Polarity.POSITIVE, 1, 1)
+	var neg_rel: AffinityLineStatus = AffinityLineStatus.create(1, 3, AffinityLink.Polarity.NEGATIVE, 1, -1)
+	var zero_rel: AffinityLineStatus = AffinityLineStatus.create(2, 3, AffinityLink.Polarity.NEGATIVE, 2, 0)
+	var map: RelationMinimap = auto_free(RelationMinimap.new())
+	var statuses: Array[AffinityLineStatus] = [pos_rel, neg_rel, zero_rel]
+	var alive: Array[int] = [1, 2, 3]
+	map.set_lines(statuses, alive)
+	var d: Array[Dictionary] = map.diagnostic_lines()
+	assert_int(d[0]["shape"]).is_not_equal(d[1]["shape"])
+	assert_bool(d[0]["has_plaque"]).is_true()
+	assert_bool(d[1]["has_plaque"]).is_true()
+	assert_bool(d[2]["has_plaque"]).is_false()
+	assert_int(d[2]["shape"]).is_equal(BoardView.LineShape.ZIGZAG)  # 效果 0 仍依關係畫形狀
+
 
 
 func test_localization_keys_resolve() -> void:
