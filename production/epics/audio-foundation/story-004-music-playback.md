@@ -9,7 +9,7 @@
 
 ## 範圍
 
-1. 場景 → 音樂曲目對應(標題 / 戰鬥各一首循環曲,對話場景預設靜音),放資料檔 `assets/data/audio/music_tracks.csv`(`scene_key,path,fade_in_ms,fade_out_ms`)。
+1. 場景 → 音樂曲目對應(標題 / 戰鬥各一首循環曲,對話場景預設靜音),放資料檔 `assets/data/audio/music_tracks.csv`(`scene_key,path,fade_in_ms,fade_out_ms`)。〔✅ 2026-11-06 更正(管理者核准加註):檔名必須改用 `assets/data/audio/music_tracks.txt` —— `.csv` 會被 Godot 當翻譯檔匯入(story-003 已實際踩到),見 `.claude/docs/coding-standards.md`「Data files under `assets/` must not use the `.csv` extension」。本檔其餘 `.csv` 字樣一律照此讀。〕
 2. 決策核心(純):給定「前一場景曲目、新場景曲目、素材是否存在、靜音」→ 動作列舉(保持/淡出後切換/淡入/靜默)。**同一首曲目跨場景不重啟**。
 3. 素材缺席同 story-003:安靜無錯。
 4. 循環:`.ogg` 的 loop 匯入旗標是否能無縫、`AudioStreamOggVorbis.loop` 屬性名稱與 4.7.1 行為**未驗證,實作者須以引擎參考或探針確認**。

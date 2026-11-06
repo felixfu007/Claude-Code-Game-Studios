@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十五批(2026-11-06)進行中。** 友敵線 relation-minimap story-002 程式完成(`d10c54e`/`8bcbcea`/樣張驅動 `4a31fe4`),待在家實拍樣張交 art-director;音訊 audio-foundation epic 開立(`ca27ac6`),story-001 實作中;33 號音樂能力詢問已推 AI_IMG。測試 1887 全綠(CI 複驗)。
+Feature: 🔴 今日裁決逐字見第九十五批節(全為推薦)。
+Task: 🔴 **compact 後先讀第九十五批節最後幾行**,接著:驗收 audio story-001(讀 diff、重跑全套、突變)→ 派 story-002/003;17:00 收工重寫 PROJECT-STATUS(含:vs01 丙丁開場無線、教學污染檢查需重看、陌生人試玩草稿待裁 Q-A~G、game-shell story-002 加註請示)。🔴 全程台灣繁體中文。
+以下為第九十四批原狀態列。
 Epic: **第九十四批(2026-11-05)收工。** 協議 2 結案(工具 v4 留作回歸檢查,story-035 `45a20de` 清死碼);第 2 階段判定完成、第 3 階段即日開始(計畫書 `1bd5772`/`b8a10a9`);協議 1 電腦半(開場)`f508090`;AI_IMG 32 號 `1eeca1e`。測試 1866 → **1860,全綠**(協調者每批重跑)。
 Feature: 🔴 管理者今天裁決逐字見第九十四批節。極性顯示:「丙,但灰線拿掉」(管理者自填)。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`,32 號:丁徽章、棋子 img2img 10 張;回來先交 art-director);第二件:收 ux-designer 規格草稿 `docs/reviews/polarity-display-spec-diff-2026-11-05.md`(17:00 時仍在寫;若未完成,用 SendMessage 續或重派),審後給管理者看,再交 art-director 定線形畫法、再派實作;第三件:問管理者在家目視與實打第 3、4 場。🔴 全程用台灣繁體中文回覆。** 測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -82,6 +86,19 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ lead-programmer audio-foundation EPIC + story-001~004(未提交)。發現**設定無任何存檔機制**(`GameSettings` static var,game-shell story-002 寫「不做跨啟動持久化(需要存檔系統,明確不在 12 個月範圍內)」)。
 - 🔴 **裁決(約 14:20)**:「**做一個小設定檔,音量與既有兩個開關都記住(推薦)**」(被跳過:只記音量 / 都不記)。⚠️ 推翻 game-shell story-002 的範圍句,需在該檔加註(文件,下次請示)。
 - 未決(待後續):素材授權登記/遊戲內署名頁/AI 音訊揭露政策無擁有者。
+- ✅ lead-programmer 依裁決修訂 → `ca27ac6`(audio-foundation EPIC + story-001~004)。定案(lead 職權):啟動接點 `TitleScreen._ready()` 呼叫 `GameSettings.boot_load()`(協調者核 main_scene 屬實);M1 按鈕音效 = 每場景一個 `SfxPlayerHost` 連 `node_added`(SceneRouter.switch_to 加入、TitleScreen 自加);無新 Autoload;持久化預設關閉、headless 下 boot_load no-op、reset_for_test 不寫檔。
+- 📌 **下次請示(文件加註)**:game-shell story-002「不做跨啟動持久化」被取代,建議加註文字已備(lead 回報);technical-preferences.md 若有 EGM「不持久化」句也要查。
+- ⏳ 約 13:55 派 godot-gdscript-specialist 實作 audio story-001(只 headless;探針 `prototypes/audio-story001-probes-2026-11-06/`;不 commit)。
+- ✅ **audio story-001 `3623d98`**:協調者核 boot_load 冪等(`_boot_loaded`)+ ensure_buses 先查再建;突變「拿掉 _boot_loaded 防護」→ `test_boot_load_loads_once_when_called_twice` 紅 → 還原;重跑 `ENGINE EXIT = 0` / `1909 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(183/183)`;全套後無真實 settings.cfg 產生。預設音量 0.7/0.5/0.7 待家中實聽。覆核收穫:本批至今三張程式交件皆無「假設錯」型收穫(協調者自己撤回一次誤算:停損是**逐批次**計,不是逐張 —— 第九十四批計數 0,本批若收工仍零 → 1)。
+- ⏳ 14:15 平行派 audio story-002(ui-programmer,主目錄)+ story-003(gameplay-programmer,worktree 隔離)。
+- 裁決「**可以,加註(推薦)**」(game-shell story-002 兩處不持久化句)→ 已套用(純插入)。
+- 裁決「**接受(推薦)**」:story-002 實作者改了範圍外 `battle_screen_hide_affinity_test.gd` 焦點順序斷言(只改斷言)。
+- ✅ **audio story-002 `f4dd61f`**:協調者突變「靜音不寫回」→ 測試紅 → 還原;重跑 `ENGINE EXIT = 0` / `1919 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(184/184)`。已知:拖動滑桿每格寫一次設定檔(檔極小,不處理);**手把 d-pad 調滑桿 headless 未驗 → 在家開窗**;面板高 300 在 960×540 是否溢出待目視。
+- ✅ **audio story-003 `6e3da81` → 合併 `e9583b6`(已推)**。實作者兩次撞 20 回合上限、未交回報 → 協調者接手驗收。🔴 **覆核收穫**:工單規格指定 `assets/data/audio/sfx_cues.csv`,Godot 把 `.csv` 當**翻譯檔**匯入(`.import` 寫 `importer="csv_translation"`,產出 path/min/bus 三個假語系)→ 匯出版可能讀不到表、依設計安靜無聲不報錯(匯出是否打包原檔 = 未實測,C 級)。改 `.txt`(專案 63 個資料檔慣例)、刪匯入產物。**story-004 的 `music_tracks.csv` 同病,派工前必改。** 突變「靜音仍播」→ `test_sfx_policy_muted_never_plays` 紅 → 還原;合併後全套 `ENGINE EXIT = 0` / `1947 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(187/187)`。工作樹已移除。⚠️ 工作樹缺 `addons/gdUnit4/bin`(版控忽略)→ 工作樹內不能直接用 GdUnitCmdTool 跑單檔,要在主目錄做。
+- 覆核收穫本批 = 1 → 連續零收穫 = 0。小觀察:「好感度增進」音在任何好感紀錄新增時響(含負向?)—— 待家中實聽確認。
+- 📌 下次請示(文件):story-003/004 工單 `.csv` → `.txt` 加註;coding-standards 是否登記「assets 下 .csv 會被當翻譯檔匯入」陷阱。
+- story-004(音樂)暫緩:等 33 號家用端回覆能否產音樂;場景切換接點未定。
+- story-003 實作者撞 20 回合上限,15:00 前 SendMessage 續做(worktree `.claude/worktrees/agent-a92986c9105c561d7`,分支 `worktree-agent-a92986c9105c561d7`)。
 - ⏳ 11:40 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
 - ✅ 已提交:S1~S3 連線表為空(零條線與距離無關);**S4 甲(0,2)乙(0,3) 距離 1 好感 → 開場綠實線+「+」**(協調者核資料檔屬實)。提示字串尚不存在(既有未決題「腳本化提示」,不動)。⚠️ 待收工告知管理者:教學關污染檢查/Q2 切線是在舊畫法下訂的,屆第 4 階段真人試玩前需重看;鋸齒線首次出現在第 1 場,與自發歸因探針位置重疊。
 - 開工基準全套(協調者):`ENGINE EXIT = 0` / `1860 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)`。

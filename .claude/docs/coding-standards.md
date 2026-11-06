@@ -12,6 +12,7 @@
   > `docs/WORKFLOW-GUIDE.md`'s "minimum 3 Foundation ADRs" gate wording is the third copy of this
   > rule and is **still unreconciled** — registered in `docs/reviews/doc-audit-2026-09-01.md`.
 - Gameplay values must be data-driven (external config), never hardcoded
+  - 🔴 **Data files under `assets/` must not use the `.csv` extension — use `.txt`.** Godot imports every `.csv` as a **translation** by default. Measured 2026-11-06 (audio story-003): `assets/data/audio/sfx_cues.csv` got a `.import` with `importer="csv_translation"` and three bogus locale files (`sfx_cues.path/min/bus.translation`), and **the whole test suite stayed green**. Whether an exported build still ships the raw `.csv` for `FileAccess` to read was **not measured** — if it does not, a reader designed to "stay silent when data is missing" fails with no error at all. The only legitimate `.csv` is the translation table `assets/data/locales/strings.csv`; the project's other data files are all `.txt`. Found by the coordinator reading the diff, not by any test. ⚠️ No lint checks this.
 - All public methods must be unit-testable (dependency injection over singletons)
 - Commits must reference the relevant design document or task ID
 - **Commit messages**: Use Conventional Commits format — `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`. Reference the story or task ID in the body (e.g., `Story: EPIC-001-S02`).

@@ -9,7 +9,7 @@
 
 ## 範圍
 
-1. **提示(cue)表**:新資料檔 `assets/data/audio/sfx_cues.csv`,欄位 `cue_id,path,min_interval_ms,bus`,九個 cue 對應 M1~M9(數值皆未驗證初值,家中實聽後可能調)。素材路徑可指向尚不存在的檔案。
+1. **提示(cue)表**:新資料檔 `assets/data/audio/sfx_cues.csv`,〔✅ 2026-11-06 協調者覆核更正(管理者核准加註):實際檔名為 `assets/data/audio/sfx_cues.txt` —— `.csv` 會被 Godot 當翻譯檔匯入,見 `.claude/docs/coding-standards.md`「Data files under `assets/` must not use the `.csv` extension」;落地 `6e3da81`。〕欄位 `cue_id,path,min_interval_ms,bus`,九個 cue 對應 M1~M9(數值皆未驗證初值,家中實聽後可能調)。素材路徑可指向尚不存在的檔案。
 2. **事件對應(M1~M9 出處,協調者讀碼核對,2026-11-06)**:
 
    | M | 事件 | 既有出處(讀到) |
