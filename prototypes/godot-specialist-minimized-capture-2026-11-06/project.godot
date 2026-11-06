@@ -1,0 +1,15 @@
+config_version=5
+
+[application]
+config/name="tmp"
+run/main_scene="res://Probe.tscn"
+
+[display]
+window/size/viewport_width=170
+window/size/viewport_height=64
+window/size/mode=1
+window/size/no_focus=true
+window/stretch/mode="disabled"
+
+[audio]
+driver/driver="Dummy"
