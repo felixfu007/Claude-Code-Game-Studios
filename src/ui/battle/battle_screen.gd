@@ -2243,6 +2243,10 @@ func _ready() -> void:
 	# story's task report for why that was left as an explicit open item
 	# rather than self-expanded into scope.
 	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
+	# audio-foundation story-003:取得場景級音效宿主並接 M2~M9;取不到(測試直接載入)靜默不接。
+	var sfx_host: SfxPlayerHost = get_tree().get_first_node_in_group(SfxPlayerHost.GROUP_NAME) as SfxPlayerHost
+	if sfx_host != null:
+		sfx_host.bind_battle(_controller, _affinity_pool, _battle_menu)
 	# 離開確認框的「回主選單」:選單是 UI,不得持有或改戰役狀態
 	# (.claude/rules/ui-code.md 第一條),所以「回滾本場累積記錄」由戰鬥畫面做,
 	# 選單只呼叫這個 Callable。見 abandon_mission_to_title()。
