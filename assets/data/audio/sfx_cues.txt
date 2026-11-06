@@ -1,0 +1,14 @@
+# audio-foundation story-003:音效提示(cue)表。欄位:cue_id,path,min_interval_ms,bus
+# 全部數值為「未驗證初值」,家中實聽後可能調。素材路徑可指向尚不存在的檔案(缺席時安靜略過)。
+# 檔名慣例:sfx_[context]_[name]_[variant].ogg(草案第四節)。bus 必須是 AudioBuses 的子 bus 名稱。
+# M5(attack_hit)與 M6(unit_down)二擇一:擊倒時只出 unit_down。
+cue_id,path,min_interval_ms,bus
+ui_click,res://assets/audio/sfx/sfx_ui_click_01.ogg,60,UI
+unit_select,res://assets/audio/sfx/sfx_battle_select_01.ogg,80,SFX
+cancel,res://assets/audio/sfx/sfx_battle_cancel_01.ogg,80,SFX
+unit_move,res://assets/audio/sfx/sfx_battle_move_01.ogg,120,SFX
+attack_hit,res://assets/audio/sfx/sfx_battle_hit_01.ogg,100,SFX
+unit_down,res://assets/audio/sfx/sfx_battle_down_01.ogg,200,SFX
+victory,res://assets/audio/sfx/sfx_battle_victory_01.ogg,1000,SFX
+defeat,res://assets/audio/sfx/sfx_battle_defeat_01.ogg,1000,SFX
+affinity_up,res://assets/audio/sfx/sfx_affinity_up_01.ogg,300,SFX

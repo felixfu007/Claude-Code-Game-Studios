@@ -32,6 +32,8 @@ static func switch_to(tree: SceneTree, scene_path: String, configure: Callable =
 		return null
 	if configure.is_valid():
 		configure.call(instance)
+	# audio-foundation story-003:宿主在新實例進樹前就位,先於場景 _ready()(M1 按鈕走訪)。
+	SfxPlayerHost.attach_to(instance)
 	_perform_swap.bind(tree, instance).call_deferred()
 	return instance
 
