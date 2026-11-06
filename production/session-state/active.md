@@ -100,6 +100,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - story-004(音樂)暫緩:等 33 號家用端回覆能否產音樂;場景切換接點未定。
 - 裁決「**可以,加註(推薦)**」(story-003/004 `.csv`→`.txt`)、「**寫一條短規則(推薦)**」(coding-standards「Data files under `assets/` must not use the `.csv` extension」,放在 data-driven 條下)→ `dadee52`。
 - 16:05 AI_IMG 無新交件(HEAD `3448eb9` = 我方 33 號)。
+- 裁決「**寫回,只加註不動日期(推薦)**」(時程重估)→ 計畫書第八節表下加註 `644b91d`;管理者確認「**對,就是這樣**」(AI_IMG `DESKTOP-77QK2TGUser` = 他在家操作)。
+- 🔴🔴 **管理者問「試玩為什麼一定要我」→ 協調者拆表說明(截圖/美術/難度可代;聲音、實體手把、陌生人不可由 AI 代)。管理者更正前提(逐字):「更正,在公司可以開窗,但是不能讓他在畫面最上層,而且要靜音」。** 取代 2026-09-24「改在私人時間跑」;記憶 `private_dev_at_work.md` 已更新。分工選項(能代全代/只代截圖/維持)**尚未裁決**(他以更正代替作答)。
+- ⛔ 16:30 派 godot-specialist 做「背景視窗」探針(拋棄式空專案、灰色色塊、`--audio-driver Dummy`、最小化取像素、PowerShell 只讀前景視窗)→ **被自動權限分類器擋下**(未說明原因)。未繞路,已向管理者說明並請他決定。
 - 🔴 **16:10 收工**:PROJECT-STATUS 重寫。全天管理者裁決全部選推薦。未做(已知):友敵線樣張實拍、手把操作設定滑桿、音樂(story-004)、素材授權登記/署名頁/AI 揭露無擁有者、陌生人試玩 Q-A~G、時程重估是否寫回計畫書(未問)、AI_IMG `DESKTOP-77QK2TGUser` = 管理者在家操作的假設(未問)。`C:/tmp/p2diag_s3`、`C:/tmp/p2run_v` 兩個舊工作樹仍在(量測用,保留)。
 - story-003 實作者撞 20 回合上限,15:00 前 SendMessage 續做(worktree `.claude/worktrees/agent-a92986c9105c561d7`,分支 `worktree-agent-a92986c9105c561d7`)。
 - ⏳ 11:40 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
