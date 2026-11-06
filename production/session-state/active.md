@@ -1,9 +1,9 @@
 # Active Session State
 
 <!-- STATUS -->
-Epic: **第九十五批(2026-11-06)進行中。** 友敵線 relation-minimap story-002 程式完成(`d10c54e`/`8bcbcea`/樣張驅動 `4a31fe4`),待在家實拍樣張交 art-director;音訊 audio-foundation epic 開立(`ca27ac6`),story-001 實作中;33 號音樂能力詢問已推 AI_IMG。測試 1887 全綠(CI 複驗)。
-Feature: 🔴 今日裁決逐字見第九十五批節(全為推薦)。
-Task: 🔴 **compact 後先讀第九十五批節最後幾行**,接著:驗收 audio story-001(讀 diff、重跑全套、突變)→ 派 story-002/003;17:00 收工重寫 PROJECT-STATUS(含:vs01 丙丁開場無線、教學污染檢查需重看、陌生人試玩草稿待裁 Q-A~G、game-shell story-002 加註請示)。🔴 全程台灣繁體中文。
+Epic: **第九十五批(2026-11-06)收工。** 友敵線 relation-minimap story-002 程式完成(`d10c54e`/`8bcbcea`/樣張驅動 `4a31fe4`);音訊 audio-foundation story-001(`3623d98`)/002(`f4dd61f`)/003(`6e3da81`→`e9583b6`)完成,004 音樂暫緩;33 號音樂能力詢問已推 AI_IMG `3448eb9`。測試 1860 → **1947,全綠**(協調者每張重跑 + 突變;CI 複驗)。
+Feature: 🔴 今日裁決逐字見第九十五批節(**全為推薦**)。覆核收穫 1(`.csv` 被當翻譯檔)→ 連續零收穫 = 0。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`;32 號、33 號回覆 → 33 號交 audio-director 整理成選項);第二件:問管理者在家結果 —— 友敵線樣張(`prototypes/story-002-line-samples-2026-11-06/README.md`,開窗路徑從未跑過,報錯先修腳本;拍完交 art-director)、設定畫面手把操作與面板是否溢出;第三件:陌生人試玩草稿 Q-A~G 不急。** 🔴 全程台灣繁體中文。測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
 以下為第九十四批原狀態列。
 Epic: **第九十四批(2026-11-05)收工。** 協議 2 結案(工具 v4 留作回歸檢查,story-035 `45a20de` 清死碼);第 2 階段判定完成、第 3 階段即日開始(計畫書 `1bd5772`/`b8a10a9`);協議 1 電腦半(開場)`f508090`;AI_IMG 32 號 `1eeca1e`。測試 1866 → **1860,全綠**(協調者每批重跑)。
 Feature: 🔴 管理者今天裁決逐字見第九十四批節。極性顯示:「丙,但灰線拿掉」(管理者自填)。
@@ -98,6 +98,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 覆核收穫本批 = 1 → 連續零收穫 = 0。小觀察:「好感度增進」音在任何好感紀錄新增時響(含負向?)—— 待家中實聽確認。
 - 📌 下次請示(文件):story-003/004 工單 `.csv` → `.txt` 加註;coding-standards 是否登記「assets 下 .csv 會被當翻譯檔匯入」陷阱。
 - story-004(音樂)暫緩:等 33 號家用端回覆能否產音樂;場景切換接點未定。
+- 裁決「**可以,加註(推薦)**」(story-003/004 `.csv`→`.txt`)、「**寫一條短規則(推薦)**」(coding-standards「Data files under `assets/` must not use the `.csv` extension」,放在 data-driven 條下)→ `dadee52`。
+- 16:05 AI_IMG 無新交件(HEAD `3448eb9` = 我方 33 號)。
+- 🔴 **16:10 收工**:PROJECT-STATUS 重寫。全天管理者裁決全部選推薦。未做(已知):友敵線樣張實拍、手把操作設定滑桿、音樂(story-004)、素材授權登記/署名頁/AI 揭露無擁有者、陌生人試玩 Q-A~G、時程重估是否寫回計畫書(未問)、AI_IMG `DESKTOP-77QK2TGUser` = 管理者在家操作的假設(未問)。`C:/tmp/p2diag_s3`、`C:/tmp/p2run_v` 兩個舊工作樹仍在(量測用,保留)。
 - story-003 實作者撞 20 回合上限,15:00 前 SendMessage 續做(worktree `.claude/worktrees/agent-a92986c9105c561d7`,分支 `worktree-agent-a92986c9105c561d7`)。
 - ⏳ 11:40 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
 - ✅ 已提交:S1~S3 連線表為空(零條線與距離無關);**S4 甲(0,2)乙(0,3) 距離 1 好感 → 開場綠實線+「+」**(協調者核資料檔屬實)。提示字串尚不存在(既有未決題「腳本化提示」,不動)。⚠️ 待收工告知管理者:教學關污染檢查/Q2 切線是在舊畫法下訂的,屆第 4 階段真人試玩前需重看;鋸齒線首次出現在第 1 場,與自發歸因探針位置重疊。
