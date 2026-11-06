@@ -1,0 +1,5 @@
+# story-002 sample affinity fixture. Fields: unit_a,unit_b,polarity,amp
+1,2,POSITIVE,1
+1,3,POSITIVE,1
+1,4,POSITIVE,1
+1,5,POSITIVE,1

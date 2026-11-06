@@ -63,6 +63,12 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ 11:00 SendMessage 同一實作者做**第二段(關係圖)**:改用 line_style_for、刪 symbol_for、0 效果 COLOR_NODE 0.6、色值引用 BoardView、牌 7×N(N 走 compute_scale)。
 - 第二段交件(未提交):拆出 `line_shape_for()`;relation_minimap 刪 symbol_for/虛線/自有色值;`affinity_line_points` 加 3 個帶預設參數(棋盤逐點不變有測試);+9 測試,實作者 1887/179 全綠。⚠️ 新增 BattleScreen↔RelationMinimap 雙向靜態相依(技術債候選,不阻擋)。協調者突變「hand_bar.gd 加第二個 line_shape_for」→ `test_ac_p7_whole_project…` 紅 → 還原(0 處)。
 - 協調者重跑 1887 / **1 failure = 計時測試 real_level_battle 30.1s(門檻 30s)**。A/B:第二段版本單跑 25.7/22.1s;**收起第二段 src 的第一段版本單跑 28.9/53.2s** → 判定機器負載(qemu 3GB),非回歸。背景重跑全套確認中。
+- 重跑仍 1 failure(計時 31.6s,整套 6m15s vs 平常 3 分)→ 提交 **`8bcbcea`**(commit 訊息已揭露),以 CI 作獨立複驗(第一段 CI success 1m55s)。⏳ 待看 CI run 42157370108。
+- ✅ CI run 42157370108(`8bcbcea`):`Overall Summary: 1887 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans`,計時測試 `elapsed_msec=13915` → 本機超標確認為負載。
+- ⏳ 11:40 派同一實作者**第三段:截圖驅動腳本** `prototypes/story-002-line-samples-2026-11-06/`,**只准 headless**、不開窗;實拍留在家。
+- ✅ 第三段截圖驅動 `prototypes/story-002-line-samples-2026-11-06/`(載入真實 BattleScreen.tscn + 合成夾具;樣張 A/C/D/E;B 色盲模擬與 F 舊虛線只寫做法)。協調者 headless 重跑:`ENGINE EXIT = 2`(預期:無像素不寫檔)、COMPAT 全 true、STRUCT 行與回報逐項相同、無殘留 godot、無 out/。🔴 **開窗路徑(驗證/存檔/灰階)從未執行** —— 在家第一次跑若 SCRIPT ERROR 先修腳本。**在家指令見該 README。** 拍完交 art-director 代看(管理者授權)。
+- ⏳ 11:50 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
+- ✅ 已提交:S1~S3 連線表為空(零條線與距離無關);**S4 甲(0,2)乙(0,3) 距離 1 好感 → 開場綠實線+「+」**(協調者核資料檔屬實)。提示字串尚不存在(既有未決題「腳本化提示」,不動)。⚠️ 待收工告知管理者:教學關污染檢查/Q2 切線是在舊畫法下訂的,屆第 4 階段真人試玩前需重看;鋸齒線首次出現在第 1 場,與自發歸因探針位置重疊。
 - 開工基準全套(協調者):`ENGINE EXIT = 0` / `1860 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)`。
 - ✅ story-002 工單交件(未提交)。10 個未決點分流:命名/色盲/筆數/命名守則 → 實作者照工單;詳情區 → 協調者核 `relation_minimap.gd` 無詳情區 + EPIC 裁決 5 不做地圖游標 = **不在範圍**;層次/中點重疊/取整/鋸齒邊界 → 10:35 SendMessage art-director 寫 `docs/reviews/polarity-line-art-answers-2-2026-11-06.md`。⚠️ 會紅測試:`battle_screen_relation_minimap_test.gd`(181 線層子節點=線數×2)、`battle_screen_preview_test.gd`、`battle_screen_hide_affinity_test.gd`(前提「開局有線」可能失效)。
 
