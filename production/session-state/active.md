@@ -53,6 +53,11 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 問管理者草稿 4 題(R4 甲/乙、第二通道、距離 2 無線、教學探針)。
 - 🔴 **裁決(09:45,全推薦)**:關係圖「**甲:關係圖十條全畫(推薦)**」/第二通道「**補,交美術總監定形式(推薦)**」/距離 2「**接受,靠預覽就夠(推薦)**」/教學探針「**保留,第 4 階段一起做,標準屆時再訂(推薦)**」。
 - ✅ art-director 交件 `docs/reviews/polarity-line-art-answers-2026-11-06.md`(未經樣張驗證):鋸齒三角波 ±2px/半週期 4px;第二通道 = 線中點 7×7 深色牌內 5×5 圖元 +/−;底襯跟鋸齒;關係圖 0 效果線用 COLOR_NODE 0.6、刪虛線;色值統一為棋盤組;樣張 A~F。它停在第 4 題(強度)→ **協調者查證:2026-10-28 裁決第 21 項「不顯示強度數字(推薦)」(active.md 第 527 行),強度已取消,線寬常數**;`relation-minimap.md` 第 59/70/133/134/152 行仍寫強度數字 = 規格未同步,併入本次修改。
+- ✅ 新規格 `design/ux/affinity-line-display.md`(協調者彙整,不新增決定)+ 4 檔 13 處只插入加註(裁決「**可以,照這樣加註(推薦)**」;驗證:移除插入文字後與 HEAD 逐位元相同)→ `f2159a4`。
+- 裁決「**現在開工,樣張交美術總監代看(推薦)**」(被跳過:先只畫樣張不改遊戲)。
+- ⏳ 10:10 派 lead-programmer 寫 `production/epics/relation-minimap/story-002-affinity-line-shape-and-symbol.md`(只寫新檔);同時協調者跑開工基準全套(log 在 scratchpad base.log)。
+- 開工基準全套(協調者):`ENGINE EXIT = 0` / `1860 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)`。
+- ✅ story-002 工單交件(未提交)。10 個未決點分流:命名/色盲/筆數/命名守則 → 實作者照工單;詳情區 → 協調者核 `relation_minimap.gd` 無詳情區 + EPIC 裁決 5 不做地圖游標 = **不在範圍**;層次/中點重疊/取整/鋸齒邊界 → 10:35 SendMessage art-director 寫 `docs/reviews/polarity-line-art-answers-2-2026-11-06.md`。⚠️ 會紅測試:`battle_screen_relation_minimap_test.gd`(181 線層子節點=線數×2)、`battle_screen_preview_test.gd`、`battle_screen_hide_affinity_test.gd`(前提「開局有線」可能失效)。
 
 ## 🔴 第九十四批(2026-11-05,公司,08:36 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;先查 AI_IMG)。
