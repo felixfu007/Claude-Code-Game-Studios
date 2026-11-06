@@ -429,7 +429,7 @@ const RESULT_DISPLAY_SECONDS: float = 3.0
 ## [method hand_bar_slot_kinds]/[method availability_for] below. [HandBar]
 ## itself has zero [Card]/[CardDeck] dependency (see its own class doc
 ## comment) — this screen is the one class allowed to know both sides,
-## exactly as it already is for [BoardView]/[method line_tone_for].
+## exactly as it already is for [BoardView]/[method line_style_for].
 @onready var _hand_bar: HandBar = $UILayer/HandBar
 
 ## Story U-016 — [BattleMenu] 實例,node path [code]$UILayer/BattleMenu[/code]
@@ -2774,20 +2774,39 @@ static func card_target_highlight_cells(
 ## the two enums are not guaranteed to share ordinal order, and a cast would
 ## silently produce the wrong tone (or a range error) the moment either enum
 ## gains or reorders a value.
-static func line_tone_for(state: AffinityLineStatus.State) -> BoardView.LineTone:
-	match state:
+##
+## 🔴 Story relation-minimap/002 (AC-P7): this is THE single place that turns an
+## [AffinityLineStatus] into (shape, tone, symbol). Shape comes from the
+## RELATION ([member AffinityLineStatus.polarity]: POSITIVE = solid, NEGATIVE
+## = zigzag); tone and symbol come from the EFFECT ([member
+## AffinityLineStatus.state]). Returns an EMPTY dictionary for a zero-effect
+## ([constant AffinityLineStatus.State.NEUTRAL]) status — callers must skip it
+## (R3: the board does not draw zero-effect lines at all). Keys:
+## [code]"shape"[/code] ([enum BoardView.LineShape]), [code]"tone"[/code]
+## ([enum BoardView.LineTone]), [code]"symbol"[/code] ([enum
+## BoardView.LineSymbol]).
+static func line_style_for(status: AffinityLineStatus) -> Dictionary:
+	var tone: BoardView.LineTone
+	var symbol: BoardView.LineSymbol
+	match status.state:
 		AffinityLineStatus.State.POSITIVE:
-			return BoardView.LineTone.POSITIVE
+			tone = BoardView.LineTone.POSITIVE
+			symbol = BoardView.LineSymbol.PLUS
 		AffinityLineStatus.State.NEGATIVE:
-			return BoardView.LineTone.NEGATIVE
-		AffinityLineStatus.State.NEUTRAL:
-			return BoardView.LineTone.MUTED
+			tone = BoardView.LineTone.NEGATIVE
+			symbol = BoardView.LineSymbol.MINUS
 		_:
-			return BoardView.LineTone.MUTED
+			return {}
+	var shape: BoardView.LineShape = (
+		BoardView.LineShape.SOLID
+		if status.polarity == AffinityLink.Polarity.POSITIVE
+		else BoardView.LineShape.ZIGZAG
+	)
+	return {"shape": shape, "tone": tone, "symbol": symbol}
 
 
 ## Story U-011 — maps [param category] to the display-only
-## [enum HandBar.SlotKind] Z1 needs. Mirrors [method line_tone_for]'s existing
+## [enum HandBar.SlotKind] Z1 needs. Mirrors [method line_style_for]'s existing
 ## mapping-function placement convention immediately above: this class is the
 ## one allowed to know both the gameplay enum ([enum Card.Category]) and the
 ## UI enum ([enum HandBar.SlotKind]); [HandBar] itself never references
@@ -2857,7 +2876,7 @@ static func availability_for(phase: BattleController.Phase) -> HandBar.Availabil
 
 
 ## Converts a list of [AffinityLineStatus] into the
-## [code]{"from": Vector2i, "to": Vector2i, "tone": int}[/code] dictionaries
+## [code]{"from": Vector2i, "to": Vector2i, "tone": int, "shape": int, "symbol": int}[/code] dictionaries
 ## [method BoardView.set_affinity_lines] expects, reading both endpoints from
 ## [param positions] — deliberately NOT from any live [BattleState]. This is
 ## what lets a caller pass a hypothetical layout (e.g.
@@ -2877,10 +2896,15 @@ static func affinity_line_dicts(
 	for status: AffinityLineStatus in statuses:
 		if not positions.has(status.unit_id) or not positions.has(status.partner_id):
 			continue
+		var style: Dictionary = line_style_for(status)
+		if style.is_empty():
+			continue  # zero effect: not drawn on the board (R3)
 		result.append({
 			"from": positions[status.unit_id],
 			"to": positions[status.partner_id],
-			"tone": line_tone_for(status.state),
+			"tone": style["tone"],
+			"shape": style["shape"],
+			"symbol": style["symbol"],
 		})
 	return result
 

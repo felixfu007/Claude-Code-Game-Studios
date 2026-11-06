@@ -51,21 +51,21 @@ func _status(
 
 
 func test_positive_state_maps_to_positive_tone() -> void:
-	assert_int(BattleScreen.line_tone_for(AffinityLineStatus.State.POSITIVE)).is_equal(
-		BoardView.LineTone.POSITIVE
-	)
+	var style: Dictionary = BattleScreen.line_style_for(_status(UNIT_A, UNIT_B, AffinityLineStatus.State.POSITIVE))
+	assert_int(style["tone"]).is_equal(BoardView.LineTone.POSITIVE)
+	assert_int(style["symbol"]).is_equal(BoardView.LineSymbol.PLUS)
 
 
 func test_negative_state_maps_to_negative_tone() -> void:
-	assert_int(BattleScreen.line_tone_for(AffinityLineStatus.State.NEGATIVE)).is_equal(
-		BoardView.LineTone.NEGATIVE
-	)
+	var style: Dictionary = BattleScreen.line_style_for(_status(UNIT_A, UNIT_B, AffinityLineStatus.State.NEGATIVE))
+	assert_int(style["tone"]).is_equal(BoardView.LineTone.NEGATIVE)
+	assert_int(style["symbol"]).is_equal(BoardView.LineSymbol.MINUS)
 
 
-func test_neutral_state_maps_to_muted_tone() -> void:
-	assert_int(BattleScreen.line_tone_for(AffinityLineStatus.State.NEUTRAL)).is_equal(
-		BoardView.LineTone.MUTED
-	)
+# 改前:NEUTRAL -> LineTone.MUTED(灰線)。改後(story-002 R3):零效果沒有任何樣式,回空字典。
+func test_neutral_state_has_no_style() -> void:
+	var style: Dictionary = BattleScreen.line_style_for(_status(UNIT_A, UNIT_B, AffinityLineStatus.State.NEUTRAL))
+	assert_bool(style.is_empty()).is_true()
 
 
 func test_line_dicts_read_endpoints_from_given_positions() -> void:

@@ -237,18 +237,48 @@ const CARD_TARGET_ILLEGAL_MARK_WIDTH: float = 2.0
 ## caller ([code]battle_screen.gd[/code], the one class allowed to know both
 ## sides) does the [code]AffinityLineStatus.State[/code] -> [enum LineTone]
 ## mapping.
-enum LineTone { POSITIVE, NEGATIVE, MUTED }
+## There is deliberately no "muted" member: a zero-effect line is not drawn on
+## the board at all (design/ux/affinity-line-display.md R3).
+enum LineTone { POSITIVE, NEGATIVE }
+
+## Line shape = the RELATION (R1): SOLID for 好感, ZIGZAG for 惡感. Independent
+## of [enum LineTone] (the EFFECT, R2).
+enum LineShape { SOLID, ZIGZAG }
+
+## Midpoint plaque symbol (R5), drawn from pixel rects, never a font.
+enum LineSymbol { PLUS, MINUS }
 
 ## [method set_affinity_lines] stroke colours, keyed by [enum LineTone].
+## (Colour-blind mode hook: a future mode swaps these two values only.)
 const AFFINITY_LINE_COLOR_POSITIVE: Color = Color(0.30, 0.90, 0.35)
 const AFFINITY_LINE_COLOR_NEGATIVE: Color = Color(1.0, 0.32, 0.32)
-const AFFINITY_LINE_COLOR_MUTED: Color = Color(0.74, 0.74, 0.74, 0.9)
 
 ## Dark backing stroke drawn under every affinity line — see
 ## [method set_affinity_lines] for why it exists.
 const AFFINITY_LINE_BACKING_COLOR: Color = Color(0.0, 0.0, 0.0, 0.72)
 const AFFINITY_LINE_BACKING_WIDTH: float = 3.0
 const AFFINITY_LINE_STROKE_WIDTH: float = 1.0
+
+## Zigzag parameters (art-director's UNVERIFIED initial values; tune after
+## the sample sheet). Amplitude is the perpendicular offset of interior
+## vertices; half-period is the target along-line length of one segment.
+const AFFINITY_ZIGZAG_AMPLITUDE: float = 2.0
+const AFFINITY_ZIGZAG_HALF_PERIOD: float = 4.0
+## Minimum segment count; 1 would be a straight line (violates R1).
+const AFFINITY_ZIGZAG_MIN_SEGMENTS: int = 3
+## Line2D settings that keep zigzag corners sharp and ends square.
+const AFFINITY_LINE_JOINT_MODE: Line2D.LineJointMode = Line2D.LINE_JOINT_SHARP
+const AFFINITY_LINE_CAP_MODE: Line2D.LineCapMode = Line2D.LINE_CAP_NONE
+const AFFINITY_LINE_SHARP_LIMIT: float = 2.0
+
+## Midpoint plaque: opaque dark tile + pixel glyph. The tile's top-left is
+## [code]mid - (PLAQUE_SIZE / 2)[/code] in integer maths (7 -> 3).
+const AFFINITY_PLAQUE_SIZE: int = 7
+const AFFINITY_PLAQUE_GLYPH_SIZE: int = 5
+const AFFINITY_PLAQUE_COLOR: Color = Color(0.05, 0.05, 0.07, 1.0)
+## When a + and a - plaque share one midpoint they sit side by side: + left,
+## - right, centres offset by this many px each way.
+const AFFINITY_PLAQUE_SPLIT_OFFSET: int = 4
 
 ## Piece sprite height in pixels. Measured 2026-08-27 (see task evidence):
 ## the placeholder pieces are 32x40 — 8px taller than a 32x32 cell, by
@@ -550,12 +580,17 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 ## Replaces the affinity connection lines drawn in [member _affinity_line_layer].
 ## Each entry of [param lines] is a [Dictionary]:
 ## [codeblock]
-## { "from": Vector2i, "to": Vector2i, "tone": int }  # tone is a LineTone
+## { "from": Vector2i, "to": Vector2i, "tone": int, "shape": int, "symbol": int }
+## # tone = LineTone, shape = LineShape, symbol = LineSymbol
 ## [/codeblock]
-## Pass an empty array to clear.
+## Pass an empty array to clear. Entries are assumed already filtered (the
+## caller omits zero-effect lines); this function performs no state mapping.
 ##
 ## Draws TWO [Line2D]s per entry — a dark backing stroke first, then the
-## coloured stroke on top. [b]Why the backing exists:[/b] this layer draws
+## coloured stroke on top (both follow the zigzag vertices for
+## [constant LineShape.ZIGZAG]) — then, after all lines, one midpoint plaque
+## per distinct midpoint/symbol (same layer, drawn above the lines).
+## [b]Why the backing exists:[/b] this layer draws
 ## above [member _pieces_layer] (see the class doc comment's layer-order
 ## note), and the placeholder pieces are fully opaque solid-colour blocks. A
 ## 1px line alone would be lost against a similarly-bright piece. A 3px total
@@ -567,28 +602,106 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 ## antialiasing would produce off-palette fringe pixels.
 func set_affinity_lines(lines: Array[Dictionary]) -> void:
 	_clear_children(_affinity_line_layer)
+	# midpoint (Vector2i) -> {LineSymbol: true}; midpoints are always integers
+	# because grid centres are integers and cell distances are multiples of 32.
+	var plaques: Dictionary[Vector2i, Dictionary] = {}
 	for entry: Dictionary in lines:
-		var from_cell: Vector2i = entry["from"]
-		var to_cell: Vector2i = entry["to"]
+		var from_center: Vector2 = BoardCoords.grid_to_local_center(entry["from"])
+		var to_center: Vector2 = BoardCoords.grid_to_local_center(entry["to"])
 		var tone: LineTone = entry["tone"]
-		var points: PackedVector2Array = PackedVector2Array([
-			BoardCoords.grid_to_local_center(from_cell),
-			BoardCoords.grid_to_local_center(to_cell),
-		])
+		var shape: LineShape = entry["shape"]
+		var symbol: LineSymbol = entry["symbol"]
+		var points: PackedVector2Array = affinity_line_points(from_center, to_center, shape)
 
-		var backing: Line2D = Line2D.new()
-		backing.points = points
-		backing.width = AFFINITY_LINE_BACKING_WIDTH
-		backing.default_color = AFFINITY_LINE_BACKING_COLOR
-		backing.antialiased = false
-		_affinity_line_layer.add_child(backing)
+		_affinity_line_layer.add_child(
+			_make_affinity_stroke(points, AFFINITY_LINE_BACKING_WIDTH, AFFINITY_LINE_BACKING_COLOR)
+		)
+		_affinity_line_layer.add_child(
+			_make_affinity_stroke(points, AFFINITY_LINE_STROKE_WIDTH, _line_color_for_tone(tone))
+		)
 
-		var stroke: Line2D = Line2D.new()
-		stroke.points = points
-		stroke.width = AFFINITY_LINE_STROKE_WIDTH
-		stroke.default_color = _line_color_for_tone(tone)
-		stroke.antialiased = false
-		_affinity_line_layer.add_child(stroke)
+		var mid: Vector2i = Vector2i(((from_center + to_center) * 0.5).round())
+		if not plaques.has(mid):
+			plaques[mid] = {}
+		plaques[mid][symbol] = tone
+
+	for mid: Vector2i in plaques:
+		var group: Dictionary = plaques[mid]
+		var split: bool = group.size() > 1
+		for symbol: LineSymbol in [LineSymbol.PLUS, LineSymbol.MINUS]:
+			if not group.has(symbol):
+				continue
+			var offset_x: int = 0
+			if split:
+				offset_x = -AFFINITY_PLAQUE_SPLIT_OFFSET if symbol == LineSymbol.PLUS else AFFINITY_PLAQUE_SPLIT_OFFSET
+			_affinity_line_layer.add_child(
+				_build_affinity_plaque(mid + Vector2i(offset_x, 0), symbol, _line_color_for_tone(group[symbol]))
+			)
+
+
+## Vertices for one affinity line. SOLID: just the two endpoints. ZIGZAG:
+## n segments (n odd, >= [constant AFFINITY_ZIGZAG_MIN_SEGMENTS], nearest to
+## L / half-period, ties go larger) with interior vertices offset
+## +-[constant AFFINITY_ZIGZAG_AMPLITUDE] perpendicular, alternating; both end
+## vertices and (because n is odd) the exact midpoint have zero offset. Every
+## vertex is rounded to whole pixels. Public + static so tests can call it.
+static func affinity_line_points(from_pos: Vector2, to_pos: Vector2, shape: LineShape) -> PackedVector2Array:
+	if shape == LineShape.SOLID:
+		return PackedVector2Array([from_pos, to_pos])
+	var length: float = from_pos.distance_to(to_pos)
+	var segments: int = 2 * roundi((length / AFFINITY_ZIGZAG_HALF_PERIOD - 1.0) / 2.0) + 1
+	segments = maxi(segments, AFFINITY_ZIGZAG_MIN_SEGMENTS)
+	var dir: Vector2 = (to_pos - from_pos) / length
+	var normal: Vector2 = Vector2(-dir.y, dir.x)
+	var points: PackedVector2Array = PackedVector2Array()
+	for i: int in range(segments + 1):
+		var p: Vector2 = from_pos.lerp(to_pos, float(i) / float(segments))
+		if i > 0 and i < segments:
+			var sign_value: float = 1.0 if i % 2 == 0 else -1.0
+			p += normal * (sign_value * AFFINITY_ZIGZAG_AMPLITUDE)
+		points.append(p.round())
+	return points
+
+
+func _make_affinity_stroke(points: PackedVector2Array, width: float, color: Color) -> Line2D:
+	var line: Line2D = Line2D.new()
+	line.points = points
+	line.width = width
+	line.default_color = color
+	line.antialiased = false
+	line.joint_mode = AFFINITY_LINE_JOINT_MODE
+	line.sharp_limit = AFFINITY_LINE_SHARP_LIMIT
+	line.begin_cap_mode = AFFINITY_LINE_CAP_MODE
+	line.end_cap_mode = AFFINITY_LINE_CAP_MODE
+	return line
+
+
+# One plaque = a root Node2D holding a 7x7 dark ColorRect plus the glyph rects.
+# Top-left = centre - (3,3), glyph top-left = tile top-left + (1,1), all int.
+func _build_affinity_plaque(center: Vector2i, symbol: LineSymbol, color: Color) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var half: int = AFFINITY_PLAQUE_SIZE / 2
+	var tile_pos: Vector2 = Vector2(center - Vector2i(half, half))
+	var tile: ColorRect = ColorRect.new()
+	tile.color = AFFINITY_PLAQUE_COLOR
+	tile.position = tile_pos
+	tile.size = Vector2(AFFINITY_PLAQUE_SIZE, AFFINITY_PLAQUE_SIZE)
+	root.add_child(tile)
+
+	var glyph_origin: Vector2 = tile_pos + Vector2(1, 1)
+	var g: int = AFFINITY_PLAQUE_GLYPH_SIZE
+	var bar_h: ColorRect = ColorRect.new()
+	bar_h.color = color
+	bar_h.position = glyph_origin + Vector2(0, g / 2)
+	bar_h.size = Vector2(g, 1)
+	root.add_child(bar_h)
+	if symbol == LineSymbol.PLUS:
+		var bar_v: ColorRect = ColorRect.new()
+		bar_v.color = color
+		bar_v.position = glyph_origin + Vector2(g / 2, 0)
+		bar_v.size = Vector2(1, g)
+		root.add_child(bar_v)
+	return root
 
 
 ## Replaces the set of highlighted move-range cells. Pass an empty array to
@@ -1176,10 +1289,8 @@ func _line_color_for_tone(tone: LineTone) -> Color:
 	match tone:
 		LineTone.POSITIVE:
 			return AFFINITY_LINE_COLOR_POSITIVE
-		LineTone.NEGATIVE:
-			return AFFINITY_LINE_COLOR_NEGATIVE
 		_:
-			return AFFINITY_LINE_COLOR_MUTED
+			return AFFINITY_LINE_COLOR_NEGATIVE
 
 
 # Renders a set of cells onto highlight_layer using texture_path, replacing

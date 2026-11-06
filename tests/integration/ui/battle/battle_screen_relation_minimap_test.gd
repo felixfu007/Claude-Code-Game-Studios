@@ -177,8 +177,17 @@ func test_map_lines_equal_board_lines_idle() -> void:
 	var expected: Array[AffinityLineStatus] = AffinityRules.board_lines(instance._phi.positions(), instance._phi.links())
 	assert_array(expected).is_not_empty()
 	assert_array(_line_set(instance.diagnostic_relation_minimap_lines())).is_equal(_expected_set(expected))
-	var board_children: int = instance._board_view._affinity_line_layer.get_child_count()
-	assert_int(board_children).is_equal(expected.size() * 2)
+	# 改前:每條線 = 2 個節點(底襯 + 線身)。改後:零效果不畫、另有符號牌節點,
+	# 故只數 Line2D:每條「有效果」的線 = 2 條 Line2D。
+	var drawn: int = 0
+	for status: AffinityLineStatus in expected:
+		if status.state != AffinityLineStatus.State.NEUTRAL:
+			drawn += 1
+	var line_nodes: int = 0
+	for child: Node in instance._board_view._affinity_line_layer.get_children():
+		if child is Line2D:
+			line_nodes += 1
+	assert_int(line_nodes).is_equal(drawn * 2)
 
 
 func test_map_lines_equal_board_lines_under_move_preview() -> void:
@@ -224,7 +233,7 @@ func test_symbols_differ_per_state_not_colour_only() -> void:
 	var p: String = RelationMinimap.symbol_for(AffinityLineStatus.State.POSITIVE)
 	var n: String = RelationMinimap.symbol_for(AffinityLineStatus.State.NEGATIVE)
 	var z: String = RelationMinimap.symbol_for(AffinityLineStatus.State.NEUTRAL)
-	assert_bool(p != n and n != z and p != z).is_true()
+	assert_bool(p != n and n != z and p != z).is_true()  # 關係圖仍是舊畫法,下一段才改
 
 
 func test_localization_keys_resolve() -> void:
