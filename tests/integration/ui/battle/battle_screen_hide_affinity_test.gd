@@ -264,6 +264,7 @@ func test_settings_focus_chain_reaches_new_row_and_is_bounded() -> void:
 	assert_bool(hide_row.focus_mode == Control.FOCUS_ALL).is_true()
 	assert_object(egm.get_node(egm.focus_neighbor_bottom)).is_same(hide_row)
 	assert_object(hide_row.get_node(hide_row.focus_neighbor_top)).is_same(egm)
-	assert_object(hide_row.get_node(hide_row.focus_neighbor_bottom)).is_same(back)
-	assert_object(back.get_node(back.focus_neighbor_top)).is_same(hide_row)
+	assert_object(hide_row.get_node(hide_row.focus_neighbor_bottom)).is_same(s.get_node("Panel/ContentMargin/Rows/MasterRow/Slider")) # audio story-002: 下一項改為主音量滑桿
+	assert_object(s.get_node("Panel/ContentMargin/Rows/MuteRow").get_node(s.get_node("Panel/ContentMargin/Rows/MuteRow").focus_neighbor_bottom)).is_same(back)
+	assert_object(back.get_node(back.focus_neighbor_top)).is_same(s.get_node("Panel/ContentMargin/Rows/MuteRow"))
 	assert_object(back.get_node(back.focus_neighbor_bottom)).is_same(back)

@@ -45,6 +45,18 @@ const TEXT_BACK: StringName = &"shell.settings.back"
 @onready var _egm_toggle_row: CheckButton = $Panel/ContentMargin/Rows/EgmToggleRow
 @onready var _hide_affinity_row: CheckButton = $Panel/ContentMargin/Rows/HideAffinityRow
 @onready var _back_row: Button = $Panel/ContentMargin/Rows/BackRow
+@onready var _master_label: Label = $Panel/ContentMargin/Rows/MasterRow/Label
+@onready var _master_slider: HSlider = $Panel/ContentMargin/Rows/MasterRow/Slider
+@onready var _music_label: Label = $Panel/ContentMargin/Rows/MusicRow/Label
+@onready var _music_slider: HSlider = $Panel/ContentMargin/Rows/MusicRow/Slider
+@onready var _sfx_label: Label = $Panel/ContentMargin/Rows/SfxRow/Label
+@onready var _sfx_slider: HSlider = $Panel/ContentMargin/Rows/SfxRow/Slider
+@onready var _mute_row: CheckButton = $Panel/ContentMargin/Rows/MuteRow
+
+const TEXT_VOLUME_MASTER: StringName = &"shell.settings.volume_master"
+const TEXT_VOLUME_MUSIC: StringName = &"shell.settings.volume_music"
+const TEXT_VOLUME_SFX: StringName = &"shell.settings.volume_sfx"
+const TEXT_MUTE_TOGGLE: StringName = &"shell.settings.mute_toggle"
 
 
 func _ready() -> void:
@@ -60,18 +72,38 @@ func _ready() -> void:
 
 	# AC5 —— 比照 title_screen.gd:FOCUS_ALL + 手動 focus_neighbor,做出有界
 	# (不環繞)的二項清單。
-	_egm_toggle_row.focus_mode = Control.FOCUS_ALL
-	_hide_affinity_row.focus_mode = Control.FOCUS_ALL
-	_back_row.focus_mode = Control.FOCUS_ALL
-	_egm_toggle_row.focus_neighbor_top = _egm_toggle_row.get_path_to(_egm_toggle_row)
-	_egm_toggle_row.focus_neighbor_bottom = _egm_toggle_row.get_path_to(_hide_affinity_row)
-	_hide_affinity_row.focus_neighbor_top = _hide_affinity_row.get_path_to(_egm_toggle_row)
-	_hide_affinity_row.focus_neighbor_bottom = _hide_affinity_row.get_path_to(_back_row)
-	_back_row.focus_neighbor_top = _back_row.get_path_to(_hide_affinity_row)
-	_back_row.focus_neighbor_bottom = _back_row.get_path_to(_back_row)
+	# audio-foundation story-002 —— 三滑桿 + 靜音。同樣只在此讀一次 GameSettings。
+	# 先設 value 再連信號:初值同步不得觸發寫回(也避免 headless 測試以外的多餘存檔)。
+	_master_label.text = Loc.localize(TEXT_VOLUME_MASTER)
+	_music_label.text = Loc.localize(TEXT_VOLUME_MUSIC)
+	_sfx_label.text = Loc.localize(TEXT_VOLUME_SFX)
+	_mute_row.text = Loc.localize(TEXT_MUTE_TOGGLE)
+	_master_slider.value = GameSettings.get_master_volume()
+	_music_slider.value = GameSettings.get_music_volume()
+	_sfx_slider.value = GameSettings.get_sfx_volume()
+	_mute_row.button_pressed = GameSettings.is_muted()
+
+	# 焦點鏈(有界、不環繞):EGM → 隱藏好感度 → 主音量 → 音樂 → 音效 → 靜音 → 返回。
+	# HSlider 原生以 ui_left/ui_right 調值,故只接 top/bottom 做換列(左右鍵職責不衝突)。
+	var chain: Array[Control] = [
+		_egm_toggle_row, _hide_affinity_row, _master_slider, _music_slider,
+		_sfx_slider, _mute_row, _back_row,
+	]
+	for i in chain.size():
+		var c: Control = chain[i]
+		c.focus_mode = Control.FOCUS_ALL
+		var up: Control = chain[maxi(i - 1, 0)]
+		var down: Control = chain[mini(i + 1, chain.size() - 1)]
+		c.focus_neighbor_top = c.get_path_to(up)
+		c.focus_neighbor_bottom = c.get_path_to(down)
 
 	_egm_toggle_row.toggled.connect(_on_egm_toggled)
 	_hide_affinity_row.toggled.connect(_on_hide_affinity_toggled)
+	# 滑鼠/鍵盤/手把最終都走同一個 value_changed / toggled 處理函式(AC-3)。
+	_master_slider.value_changed.connect(_on_master_changed)
+	_music_slider.value_changed.connect(_on_music_changed)
+	_sfx_slider.value_changed.connect(_on_sfx_changed)
+	_mute_row.toggled.connect(_on_mute_toggled)
 	_back_row.pressed.connect(back_to_title)
 
 	_egm_toggle_row.grab_focus()
@@ -87,6 +119,27 @@ func _on_egm_toggled(button_pressed: bool) -> void:
 ## story-009 —— 「隱藏好感度顯示」寫回點(同 EGM:進行中的戰鬥不受影響)。
 func _on_hide_affinity_toggled(button_pressed: bool) -> void:
 	GameSettings.set_hide_affinity_display(button_pressed)
+
+
+func _on_master_changed(value: float) -> void:
+	GameSettings.set_master_volume(value)
+	GameSettings.apply_audio_to_engine()
+
+
+func _on_music_changed(value: float) -> void:
+	GameSettings.set_music_volume(value)
+	GameSettings.apply_audio_to_engine()
+
+
+func _on_sfx_changed(value: float) -> void:
+	GameSettings.set_sfx_volume(value)
+	GameSettings.apply_audio_to_engine()
+
+
+## 靜音只改旗標,不動三個音量值(AC-7)。
+func _on_mute_toggled(button_pressed: bool) -> void:
+	GameSettings.set_muted(button_pressed)
+	GameSettings.apply_audio_to_engine()
 
 
 ## AC6 —— 測試直接呼叫本方法,不模擬 [InputEvent](headless 不送 InputEvent,

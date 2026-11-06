@@ -166,3 +166,7 @@ shell.title.skip_tutorial,略過教學
 battle.hud.guard_move_format,減傷 %d→%d
 battle.attack_confirm.hold_back_format,留一手：-%d
 shell.title.game_name,盲目於微光
+shell.settings.volume_master,主音量
+shell.settings.volume_music,音樂
+shell.settings.volume_sfx,音效
+shell.settings.mute_toggle,靜音
