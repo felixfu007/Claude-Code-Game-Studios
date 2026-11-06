@@ -67,7 +67,22 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ CI run 42157370108(`8bcbcea`):`Overall Summary: 1887 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans`,計時測試 `elapsed_msec=13915` → 本機超標確認為負載。
 - ⏳ 11:40 派同一實作者**第三段:截圖驅動腳本** `prototypes/story-002-line-samples-2026-11-06/`,**只准 headless**、不開窗;實拍留在家。
 - ✅ 第三段截圖驅動 `prototypes/story-002-line-samples-2026-11-06/`(載入真實 BattleScreen.tscn + 合成夾具;樣張 A/C/D/E;B 色盲模擬與 F 舊虛線只寫做法)。協調者 headless 重跑:`ENGINE EXIT = 2`(預期:無像素不寫檔)、COMPAT 全 true、STRUCT 行與回報逐項相同、無殘留 godot、無 out/。🔴 **開窗路徑(驗證/存檔/灰階)從未執行** —— 在家第一次跑若 SCRIPT ERROR 先修腳本。**在家指令見該 README。** 拍完交 art-director 代看(管理者授權)。
-- ⏳ 11:50 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
+- 提交 `4a31fe4`(驅動腳本)。⏳ 11:50 派 producer(只讀)盤點下午公司可做項目。
+- ✅ producer 盤點 5 項(1 開場連線引擎實測、2 第 4 階段陌生人試玩程序草稿、3 最小音效範圍草稿、4 第 3~5 階段時程重估草稿、5 三處狀態欄/技術債 —— 需問寫檔許可:tactical story-021 Status 仍 Ready、relation-minimap story-002 Status、技術債登記 BattleScreen↔RelationMinimap)。
+- ⏳ 12:00 平行派 1~4(皆只寫新檔/新資料夾):godot-gdscript-specialist `prototypes/opening-line-visibility-2026-11-06/`(只 headless,不跑全套);qa-lead `docs/reviews/stage4-stranger-playtest-protocol-draft-2026-11-06.md`;audio-director `docs/reviews/minimal-audio-scope-draft-2026-11-06.md`;producer `docs/reviews/schedule-reestimate-stage3-5-draft-2026-11-06.md`。第 5 項併入下次請示。
+- 裁決「**可以,三處都改(推薦)**」→ story-021 加註完成、story-002 加註程式完成待目視、技術債登記雙向相依。
+- ✅ 四件交件,與上項一起提交 `a0afe9e`:
+  - 開場連線探針(協調者核原始輸出):9 關 11 對,**只有 vs01 丙丁(惡感)距離 2 開場不畫線**;tut1~3 無關係;其餘全畫。
+  - 音效草稿:src 零音訊程式、無音量設定;demo 必要 9 項 + 音量/靜音;音樂 2 首循環 + 勝敗 stinger;待裁 Q1 來源/Q2 誰/Q3 範圍/Q4 音量/Q5 試聽/Q6 AI 揭露。
+  - 陌生人試玩草稿:時序 P0~P6;待裁 Q-A~Q-G;衝突 C1~C8(重點 C2 教學後問歸因 vs 第 1 場不引導互斥、C4/C5 vs01 同時是三個探針、C7 電腦半建立在舊畫法)。
+  - 時程重估:瓶頸是在家時段與陌生人,不是程式;7 週緩衝 甲 先做在家工作/乙 先找真人/丙 先開商店頁;假設 AI_IMG `DESKTOP-77QK2TGUser` = 管理者在家操作(待確認)。
+- 🔴 **裁決(13:40,全推薦)**:7 週緩衝「**甲:先做在家工作(推薦)**」(被跳過:乙 先找陌生人 / 丙 先開商店頁);音效來源「**混合:音效用免費無權利素材,音樂用 AI 產(推薦)**」(被跳過:全素材庫 / 外包 / demo 無聲);音量「**要,現在就先做程式骨架(推薦)**」(被跳過:等素材 / 不要)。
+- ⏳ 13:45 派 lead-programmer 音訊骨架 epic+story(新檔);派 audio-director 起草 AI_IMG 33 號請求草稿(音樂能力詢問 + 2 首需求)+ CC0 音效來源候選。
+- ✅ 33 號已推 AI_IMG(`docs/team/handoff/33-music-capability-inquiry-2026-11-06.md`,推前 status 0、1 added):音樂能力詢問 Q1~Q10,只回答不下載不產。CC0 來源候選 `docs/reviews/cc0-sfx-sources-2026-11-06.md`(Kenney 主力;授權摘錄皆為搜尋摘要,入庫前要開頁存原文)。
+- ✅ lead-programmer audio-foundation EPIC + story-001~004(未提交)。發現**設定無任何存檔機制**(`GameSettings` static var,game-shell story-002 寫「不做跨啟動持久化(需要存檔系統,明確不在 12 個月範圍內)」)。
+- 🔴 **裁決(約 14:20)**:「**做一個小設定檔,音量與既有兩個開關都記住(推薦)**」(被跳過:只記音量 / 都不記)。⚠️ 推翻 game-shell story-002 的範圍句,需在該檔加註(文件,下次請示)。
+- 未決(待後續):素材授權登記/遊戲內署名頁/AI 音訊揭露政策無擁有者。
+- ⏳ 11:40 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
 - ✅ 已提交:S1~S3 連線表為空(零條線與距離無關);**S4 甲(0,2)乙(0,3) 距離 1 好感 → 開場綠實線+「+」**(協調者核資料檔屬實)。提示字串尚不存在(既有未決題「腳本化提示」,不動)。⚠️ 待收工告知管理者:教學關污染檢查/Q2 切線是在舊畫法下訂的,屆第 4 階段真人試玩前需重看;鋸齒線首次出現在第 1 場,與自發歸因探針位置重疊。
 - 開工基準全套(協調者):`ENGINE EXIT = 0` / `1860 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(176/176)`。
 - ✅ story-002 工單交件(未提交)。10 個未決點分流:命名/色盲/筆數/命名守則 → 實作者照工單;詳情區 → 協調者核 `relation_minimap.gd` 無詳情區 + EPIC 裁決 5 不做地圖游標 = **不在範圍**;層次/中點重疊/取整/鋸齒邊界 → 10:35 SendMessage art-director 寫 `docs/reviews/polarity-line-art-answers-2-2026-11-06.md`。⚠️ 會紅測試:`battle_screen_relation_minimap_test.gd`(181 線層子節點=線數×2)、`battle_screen_preview_test.gd`、`battle_screen_hide_affinity_test.gd`(前提「開局有線」可能失效)。
