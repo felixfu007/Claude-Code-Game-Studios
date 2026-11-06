@@ -103,6 +103,8 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 裁決「**寫回,只加註不動日期(推薦)**」(時程重估)→ 計畫書第八節表下加註 `644b91d`;管理者確認「**對,就是這樣**」(AI_IMG `DESKTOP-77QK2TGUser` = 他在家操作)。
 - 🔴🔴 **管理者問「試玩為什麼一定要我」→ 協調者拆表說明(截圖/美術/難度可代;聲音、實體手把、陌生人不可由 AI 代)。管理者更正前提(逐字):「更正,在公司可以開窗,但是不能讓他在畫面最上層,而且要靜音」。** 取代 2026-09-24「改在私人時間跑」;記憶 `private_dev_at_work.md` 已更新。分工選項(能代全代/只代截圖/維持)**尚未裁決**(他以更正代替作答)。
 - ⛔ 16:30 派 godot-specialist 做「背景視窗」探針(拋棄式空專案、灰色色塊、`--audio-driver Dummy`、最小化取像素、PowerShell 只讀前景視窗)→ **被自動權限分類器擋下**(未說明原因)。未繞路,已向管理者說明並請他決定。
+- 🔴 **裁決(16:27)**:探針「**縮小範圍再試(推薦)**」(只試最小化開窗 + `--audio-driver Dummy` + 能否取到真像素,拿掉讀前景視窗;被跳過:在家再驗 / 不驗);分工「**能代的全代,我只留聲音與手把(推薦)**」(被跳過:只代截圖與美術)→ **截圖/美術由 art-director/creative-director 看圖裁定;第 3、4 場難度與丙射程手感由 level-designer 依電腦數據裁定;管理者只留聽聲音、插實體手把按一輪。**
+- ✅ level-designer 裁定書 `docs/reviews/vs03-vs04-difficulty-decision-2026-11-06.md`:**第 3 場改 3-B**(vs03_roster E4 第 11 欄 8→10、E5 7→8;達標:運用臂 8 局勝 ≥7 且勝局 neardeath 總和 ≥3,否則還原);**第 4 場改 4-A**(vs04_roster E3 (12,5)→(11,4);勝 ≥6 且第 1、2 回合無敗);**丙射程 6 維持**。⚠️ 明天:①先確認量測工具(v4 有無 --level/--arms;撤退+隊形對照只能在 `cbe811d` 前跑,跑不了標未驗)②名冊是既有資料檔 → 開工單(Affected Files 明列)或請示 ③grep tests 有無寫死座標 ④不得跑 vs01。
 - 🔴 **16:10 收工**:PROJECT-STATUS 重寫。全天管理者裁決全部選推薦。未做(已知):友敵線樣張實拍、手把操作設定滑桿、音樂(story-004)、素材授權登記/署名頁/AI 揭露無擁有者、陌生人試玩 Q-A~G、時程重估是否寫回計畫書(未問)、AI_IMG `DESKTOP-77QK2TGUser` = 管理者在家操作的假設(未問)。`C:/tmp/p2diag_s3`、`C:/tmp/p2run_v` 兩個舊工作樹仍在(量測用,保留)。
 - story-003 實作者撞 20 回合上限,15:00 前 SendMessage 續做(worktree `.claude/worktrees/agent-a92986c9105c561d7`,分支 `worktree-agent-a92986c9105c561d7`)。
 - ⏳ 11:40 派 game-designer `docs/reviews/tutorial-s4-line-display-check-2026-11-06.md`(教學關開場各對距離/是否零條線 —— 人工推算需標註;S4 提示措辭候選)。
