@@ -1,0 +1,25 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE DisplayServer.get_name() = headless
+PROBE bus_count(initial) = 1
+PROBE bus[0] name=Master send=
+PROBE get_bus_index('Music') before = -1
+PROBE after add: count=2 idx('Music')=1 send=Master
+PROBE readback volume_db = -6.0
+PROBE readback mute = true
+PROBE linear_to_db(1.0)=0.0 (0.5)=-6.02059991327962 (0.0)=-inf (0.0001)=-80.0
+PROBE is_inf(linear_to_db(0.0)) = true
+PROBE encode_to_text = [[settings]
+
+egm=true
+vol=0.5
+]
+PROBE parse ok err = 0
+PROBE roundtrip egm=true vol=0.5 missing=DEF
+ERROR: ConfigFile parse error at <string>:0: Expected value, got ''=''.
+   at: _parse (core/io/config_file.cpp:293)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://prototypes/audio-story001-probes-2026-11-06/probe_api.gd:32)
+PROBE parse garbage err = 43
+PROBE parse empty err = 0
+PROBE parse type-mismatch: 0 vol=abc

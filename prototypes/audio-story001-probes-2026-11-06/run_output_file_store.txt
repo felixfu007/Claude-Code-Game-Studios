@@ -1,0 +1,11 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE path = C:/Users/FELIXF~1/AppData/Local/Temp/1/tmp.X1Z4MUDcUm/probe_settings.cfg  default path untouched = user://settings.cfg
+PROBE read missing file -> [] (expect empty)
+PROBE write ok = true
+PROBE read back text equals written = true
+PROBE roundtrip equal = true egm=true master=0.25 muted=true
+PROBE write to impossible path -> false (expect false, no crash)
+PROBE boot_load(real store, headless=false) = true master=0.25 egm=true
+PROBE after setter, file master -> 0.5 (expect 0.5)
+PROBE bus count after boot_load = 4 music mute=true

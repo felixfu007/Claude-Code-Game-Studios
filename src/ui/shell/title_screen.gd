@@ -93,6 +93,10 @@ const TEXT_GAME_NAME: StringName = &"shell.title.game_name"
 
 
 func _ready() -> void:
+	# audio-foundation story-001 —— 設定檔載入的啟動接點(開機場景即本畫面)。冪等;
+	# headless 下為 no-op。代價:編輯器 F6 單跑戰鬥/設定場景不經此處,用預設值。
+	GameSettings.boot_load()
+
 	# story-010 —— 遊戲名稱:HUD 點陣字 Cubic 11,字級 = HudLayout.font_size()
 	# (倍率唯一出自 WorldLayout.compute_scale(),不自行計算)。純顯示、不可聚焦,
 	# 不參與下方的焦點接線。
