@@ -155,7 +155,7 @@ Sensation 最低——任何讓玩家多花一次「重新確認」才能讀懂�
 
 | 區 | 層 | 內容 | 現況 |
 |---|---|---|---|
-| **世界層(BoardView)** | 世界層,480×270 原生,`WorldViewportContainer` 整數縮放 | 地形、棋子、HP 條/文字、移動/攻擊/威脅高亮、好感度連線、游標 | ✅ 已實作(`src/ui/battle/board_view.gd`) |
+| **世界層(BoardView)** | 世界層,480×270 原生,`WorldViewportContainer` 整數縮放 | 地形、棋子、HP 條/文字、移動/攻擊/威脅高亮、好感度連線、游標(✅ 2026-11-06 連線畫法見 `design/ux/affinity-line-display.md`) | ✅ 已實作(`src/ui/battle/board_view.gd`) |
 | **StatusLabel** | 介面層 | `第 N 回合．{我方/敵方}行動` | ✅ 已實作 |
 | **資訊列(_info_label)** | 介面層 | 游標即時查詢結果(好感度預覽/現值/傷害預覽三擇一) | ⚠️ **尚未實作 P-N1 完整要求**——見下方 (c) |
 | **HandBar Z1/Z2** | 介面層 | 手牌縮圖/展開(`skill-card-play.md` 擁有,本文件不重述) | ✅ 已實作,不在本份規格範圍 |
