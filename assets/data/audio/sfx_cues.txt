@@ -12,3 +12,4 @@ unit_down,res://assets/audio/sfx/sfx_battle_down_01.ogg,200,SFX
 victory,res://assets/audio/sfx/sfx_battle_victory_01.ogg,1000,SFX
 defeat,res://assets/audio/sfx/sfx_battle_defeat_01.ogg,1000,SFX
 affinity_up,res://assets/audio/sfx/sfx_affinity_up_01.ogg,300,SFX
+affinity_down,res://assets/audio/sfx/sfx_affinity_down_01.ogg,300,SFX

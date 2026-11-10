@@ -16,11 +16,12 @@ const CUE_UNIT_DOWN: StringName = &"unit_down"
 const CUE_VICTORY: StringName = &"victory"
 const CUE_DEFEAT: StringName = &"defeat"
 const CUE_AFFINITY_UP: StringName = &"affinity_up"
+const CUE_AFFINITY_DOWN: StringName = &"affinity_down"
 
-## M1~M9 對應的九個 cue(M5/M6 各一)。
+## M1~M9 對應的 cue(M5/M6 各一)加 affinity_down,共十個。
 const REQUIRED_CUE_IDS: Array[StringName] = [
 	CUE_UI_CLICK, CUE_UNIT_SELECT, CUE_CANCEL, CUE_UNIT_MOVE, CUE_ATTACK_HIT,
-	CUE_UNIT_DOWN, CUE_VICTORY, CUE_DEFEAT, CUE_AFFINITY_UP,
+	CUE_UNIT_DOWN, CUE_VICTORY, CUE_DEFEAT, CUE_AFFINITY_UP, CUE_AFFINITY_DOWN,
 ]
 
 const COLUMN_COUNT: int = 4

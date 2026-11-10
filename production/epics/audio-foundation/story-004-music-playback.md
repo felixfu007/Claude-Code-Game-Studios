@@ -3,6 +3,7 @@
 > **Epic**: `production/epics/audio-foundation/EPIC.md`
 > **Status**: Blocked(前置 story-001、003;且必須先裁決未決點 1)。**可選**,可延後。
 > ✅ **2026-11-10 更新(管理者核准加註)**:Status 改為 **Ready**。未決點 1 已裁決「甲:掛最外層,不加常駐物件(推薦)」(見下方未決點 1 加註);前置 story-001、003 已完成。原句保留。
+> ✅ **2026-11-10 加註(管理者核准整批加註):已完成,提交 `ccdf11b`(含「選單打開時音樂繼續播」修正)。** 曲目表目前為空(授權未辦),聽感待在家。
 > **Type**: Logic + Integration
 > **需求來源**: `docs/reviews/minimal-audio-scope-draft-2026-11-06.md` 第二節 2.3、第四節需求 6
 > **指派**: `godot-gdscript-specialist`;架構判斷 `godot-specialist`

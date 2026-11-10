@@ -103,7 +103,7 @@ func test_sfx_wiring_cancel_and_non_lethal_hit_and_affinity_handlers() -> void:
 	var host: SfxPlayerHost = auto_free(_make_host())
 	host._on_selection_cleared()
 	host._on_attack_resolved(1, 2, 5, false)
-	host._on_entry_appended(AffinityTypes.Pair.C1_C2, null)
+	host._on_entry_appended(AffinityTypes.Pair.C1_C2, _record(1.0))
 	host._on_open_rejected(0, "x")
 	assert_array(host.diagnostic_play_requests).is_equal([
 		SfxCueTable.CUE_CANCEL, SfxCueTable.CUE_ATTACK_HIT, SfxCueTable.CUE_AFFINITY_UP, SfxCueTable.CUE_CANCEL,
@@ -131,7 +131,7 @@ func test_sensitivity_proof_ac4_both_m5_and_m6_on_kill_is_caught() -> void:
 # ---- AC-8:素材全缺席(真實 ResourceLoader)整場戰鬥不崩潰 ------------------
 
 func test_sfx_wiring_all_assets_missing_full_battle_runs_clean() -> void:
-	# 自製「全缺席」:九個 cue 皆指向不存在的路徑,走真實 ResourceLoader.exists。
+	# 自製「全缺席」:十個 cue 皆指向不存在的路徑,走真實 ResourceLoader.exists。
 	var absent: Dictionary = {}
 	for cue_id: StringName in SfxCueTable.REQUIRED_CUE_IDS:
 		absent[cue_id] = {"path": "res://assets/audio/sfx/__absent_for_test__.ogg", "min_interval_ms": 0, "bus": &"SFX"}
@@ -223,3 +223,35 @@ func test_sfx_wiring_scene_router_leaves_exactly_one_host_per_scene() -> void:
 	settings.queue_free()
 	await get_tree().process_frame
 	get_tree().current_scene = original
+
+
+# ---- audio-foundation story-005:好感度正負分音 -----------------------------
+
+func _record(m: float) -> AffinityRecord:
+	var record: AffinityRecord = AffinityRecord.new()
+	record.m = m
+	return record
+
+
+## AC-1
+func test_sfx_wiring_affinity_positive_requests_only_up() -> void:
+	var host: SfxPlayerHost = auto_free(_make_host())
+	host._on_entry_appended(AffinityTypes.Pair.C1_C2, _record(2.0))
+	assert_array(host.diagnostic_play_requests).is_equal([SfxCueTable.CUE_AFFINITY_UP])
+
+
+## AC-2(敏感度證明:把 host 分支改回一律 up,本測試紅)
+func test_sfx_wiring_affinity_negative_requests_only_down() -> void:
+	var host: SfxPlayerHost = auto_free(_make_host())
+	host._on_entry_appended(AffinityTypes.Pair.C1_C2, _record(-2.0))
+	assert_array(host.diagnostic_play_requests).is_equal([SfxCueTable.CUE_AFFINITY_DOWN])
+	assert_bool(host.diagnostic_play_requests.has(SfxCueTable.CUE_AFFINITY_UP)).is_false()
+
+
+## AC-4
+func test_sfx_wiring_affinity_muted_plays_neither() -> void:
+	var host: SfxPlayerHost = auto_free(_make_host())
+	host.muted_check = func() -> bool: return true
+	host._on_entry_appended(AffinityTypes.Pair.C1_C2, _record(2.0))
+	host._on_entry_appended(AffinityTypes.Pair.C1_C2, _record(-2.0))
+	assert_array(host.diagnostic_play_requests).is_empty()

@@ -2,6 +2,7 @@
 
 > **Epic**: `production/epics/audio-foundation/EPIC.md`
 > **Status**: Blocked(前置 story-001 完成後轉 Ready)
+> ✅ **2026-11-10 加註(管理者核准整批加註):已完成,提交 `f4dd61f`(2026-11-06)。** 剩在家:實體手把上下/左右調滑桿。版面 960×540 / 1920×1080 不溢出已由 headless 探針量測(`prototypes/settings-layout-probe-2026-11-10/`,結構級,目視仍需在家)。
 > **Type**: UI(結構與互動 headless 可測;外觀為開窗人眼)
 > **需求來源**: `docs/reviews/minimal-audio-scope-draft-2026-11-06.md` 第四節需求 1;管理者 2026-11-06 裁決
 > **指派**: `ui-programmer`(`.gd` 路由 `godot-gdscript-specialist`;`.tscn` 路由 `godot-specialist`)

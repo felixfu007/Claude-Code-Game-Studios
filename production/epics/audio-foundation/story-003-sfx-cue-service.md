@@ -2,6 +2,7 @@
 
 > **Epic**: `production/epics/audio-foundation/EPIC.md`
 > **Status**: Blocked(前置 story-001;另受未決點 1、2 阻擋)
+> ✅ **2026-11-10 加註(管理者核准整批加註):已完成,提交 `6e3da81` → 合併 `e9583b6`(2026-11-06)。** 9 個 CC0 素材 2026-11-10 入庫 `781a990`(兩條測試改自製缺檔 + 正向測試)。扣分音另開 story-005。
 > **Type**: Logic + Integration
 > **需求來源**: `docs/reviews/minimal-audio-scope-draft-2026-11-06.md` 第二節 M1~M9、第四節需求 4、5、7
 > **指派**: `godot-gdscript-specialist`(`.gd`);掛載位置請 `godot-specialist` 確認

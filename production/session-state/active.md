@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十六批(2026-11-10)收工。** 第 4 場 E3 改站(story-036 `289c837`,第 3 場退回);35 號推 AI_IMG `dc372ba`;音樂播放 story-004 `ccdf11b`;9 個 CC0 音效入庫 `781a990`;扣分音 story-005;公司開窗拍照四階段判不可行。測試 1947 → 見第九十六批節末行(收工重跑值)。
+Feature: 🔴 今日裁決逐字見第九十六批節。非推薦:「最後試一次彈出式旗標」、Stability「用我個人名義」(無推薦)、署名揭露「先不決定,試聽後再說」。覆核收穫 ≥2(暫停凍結音樂、扣分播增進音)→ 連續零收穫 = 0。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(35 號正式化 5 張 → 交 art-director;注意甲丁深藍可分辨性);第二件:問管理者在家結果 —— 試聽 10 音效 + 12 首音樂(選曲/限幅器/署名揭露)、實體手把一輪、Stability 登記;友敵線樣張若在家已拍 → 交 art-director;第三件:陌生人試玩 Q-A~G 不急。** 🔴 全程台灣繁體中文。測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
+以下為第九十五批原狀態列。
 Epic: **第九十五批(2026-11-06)收工。** 友敵線 relation-minimap story-002 程式完成(`d10c54e`/`8bcbcea`/樣張驅動 `4a31fe4`);音訊 audio-foundation story-001(`3623d98`)/002(`f4dd61f`)/003(`6e3da81`→`e9583b6`)完成,004 音樂暫緩;33 號音樂能力詢問已推 AI_IMG `3448eb9`。測試 1860 → **1947,全綠**(協調者每張重跑 + 突變;CI 複驗)。
 Feature: 🔴 今日裁決逐字見第九十五批節(**全為推薦**)。覆核收穫 1(`.csv` 被當翻譯檔)→ 連續零收穫 = 0。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG(`C:/tmp/aiimg27`;32 號、33 號回覆 → 33 號交 audio-director 整理成選項);第二件:問管理者在家結果 —— 友敵線樣張(`prototypes/story-002-line-samples-2026-11-06/README.md`,開窗路徑從未跑過,報錯先修腳本;拍完交 art-director)、設定畫面手把操作與面板是否溢出;第三件:陌生人試玩草稿 Q-A~G 不急。** 🔴 全程台灣繁體中文。測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -72,7 +76,13 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ Kenney 五包下載(`C:/tmp/kenney-dl/INVENTORY.md`,353 個 .ogg,商店頁與包內授權皆 CC0 一致)。⏳ 13:56 派 audio-director 依檔名挑 M1~M9 初值 → `docs/reviews/sfx-initial-picks-2026-11-10.md`(含複製清單 + LICENSES 草稿)。
 - ✅ 暫停修正交件(`process_mode = ALWAYS` + 測試;實作者另修假串流 4 位元組導致的間歇失敗)。協調者重跑 `ENGINE EXIT = 0` / `1975 … 0 failures … 0 orphans` / `(189/189)`;協調者突變(拿掉 SceneRouter 音樂接線)→ `test_scene_router_switch_to_notifies_music_host_with_scene_key` 紅 → 還原。→ **`ccdf11b`(已推)**(含 .gdignore)。
 - 音效 9 檔已複製進 `assets/audio/sfx/`(來源見 `docs/reviews/sfx-initial-picks-2026-11-10.md` 第二節)+ `LICENSES.md` + 盤點入庫 `docs/reviews/kenney-sfx-inventory-2026-11-10.md`(未提交)。全套 **2 紅**:兩條測試以「真實素材不存在」為前提(`sfx_cue_policy_test.gd:92`、`battle_sfx_wiring_test.gd:140`)。🔴 裁決「**可以,修這 2 條並加正向測試(推薦)**」→ 14:35 派 godot-gdscript-specialist(只准改這兩個測試檔)。
-- 📌 待請示(文件):story-004 Status → Done。
+- 📌 待請示(文件):story-004 Status → Done。(✅ 已併入下方整批加註)
+- ✅ 音效測試修正交件(只改兩測試檔;自製缺檔 + 正向 2 條)。協調者突變(暫移 sfx_battle_down_01.ogg)→ `test_sfx_real_assets_all_nine_cue_paths_exist` 紅 → 還原(SHA256 同);重跑 `ENGINE EXIT = 0` / `1977 … 0 failures … 0 orphans` / `(189/189)` → **`781a990`(已推)**。Stability 註冊步驟 `9043d50`。
+- producer 下午盤點:Ready/Blocked 狀態欄 7 張實已完成;🔴 裁決「**可以,整批加註 + 收工重寫狀態頁(推薦)**」→ audio 001~004、story-036、audio EPIC 共 6 處純插入(021、minimap-002 先前已加註);PROJECT-STATUS 重寫。
+- ✅ 設定畫面版面探針 `prototypes/settings-layout-probe-2026-11-10/`:960×540 / 1920×1080 皆不溢出(內容最小高 217 / 面板 300;結構級 (A),目視仍在家)。
+- ✅ game-designer 查證:負向好感紀錄實戰會發生(每場 card_08 −2,協調者核 vs01_cards.txt:87)→ 🔴 裁決「**丙:扣分另配一個音(推薦)**」→ 協調者寫 story-005(新檔)、複製 Kenney `minimize_003.ogg` → `sfx_affinity_down_01.ogg` + LICENSES 列;⏳ 15:58 派 godot-gdscript-specialist 實作。
+- ✅ **story-005** 交件(實作者另把既有測試的 null record 改為正向 record,預期序列不變;host 加 null 防護)。協調者突變(正負分支對調)→ `test_sfx_wiring_cancel_and_non_lethal_hit_and_affinity_handlers` 紅 → 還原 SAME;**收工全套** `ENGINE EXIT = 0` / `1981 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(189/189)`。
+- 🔴 **16:15 收工**:PROJECT-STATUS 重寫。今日覆核收穫 2(暫停凍結音樂、扣分播增進音)。未做(已知):友敵線樣張實拍、實體手把、試聽(全在家);production/qa/evidence 匯入檔清理(低價值,未問);棋子接線工單(等 35 號回來)。
 - ⏳ 11:45 派 general-purpose 下載 Kenney 五包到 `C:/tmp/kenney-dl/`(不進專案)+ `INVENTORY.md` 授權逐字盤點 → 之後交 audio-director 依檔名挑 M1~M9 初值。
 
 ## 🔴 第九十五批(2026-11-06,公司,09:23 開工)—— 進行中,位階高於下方

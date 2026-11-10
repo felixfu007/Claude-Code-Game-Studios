@@ -2,9 +2,9 @@
 ##
 ## ## 檔案 I/O 使用揭露(test-standards.md 2026-09-16 裁決)
 ## 甲類:唯讀 res://assets/data/audio/sfx_cues.txt(已進版控的真實資料檔)。
-## 為什麼不能注入取代:要驗的就是「真實資料檔九個 cue 都在、bus 合法」,
+## 為什麼不能注入取代:要驗的就是「真實資料檔十個 cue 都在、bus 合法」,
 ## 改寫死假資料抓不到資料檔打錯字。其餘解析行為用 in-test 字串驗,不讀檔。
-## 🔴 不證明窮盡性:只驗九個必要 cue_id 與 bus 欄位,不驗路徑檔案存在(素材尚未到)。
+## 🔴 不證明窮盡性:只驗十個必要 cue_id 與 bus 欄位,不驗路徑檔案存在(素材尚未到)。
 ## 敏感度證明:甲類真實資料檔斷言屬「A′ 類」(沒有類別可注入錯誤版本),不蓋證明;
 ## 解析函式為 static 純函式(「A 類」,無繼承鏈可覆寫),亦不蓋常駐 mutant。
 extends GdUnitTestSuite
@@ -41,13 +41,13 @@ func test_sfx_table_empty_text_gives_empty_table_without_error() -> void:
 	assert_array(result["errors"]).is_empty()
 
 
-func test_sfx_table_real_csv_has_all_nine_cues_no_errors() -> void:
+func test_sfx_table_real_csv_has_all_ten_cues_no_errors() -> void:
 	var text: String = FileAccess.get_file_as_string(SfxCueTable.CSV_PATH)
 	var result: Dictionary = SfxCueTable.parse(text)
 	assert_array(result["errors"]).append_failure_message("真實 CSV 有壞列:%s" % [result["errors"]]).is_empty()
 	assert_array(SfxCueTable.missing_required(result["cues"])).is_empty()
 	assert_int((result["cues"] as Dictionary).size()).is_equal(SfxCueTable.REQUIRED_CUE_IDS.size())
-	assert_int(SfxCueTable.REQUIRED_CUE_IDS.size()).is_equal(9)
+	assert_int(SfxCueTable.REQUIRED_CUE_IDS.size()).is_equal(10)
 
 
 func test_sfx_table_real_csv_buses_are_story001_constants() -> void:
@@ -60,3 +60,14 @@ func test_sfx_table_real_csv_buses_are_story001_constants() -> void:
 func test_sfx_table_unknown_bus_is_rejected() -> void:
 	assert_bool(SfxCueTable.is_valid_bus(&"SFX")).is_true()
 	assert_bool(SfxCueTable.is_valid_bus(&"Bogus")).is_false()
+
+
+## story-005 AC-3:affinity_down 是必要 cue,且真實表十個素材路徑皆存在(素材已入庫)。
+func test_sfx_table_real_csv_affinity_down_required_and_all_ten_paths_exist() -> void:
+	assert_bool(SfxCueTable.REQUIRED_CUE_IDS.has(SfxCueTable.CUE_AFFINITY_DOWN)).is_true()
+	var result: Dictionary = SfxCueTable.parse(FileAccess.get_file_as_string(SfxCueTable.CSV_PATH))
+	var cues: Dictionary = result["cues"]
+	assert_int(cues.size()).is_equal(10)
+	for cue_id: StringName in cues.keys():
+		var path: String = (cues[cue_id] as Dictionary)["path"]
+		assert_bool(ResourceLoader.exists(path)).append_failure_message("缺素材:%s" % path).is_true()

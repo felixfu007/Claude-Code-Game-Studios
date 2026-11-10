@@ -210,5 +210,11 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 		request_cue(SfxCueTable.CUE_DEFEAT)
 
 
-func _on_entry_appended(_pair: AffinityTypes.Pair, _record: AffinityRecord) -> void:
-	request_cue(SfxCueTable.CUE_AFFINITY_UP)
+## M9:依紀錄帶號幅度分音。池已拒絕 0 / NaN / inf,故只有正、負兩種;record 為 null 時不出聲。
+func _on_entry_appended(_pair: AffinityTypes.Pair, record: AffinityRecord) -> void:
+	if record == null:
+		return
+	if record.m > 0.0:
+		request_cue(SfxCueTable.CUE_AFFINITY_UP)
+	elif record.m < 0.0:
+		request_cue(SfxCueTable.CUE_AFFINITY_DOWN)

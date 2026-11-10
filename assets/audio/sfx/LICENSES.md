@@ -25,6 +25,7 @@
 | sfx_battle_victory_01.ogg | Music Jingles | Audio/Steel jingles/jingles_STEEL02.ogg | https://kenney.nl/assets/music-jingles | CC0 | 2026-11-10 |
 | sfx_battle_defeat_01.ogg | Music Jingles | Audio/Sax jingles/jingles_SAX07.ogg | https://kenney.nl/assets/music-jingles | CC0 | 2026-11-10 |
 | sfx_affinity_up_01.ogg | Interface Sounds | Audio/confirmation_003.ogg | https://kenney.nl/assets/interface-sounds | CC0 | 2026-11-10 |
+| sfx_affinity_down_01.ogg | Interface Sounds | Audio/minimize_003.ogg | https://kenney.nl/assets/interface-sounds | CC0 | 2026-11-10 |
 
 ## 維護規則
 

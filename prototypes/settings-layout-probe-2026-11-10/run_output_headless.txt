@@ -1,0 +1,44 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+=== requested (960, 540) actual root.size=(960, 540) content_scale_size=(480, 270)
+viewport rect=[P: (0.0, 0.0), S: (960.0, 540.0)]
+Panel global_rect=[P: (320.0, 120.0), S: (320.0, 300.0)] size=(320.0, 300.0) min=(160.0, 217.0)
+Rows global_rect=[P: (320.0, 120.0), S: (320.0, 300.0)] min=(160.0, 217.0)
+CHILD SettingsScreen/Panel/ContentMargin rect=[P: (320.0, 120.0), S: (320.0, 300.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows rect=[P: (320.0, 120.0), S: (320.0, 300.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/EgmToggleRow rect=[P: (320.0, 120.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/HideAffinityRow rect=[P: (320.0, 155.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow rect=[P: (320.0, 190.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow/Label rect=[P: (320.0, 190.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow/Slider rect=[P: (414.0, 193.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow rect=[P: (320.0, 217.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow/Label rect=[P: (320.0, 217.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow/Slider rect=[P: (414.0, 220.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow rect=[P: (320.0, 244.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow/Label rect=[P: (320.0, 244.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow/Slider rect=[P: (414.0, 247.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MuteRow rect=[P: (320.0, 271.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/BackRow rect=[P: (320.0, 306.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+MAX_BOTTOM_Y=420.0 panel_bottom=420.0 window_h=540.0 overflow_panel=false overflow_window=false
+panel_min_h_vs_panel_h: min=217.0 actual=300.0
+=== requested (1920, 1080) actual root.size=(1920, 1080) content_scale_size=(480, 270)
+viewport rect=[P: (0.0, 0.0), S: (1920.0, 1080.0)]
+Panel global_rect=[P: (800.0, 390.0), S: (320.0, 300.0)] size=(320.0, 300.0) min=(160.0, 217.0)
+Rows global_rect=[P: (800.0, 390.0), S: (320.0, 300.0)] min=(160.0, 217.0)
+CHILD SettingsScreen/Panel/ContentMargin rect=[P: (800.0, 390.0), S: (320.0, 300.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows rect=[P: (800.0, 390.0), S: (320.0, 300.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/EgmToggleRow rect=[P: (800.0, 390.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/HideAffinityRow rect=[P: (800.0, 425.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow rect=[P: (800.0, 460.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow/Label rect=[P: (800.0, 460.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MasterRow/Slider rect=[P: (894.0, 463.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow rect=[P: (800.0, 487.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow/Label rect=[P: (800.0, 487.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MusicRow/Slider rect=[P: (894.0, 490.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow rect=[P: (800.0, 514.0), S: (320.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow/Label rect=[P: (800.0, 514.0), S: (90.0, 23.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/SfxRow/Slider rect=[P: (894.0, 517.0), S: (226.0, 16.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/MuteRow rect=[P: (800.0, 541.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+CHILD SettingsScreen/Panel/ContentMargin/Rows/BackRow rect=[P: (800.0, 576.0), S: (320.0, 31.0)] inPanel=true inWindow=true
+MAX_BOTTOM_Y=690.0 panel_bottom=690.0 window_h=1080.0 overflow_panel=false overflow_window=false
+panel_min_h_vs_panel_h: min=217.0 actual=300.0
