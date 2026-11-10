@@ -11,8 +11,14 @@
 ## 🔴 不證明窮盡性:反射呼叫、字串組出的函式名、.tscn 腳本掛載都在掃描視野之外;
 ## AC-2 的原始碼掃描證明「這兩檔沒寫」,不證明引擎內部不會因素材缺席印訊息。
 ##
+## 甲類(唯讀已進版控的 assets/data/audio/sfx_cues.txt):正向測試要驗「真實 cue 表指向的真實素材存在」,
+## 注入假表就失去意義。🔴 不證明窮盡性:只驗九個必要 cue 的路徑存在,不證明檔案內容可解碼或會響。
+## 正向測試的敏感度證明為手動(暫改 ui_click 路徑為不存在檔名 -> 紅 -> 還原),見交件回報。
+##
 ## 敏感度證明:AC-1(_MutantIgnoresMute)、AC-3(_MutantIgnoresInterval),常駐 mutant。
 extends GdUnitTestSuite
+
+const _ABSENT_PATH: String = "res://assets/audio/sfx/__absent_for_test__.ogg"
 
 const _TABLE: Dictionary = {
 	&"a": {"path": "res://x/a.ogg", "min_interval_ms": 100, "bus": &"SFX"},
@@ -85,11 +91,42 @@ func test_sfx_policy_unknown_cue_is_silent() -> void:
 
 
 func test_sfx_real_resource_loader_missing_asset_does_not_crash_host() -> void:
-	# 真實 ResourceLoader.exists:素材目前不存在 -> 決策為 ASSET_MISSING,不崩潰。
+	# 真實 ResourceLoader.exists + 自製「缺席」:cue 表指向刻意不存在的路徑 -> ASSET_MISSING,不崩潰。
+	# (與真實素材是否已入庫無關;真實素材存在的正向驗證見 test_sfx_real_assets_*。)
+	var table: Dictionary = {
+		SfxCueTable.CUE_UI_CLICK: {"path": _ABSENT_PATH, "min_interval_ms": 60, "bus": &"UI"},
+	}
+	var policy: SfxCuePolicy = SfxCuePolicy.new(table, Callable(Time, "get_ticks_msec"),
+			func(path: String) -> bool: return ResourceLoader.exists(path))
 	var host: SfxPlayerHost = auto_free(SfxPlayerHost.new())
 	host.muted_check = func() -> bool: return false
+	host.configure(policy)
 	add_child(host)
+	assert_bool(ResourceLoader.exists(_ABSENT_PATH)).is_false()
 	assert_int(host.request_cue(SfxCueTable.CUE_UI_CLICK)).is_equal(SfxCuePolicy.Decision.ASSET_MISSING)
+	assert_int(host.diagnostic_play_requests.size()).is_equal(0)
+
+
+## 正向:真實 ResourceLoader + 真實 sfx_cues.txt。ui_click 決策為 PLAY 且送出播放請求;
+## 九個 cue 的真實路徑皆存在(防止日後刪檔/改名而無聲)。
+func test_sfx_real_assets_ui_click_plays_with_real_loader_and_table() -> void:
+	var parsed: Dictionary = SfxCueTable.parse(FileAccess.get_file_as_string(SfxCueTable.CSV_PATH))
+	var policy: SfxCuePolicy = SfxCuePolicy.new(parsed["cues"], Callable(Time, "get_ticks_msec"),
+			func(path: String) -> bool: return ResourceLoader.exists(path))
+	var host: SfxPlayerHost = auto_free(SfxPlayerHost.new())
+	host.playback_enabled = false # headless 音訊 no-op,只驗決策與請求
+	host.muted_check = func() -> bool: return false
+	host.configure(policy)
+	assert_int(host.request_cue(SfxCueTable.CUE_UI_CLICK)).is_equal(SfxCuePolicy.Decision.PLAY)
+	assert_array(host.diagnostic_play_requests).is_equal([SfxCueTable.CUE_UI_CLICK])
+
+
+func test_sfx_real_assets_all_nine_cue_paths_exist() -> void:
+	var cues: Dictionary = SfxCueTable.parse(FileAccess.get_file_as_string(SfxCueTable.CSV_PATH))["cues"]
+	assert_array(SfxCueTable.missing_required(cues)).is_empty()
+	for cue_id: StringName in SfxCueTable.REQUIRED_CUE_IDS:
+		var path: String = String(cues[cue_id]["path"])
+		assert_bool(ResourceLoader.exists(path)).append_failure_message("cue %s 素材不存在:%s" % [cue_id, path]).is_true()
 
 
 func test_sfx_audio_code_never_pushes_errors_or_warnings() -> void:

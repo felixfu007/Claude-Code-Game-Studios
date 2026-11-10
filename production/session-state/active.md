@@ -70,6 +70,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ story-004 交件(未提交):music_policy / music_track_table / music_player_host + scene_router、shell/title_screen 各 1 行;表為空(全靜音)。協調者掃突變標記 0、重跑 `ENGINE EXIT = 0` / `1974 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(189/189)`。
 - 🔴 **覆核收穫**:戰鬥選單 `paused=true` 時,INHERIT 的音樂宿主被暫停、Tween 卡住(探針 `prototypes/audio-pause-probe-2026-11-10/` T1/T4 (A));協調者另一假設「選單點擊音不響」**實測不成立**(T3)。裁決「**選單打開時音樂繼續播(推薦)**」→ 13:56 SendMessage 實作者改 ALWAYS + 補測試 + 突變。
 - ✅ Kenney 五包下載(`C:/tmp/kenney-dl/INVENTORY.md`,353 個 .ogg,商店頁與包內授權皆 CC0 一致)。⏳ 13:56 派 audio-director 依檔名挑 M1~M9 初值 → `docs/reviews/sfx-initial-picks-2026-11-10.md`(含複製清單 + LICENSES 草稿)。
+- ✅ 暫停修正交件(`process_mode = ALWAYS` + 測試;實作者另修假串流 4 位元組導致的間歇失敗)。協調者重跑 `ENGINE EXIT = 0` / `1975 … 0 failures … 0 orphans` / `(189/189)`;協調者突變(拿掉 SceneRouter 音樂接線)→ `test_scene_router_switch_to_notifies_music_host_with_scene_key` 紅 → 還原。→ **`ccdf11b`(已推)**(含 .gdignore)。
+- 音效 9 檔已複製進 `assets/audio/sfx/`(來源見 `docs/reviews/sfx-initial-picks-2026-11-10.md` 第二節)+ `LICENSES.md` + 盤點入庫 `docs/reviews/kenney-sfx-inventory-2026-11-10.md`(未提交)。全套 **2 紅**:兩條測試以「真實素材不存在」為前提(`sfx_cue_policy_test.gd:92`、`battle_sfx_wiring_test.gd:140`)。🔴 裁決「**可以,修這 2 條並加正向測試(推薦)**」→ 14:35 派 godot-gdscript-specialist(只准改這兩個測試檔)。
+- 📌 待請示(文件):story-004 Status → Done。
 - ⏳ 11:45 派 general-purpose 下載 Kenney 五包到 `C:/tmp/kenney-dl/`(不進專案)+ `INVENTORY.md` 授權逐字盤點 → 之後交 audio-director 依檔名挑 M1~M9 初值。
 
 ## 🔴 第九十五批(2026-11-06,公司,09:23 開工)—— 進行中,位階高於下方

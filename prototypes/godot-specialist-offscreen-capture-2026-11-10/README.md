@@ -86,3 +86,25 @@
 - 焦點保持 false:**不成立**。`NO_FOCUS` 重設三種順序都沒用,視窗在第一幀後回報 focused=true。
 - 其餘(螢幕外、尺寸、像素、Dummy)維持第二階段結論。
 - 第 3 次(popup 類旗標組合)結果見上表第 3 列/`run_output_3_alt.txt`。
+
+---
+
+# 第四階段(2026-11-10,最後一次):`WINDOW_FLAG_POPUP`
+**方法**:`phase4/`(`--before` 移位放大前設旗標 / `--after` 之後設),兩次 `ENGINE EXIT=0`。①「專案設定/建立時就設」:未找到對應的 `display/window/*` 設定(未逐一窮舉,(C)),故未試。
+## 量測 (A)(`phase4/run_output_1_before.txt`、`run_output_2_after.txt`)
+```
+ERROR: Main window can't be popup.
+   at: window_set_flag (platform/windows/display_server_windows.cpp:2930)
+POPUP_SET_BEFORE flag=false FOCUS=false      (第 2 次為 POPUP_SET_AFTER,同)
+FOCUS_TRACE_60=111111111111111111111111111111111111111111111111111111111111 TRUE_COUNT=60
+IMG_SIZE=(960, 540) left=(0.502, 0.502, 0.502, 1.0) right=(1.0, 0.0, 0.0, 1.0)
+POS_END=(-5000, -5000) SIZE_END=(960, 540) FOCUS_END=true POPUP_END=false
+AUDIO_SERVER_DRIVER=Dummy
+```
+**引擎明文拒絕:主視窗不能設為 popup**(兩種順序皆然),旗標維持 false,行為與前階段完全相同(焦點 60 幀全 true)。
+
+# 最終總判定(四階段合計):**不可行**(對「不得被看見、不搶焦點」的完整要求);**部分可行**(僅就「螢幕外取像素+靜音」)
+- 成立 (A):螢幕外 (-5000,-5000) 事後移位成立且不被拉回;960×540 取得正確像素;`--audio-driver Dummy` 生效;無逾時;建立尺寸可縮到引擎下限 64×64 無邊框。
+- 不成立 (A):①啟動時指定螢幕外位置無效;②`no_focus` 重設(三種順序)與 popup(引擎拒絕)皆無法讓 `window_is_focused()` 保持 false —— 第一幀後恆為 true。
+- **最接近的做法**:專案設定 `window_width/height_override=1`+`borderless=true`+`no_focus=true`,`_ready()` 先 `window_set_position(-5000,-5000)` 再 `window_set_size(960,540)`。
+- **剩餘風險**:①建立瞬間有一個 64×64 無邊框視窗出現在主螢幕中央,持續到 `_ready()`(引擎啟動後約 4 秒量級,實際可見時間量不到);②螢幕外視窗回報 focused=true,是否真的搶走鍵盤焦點量不到(引擎內無法區分,外部工具不得用)—— 若是真的,會影響使用者正在操作的視窗輸入。

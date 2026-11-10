@@ -131,7 +131,14 @@ func test_sensitivity_proof_ac4_both_m5_and_m6_on_kill_is_caught() -> void:
 # ---- AC-8:素材全缺席(真實 ResourceLoader)整場戰鬥不崩潰 ------------------
 
 func test_sfx_wiring_all_assets_missing_full_battle_runs_clean() -> void:
+	# 自製「全缺席」:九個 cue 皆指向不存在的路徑,走真實 ResourceLoader.exists。
+	var absent: Dictionary = {}
+	for cue_id: StringName in SfxCueTable.REQUIRED_CUE_IDS:
+		absent[cue_id] = {"path": "res://assets/audio/sfx/__absent_for_test__.ogg", "min_interval_ms": 0, "bus": &"SFX"}
 	var host: SfxPlayerHost = SfxPlayerHost.new()
+	host.playback_enabled = false
+	host.configure(SfxCuePolicy.new(absent, Callable(Time, "get_ticks_msec"),
+			func(path: String) -> bool: return ResourceLoader.exists(path)))
 	host.muted_check = func() -> bool: return false
 	var instance: BattleScreen = _load_battle(host, _ROSTER_DUEL_PATH)
 	instance._controller.click_tile(Vector2i(0, 0))
