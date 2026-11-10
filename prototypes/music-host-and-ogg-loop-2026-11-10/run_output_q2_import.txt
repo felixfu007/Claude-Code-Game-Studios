@@ -1,0 +1,17 @@
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+--- default .import params:
+3:importer="oggvorbisstr"
+15:loop=false
+16:loop_offset=0
+17:bpm=0
+18:beat_count=0
+19:bar_beats=4
+Q2I class=AudioStreamOggVorbis loop=false loop_offset=0.0 length=96.0001831054688
+--- edited .import:
+15:loop=true
+16:loop_offset=0
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+Q2I class=AudioStreamOggVorbis loop=true loop_offset=0.0 length=96.0001831054688

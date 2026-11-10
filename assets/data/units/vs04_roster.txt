@@ -41,6 +41,11 @@
 # ⚠️ 上方「座標設計理由」與「敵方五人全部縮在牆內(x=9~11)」已不成立:E1 現在站在 y=2 那格門上(x=8)。
 # 敘事是否接受「一人守門」待 level-designer 確認;可能偏易(電腦打法全勝),待管理者實打。
 #
+# ── 2026-11-10 修訂(story-036,依 docs/reviews/vs03-vs04-difficulty-decision-2026-11-06.md)──
+# 只改 E3 座標:(12,5) -> (11,4)。其餘各行不動。量測(--arms=use,8 組旋鈕,副本名冊):8/8 勝、第 1~2 回合無敗局、
+# 勝局 neardeath 總和 4(改前 2)、最低剩餘 HP 5(改前 6)。原始 log:prototypes/story-036-roster-measure-2026-11-10/run_vs04_copy.log
+# 僅為電腦打法數據,不代表真人手感。
+#
 # id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
 1,甲,PLAYER,30,16,8,6,1,1,0,1
 2,乙,PLAYER,26,14,6,5,1,2,0,2
@@ -49,6 +54,6 @@
 5,戊,PLAYER,30,16,8,6,1,1,0,5,1
 6,E1,ENEMY,23,14,6,6,1,1,8,2
 7,E2,ENEMY,20,13,5,5,1,2,12,0
-8,E3,ENEMY,18,14,3,3,2,4,12,5
+8,E3,ENEMY,18,14,3,3,2,4,11,4
 9,E4,ENEMY,22,13,5,5,1,2,11,3
 10,E5,ENEMY,24,14,6,6,1,1,12,2

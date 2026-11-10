@@ -1,0 +1,12 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Condition "packet_sequence.is_null()" is true. Returning: 0
+   at: get_length (modules/vorbis/audio_stream_ogg_vorbis.cpp:519)
+   GDScript backtrace (most recent call first):
+       [0] _init (C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/prototypes/music-host-and-ogg-loop-2026-11-10/probe_q2_ogg_props.gd:5)
+Q2 fresh: loop=false loop_offset=0.0 length=0.0
+Q2 props: ["packet_sequence", "bpm", "beat_count", "bar_beats", "tags", "loop", "loop_offset"]
+Q2 loaded null? false
+Q2 file: loop=false loop_offset=0.0 length=96.0001831054688 bpm=0.0
+Q2 after set: loop=true loop_offset=1.5
+Q2 exit 0

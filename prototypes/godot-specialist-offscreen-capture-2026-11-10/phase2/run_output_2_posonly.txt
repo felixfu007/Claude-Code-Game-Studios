@@ -1,0 +1,26 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+TICKS_AT_READY_MS=4144
+SETTING borderless=true no_focus=true w_override=1
+MIN_SIZE=(64, 64) BORDERLESS_FLAG=true
+AUDIO_SERVER_DRIVER=Dummy
+POS_T0=(959, 569) SIZE_T0=(64, 64) VP_T0=(64, 64) FOCUS_T0=false
+AFTER_SET POS=(-5000, -5000) SIZE=(64, 64)
+F0 POS=(-5000, -5000) SIZE=(64, 64) VP=(64, 64) FOCUS=true
+F1 POS=(-5000, -5000) SIZE=(64, 64) VP=(64, 64) FOCUS=true
+F5 POS=(-5000, -5000) SIZE=(64, 64) VP=(64, 64) FOCUS=true
+F30 POS=(-5000, -5000) SIZE=(64, 64) VP=(64, 64) FOCUS=true
+F59 POS=(-5000, -5000) SIZE=(64, 64) VP=(64, 64) FOCUS=true
+IMAGE_IS_NULL=false
+ERROR: Index p_x = 240 is out of bounds (width = 64).
+   at: get_pixel (core/io/image.cpp:3689)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://probe_main.gd:28)
+ERROR: Index p_x = 720 is out of bounds (width = 64).
+   at: get_pixel (core/io/image.cpp:3689)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://probe_main.gd:28)
+IMG_SIZE=(64, 64) left=(0.0, 0.0, 0.0, 1.0) right=(0.0, 0.0, 0.0, 1.0)
+POS_END=(-5000, -5000) SIZE_END=(64, 64) FOCUS_END=true TICKS_END_MS=5912
+ENGINE EXIT=0

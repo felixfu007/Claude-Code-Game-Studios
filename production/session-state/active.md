@@ -49,6 +49,20 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;查 AI_IMG)。
+- 開工:本倉庫 pull 無新提交。AI_IMG pull 到 `bb2b7df`:**32 號交付、33 號回報(`5448195`)、33a 管理者在家當面裁決(`1562b3f`:音樂用現有 Stable Audio 3(推薦)/ stinger 一起做(推薦)/ 棋子**直接擴大 img2img**(非推薦,不等審定)/ 色盤新增衣物綠(推薦))、34 號(`bb2b7df`:棋子 r2 20 張 + 音樂候選 12 個 .ogg)**。家用端待辦清空。授權三事(Stability 註冊、署名、AI 揭露)未辦前音樂只供試聽、不進遊戲。
+- ⏳ 11:10 平行派四件:art-director 審 32/34 棋子 + 色盤附加衣物綠一列(33a 已裁決)+ 35 號草稿 → `docs/ai-art-service-handoff/34-art-director-review-2026-11-10.md`;audio-director 授權查證選項 + 試聽單 → `docs/reviews/music-licensing-and-listening-2026-11-10.md`;godot-specialist story-004 未決點 1(宿主)+ OGG 循環/Tween headless 探針 → `prototypes/music-host-and-ogg-loop-2026-11-10/`;lead-programmer 第 3、4 場名冊工單 → `production/epics/tactical-combat/story-036-*`。
+- 📌 順手發現:`design/art/color-palette.csv` 有 `.import`(被當翻譯檔匯入,同 11-06 陷阱;design/ 非 assets/,規則條文只寫 assets/)—— 待登記/處置。
+- 開工基準全套:`ENGINE EXIT = 0` / `1947 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(187/187)`。
+- 🔴 **裁決(11:20)**:公司拍照「**試螢幕外開窗(推薦)**」;資料檔「**比照程式檔(推薦)**」(工單 Affected Files 內的資料檔可直接改,須全套+重量)。
+- 🔴 **裁決(11:25)**:色盤「**加一列,檔頭計數一起更新(推薦)**」→ 已套用(39 色,錨點各 1 命中);音樂宿主「**甲:掛最外層,不加常駐物件(推薦)**」;Stability 註冊「**用我個人名義**」(無推薦);署名/揭露「**先不決定,試聽後再說**」。
+- ✅ 交件:art-director `34-art-director-review-2026-11-10.md`(主選 r2 s3701/3302/3303/3304/3305;乙十字、戊紅內襯改後製;甲丁深藍可能分不開待驗)+ 35 號草稿;**它正確拒絕代改色盤**(agent 訊息非核准)。audio-director `docs/reviews/music-licensing-and-listening-2026-11-10.md`(試聽單 + 授權選項;抓到家用端「5 個未達 -16 LUFS」實為 6 個,協調者核表屬實)。godot-specialist `prototypes/music-host-and-ogg-loop-2026-11-10/`(GameRoot 無載入者、SceneRouter 純靜態 → 宿主掛 tree.root;OGG loop/Tween headless (A))。lead-programmer story-036 工單。
+- ✅ **story-036**:第 3 場 3-B **6/8 未改善 → 整案退回(名冊零改動)**;第 4 場 4-A **8/8、無早敗、neardeath 2→4、最低 HP 6→5 → 保留**(`vs04_roster.txt` E3 (11,4) + 修訂註解)。協調者獨立重跑落地名冊 `RESULT` 8 行與實作者副本 log `cmp` 相同。
+- ✅ **35 號已推 AI_IMG `dc372ba`**(推前 status 空;35 號正式化 5 張 + 新色盤 + LUFS 6 個更正)。
+- 螢幕外開窗探針:第一階段 啟動時位置被忽略(出現在 (0,0))、`_ready` 後移位成立、無焦點、像素可取、Dummy 生效;第二階段 64×64 無邊框建立(引擎下限 64)→ 移位放大 OK,**但移位後 FOCUS=true**。🔴 裁決「**再試一次:移位後重設「不搶焦點」(推薦)**」→ 第三階段進行中。
+- 🔴 裁決「**可以,兩處都改後開工(推薦)**」→ story-004 已加註(Status Ready、Affected Files 加 scene_router.gd / shell/title_screen.gd、未決點 1 裁決)。待全套重跑完再派實作(主目錄)。
+
 ## 🔴 第九十五批(2026-11-06,公司,09:23 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
 - 開工:本倉庫 pull 無新提交;AI_IMG HEAD 仍 `1eeca1e`(我方 32 號),**家用端無新交件**。

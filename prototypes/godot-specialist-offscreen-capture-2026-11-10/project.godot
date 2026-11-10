@@ -1,0 +1,12 @@
+config_version=5
+
+[application]
+config/name="offscreen_probe"
+run/main_scene="res://Probe.tscn"
+
+[display]
+window/size/viewport_width=320
+window/size/viewport_height=180
+window/size/no_focus=true
+window/size/initial_position_type=0
+window/size/initial_position=Vector2i(-5000, -5000)

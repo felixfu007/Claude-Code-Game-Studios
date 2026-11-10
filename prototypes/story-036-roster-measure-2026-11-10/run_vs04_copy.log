@@ -1,0 +1,15 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+HEADER tool=protocol2-computer-measure-v4 build_commit=9b7dc4032f2bd3cbcee41d4284768805f1af4eca engine=4.7.1-stable (official) level=2 terrain=res://assets/data/levels/vs04_terrain.txt roster=res://prototypes/story-036-roster-measure-2026-11-10/vs04_roster_copy.txt affinity=res://assets/data/affinity/vs04_affinity_links.txt max_rounds=12
+RESULT arm=use v=0 outcome=VICTORY rounds=4 neardeath=1 phi_avg=6.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,26,16,6,19 first_round=1 guard_events=6 guard_nonzero=4
+RESULT arm=use v=1 outcome=VICTORY rounds=5 neardeath=1 phi_avg=6.400 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=24,11,11,6,30 first_round=1 guard_events=8 guard_nonzero=5
+RESULT arm=use v=2 outcome=VICTORY rounds=4 neardeath=1 phi_avg=8.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=30,21,22,5,30 first_round=1 guard_events=4 guard_nonzero=4
+RESULT arm=use v=3 outcome=VICTORY rounds=5 neardeath=0 phi_avg=6.400 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=23,26,22,26,14 first_round=1 guard_events=5 guard_nonzero=5
+RESULT arm=use v=4 outcome=VICTORY rounds=4 neardeath=0 phi_avg=6.500 raw_outcome=VICTORY aborted=false reason= phi_samples=4 final_hp=23,20,16,20,27 first_round=1 guard_events=5 guard_nonzero=5
+RESULT arm=use v=5 outcome=VICTORY rounds=5 neardeath=1 phi_avg=8.800 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=9,26,22,26,30 first_round=1 guard_events=6 guard_nonzero=6
+RESULT arm=use v=6 outcome=VICTORY rounds=5 neardeath=0 phi_avg=7.600 raw_outcome=VICTORY aborted=false reason= phi_samples=5 final_hp=30,18,12,11,30 first_round=1 guard_events=5 guard_nonzero=4
+RESULT arm=use v=7 outcome=VICTORY rounds=6 neardeath=0 phi_avg=5.000 raw_outcome=VICTORY aborted=false reason= phi_samples=6 final_hp=17,12,22,26,20 first_round=1 guard_events=6 guard_nonzero=6
+SIGSUM arm=use distinct=8 of 8
+GUARDSUM guard_events=45 guard_nonzero=39
+DONE
+ENGINE EXIT = 0

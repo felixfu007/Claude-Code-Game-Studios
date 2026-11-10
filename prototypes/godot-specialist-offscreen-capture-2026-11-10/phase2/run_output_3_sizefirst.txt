@@ -1,0 +1,19 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+TICKS_AT_READY_MS=3196
+SETTING borderless=true no_focus=true w_override=1
+MIN_SIZE=(64, 64) BORDERLESS_FLAG=true
+AUDIO_SERVER_DRIVER=Dummy
+POS_T0=(959, 569) SIZE_T0=(64, 64) VP_T0=(64, 64) FOCUS_T0=false
+MID POS=(959, 569) FOCUS=false
+AFTER_SET POS=(-5000, -5000) SIZE=(960, 540)
+F0 POS=(-5000, -5000) SIZE=(960, 540) VP=(960, 540) FOCUS=true
+F1 POS=(-5000, -5000) SIZE=(960, 540) VP=(960, 540) FOCUS=true
+F5 POS=(-5000, -5000) SIZE=(960, 540) VP=(960, 540) FOCUS=true
+F30 POS=(-5000, -5000) SIZE=(960, 540) VP=(960, 540) FOCUS=true
+F59 POS=(-5000, -5000) SIZE=(960, 540) VP=(960, 540) FOCUS=true
+IMAGE_IS_NULL=false
+IMG_SIZE=(960, 540) left=(0.502, 0.502, 0.502, 1.0) right=(1.0, 0.0, 0.0, 1.0)
+POS_END=(-5000, -5000) SIZE_END=(960, 540) FOCUS_END=true TICKS_END_MS=4990
+ENGINE EXIT=0
