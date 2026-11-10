@@ -1,0 +1,18 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE engine=4.7.1-stable (official) audio_driver=Dummy
+T0 baseline unpaused INHERIT: playing=true stream_paused=false pos=0.2880
+T0 baseline unpaused ALWAYS : playing=true stream_paused=false pos=0.2880
+T1 just paused INHERIT: playing=false stream_paused=true pos=0.2880
+T1 just paused ALWAYS : playing=true stream_paused=false pos=0.2880
+T1 +0.5s paused INHERIT: playing=false stream_paused=true pos=0.3040 delta=0.0160000026226
+T1 +0.5s paused ALWAYS : playing=true stream_paused=false pos=0.6560 delta=0.36800003051758
+T3 play() while paused INHERIT: playing=true stream_paused=false pos=0.3840
+T3 play() while paused ALWAYS : playing=true stream_paused=false pos=0.3840
+T4 tween under pause INHERIT-bound: volume_db=-40.0 running=true
+T4 tween under pause ALWAYS-bound : volume_db=0.0 running=false
+T5 signal callback while paused: hits=1
+T6 unpaused again INHERIT: playing=true stream_paused=false pos=0.7680 (pos before pause ~0.28799998760223)
+T6 unpaused again INHERIT2(play during pause): playing=true stream_paused=false pos=1.6800
+WARNING: 8 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

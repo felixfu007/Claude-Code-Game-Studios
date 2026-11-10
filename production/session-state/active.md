@@ -62,6 +62,15 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ **35 號已推 AI_IMG `dc372ba`**(推前 status 空;35 號正式化 5 張 + 新色盤 + LUFS 6 個更正)。
 - 螢幕外開窗探針:第一階段 啟動時位置被忽略(出現在 (0,0))、`_ready` 後移位成立、無焦點、像素可取、Dummy 生效;第二階段 64×64 無邊框建立(引擎下限 64)→ 移位放大 OK,**但移位後 FOCUS=true**。🔴 裁決「**再試一次:移位後重設「不搶焦點」(推薦)**」→ 第三階段進行中。
 - 🔴 裁決「**可以,兩處都改後開工(推薦)**」→ story-004 已加註(Status Ready、Affected Files 加 scene_router.gd / shell/title_screen.gd、未決點 1 裁決)。待全套重跑完再派實作(主目錄)。
+- ✅ 重跑(落地 vs04 後)`ENGINE EXIT = 0` / `1947 … 0 failures … 0 orphans` / `(187/187)` → 提交 **`289c837`**(已推)。
+- ⏳ 11:40 派 godot-gdscript-specialist 實作 audio story-004(主目錄;只准動 scene_router.gd、shell/title_screen.gd + 新檔;表內不得填真實音檔)。
+- 螢幕外第三階段:三種旗標順序,第一幀後 FOCUS 皆 true → 不可行。🔴 裁決「**最後試一次彈出式旗標**」(非推薦;推薦為停)→ 第四階段進行中。
+- 🔴 裁決「**做,只限這兩個文件資料夾(推薦)**」→ `design/.gdignore`、`docs/.gdignore` 新增,`design/art/color-palette.csv.import` 刪除(未提交)。⚠️ **協調者選項文字不實已揭露**:寫「52 個多餘匯入檔」,實際這兩夾只 1 個,其餘 51 個在 production/qa/evidence(perf 測試讀 res://production/qa/*.md,故 production 不整夾忽略;evidence 子夾可另議)。
+- ⛔ 螢幕外第四階段:`ERROR: Main window can't be popup.`,FOCUS 60 幀全 true(協調者核原始行)→ **四階段總判定:公司拍照不可行,維持在家拍**(剩餘風險:64×64 方塊建立時上屏約數秒、focused=true 是否真搶鍵盤分不出)。不再延伸。
+- ✅ story-004 交件(未提交):music_policy / music_track_table / music_player_host + scene_router、shell/title_screen 各 1 行;表為空(全靜音)。協調者掃突變標記 0、重跑 `ENGINE EXIT = 0` / `1974 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(189/189)`。
+- 🔴 **覆核收穫**:戰鬥選單 `paused=true` 時,INHERIT 的音樂宿主被暫停、Tween 卡住(探針 `prototypes/audio-pause-probe-2026-11-10/` T1/T4 (A));協調者另一假設「選單點擊音不響」**實測不成立**(T3)。裁決「**選單打開時音樂繼續播(推薦)**」→ 13:56 SendMessage 實作者改 ALWAYS + 補測試 + 突變。
+- ✅ Kenney 五包下載(`C:/tmp/kenney-dl/INVENTORY.md`,353 個 .ogg,商店頁與包內授權皆 CC0 一致)。⏳ 13:56 派 audio-director 依檔名挑 M1~M9 初值 → `docs/reviews/sfx-initial-picks-2026-11-10.md`(含複製清單 + LICENSES 草稿)。
+- ⏳ 11:45 派 general-purpose 下載 Kenney 五包到 `C:/tmp/kenney-dl/`(不進專案)+ `INVENTORY.md` 授權逐字盤點 → 之後交 audio-director 依檔名挑 M1~M9 初值。
 
 ## 🔴 第九十五批(2026-11-06,公司,09:23 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。

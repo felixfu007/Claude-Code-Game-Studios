@@ -34,6 +34,8 @@ static func switch_to(tree: SceneTree, scene_path: String, configure: Callable =
 		configure.call(instance)
 	# audio-foundation story-003:宿主在新實例進樹前就位,先於場景 _ready()(M1 按鈕走訪)。
 	SfxPlayerHost.attach_to(instance)
+	# audio-foundation story-004:音樂宿主掛 tree.root(跨場景存活),冪等;依目標場景通知換曲。
+	MusicPlayerHost.ensure_on_root(tree).enter_scene(MusicTrackTable.scene_key_for_path(scene_path))
 	_perform_swap.bind(tree, instance).call_deferred()
 	return instance
 

@@ -98,6 +98,8 @@ func _ready() -> void:
 	GameSettings.boot_load()
 	# audio-foundation story-003:開機場景不經 SceneRouter,自行加一個音效宿主(attach_to 冪等)。
 	SfxPlayerHost.attach_to(self)
+	# audio-foundation story-004:開機場景同樣自行確保音樂宿主(掛 root、冪等)並通知「標題」。
+	MusicPlayerHost.ensure_on_root(get_tree()).enter_scene(MusicTrackTable.KEY_TITLE)
 
 	# story-010 —— 遊戲名稱:HUD 點陣字 Cubic 11,字級 = HudLayout.font_size()
 	# (倍率唯一出自 WorldLayout.compute_scale(),不自行計算)。純顯示、不可聚焦,

@@ -1,0 +1,6 @@
+# audio-foundation story-004:場景 → 音樂曲目表。欄位:scene_key,path,fade_in_ms,fade_out_ms
+# scene_key:title(設定畫面沿用)/ battle / dialogue(不列 = 靜音,預設)。
+# 🔴 曲目授權尚未辦理,本表刻意不填任何真實音檔路徑(空表 = 全場景靜音,安靜無錯)。
+# 授權辦妥後再加列,例:title,res://assets/audio/music/mus_title_main_loop_01.ogg,1500,1000
+# 素材缺席時安靜略過;循環靠該 .ogg 的 .import loop 旗標,宿主載入時也會再設一次 loop。
+scene_key,path,fade_in_ms,fade_out_ms
