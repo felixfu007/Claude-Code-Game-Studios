@@ -104,6 +104,15 @@ const ALLY_SPRITE_PATHS: Array[String] = [
 ## no per-enemy sprite_index distinction to make yet.
 const ENEMY_SPRITE_PATH: String = "res://assets/art/placeholder/piece_enemy_01.png"
 
+## Directory of the final (non-placeholder) 32x40 ally piece sprites
+## (story-037; path fixed by art-director 2026-11-11). Files are
+## [code]char_<code>_piece_idle_01.png[/code]. A missing file silently falls
+## back to the placeholder in [constant ALLY_SPRITE_PATHS].
+const FINAL_PIECE_DIR: String = "res://assets/art/characters/pieces/"
+
+## Character codes, same index semantics as [constant ALLY_SPRITE_PATHS].
+const FINAL_PIECE_CODES: Array[String] = ["jia", "yi", "bing", "ding", "wu"]
+
 const MOVE_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_move.png"
 const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_attack.png"
 
@@ -548,10 +557,21 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 	_clear_children(_pieces_layer)
 	_clear_children(_stats_layer)
 	_clear_children(_action_flag_layer)
+	# Sprites are added in draw order (cell y ascending) so a lower row's piece,
+	# whose head overhangs into the row above, paints over the upper piece's feet.
+	for piece_index: int in piece_draw_order(pieces):
+		var piece: Dictionary = pieces[piece_index]
+		var piece_cell: Vector2i = piece["cell"]
+		var piece_path: String = resolve_piece_sprite_path(
+			piece.get("faction", "PLAYER"), piece.get("sprite_index", 0)
+		)
+		var piece_sprite: Sprite2D = Sprite2D.new()
+		piece_sprite.texture = load(piece_path)
+		piece_sprite.centered = true
+		piece_sprite.position = _piece_anchor(piece_cell)
+		_pieces_layer.add_child(piece_sprite)
 	for data: Dictionary in pieces:
 		var cell: Vector2i = data["cell"]
-		var faction: String = data.get("faction", "PLAYER")
-		var sprite_index: int = data.get("sprite_index", 0)
 		var hp: int = data.get("hp", 1)
 		var hp_max: int = data.get("hp_max", 1)
 		var hp_preview: int = data.get("hp_preview", -1)
@@ -559,22 +579,51 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		var card_target_illegal: bool = data.get("card_target_illegal", false)
 		var action_flag: ActionFlag = data.get("action_flag", ActionFlag.NONE_USED)
 
-		var path: String = ENEMY_SPRITE_PATH
-		if faction == "PLAYER":
-			var clamped_index: int = clampi(sprite_index, 0, ALLY_SPRITE_PATHS.size() - 1)
-			path = ALLY_SPRITE_PATHS[clamped_index]
-
-		var sprite: Sprite2D = Sprite2D.new()
-		sprite.texture = load(path)
-		sprite.centered = true
-		sprite.position = _piece_anchor(cell)
-		_pieces_layer.add_child(sprite)
-
 		_stats_layer.add_child(
 			_build_stat_block(cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal)
 		)
 
 		_action_flag_layer.add_child(_build_action_flag_marker(cell, action_flag))
+
+
+## Resolves which texture path a piece should use (story-037). Enemy pieces
+## always use [constant ENEMY_SPRITE_PATH]. Ally [param sprite_index] is
+## clamped to 0-4; the final art path is used when [param exists_fn] (a
+## [Callable] taking a path and returning bool; defaults to
+## [method ResourceLoader.exists]) says it exists, otherwise the placeholder.
+## Never pushes errors for a missing final file.
+static func resolve_piece_sprite_path(
+	faction: String, sprite_index: int, exists_fn: Callable = Callable()
+) -> String:
+	if faction != "PLAYER":
+		return ENEMY_SPRITE_PATH
+	var clamped_index: int = clampi(sprite_index, 0, ALLY_SPRITE_PATHS.size() - 1)
+	var final_path: String = (
+		FINAL_PIECE_DIR + "char_" + FINAL_PIECE_CODES[clamped_index] + "_piece_idle_01.png"
+	)
+	var found: bool = (
+		exists_fn.call(final_path) if exists_fn.is_valid() else ResourceLoader.exists(final_path)
+	)
+	if found:
+		return final_path
+	return ALLY_SPRITE_PATHS[clamped_index]
+
+
+## Returns indices into [param pieces] in sprite draw order: cell y ascending,
+## ties broken by original index (stable), so lower-row pieces paint in front.
+static func piece_draw_order(pieces: Array[Dictionary]) -> Array[int]:
+	var order: Array[int] = []
+	for i: int in range(pieces.size()):
+		order.append(i)
+	order.sort_custom(
+		func(a: int, b: int) -> bool:
+			var ya: int = (pieces[a]["cell"] as Vector2i).y
+			var yb: int = (pieces[b]["cell"] as Vector2i).y
+			if ya != yb:
+				return ya < yb
+			return a < b
+	)
+	return order
 
 
 ## Replaces the affinity connection lines drawn in [member _affinity_line_layer].

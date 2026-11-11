@@ -53,6 +53,15 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第九十七批(2026-11-11,公司,08:34 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
+- 開工:昨晚收工提交 `09336bd` 已在遠端(被中斷的只是背景視窗,工作樹乾淨)。pull 無新提交;AI_IMG HEAD 仍 `dc372ba`(我方 35 號),**家用端無新交件**。管理者未回覆昨晚在家結果(試聽/手把/Stability)。
+- 🔴 裁決(08:40):陌生人可找人數「**找不到 / 不確定**」→ ⏳ 派 producer 招募管道選項 `docs/reviews/stranger-recruitment-options-2026-11-11.md`;⏳ 派 lead-programmer 棋子圖接線工單(新檔,佔位圖先行)。
+- ✅ story-037 工單 `production/epics/tactical-combat/story-037-piece-sprites.md`(Blocked 1~3);art-director 答 `docs/reviews/piece-sprites-art-answers-2026-11-11.md`(敵方先不做、路徑 `assets/art/characters/pieces/`、對齊不改 + 下列蓋上列)。🔴 裁決「**現在開工,先用佔位圖(推薦)**」→ 工單第 4 行加註 Ready;⏳ 派 godot-gdscript-specialist 實作(協調者已核 `board_view.gd` `render_pieces` 直接 `load(path)` 無存在檢查)。
+- ✅ producer 招募選項 `docs/reviews/stranger-recruitment-options-2026-11-11.md`(三題:管道/遠端/開始時點;發現「預判一致率不存檔」—— 協調者核 `effect_guess_tracker.gd` 檔頭 "no save/load I/O (AC14)" 屬實)。🔴 管理者三題都回「**我先問一下,找真人試玩是要確認那些議題?**」→ 協調者答 5 項(1 前 30 分不需解釋、2 自發歸因 = 只能真人;3 規則理解附帶;4 預判、5 忽視/運用對照 = 電腦已有,真人補充)。再問範圍 → 管理者:「**我今天晚上回去試玩,在跟你說結果,有其他試玩以外的代辦嗎?**」→ **試玩範圍與招募三題延後到明天,依他今晚試玩感想再問。** 協調者答今日代辦:story-037、預判紀錄存檔工單(只評估)、producer 再盤點。
+- ✅ **story-037 程式完成**(佔位圖先行;`resolve_piece_sprite_path` 正式圖存在才用、否則退回佔位;`piece_draw_order` 依列 y 排序 —— 實作者查得**現況敵方整批蓋在我方上、未依列排序**,已修)。協調者讀 diff:無索引 PiecesLayer 子節點的程式(grep 0)、無注入殘留;重跑 `ENGINE EXIT = 0` / `1988 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(190/190)`。在家驗收 AC-5~7(需正式圖 + 開窗)。
+- ✅ battle-hud story-005 預判紀錄匯出工單(Draft,約 1 工作天;未決點 1 = AC14「不持久化」裁決的精神張力,未自行推翻)—— **待管理者定試玩範圍後再問**。
+
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;查 AI_IMG)。
 - 開工:本倉庫 pull 無新提交。AI_IMG pull 到 `bb2b7df`:**32 號交付、33 號回報(`5448195`)、33a 管理者在家當面裁決(`1562b3f`:音樂用現有 Stable Audio 3(推薦)/ stinger 一起做(推薦)/ 棋子**直接擴大 img2img**(非推薦,不等審定)/ 色盤新增衣物綠(推薦))、34 號(`bb2b7df`:棋子 r2 20 張 + 音樂候選 12 個 .ogg)**。家用端待辦清空。授權三事(Stability 註冊、署名、AI 揭露)未辦前音樂只供試聽、不進遊戲。
