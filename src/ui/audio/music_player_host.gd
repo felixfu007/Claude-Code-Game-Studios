@@ -20,6 +20,11 @@ var muted_check: Callable = Callable()
 var asset_exists: Callable = Callable()
 ## Callable(path: String) -> AudioStream;預設 load()。
 var stream_loader: Callable = Callable()
+## Callable(pool_size: int, avoid_index: int) -> int;從曲目池挑一首的索引(測試注入用)。
+## 預設:[member _rng] 隨機,池大於 1 首時避開 [param avoid_index](上次在同一 scene_key 挑到的那首,
+## 沒有則為 -1)。2026-11-11 管理者裁決「戰鬥BGM可以三四首隨機撥放」。
+## 🔴 這是背景音樂的隨機,不屬於戰鬥結算 —— 專案禁令 rng_in_combat_settlement 不涵蓋。
+var track_picker: Callable = Callable()
 
 ## 診斷:每次 enter_scene 的 [scene_key, Action];以及實際送出的播放請求路徑。
 var diagnostic_actions: Array = []
@@ -34,6 +39,9 @@ var _has_pending: bool = false
 var _current_fade_out_ms: int = 0
 var _player: AudioStreamPlayer
 var _tween: Tween
+var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+## scene_key → 上次從該池挑到的索引(避免連兩場同一首)。
+var _last_pick: Dictionary = {}
 
 
 ## 確保 root 下恰好一個宿主(冪等);尚未進樹的宿主由 call_deferred 加入。
@@ -60,6 +68,7 @@ func _ready() -> void:
 	# 管理者裁決 2026-11-10:戰鬥選單開啟會 tree.paused = true,音樂須繼續播(探針
 	# prototypes/audio-pause-probe-2026-11-10:INHERIT 下播放器被暫停、node 綁定 Tween 卡住)。
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_rng.randomize()
 	if not _tracks_configured:
 		_tracks = _load_default_tracks()
 		_tracks_configured = true
@@ -89,7 +98,7 @@ func enter_scene(scene_key: StringName) -> void:
 
 
 func _apply_scene(scene_key: StringName) -> void:
-	var entry: Dictionary = _tracks.get(scene_key, {})
+	var entry: Dictionary = _pick_entry(scene_key, _tracks.get(scene_key, {}))
 	var new_track: String = String(entry.get("path", ""))
 	var exists: bool = false
 	if not new_track.is_empty():
@@ -108,6 +117,31 @@ func _apply_scene(scene_key: StringName) -> void:
 			_fade_out_and_stop(out_ms)
 		_:
 			pass
+
+
+## 從 [param entry] 的曲目池挑一首(見 [method MusicTrackTable.parse] 的 pool 說明)。
+## 沒有 pool 或只有一首時原樣回傳 —— 行為與曲目池功能加入前完全相同。
+func _pick_entry(scene_key: StringName, entry: Dictionary) -> Dictionary:
+	var pool: Array = entry.get("pool", [])
+	if pool.size() <= 1:
+		return entry
+	var avoid: int = int(_last_pick.get(scene_key, -1))
+	var index: int = int(track_picker.call(pool.size(), avoid)) if track_picker.is_valid() \
+			else default_pick_index(_rng, pool.size(), avoid)
+	index = clampi(index, 0, pool.size() - 1)
+	_last_pick[scene_key] = index
+	return pool[index]
+
+
+## 預設挑選:池大於 1 首且 [param avoid_index] 有效時,從其餘曲目中均勻隨機挑一首;否則全池隨機。
+## 純函式(隨機源由呼叫端傳入),可直接單元測試。
+static func default_pick_index(rng: RandomNumberGenerator, pool_size: int, avoid_index: int) -> int:
+	if pool_size <= 1:
+		return 0
+	if avoid_index < 0 or avoid_index >= pool_size:
+		return rng.randi_range(0, pool_size - 1)
+	var offset: int = rng.randi_range(1, pool_size - 1)
+	return (avoid_index + offset) % pool_size
 
 
 func _start_track(path: String, entry: Dictionary) -> void:

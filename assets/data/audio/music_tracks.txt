@@ -1,6 +1,13 @@
 # audio-foundation story-004:場景 → 音樂曲目表。欄位:scene_key,path,fade_in_ms,fade_out_ms
 # scene_key:title(設定畫面沿用)/ battle / dialogue(不列 = 靜音,預設)。
-# 🔴 曲目授權尚未辦理,本表刻意不填任何真實音檔路徑(空表 = 全場景靜音,安靜無錯)。
-# 授權辦妥後再加列,例:title,res://assets/audio/music/mus_title_main_loop_01.ogg,1500,1000
+# 🔴 2026-11-11 管理者裁決:授權登記前即放入(附授權標示,見 assets/audio/music/LICENSES.md)。
+#    原文「授權辦妥後再加列」已被該裁決取代。
+# 同一 scene_key 可列多首 = 曲目池,每次進入該場景隨機挑一首、避開上一次挑到的(管理者:
+# 「戰鬥BGM可以三四首隨機撥放」)。第 4 首戰鬥曲與勝利曲待重新產生(37 號)。
+# 淡入淡出毫秒數為未驗證初值。
 # 素材缺席時安靜略過;循環靠該 .ogg 的 .import loop 旗標,宿主載入時也會再設一次 loop。
 scene_key,path,fade_in_ms,fade_out_ms
+title,res://assets/audio/music/mus_title_main_loop_01.ogg,1500,1000
+battle,res://assets/audio/music/mus_battle_main_loop_01.ogg,1000,1000
+battle,res://assets/audio/music/mus_battle_main_loop_02.ogg,1000,1000
+battle,res://assets/audio/music/mus_battle_main_loop_03.ogg,1000,1000

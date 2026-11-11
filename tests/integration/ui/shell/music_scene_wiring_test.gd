@@ -5,7 +5,10 @@
 ## - 宿主測試自己建立(掛在測試節點下,auto_free);唯一掛 /root 的宿主(ensure_on_root 與
 ##   SceneRouter 接線測試)在 after_test 清掉(含 root meta),避免跨測試殘留。
 ## - 聽感與無縫循環不可自動化(家中耳聽);headless 音訊為 no-op,只驗決策與 volume_db。
-## - 不讀任何檔案(AC-4 用注入的曲目表與假的 asset_exists)。
+## - 不讀任何檔案(AC-4 用注入的曲目表與假的 asset_exists)。🔴 例外一條(2026-11-11):
+##   test_music_host_default_real_table_plays_title_then_a_battle_pool_track 唯讀已進版控的
+##   res://assets/data/audio/music_tracks.txt(甲類,test-standards.md 2026-09-16 裁決)——
+##   要驗的就是「真實表」接上宿主後的行為,注入取代即失去意義。不證明窮盡性(只驗 title + battle)。
 ## - 敏感度:決策核心是 static(A 類),AC-1/AC-2 由實作者暫時注入證明,見交付回報。
 extends GdUnitTestSuite
 
@@ -155,15 +158,26 @@ func test_music_host_missing_asset_is_silent_without_requests() -> void:
 	assert_str(host.current_track).is_equal("")
 
 
-func test_music_host_default_empty_table_is_silent_without_crash() -> void:
+## 2026-11-11 改寫:原測試 test_music_host_default_empty_table_is_silent_without_crash 斷言
+## 「真實曲目表為空 → 全場景靜音」,依據是「授權辦妥前表刻意為空」。管理者 2026-11-11 裁決
+## 授權登記前即放入曲目(見 assets/audio/music/LICENSES.md),該前提消失,改為正向斷言:
+## 真實表下標題放標題曲、戰鬥從真實 battle 池挑一首(哪一首由隨機決定,只斷言屬於池)。
+func test_music_host_default_real_table_plays_title_then_a_battle_pool_track() -> void:
 	var host: MusicPlayerHost = MusicPlayerHost.new()
 	host.muted_check = func() -> bool: return false
 	add_child(host)
 	auto_free(host)
 	host.enter_scene(&"title")
 	host.enter_scene(&"battle")
-	assert_array(host.diagnostic_play_requests).is_empty()
-	assert_str(host.current_track).is_equal("")
+	var parsed: Dictionary = MusicTrackTable.parse(FileAccess.get_file_as_string(MusicTrackTable.TABLE_PATH))
+	var battle_paths: Array[String] = []
+	for entry: Dictionary in parsed["tracks"][&"battle"]["pool"]:
+		battle_paths.append(String(entry["path"]))
+	assert_int(host.diagnostic_play_requests.size()).is_equal(2)
+	assert_str(host.diagnostic_play_requests[0]).is_equal(String(parsed["tracks"][&"title"]["path"]))
+	assert_bool(battle_paths.has(host.diagnostic_play_requests[1])) \
+		.append_failure_message("戰鬥曲 %s 不在池 %s 內" % [host.diagnostic_play_requests[1], battle_paths]).is_true()
+	assert_str(host.current_track).is_equal(host.diagnostic_play_requests[1])
 
 
 func test_music_host_unloadable_stream_leaves_no_current_track() -> void:

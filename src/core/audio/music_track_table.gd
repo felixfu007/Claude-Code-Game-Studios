@@ -16,9 +16,15 @@ const KEY_DIALOGUE: StringName = &"dialogue"
 const COLUMN_COUNT: int = 4
 
 
-## 解析表文字。回傳 {"tracks": {StringName: {"path": String, "fade_in_ms": int, "fade_out_ms": int}},
-## "errors": Array[String]}。壞列(欄數不對、空欄位、非數值/負數淡化時間、重複 scene_key)
-## 被略過並記入 errors。
+## 解析表文字。回傳 {"tracks": {StringName: {"path": String, "fade_in_ms": int, "fade_out_ms": int,
+## "pool": Array[Dictionary]}}, "errors": Array[String]}。壞列(欄數不對、空欄位、非數值/負數淡化
+## 時間、同一 scene_key 下重複的 path)被略過並記入 errors。
+##
+## 曲目池(2026-11-11 管理者裁決「戰鬥BGM可以三四首隨機撥放」):同一 scene_key 可以有多列,
+## 每列一首。第一列是 [code]tracks[key][/code] 的主欄位(path/fade_in_ms/fade_out_ms),全部列
+## (含第一列)依出現順序收進 [code]tracks[key]["pool"][/code]。只有一列時 pool 只有它自己。
+## 由宿主 [method MusicPlayerHost._apply_scene] 在每次進入場景時從 pool 挑一首。
+## 🔴 同 key 同 path 仍是錯誤(重複列,多半是手誤),不會進 pool。
 static func parse(text: String) -> Dictionary:
 	var tracks: Dictionary = {}
 	var errors: Array[String] = []
@@ -45,14 +51,27 @@ static func parse(text: String) -> Dictionary:
 				or not fade_out.is_valid_int() or fade_out.to_int() < 0:
 			errors.append("line %d: fade time not a non-negative integer" % line_no)
 			continue
-		if tracks.has(StringName(key)):
-			errors.append("line %d: duplicate scene_key '%s'" % [line_no, key])
-			continue
-		tracks[StringName(key)] = {
+		var row: Dictionary = {
 			"path": path,
 			"fade_in_ms": fade_in.to_int(),
 			"fade_out_ms": fade_out.to_int(),
 		}
+		var skey: StringName = StringName(key)
+		if tracks.has(skey):
+			var pool: Array = tracks[skey]["pool"]
+			var already: bool = false
+			for existing: Dictionary in pool:
+				if String(existing["path"]) == path:
+					already = true
+					break
+			if already:
+				errors.append("line %d: duplicate path '%s' for scene_key '%s'" % [line_no, path, key])
+				continue
+			pool.append(row)
+			continue
+		var first: Dictionary = row.duplicate()
+		first["pool"] = [row]
+		tracks[skey] = first
 	return {"tracks": tracks, "errors": errors}
 
 
