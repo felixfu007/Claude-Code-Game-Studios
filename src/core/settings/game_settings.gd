@@ -156,7 +156,7 @@ static func is_persistence_enabled() -> bool:
 ## [param store] 可注入(測試傳假薄殼;預設用 [constant SettingsFileStore.DEFAULT_PATH])。
 ## [param headless] 預設自動偵測;只有測試為驗證載入邏輯才覆寫。
 ## 回傳是否真的執行了載入。
-static func boot_load(store: SettingsFileStore = null, headless: bool = _detect_headless()) -> bool:
+static func boot_load(store: SettingsFileStore = null, headless: bool = _detect_test_run()) -> bool:
 	if headless or _boot_loaded:
 		return false
 	_boot_loaded = true
@@ -193,8 +193,20 @@ static func enable_persistence_for_test(store: SettingsFileStore) -> void:
 	_persist_enabled = true
 
 
-static func _detect_headless() -> bool:
-	return DisplayServer.get_name() == "headless"
+## 純函式:是否為「測試期」(不得碰真實 user://)。
+## 顯示驅動為 "headless",或啟動參數含 [code]-s[/code] / [code]--script[/code]
+## (GdUnit 入口形狀;CI 以 xvfb + x11 執行,顯示名稱不是 headless,故需看參數)。
+## PLAY.bat / 匯出版的參數為空 → false。
+## 範例:[code]is_test_run([], "Windows") == false[/code];
+## [code]is_test_run(["-s", "x"], "X11") == true[/code]。
+static func is_test_run(cmdline_args: PackedStringArray, display_name: String) -> bool:
+	if display_name == "headless":
+		return true
+	return cmdline_args.has("-s") or cmdline_args.has("--script")
+
+
+static func _detect_test_run() -> bool:
+	return is_test_run(OS.get_cmdline_args(), DisplayServer.get_name())
 
 
 static func _clamp01(value: float) -> float:

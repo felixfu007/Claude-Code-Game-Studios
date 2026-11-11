@@ -78,9 +78,28 @@ func test_boot_load_in_headless_is_noop() -> void:
 	assert_bool(GameSettings.is_persistence_enabled()).is_false()
 
 
-func test_headless_detection_true_under_test_run() -> void:
-	# 全套測試以 --headless 跑,boot_load() 預設偵測依此判為 no-op,不會碰真實 user://。
-	assert_str(DisplayServer.get_name()).is_equal("headless")
+func test_test_run_detection_true_under_test_run() -> void:
+	# AC-2:測試行程中預設偵測為 true(headless 或帶 -s/--script;CI 的 x11 顯示也成立),
+	# boot_load() 因此是 no-op,不會碰真實 user://。
+	assert_bool(GameSettings._detect_test_run()).is_true()
+
+
+func test_is_test_run_plain_launch_is_false() -> void:
+	# PLAY.bat / 匯出版形狀:無參數、有顯示驅動。
+	assert_bool(GameSettings.is_test_run([], "Windows")).is_false()
+
+
+func test_is_test_run_script_flag_with_display_is_true() -> void:
+	# CI 形狀:xvfb + x11 顯示,但帶 -s。
+	assert_bool(GameSettings.is_test_run(["-s", "res://x.gd"], "X11")).is_true()
+
+
+func test_is_test_run_headless_display_is_true() -> void:
+	assert_bool(GameSettings.is_test_run([], "headless")).is_true()
+
+
+func test_is_test_run_long_script_flag_is_true() -> void:
+	assert_bool(GameSettings.is_test_run(["--script", "x"], "Windows")).is_true()
 
 
 func test_boot_load_loads_once_when_called_twice() -> void:
