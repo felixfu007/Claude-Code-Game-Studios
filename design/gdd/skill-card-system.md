@@ -71,6 +71,8 @@
 | ADR-0002 好感度數值池資料結構與並發契約 | Accepted | 寫入介面的形狀與並發規則;本系統只呼叫,不自行定義 |
 | ADR-0005 單一游標/高亮狀態系統 | Accepted | 卡牌介面選取視覺**必須**走單一游標狀態源,**不得**用引擎原生 Control focus/hover |
 
+> 📌 2026-11-11 加註(管理者核准):手牌列目前不走單一游標狀態源(私有焦點,未註冊 CARD_SLOT)—— 管理者裁決為「手牌例外」,改以共用 card_slot_threshold_px 的滑鼠奪權門檻補足裝置權威(story-u020)。依據 docs/reviews/card-slot-surface-decision-2026-11-11.md、prototypes/hand-focus-mouse-steal-probe-2026-11-11/。原文保留。
+
 ## Player Fantasy
 
 **目標感受:「這一手打得漂亮。」**
@@ -328,6 +330,8 @@ ADR-0001 正文裡,只是不再以修訂的形式呈現;要查「當時為什麼
 | 好感度—位置連鎖(#5,Approved) | **MVP 無直接互動** | 乙類需要一個「暫時覆蓋極性」的注入口,而該系統的 `Φ` 公式沒有這個入口。**不得由本系統單方面新增** | ❌ 隨乙類延後 |
 | 存檔系統(#2,Approved) | **無互動** | 本系統不需要存檔區塊(戰鬥中禁止手動存檔,見下方)。丙類的寫入由好感度數值池自己序列化 | ✅ |
 
+> 📌 2026-11-11 加註(管理者核准):上表「游標/高亮狀態(#3)」列的「✅ 遵守」須附但書 —— 手牌列目前不走單一游標狀態源(私有焦點,未註冊 CARD_SLOT)。管理者裁決為「手牌例外」,改以共用 card_slot_threshold_px 的滑鼠奪權門檻補足裝置權威(story-u020)。依據 docs/reviews/card-slot-surface-decision-2026-11-11.md、prototypes/hand-focus-mouse-steal-probe-2026-11-11/。原文保留。
+
 ✅ **存檔:本系統不需要任何存檔資料區塊**(2026-09-08 管理者裁決:**戰鬥進行中不可手動存檔**)。
 
 甲類戰鬥結束即清除、手牌戰鬥結束即收回,**兩者都活不過任何存檔點**;丙類的寫入已由好感度數值池自己序列化。**本系統在 manifest 的區塊清單裡不需要位置。**
@@ -511,6 +515,8 @@ ADR-0001 正文裡,只是不再以修訂的形式呈現;要查「當時為什麼
 
 **3. 手把與十字鍵必須能完整操作手牌,不得有僅滑鼠可達的互動。** 主機無游標(`technical-preferences.md` 平台註記)。選取視覺一律走單一游標狀態源,**不得**使用引擎原生 Control focus/hover(ADR-0005)。
 
+> 📌 2026-11-11 加註(管理者核准):手牌列目前不走單一游標狀態源(私有焦點,未註冊 CARD_SLOT)—— 管理者裁決為「手牌例外」,改以共用 card_slot_threshold_px 的滑鼠奪權門檻補足裝置權威(story-u020)。依據 docs/reviews/card-slot-surface-decision-2026-11-11.md、prototypes/hand-focus-mouse-steal-probe-2026-11-11/。原文保留。
+
 🔴 **4. 同一對角色關係,介面上不得同時呈現兩個好感度數值。** `game-concept.md` 第七輪裁決的 UI 硬性約束(理由:第三輪駁回雙軸分流時的「玩家會困惑哪個才是真的」)。**本系統特別容易違反它** —— 丙類卡牌天然想同時顯示「戰場影響」與「敘事影響」。
 
 **5. 丙類須揭露「此牌的敘事影響小於戰場影響」的定性提示,且不得揭露 `α` 的數值**(同上裁決)。**只揭露事實層**:這一張會留下來。**不揭露它會導向什麼結果。**
@@ -594,6 +600,8 @@ ADR-0001 正文裡,只是不再以修訂的形式呈現;要查「當時為什麼
 | ~~**OQ-12**~~ | ✅ **已關閉 2026-09-15(管理者裁決:「關掉限制,兩份文件改成用現有介面」)**。介面已實作為 `Unit.active_modifiers()`(`src/gameplay/units/unit.gd`,doc comment 逐字標註「as required by GDD OQ-12」),逐條回傳每筆修正的獨立 `clone()`,欄位 `source_name`(來源)、`atk_delta`/`def_delta`(帶號量值,分開兩欄而非單一合併值)、`remaining_turns`(剩餘回合)——與本列原要求逐項核對後語意等價 | ~~阻擋 UX 規格的逐條明細與其灰階驗收~~ 已解除 | ✅ `src/gameplay/units/unit.gd`(語意由 `ux-designer` 於 2026-09-15 核對;實作日期 2026-09-10 依協調者提供,本檔未獨立覆核 git 紀錄) |
 | 🔴 **OQ-14** | **關閉 OQ-12 時新發現的缺口,不在 OQ-12 原本的範圍內**:`Unit.tick_modifiers()` 對到期修正是同步、永久移除,不保留任何「本回合剛到期」的清單;而 `design/ux/skill-card-play.md` 的 AC-U9 要求到期修正在逐條明細多留一回合(「本回合已到期」一列)。**`Unit.active_modifiers()` 查不到已被移除的那一條**,故 AC-U9 目前沒有介面可支撐 | 不阻擋 OQ-12 的關閉(OQ-12 只問「逐條清單是否存在」,不問「到期後多留一回合」);阻擋 AC-U9(ADVISORY)的端到端驗證 | 本系統。⚠️ **兩側各自記錄**(模式 G):`design/ux/skill-card-play.md` 的 UX-14 記一份,本列記一份 |
 | 🔴 **OQ-13** | **取消鍵的重新綁定與「結束回合的新家」必須同一批交付。** `battle_end_phase`(`Esc` / 手把 `B`)**就是玩家唯一能把回合交給敵方的手段**;把它讓給取消而選單還沒做好,**玩家無法結束回合,戰鬥永遠停在自己的回合**。⚠️ **本專案已在同樣這兩個動作上踩過一次同形狀的問題**(`battle_screen.gd` 逐字:原綁的 `ui_cancel` 沒有手把綁定,「would otherwise leave a gamepad-only player unable to ever hand the turn to the enemy」)。<br>✅ **2026-09-09 同日,管理者裁決「選單要現在做」,規格已產出:`design/ux/battle-menu.md`。設計層的鎖解除。** | 🔴 **實作層仍然成立:兩者必須同批上線。** 驗收條件為 `skill-card-play.md` 的 **AC-U12** 與 `battle-menu.md` 的 **AC-M1** —— **同一條要求的兩側,兩份都要過** | ✅ 規格已完成;**實作待排**(該畫面的動作歸屬見 `battle-menu.md` 的 BM-1) |
+
+> 📌 2026-11-11 加註(管理者核准):針對上表 OQ-9 列 —— 手牌列目前不走單一游標狀態源(私有焦點,未註冊 CARD_SLOT),管理者裁決為「手牌例外」,改以共用 card_slot_threshold_px 的滑鼠奪權門檻補足裝置權威(story-u020)。依據 docs/reviews/card-slot-surface-decision-2026-11-11.md、prototypes/hand-focus-mouse-steal-probe-2026-11-11/。原文保留。
 
 ✅ **OQ-1 / OQ-2 / OQ-3 三項於 2026-09-09 全部關閉,亦即本系統的**設計與資料層**開工前置條件已清空。**
 

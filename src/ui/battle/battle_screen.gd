@@ -675,6 +675,13 @@ var _direction_was_pressed: Dictionary = {}
 ## into the other's edge detection.
 var _hand_direction_was_pressed: Dictionary = {}
 
+## U-020:鍵盤/手把剛移動過手牌焦點,滑鼠須累積位移過門檻才可奪回(見 [method _hover_hand_card])。
+var _hand_kb_pad_locked: bool = false
+## U-020:鎖定期間滑鼠累積位移(px)。
+var _hand_mouse_accum_px: float = 0.0
+## U-020:門檻來源(取 card_slot_threshold_px,不得另寫數字);測試可替換。
+var _hand_reclaim_config: MouseReclaimThresholdConfig = MouseReclaimThresholdConfig.new()
+
 ## Story U-013 connective tissue — presentation-local mirror of "is [S1,
 ## [constant CardPlaySession.Step.SELECTING_CARD]] the step this screen most
 ## recently drove [BattleController]'s card-play session into", used ONLY to
@@ -1441,9 +1448,20 @@ func _mouse_over_hud_action_buttons(window_pos: Vector2) -> bool:
 
 ## 選牌/棄牌時,滑鼠移到哪張卡上,手牌游標就跟到哪張 —— 說明框(Z3)跟著游標顯示
 ## 那張卡的效果,與方向鍵移動游標是同一個狀態。
-func _hover_hand_card(window_pos: Vector2) -> void:
+## U-020(2026-11-11 管理者裁決「手牌加同款門檻」):鍵盤/手把最近一次移動手牌焦點之後,
+## 滑鼠須累積位移 ≥ [code]card_slot_threshold_px[/code] 才可改變焦點(奪回後即時跟隨,
+## 直到下一次鍵盤/手把移動)。純滑鼠操作者從未被鍵盤/手把鎖住,首次懸停即跟隨。
+## 未共用 [CursorStateHost]:手牌不註冊 CARD_SLOT(本裁決為「手牌例外」),且開手牌時
+## BOARD_TILE 已被註銷,該狀態源此刻沒有手牌可追蹤;只共用門檻設定資源。
+func _hover_hand_card(window_pos: Vector2, relative: Vector2 = Vector2.ZERO) -> void:
 	if not (_card_selecting_from_hand or _controller.has_pending_discard()):
 		return
+	if _hand_kb_pad_locked:
+		_hand_mouse_accum_px += relative.length()
+		if _hand_mouse_accum_px < _hand_reclaim_config.threshold_for_surface(CursorTypes.SurfaceType.CARD_SLOT):
+			return
+		_hand_kb_pad_locked = false
+		_hand_mouse_accum_px = 0.0
 	var index: int = _hand_bar.slot_index_at(window_pos)
 	if index < 0 or index == _hand_bar.diagnostic_cursor_index():
 		return
@@ -2398,7 +2416,7 @@ func _input(event: InputEvent) -> void:
 		_track_forced_discard_arming()
 		if _discard_armed and _hand_bar.slot_index_at((event as InputEventMouseMotion).position) >= 0:
 			_discard_card_hovered = true
-		_hover_hand_card((event as InputEventMouseMotion).position)
+		_hover_hand_card((event as InputEventMouseMotion).position, (event as InputEventMouseMotion).relative)
 		return
 
 	if event is InputEventMouseButton:
@@ -3628,6 +3646,8 @@ func _handle_directional(_event: InputEvent) -> void:
 func _handle_hand_navigation(_event: InputEvent) -> void:
 	for action: StringName in _HAND_DIRECTION_DELTAS:
 		if _direction_just_pressed(action, _hand_direction_was_pressed):
+			_hand_kb_pad_locked = true
+			_hand_mouse_accum_px = 0.0
 			_hand_bar.move_cursor(_HAND_DIRECTION_DELTAS[action])
 
 
@@ -3670,6 +3690,8 @@ func _handle_open_hand_pressed() -> void:
 					% unregister_result
 				)
 			_card_selecting_from_hand = true
+			_hand_kb_pad_locked = false  # U-020:每次開手牌重新起算裝置權
+			_hand_mouse_accum_px = 0.0
 			_refresh_view()
 		return
 	if _card_selecting_from_hand:

@@ -71,6 +71,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ **story-038 完成**(實作者撞 20 回合一次,SendMessage 續完)。GdUnit4 預設 `REPORT_PUSH_ERRORS=false` → push_error 不使測試失敗(探針 A 級 `prototypes/gdunit-push-error-probe-2026-11-11/`)。card_text 回型為 Dictionary → 壞表 = 空字典 = 整表無牌面文字、大聲報錯、戰鬥照常(其餘三表為載入失敗)。協調者突變(unit.gd 拿掉 return null)→ 2 測試紅 → 還原 SAME;重跑 `ENGINE EXIT = 0` / `1997 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(190/190)`。
 - ✅ story-038 `f0884ac`;relation-minimap story-003 解耦工單 Draft `7982d34`(未排程)。
 - 🔴 裁決(約 11:20,四項全勾,皆推薦):3 張工單狀態欄、技術債 7 項清償/失效 + C2 已量測、設計文件 7 處數值指路、coding-standards「release 移除 assert」→ 全部純插入,`75e4479`(38 增 0 刪,協調者核 numstat)。E4 抽查成立(ADR-0005 VC#13(iv) 六→七)。
+- ✅ 游標表面註冊稽核 `9327abf`(缺陷 0;CARD_SLOT 待確認)。ux-designer `docs/reviews/card-slot-surface-decision-2026-11-11.md`:**非設計空白,是實作偏離 GDD**(skill-card-system 依賴表要求走單一游標源,協調者核該 GDD 第 72 行)。godot-specialist 探針 `prototypes/hand-focus-mouse-steal-probe-2026-11-11/`:**1px 滑鼠移動即搶手牌焦點(成立)** → `5c4ef1e`。
+- 🔴 裁決(約 14:05):「**手牌加同款門檻,設計文件註明「手牌例外」(推薦)**」→ 協調者寫 `production/epics/card-play-interface/story-u020-hand-mouse-reclaim-threshold.md`;⏳ 派 godot-gdscript-specialist 實作;⏳ 派 ux-designer 在 GDD 加「手牌例外」加註(純插入)。
+- ✅ **U-020 完成**:鍵盤/手把移動後上鎖,滑鼠累積位移 ≥ `card_slot_threshold_px`(75)才奪回;開手牌重置(純滑鼠手感不變);門檻共用設定資源,未共用 CursorStateHost(手牌不註冊 CARD_SLOT)。已知:累積無衰減;點擊路徑直接選取(刻意動作,協調者核 1527 行)。實作者第一次全套 1 紅 = 計時測試 44s(負載);協調者重跑 `ENGINE EXIT = 0` / `2001 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(191/191)`。GDD/UX 手牌例外 6 處加註(12 增 0 刪,協調者核)。
 - 📌 收工請示清單(已清空,上列已核准並提交;舊行保留):audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
 
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
