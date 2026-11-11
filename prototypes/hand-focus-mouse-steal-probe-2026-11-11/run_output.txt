@@ -1,0 +1,10 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE hand_bar=HandBar:<Control#66035123852> phase=0
+PROBE after open: from_hand=true slots=5
+PROBE expanded=true progress=1.0
+PROBE after ui_right: cursor_index=1
+PROBE target slot=0 centre=(260.0, 385.4) slot_index_at(centre)=0
+PROBE control (mouse on same card, rel=(1,0)): cursor_index=1 expected unchanged=1
+PROBE test (mouse on other card, rel=(1,0)): cursor_index=0 before=1 stolen=true
+PROBE RESULT: CONFIRMED focus stolen by 1px motion
