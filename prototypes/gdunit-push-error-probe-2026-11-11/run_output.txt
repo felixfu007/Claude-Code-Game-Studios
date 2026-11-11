@@ -1,0 +1,99 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[2J[H
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------
+
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+Scanning for test suites in: prototypes/gdunit-push-error-probe-2026-11-11
+Installing GdUnit4 session system hooks.
+Session hook 'GdUnitHtmlTestReporter' installed.
+Session hook 'GdUnitXMLTestReporter' installed.
+Run Test Suite: res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_plain_push_error_does_not_fail STARTED
+ERROR: PROBE push_error message
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _emit_error (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:5)
+       [1] test_plain_push_error_does_not_fail (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:9)
+       [2] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [3] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [4] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [5] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_plain_push_error_does_not_fail PASSED 13ms
+
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_assert_error_captures_push_error STARTED
+ERROR: PROBE push_error message
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _emit_error (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:5)
+       [1] <anonymous lambda> (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:13)
+       [2] _execute (res://addons/gdUnit4/src/asserts/GdUnitGodotErrorAssertImpl.gd:17)
+       [3] is_push_error (res://addons/gdUnit4/src/asserts/GdUnitGodotErrorAssertImpl.gd:132)
+       [4] test_assert_error_captures_push_error (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:13)
+       [5] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [6] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [7] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [8] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [11] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [17] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [20] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [21] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_assert_error_captures_push_error PASSED 11ms
+
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_real_parser_push_error_plain STARTED
+ERROR: AffinityLink.from_csv_line: unknown polarity 'NOPE' in line: 1,2,NOPE,3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_csv_line (res://src/gameplay/affinity/affinity_link.gd:101)
+       [1] test_real_parser_push_error_plain (res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd:16)
+       [2] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+       [3] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+       [4] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [5] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [6] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+       [7] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [8] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:26)
+       [9] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [10] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:36)
+       [11] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [12] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:35)
+       [13] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [14] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+       [15] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+       [16] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+       [17] execute (res://addons/gdUnit4/src/core/_TestCase.gd:41)
+       [18] test_completed (res://addons/gdUnit4/src/core/_TestCase.gd:86)
+  res://prototypes/gdunit-push-error-probe-2026-11-11/push_error_probe_test.gd > test_real_parser_push_error_plain PASSED 11ms
+
+Statistics: 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans | PASSED 64ms
+
+
+Overall Summary: 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |
+Executed test suites: (1/1)
+Executed test cases : (3/3)
+Total execution time: 64ms
+ Open XML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_1014/results.xml
+Open HTML Report at: file://C:/Users/felixfu007/Documents/Claude-Code-Game-Studios/reports/report_1014/index.html
+Exit code: 0
+Run dispose test resources

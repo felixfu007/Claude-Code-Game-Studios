@@ -63,6 +63,12 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ battle-hud story-005 預判紀錄匯出工單(Draft,約 1 工作天;未決點 1 = AC14「不持久化」裁決的精神張力,未自行推翻)—— **待管理者定試玩範圍後再問**。
 - ✅ story-037 已提交 **`34c2f2d`**(已推)。
 - producer 再盤點 6 項(不需決定者:技術債陳舊度盤點、旋鈕↔設計文件對照表、雙向相依工單草稿;需問:story-005/037 狀態欄、行號自我引用 142 處分流、evidence 匯入檔;丙射程不一致已揭露不列)。⏳ 09:20 平行派 lead-programmer 技術債陳舊度盤點 `docs/reviews/tech-debt-staleness-audit-2026-11-11.md`、systems-designer 旋鈕對照表 `docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md`(皆只寫新檔)。
+- ✅ 旋鈕對照表 `f47b6b3`(23 鍵全一致;文件側 4 落差 A~D,7 條指路建議)。✅ 技術債陳舊度盤點 `dd2cd62`(實作者撞 20 回合一次,只寫 6 條 → SendMessage「每 3 條寫檔」續完 25/25:已清償 A2/B2/C1/D1/E4、失效 E5/E7、仍開啟 11、無法判斷 7;協調者抽核 E5、C2 屬實)。
+- ⏳ 09:45 派 godot-specialist 量 `assert()` 在 debug/release 匯出的行為(C2/E6;拋棄式專案、headless)→ `prototypes/assert-release-probe-2026-11-11/`。
+- ✅ assert 探針 `0b739fa`:**release 匯出整條移除 assert(運算式不求值、照常往下);release 下整數除以零行程無聲結束 exit 127**(協調者核 run_release.log / run_debug.log 原始行)。
+- ✅ lead-programmer 盤點 `docs/reviews/assert-release-risk-inventory-2026-11-11.md`:src 18 處 → 改 5 / 保留 3 / 無需 10;必修全是資料檔解析(affinity_link 欄數+自配、unit 欄數、card 欄數、card_text 缺逗號)。協調者抽核三處原始行。
+- 🔴 裁決「**修 5 處,壞資料一律整張表拒絕(推薦)**」→ 協調者寫 `production/epics/tactical-combat/story-038-release-safe-data-parsing.md`(新檔);⏳ 派 godot-gdscript-specialist(先探針 GdUnit4 遇 push_error 的行為)。
+- ✅ **story-038 完成**(實作者撞 20 回合一次,SendMessage 續完)。GdUnit4 預設 `REPORT_PUSH_ERRORS=false` → push_error 不使測試失敗(探針 A 級 `prototypes/gdunit-push-error-probe-2026-11-11/`)。card_text 回型為 Dictionary → 壞表 = 空字典 = 整表無牌面文字、大聲報錯、戰鬥照常(其餘三表為載入失敗)。協調者突變(unit.gd 拿掉 return null)→ 2 測試紅 → 還原 SAME;重跑 `ENGINE EXIT = 0` / `1997 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(190/190)`。
 - 📌 收工請示清單:audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
 
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方

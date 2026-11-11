@@ -359,3 +359,31 @@ func test_sensitivity_proof_stat_access_view_hp_effective_tracks_current_hp() ->
 	# 不是 18(扣 12 點後的當前 hp),不是巧合同值。
 	assert_int(view["hp"]["effective"]).is_equal(30)
 	assert_int(view["hp"]["effective"]).is_not_equal(mutant.hp)
+
+
+# ---- story-038:欄數不符 -> push_error + 整表拒絕(發行版也有效,不靠 assert)----
+
+func test_from_csv_line_wrong_field_count_returns_null() -> void:
+	# Arrange — 只有 5 欄(合法為 11 或 12)
+	var line: String = "1,甲,PLAYER,30,16"
+
+	# Act
+	var unit: Unit = Unit.from_csv_line(line)
+
+	# Assert
+	assert_object(unit).is_null()
+
+
+func test_roster_from_text_wrong_field_count_discards_entire_roster() -> void:
+	# Arrange — 壞列前後各一個合法列
+	var text: String = (
+		"1,甲,PLAYER,30,16,8,6,1,1,0,2\n"
+		+ "7,丁,ENEMY,10,10\n"
+		+ "2,乙,PLAYER,26,14,6,5,1,2,0,3\n"
+	)
+
+	# Act
+	var roster: Array[Unit] = Unit.roster_from_text(text)
+
+	# Assert
+	assert_int(roster.size()).is_equal(0)

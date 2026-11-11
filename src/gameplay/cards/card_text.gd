@@ -18,20 +18,11 @@ extends RefCounted
 ## Number of comma-separated fields a parsed line must resolve to: id, flavor_text.
 ## Unlike [Unit] / [AffinityLink]'s per-line parsers, this format has no enum field to
 ## validate — the only structural failure this checks is a missing separator (a line with
-## no comma at all resolves to 1 field, not 2). [code]assert()[/code] is used here
-## deliberately to match the SAME idiom [Unit.from_csv_line] / [AffinityLink.from_csv_line]
-## already use for THEIR field-count checks (as opposed to the push_error+null idiom those
-## two use for an unrecognized enum string) — there is no enum string in this format for
-## that second idiom to apply to.
+## no comma at all resolves to 1 field, not 2).
 ##
-## ⚠️ Known project-level caveat, registered rather than fixed here (2026-09-16, per
-## coordinator instruction): [code]assert()[/code] calls are stripped entirely from release
-## exports — this field-count guard is a debug-build-only safety net. A malformed line
-## (missing comma) reaching this code in a release export would fall through to
-## [code]fields[1][/code] on a 1-element array, an out-of-bounds access, not a caught error.
-## This is an existing project-wide property of every [code]assert()[/code]-based
-## field-count check ([Unit.from_csv_line], [AffinityLink.from_csv_line] included), not
-## something introduced by this file — flagged here per instruction, not remediated here.
+## 2026-11-11 管理者裁決(story-038):欄數檢查改為 push_error + 整表拒絕,發行版也有效
+## (assert 在 release 匯出會被整條移除,檢查會消失)。見
+## production/epics/tactical-combat/story-038-release-safe-data-parsing.md。
 const FIELD_COUNT: int = 2
 
 
@@ -46,37 +37,31 @@ const FIELD_COUNT: int = 2
 ## [code]flavor_text[/code] degrades to "the comma stayed in the text, no third field", not
 ## a silently-truncated string or a thrown exception.
 ##
-## 🔴 [b]Placeholder — deliberately undecided, do not infer an answer from this method's
-## current behavior (2026-09-16 coordinator instruction).[/b] What should happen when a
-## row's [code]id[/code] duplicates an earlier row's [code]id[/code], or a row is otherwise
-## malformed in a way [code]assert()[/code] does not already catch (release-build silence
-## included, see [constant FIELD_COUNT]'s doc comment) has NOT been ruled on for this table.
-## The manager ruled the SAME DAY that [code]vs01_cards.txt[/code] (this table's sibling —
-## [Card]'s own data file) gets "one bad row aborts the whole table, loudly, naming the
-## line" (the same discipline already applied to [method Unit.roster_from_text] and
-## [method AffinityLink.links_from_text]) — but in the SAME ruling explicitly declined to
-## generalize that to a project-wide rule, deciding case-by-case instead. This table's case
-## has NOT been decided and is queued for a future ruling. It may or may not land on the
-## same answer as [code]vs01_cards.txt[/code]: a bad row in the mechanics table changes what
-## a drawn card DOES (a gameplay-legality question); a bad row here only changes what a
-## card's face SAYS (a cosmetic question) — the two tables' stakes differ, so their answers
-## are not assumed to match. Whoever implements that future ruling: this method currently
-## silently overwrites on a duplicate [code]id[/code] (last row wins) and currently has no
-## abort-the-whole-table path at all — treat both as accidental byproducts of "not yet
-## decided", not as an endorsed design.
+## 🔴 [b]壞列的處置已決(2026-11-11 管理者裁決,見 story-038):整表拒絕。[/b]
+## 任何一列缺逗號 -> [code]push_error()[/code](含行號)後回傳 [b]空字典[/b],整張表不採用
+## (比照 [method Unit.roster_from_text] / [method AffinityLink.links_from_text])。本方法回傳
+## 具型別 [code]Dictionary[/code],無法表達 null,故以空字典表示失敗;接收端
+## (battle_screen.gd 的 [code]_card_flavor_texts[/code])對缺牌面文字本來就以 [code]""[/code]
+## 退回,所以不需改動。
+##
+## 🔴 重複 [code]id[/code] 仍【未裁決】:目前後者覆蓋前者,屬「尚未決定」的副產品,
+## 不是背書的設計。
 static func flavor_texts_from_text(text: String) -> Dictionary[String, String]:
 	var result: Dictionary[String, String] = {}
+	var line_number: int = 0
 	for raw_line: String in text.split("\n"):
+		line_number += 1
 		var line: String = raw_line.strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
 		var fields: PackedStringArray = line.split(",", true, 1)
-		assert(
-			fields.size() == FIELD_COUNT,
-			(
-				"CardText.flavor_texts_from_text: expected %d fields (a line with no comma "
-				+ "at all?), got %d in line: %s"
-			) % [FIELD_COUNT, fields.size(), line]
-		)
+		if fields.size() != FIELD_COUNT:
+			push_error(
+				(
+					"CardText.flavor_texts_from_text: aborting -- expected %d fields (a line "
+					+ "with no comma at all?), got %d at line %d: %s"
+				) % [FIELD_COUNT, fields.size(), line_number, line]
+			)
+			return {}
 		result[fields[0]] = fields[1]
 	return result

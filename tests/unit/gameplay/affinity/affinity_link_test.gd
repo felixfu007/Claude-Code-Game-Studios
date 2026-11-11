@@ -184,3 +184,27 @@ func test_partner_of_returns_the_other_endpoint() -> void:
 	# Assert
 	assert_int(link.partner_of(1)).is_equal(2)
 	assert_int(link.partner_of(2)).is_equal(1)
+
+
+# ---- story-038:欄數不符 / 自配連結 -> push_error + 整表拒絕(發行版也有效)----
+
+func test_from_csv_line_wrong_field_count_returns_null() -> void:
+	var link: AffinityLink = AffinityLink.from_csv_line("1,2,POSITIVE")
+	assert_object(link).is_null()
+
+
+func test_from_csv_line_self_pairing_returns_null() -> void:
+	var link: AffinityLink = AffinityLink.from_csv_line("3,3,POSITIVE,1")
+	assert_object(link).is_null()
+
+
+func test_links_from_text_wrong_field_count_returns_null() -> void:
+	var text: String = "%s\n1,3\n%s" % [LINE_POSITIVE, LINE_NEGATIVE]
+	var links: Variant = AffinityLink.links_from_text(text)
+	assert_object(links).is_null()
+
+
+func test_links_from_text_self_pairing_returns_null() -> void:
+	var text: String = "%s\n3,3,POSITIVE,1\n%s" % [LINE_POSITIVE, LINE_NEGATIVE]
+	var links: Variant = AffinityLink.links_from_text(text)
+	assert_object(links).is_null()

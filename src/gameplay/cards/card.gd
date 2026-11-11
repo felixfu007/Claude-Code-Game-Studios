@@ -212,11 +212,13 @@ static func new_permanent_affinity_write(
 ## that method's doc comment.
 static func from_csv_line(line: String) -> Card:
 	var fields: PackedStringArray = line.split(",")
-	assert(
-		fields.size() >= FIELD_COUNT and fields.size() <= FIELD_COUNT_WITH_NAMED_MODE,
-		"Card.from_csv_line: expected %d to %d fields, got %d in line: %s"
-		% [FIELD_COUNT, FIELD_COUNT_WITH_NAMED_MODE, fields.size(), line]
-	)
+	# story-038:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
+	if fields.size() < FIELD_COUNT or fields.size() > FIELD_COUNT_WITH_NAMED_MODE:
+		push_error(
+			"Card.from_csv_line: expected %d to %d fields, got %d in line: %s"
+			% [FIELD_COUNT, FIELD_COUNT_WITH_NAMED_MODE, fields.size(), line]
+		)
+		return null
 
 	var id: String = fields[0]
 	var category: Variant = _category_from_string(fields[1])

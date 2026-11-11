@@ -189,11 +189,13 @@ var _modifiers: Array[CardModifier] = []
 ## see that method's doc comment.
 static func from_csv_line(line: String) -> Unit:
 	var fields: PackedStringArray = line.split(",")
-	assert(
-		fields.size() == FIELD_COUNT or fields.size() == FIELD_COUNT_WITH_LONE_FLAG,
-		"Unit.from_csv_line: expected %d or %d fields, got %d in line: %s"
-		% [FIELD_COUNT, FIELD_COUNT_WITH_LONE_FLAG, fields.size(), line]
-	)
+	# story-038:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
+	if fields.size() != FIELD_COUNT and fields.size() != FIELD_COUNT_WITH_LONE_FLAG:
+		push_error(
+			"Unit.from_csv_line: expected %d or %d fields, got %d in line: %s"
+			% [FIELD_COUNT, FIELD_COUNT_WITH_LONE_FLAG, fields.size(), line]
+		)
+		return null
 
 	var unit: Unit = Unit.new()
 	unit.id = int(fields[0])

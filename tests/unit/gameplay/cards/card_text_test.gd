@@ -85,3 +85,13 @@ func test_blank_and_comment_lines_are_skipped() -> void:
 	assert_int(flavor_texts.size()).is_equal(2)
 	assert_str(flavor_texts["card_01"]).is_equal("第一張卡的文字")
 	assert_str(flavor_texts["card_02"]).is_equal("第二張卡的文字")
+
+
+# story-038(2026-11-11 管理者裁決):缺逗號的壞列 -> push_error + 整表拒絕(回空字典),
+# 合法列不得「部分成功」留下。
+func test_missing_comma_line_discards_entire_table() -> void:
+	var text: String = "card_01,第一張\nthis line has no comma\ncard_02,第二張\n"
+
+	var flavor_texts: Dictionary[String, String] = CardText.flavor_texts_from_text(text)
+
+	assert_int(flavor_texts.size()).is_equal(0)

@@ -206,3 +206,20 @@ func test_cards_from_text_parses_vs01_cards_txt_into_eight_cards() -> void:
 			permanent_count += 1
 	assert_int(temporary_count).is_equal(6)
 	assert_int(permanent_count).is_equal(2)
+
+
+# ---- story-038:欄數不符 -> push_error + 整表拒絕(發行版也有效,不靠 assert)----
+
+func test_from_csv_line_wrong_field_count_returns_null() -> void:
+	var card: Card = Card.from_csv_line("c1,TEMPORARY_STAT_MODIFIER,1")
+	assert_object(card).is_null()
+
+
+func test_cards_from_text_wrong_field_count_aborts_whole_batch() -> void:
+	var text: String = (
+		"c1,TEMPORARY_STAT_MODIFIER,1,1,1,-1,-1,0\n"
+		+ "c_bad,TEMPORARY_STAT_MODIFIER,1\n"
+		+ "c2,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,1\n"
+	)
+	var cards: Variant = Card.cards_from_text(text)
+	assert_object(cards).is_null()

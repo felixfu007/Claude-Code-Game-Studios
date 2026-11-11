@@ -87,11 +87,13 @@ const _LOG_AMP_OUT_OF_RANGE_FORMAT: String = (
 ## failure — see that method's doc comment.
 static func from_csv_line(line: String) -> AffinityLink:
 	var fields: PackedStringArray = line.split(",")
-	assert(
-		fields.size() == FIELD_COUNT,
-		"AffinityLink.from_csv_line: expected %d fields, got %d in line: %s"
-		% [FIELD_COUNT, fields.size(), line]
-	)
+	# story-038:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
+	if fields.size() != FIELD_COUNT:
+		push_error(
+			"AffinityLink.from_csv_line: expected %d fields, got %d in line: %s"
+			% [FIELD_COUNT, fields.size(), line]
+		)
+		return null
 
 	var link: AffinityLink = AffinityLink.new()
 	link.unit_a = int(fields[0])
@@ -104,10 +106,10 @@ static func from_csv_line(line: String) -> AffinityLink:
 		return null
 	link.polarity = polarity
 	link.amp = int(fields[3])
-	assert(
-		link.unit_a != link.unit_b,
-		"AffinityLink.from_csv_line: a unit cannot be paired with itself: %s" % line
-	)
+	# story-038:自配連結在發行版也必須被拒絕(assert 在 release 會被移除)。
+	if link.unit_a == link.unit_b:
+		push_error("AffinityLink.from_csv_line: a unit cannot be paired with itself: %s" % line)
+		return null
 	# amp 超出合法值域是資料錯誤(design/gdd/affinity-position-chain.md Edge
 	# Cases),但這不是中止解析的理由——中止會讓呼叫端連同其餘合法列一起讀不
 	# 到,比記錄後繼續讀還要糟。log-and-continue:仍照原樣使用解析到的值
