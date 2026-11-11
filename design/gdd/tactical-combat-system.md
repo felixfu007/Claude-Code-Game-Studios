@@ -499,6 +499,8 @@
 | `Φ_max`(好感度—位置修正的合法值域上界) | **好感度—位置連鎖系統(#5,Not Started)** | 公式一的 `Φ` 變數;**該系統定案前,公式一的上界無法收斂**(見公式一邊界行為的風險標記) |
 | `player_baseline_stat`(HP/ATK/DEF 基準數值表) | ✅ **`design/quick-specs/unit-stats-provisional.md` 第 1 節「主角數值表」**(2026-08-31 管理者指派)。**本列原文為「尚無歸屬系統」,是 OQ-2 於 2026-09-09 更正關閉時漏掉的一列,同一份文件裡另外兩處(檔頭摘要、Open Questions 本節)當時都已同步,唯獨這裡沒有——現於 2026-09-29 補正同步** | 公式二的輸入。**擁有者已確定,但數值本身仍為暫定值**,校準時機見本文件 OQ-14(首次可玩建置後的平衡校準)——「有人負責」與「數字是對的」是兩件事 |
 
+> 📌 2026-11-11 加註(管理者核准):減傷、獨行、留一手、好感度曲線與卡牌夾限的資料檔在 `assets/data/tuning/tuning_knobs.txt`(`combat` / `affinity` / `card_modifier` 區),設計理由見 `affinity-position-chain.md` 與 `skill-card-system.md` 各自的 Tuning Knobs;僅為指標;對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
+
 ### 跨系統校準義務(硬性)
 
 `enemy_advantage_pct` 與 `Φ_max` **不得各自獨立校準**。Core Rules #7 指定好感度佈局帶來的加成是抵銷敵方數值優勢的主要機制(本系統無隨機判定可作為變數),因此兩者必須滿足(⚠️ **2026-08-31 修訂:原寫「唯一」;下列不等式僅對「輸出通道」成立,承傷通道 `Φ` 不覆蓋,見 Core Rules #7 修訂註**。本耦合義務已登記於 `docs/registry/architecture.yaml` 的 `phi_curve_enemy_advantage_cross_calibration` 條目):

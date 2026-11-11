@@ -488,6 +488,10 @@ ADR-0001 正文裡,只是不再以修訂的形式呈現;要查「當時為什麼
 | 🔴 **`Σ Δatk` / `Σ Δdef` 的累計夾限** | **待基準表** | 必須存在 | 見公式一。**須與 `Φ` 的 −4/+12 做尺度校準,不得獨立決定** —— 甲類是平行於 `Φ`、餵進同一條傷害公式的通道 |
 | 卡池規模 | 待卡表 | **> 11** | 低於此值單場就會重複(公式四) |
 
+> 📌 2026-11-11 加註(管理者核准):開局手牌、每回合補牌、手牌上限三項的現值在 `assets/data/tuning/tuning_knobs.txt` 的 `deck` 區(`opening_hand_size`、`cards_drawn_per_turn`、`hand_size_limit`);對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
+
+> 📌 2026-11-11 加註(管理者核准):上表「`Σ Δatk` / `Σ Δdef` 的累計夾限」兩列寫「待基準表」,現況是現值已在 `assets/data/tuning/tuning_knobs.txt` 的 `card_modifier` 區(`atk_delta_min`/`atk_delta_max`、`def_delta_min`/`def_delta_max`),數值出處為 `design/quick-specs/unit-stats-provisional.md` 7-4 節;對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
+
 ⚠️ **本節有兩項不是「調數值」而是「改設計」**:每回合補牌數與甲類持續回合。兩者各自綁著一條已裁決的體驗承諾,**動它們要回頭改 Player Fantasy,不是改一個常數。**
 
 ## Visual/Audio Requirements

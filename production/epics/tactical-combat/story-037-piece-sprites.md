@@ -2,6 +2,7 @@
 
 > **Status**: Blocked(未決點 1、2、3 —— 詳見最後一節;**程式部分可先用佔位圖做完,不必等素材,但未決點 1 會決定敵方那一側的範圍**)
 > ✅ **2026-11-11 加註(管理者核准「現在開工,先用佔位圖(推薦)」)**:Status 改為 **Ready**。未決點 1、3、4 由 art-director 答覆 `docs/reviews/piece-sprites-art-answers-2026-11-11.md`:①敵方維持現行佔位圖,本張不做敵方圖;③正式圖路徑定案 `assets/art/characters/pieces/char_<jia|yi|bing|ding|wu>_piece_idle_01.png`;④對齊確認不改 `_piece_anchor`,另要求「下方格位的棋子畫在上方棋子前面」(現況未查,實作者確認)。未決點 2:程式先做、素材到再放檔,最終畫面驗收在家。原句保留。
+> ✅ **2026-11-11 加註(管理者核准狀態欄加註):程式完成,提交 `34c2f2d`;AC-5~7 待正式圖到位後在家驗收。** 原句保留。
 > **Type**: UI / Visual(含少量 Logic:貼圖路徑解析與缺檔退回,可單元測試)
 > **Epic**: tactical-combat(M4 世界層呈現)
 > **指派建議**: `godot-gdscript-specialist`(.gd);像素量測與截圖驗收在家驗收,見 AC

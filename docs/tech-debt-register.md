@@ -85,6 +85,7 @@
   > 戰鬥減傷 9、好感度 7 項搬到 `assets/data/tuning/tuning_knobs.txt`,缺行/打錯字一律載入失敗。
   > **刻意未搬(依裁決,仍為程式常數)**:好感度距離門檻 `DISTANCE_ADJACENT`/`DISTANCE_FAR`(「距離留在程式(推薦)」)、
   > 本段列的 `board.gd` 移動成本表、手感秒數(協調者依 lead-programmer 建議延後)。`LONE_MID_DISTANCE` 已刪(從未被讀)。
+  > ✅ 2026-11-11 加註(管理者核准):已清償(刻意保留項除外)—— `assets/data/tuning/tuning_knobs.txt` 存在且 `card_deck.gd` 已讀取,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
   🔴 **約 17 個遊戲平衡數值硬編碼在 `const` 裡,而 `coding-standards.md` 明文要求
   「Gameplay values must be data-driven (external config), never hardcoded」。**
   **不是孤例,是系統性的** —— 分佈在 4 個檔案:
@@ -136,6 +137,7 @@
   範圍、逐條跑、再改回 —— **每證明一條約等於一次完整測試執行**。排程時請以此為基數。
   追蹤來源:`production/epics/cursor-highlight-state/story-005-frame-buffer-ordering.md`
   的「未完成項與已登記債」節第 1 項。
+  > ✅ 2026-11-11 加註(管理者核准):已清償 —— `tests/integration/cursor/frame_buffer_ordering_test.gd` 已有 `_MutantMouseBeatsKeyboardGamepad`、`_MutantNavigationLeavesStaleValidity` 等 mutant 敏感度證明,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 
 
 - **2026-09-02**(Story 001 共用列舉、目標值型別與策略契約):
@@ -147,6 +149,7 @@
   與 ADR-0005 已登記的「export release 建置下 VM 是否中止所在函式」是同一類本機測不了的問題,
   建議取得匯出範本後兩項一起驗。
   追蹤來源:`production/epics/cursor-highlight-state/story-001-shared-types.md`
+  > 📌 2026-11-11 加註(管理者核准):已量測 —— release 匯出整條移除 assert(`prototypes/assert-release-probe-2026-11-11/`,A 級);資料檔解析 5 處已改 push_error+整表拒絕(story-038 `f0884ac`);其餘 13 處依 `docs/reviews/assert-release-risk-inventory-2026-11-11.md` 判保留/無需處理。游標 `cursor_types.gd` 的 assert 盤點判「無需處理(呼叫端皆常數)」,本項不自行升級為已清償。見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 
 - **2026-09-02**(Story 001 共用列舉、目標值型別與策略契約):
   **AC-53 只做到部分涵蓋,補齊要等 Story 003** —— 該條文要求檢視「所有**已掛載** UI 表面」
@@ -157,6 +160,7 @@
   永遠停在半驗證狀態。
   追蹤來源:`production/epics/cursor-highlight-state/story-001-shared-types.md`、
   `production/epics/cursor-highlight-state/story-003-surface-registry.md`
+  > ✅ 2026-11-11 加註(管理者核准):已清償(由 D6 承接)—— 補驗已於 2026-09-02 當日做過,結論登記為「AC-53 結構上擋不住」(見下方 2026-09-02 AC-53 補驗結論條目),見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 
 
 - **2026-09-02**(Story 002 Autoload 薄殼 + 依賴注入核心 + 三欄位狀態):
@@ -291,10 +295,12 @@
   ② **L.934 vs R6-10**:重入 reseed 算不算遞增診斷計數,兩段講不一樣(**測試端與引擎端各自獨立撞到**)。
   ③ **VC #13(iv) 說六 / Key Interfaces 說七。** ④ **登記表 L.1930-1933 只列 5 個公開入口,實際 7 個。**
   ⚠️ ADR-0005 **已 `Accepted`**,修訂須走既有流程。—— 追蹤來源 `docs/reviews/story-007-engine-review-2026-09-03.md` 總結表
+  > ✅ 2026-11-11 加註(管理者核准):已清償 —— 抽查第③項:`docs/architecture/adr-0005-*.md` 內已有「2026-09-03 事實層更正:原寫「六個會發訊號的公開入口」,實測七個全部都呼叫」,與條目自述一致,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 - **2026-09-03**(Story 007,✅ **已裁決,轉為帶期限的延後項**):ADR L.1041 明文承諾
   「`set_target()` 於 `from_ui_action == true` 時連動裝置權威轉移」,**但沒說轉移到哪個裝置,簽章也不帶裝置資訊**。
   現況:**無實作、無測試會失敗**,實作端留明確 no-op 分支並在公開 doc comment 標明為未定案。
   方向與 AC-39 一致但 **AC-39 未回答此問題**,不得讀成已結案。—— 追蹤 同上報告第 10(c) 項
+  > ✅ 2026-11-11 加註(管理者核准):已失效 —— `from_ui_action` 參數已於 2026-09-07 刪除(`cursor_state.gd` 內 `DELETED 2026-09-07 (Story 005)` 註解),債所指分支不存在,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 - **2026-09-03**(Story 007,引擎覆核 S-1,判定可延後但後果嚴重):**重入閘門的兩條 abort 路徑在閘門內**
   (`assert` 與 `_registry.get_surface()`)。一次中止 = `_mutation_in_progress` 永久卡住 = **游標系統無聲死亡**。
   ⚠️ `assert` **在 release 建置可能被整條剝離** → 開發時大聲報錯、玩家手上無聲卡死;
@@ -307,6 +313,7 @@
   Story 014 解凍前它恆為 `0.0` → **Story 011 的 AC-31 GIVEN 永遠成立、AC-31b(進度非零)永遠觸發不到**,
   測試會全綠卻從未驗到它要防的東西。與 `story-011` 工作單第 69 行記載的教訓同形。
   已在 `reclaim_progress()` 的 doc comment 寫入二義性警告。—— 追蹤 `docs/reviews/story-007-test-evidence-review-2026-09-03.md` G-1 節
+  > ✅ 2026-11-11 加註(管理者核准):已失效(傷害路徑已消失;程式二義仍在)—— Story 014 已 `✅ Complete(2026-09-07)`,AC-31b 不再恆觸發不到,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 - **2026-09-03**(Story 007,N-1 的殘留):**接縫的縮排層級是一項規格,但沒有任何自動檢查。**
   已改用具名區域旗標讓依賴關係不再靠縮排表達、並在註解逐字寫明,**但實作端誠實指出「註解不是自動檢查」**,
   而真正該擋住回歸的測試要等 Story 005 填入主體才寫得出來。—— 追蹤 同上引擎報告第 15(c) 項
@@ -344,6 +351,7 @@
   列舉值,屬 ADR-0005 管轄,**不由工作單決定**。三個落點與各自能不能寫出「會失敗的測試」
   已列在工作單文末。工作單狀態已改為 **Blocked**。
   追蹤來源:`production/epics/cursor-highlight-state/story-012-disable-native-focus.md` 文末
+  > ✅ 2026-11-11 加註(管理者核准):已清償 —— Story 012 工單 `Status: ✅ Done(2026-10-15,提交 04472fe)`,`cursor_surface_registry.gd` 的 `register()` 已內建條件檢查,見 docs/reviews/tech-debt-staleness-audit-2026-11-11.md
 
 ## Resolved
 

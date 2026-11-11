@@ -635,3 +635,5 @@ MP 沿用對應武器分層的第6節推導值(pct 不套用於 MP)。五隻敵�
 偏保守不會壞掉東西,但 #6 若覺得 DEF 卡太弱,**這裡是可以放寬的地方,且放寬有依據。**
 
 ⚠️ **以上皆為起始尺度,不是定案** —— 逐卡的 `Δ` 要等 #6 的實際卡表出現才能校準。
+
+> 📌 2026-11-11 加註(管理者核准):這三項的現行資料檔位置為 `assets/data/tuning/tuning_knobs.txt` 的 `card_modifier` 區(`atk_delta_min`/`atk_delta_max`/`def_delta_min`/`def_delta_max`);對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。

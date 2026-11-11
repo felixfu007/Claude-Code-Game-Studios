@@ -500,7 +500,11 @@ damage       = max(0, ATK − DEF + Φ_att − guard_total)
 | `HOLD_BACK_PENALTY`(留一手傷害) | **1** | 1~2 | 曲線 | >2 時戊從 d=2 出手不值得,騎牆退化為「全程貼身或脫隊」 |
 | 「出手條件(布林)」列 | **作廢**(程式已不讀) | — | — | 不再是旋鈕 |
 
+> 📌 2026-11-11 加註(管理者核准):現況陳述 —— `LONE_MID_DISTANCE` 目前不在 `assets/data/tuning/tuning_knobs.txt`(該檔 `combat` 區只有 `lone_mid_guard`,有 `hold_back_distance`、無對應的 mid 距離鍵),且程式不讀它(見 docs/reviews/tuning-knobs-data-driven-plan-2026-11-04.md 第 1.3 節);`hold_back_distance` 可由資料檔調整而 `LONE_MID_DISTANCE` 不可,上列「兩者同值」的約束目前無機制保證。此為待裁決事項,本註不給結論;對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
+
 存放:沿用 `LONE_*` 既有做法放 `CombatRules` 常數;**是否改外部資料檔,交 gameplay-programmer 與 lead-programmer 決定**(專案原則是資料驅動,現況是已登記的未決偏離,**未查證**是否已有登記)。
+
+> 📌 2026-11-11 加註(管理者核准):`GUARD_*`、`LONE_*`、`HOLD_BACK_*`、`Φ` 夾限與距離曲線四項的現值已搬至 `assets/data/tuning/tuning_knobs.txt`(`combat` / `affinity` 兩區,鍵名如 `guard_min`、`lone_far_guard`、`hold_back_distance`、`phi_min`、`phi_max`、`delta_positive_adjacent`);上一段「存放」所述的未決已有現況,本節仍是各值的設計理由來源;對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
 - 🔴 **跨系統校準義務擴大**:原義務(輸出通道 Φ ≥ 敵方 DEF 差距)之外,**承傷通道**須驗 `guard_total` 與敵方 ATK 虛高差距。已登記於 `docs/registry/architecture.yaml`。**⚠️ 本次未重驗。**
 - 「校準目標」(無加成 4 下、有加成 3 下)針對我方輸出,語意不變;`AC-FEEL` 人工試玩須同時記錄承傷體感(AC-GFEEL-2)。
 

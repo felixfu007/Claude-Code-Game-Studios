@@ -503,6 +503,7 @@ constants:
       重算的觸發條件與算式(phi_min = 4 × amp_max × (−1))見 phi_max 條目,不在此複述。⚠️ 來源 GDD 已於 2026-08-31 Approved(本欄原寫 Designed,一併更正)。"
     added: 2026-08-31
     revised: ""
+    # 📌 2026-11-11 加註(管理者核准):phi_min / phi_max 的現行資料檔位置為 assets/data/tuning/tuning_knobs.txt 的 affinity 區(鍵 phi_min / phi_max);對照見 docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md。原文保留。
 
   - name: affinity_links_per_character_max
     status: retracted

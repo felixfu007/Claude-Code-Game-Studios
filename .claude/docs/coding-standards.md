@@ -52,6 +52,20 @@
   by the implementer, who had been about to use `assert()` for exactly this purpose and
   probed it first; the coordinator then re-verified it independently rather than taking the
   report at face value.
+- 🔴 **A release export strips `assert()` entirely — never use it to validate external input.**
+  Measured 2026-11-11 (`prototypes/assert-release-probe-2026-11-11/README.md`, engine-executed
+  on an exported release build, Godot 4.7.1): in a release export the `assert(...)` statement is
+  **removed whole — its condition expression is not even evaluated** — and the function simply
+  continues past it. The same probe measured that **integer division by zero in a release build
+  ends the process silently (exit 127, no error message)**, where debug prints an error and goes on.
+  **Rule: any check that validates external input (data files, save files, player input) must use
+  `push_error()` followed by an explicit `return` of a deliberately non-success value; `assert()`
+  is only for purely internal invariants** (conditions the caller controls and no outside data can
+  reach). Applied once already: data-file parsing was moved off `assert()` in story-038 (`f0884ac`).
+  Re-run the evidence: open the README above and follow its export/run steps (logs
+  `run_release*.log` are kept beside it; compare with `run_debug*.log`).
+  ⚠️ **No lint checks this** — compliance is unobservable, same as the rest of this document's
+  discipline rules.
 - 🔴 **A verification command written inside a comment counts itself as a match.**
   Measured 2026-10-12: a doc comment in `src/gameplay/units/unit.gd` asserted
   `grep -rn "enemy_stat(" src/` "has exactly one hit" — rerunning it found **2**,
