@@ -30,10 +30,10 @@
 # 並在需要時插入色相/材質描述詞,例:cloth_warm_shadow_01):
 #   _shadow_ / _base_ / _highlight_ — 明暗三階;_outline_ — 描邊色(依材質分開,非純黑)
 #
-# 總數:本版用 39 / 64(2026-11-10 新增 cloth_green_base_01,管理者 11-06 裁決「色盤新增一個衣物綠」;初版為 38)(全專案共用上限,地形+介面+5 位角色共享,非單一角色配額,
+# 總數:本版用 48 / 64(2026-11-11 新增地形 9 色 —— 倒木新三階 _02、水三階、懸崖/虛空三階,管理者 11-11 裁決「可以,兩邊色票一起更新」,依 design/art/terrain-tile-spec.md v0.2 第 3 節;舊倒木三階 _01 保留不改)(前版 39:2026-11-10 新增 cloth_green_base_01,管理者 11-06 裁決「色盤新增一個衣物綠」;初版為 38)(全專案共用上限,地形+介面+5 位角色共享,非單一角色配額,
 # 出處:design/art/art-direction.md 第二、三節與 06a 第一節)。
-#   skin 7 / cloth 11 / metal 4 / nature 10 / ui 6 / reserved 1 = 39。
-#   剩餘 25 色為刻意保留的頭寸,供後續角色專屬子色盤挑選、地形演變新增地形種類
+#   skin 7 / cloth 11 / metal 4 / nature 19 / ui 6 / reserved 1 = 48。
+#   剩餘 16 色為刻意保留的頭寸,供後續角色專屬子色盤挑選、地形演變新增地形種類
 #   (design/gdd/living-board-terrain.md)、或既有 UI 色一併納管時使用 —— 不是遺漏。
 #
 # 描邊色(硬性規則出處:art-direction.md 第四節 + 06a 驗收標準表 #4 ——
@@ -124,3 +124,12 @@ hex,category,label
 #FF5252,ui,ui_state_negative_01
 #FFBF4D,ui,ui_state_warning_01
 #3C8C3C,cloth,cloth_green_base_01
+#1E1A17,nature,nature_fallenlog_shadow_02
+#3B342E,nature,nature_fallenlog_base_02
+#6E6458,nature,nature_fallenlog_highlight_02
+#1B2E3F,nature,nature_water_shadow_01
+#2F5670,nature,nature_water_base_01
+#7FB2C4,nature,nature_water_highlight_01
+#0E0F14,nature,nature_void_shadow_01
+#4B4A52,nature,nature_cliff_base_01
+#8C8A94,nature,nature_cliff_highlight_01
