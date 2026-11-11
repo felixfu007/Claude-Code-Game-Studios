@@ -69,7 +69,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ lead-programmer 盤點 `docs/reviews/assert-release-risk-inventory-2026-11-11.md`:src 18 處 → 改 5 / 保留 3 / 無需 10;必修全是資料檔解析(affinity_link 欄數+自配、unit 欄數、card 欄數、card_text 缺逗號)。協調者抽核三處原始行。
 - 🔴 裁決「**修 5 處,壞資料一律整張表拒絕(推薦)**」→ 協調者寫 `production/epics/tactical-combat/story-038-release-safe-data-parsing.md`(新檔);⏳ 派 godot-gdscript-specialist(先探針 GdUnit4 遇 push_error 的行為)。
 - ✅ **story-038 完成**(實作者撞 20 回合一次,SendMessage 續完)。GdUnit4 預設 `REPORT_PUSH_ERRORS=false` → push_error 不使測試失敗(探針 A 級 `prototypes/gdunit-push-error-probe-2026-11-11/`)。card_text 回型為 Dictionary → 壞表 = 空字典 = 整表無牌面文字、大聲報錯、戰鬥照常(其餘三表為載入失敗)。協調者突變(unit.gd 拿掉 return null)→ 2 測試紅 → 還原 SAME;重跑 `ENGINE EXIT = 0` / `1997 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(190/190)`。
-- 📌 收工請示清單:audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
+- ✅ story-038 `f0884ac`;relation-minimap story-003 解耦工單 Draft `7982d34`(未排程)。
+- 🔴 裁決(約 11:20,四項全勾,皆推薦):3 張工單狀態欄、技術債 7 項清償/失效 + C2 已量測、設計文件 7 處數值指路、coding-standards「release 移除 assert」→ 全部純插入,`75e4479`(38 增 0 刪,協調者核 numstat)。E4 抽查成立(ADR-0005 VC#13(iv) 六→七)。
+- 📌 收工請示清單(已清空,上列已核准並提交;舊行保留):audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
 
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;查 AI_IMG)。
