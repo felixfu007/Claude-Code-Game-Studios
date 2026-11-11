@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第九十七批(2026-11-11)收工。** story-037 棋子接線 `34c2f2d`、story-038 資料解析防呆 `f0884ac`、U-020 手牌滑鼠門檻 `187e669`、audio story-006 測試期判斷 `2f5efc3`(**CI 自 11-06 紅 → 轉綠**,run 42985955694 `2005 test cases | 0 failures`、Exit code 0);技術債/旋鈕/游標/assert 盤點與文件加註 `75e4479` 等。測試 1981 → **2005,本機與 CI 全綠**。
+Feature: 🔴 今日裁決逐字見第九十七批節(全為推薦,除「陌生人找不到/不確定」與兩次「我先問一下…」「今晚試玩後再說」)。覆核收穫:CI 紅三天(協調者疏失,自揭)、手牌焦點被搶(假設錯型)→ 連續零收穫 = 0。
+Task: 🔴 **下次第一件:git pull + 查 AI_IMG(35 號)+ `gh run list` 看 CI;第二件:問管理者今晚試玩心得 → 依此出「試玩範圍(必要 3 項 / +預判 / 全部)」與招募三題(`docs/reviews/stranger-recruitment-options-2026-11-11.md` 第 4 節)選項,若選遠端再問 battle-hud story-005(預判紀錄存檔,與 10-16 AC14 張力);第三件:問手把(選牌碰滑鼠、設定畫面)、音效、設定記憶。** 🔴 全程台灣繁體中文。
+以下為第九十六批原狀態列。
 Epic: **第九十六批(2026-11-10)收工。** 第 4 場 E3 改站(story-036 `289c837`,第 3 場退回);35 號推 AI_IMG `dc372ba`;音樂播放 story-004 `ccdf11b`;9 個 CC0 音效入庫 `781a990`;扣分音 story-005;公司開窗拍照四階段判不可行。測試 1947 → 見第九十六批節末行(收工重跑值)。
 Feature: 🔴 今日裁決逐字見第九十六批節。非推薦:「最後試一次彈出式旗標」、Stability「用我個人名義」(無推薦)、署名揭露「先不決定,試聽後再說」。覆核收穫 ≥2(暫停凍結音樂、扣分播增進音)→ 連續零收穫 = 0。
 Task: 🔴 **下次第一件:git pull + 查 AI_IMG(35 號正式化 5 張 → 交 art-director;注意甲丁深藍可分辨性);第二件:問管理者在家結果 —— 試聽 10 音效 + 12 首音樂(選曲/限幅器/署名揭露)、實體手把一輪、Stability 登記;友敵線樣張若在家已拍 → 交 art-director;第三件:陌生人試玩 Q-A~G 不急。** 🔴 全程台灣繁體中文。測試:`GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。
@@ -77,6 +81,8 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ U-020 `187e669`。
 - 🔴🔴 **協調者疏失:GitHub CI 自 11-06 `3623d98`(audio story-001)起每次都紅,三天沒人發現**(最後綠 `ca27ac6`)。唯一失敗 `game_settings_persistence_guard_test.gd::test_headless_detection_true_under_test_run`(斷言 DisplayServer == "headless";CI 非 headless)。協調者 11-06 起只用本機全套驗收,沒看 CI;第九十五批狀態列寫「CI 複驗」只對 `8bcbcea` 成立。後果推論(未驗):CI 下 `boot_load()` 非 no-op,測試可能讀寫 user://。⏳ 14:45 派 godot-specialist 查證 + 方案(不改檔)→ `prototypes/ci-test-detection-2026-11-11/`。**今後每次提交後看 `gh run list`。**
 - 查證(godot-specialist `prototypes/ci-test-detection-2026-11-11/`):CI 為 `xvfb-run ... --display-driver x11`;9 支整合測試載入 TitleScreen → CI 下 boot_load 真讀 user://(寫為高度可能)。🔴 裁決「**改判斷方式:看啟動指令(推薦)**」→ 協調者寫 audio story-006;實作 `is_test_run(args, display)`(headless 或 args 含 -s/--script)。實作者全套 1 紅 = 計時測試 79s(負載);協調者重跑 `ENGINE EXIT = 0` / `2005 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(191/191)`(該計時測試 25.8s)。
+- ✅ **`2f5efc3` 推送後 CI 轉綠**:run 42985955694 `Overall Summary: 2005 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `Exit code: 0`。
+- 🔴 **16:25 收工**:PROJECT-STATUS 重寫。未做(已知):陌生人試玩範圍/招募(等管理者今晚試玩)、預判紀錄存檔(Draft)、解耦工單(Draft 未排程)、行號自我引用 142 處、evidence 匯入檔、CARD_SLOT 去留(手牌例外已裁決,列舉成員去留未定)、計時測試 30s 門檻在負載下誤報(今日 2 次)。
 - 📌 收工請示清單(已清空,上列已核准並提交;舊行保留):audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
 
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
