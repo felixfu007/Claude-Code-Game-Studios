@@ -61,6 +61,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ producer 招募選項 `docs/reviews/stranger-recruitment-options-2026-11-11.md`(三題:管道/遠端/開始時點;發現「預判一致率不存檔」—— 協調者核 `effect_guess_tracker.gd` 檔頭 "no save/load I/O (AC14)" 屬實)。🔴 管理者三題都回「**我先問一下,找真人試玩是要確認那些議題?**」→ 協調者答 5 項(1 前 30 分不需解釋、2 自發歸因 = 只能真人;3 規則理解附帶;4 預判、5 忽視/運用對照 = 電腦已有,真人補充)。再問範圍 → 管理者:「**我今天晚上回去試玩,在跟你說結果,有其他試玩以外的代辦嗎?**」→ **試玩範圍與招募三題延後到明天,依他今晚試玩感想再問。** 協調者答今日代辦:story-037、預判紀錄存檔工單(只評估)、producer 再盤點。
 - ✅ **story-037 程式完成**(佔位圖先行;`resolve_piece_sprite_path` 正式圖存在才用、否則退回佔位;`piece_draw_order` 依列 y 排序 —— 實作者查得**現況敵方整批蓋在我方上、未依列排序**,已修)。協調者讀 diff:無索引 PiecesLayer 子節點的程式(grep 0)、無注入殘留;重跑 `ENGINE EXIT = 0` / `1988 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans` / `(190/190)`。在家驗收 AC-5~7(需正式圖 + 開窗)。
 - ✅ battle-hud story-005 預判紀錄匯出工單(Draft,約 1 工作天;未決點 1 = AC14「不持久化」裁決的精神張力,未自行推翻)—— **待管理者定試玩範圍後再問**。
+- ✅ story-037 已提交 **`34c2f2d`**(已推)。
+- producer 再盤點 6 項(不需決定者:技術債陳舊度盤點、旋鈕↔設計文件對照表、雙向相依工單草稿;需問:story-005/037 狀態欄、行號自我引用 142 處分流、evidence 匯入檔;丙射程不一致已揭露不列)。⏳ 09:20 平行派 lead-programmer 技術債陳舊度盤點 `docs/reviews/tech-debt-staleness-audit-2026-11-11.md`、systems-designer 旋鈕對照表 `docs/reviews/tuning-knobs-gdd-crosswalk-2026-11-11.md`(皆只寫新檔)。
+- 📌 收工請示清單:audio story-005 / tactical story-037 狀態欄加註;技術債登記表搬 Resolved(依盤點結果);各 GDD 加 tuning_knobs 指路(依對照表)。
 
 ## 🔴 第九十六批(2026-11-10,公司,11:03 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact;查 AI_IMG)。
