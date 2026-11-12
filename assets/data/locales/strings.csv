@@ -170,3 +170,5 @@ shell.settings.volume_master,主音量
 shell.settings.volume_music,音樂
 shell.settings.volume_sfx,音效
 shell.settings.mute_toggle,靜音
+battle.tile_info.identity_line_format,%s（%s）
+battle.tile_info.enemy_name_format,敵兵 %d

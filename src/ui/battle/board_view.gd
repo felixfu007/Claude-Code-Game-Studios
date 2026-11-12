@@ -312,6 +312,14 @@ const HP_BAR_BOTTOM_MARGIN: int = 3
 const HP_TEXT_HEIGHT: int = 10
 const HP_TEXT_TOP_MARGIN: int = 1
 const HP_TEXT_FONT_SIZE: int = 8
+## story-039 棋子標記字樣式(art-director 2026-11-12;色取自色盤既有色)。
+const PIECE_LABEL_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
+const PIECE_LABEL_FONT_SIZE: int = 11
+const PIECE_LABEL_SIZE: Vector2 = Vector2(12, 14)
+const PIECE_LABEL_TOP_OFFSET_IN_CELL: int = 8
+const PIECE_LABEL_COLOR_ALLY: Color = Color("#FFFFFF")
+const PIECE_LABEL_COLOR_ENEMY: Color = Color("#FF5252")
+const PIECE_LABEL_OUTLINE_COLOR: Color = Color("#0E0F14")
 const HP_TEXT_BG_COLOR: Color = Color(0.0, 0.0, 0.0, 0.72)
 const HP_TEXT_COLOR_NORMAL: Color = Color.WHITE
 const HP_TEXT_COLOR_PREVIEW: Color = Color(1.0, 0.78, 0.28)
@@ -557,6 +565,7 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 	_clear_children(_pieces_layer)
 	_clear_children(_stats_layer)
 	_clear_children(_action_flag_layer)
+	var label_used: int = 0
 	# Sprites are added in draw order (cell y ascending) so a lower row's piece,
 	# whose head overhangs into the row above, paints over the upper piece's feet.
 	for piece_index: int in piece_draw_order(pieces):
@@ -579,11 +588,20 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		var card_target_illegal: bool = data.get("card_target_illegal", false)
 		var action_flag: ActionFlag = data.get("action_flag", ActionFlag.NONE_USED)
 
-		_stats_layer.add_child(
-			_build_stat_block(cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal)
-		)
+		_stats_layer.add_child(_build_stat_block(
+			cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal
+		))
+		var label_text: String = data.get("label", "")
+		if label_text != "":
+			_apply_piece_label(
+				label_used, BoardCoords.grid_to_local(cell), label_text,
+				data.get("faction", "PLAYER") == "PLAYER"
+			)
+			label_used += 1
 
 		_action_flag_layer.add_child(_build_action_flag_marker(cell, action_flag))
+	for i: int in range(label_used, _piece_label_pool.size()):
+		_piece_label_pool[i].visible = false
 
 
 ## Resolves which texture path a piece should use (story-037). Enemy pieces
@@ -945,6 +963,68 @@ func _build_stat_block(
 			_build_hp_text(cell_top_left, hp, hp_max, hp_preview, card_target_illegal)
 		)
 	return root
+
+
+# story-039 — 棋子姓名首字(我方)/敵兵編號(敵方)。樣式依 art-director
+# docs/reviews/piece-initial-label-style-2026-11-12.md:Cubic 11 原生 11px、
+# 1px 描邊、無底色塊;字框左上角在棋子圖座標 (0,16)。棋子圖頂 = 格頂 - 8
+# (PIECE_SPRITE_HEIGHT 40 - CELL_SIZE 32),故字框頂 = 格頂 + 8、左緣 = 格左緣。
+# 整數像素對齊:位置全為整數。
+# 兩份共用的 LabelSettings(我方/敵方各一),首次用到才建。每次 render_pieces 重建
+# 全部棋子標記時只指派參照,不再逐 Label 做 6 個 theme override(story-039 效能修正)。
+var _piece_label_settings_ally: LabelSettings = null
+var _piece_label_settings_enemy: LabelSettings = null
+
+
+func _piece_label_settings(is_ally: bool) -> LabelSettings:
+	if is_ally and _piece_label_settings_ally != null:
+		return _piece_label_settings_ally
+	if not is_ally and _piece_label_settings_enemy != null:
+		return _piece_label_settings_enemy
+	var settings: LabelSettings = LabelSettings.new()
+	settings.font = PIECE_LABEL_FONT
+	settings.font_size = PIECE_LABEL_FONT_SIZE
+	settings.font_color = PIECE_LABEL_COLOR_ALLY if is_ally else PIECE_LABEL_COLOR_ENEMY
+	settings.outline_color = PIECE_LABEL_OUTLINE_COLOR
+	settings.outline_size = 1
+	if is_ally:
+		_piece_label_settings_ally = settings
+	else:
+		_piece_label_settings_enemy = settings
+	return settings
+
+
+# 常駐 Label 池(位於 StatsLayer 之後的兄弟節點,不隨 render_pieces 清除)。
+# 每次重畫逐個棋子複用池中第 i 個 Label,只更新 text/position/visible,不重建:
+# 實測新建 Label(Cubic 11 + 描邊)的字形整形是每次重畫的主要成本(見
+# prototypes/piece-label-perf-2026-11-12/)。多餘的 Label 隱藏而非釋放。
+var _piece_label_layer: Node2D = null
+var _piece_label_pool: Array[Label] = []
+
+
+func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_ally: bool) -> void:
+	if _piece_label_layer == null:
+		_piece_label_layer = Node2D.new()
+		_piece_label_layer.name = "PieceLabelLayer"
+		add_child(_piece_label_layer)
+		move_child(_piece_label_layer, _stats_layer.get_index() + 1)
+	if index >= _piece_label_pool.size():
+		var created: Label = Label.new()
+		created.size = PIECE_LABEL_SIZE
+		created.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		created.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		created.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_piece_label_layer.add_child(created)
+		_piece_label_pool.append(created)
+	var label: Label = _piece_label_pool[index]
+	label.text = text
+	label.position = Vector2(
+		cell_top_left.x, cell_top_left.y + PIECE_LABEL_TOP_OFFSET_IN_CELL
+	)
+	var settings: LabelSettings = _piece_label_settings(is_ally)
+	if label.label_settings != settings:
+		label.label_settings = settings
+	label.visible = true
 
 
 # Builds a minimal two-rect HP bar (dark background + proportional fill),

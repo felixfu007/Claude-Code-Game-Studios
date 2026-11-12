@@ -224,6 +224,8 @@ const TEXT_TILE_INFO_OCCUPANT_NONE: StringName = &"battle.tile_info.occupant_non
 const TEXT_TILE_INFO_FACTION_PLAYER: StringName = &"battle.tile_info.faction_player"
 const TEXT_TILE_INFO_FACTION_ENEMY: StringName = &"battle.tile_info.faction_enemy"
 const TEXT_TILE_INFO_FACTION_LINE_FORMAT: StringName = &"battle.tile_info.faction_line_format"
+const TEXT_TILE_INFO_IDENTITY_LINE_FORMAT: StringName = &"battle.tile_info.identity_line_format"
+const TEXT_TILE_INFO_ENEMY_NAME_FORMAT: StringName = &"battle.tile_info.enemy_name_format"
 const TEXT_TILE_INFO_HP_LINE_FORMAT: StringName = &"battle.tile_info.hp_line_format"
 const TEXT_TILE_INFO_STATE_NONE_USED: StringName = &"battle.tile_info.state_none_used"
 const TEXT_TILE_INFO_STATE_ATTACK_ONLY: StringName = &"battle.tile_info.state_attack_only"
@@ -3081,6 +3083,55 @@ static func format_tile_info_faction_line(faction: Unit.Faction) -> String:
 	return Loc.localize(TEXT_TILE_INFO_FACTION_LINE_FORMAT) % name
 
 
+## story-039 —— 敵兵固定編號 N,取自名冊 code_name 的 "E<N>"。格式不符回傳 -1
+## (不 assert:release 匯出會把 assert 整句移除,見 coding-standards.md)。
+static func enemy_number_from_code_name(code_name: String) -> int:
+	if code_name.length() < 2 or code_name[0] != "E":
+		return -1
+	var digits: String = code_name.substr(1)
+	if not digits.is_valid_int():
+		return -1
+	return digits.to_int()
+
+
+## story-039 —— 我方單位正式姓名,一律經 Loc 取得(鍵與 relation_minimap 同格式)。
+static func player_display_name(unit_id: int) -> String:
+	return Loc.localize(StringName("character.name.%d" % unit_id))
+
+
+## story-039 —— 棋子上的標記字:我方 = 正式姓名第一個字;敵方 = 編號數字 N。
+## 敵方 code_name 格式不符 → push_error + 回傳 ""(不畫標記)。
+static func piece_label_text(faction: Unit.Faction, unit_id: int, code_name: String) -> String:
+	if faction == Unit.Faction.PLAYER:
+		return player_display_name(unit_id).substr(0, 1)
+	var n: int = enemy_number_from_code_name(code_name)
+	if n < 0:
+		push_error("piece_label_text: enemy code_name '%s' is not E<number>" % code_name)
+		return ""
+	return str(n)
+
+
+## story-039 —— 資訊卡單位第一行:我方「藍亭萱（我方）」、敵方「敵兵 N（敵方）」。
+## 敵方 code_name 格式不符 → push_error + 退回原陣營行。
+static func format_tile_info_identity_line(
+	faction: Unit.Faction, unit_id: int, code_name: String
+) -> String:
+	var faction_name: String = (
+		Loc.localize(TEXT_TILE_INFO_FACTION_PLAYER) if faction == Unit.Faction.PLAYER
+		else Loc.localize(TEXT_TILE_INFO_FACTION_ENEMY)
+	)
+	var who: String
+	if faction == Unit.Faction.PLAYER:
+		who = player_display_name(unit_id)
+	else:
+		var n: int = enemy_number_from_code_name(code_name)
+		if n < 0:
+			push_error("identity line: enemy code_name '%s' is not E<number>" % code_name)
+			return format_tile_info_faction_line(faction)
+		who = Loc.localize(TEXT_TILE_INFO_ENEMY_NAME_FORMAT) % n
+	return Loc.localize(TEXT_TILE_INFO_IDENTITY_LINE_FORMAT) % [who, faction_name]
+
+
 static func format_tile_info_hp_line(hp: int, hp_max: int) -> String:
 	return Loc.localize(TEXT_TILE_INFO_HP_LINE_FORMAT) % [hp, hp_max]
 
@@ -3120,14 +3171,22 @@ static func build_tile_info_text(
 	occupant_state: TurnOrder.ActionState,
 	occupant_min_range: int,
 	occupant_max_range: int,
-	occupant_mp: int
+	occupant_mp: int,
+	occupant_id: int = -1,
+	occupant_code_name: String = ""
 ) -> String:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append(format_tile_info_terrain_line(terrain_char))
 	lines.append(format_tile_info_cost_line(cost))
 	lines.append(format_tile_info_concealment_line(blocks_sight))
 	if has_occupant:
-		lines.append(format_tile_info_faction_line(occupant_faction))
+		# story-039:呼叫端給了單位 id 就顯示姓名/敵兵編號行,否則維持舊「陣營」行。
+		if occupant_id >= 0:
+			lines.append(format_tile_info_identity_line(
+				occupant_faction, occupant_id, occupant_code_name
+			))
+		else:
+			lines.append(format_tile_info_faction_line(occupant_faction))
 		lines.append(format_tile_info_hp_line(occupant_hp, occupant_hp_max))
 		lines.append(format_tile_info_state_line(occupant_state))
 		lines.append(format_tile_info_weapon_range_line(occupant_min_range, occupant_max_range))
@@ -4692,6 +4751,7 @@ func _refresh_view() -> void:
 			# id-1 lines up with ALLY_SPRITE_PATHS' 0-4 index. Clamped
 			# defensively in case the roster data ever changes shape.
 			"sprite_index": clampi(unit.id - 1, 0, 4),
+			"label": piece_label_text(Unit.Faction.PLAYER, unit.id, unit.code_name),
 			"hp": unit.hp,
 			"hp_max": unit.hp_max,
 			"hp_preview": -1,
@@ -4708,6 +4768,7 @@ func _refresh_view() -> void:
 			"cell": _display_cell_override.get(unit.id, _state.position_of(unit.id)),
 			"faction": "ENEMY",
 			"sprite_index": 0,
+			"label": piece_label_text(Unit.Faction.ENEMY, unit.id, unit.code_name),
 			"hp": unit.hp,
 			"hp_max": unit.hp_max,
 			"hp_preview": preview_target_hp if unit.id == preview_target_id else -1,
@@ -5017,7 +5078,8 @@ func _update_tile_info_panel() -> void:
 			terrain_char, cost, blocks_sight,
 			true, occupant.faction, occupant.hp, occupant.hp_max,
 			_controller.unit_action_state(occupant.id),
-			occupant.min_range, occupant.max_range, occupant.mp
+			occupant.min_range, occupant.max_range, occupant.mp,
+			occupant.id, occupant.code_name
 		)
 		# story-032 AC1/AC3:指到我方單位 → 加一列「目前所在格」的減傷(0 不顯示)。
 		var guard_text: String = ""
