@@ -98,8 +98,8 @@ func test_cost_line_unknown_terrain_sentinel_never_prints_as_a_number() -> void:
 
 
 func test_concealment_line_true_and_false_are_distinct_and_never_merged_with_cost() -> void:
-	assert_str(BattleScreen.format_tile_info_concealment_line(true)).is_equal("遮蔽：是")
-	assert_str(BattleScreen.format_tile_info_concealment_line(false)).is_equal("遮蔽：否")
+	assert_str(BattleScreen.format_tile_info_concealment_line(true)).is_equal("擋視線：是")
+	assert_str(BattleScreen.format_tile_info_concealment_line(false)).is_equal("擋視線：否")
 
 
 func test_terrain_line_format() -> void:
@@ -147,7 +147,7 @@ func test_build_tile_info_text_empty_tile_shows_three_terrain_lines_and_occupant
 	assert_int(lines.size()).is_equal(4)
 	assert_str(lines[0]).is_equal("地形：倒木")
 	assert_str(lines[1]).is_equal("移動成本：3")
-	assert_str(lines[2]).is_equal("遮蔽：是")
+	assert_str(lines[2]).is_equal("擋視線：是")
 	assert_str(lines[3]).is_equal("（無佔位單位）")
 
 
@@ -163,7 +163,7 @@ func test_build_tile_info_text_with_occupant_appends_five_more_lines() -> void:
 	assert_int(lines.size()).is_equal(8)
 	assert_str(lines[0]).is_equal("地形：開闊地")
 	assert_str(lines[1]).is_equal("移動成本：1")
-	assert_str(lines[2]).is_equal("遮蔽：否")
+	assert_str(lines[2]).is_equal("擋視線：否")
 	assert_str(lines[3]).is_equal("陣營：敵方")
 	assert_str(lines[4]).is_equal("HP：12/30")
 	assert_str(lines[5]).is_equal("狀態：只剩攻擊")

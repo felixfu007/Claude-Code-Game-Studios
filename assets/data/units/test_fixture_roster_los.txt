@@ -1,0 +1,4 @@
+# test_fixture_roster_los.txt -- story-042 AC3: pairs with test_fixture_terrain_los.txt (must stay compatible).
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTSHOOT,PLAYER,999,10,0,0,1,4,0,0
+2,TESTTARGET,ENEMY,50,0,0,0,1,1,4,0

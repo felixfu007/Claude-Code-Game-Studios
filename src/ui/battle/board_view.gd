@@ -309,8 +309,8 @@ const HP_BAR_BOTTOM_MARGIN: int = 3
 ## HP text readout geometry/colour, in pixels — a dark strip across the
 ## cell's bottom edge with a centered [Label] on top. See [method render_pieces]
 ## for the normal-vs-preview colour rule.
-const HP_TEXT_HEIGHT: int = 10
-const HP_TEXT_TOP_MARGIN: int = 1
+const HP_TEXT_HEIGHT: int = 8
+const HP_TEXT_TOP_MARGIN: int = 0
 const HP_TEXT_FONT_SIZE: int = 8
 ## story-039 棋子標記字樣式(art-director 2026-11-12;色取自色盤既有色)。
 const PIECE_LABEL_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
@@ -1002,6 +1002,28 @@ var _piece_label_layer: Node2D = null
 var _piece_label_pool: Array[Label] = []
 
 
+# story-041 — 格內版面單一出處(座標相對格左上,格 32x32)。三個矩形垂直分帶:
+#   HP 文字條 y[0,8) | 首字框 y[8,22) | 血條 y[26,29),兩兩不相交。
+# 算術:首字底 22 到血條頂 26 只剩 4px,放不下文字條;右側 x12~32 只有 20px,
+# 實測 8px 字 "22/22"=22px、"22→15"=27px 放不下。故文字條留在格頂、高度由 10 縮為 8,
+# 讓出 y8~11 給首字框(首字框位置/大小一律不動)。
+# _build_hp_text / _build_hp_bar / _apply_piece_label 都呼叫這三個函式定位,不另存複本。
+static func hp_text_rect_in_cell() -> Rect2:
+	return Rect2(0.0, HP_TEXT_TOP_MARGIN, BoardCoords.CELL_SIZE, HP_TEXT_HEIGHT)
+
+
+static func piece_label_rect_in_cell() -> Rect2:
+	return Rect2(Vector2(0.0, PIECE_LABEL_TOP_OFFSET_IN_CELL), PIECE_LABEL_SIZE)
+
+
+static func hp_bar_rect_in_cell() -> Rect2:
+	return Rect2(
+		(BoardCoords.CELL_SIZE - HP_BAR_WIDTH) * 0.5,
+		BoardCoords.CELL_SIZE - HP_BAR_BOTTOM_MARGIN - HP_BAR_HEIGHT,
+		HP_BAR_WIDTH, HP_BAR_HEIGHT
+	)
+
+
 func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_ally: bool) -> void:
 	if _piece_label_layer == null:
 		_piece_label_layer = Node2D.new()
@@ -1010,6 +1032,9 @@ func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_all
 		move_child(_piece_label_layer, _stats_layer.get_index() + 1)
 	if index >= _piece_label_pool.size():
 		var created: Label = Label.new()
+		# 先指派 label_settings 再設 size:Label 的最小尺寸取決於字型,size 在字型就位前
+		# 設定會被預設 16px 字型的最小高度(23)撐大,使實際節點矩形偏離 PIECE_LABEL_SIZE。
+		created.label_settings = _piece_label_settings(is_ally)
 		created.size = PIECE_LABEL_SIZE
 		created.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		created.vertical_alignment = VERTICAL_ALIGNMENT_TOP
@@ -1018,9 +1043,7 @@ func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_all
 		_piece_label_pool.append(created)
 	var label: Label = _piece_label_pool[index]
 	label.text = text
-	label.position = Vector2(
-		cell_top_left.x, cell_top_left.y + PIECE_LABEL_TOP_OFFSET_IN_CELL
-	)
+	label.position = cell_top_left + piece_label_rect_in_cell().position
 	var settings: LabelSettings = _piece_label_settings(is_ally)
 	if label.label_settings != settings:
 		label.label_settings = settings
@@ -1033,16 +1056,13 @@ func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_all
 # anchored to the cell rather than the piece sprite.
 func _build_hp_bar(cell_top_left: Vector2, hp: int, hp_max: int) -> Node2D:
 	var bar_root: Node2D = Node2D.new()
-	var center_x: float = cell_top_left.x + BoardCoords.CELL_SIZE * 0.5
-	var bar_center_y: float = (
-		cell_top_left.y + BoardCoords.CELL_SIZE - HP_BAR_BOTTOM_MARGIN - HP_BAR_HEIGHT * 0.5
-	)
-	bar_root.position = Vector2(center_x, bar_center_y)
+	var bar_rect: Rect2 = hp_bar_rect_in_cell()
+	bar_root.position = cell_top_left + bar_rect.position
 
 	var background: ColorRect = ColorRect.new()
 	background.color = Color(0.1, 0.1, 0.1, 1.0)
-	background.size = Vector2(HP_BAR_WIDTH, HP_BAR_HEIGHT)
-	background.position = Vector2(-HP_BAR_WIDTH * 0.5, -HP_BAR_HEIGHT * 0.5)
+	background.size = bar_rect.size
+	background.position = Vector2.ZERO
 	bar_root.add_child(background)
 
 	var fraction: float = 0.0
@@ -1050,8 +1070,8 @@ func _build_hp_bar(cell_top_left: Vector2, hp: int, hp_max: int) -> Node2D:
 		fraction = clampf(float(hp) / float(hp_max), 0.0, 1.0)
 	var fill: ColorRect = ColorRect.new()
 	fill.color = Color(0.2, 0.8, 0.2, 1.0) if fraction > 0.25 else Color(0.8, 0.2, 0.2, 1.0)
-	fill.size = Vector2(HP_BAR_WIDTH * fraction, HP_BAR_HEIGHT)
-	fill.position = Vector2(-HP_BAR_WIDTH * 0.5, -HP_BAR_HEIGHT * 0.5)
+	fill.size = Vector2(bar_rect.size.x * fraction, bar_rect.size.y)
+	fill.position = Vector2.ZERO
 	bar_root.add_child(fill)
 
 	return bar_root
@@ -1074,20 +1094,27 @@ func _build_hp_text(
 	cell_top_left: Vector2, hp: int, hp_max: int, hp_preview: int, card_target_illegal: bool
 ) -> Node2D:
 	var root: Node2D = Node2D.new()
-	var strip_top: float = cell_top_left.y + HP_TEXT_TOP_MARGIN
-	root.position = Vector2(cell_top_left.x, strip_top)
+	var text_rect: Rect2 = hp_text_rect_in_cell()
+	root.position = cell_top_left + text_rect.position
 
 	var background: ColorRect = ColorRect.new()
 	background.color = (
 		HP_TEXT_BG_COLOR_TARGET_ILLEGAL if card_target_illegal else HP_TEXT_BG_COLOR
 	)
 	background.position = Vector2.ZERO
-	background.size = Vector2(BoardCoords.CELL_SIZE, HP_TEXT_HEIGHT)
+	background.size = text_rect.size
 	root.add_child(background)
 
+	# Label 最小高度(8px 字 = 12px)大於文字條高度 8,無法縮進條內;故 Label 放進一個
+	# clip_contents 的同尺寸容器,Label 垂直置中(y = (條高 - Label 高)/2,為負),
+	# 可見部分被裁在條內。字型覆寫必須在設 size 之前,否則 size 會被預設字型撐大。
+	var clip: Control = Control.new()
+	clip.position = Vector2.ZERO
+	clip.size = text_rect.size
+	clip.clip_contents = true
+	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(clip)
 	var label: Label = Label.new()
-	label.position = Vector2.ZERO
-	label.size = Vector2(BoardCoords.CELL_SIZE, HP_TEXT_HEIGHT)
 	label.add_theme_font_size_override("font_size", HP_TEXT_FONT_SIZE)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1098,7 +1125,9 @@ func _build_hp_text(
 	else:
 		label.text = "%d/%d" % [hp, hp_max]
 		label.add_theme_color_override("font_color", HP_TEXT_COLOR_NORMAL)
-	root.add_child(label)
+	label.size = Vector2(text_rect.size.x, label.get_minimum_size().y)
+	label.position = Vector2(0.0, (text_rect.size.y - label.size.y) * 0.5)
+	clip.add_child(label)
 
 	return root
 

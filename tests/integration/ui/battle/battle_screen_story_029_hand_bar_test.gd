@@ -4,7 +4,7 @@ extends GdUnitTestSuite
 # 矩形一律呼叫 HudLayout / HandBar / BattleMenu / WorldLayout 既有函式,不自算倍率。
 # 敏感度:E1、F 各一條常駐 test_sensitivity_proof_*(偵測器抓得到舊行為/植入缺陷)。
 # F 的判準(照實):避開棋盤最下一列「中間」格子(欄 3..BOARD_COLS-4),不是完全不壓格;
-# 貼右緣後仍會壓到最下一列右端(欄 10..12)的格子,見 test_f_collapsed_hand_still_overlaps_some_bottom_row_cells。
+# story-043 起收合手牌再抬一列、不壓任何敵兵起始格;原「仍壓最下一列右端」的揭露測試已刪(管理者裁決「直接刪除」)。
 
 const _SCENE_PATH: String = "res://src/ui/battle/HandBar.tscn"
 const _SIZES: Array[Vector2i] = [Vector2i(1440, 810), Vector2i(1920, 1080), Vector2i(960, 540)]
@@ -63,15 +63,6 @@ func test_f_collapsed_hand_does_not_touch_hint_bar_or_action_buttons() -> void:
 		assert_bool(vis.intersects(b1)).append_failure_message("%s: 與按鈕1相交" % ws).is_false()
 		var safe: Rect2 = HudLayout.safe_rect(ws)
 		assert_bool(safe.grow(0.01).encloses(vis)).append_failure_message("%s: 超出安全區" % ws).is_true()
-
-
-func test_f_collapsed_hand_still_overlaps_some_bottom_row_cells() -> void:
-	# 誠實揭露:本修法不是「完全不壓格」。1080p 棋盤滿版,右下角仍是棋盤格。
-	var overlaps_any: bool = false
-	for ws: Vector2i in _SIZES:
-		if _any_intersects(HandBar.collapsed_backing_window_rect(ws, _MAX_SLOTS), _bottom_row_cells(ws, false)):
-			overlaps_any = true
-	assert_bool(overlaps_any).is_true()
 
 
 func test_sensitivity_proof_f_detector_catches_old_centered_position() -> void:

@@ -70,8 +70,8 @@ battle.tile_info.terrain_fallen_log,倒木
 battle.tile_info.terrain_unknown,未知地形
 battle.tile_info.cost_line_format,移動成本：%d
 battle.tile_info.cost_unknown,移動成本：未知
-battle.tile_info.concealment_yes,遮蔽：是
-battle.tile_info.concealment_no,遮蔽：否
+battle.tile_info.concealment_yes,擋視線：是
+battle.tile_info.concealment_no,擋視線：否
 battle.tile_info.occupant_none,（無佔位單位）
 battle.tile_info.faction_player,我方
 battle.tile_info.faction_enemy,敵方

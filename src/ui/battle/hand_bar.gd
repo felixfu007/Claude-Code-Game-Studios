@@ -810,7 +810,25 @@ static func collapsed_x_shift(window_size: Vector2i, max_slots: int) -> float:
 static func collapsed_backing_window_rect(window_size: Vector2i, max_slots: int) -> Rect2:
 	var r: Rect2 = _collapsed_backing_window_rect_unshifted(window_size, max_slots)
 	r.position.x += collapsed_x_shift(window_size, max_slots)
+	r.position.y += collapsed_y_shift(window_size, max_slots)
 	return r
+
+
+## story-043:收合態整組往上抬的垂直位移(<= 0)。右貼齊後的收合背板落在棋盤最下一列的右端,
+## 蓋住該列右端的敵兵(960/1440/1920/2560/3840 實測 (11,5))。做法:背板與棋盤【最下一列】
+## 的垂直帶、且水平上與棋盤重疊時,把背板底緣抬到最下一列的上緣(背板高 < 一格高,故必落在
+## 倒數第二列內)。不換邊(管理者 2026-11-03 已跳過「依游標自動換邊」)、不改 [method slot_bar_rect]。
+## 棋盤格矩形一律取自 [method HudLayout.cell_window_rect],不另算。背板已在棋盤外(1366/3440)時為 0。
+static func collapsed_y_shift(window_size: Vector2i, max_slots: int) -> float:
+	var r: Rect2 = _collapsed_backing_window_rect_unshifted(window_size, max_slots)
+	r.position.x += collapsed_x_shift(window_size, max_slots)
+	var last_row: int = BoardCoords.BOARD_ROWS - 1
+	var row_first: Rect2 = HudLayout.cell_window_rect(Vector2i(0, last_row), window_size)
+	var row_last: Rect2 = HudLayout.cell_window_rect(Vector2i(BoardCoords.BOARD_COLS - 1, last_row), window_size)
+	var band: Rect2 = row_first.merge(row_last)
+	if not r.intersects(band):
+		return 0.0
+	return minf(0.0, band.position.y - r.end.y)
 
 
 static func _collapsed_backing_window_rect_unshifted(window_size: Vector2i, max_slots: int) -> Rect2:
@@ -836,7 +854,9 @@ func _apply_layout() -> void:
 	var collapsed_rect: Rect2 = slot_bar_rect(window_size, _max_slots)
 	var expanded_rect: Rect2 = expanded_slot_bar_rect(window_size, _max_slots)
 	var rect: Rect2 = _lerp_rect(collapsed_rect, expanded_rect, _expand_progress)
-	position = rect.position + Vector2(collapsed_x_shift(window_size, _max_slots) * (1.0 - _expand_progress), 0.0)
+	position = rect.position + Vector2(
+		collapsed_x_shift(window_size, _max_slots), collapsed_y_shift(window_size, _max_slots)
+	) * (1.0 - _expand_progress)
 	size = rect.size
 	# 2026-10-28 管理者試玩回饋:「手牌不見了,縮小就好,不是要你隱藏」。收合態(Z1)整組
 	# 等比縮小(卡格、背板、張數一起),以底邊中點為軸,貼著說明列往下縮;展開時回到原尺寸。
