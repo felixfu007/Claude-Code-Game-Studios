@@ -1344,6 +1344,31 @@ func _attack_targets_for(unit_id: int) -> Array[Vector2i]:
 	return result
 
 
+## story-040: why the currently selected unit cannot attack [param target_id].
+## Same outer gate as [method _attack_targets_for]: outside PLAYER_INPUT or with
+## no selection -> NONE ("not applicable"); attack already spent ->
+## ACTION_SPENT; otherwise geometry is delegated to
+## [method CombatRules.attack_block_reason] with the same terrain-only occluder
+## BattleState uses. Priority: ACTION_SPENT > range class > LOS_BLOCKED.
+## Plain enum return (not wrapped in QueryResult) — see story-040 header notes.
+func attack_block_reason_for(target_id: int) -> CombatRules.AttackBlockReason:
+	if _phase != Phase.PLAYER_INPUT or _selected_unit_id == -1:
+		return CombatRules.AttackBlockReason.NONE
+	if not _order.can_attack(_selected_unit_id):
+		return CombatRules.AttackBlockReason.ACTION_SPENT
+	var attacker: Unit = _state.unit_by_id(_selected_unit_id)
+	var target: Unit = _state.unit_by_id(target_id)
+	if attacker == null or target == null:
+		return CombatRules.AttackBlockReason.NONE
+	var board: Board = _state.board
+	var is_occluding: Callable = func(cell: Vector2i) -> bool:
+		return board.blocks_sight(cell)
+	return CombatRules.attack_block_reason(
+		_state.position_of(_selected_unit_id), _state.position_of(target_id),
+		attacker.min_range, attacker.max_range, is_occluding
+	)
+
+
 # story-003-los-blocked-in-range-query.md: shared computation for
 # attack_targets_blocked_by_los(). Same gating as _attack_targets_for()
 # (phase, selection, TurnOrder.can_attack()) — a unit that has already

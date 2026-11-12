@@ -13,6 +13,10 @@ class_name CombatRules
 extends RefCounted
 
 
+## story-040: why a target cannot be attacked right now. Priority (fixed):
+## ACTION_SPENT > range class (TOO_CLOSE / OUT_OF_RANGE) > LOS_BLOCKED.
+enum AttackBlockReason { NONE, OUT_OF_RANGE, TOO_CLOSE, LOS_BLOCKED, ACTION_SPENT }
+
 ## story-031 (docs/reviews/affinity-core-redesign-spec-2026-10-30.md §1.2):
 ## clamp bounds for the total damage reduction. Tunable knobs.
 const GUARD_MIN: int = -2
@@ -162,6 +166,30 @@ static func is_attack_blocked_by_los(
 	if _manhattan_distance(from, to) < 2:
 		return false
 	return not LineOfSight.is_clear(from, to, is_occluding)
+
+
+## story-040: why an attack from [param from] to [param to] is not possible.
+## Pure geometry only; [code]ACTION_SPENT[/code] is never returned here (the
+## turn-order layer owns it — see BattleController.attack_block_reason_for).
+## Delegates to [method is_in_range] / [method is_attack_blocked_by_los] and
+## uses [method _manhattan_distance] only to tell too-close from too-far; it
+## contains no distance or line-of-sight algorithm of its own.
+## Returns NONE exactly when [method is_attack_legal] is true.
+static func attack_block_reason(
+	from: Vector2i,
+	to: Vector2i,
+	min_range: int,
+	max_range: int,
+	is_occluding: Callable
+) -> AttackBlockReason:
+	if not is_in_range(from, to, min_range, max_range):
+		# Distance 0 (own cell) counts as too close.
+		if _manhattan_distance(from, to) < min_range or from == to:
+			return AttackBlockReason.TOO_CLOSE
+		return AttackBlockReason.OUT_OF_RANGE
+	if is_attack_blocked_by_los(from, to, min_range, max_range, is_occluding):
+		return AttackBlockReason.LOS_BLOCKED
+	return AttackBlockReason.NONE
 
 
 ## Manhattan distance shared by [method is_in_range] and

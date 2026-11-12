@@ -172,3 +172,8 @@ shell.settings.volume_sfx,音效
 shell.settings.mute_toggle,靜音
 battle.tile_info.identity_line_format,%s（%s）
 battle.tile_info.enemy_name_format,敵兵 %d
+battle.tile_info.attack_line_format,攻擊：%s
+battle.tile_info.attack_reason_action_spent,已用完
+battle.tile_info.attack_reason_out_of_range,目前太遠
+battle.tile_info.attack_reason_too_close,目前太近
+battle.tile_info.attack_reason_los_blocked,視線被擋

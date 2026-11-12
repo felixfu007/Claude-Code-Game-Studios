@@ -235,6 +235,11 @@ const TEXT_TILE_INFO_STATE_NOT_FOUND: StringName = &"battle.tile_info.state_not_
 const TEXT_TILE_INFO_STATE_LINE_FORMAT: StringName = &"battle.tile_info.state_line_format"
 const TEXT_TILE_INFO_WEAPON_RANGE_LINE_FORMAT: StringName = &"battle.tile_info.weapon_range_line_format"
 const TEXT_TILE_INFO_MP_LINE_FORMAT: StringName = &"battle.tile_info.mp_line_format"
+const TEXT_TILE_INFO_ATTACK_LINE_FORMAT: StringName = &"battle.tile_info.attack_line_format"
+const TEXT_TILE_INFO_ATTACK_REASON_ACTION_SPENT: StringName = &"battle.tile_info.attack_reason_action_spent"
+const TEXT_TILE_INFO_ATTACK_REASON_OUT_OF_RANGE: StringName = &"battle.tile_info.attack_reason_out_of_range"
+const TEXT_TILE_INFO_ATTACK_REASON_TOO_CLOSE: StringName = &"battle.tile_info.attack_reason_too_close"
+const TEXT_TILE_INFO_ATTACK_REASON_LOS_BLOCKED: StringName = &"battle.tile_info.attack_reason_los_blocked"
 
 ## Message template shown on [member _load_error_label] when terrain or
 ## roster data fails to load. Slot 1 is one of the TEXT_LOAD_REASON_*
@@ -2986,6 +2991,24 @@ static func format_guard_move(current: int, preview: int) -> String:
 	return Loc.localize(&"battle.hud.guard_move_format") % [current, preview]
 
 
+## story-040 AC3 —— 把攻擊受阻原因轉成資訊卡的整行「攻擊：原因」;NONE 回空字串(不顯示)。
+## 文案走在地化,不寫死。
+static func format_attack_reason_line(reason: CombatRules.AttackBlockReason) -> String:
+	var key: StringName
+	match reason:
+		CombatRules.AttackBlockReason.ACTION_SPENT:
+			key = TEXT_TILE_INFO_ATTACK_REASON_ACTION_SPENT
+		CombatRules.AttackBlockReason.OUT_OF_RANGE:
+			key = TEXT_TILE_INFO_ATTACK_REASON_OUT_OF_RANGE
+		CombatRules.AttackBlockReason.TOO_CLOSE:
+			key = TEXT_TILE_INFO_ATTACK_REASON_TOO_CLOSE
+		CombatRules.AttackBlockReason.LOS_BLOCKED:
+			key = TEXT_TILE_INFO_ATTACK_REASON_LOS_BLOCKED
+		_:
+			return ""
+	return Loc.localize(TEXT_TILE_INFO_ATTACK_LINE_FORMAT) % Loc.localize(key)
+
+
 ## story-032 AC2/AC3 —— 左下資訊列:好感度文字(可能因隱藏而為空)與減傷文字(可能為空)以雙空白相接。
 static func compose_info_line(affinity_text: String, guard_text: String) -> String:
 	if affinity_text == "":
@@ -5088,9 +5111,15 @@ func _update_tile_info_panel() -> void:
 			guard_text = format_guard_value(_displayed_guard_at(
 				occupant.id, here, _phi.positions()
 			))
-		_set_tile_info_extra_line(guard_text != "")
-		if guard_text != "":
-			unit_text += "\n" + guard_text
+		# story-040:敵方單位 → 附「攻擊：原因」(查詢結果為唯一判斷來源);
+		# 與我方減傷列互斥,共用同一個「多一行」旗標。
+		var attack_line: String = ""
+		if occupant.faction == Unit.Faction.ENEMY:
+			attack_line = format_attack_reason_line(_controller.attack_block_reason_for(occupant.id))
+		var extra_text: String = guard_text if guard_text != "" else attack_line
+		_set_tile_info_extra_line(extra_text != "")
+		if extra_text != "":
+			unit_text += "\n" + extra_text
 		_tile_info_panel_label.text = unit_text
 	else:
 		_set_tile_info_extra_line(false)
