@@ -90,3 +90,14 @@ ERROR: Parameter "t" is null.
 SHOT 29_1920x1080_09_defeat.png -> get_image() is null (expected under headless; skipped)
 TOTAL shots=30
 ```
+
+## 補拍 driver_retake.gd(2026-11-12 午間)
+開窗指令(輸出到 `out_retake/`,預設 960x540 與 1920x1080,共 20 張):
+```
+"C:/Users/felixfu007/Downloads/Godot_v4.7.1-stable_win64.exe/Godot_v4.7.1-stable_win64_console.exe" --audio-driver Dummy --title x --position 0,0 --path . -s res://prototypes/readability-capture-2026-11-12/driver_retake.gd > prototypes/readability-capture-2026-11-12/run_output_retake.txt 2>&1
+```
+- 03r/04r 修正:游標改由「合成滑鼠移動 -> 不到位則 `CursorStateHost.set_target`」並等 `_process` 自己重繪;log 的 `INFO [...]` 行印截圖當下資訊卡文字與 `_cursor_cell`。仍不到位時檔名加 `_CURSOR_FAILED`。headless 下兩個解析度都由滑鼠移動直接到位。
+- 10 選牌後選目標提示、11 確認面板、12 打出後:真實動作事件(`battle_open_hand`/`battle_confirm`)。目標確認按 1~2 次才生效(log `tries`);打出是否成功看 log `S2 after final confirm: confirming=false`。
+- 13 已行動變暗(甲)+ 低血量(乙 6/26、丙 4/22):**注入**,`controller.end_unit_turn(1)` 與 `Unit.take_damage()` 後呼叫 `_refresh_view()`,非玩家實際操作。14 游標停在低血量乙。
+- 15~17 敵兵站灌木 (5,1) / 倒木 (6,2):合成名冊 `fixture_roster_terrain_enemy.txt`(vs01 只改 E1、E2 座標)。
+- 全部做出,無跳過項;原驅動 03/04 在 960 的失敗成因:該解析度下游標權威非滑鼠,`_process` 每幀以 `CursorStateHost` 覆寫強設值。

@@ -315,6 +315,16 @@ interfaces:
       as well, overruling section 七之三 of the boundary document. Reason: that section's
       ruling would have left THREE coexisting shapes, while the cost disclosed to the manager
       at decision time said two. The boundary document's own escalation is what surfaced it.
+      2026-11-12 ADDENDUM — criterion 1 ("read inside _refresh_view()") covers the whole
+      synchronous call tree, not just the function body (technical-director ruling,
+      docs/reviews/query-result-scope-transitive-ruling-2026-11-12.md). One in-scope
+      exception by manager ruling: BattleController.attack_block_reason_for() (story-040)
+      stays an unversioned enum — display-only, input re-checked authoritatively. Void if
+      the result is cached past one _refresh_view() execution or any await/deferred/commit
+      enters that call tree. attack_targets_blocked_by_los() has the same shape and is NOT
+      yet ruled on. See §2.1 addendum and §4.6 of the boundary document. NOTE: the "5
+      computed queries" count above is stale (2026-11-12 function-body grep: 20 distinct
+      queries); kept verbatim per the no-delete convention.
     referenced_by:
       - docs/architecture/adr-0001-tactical-query-atomicity-contract.md
       - docs/architecture/query-result-scope-boundary-2026-10-12.md

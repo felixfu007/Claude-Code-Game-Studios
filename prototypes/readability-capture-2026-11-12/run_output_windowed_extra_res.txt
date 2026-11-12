@@ -1,0 +1,471 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+=== RESOLUTION requested=(1366, 768) actual root.size=(1366, 768) ===
+LOS resolved={ "terrain": "res://assets/data/levels/vs01_terrain.txt", "roster": "res://prototypes/readability-capture-2026-11-12/fixture_roster_los.txt", "affinity": "res://assets/data/affinity/vs01_affinity_links.txt", "cards": "res://assets/data/cards/vs01_cards.txt", "card_text": "res://assets/data/cards/vs01_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+HOST [01_open] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 00_1366x768_01_open.png -> 1366x768 save_err=0
+LOS after select 丙: phase=0 outcome=0 last_click=selected
+HOST [02_selected_ranges] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 01_1366x768_02_selected_ranges.png -> 1366x768 save_err=0
+LOS cursor after hover E3: cell=(0, 2) active=true
+LOS NOTE: injected motion did not move cursor (mouse authority reads live pointer); FORCING _cursor_cell
+HOST [03_cursor_on_los_blocked_enemy] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 02_1366x768_03_cursor_on_los_blocked_enemy.png -> 1366x768 save_err=0
+LOS after right-click cancel: phase=0 outcome=0 last_click=selected
+HOST [04_cursor_on_empty_tile] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 03_1366x768_04_cursor_on_empty_tile.png -> 1366x768 save_err=0
+LOS after open_hand: phase=0 outcome=0 last_click=selected hand_selecting=true
+HOST [05_hand_open] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 04_1366x768_05_hand_open.png -> 1366x768 save_err=0
+HOST [06_battle_menu] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 05_1366x768_06_battle_menu.png -> 1366x768 save_err=0
+LOS enemy phase early: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_a] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 06_1366x768_07_enemy_phase_a.png -> 1366x768 save_err=0
+LOS enemy phase later: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_b] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 07_1366x768_07_enemy_phase_b.png -> 1366x768 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2109)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3575)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2441)
+VICTORY state: phase=2 outcome=1 last_click=attacked
+HOST [08_victory] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 08_1366x768_08_victory.png -> 1366x768 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2120)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4514)
+       [8] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [9] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [10] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4551)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4516)
+       [4] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [5] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [6] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4525)
+       [3] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [4] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [5] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4575)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+DEFEAT state (waited 0 frames): phase=2 outcome=2 last_click=
+HOST [09_defeat] root.size=(1366, 768) WorldViewportContainer position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT 09_1366x768_09_defeat.png -> 1366x768 save_err=0
+=== RESOLUTION requested=(2560, 1440) actual root.size=(2560, 1440) ===
+LOS resolved={ "terrain": "res://assets/data/levels/vs01_terrain.txt", "roster": "res://prototypes/readability-capture-2026-11-12/fixture_roster_los.txt", "affinity": "res://assets/data/affinity/vs01_affinity_links.txt", "cards": "res://assets/data/cards/vs01_cards.txt", "card_text": "res://assets/data/cards/vs01_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+HOST [01_open] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 10_2560x1440_01_open.png -> 2560x1440 save_err=0
+LOS after select 丙: phase=0 outcome=0 last_click=selected
+HOST [02_selected_ranges] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 11_2560x1440_02_selected_ranges.png -> 2560x1440 save_err=0
+LOS cursor after hover E3: cell=(8, 3) active=true
+HOST [03_cursor_on_los_blocked_enemy] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 12_2560x1440_03_cursor_on_los_blocked_enemy.png -> 2560x1440 save_err=0
+LOS after right-click cancel: phase=0 outcome=0 last_click=selected
+HOST [04_cursor_on_empty_tile] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 13_2560x1440_04_cursor_on_empty_tile.png -> 2560x1440 save_err=0
+LOS after open_hand: phase=0 outcome=0 last_click=selected hand_selecting=true
+HOST [05_hand_open] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 14_2560x1440_05_hand_open.png -> 2560x1440 save_err=0
+HOST [06_battle_menu] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 15_2560x1440_06_battle_menu.png -> 2560x1440 save_err=0
+LOS enemy phase early: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_a] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 16_2560x1440_07_enemy_phase_a.png -> 2560x1440 save_err=0
+LOS enemy phase later: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_b] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 17_2560x1440_07_enemy_phase_b.png -> 2560x1440 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2109)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3575)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2441)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+VICTORY state: phase=2 outcome=1 last_click=attacked
+HOST [08_victory] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 18_2560x1440_08_victory.png -> 2560x1440 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2120)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4514)
+       [8] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [9] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [10] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4551)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4516)
+       [4] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [5] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [6] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4525)
+       [3] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [4] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [5] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+DEFEAT state (waited 0 frames): phase=2 outcome=2 last_click=
+HOST [09_defeat] root.size=(2560, 1440) WorldViewportContainer position=(80.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 19_2560x1440_09_defeat.png -> 2560x1440 save_err=0
+=== RESOLUTION requested=(3440, 1440) actual root.size=(3440, 1440) ===
+LOS resolved={ "terrain": "res://assets/data/levels/vs01_terrain.txt", "roster": "res://prototypes/readability-capture-2026-11-12/fixture_roster_los.txt", "affinity": "res://assets/data/affinity/vs01_affinity_links.txt", "cards": "res://assets/data/cards/vs01_cards.txt", "card_text": "res://assets/data/cards/vs01_card_text.txt", "tuning": "res://assets/data/tuning/tuning_knobs.txt" }
+HOST [01_open] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 20_3440x1440_01_open.png -> 3440x1440 save_err=0
+LOS after select 丙: phase=0 outcome=0 last_click=selected
+HOST [02_selected_ranges] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 21_3440x1440_02_selected_ranges.png -> 3440x1440 save_err=0
+LOS cursor after hover E3: cell=(8, 3) active=true
+HOST [03_cursor_on_los_blocked_enemy] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 22_3440x1440_03_cursor_on_los_blocked_enemy.png -> 3440x1440 save_err=0
+LOS after right-click cancel: phase=0 outcome=0 last_click=selected
+HOST [04_cursor_on_empty_tile] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 23_3440x1440_04_cursor_on_empty_tile.png -> 3440x1440 save_err=0
+LOS after open_hand: phase=0 outcome=0 last_click=selected hand_selecting=true
+HOST [05_hand_open] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 24_3440x1440_05_hand_open.png -> 3440x1440 save_err=0
+HOST [06_battle_menu] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 25_3440x1440_06_battle_menu.png -> 3440x1440 save_err=0
+LOS enemy phase early: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_a] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 26_3440x1440_07_enemy_phase_a.png -> 3440x1440 save_err=0
+LOS enemy phase later: phase=1 outcome=0 last_click=selected
+HOST [07_enemy_phase_b] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 27_3440x1440_07_enemy_phase_b.png -> 3440x1440 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2109)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3575)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2441)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+VICTORY state: phase=2 outcome=1 last_click=attacked
+HOST [08_victory] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 28_3440x1440_08_victory.png -> 3440x1440 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:132)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:136)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1946)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4613)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2120)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4514)
+       [8] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [9] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [10] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4551)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4516)
+       [4] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [5] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [6] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4525)
+       [3] _scenario_defeat (res://prototypes/readability-capture-2026-11-12/driver.gd:174)
+       [4] _make (res://prototypes/readability-capture-2026-11-12/driver.gd:41)
+       [5] _frames (res://prototypes/readability-capture-2026-11-12/driver.gd:28)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3132)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4790)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4575)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+DEFEAT state (waited 0 frames): phase=2 outcome=2 last_click=
+HOST [09_defeat] root.size=(3440, 1440) WorldViewportContainer position=(520.0, 45.0) size=(2400.0, 1350.0) stretch_shrink=5 WorldViewport.size=(480, 270)
+SHOT 29_3440x1440_09_defeat.png -> 3440x1440 save_err=0
+TOTAL shots=30

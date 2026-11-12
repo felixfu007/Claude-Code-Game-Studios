@@ -27,6 +27,7 @@ const CAPTURE_RETRIES: int = 5
 const SAMPLE_STRIDE: int = 5
 const DOMINANT_MAX: float = 0.80
 const MIN_DISTINCT: int = 3
+const WATCHDOG_SEC: float = 240.0
 
 const SIZE_960: Vector2i = Vector2i(960, 540)
 const SIZE_1080: Vector2i = Vector2i(1920, 1080)
@@ -54,6 +55,8 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
 			only = arg.substr("--only=".length()).split(",")
+	# self-timeout watchdog (2026-11-12): force quit(3) if the run exceeds WATCHDOG_SEC
+	get_tree().create_timer(WATCHDOG_SEC, true, false, true).timeout.connect(_on_watchdog)
 	print("=== SAMPLES DRIVER START display=", DisplayServer.get_name(), " ===")
 	_out_dir_abs = ProjectSettings.globalize_path(DIR + OUT_DIR_NAME)
 	for shot: Dictionary in SHOTS:
@@ -66,6 +69,11 @@ func _ready() -> void:
 		return
 	print("RESULT: failures=", _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+func _on_watchdog() -> void:
+	print("WATCHDOG: exceeded ", WATCHDOG_SEC, "s -- forcing quit(3); shots so far failures=", _failures)
+	get_tree().quit(3)
 
 
 func _run_shot(shot: Dictionary) -> void:

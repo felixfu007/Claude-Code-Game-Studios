@@ -1,0 +1,48 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+=== RESOLUTION requested=(1366, 768) actual root.size=(1366, 768) ===
+S1 select 丙: last_click=selected
+CURSOR (8, 3) reached via mouse motion
+HOST [03r_cursor_on_los_blocked_enemy] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [03r_cursor_on_los_blocked_enemy] panel_visible=true cursor_cell=(8, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 敵兵 3（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3 | 攻擊：視線被擋
+SHOT 00_1366x768_03r_cursor_on_los_blocked_enemy.png -> 1366x768 save_err=0
+CURSOR (2, 2) reached via mouse motion
+HOST [04r_cursor_on_empty_tile] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [04r_cursor_on_empty_tile] panel_visible=false cursor_cell=(2, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | （無佔位單位）
+SHOT 01_1366x768_04r_cursor_on_empty_tile.png -> 1366x768 save_err=0
+S2 hand opened: hand_selecting=true
+S2 after confirm on card: selecting_from_hand=false selecting_target=true confirming=false
+HOST [10_card_selected_target_prompt] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [10_card_selected_target_prompt] panel_visible=false cursor_cell=(0, 2) cursor_active=false text=（目前無法顯示格位資訊）
+SHOT 02_1366x768_10_card_selected_target_prompt.png -> 1366x768 save_err=0
+S2 target confirm tries=1
+S2 after target confirm: selecting_target=false confirming=true
+HOST [11_card_confirm_panel] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [11_card_confirm_panel] panel_visible=false cursor_cell=(0, 2) cursor_active=false text=（目前無法顯示格位資訊）
+SHOT 03_1366x768_11_card_confirm_panel.png -> 1366x768 save_err=0
+S2 after final confirm: confirming=false selecting_from_hand=false
+HOST [12_after_card_played] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [12_after_card_played] panel_visible=false cursor_cell=(0, 2) cursor_active=false text=（目前無法顯示格位資訊）
+SHOT 04_1366x768_12_after_card_played.png -> 1366x768 save_err=0
+S3 end_unit_turn(1)=true action_state(1)=3 hp(乙)=6/26 hp(丙)=4/22
+HOST [13_acted_unit1_and_low_hp_unit2_unit3] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [13_acted_unit1_and_low_hp_unit2_unit3] panel_visible=false cursor_cell=(0, 2) cursor_active=false text=（目前無法顯示格位資訊）
+SHOT 05_1366x768_13_acted_unit1_and_low_hp_unit2_unit3.png -> 1366x768 save_err=0
+CURSOR (0, 3) reached via mouse motion
+HOST [14_cursor_on_low_hp_unit2] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [14_cursor_on_low_hp_unit2] panel_visible=true cursor_cell=(0, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 徐培恩（我方） | HP：6/26 | 狀態：皆未用 | 武器射程：1–2 | MP：5 | 減傷：2
+SHOT 06_1366x768_14_cursor_on_low_hp_unit2.png -> 1366x768 save_err=0
+HOST [15_enemies_on_bush_and_log_open] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [15_enemies_on_bush_and_log_open] panel_visible=false cursor_cell=(0, 2) cursor_active=false text=（目前無法顯示格位資訊）
+SHOT 07_1366x768_15_enemies_on_bush_and_log_open.png -> 1366x768 save_err=0
+CURSOR (5, 1) reached via mouse motion
+HOST [16_cursor_on_enemy_in_bush] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [16_cursor_on_enemy_in_bush] panel_visible=true cursor_cell=(5, 1) cursor_active=true text=地形：灌木 | 移動成本：2 | 遮蔽：否 | 敵兵 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6
+SHOT 08_1366x768_16_cursor_on_enemy_in_bush.png -> 1366x768 save_err=0
+CURSOR (6, 2) reached via mouse motion
+HOST [17_cursor_on_enemy_on_fallen_log] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [17_cursor_on_enemy_on_fallen_log] panel_visible=true cursor_cell=(6, 2) cursor_active=true text=地形：倒木 | 移動成本：3 | 擋視線：是 | 敵兵 2（敵方） | HP：20/20 | 狀態：皆未用 | 武器射程：1–2 | MP：5
+SHOT 09_1366x768_17_cursor_on_enemy_on_fallen_log.png -> 1366x768 save_err=0
+TOTAL shots=10

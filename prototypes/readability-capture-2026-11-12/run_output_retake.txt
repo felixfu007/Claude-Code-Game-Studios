@@ -1,0 +1,101 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+=== RESOLUTION requested=(960, 540) actual root.size=(960, 540) ===
+S1 select 丙: last_click=selected
+CURSOR (8, 3) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (8, 3) set_target result=0 reached=true
+HOST [03r_cursor_on_los_blocked_enemy] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [03r_cursor_on_los_blocked_enemy] panel_visible=true cursor_cell=(8, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 敵兵 3（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3 | 攻擊：視線被擋
+SHOT 00_960x540_03r_cursor_on_los_blocked_enemy.png -> 960x540 save_err=0
+CURSOR (2, 2) NOT reached via motion (at (8, 3)); trying CursorStateHost.set_target
+CURSOR (2, 2) set_target result=0 reached=true
+HOST [04r_cursor_on_empty_tile] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [04r_cursor_on_empty_tile] panel_visible=false cursor_cell=(2, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | （無佔位單位）
+SHOT 01_960x540_04r_cursor_on_empty_tile.png -> 960x540 save_err=0
+S2 hand opened: hand_selecting=true
+S2 after confirm on card: selecting_from_hand=false selecting_target=true confirming=false
+HOST [10_card_selected_target_prompt] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [10_card_selected_target_prompt] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 02_960x540_10_card_selected_target_prompt.png -> 960x540 save_err=0
+S2 target confirm tries=1
+S2 after target confirm: selecting_target=false confirming=true
+HOST [11_card_confirm_panel] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [11_card_confirm_panel] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 03_960x540_11_card_confirm_panel.png -> 960x540 save_err=0
+S2 after final confirm: confirming=false selecting_from_hand=false
+HOST [12_after_card_played] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [12_after_card_played] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 04_960x540_12_after_card_played.png -> 960x540 save_err=0
+S3 end_unit_turn(1)=true action_state(1)=3 hp(乙)=6/26 hp(丙)=4/22
+HOST [13_acted_unit1_and_low_hp_unit2_unit3] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [13_acted_unit1_and_low_hp_unit2_unit3] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：已行動 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 05_960x540_13_acted_unit1_and_low_hp_unit2_unit3.png -> 960x540 save_err=0
+CURSOR (0, 3) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (0, 3) set_target result=0 reached=true
+HOST [14_cursor_on_low_hp_unit2] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [14_cursor_on_low_hp_unit2] panel_visible=true cursor_cell=(0, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 徐培恩（我方） | HP：6/26 | 狀態：皆未用 | 武器射程：1–2 | MP：5 | 減傷：2
+SHOT 06_960x540_14_cursor_on_low_hp_unit2.png -> 960x540 save_err=0
+HOST [15_enemies_on_bush_and_log_open] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [15_enemies_on_bush_and_log_open] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 07_960x540_15_enemies_on_bush_and_log_open.png -> 960x540 save_err=0
+CURSOR (5, 1) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (5, 1) set_target result=0 reached=true
+HOST [16_cursor_on_enemy_in_bush] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [16_cursor_on_enemy_in_bush] panel_visible=true cursor_cell=(5, 1) cursor_active=true text=地形：灌木 | 移動成本：2 | 遮蔽：否 | 敵兵 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6
+SHOT 08_960x540_16_cursor_on_enemy_in_bush.png -> 960x540 save_err=0
+CURSOR (6, 2) NOT reached via motion (at (5, 1)); trying CursorStateHost.set_target
+CURSOR (6, 2) set_target result=0 reached=true
+HOST [17_cursor_on_enemy_on_fallen_log] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+INFO [17_cursor_on_enemy_on_fallen_log] panel_visible=true cursor_cell=(6, 2) cursor_active=true text=地形：倒木 | 移動成本：3 | 遮蔽：是 | 敵兵 2（敵方） | HP：20/20 | 狀態：皆未用 | 武器射程：1–2 | MP：5
+SHOT 09_960x540_17_cursor_on_enemy_on_fallen_log.png -> 960x540 save_err=0
+=== RESOLUTION requested=(1920, 1080) actual root.size=(1920, 1080) ===
+S1 select 丙: last_click=selected
+CURSOR (8, 3) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (8, 3) set_target result=0 reached=true
+HOST [03r_cursor_on_los_blocked_enemy] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [03r_cursor_on_los_blocked_enemy] panel_visible=true cursor_cell=(8, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 敵兵 3（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3 | 攻擊：視線被擋
+SHOT 10_1920x1080_03r_cursor_on_los_blocked_enemy.png -> 1920x1080 save_err=0
+CURSOR (2, 2) NOT reached via motion (at (8, 3)); trying CursorStateHost.set_target
+CURSOR (2, 2) set_target result=0 reached=true
+HOST [04r_cursor_on_empty_tile] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [04r_cursor_on_empty_tile] panel_visible=false cursor_cell=(2, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | （無佔位單位）
+SHOT 11_1920x1080_04r_cursor_on_empty_tile.png -> 1920x1080 save_err=0
+S2 hand opened: hand_selecting=true
+S2 after confirm on card: selecting_from_hand=false selecting_target=true confirming=false
+HOST [10_card_selected_target_prompt] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [10_card_selected_target_prompt] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 12_1920x1080_10_card_selected_target_prompt.png -> 1920x1080 save_err=0
+S2 target confirm tries=1
+S2 after target confirm: selecting_target=false confirming=true
+HOST [11_card_confirm_panel] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [11_card_confirm_panel] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 13_1920x1080_11_card_confirm_panel.png -> 1920x1080 save_err=0
+S2 after final confirm: confirming=false selecting_from_hand=false
+HOST [12_after_card_played] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [12_after_card_played] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 14_1920x1080_12_after_card_played.png -> 1920x1080 save_err=0
+S3 end_unit_turn(1)=true action_state(1)=3 hp(乙)=6/26 hp(丙)=4/22
+HOST [13_acted_unit1_and_low_hp_unit2_unit3] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [13_acted_unit1_and_low_hp_unit2_unit3] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：已行動 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 15_1920x1080_13_acted_unit1_and_low_hp_unit2_unit3.png -> 1920x1080 save_err=0
+CURSOR (0, 3) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (0, 3) set_target result=0 reached=true
+HOST [14_cursor_on_low_hp_unit2] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [14_cursor_on_low_hp_unit2] panel_visible=true cursor_cell=(0, 3) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 徐培恩（我方） | HP：6/26 | 狀態：皆未用 | 武器射程：1–2 | MP：5 | 減傷：2
+SHOT 16_1920x1080_14_cursor_on_low_hp_unit2.png -> 1920x1080 save_err=0
+HOST [15_enemies_on_bush_and_log_open] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [15_enemies_on_bush_and_log_open] panel_visible=true cursor_cell=(0, 2) cursor_active=true text=地形：開闊地 | 移動成本：1 | 遮蔽：否 | 藍亭萱（我方） | HP：30/30 | 狀態：皆未用 | 武器射程：1–1 | MP：6 | 減傷：2
+SHOT 17_1920x1080_15_enemies_on_bush_and_log_open.png -> 1920x1080 save_err=0
+CURSOR (5, 1) NOT reached via motion (at (0, 2)); trying CursorStateHost.set_target
+CURSOR (5, 1) set_target result=0 reached=true
+HOST [16_cursor_on_enemy_in_bush] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [16_cursor_on_enemy_in_bush] panel_visible=true cursor_cell=(5, 1) cursor_active=true text=地形：灌木 | 移動成本：2 | 遮蔽：否 | 敵兵 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6
+SHOT 18_1920x1080_16_cursor_on_enemy_in_bush.png -> 1920x1080 save_err=0
+CURSOR (6, 2) NOT reached via motion (at (5, 1)); trying CursorStateHost.set_target
+CURSOR (6, 2) set_target result=0 reached=true
+HOST [17_cursor_on_enemy_on_fallen_log] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+INFO [17_cursor_on_enemy_on_fallen_log] panel_visible=true cursor_cell=(6, 2) cursor_active=true text=地形：倒木 | 移動成本：3 | 遮蔽：是 | 敵兵 2（敵方） | HP：20/20 | 狀態：皆未用 | 武器射程：1–2 | MP：5
+SHOT 19_1920x1080_17_cursor_on_enemy_on_fallen_log.png -> 1920x1080 save_err=0
+TOTAL shots=20
