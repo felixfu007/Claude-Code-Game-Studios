@@ -8,6 +8,13 @@
 > 被跳過:「移到棋盤外上方」、「游標在右半邊時自動移到左上」。
 > 來源問題:`production/qa/playtest-report-2026-10-28.md` 第四節問題 A(截圖 01、05)。
 
+> 📌 **2026-11-12 加註(管理者核准加註;原文一字未改)**:
+> ① **AC5「框高隨內容」實際未做** —— `battle_screen.gd` 仍以常數 `_TILE_INFO_PANEL_LINE_COUNT` 寫死 8 行(有減傷列時 9)。
+>   當場查:`grep -n "_TILE_INFO_PANEL_LINE_COUNT" src/ui/battle/battle_screen.gd`。本單標 Done 時此項未被驗出。
+> ② **AC2「空地 → 隱藏」已被新裁決取代方向**:管理者 2026-11-12 裁決空格也要顯示地形,但**等畫面捲動完成後再做**
+>   (玩家可自行挪地圖避開遮擋),且捲動須允許拉過地圖邊緣約一個資訊框的距離。在那之前本單行為不變。
+>   出處:`production/session-state/active.md` 第九十九批節;選項分析 `docs/reviews/tile-info-and-attack-reason-options-2026-11-12.md`。
+
 ## 為什麼
 
 1440×810 等「棋盤貼滿視窗」的尺寸下,右上資訊框常駐顯示,蓋住棋盤右上角的敵方棋子。

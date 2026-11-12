@@ -213,6 +213,10 @@ GDD UI Requirements §4:`ATK`(攻擊方有效攻擊力)、`DEF`(目標有效防�
 算出敵方單位的威脅範圍組成(射程 + MP),必須依賴 §1a 敵方威脅範圍疊加圖(見 6/7 節)
 單獨補足一部分,但威脅範圍疊加圖本身也未實作(見下)。
 
+> 📌 2026-11-12 加註(管理者裁決):資訊卡單位分支第一行改顯示正式姓名(取代原陣營行、總行數不變),
+> 並於棋子標姓名首字/敵兵編號。規則本體見 GDD `tactical-combat-system.md` UI Requirements §1 同日加註,
+> 實作見 `production/epics/tactical-combat/story-039-unit-name-and-piece-initials.md`;本節不複述。
+
 **(c) ⚠️ `_info_label` 現況與 `P-N1`(游標即檢視)的落差**
 
 `P-N1` 要求「面板更新前必須先查詢游標系統的有效性旗標;旗標無效時走 P-F1 未解析態」。
