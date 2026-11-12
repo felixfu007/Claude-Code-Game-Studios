@@ -5236,6 +5236,39 @@ const _TILE_INFO_PANEL_LINE_COUNT: int = 8
 const _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER: float = 1.2
 const _TILE_INFO_PANEL_PADDING_MULTIPLIER: float = 0.8
 
+## story-048 AC1 -- 資訊卡不透明底與框。色值全取自色盤既有列(design/art/color-palette.csv):
+## 底 ui_panel_bg_01、內框 cloth_neutral_highlight_01、外側隔線 nature_void_shadow_01。
+## 規格:docs/reviews/highlight-and-info-panel-art-spec-2026-11-12.md 第三節 3.1。
+const TILE_INFO_PANEL_BG_COLOR: Color = Color("1A1A1F")
+const TILE_INFO_PANEL_FRAME_COLOR: Color = Color("B0A897")
+const TILE_INFO_PANEL_OUTER_LINE_COLOR: Color = Color("0E0F14", 0.8)
+## 內距(文字到內框):水平 0.5 x 字級 px、垂直 0.4 x 字級 px。
+const _TILE_INFO_PANEL_PAD_H_MULTIPLIER: float = 0.5
+const _TILE_INFO_PANEL_PAD_V_MULTIPLIER: float = 0.4
+
+## 內框(1u,貼面板內緣)與外側隔線(面板外緣外側再 1u)。u = small_font_size / GLYPH_PX。
+var _tile_info_frame_inner: Panel = null
+var _tile_info_frame_outer: Panel = null
+
+
+func _make_tile_info_frame(border_color: Color) -> Panel:
+	var panel: Panel = Panel.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box: StyleBoxFlat = StyleBoxFlat.new()
+	box.draw_center = false
+	box.border_color = border_color
+	box.anti_aliasing = false
+	panel.add_theme_stylebox_override(&"panel", box)
+	_tile_info_panel_bg.add_child(panel)
+	_tile_info_panel_bg.move_child(panel, 0)
+	return panel
+
+
+func _set_tile_info_frame_width(panel: Panel, u: int) -> void:
+	var box: StyleBoxFlat = panel.get_theme_stylebox(&"panel") as StyleBoxFlat
+	box.set_border_width_all(u)
+
+
 func _apply_tile_info_panel_layout() -> void:
 	var window_size: Vector2i = get_window().size
 	var safe: Rect2 = HudLayout.safe_rect(window_size)
@@ -5250,10 +5283,14 @@ func _apply_tile_info_panel_layout() -> void:
 		_TILE_INFO_PREVIEW_WIDTH_FPX_MULTIPLIER if _tile_info_preview_mode
 		else _TILE_INFO_PANEL_WIDTH_FPX_MULTIPLIER
 	)
+	var u: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
+	var pad_h: float = fpx * _TILE_INFO_PANEL_PAD_H_MULTIPLIER
+	var pad_v: float = fpx * _TILE_INFO_PANEL_PAD_V_MULTIPLIER
+	width += 2.0 * (pad_h + float(u))
 	var height: float = fpx * (
 		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * (_TILE_INFO_PANEL_LINE_COUNT + (1 if _tile_info_extra_line else 0))
 		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
-	)
+	) + 2.0 * float(u)
 	var left: float = safe.position.x + safe.size.x - width
 	var top: float = status.position.y + status.size.y + gap
 
@@ -5261,6 +5298,23 @@ func _apply_tile_info_panel_layout() -> void:
 	_tile_info_panel_bg.offset_top = top
 	_tile_info_panel_bg.offset_right = left + width
 	_tile_info_panel_bg.offset_bottom = top + height
+
+	_tile_info_panel_bg.color = TILE_INFO_PANEL_BG_COLOR
+	if _tile_info_frame_inner == null:
+		_tile_info_frame_outer = _make_tile_info_frame(TILE_INFO_PANEL_OUTER_LINE_COLOR)
+		_tile_info_frame_inner = _make_tile_info_frame(TILE_INFO_PANEL_FRAME_COLOR)
+	_tile_info_frame_inner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_set_tile_info_frame_width(_tile_info_frame_inner, u)
+	_tile_info_frame_outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_tile_info_frame_outer.offset_left = -float(u)
+	_tile_info_frame_outer.offset_top = -float(u)
+	_tile_info_frame_outer.offset_right = float(u)
+	_tile_info_frame_outer.offset_bottom = float(u)
+	_set_tile_info_frame_width(_tile_info_frame_outer, u)
+	_tile_info_panel_label.offset_left = float(u) + pad_h
+	_tile_info_panel_label.offset_right = -(float(u) + pad_h)
+	_tile_info_panel_label.offset_top = float(u) + pad_v
+	_tile_info_panel_label.offset_bottom = -(float(u) + pad_v)
 
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
