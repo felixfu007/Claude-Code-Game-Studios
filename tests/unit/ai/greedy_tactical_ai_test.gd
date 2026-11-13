@@ -23,7 +23,7 @@ func _open_rows() -> PackedStringArray:
 	return rows
 
 
-# 與 _open_rows() 相同，但 wall_pos 那一格改成倒木（阻擋視線）。
+# 與 _open_rows() 相同，但 wall_pos 那一格改成密林（阻擋視線）。
 func _rows_with_wall(wall_pos: Vector2i) -> PackedStringArray:
 	var rows: PackedStringArray = PackedStringArray()
 	for y: int in range(Board.BOARD_HEIGHT):
@@ -109,7 +109,7 @@ func test_can_move_false_never_moves_even_when_moving_would_help() -> void:
 
 func test_los_blocked_enemy_is_skipped_even_though_its_hp_is_lower() -> void:
 	# Arrange — 攻方在 (6,3)，射程 1..3，mp=0（原地判斷）
-	# EA 在 (6,1)：直線距離 2，中繼格 (6,2) 是倒木，視線被擋
+	# EA 在 (6,1)：直線距離 2，中繼格 (6,2) 是密林，視線被擋
 	# EB 在 (8,3)：直線距離 2，中繼格 (7,3) 是空地，視線暢通
 	# EA 血量刻意設得比 EB 低 —— 若演算法誤把被擋的目標也算進候選，
 	# 血量最低優先的規則會選到 EA；只有正確排除 EA 才會選到 EB。

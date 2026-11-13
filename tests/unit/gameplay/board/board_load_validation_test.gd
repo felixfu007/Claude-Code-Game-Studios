@@ -55,7 +55,7 @@ func test_from_ascii_legal_open_board_triggers_zero_push_errors() -> void:
 
 
 func test_from_ascii_legal_mixed_terrain_board_triggers_zero_push_errors() -> void:
-	# Arrange — 與 board_test.gd 相同的平地/灌木/倒木混合版面，是既有 24 處
+	# Arrange — 與 board_test.gd 相同的平地/灌木/密林混合版面，是既有 24 處
 	# Board.from_ascii() 呼叫點的代表性樣本
 	var rows: PackedStringArray = PackedStringArray([
 		".............",

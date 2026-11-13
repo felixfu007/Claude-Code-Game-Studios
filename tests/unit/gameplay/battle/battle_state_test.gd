@@ -208,12 +208,12 @@ func test_preview_damage_does_not_mutate_state() -> void:
 	assert_int(state.board.get_occupant(state.position_of(6))).is_equal(occupant_before)
 
 
-# ---- can_attack() — (d) 中央倒木堆擋下原本射程內的遠程攻擊 ----------------------
+# ---- can_attack() — (d) 中央密林堆擋下原本射程內的遠程攻擊 ----------------------
 
 func test_can_attack_blocked_by_central_fallen_log_despite_being_in_range() -> void:
 	# Arrange — 攻擊方 3（丙，range 2-4，mp=3）從 (1,3) 走到 (3,3)（開闊地，成本 2）；
 	# 目標 9（E4，mp=5）從 (7,5) 走到 (7,3)（(7,4) 開闊 1 + (7,3) 灌木 2 = 3）。
-	# 兩者最終距離 4，落在 2-4 射程內；但視線直線會穿過 (5,3) 與 (6,3) 兩格倒木。
+	# 兩者最終距離 4，落在 2-4 射程內；但視線直線會穿過 (5,3) 與 (6,3) 兩格密林。
 	var state: BattleState = _load_state()
 	assert_bool(state.move_unit(3, Vector2i(3, 3))).is_true()
 	assert_bool(state.move_unit(9, Vector2i(7, 3))).is_true()
@@ -221,12 +221,12 @@ func test_can_attack_blocked_by_central_fallen_log_despite_being_in_range() -> v
 	# Act
 	var legal: bool = state.can_attack(3, 9)
 
-	# Assert — 距離合法，但倒木擋視線，攻擊不合法
+	# Assert — 距離合法，但密林擋視線，攻擊不合法
 	assert_bool(legal).is_false()
 
 
 func test_can_attack_ignores_a_living_unit_standing_between_attacker_and_target() -> void:
-	# Arrange — 三個單位沿全開闊的第 5 列（row 5，無倒木無灌木）一字排開：
+	# Arrange — 三個單位沿全開闊的第 5 列（row 5，無密林無灌木）一字排開：
 	# 攻擊方 3（丙，range 2-4）在 (2,5)；擋在正中間的 4（丁，仍存活）在 (3,5)；
 	# 目標 9（E4）在 (4,5)。距離 2，落在射程內；中繼格地形不遮蔽，
 	# 且依規則單位本身絕不遮蔽視線 —— 即使 4 活生生站在直線正中央。
@@ -248,13 +248,13 @@ func test_can_attack_ignores_a_living_unit_standing_between_attacker_and_target(
 # is_attack_reachable() 是 can_attack() 拆分出來的純謂詞：只問「從 from 這一格
 # 打 to 這一格，射程與視線合不合法」，不問存活、不問陣營、也不問 to 格是否有人
 # 站著。以下測試分別驗證：(1) from 可以是攻擊方根本沒站過的假設格；(2) 答案完全
-# 不受 to 格佔位狀態影響（不管是空地、友軍、敵軍都一樣）；(3) 中央倒木堆對距離
-# ≥2 的假設查詢一樣生效，且用同距離、無倒木的對照格證明真的是視線在擋，而不是
+# 不受 to 格佔位狀態影響（不管是空地、友軍、敵軍都一樣）；(3) 中央密林堆對距離
+# ≥2 的假設查詢一樣生效，且用同距離、無密林的對照格證明真的是視線在擋，而不是
 # 單純射程判斷。
 
 func test_is_attack_reachable_true_for_hypothetical_origin_attacker_never_stood_at() -> void:
 	# Arrange — 丙（id 3，射程 2-4）實際站在 (1,3)，從未去過 (0,0)。查詢一個
-	# 丙根本沒站過的假設起點 (0,0) 打 (2,0)，距離 2、全開闊地、無倒木
+	# 丙根本沒站過的假設起點 (0,0) 打 (2,0)，距離 2、全開闊地、無密林
 	var state: BattleState = _load_state()
 	assert_vector(state.position_of(3)).is_equal(Vector2i(1, 3))
 
@@ -282,8 +282,8 @@ func test_is_attack_reachable_ignores_occupancy_of_both_endpoints() -> void:
 
 
 func test_is_attack_reachable_false_when_los_blocked_true_for_unblocked_cell_at_same_distance() -> void:
-	# Arrange — 中央 (5,3)/(6,3) 是倒木。假設起點 (3,3) 打 (7,3)（第 3 列，
-	# 距離 4，直線穿過兩格倒木）應該被擋；同一顆假設起點打 (3,5)→(7,5)
+	# Arrange — 中央 (5,3)/(6,3) 是密林。假設起點 (3,3) 打 (7,3)（第 3 列，
+	# 距離 4，直線穿過兩格密林）應該被擋；同一顆假設起點打 (3,5)→(7,5)
 	# 位於第 5 列（全開闊地，距離同樣是 4）的對照組應該合法——證明擋下來的
 	# 真的是視線，不是單純距離判斷。丙（id 3，射程 2-4）從未實際移動過。
 	var state: BattleState = _load_state()

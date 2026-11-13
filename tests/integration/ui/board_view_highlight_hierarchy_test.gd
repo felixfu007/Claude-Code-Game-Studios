@@ -3,7 +3,7 @@
 # 甲類檔案 I/O 揭露(.claude/rules/test-standards.md):載入真實 BoardView.tscn / BattleScreen.tscn;
 # BattleScreen 以 terrain_path_override / roster_path_override 注入合成夾具
 # test_fixture_terrain_los.txt / test_fixture_roster_los.txt(唯讀、已進版控、兩份彼此相容:
-# 5 格走廊,(2,0) 倒木,我方 (0,0) 射程 1-4,敵方 (4,0))。
+# 5 格走廊,(2,0) 密林,我方 (0,0) 射程 1-4,敵方 (4,0))。
 # 揭露:headless 不 rasterize,本檔只證明節點樹結構與矩形,不證明畫面看起來對(見 AC8 待補拍)。
 # 揭露:威脅斜紋是整格貼圖(Sprite2D),不在矩形禁區斷言內(規格把它當不靠顏色的通道保留);
 #      斜紋覆蓋量 THREAT_STRIPE_AREA_PX 是規格值,不是量測值。

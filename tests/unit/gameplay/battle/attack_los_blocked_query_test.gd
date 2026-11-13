@@ -42,7 +42,7 @@ static func _tile_less(a: Vector2i, b: Vector2i) -> bool:
 # ---- QA (1)/(2): 視線被擋格進入第三層、暢通格進入 attack_targets()、兩者互斥 -------
 
 func test_los_blocked_cell_in_third_layer_clear_cell_in_attack_targets_mutually_exclusive() -> void:
-	# Arrange — 單位 1 mp=0、射程 1-4，起點 (0,0)；row0 的 (2,0) 放倒木擋視線。
+	# Arrange — 單位 1 mp=0、射程 1-4，起點 (0,0)；row0 的 (2,0) 放密林擋視線。
 	# 敵方 2 站 (4,0)：距離 4，直線穿過 (2,0) → 應被擋，落入第三層、不在
 	# attack_targets()。敵方 3 站 (0,4)：距離 4，沿 y 軸開闊地 → 視線暢通，應在
 	# attack_targets()、不落入第三層。
@@ -99,7 +99,7 @@ func test_third_layer_cells_are_always_within_the_min_max_range_band() -> void:
 # ---- QA (3) 近戰武器恆回傳空集合（結構性保證，非特判）---------------------------
 
 func test_melee_weapon_always_returns_empty_regardless_of_terrain() -> void:
-	# Arrange — 單位 1 近戰 (1,1)，起點 (0,0)；緊鄰的 (1,0) 刻意放倒木（用來
+	# Arrange — 單位 1 近戰 (1,1)，起點 (0,0)；緊鄰的 (1,0) 刻意放密林（用來
 	# 證明「不論盤面遮蔽狀況」——即使緊鄰格被標記為遮蔽，近戰距離 1 結構上永遠
 	# 不會走到視線分支，見 CombatRules.is_attack_blocked_by_los 的文件註解）。
 	# 敵方 2 就站在這個被標記遮蔽的鄰格上。
@@ -145,7 +145,7 @@ func test_blind_spot_cell_excluded_from_third_layer() -> void:
 
 func test_corner_clip_both_flanks_blocked_matches_existing_is_attack_reachable() -> void:
 	# Arrange — 攻擊方 (0,0)、目標 (1,1)（曼哈頓距離 2，射線恰穿過 (0.5,0.5)
-	# 頂點）；兩側 (1,0)/(0,1) 皆放倒木 → 依既有 LineOfSight 規則「兩側皆遮蔽
+	# 頂點）；兩側 (1,0)/(0,1) 皆放密林 → 依既有 LineOfSight 規則「兩側皆遮蔽
 	# 才算擋」，應判定視線被擋。交叉核對既有 BattleState.is_attack_reachable()
 	# 對同一輸入回報相反的布林值（同一份判定的兩面，而非各算各的）。
 	var terrain: PackedStringArray = PackedStringArray([
@@ -175,7 +175,7 @@ func test_corner_clip_both_flanks_blocked_matches_existing_is_attack_reachable()
 
 
 func test_corner_clip_only_one_flank_blocked_matches_existing_is_attack_reachable() -> void:
-	# Arrange — 同上座標，但只有 (1,0) 放倒木、(0,1) 保持開闊 → 依「兩側皆遮蔽
+	# Arrange — 同上座標，但只有 (1,0) 放密林、(0,1) 保持開闊 → 依「兩側皆遮蔽
 	# 才算擋」規則，單側遮蔽不足以擋住視線，應視為暢通。
 	var terrain: PackedStringArray = PackedStringArray([".#..........."])
 	var roster: Array[String] = [

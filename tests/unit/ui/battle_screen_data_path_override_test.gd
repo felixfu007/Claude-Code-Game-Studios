@@ -147,7 +147,7 @@ const _FIXTURE_ROSTER_PATH: String = "res://assets/data/units/test_fixture_roste
 
 
 func test_terrain_path_override_with_valid_fixture_reads_fixture_content_not_default() -> void:
-	# Arrange — test_fixture_terrain.txt(5 寬 x 3 高)在 (0,0) 是 '#'(倒木);
+	# Arrange — test_fixture_terrain.txt(5 寬 x 3 高)在 (0,0) 是 '#'(密林);
 	# 真實 vs01_terrain.txt 同一格是 '.'(平地)——刻意選這一格做為可斷言的差異點。
 	# 注意:Board 的座標邊界(BOARD_WIDTH=13/BOARD_HEIGHT=6)是固定常數,不受
 	# terrain 內容影響,所以維持預設 roster 的單位起始座標不會因為夾具棋盤變小

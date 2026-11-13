@@ -168,13 +168,13 @@ func test_threat_targets_empty_when_no_cell_on_board_falls_within_range_of_any_o
 	assert_array(controller.threat_targets().cells).is_empty()
 
 
-# ---- (4) 中央倒木堆擋住視線（距離 ≥2 的假設查詢）--------------------------------
+# ---- (4) 中央密林堆擋住視線（距離 ≥2 的假設查詢）--------------------------------
 
 func test_threat_targets_excludes_cell_blocked_by_terrain_but_includes_unblocked_cell_at_same_distance() -> void:
-	# Arrange — 自建一塊只在 row0 的 x=2 放倒木的地形，其餘格子一律開闊地
+	# Arrange — 自建一塊只在 row0 的 x=2 放密林的地形，其餘格子一律開闊地
 	# （Board.from_ascii 對缺列/缺字元一律預設 TERRAIN_OPEN）。單位 1 mp=0、
 	# 射程 1-4，起點 (0,0)：
-	# - 打 (4,0)：距離 4，直線穿過 (1,0)/(2,0)/(3,0)，(2,0) 是倒木 → 應被擋
+	# - 打 (4,0)：距離 4，直線穿過 (1,0)/(2,0)/(3,0)，(2,0) 是密林 → 應被擋
 	# - 打 (0,4)：距離同樣是 4，沿 y 軸走、全程開闊地 → 應合法
 	# 用同距離的一擋一不擋，證明真的是視線邏輯在運作，不是單純射程判斷。
 	var terrain: PackedStringArray = PackedStringArray(["..#.........."])

@@ -16,7 +16,7 @@ func _build_open_rows() -> PackedStringArray:
 
 
 func test_from_ascii_parses_terrain_cost_and_sight_blocking() -> void:
-	# Arrange — 用規格給的 vs01 版面：中央 2x2 是倒木（#），外圈一圈灌木（,）
+	# Arrange — 用規格給的 vs01 版面：中央 2x2 是密林（#），外圈一圈灌木（,）
 	var rows: PackedStringArray = PackedStringArray([
 		".............",
 		".....,,......",
@@ -61,7 +61,7 @@ func test_from_ascii_loads_vs01_terrain_file_without_crashing() -> void:
 	# Act
 	var board: Board = Board.from_ascii(rows)
 
-	# Assert — 中心倒木格判讀正確即可，代表整檔載入路徑沒問題
+	# Assert — 中心密林格判讀正確即可，代表整檔載入路徑沒問題
 	assert_int(board.get_move_cost(Vector2i(5, 2))).is_equal(3)
 	assert_bool(board.blocks_sight(Vector2i(5, 2))).is_true()
 

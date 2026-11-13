@@ -73,7 +73,7 @@ func test_threat_range_for_single_unit_returns_manhattan_ring_from_static_origin
 
 func test_threat_range_for_ignores_line_of_sight_per_formula_four() -> void:
 	# Arrange — 場景取自既有 attack_los_blocked_query_test.gd 測試 1 的同一佈局：
-	# 倒木在 (2,0) 擋視線，敵方單位 2 站 (0,0)、射程 [1,4]，目標格 (4,0) 距離 4、
+	# 密林在 (2,0) 擋視線，敵方單位 2 站 (0,0)、射程 [1,4]，目標格 (4,0) 距離 4、
 	# 直線穿過 (2,0) → 視線被擋。那支既有測試證明 attack_targets()/
 	# is_attack_reachable() 會把 (4,0) 排除；本測試證明 threat_range_for() 相反地
 	# 一定要保留它。

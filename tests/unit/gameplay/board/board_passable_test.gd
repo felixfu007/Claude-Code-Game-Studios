@@ -42,7 +42,7 @@ func _build_open_rows() -> PackedStringArray:
 # --- QA Test Case 1: passable() 起始三地形皆為 true -------------------------
 
 func test_passable_three_existing_terrains_return_true() -> void:
-	# Arrange — 含平地（.）、灌木（,）、倒木（#）三種既有地形的版面
+	# Arrange — 含平地（.）、灌木（,）、密林（#）三種既有地形的版面
 	var rows: PackedStringArray = PackedStringArray([
 		".............",
 		".....,,......",
@@ -58,7 +58,7 @@ func test_passable_three_existing_terrains_return_true() -> void:
 	# Assert
 	assert_bool(board.passable(Vector2i(0, 0))).is_true()  # 平地
 	assert_bool(board.passable(Vector2i(5, 1))).is_true()  # 灌木
-	assert_bool(board.passable(Vector2i(5, 2))).is_true()  # 倒木
+	assert_bool(board.passable(Vector2i(5, 2))).is_true()  # 密林
 
 
 func test_passable_origin_tile_is_always_true_for_well_formed_terrain() -> void:

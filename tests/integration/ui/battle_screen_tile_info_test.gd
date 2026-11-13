@@ -41,7 +41,7 @@ func test_terrain_display_name_brush() -> void:
 
 
 func test_terrain_display_name_fallen_log() -> void:
-	assert_str(BattleScreen.terrain_display_name(Board.TERRAIN_FALLEN_LOG)).is_equal("倒木")
+	assert_str(BattleScreen.terrain_display_name(Board.TERRAIN_FALLEN_LOG)).is_equal("密林")
 
 
 func test_terrain_display_name_unregistered_char_falls_back_to_unknown() -> void:
@@ -136,7 +136,7 @@ func test_mp_line_format() -> void:
 # ---- build_tile_info_text() —— 完整面板文字組裝（Visual/Audio §1.4 正交性） ------
 
 func test_build_tile_info_text_empty_tile_shows_three_terrain_lines_and_occupant_none() -> void:
-	# Arrange / Act —— 無佔位單位的倒木格
+	# Arrange / Act —— 無佔位單位的密林格
 	var text: String = BattleScreen.build_tile_info_text(
 		Board.TERRAIN_FALLEN_LOG, 3, true,
 		false, Unit.Faction.PLAYER, 0, 0, TurnOrder.ActionState.NOT_FOUND, 0, 0, 0
@@ -145,7 +145,7 @@ func test_build_tile_info_text_empty_tile_shows_three_terrain_lines_and_occupant
 
 	# Assert —— terrain_cost 與遮蔽各自獨立一行，不得合併成單一「特殊地形」欄位
 	assert_int(lines.size()).is_equal(4)
-	assert_str(lines[0]).is_equal("地形：倒木")
+	assert_str(lines[0]).is_equal("地形：密林")
 	assert_str(lines[1]).is_equal("移動成本：3")
 	assert_str(lines[2]).is_equal("擋視線：是")
 	assert_str(lines[3]).is_equal("（無佔位單位）")

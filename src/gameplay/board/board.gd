@@ -15,6 +15,7 @@ const BOARD_HEIGHT: int = 6
 ## Terrain character constants, as used by from_ascii().
 const TERRAIN_OPEN: String = "."
 const TERRAIN_BRUSH: String = ","
+## 顯示名「密林」(2026-11-13 改名);符號沿用以免牽動規則層
 const TERRAIN_FALLEN_LOG: String = "#"
 
 ## Per-terrain-character data table: movement cost and passability, as two

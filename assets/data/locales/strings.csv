@@ -66,7 +66,7 @@ battle.tile_info.unresolved,（目前無法顯示格位資訊）
 battle.tile_info.terrain_line_format,地形：%s
 battle.tile_info.terrain_open,開闊地
 battle.tile_info.terrain_brush,灌木
-battle.tile_info.terrain_fallen_log,倒木
+battle.tile_info.terrain_fallen_log,密林
 battle.tile_info.terrain_unknown,未知地形
 battle.tile_info.cost_line_format,移動成本：%d
 battle.tile_info.cost_unknown,移動成本：未知

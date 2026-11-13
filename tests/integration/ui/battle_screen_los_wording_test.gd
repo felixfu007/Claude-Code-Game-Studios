@@ -3,7 +3,7 @@
 # 甲類檔案 I/O 揭露(.claude/rules/test-standards.md):載入真實 BattleScreen.tscn,
 # 以 terrain_path_override / roster_path_override 注入合成夾具
 # assets/data/levels/test_fixture_terrain_los.txt 與 assets/data/units/test_fixture_roster_los.txt
-# (唯讀、已進版控;terrain 檔不可含註解——# 是倒木字元;兩份彼此相容:5 格走廊,(2,0) 倒木,我方 (0,0) 射程 1-4,敵方 (4,0))。
+# (唯讀、已進版控;terrain 檔不可含註解——# 是密林字元;兩份彼此相容:5 格走廊,(2,0) 密林,我方 (0,0) 射程 1-4,敵方 (4,0))。
 # 為何不能用純注入:要驗的是真實面板文字(Loc 取得的 CSV 值),不是 format 函式本身。
 # 揭露:只證明「兩行用同一個詞」,不證明玩家讀得懂(像素層見 story-042 AC5)。
 # 敏感度:static/資料字面值,無繼承鏈可覆寫;以手動 mutant(改回 CSV 舊字、對調分支)證明,見交付回報。
