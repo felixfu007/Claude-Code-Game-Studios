@@ -22,6 +22,11 @@ mouse_filter = 0
 
 [node name="ReturnToBattleRow" type="Button" parent="Panel/ContentMargin/Rows"]
 
+[node name="ObjectiveRow" type="Button" parent="Panel/ContentMargin/Rows"]
+
+[node name="LegendRow" type="Button" parent="Panel/ContentMargin/Rows"]
+visible = false
+
 [node name="EndPhaseRow" type="Button" parent="Panel/ContentMargin/Rows"]
 
 [node name="EndPhaseReasonLabel" type="Label" parent="Panel/ContentMargin/Rows"]

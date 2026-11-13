@@ -149,7 +149,7 @@ extends Control
 ## Layout Zones table: "M1 選單面板 | ... | 寬 10 fpx,高 9 fpx".
 const PANEL_WIDTH_FPX_MULTIPLIER: float = 10.0
 ## M1 panel height, same table row.
-const PANEL_HEIGHT_FPX_MULTIPLIER: float = 9.0
+const PANEL_HEIGHT_FPX_MULTIPLIER: float = 12.0
 ## M2 each row's height — battle-menu.md Layout Zones table: "M2 項目列 | ... | 每列高 2 fpx".
 const ROW_HEIGHT_FPX_MULTIPLIER: float = 2.0
 ## M4 (leave-confirmation) width — SIZE ONLY, M4 itself is out of scope (U-010).
@@ -196,6 +196,11 @@ const RETURN_TO_BATTLE_ROW: StringName = &"battle.menu.return_to_battle_row"
 const END_PHASE_ROW: StringName = &"battle.menu.end_phase_row"
 ## Story-002 續批 — 見 [constant RETURN_TO_BATTLE_ROW] 的 doc comment。
 const QUIT_ROW: StringName = &"battle.menu.quit_row"
+const OBJECTIVE_ROW: StringName = &"battle.menu.objective_row"
+const LEGEND_ROW: StringName = &"battle.menu.legend_row"
+## story-046:圖例內容由 story-047 提供;false 時「圖例」列隱藏、不可聚焦,不得開出空白畫面。
+## story-047 完成後改為 true(列順序固定:回到遊戲、目標、圖例、結束回合、離開戰鬥)。
+const LEGEND_AVAILABLE: bool = false
 
 ## Story-002 續批 — M4(離開確認)對話框的兩個按鈕文字,同一批遷移,同一理由見
 ## [constant RETURN_TO_BATTLE_ROW] 的 doc comment。命名沿用 [constant LEAVE_CONFIRM_TITLE] /
@@ -462,6 +467,8 @@ const DISABLED_ROW_PREFIX_GLYPH: StringName = &"battle.menu.disabled_row_prefix_
 @onready var _content_margin: MarginContainer = $Panel/ContentMargin
 @onready var _rows: VBoxContainer = $Panel/ContentMargin/Rows
 @onready var _return_row: Button = $Panel/ContentMargin/Rows/ReturnToBattleRow
+@onready var _objective_row: Button = $Panel/ContentMargin/Rows/ObjectiveRow
+@onready var _legend_row: Button = $Panel/ContentMargin/Rows/LegendRow
 @onready var _end_phase_row: Button = $Panel/ContentMargin/Rows/EndPhaseRow
 @onready var _end_phase_reason_label: Label = $Panel/ContentMargin/Rows/EndPhaseReasonLabel
 @onready var _divider: ColorRect = $Panel/ContentMargin/Rows/Divider
@@ -503,6 +510,11 @@ var _opened_on_frame: int = -1
 ## job, not this file's.
 signal end_faction_phase_confirmed()
 
+## story-046:按下「目標」—— 選單先關閉,再由戰鬥畫面重顯目標文字。
+signal objective_requested()
+## story-046:按下「圖例」(story-047 提供內容;在那之前列隱藏,見 [constant LEGEND_AVAILABLE])。
+signal legend_requested()
+
 ## The three focusable rows, captured once at [method _ready] purely as an
 ## iteration convenience for [method _apply_layout] (and, previously, for the
 ## now-removed focus-marker text rewrite — see class doc comment's
@@ -512,7 +524,7 @@ var _focusable_rows: Array[Button] = []
 
 
 func _ready() -> void:
-	_focusable_rows = [_return_row, _end_phase_row, _quit_row]
+	_focusable_rows = [_return_row, _objective_row, _legend_row, _end_phase_row, _quit_row]
 
 	# Story-002 續批 — M1 三列按鈕文字,見 RETURN_TO_BATTLE_ROW 的 doc comment。
 	# 設定一次,之後不再改寫(見本檔類別文件註解:"Row TEXT itself is fixed for
@@ -520,6 +532,9 @@ func _ready() -> void:
 	_return_row.text = Loc.localize(RETURN_TO_BATTLE_ROW)
 	_end_phase_row.text = Loc.localize(END_PHASE_ROW)
 	_quit_row.text = Loc.localize(QUIT_ROW)
+	_objective_row.text = Loc.localize(OBJECTIVE_ROW)
+	_legend_row.text = Loc.localize(LEGEND_ROW)
+	_legend_row.visible = LEGEND_AVAILABLE
 
 	for row: Button in _focusable_rows:
 		row.focus_mode = Control.FOCUS_ALL
@@ -551,12 +566,7 @@ func _ready() -> void:
 	# edge only); wiring the two INTERIOR transitions explicitly as well is
 	# this file's own extension, made for the layout-timing reason above, not
 	# a design-mandated requirement.
-	_return_row.focus_neighbor_top = _return_row.get_path_to(_return_row)
-	_return_row.focus_neighbor_bottom = _return_row.get_path_to(_end_phase_row)
-	_end_phase_row.focus_neighbor_top = _end_phase_row.get_path_to(_return_row)
-	_end_phase_row.focus_neighbor_bottom = _end_phase_row.get_path_to(_quit_row)
-	_quit_row.focus_neighbor_top = _quit_row.get_path_to(_end_phase_row)
-	_quit_row.focus_neighbor_bottom = _quit_row.get_path_to(_quit_row)
+	_wire_focus_neighbors(true)
 
 	_apply_layout()
 	get_window().size_changed.connect(_apply_layout)
@@ -601,6 +611,8 @@ func _ready() -> void:
 	# a button they built but did not wire, the same shape as U-008 wiring
 	# ReturnToBattleRow.pressed -> close() above.
 	_quit_row.pressed.connect(open_leave_confirm)
+	_objective_row.pressed.connect(_on_objective_row_pressed)
+	_legend_row.pressed.connect(_on_legend_row_pressed)
 
 	_leave_confirm_title_label.text = Loc.localize(LEAVE_CONFIRM_TITLE)
 	_leave_confirm_body_label.text = Loc.localize(LEAVE_CONFIRM_BODY)
@@ -857,14 +869,8 @@ func _refresh_end_phase_row() -> void:
 		# reason string, verbatim from the wireframe's own formatting.
 		_end_phase_reason_label.text = Loc.localize(DISABLED_ROW_PREFIX_GLYPH) + reason
 
-	if can_end:
-		_return_row.focus_neighbor_bottom = _return_row.get_path_to(_end_phase_row)
-		_end_phase_row.focus_neighbor_top = _end_phase_row.get_path_to(_return_row)
-		_end_phase_row.focus_neighbor_bottom = _end_phase_row.get_path_to(_quit_row)
-		_quit_row.focus_neighbor_top = _quit_row.get_path_to(_end_phase_row)
-	else:
-		_return_row.focus_neighbor_bottom = _return_row.get_path_to(_quit_row)
-		_quit_row.focus_neighbor_top = _quit_row.get_path_to(_return_row)
+	_wire_focus_neighbors(can_end)
+	if not can_end:
 		# Defensive: if a still-open menu's focus was already sitting on this
 		# row the instant it became disabled (e.g. card play started while the
 		# player had navigated here but had not yet pressed anything), do not
@@ -1251,3 +1257,30 @@ static func egm_status_rect(window_size: Vector2i) -> Rect2:
 		panel_r.position.x, panel_r.position.y - fpx * ROW_SEPARATION_FPX_MULTIPLIER - height
 	)
 	return Rect2(pos, Vector2(panel_r.size.x, height))
+
+
+## story-046:依「目前可聚焦的列」重接上下鄰居(顯式 NodePath,不靠自動幾何搜尋,
+## 理由見 [method _ready] 的長註解)。順序固定:回到遊戲、目標、圖例(隱藏時略過)、
+## 結束回合(不可用時略過)、離開戰鬥。頭尾「到底停住」(指向自己)。
+func _wire_focus_neighbors(end_phase_enabled: bool) -> void:
+	var chain: Array[Button] = [_return_row, _objective_row]
+	if _legend_row.visible:
+		chain.append(_legend_row)
+	if end_phase_enabled:
+		chain.append(_end_phase_row)
+	chain.append(_quit_row)
+	for i: int in chain.size():
+		var up: Button = chain[maxi(i - 1, 0)]
+		var down: Button = chain[mini(i + 1, chain.size() - 1)]
+		chain[i].focus_neighbor_top = chain[i].get_path_to(up)
+		chain[i].focus_neighbor_bottom = chain[i].get_path_to(down)
+
+
+func _on_objective_row_pressed() -> void:
+	close()
+	objective_requested.emit()
+
+
+func _on_legend_row_pressed() -> void:
+	close()
+	legend_requested.emit()

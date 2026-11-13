@@ -87,9 +87,11 @@ const TABLE_FPX: Dictionary = {
 }
 
 # 表格「M1(100%)」欄(寬,高)。
+# story-046:M1(100%) 高度由 9 fpx 改 12 fpx(選單加「目標」列);spec 文件 design/ux/battle-menu.md 尚未同步,
+# 150% 欄與本檔其餘 spec 算術仍按 spec 原值 9 fpx。
 const TABLE_M1_100: Dictionary = {
-	"960x540": Vector2(220, 198), "1080p": Vector2(440, 396),
-	"2K": Vector2(550, 495), "4K": Vector2(880, 792),
+	"960x540": Vector2(220, 264), "1080p": Vector2(440, 528),
+	"2K": Vector2(550, 660), "4K": Vector2(880, 1056),
 }
 
 # 表格「M1(150%)」欄。⚠️ 2560×1440 這格,表格寫 825x742,但
@@ -154,7 +156,8 @@ func test_panel_rect_matches_hud_layout_font_size_and_safe_rect_at_every_defined
 		var window_size: Vector2i = RESOLUTIONS_WITH_MIN_WINDOW[label]
 		var fpx: float = float(HudLayout.font_size(window_size))
 		var safe: Rect2 = HudLayout.safe_rect(window_size)
-		var expected_size: Vector2 = Vector2(fpx * 10.0, fpx * 9.0)
+		# story-046:面板高度 9 → 12 fpx(選單新增「目標」列);design/ux/battle-menu.md 的表待同步。
+		var expected_size: Vector2 = Vector2(fpx * 10.0, fpx * 12.0)
 		var expected_pos: Vector2 = safe.position + (safe.size - expected_size) / 2.0
 		var rect: Rect2 = BattleMenu.panel_rect(window_size)
 		assert_vector(rect.position).append_failure_message(

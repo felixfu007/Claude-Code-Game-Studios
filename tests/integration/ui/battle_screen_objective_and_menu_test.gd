@@ -144,3 +144,83 @@ func test_sensitivity_missing_rule_line_is_caught() -> void:
 	var instance: BattleScreen = _load(_MutantNoRuleLine)
 	instance._on_battle_ended(BattleState.Outcome.DEFEAT)
 	assert_int(_detail(instance).split("\n").size()).is_not_equal(2)
+
+
+# ---- AC2 選單「目標」「圖例」入口 --------------------------------------------------
+
+const _MENU_SCENE_PATH: String = "res://src/ui/menu/BattleMenu.tscn"
+const _ROWS: String = "Panel/ContentMargin/Rows/"
+
+
+## 突變體②a:「圖例」列文字被清掉(漏掉圖例項)。
+class _MutantMenuNoLegend extends BattleMenu:
+	func _ready() -> void:
+		super._ready()
+		_legend_row.text = ""
+
+
+## 突變體②b:「目標」列文字被清掉(漏掉目標項)。
+class _MutantMenuNoObjective extends BattleMenu:
+	func _ready() -> void:
+		super._ready()
+		_objective_row.text = ""
+
+
+func _menu_of(script: Script) -> BattleMenu:
+	var menu: BattleMenu = load(_MENU_SCENE_PATH).instantiate()
+	if script != null:
+		menu.set_script(script)
+	auto_free(menu)
+	add_child(menu)
+	return menu
+
+
+## 選單項目清單是否正確:目標、圖例兩列存在、文字取自在地化、順序固定。
+func _menu_items_ok(menu: BattleMenu) -> bool:
+	var names: Array[String] = []
+	for child: Node in menu.get_node("Panel/ContentMargin/Rows").get_children():
+		if child is Button:
+			names.append(child.name)
+	var order_ok: bool = names == ["ReturnToBattleRow", "ObjectiveRow", "LegendRow", "EndPhaseRow", "QuitRow"]
+	var obj: Button = menu.get_node(_ROWS + "ObjectiveRow")
+	var leg: Button = menu.get_node(_ROWS + "LegendRow")
+	return order_ok \
+		and obj.text == Loc.localize(&"battle.menu.objective_row") and not obj.text.is_empty() \
+		and leg.text == Loc.localize(&"battle.menu.legend_row") and not leg.text.is_empty()
+
+
+func test_menu_lists_objective_and_legend_rows_in_fixed_order() -> void:
+	var menu: BattleMenu = _menu_of(null)
+	assert_bool(_menu_items_ok(menu)).is_true()
+
+
+func test_legend_row_hidden_until_story_047_and_not_in_focus_chain() -> void:
+	var menu: BattleMenu = _menu_of(null)
+	var legend: Button = menu.get_node(_ROWS + "LegendRow")
+	var objective: Button = menu.get_node(_ROWS + "ObjectiveRow")
+	var end_row: Button = menu.get_node(_ROWS + "EndPhaseRow")
+	assert_bool(BattleMenu.LEGEND_AVAILABLE).is_false()
+	assert_bool(legend.visible).is_false()
+	assert_bool(objective.get_node(objective.focus_neighbor_bottom) == end_row).is_true()
+
+
+func test_objective_row_reachable_by_down_navigation_and_press_shows_objective() -> void:
+	var instance: BattleScreen = _load(null)
+	instance.hide_objective()
+	instance._battle_menu.open()
+	var ret: Button = instance._battle_menu.get_node(_ROWS + "ReturnToBattleRow")
+	var objective: Button = instance._battle_menu.get_node(_ROWS + "ObjectiveRow")
+	assert_bool(ret.has_focus()).is_true()
+	assert_bool(ret.get_node(ret.focus_neighbor_bottom) == objective).is_true()
+	objective.pressed.emit()
+	assert_bool(instance._battle_menu.is_open()).is_false()
+	assert_bool(instance.is_objective_visible()).is_true()
+	get_tree().paused = false
+
+
+func test_sensitivity_menu_missing_legend_is_caught() -> void:
+	assert_bool(_menu_items_ok(_menu_of(_MutantMenuNoLegend))).is_false()
+
+
+func test_sensitivity_menu_missing_objective_is_caught() -> void:
+	assert_bool(_menu_items_ok(_menu_of(_MutantMenuNoObjective))).is_false()

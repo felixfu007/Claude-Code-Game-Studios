@@ -2278,6 +2278,7 @@ func _ready() -> void:
 	# story's task report for why that was left as an explicit open item
 	# rather than self-expanded into scope.
 	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
+	_battle_menu.objective_requested.connect(show_objective)
 	# story-045:選單開啟時整棵樹暫停、_process 不跑,故以可見性變化即時換提示列。
 	_battle_menu.visibility_changed.connect(_refresh_controls_hint.bind(true))
 	# audio-foundation story-003:取得場景級音效宿主並接 M2~M9;取不到(測試直接載入)靜默不接。

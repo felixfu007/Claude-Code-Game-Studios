@@ -440,6 +440,8 @@ func test_navigating_down_from_return_row_skips_disabled_end_phase_row() -> void
 	# already establishes as headless-provable for this engine version.
 	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
+	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
 
 	# Assert
 	assert_bool(_quit_row(instance).has_focus()).append_failure_message(
@@ -488,6 +490,8 @@ func test_sensitivity_proof_navigation_skip_detection_catches_missing_neighbor_r
 	).is_true()
 
 	# Act
+	mutant.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
 	mutant.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
 
@@ -605,6 +609,8 @@ func test_gamepad_only_path_completes_open_menu_to_end_turn() -> void:
 
 	# Act (ii) — "結束回合": real simulated gamepad-equivalent ui_down
 	# navigation (headless-provable, see file header) to reach EndPhaseRow.
+	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
 	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
 
