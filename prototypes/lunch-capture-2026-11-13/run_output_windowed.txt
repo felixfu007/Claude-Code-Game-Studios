@@ -1,0 +1,521 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+=== RESOLUTION requested=(1920, 1080) actual root.size=(1920, 1080) ===
+S044 select 丙: last_click=selected
+HOST [unit_selected_attackable_and_los_blocked] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [unit_selected_attackable_and_los_blocked] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 00_1920x1080_s044_unit_selected_attackable_and_los_blocked.png -> 1920x1080 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [cursor_on_los_blocked_enemy] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [cursor_on_los_blocked_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 01_1920x1080_s044_cursor_on_los_blocked_enemy.png -> 1920x1080 save_err=0
+CURSOR (4, 0) via set_target result=0 reached=true
+HOST [cursor_on_attackable_enemy] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [cursor_on_attackable_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(4, 0) cursor_active=true
+SHOT 02_1920x1080_s044_cursor_on_attackable_enemy.png -> 1920x1080 save_err=0
+S044 after hand+confirm: selecting_target=true
+HOST [card_selecting_target] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [card_selecting_target] phase=0 outcome=0 sel_unit=3 hint_state=3 hint_bg_visible=true hint_text='請選擇目標　確定目標 左鍵　取消 右鍵' hand_open=false card_selecting_target=true card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 03_1920x1080_s044_card_selecting_target.png -> 1920x1080 save_err=0
+HOST [hint_1_no_selection] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_1_no_selection] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 04_1920x1080_s045_hint_1_no_selection.png -> 1920x1080 save_err=0
+HOST [hint_2_unit_selected] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_2_unit_selected] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 05_1920x1080_s045_hint_2_unit_selected.png -> 1920x1080 save_err=0
+HOST [hint_3_hand_open] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_3_hand_open] phase=0 outcome=0 sel_unit=3 hint_state=2 hint_bg_visible=true hint_text='選用 左鍵　取消 右鍵' hand_open=true card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 06_1920x1080_s045_hint_3_hand_open.png -> 1920x1080 save_err=0
+HOST [hint_4_enemy_phase] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_4_enemy_phase] phase=1 outcome=0 sel_unit=-1 hint_state=7 hint_bg_visible=true hint_text='敵方行動中' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 07_1920x1080_s045_hint_4_enemy_phase.png -> 1920x1080 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2107)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3653)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2519)
+HOST [hint_5_finished_victory] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_victory] phase=2 outcome=1 sel_unit=1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 08_1920x1080_s045_hint_5_finished_victory.png -> 1920x1080 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2118)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4592)
+       [8] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [9] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [10] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4629)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4594)
+       [4] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [5] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [6] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4603)
+       [3] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [4] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [5] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4653)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+HOST [hint_5_finished_defeat] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_defeat] phase=2 outcome=2 sel_unit=-1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 09_1920x1080_s045_hint_5_finished_defeat.png -> 1920x1080 save_err=0
+S041 injected: 乙 6/26  E3 3/18
+HOST [lowhp_overview_no_cursor] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [lowhp_overview_no_cursor] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 10_1920x1080_s041_lowhp_overview_no_cursor.png -> 1920x1080 save_err=0
+CURSOR (0, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_player_unit2] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_player_unit2] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 3) cursor_active=true
+SHOT 11_1920x1080_s041_lowhp_cursor_on_player_unit2.png -> 1920x1080 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_enemy_E3] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_enemy_E3] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 12_1920x1080_s041_lowhp_cursor_on_enemy_E3.png -> 1920x1080 save_err=0
+=== RESOLUTION requested=(960, 540) actual root.size=(960, 540) ===
+S044 select 丙: last_click=selected
+HOST [unit_selected_attackable_and_los_blocked] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [unit_selected_attackable_and_los_blocked] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 13_960x540_s044_unit_selected_attackable_and_los_blocked.png -> 960x540 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [cursor_on_los_blocked_enemy] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [cursor_on_los_blocked_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 14_960x540_s044_cursor_on_los_blocked_enemy.png -> 960x540 save_err=0
+CURSOR (4, 0) via set_target result=0 reached=true
+HOST [cursor_on_attackable_enemy] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [cursor_on_attackable_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(4, 0) cursor_active=true
+SHOT 15_960x540_s044_cursor_on_attackable_enemy.png -> 960x540 save_err=0
+S044 after hand+confirm: selecting_target=true
+HOST [card_selecting_target] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [card_selecting_target] phase=0 outcome=0 sel_unit=3 hint_state=3 hint_bg_visible=true hint_text='請選擇目標　確定目標 左鍵　取消 右鍵' hand_open=false card_selecting_target=true card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 16_960x540_s044_card_selecting_target.png -> 960x540 save_err=0
+HOST [hint_1_no_selection] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_1_no_selection] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 17_960x540_s045_hint_1_no_selection.png -> 960x540 save_err=0
+HOST [hint_2_unit_selected] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_2_unit_selected] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 18_960x540_s045_hint_2_unit_selected.png -> 960x540 save_err=0
+HOST [hint_3_hand_open] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_3_hand_open] phase=0 outcome=0 sel_unit=3 hint_state=2 hint_bg_visible=true hint_text='選用 左鍵　取消 右鍵' hand_open=true card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 19_960x540_s045_hint_3_hand_open.png -> 960x540 save_err=0
+HOST [hint_4_enemy_phase] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_4_enemy_phase] phase=1 outcome=0 sel_unit=-1 hint_state=7 hint_bg_visible=true hint_text='敵方行動中' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 20_960x540_s045_hint_4_enemy_phase.png -> 960x540 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2107)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3653)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2519)
+HOST [hint_5_finished_victory] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_victory] phase=2 outcome=1 sel_unit=1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 21_960x540_s045_hint_5_finished_victory.png -> 960x540 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2118)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4592)
+       [8] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [9] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [10] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4629)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4594)
+       [4] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [5] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [6] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4603)
+       [3] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [4] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [5] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4653)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+HOST [hint_5_finished_defeat] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_defeat] phase=2 outcome=2 sel_unit=-1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 22_960x540_s045_hint_5_finished_defeat.png -> 960x540 save_err=0
+S041 injected: 乙 6/26  E3 3/18
+HOST [lowhp_overview_no_cursor] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_overview_no_cursor] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 23_960x540_s041_lowhp_overview_no_cursor.png -> 960x540 save_err=0
+CURSOR (0, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_player_unit2] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_player_unit2] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 3) cursor_active=true
+SHOT 24_960x540_s041_lowhp_cursor_on_player_unit2.png -> 960x540 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_enemy_E3] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_enemy_E3] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 25_960x540_s041_lowhp_cursor_on_enemy_E3.png -> 960x540 save_err=0
+=== RESOLUTION requested=(1366, 768) actual root.size=(1366, 768) ===
+S044 select 丙: last_click=selected
+HOST [unit_selected_attackable_and_los_blocked] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [unit_selected_attackable_and_los_blocked] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 26_1366x768_s044_unit_selected_attackable_and_los_blocked.png -> 1366x768 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [cursor_on_los_blocked_enemy] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [cursor_on_los_blocked_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 27_1366x768_s044_cursor_on_los_blocked_enemy.png -> 1366x768 save_err=0
+CURSOR (4, 0) via set_target result=0 reached=true
+HOST [cursor_on_attackable_enemy] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [cursor_on_attackable_enemy] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(4, 0) cursor_active=true
+SHOT 28_1366x768_s044_cursor_on_attackable_enemy.png -> 1366x768 save_err=0
+S044 after hand+confirm: selecting_target=true
+HOST [card_selecting_target] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [card_selecting_target] phase=0 outcome=0 sel_unit=3 hint_state=3 hint_bg_visible=true hint_text='請選擇目標　確定目標 左鍵　取消 右鍵' hand_open=false card_selecting_target=true card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 29_1366x768_s044_card_selecting_target.png -> 1366x768 save_err=0
+HOST [hint_1_no_selection] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_1_no_selection] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 30_1366x768_s045_hint_1_no_selection.png -> 1366x768 save_err=0
+HOST [hint_2_unit_selected] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_2_unit_selected] phase=0 outcome=0 sel_unit=3 hint_state=1 hint_bg_visible=true hint_text='移動 滑鼠　確認 左鍵　取消 右鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 31_1366x768_s045_hint_2_unit_selected.png -> 1366x768 save_err=0
+HOST [hint_3_hand_open] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_3_hand_open] phase=0 outcome=0 sel_unit=3 hint_state=2 hint_bg_visible=true hint_text='選用 左鍵　取消 右鍵' hand_open=true card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 32_1366x768_s045_hint_3_hand_open.png -> 1366x768 save_err=0
+HOST [hint_4_enemy_phase] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_4_enemy_phase] phase=1 outcome=0 sel_unit=-1 hint_state=7 hint_bg_visible=true hint_text='敵方行動中' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 33_1366x768_s045_hint_4_enemy_phase.png -> 1366x768 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTDUMMY' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2107)
+       [3] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1216)
+       [4] click_tile (res://src/gameplay/battle/battle_controller.gd:803)
+       [5] _click_tile_with_egm (res://src/ui/battle/battle_screen.gd:1179)
+       [6] _handle_mouse_button (res://src/ui/battle/battle_screen.gd:3653)
+       [7] _input (res://src/ui/battle/battle_screen.gd:2519)
+HOST [hint_5_finished_victory] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_victory] phase=2 outcome=1 sel_unit=1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 34_1366x768_s045_hint_5_finished_victory.png -> 1366x768 save_err=0
+ERROR: Board.from_ascii: expected 6 rows, got 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:133)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 0 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 1 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: Board.from_ascii: row 2 has length 5, expected 13
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] from_ascii (res://src/gameplay/board/board.gd:137)
+       [1] create (res://src/gameplay/battle/battle_state.gd:236)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:1944)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _ready (res://src/ui/battle/battle_screen.gd:2288)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4691)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2118)
+       [3] _process_enemy_unit (res://src/gameplay/battle/battle_controller.gd:1603)
+       [4] <anonymous lambda> (res://src/gameplay/battle/battle_controller.gd:1109)
+       [5] commit_authoritative_change (res://src/gameplay/battle/battle_state.gd:174)
+       [6] step_enemy_phase (res://src/gameplay/battle/battle_controller.gd:1108)
+       [7] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4592)
+       [8] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [9] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [10] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _play_enemy_moves_cell_by_cell (res://src/ui/battle/battle_screen.gd:4629)
+       [3] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4594)
+       [4] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [5] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [6] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _end_faction_phase_pressed (res://src/ui/battle/battle_screen.gd:4603)
+       [3] _s045 (res://prototypes/lunch-capture-2026-11-13/driver.gd:200)
+       [4] _make (res://prototypes/lunch-capture-2026-11-13/driver.gd:50)
+       [5] _frames (res://prototypes/lunch-capture-2026-11-13/driver.gd:38)
+ERROR: piece_label_text: enemy code_name 'TESTKILLER' is not E<number>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] piece_label_text (res://src/ui/battle/battle_screen.gd:3210)
+       [1] _refresh_view (res://src/ui/battle/battle_screen.gd:4868)
+       [2] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:4653)
+       [3] _process (res://src/ui/battle/battle_screen.gd:2351)
+HOST [hint_5_finished_defeat] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [hint_5_finished_defeat] phase=2 outcome=2 sel_unit=-1 hint_state=8 hint_bg_visible=true hint_text='' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 0) cursor_active=false
+SHOT 35_1366x768_s045_hint_5_finished_defeat.png -> 1366x768 save_err=0
+S041 injected: 乙 6/26  E3 3/18
+HOST [lowhp_overview_no_cursor] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_overview_no_cursor] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 方向鍵　選取 Enter　手牌 C　選單 M' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 2) cursor_active=true
+SHOT 36_1366x768_s041_lowhp_overview_no_cursor.png -> 1366x768 save_err=0
+CURSOR (0, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_player_unit2] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_player_unit2] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(0, 3) cursor_active=true
+SHOT 37_1366x768_s041_lowhp_cursor_on_player_unit2.png -> 1366x768 save_err=0
+CURSOR (8, 3) via set_target result=0 reached=true
+HOST [lowhp_cursor_on_enemy_E3] root.size=(1366, 768) WVC position=(203.0, 114.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+STATE [lowhp_cursor_on_enemy_E3] phase=0 outcome=0 sel_unit=-1 hint_state=0 hint_bg_visible=true hint_text='移動 滑鼠　選取 左鍵' hand_open=false card_selecting_target=false card_confirming=false cursor_cell=(8, 3) cursor_active=true
+SHOT 38_1366x768_s041_lowhp_cursor_on_enemy_E3.png -> 1366x768 save_err=0
+TOTAL shots=39 states_done=39

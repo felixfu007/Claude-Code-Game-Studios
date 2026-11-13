@@ -151,6 +151,12 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 031 | story-031-affinity-guard-and-lone-guard.md | — | Logic + Integration | 好感度減傷(guard)+ 戊獨行減傷。✅ Done-pending-visual(2026-10-30) | — |
 | 032 | story-032-guard-display-and-hide-leaks.md | — | UI | 減傷顯示(指到我方角色 + 移動預覽)+ 隱藏好感度設定補漏。✅ Done-pending-visual(2026-10-30) | 031 |
 | 033 | story-033-lone-guard-conditional-and-negative-ceil.md | — | Logic | 戊獨行減傷條件化(本回合未出手才有)+ 負向 Φ 減傷改進位。✅ Done(依提交 `e7751fc`,檔頭待改;檔頭現寫 Ready(2026-10-30)) | 031 |
+| 050 | story-050-terrain-rename-fallen-log-to-dense-forest.md | — | Config/Data + UI | 地形顯示名「倒木」→「密林」(規則與符號不動)。✅ Done(`49ff7ca`,2026-11-13) | — |
+| 051 | story-051-enemy-kind-data-and-per-kind-names.md | — | Logic + UI | 敵方型別資料欄 + 分種類名稱(裂殼/垂鉤/聽環)+ 確認面板我方改姓名 + 姓名鍵收斂。📋 Ready(2026-11-13) | 048 |
+| 052 | story-052-blocked-stamp-only-on-enemy-cells.md | — | Visual/UI + Logic | 被擋章只畫敵兵格(空格不畫;GDD 已於 2026-11-13 同步)。📋 Ready(2026-11-13) | 044 |
+| 053 | story-053-end-action-button-and-hide-finished-hint-bar.md | — | UI | 滑鼠「結束行動」按鈕 + 結束畫面隱藏空底條。📋 Ready(文案待 ux 覆核) | 045、046 |
+| 054 | story-054-action-state-icons-sword-shoe.md | — | Visual/UI | 鞋/劍行動圖示(做過才出現、我方限定)+ 做完變暗。⛔ Blocked(待 art 補遺併入) | 051 |
+| 055 | story-055-damage-preview-text-clipped.md | — | UI | 傷害預覽「23→7」截字。⛔ Blocked(待開窗量測 + 修法選擇) | 041 |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)
 

@@ -1,7 +1,7 @@
 # Story 043:手牌列(收合/不可用)不得蓋住任何敵兵;展開面板不得蓋住關鍵棋子
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`(UI 部分與 `production/epics/battle-hud/` story-004 同屬介面蓋棋盤議題)
-> **Status**: Ready(2026-11-12)—— 🔴 **須先交「版面提案」並經 lead-programmer 同意才能寫碼**(見「派工前須先決定」)
+> **Status**: Done(AC1)—— 程式已於 `74fbce7`(2026-11-12)提交;AC2 展開態(併入大地圖捲動)與最小間隙(延到 48 格改造)為管理者已裁決之延後項,見檔尾加註。原狀態列「Ready(2026-11-12)—— 須先交版面提案…」於 2026-11-13 經管理者同意更新(選項「可以(推薦)」)。
 > **Type**: UI
 > **Estimate**: M
 > **優先序**: 畫面可讀性批次 T3
