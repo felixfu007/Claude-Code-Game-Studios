@@ -925,6 +925,11 @@ func return_cards_to_pool() -> void:
 		_card_deck.return_all_to_pool()
 
 
+## 勝敗條件全遊戲一套,無關卡參數。玩家看到的文字出處是 strings.csv 的
+## battle.objective.line 與 battle.result.rule_victory / rule_defeat;
+## 改這裡的規則時必須同步改那三個鍵,否則畫面上的規則文字會變成假話。
+## 若要讓任一關的勝敗條件不同,須先把這些鍵改成每關一組。
+##
 ## Returns the current battle [enum Outcome]. Defeat is checked before
 ## victory: if any PLAYER unit has died, the result is DEFEAT even if every
 ## ENEMY unit also happens to be dead at the same time.

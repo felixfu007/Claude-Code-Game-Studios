@@ -87,20 +87,20 @@ const TABLE_FPX: Dictionary = {
 }
 
 # 表格「M1(100%)」欄(寬,高)。
-# story-046:M1(100%) 高度由 9 fpx 改 12 fpx(選單加「目標」列);spec 文件 design/ux/battle-menu.md 尚未同步,
-# 150% 欄與本檔其餘 spec 算術仍按 spec 原值 9 fpx。
+# story-046:M1 高度由 9 fpx 改 12 fpx(選單加「目標」列);design/ux/battle-menu.md 已同步(2026-11-13),
+# 100% 與 150% 欄皆按 12 fpx。
 const TABLE_M1_100: Dictionary = {
 	"960x540": Vector2(220, 264), "1080p": Vector2(440, 528),
 	"2K": Vector2(550, 660), "4K": Vector2(880, 1056),
 }
 
 # 表格「M1(150%)」欄。⚠️ 2560×1440 這格,表格寫 825x742,但
-# fpx(55) * 1.5 = 82.5,82.5*9 = 742.5——表格把 742.5 無條件捨去成 742。
+# (舊 9 fpx 時代:82.5*9 = 742.5 被表格捨去成 742;改 12 fpx 後 82.5*12 = 990 為整數,不再有捨入差。)
 # 下方測試對這一格改用 is_equal_approx(容忍 0.5),並在測試裡逐字記下這個
 # 發現,而不是悄悄複製表格的捨去值當成「正確答案」。
 const TABLE_M1_150: Dictionary = {
-	"960x540": Vector2(330, 297), "1080p": Vector2(660, 594),
-	"2K": Vector2(825, 742), "4K": Vector2(1320, 1188),
+	"960x540": Vector2(330, 396), "1080p": Vector2(660, 792),
+	"2K": Vector2(825, 990), "4K": Vector2(1320, 1584),
 }
 
 # 表格「M4(150%)」欄(僅寬高,M4 本體不在本 story 範圍——見 leave_confirm_size()
@@ -228,9 +228,9 @@ func test_battle_menu_md_table_values_match_hud_layout_derived_arithmetic() -> v
 		).is_equal_approx(TABLE_M1_100[label], Vector2(0.01, 0.01))
 
 		# M1(150%) — 75%/150% 字級功能本身未實作（BM-6),這裡只驗算術：把
-		# fpx 乘以 1.5 之後,面板尺寸公式（10fpx x 9fpx）是否仍等於表格數字。
+		# fpx 乘以 1.5 之後,面板尺寸公式（10fpx x 12fpx）是否仍等於表格數字。
 		var fpx_150: float = float(fpx) * 1.5
-		var m1_150: Vector2 = Vector2(fpx_150 * 10.0, fpx_150 * 9.0)
+		var m1_150: Vector2 = Vector2(fpx_150 * 10.0, fpx_150 * 12.0)
 		assert_vector(m1_150).append_failure_message(
 			("%s: M1(150%%) 算術 = %s, battle-menu.md table 寫 %s"
 				+ " ——2560x1440 這格允許 0.5px 誤差,已知表格本身把 742.5 無條件捨去成 742") % [
