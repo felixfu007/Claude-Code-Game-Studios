@@ -1340,11 +1340,9 @@ func _make_hud_action_button(node_name: String, text_key: StringName, on_pressed
 
 func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
 	# Story 028 G:小視窗單行說明列用精簡文字,其餘視窗還原完整兩行文字。
-	var full_hint: String = Loc.localize(TEXT_CONTROLS_HINT)
-	_controls_hint_label.text = (
-		HudLayout.compact_hint_text(full_hint, window_size) if HudLayout.is_compact_hint_bar(window_size)
-		else full_hint
-	)
+	# story-045:提示列內容改由 ControlsHintContent 依狀態/裝置產生(舊 TEXT_CONTROLS_HINT 不再用於顯示)。
+	_hint_window_size = window_size
+	_refresh_controls_hint(true)
 	if _hand_button == null:
 		return
 	var fpx: int = HudLayout.font_size(window_size)
@@ -1742,7 +1740,7 @@ func _ready() -> void:
 		_build_guess_selector()
 		_build_consistency_counter()
 
-	_controls_hint_label.text = Loc.localize(TEXT_CONTROLS_HINT)
+	_refresh_controls_hint(true)
 	_build_relation_minimap()
 	_build_hud_action_buttons()
 
@@ -2268,6 +2266,8 @@ func _ready() -> void:
 	# story's task report for why that was left as an explicit open item
 	# rather than self-expanded into scope.
 	_battle_menu.open_rejected.connect(_on_battle_menu_open_rejected)
+	# story-045:選單開啟時整棵樹暫停、_process 不跑,故以可見性變化即時換提示列。
+	_battle_menu.visibility_changed.connect(_refresh_controls_hint.bind(true))
 	# audio-foundation story-003:取得場景級音效宿主並接 M2~M9;取不到(測試直接載入)靜默不接。
 	var sfx_host: SfxPlayerHost = get_tree().get_first_node_in_group(SfxPlayerHost.GROUP_NAME) as SfxPlayerHost
 	if sfx_host != null:
@@ -2350,6 +2350,9 @@ func _process(_delta: float) -> void:
 	else:
 		_update_cursor_visual()
 
+	# story-045:提示列即時更新(此處是本檔唯一允許讀裝置權威的地方之一,見下方 Story U-013 註解)。
+	_refresh_controls_hint()
+
 	# battle-hud story-004:變淡依目前高亮格(鍵盤/手把/滑鼠共用的那一格);新面板出現則自動恢復隱藏的介面。
 	_restore_hud_if_new_panel_opened()
 	_update_hud_overlap_fade()
@@ -2381,6 +2384,80 @@ func _process(_delta: float) -> void:
 	_auto_end_faction_phase_if_no_unit_can_act()
 
 
+# ---- story-045:提示列依狀態與裝置顯示 -----------------------------------------------
+# 裝置分辨 = 甲案(管理者 2026-11-12 裁決):提示列自己記「最後按的是什麼」。
+# 這個旗標只供顯示,不寫入任何遊戲狀態,不動 CursorTypes.Authority / ADR-0005。
+var _hint_device_seen: int = -1
+var _hint_device: ControlsHintContent.HintDevice = ControlsHintContent.HintDevice.KEYBOARD
+var _hint_window_size: Vector2i = Vector2i.ZERO
+var _hint_applied_key: String = ""
+
+
+func _note_hint_device(event: InputEvent) -> void:
+	if event is InputEventKey:
+		if (event as InputEventKey).pressed and not (event as InputEventKey).echo:
+			_hint_device_seen = ControlsHintContent.HintDevice.KEYBOARD
+	elif event is InputEventJoypadButton:
+		if (event as InputEventJoypadButton).pressed:
+			_hint_device_seen = ControlsHintContent.HintDevice.GAMEPAD
+	elif event is InputEventJoypadMotion:
+		if absf((event as InputEventJoypadMotion).axis_value) > 0.5:
+			_hint_device_seen = ControlsHintContent.HintDevice.GAMEPAD
+	elif event is InputEventMouseButton:
+		_hint_device_seen = ControlsHintContent.HintDevice.MOUSE
+	elif event is InputEventMouseMotion:
+		if (event as InputEventMouseMotion).relative != Vector2.ZERO:
+			_hint_device_seen = ControlsHintContent.HintDevice.MOUSE
+
+
+## 狀態映射的唯一一處(優先序依定稿第 6 節)。UI 其餘地方不得自行判斷提示列狀態。
+func _current_hint_state() -> ControlsHintContent.HintState:
+	var phase: BattleController.Phase = _controller.phase()
+	if phase == BattleController.Phase.FINISHED:
+		return ControlsHintContent.HintState.FINISHED
+	if phase == BattleController.Phase.ENEMY_ACTING:
+		return ControlsHintContent.HintState.ENEMY_PHASE
+	if _controller.has_pending_discard():
+		return ControlsHintContent.HintState.FORCED_DISCARD
+	if _battle_menu != null and _battle_menu.is_open():
+		return ControlsHintContent.HintState.MENU_OPEN
+	if _card_confirming:
+		return ControlsHintContent.HintState.CARD_CONFIRM
+	if _card_selecting_target:
+		return ControlsHintContent.HintState.CARD_TARGET
+	if _card_selecting_from_hand:
+		return ControlsHintContent.HintState.HAND_OPEN
+	if _controller.selected_unit() != -1:
+		return ControlsHintContent.HintState.UNIT_SELECTED
+	return ControlsHintContent.HintState.NO_SELECTION
+
+
+## [param force] 為 true 時不比對快取(視窗尺寸變動、選單可見性變動時用)。
+## 只有從 [method _process] 呼叫時才會讀裝置權威(後備:從未按過任何鍵時)。
+func _refresh_controls_hint(force: bool = false) -> void:
+	if _controls_hint_label == null or _controller == null:
+		return
+	if not force:
+		if _hint_device_seen >= 0:
+			_hint_device = _hint_device_seen as ControlsHintContent.HintDevice
+		elif CursorStateHost.get_device_authority() == CursorTypes.Authority.MOUSE:
+			_hint_device = ControlsHintContent.HintDevice.MOUSE
+		else:
+			_hint_device = ControlsHintContent.HintDevice.KEYBOARD
+	elif _hint_device_seen >= 0:
+		_hint_device = _hint_device_seen as ControlsHintContent.HintDevice
+	var state: ControlsHintContent.HintState = _current_hint_state()
+	var size: Vector2i = _hint_window_size if _hint_window_size != Vector2i.ZERO else get_window().size
+	var key: String = "%d|%d|%d|%d" % [int(state), int(_hint_device), size.x, size.y]
+	if key == _hint_applied_key and not force:
+		return
+	_hint_applied_key = key
+	_controls_hint_label.text = ControlsHintContent.fit_text(
+		ControlsHintContent.segments_for(state, _hint_device),
+		HudLayout.compact_hint_available_width(size),
+		HudLayoutScaler.HUD_FONT, HudLayout.font_size(size))
+
+
 ## 2026-10-28 管理者試玩回饋第 2 點:「當我方沒有可移動角色的時候,應該要自動結束回合,
 ## 輪到對手移動」。我方階段中,只要沒有任何我方單位還做得了有意義的事
 ## ([method BattleController.has_unit_with_available_action] —— 第二輪回饋「腳色都移動後,
@@ -2401,6 +2478,7 @@ func _auto_end_faction_phase_if_no_unit_can_act() -> void:
 func _input(event: InputEvent) -> void:
 	if _load_failed:
 		return
+	_note_hint_device(event)
 	if _controller.phase() == BattleController.Phase.FINISHED:
 		return
 

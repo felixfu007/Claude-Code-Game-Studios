@@ -177,3 +177,44 @@ battle.tile_info.attack_reason_action_spent,已用完
 battle.tile_info.attack_reason_out_of_range,目前太遠
 battle.tile_info.attack_reason_too_close,目前太近
 battle.tile_info.attack_reason_los_blocked,視線被擋
+battle.hud.hint.status.pick_target,請選擇目標
+battle.hud.hint.status.enemy_phase,敵方行動中
+battle.hud.hint.move.mouse,移動 滑鼠
+battle.hud.hint.select.mouse,選取 左鍵
+battle.hud.hint.confirm.mouse,確認 左鍵
+battle.hud.hint.cancel.mouse,取消 右鍵
+battle.hud.hint.card_use.mouse,選用 左鍵
+battle.hud.hint.target_confirm.mouse,確定目標 左鍵
+battle.hud.hint.discard.mouse,棄掉 左鍵
+battle.hud.hint.menu_pick.mouse,選擇 滑鼠
+battle.hud.hint.menu_close.mouse,關閉 右鍵
+battle.hud.hint.move.keyboard,移動 方向鍵
+battle.hud.hint.select.keyboard,選取 Enter
+battle.hud.hint.confirm.keyboard,確認 Enter
+battle.hud.hint.cancel.keyboard,取消 Esc
+battle.hud.hint.end_unit.keyboard,結束單位 Q
+battle.hud.hint.jump_target.keyboard,跳目標 Tab
+battle.hud.hint.hand.keyboard,手牌 C
+battle.hud.hint.menu.keyboard,選單 M
+battle.hud.hint.card_pick.keyboard,換牌 左右鍵
+battle.hud.hint.card_use.keyboard,選用 Enter
+battle.hud.hint.hand_close.keyboard,收手牌 C
+battle.hud.hint.target_confirm.keyboard,確定目標 Enter
+battle.hud.hint.discard.keyboard,棄掉 Enter
+battle.hud.hint.menu_pick.keyboard,選擇 上下鍵
+battle.hud.hint.menu_close.keyboard,關閉 Esc
+battle.hud.hint.move.gamepad,移動 十字鍵
+battle.hud.hint.select.gamepad,選取 A
+battle.hud.hint.confirm.gamepad,確認 A
+battle.hud.hint.cancel.gamepad,取消 B
+battle.hud.hint.end_unit.gamepad,結束單位 Back
+battle.hud.hint.jump_target.gamepad,跳目標 RB
+battle.hud.hint.hand.gamepad,手牌 X
+battle.hud.hint.menu.gamepad,選單 Start
+battle.hud.hint.card_pick.gamepad,換牌 十字鍵
+battle.hud.hint.card_use.gamepad,選用 A
+battle.hud.hint.hand_close.gamepad,收手牌 X
+battle.hud.hint.target_confirm.gamepad,確定目標 A
+battle.hud.hint.discard.gamepad,棄掉 A
+battle.hud.hint.menu_pick.gamepad,選擇 十字鍵
+battle.hud.hint.menu_close.gamepad,關閉 B

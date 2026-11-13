@@ -182,8 +182,10 @@ func test_large_window_also_uses_single_line_hint() -> void:
 	assert_bool(HudLayout.is_compact_hint_bar(_BIG_WINDOW)).append_failure_message("PRECONDITION: 1920x1080 現為單行模式").is_true()
 	var instance: BattleScreen = _fresh_instance()
 	instance._apply_hud_action_buttons_layout(_BIG_WINDOW)
-	assert_str(instance._controls_hint_label.text).is_equal(
-		HudLayout.compact_hint_text(Loc.localize(BattleScreen.TEXT_CONTROLS_HINT), _BIG_WINDOW))
+	# story-045: content now comes from ControlsHintContent per state/device; only the single-line + width contract is checked here.
+	assert_str(instance._controls_hint_label.text).is_not_empty()
+	assert_float(_hint_text_width(instance._controls_hint_label.text, _BIG_WINDOW)).is_less_equal(
+		HudLayout.compact_hint_available_width(_BIG_WINDOW))
 	assert_bool(instance._controls_hint_label.text.contains("
 ")).is_false()
 
