@@ -1,0 +1,22 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE before: campaign mission=3 tutorial_active=false
+PROBE battle scene is BattleScreen? true
+PROBE after defeat: mission=3 tutorial_active=false
+PROBE current scene is TitleScreen? true
+PROBE row text=開始戰鬥
+WARNING: BattleScreen: res://assets/data/affinity/tutorial_no_links.txt parsed to zero affinity links (PARSED_EMPTY) — proceeding with no pairings
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1832)
+       [1] _perform_swap (res://src/ui/shell/scene_router.gd:105)
+WARNING: BattleScreen: res://assets/data/cards/tutorial_cards.txt parsed to zero cards — proceeding with an empty CardDeck
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://src/ui/battle/battle_screen.gd:1860)
+       [1] _perform_swap (res://src/ui/shell/scene_router.gd:105)
+PROBE after pressing it: BattleScreen? true tutorial_active=true tutorial_index=1 campaign_mission=3
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

@@ -185,6 +185,18 @@ const TEXT_RESULT_DEFEAT: StringName = &"battle.hud.result_defeat"
 const TEXT_RESULT_DEFEAT_REASON_FORMAT: StringName = &"battle.hud.result_defeat_reason_format"
 const TEXT_RESULT_DEFEAT_REASON_SEPARATOR: StringName = &"battle.hud.result_defeat_reason_separator"
 const TEXT_RESULT_CAMPAIGN_COMPLETE: StringName = &"battle.hud.result_campaign_complete"
+## story-046:開場目標與結果畫面「規則/下一步」行的在地化鍵。勝敗條件全遊戲一套
+## (唯一條件出處是 BattleState.outcome()),文字出處是 strings.csv。
+const TEXT_OBJECTIVE_LINE: StringName = &"battle.objective.line"
+const TEXT_OBJECTIVE_TUTORIAL_FORMAT: String = "battle.objective.tut%02d_learn"
+const TEXT_RULE_VICTORY: StringName = &"battle.result.rule_victory"
+const TEXT_RULE_DEFEAT: StringName = &"battle.result.rule_defeat"
+const TEXT_NEXT_MISSION: StringName = &"battle.result.next_mission"
+const TEXT_NEXT_TITLE: StringName = &"battle.result.next_title"
+const TEXT_NEXT_DEFEAT_CAMPAIGN: StringName = &"battle.result.next_defeat_campaign"
+const TEXT_NEXT_DEFEAT_TUTORIAL: StringName = &"battle.result.next_defeat_tutorial"
+## story-046:開場目標自動淡出秒數(可被確認鍵/滑鼠點擊提前關閉,不吞輸入)。
+const OBJECTIVE_AUTO_HIDE_SECONDS: float = 8.0
 
 ## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
 ## Mode A/B/C). [constant TEXT_AFFINITY_PREVIEW_FORMAT] is Mode A ("if I move
@@ -2284,6 +2296,9 @@ func _ready() -> void:
 	# file.
 	_apply_tile_info_panel_layout()
 	get_window().size_changed.connect(_apply_tile_info_panel_layout)
+	# story-046:開場目標(一次性、不吞輸入;確認鍵/點擊或逾時關閉)。
+	_build_objective_overlay()
+	show_objective()
 
 	_refresh_view()
 
@@ -2479,6 +2494,10 @@ func _input(event: InputEvent) -> void:
 	if _load_failed:
 		return
 	_note_hint_device(event)
+	# story-046 AC1:目標顯示中,確認鍵或滑鼠點擊即關閉;不消耗事件(不阻擋輸入)。
+	if _objective_panel != null and _objective_panel.visible:
+		if event.is_action_pressed(&"battle_confirm") or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed):
+			hide_objective()
 	if _controller.phase() == BattleController.Phase.FINISHED:
 		return
 
@@ -5454,6 +5473,7 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	_status_label.visible = false
 	_result_label.visible = true
 	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else _defeat_result_text()
+	hide_objective()
 
 	# 裁決①第三輪(production/epics/support-conversation/
 	# story-003-cross-mission-affinity-continuity.md「下一輪接線」)—— AC3(勝利
@@ -5526,6 +5546,8 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	# 倒數當場停止,結構上不可能在本實例已經不存在之後還觸發 —— 比只加
 	# is_inside_tree() 守衛更釜底抽薪(守衛仍然另外加了,見 return_to_title_screen()
 	# 開頭,當作最後一道防線)。
+	# story-046 AC3:結果文字之後加「規則」「下一步」兩行(此時 _tutorial_next 與 _proceed_to_next_mission 已定)。
+	_show_result_detail(outcome)
 	var return_timer: Timer = Timer.new()
 	return_timer.one_shot = true
 	return_timer.wait_time = RESULT_DISPLAY_SECONDS
@@ -5672,3 +5694,127 @@ func _resolve_tutorial_outcome(outcome: BattleState.Outcome) -> void:
 func _on_battle_menu_open_rejected(result: BattleMenu.OpenResult, message: String) -> void:
 	_diagnostic_last_menu_rejection_result = result
 	_diagnostic_last_menu_rejection_message = message
+
+
+# ---- story-046:開場目標、結果「規則/下一步」行 ----------------------------------
+
+var _objective_panel: ColorRect = null
+var _objective_label: Label = null
+var _result_detail_label: Label = null
+
+
+## 目標文字(唯一出處 strings.csv;教學場多一行「這關學什麼」)。測試與選單「目標」項共用。
+func objective_text() -> String:
+	var text: String = Loc.localize(TEXT_OBJECTIVE_LINE)
+	if TutorialProgress.is_active():
+		var key: StringName = StringName(TEXT_OBJECTIVE_TUTORIAL_FORMAT % TutorialProgress.current_index())
+		var learn: String = Loc.localize(key)
+		# 未定義的教學場次 Loc 會回傳鍵本身;此時不顯示那一行。
+		if learn != String(key):
+			text += "\n" + learn
+	return text
+
+
+## 顯示目標(開場自動呼叫一次;選單「目標」項重看時也呼叫)。
+func show_objective() -> void:
+	if _objective_panel == null:
+		return
+	_objective_label.text = objective_text()
+	_apply_objective_layout()
+	_objective_panel.visible = true
+	var timer: Timer = get_node_or_null("ObjectiveTimer") as Timer
+	if timer == null:
+		timer = Timer.new()
+		timer.name = "ObjectiveTimer"
+		timer.one_shot = true
+		timer.timeout.connect(hide_objective)
+		add_child(timer)
+	timer.start(OBJECTIVE_AUTO_HIDE_SECONDS)
+
+
+func hide_objective() -> void:
+	if _objective_panel != null:
+		_objective_panel.visible = false
+
+
+func is_objective_visible() -> bool:
+	return _objective_panel != null and _objective_panel.visible
+
+
+func _build_objective_overlay() -> void:
+	_objective_panel = ColorRect.new()
+	_objective_panel.name = "ObjectivePanel"
+	_objective_panel.color = Color(0.0, 0.0, 0.0, 0.7)
+	_objective_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_panel.visible = false
+	$UILayer.add_child(_objective_panel)
+	_objective_label = Label.new()
+	_objective_label.name = "ObjectiveLabel"
+	_objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_objective_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_objective_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	_objective_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_objective_panel.add_child(_objective_label)
+	_result_detail_label = Label.new()
+	_result_detail_label.name = "ResultDetailLabel"
+	_result_detail_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_result_detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_result_detail_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	_result_detail_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_result_detail_label.visible = false
+	$UILayer.add_child(_result_detail_label)
+	_apply_objective_layout()
+	get_window().size_changed.connect(_apply_objective_layout)
+
+
+func _apply_objective_layout() -> void:
+	if _objective_panel == null:
+		return
+	var window_size: Vector2i = get_window().size
+	var safe: Rect2 = HudLayout.safe_rect(window_size)
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var width: float = safe.size.x * 0.5
+	var height: float = fpx * 4.0
+	var left: float = safe.position.x + (safe.size.x - width) / 2.0
+	var top: float = safe.position.y + safe.size.y * 0.18
+	_objective_panel.position = Vector2(left, top)
+	_objective_panel.size = Vector2(width, height)
+	_objective_label.position = Vector2.ZERO
+	_objective_label.size = Vector2(width, height)
+	_objective_label.add_theme_font_size_override(&"font_size", int(fpx))
+	# 結果「規則/下一步」兩行:置於結果大字框正下方、安全區全寬。
+	var result_rect: Rect2 = HudLayout.result_label_offset_rect(window_size)
+	var center: Vector2 = Vector2(window_size) / 2.0
+	var detail_top: float = center.y + result_rect.size.y / 2.0
+	_result_detail_label.position = Vector2(safe.position.x, detail_top)
+	_result_detail_label.size = Vector2(safe.size.x, fpx * 3.2)
+	_result_detail_label.add_theme_font_size_override(&"font_size", int(fpx))
+
+
+## 「規則」+「下一步」兩行,依實際會發生的事(見 [method _on_result_display_finished])。
+func result_detail_text(outcome: BattleState.Outcome) -> String:
+	var victory: bool = outcome == BattleState.Outcome.VICTORY
+	var rule: StringName = TEXT_RULE_VICTORY if victory else TEXT_RULE_DEFEAT
+	var next: StringName = TEXT_NEXT_TITLE
+	match _tutorial_next:
+		TutorialNext.TUTORIAL_BATTLE:
+			next = TEXT_NEXT_MISSION if victory else TEXT_NEXT_DEFEAT_TUTORIAL
+		TutorialNext.CAMPAIGN:
+			next = TEXT_NEXT_MISSION
+		_:
+			if campaign_ledger_override != null and not TutorialProgress.is_active():
+				if victory:
+					next = TEXT_NEXT_MISSION if _proceed_to_next_mission else TEXT_NEXT_TITLE
+				else:
+					# 2026-11-13 實測:標題「開始戰鬥」進教學第 1 場而非同一場 ->
+					# 不寫「可再次開始戰鬥」(prototypes/story-046-defeat-restart-probe-2026-11-13)。
+					next = TEXT_NEXT_DEFEAT_CAMPAIGN
+	return Loc.localize(rule) + "\n" + Loc.localize(next)
+
+
+func _show_result_detail(outcome: BattleState.Outcome) -> void:
+	if _result_detail_label == null:
+		return
+	_result_detail_label.text = result_detail_text(outcome)
+	_result_detail_label.visible = true

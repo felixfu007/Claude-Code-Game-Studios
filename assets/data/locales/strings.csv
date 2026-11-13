@@ -218,3 +218,14 @@ battle.hud.hint.target_confirm.gamepad,確定目標 A
 battle.hud.hint.discard.gamepad,棄掉 A
 battle.hud.hint.menu_pick.gamepad,選擇 十字鍵
 battle.hud.hint.menu_close.gamepad,關閉 B
+battle.objective.line,擊倒所有敵人，我方無人倒下
+battle.objective.tut01_learn,選取角色，看移動範圍再走過去
+battle.objective.tut02_learn,靠近敵人，看射程與傷害預覽再攻擊
+battle.objective.tut03_learn,選中敵人看威脅範圍，小心踏入
+battle.objective.tut04_learn,看傷害預覽，換個位置再看一次
+battle.result.rule_victory,敵人已全數倒下，我方全員存活
+battle.result.rule_defeat,我方任何一人倒下，即判戰敗
+battle.result.next_mission,稍後自動進入下一場
+battle.result.next_title,稍後自動回到標題畫面
+battle.result.next_defeat_campaign,稍後回到標題畫面
+battle.result.next_defeat_tutorial,稍後自動重來這一場

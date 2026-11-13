@@ -292,12 +292,13 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# 這些 key 從未以硬寫字串的形式存在過，不是「被遷移」的對象，因此不屬於
 	# i18n_migrated_strings_test.gd 的涵蓋範圍；這批內容的字面值由
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
+	# story-046:新增 11 列(battle.objective.* 5、battle.result.* 6),211 → 222。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 211（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 222（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(211)
+	).is_equal(222)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(
