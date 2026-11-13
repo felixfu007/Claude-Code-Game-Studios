@@ -5542,6 +5542,9 @@ func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 			# 已經 push_error() 記錄原因——這裡不前進,不得默默假設任何場次數。
 		else:
 			CampaignProgress.rollback_on_defeat()
+			# story-056(管理者 2026-11-13 裁決「直接重打同一場,不回標題」):戰役戰敗 -> 結果顯示後
+			# 重打同一場。旗標與 _proceed_to_next_mission 並列、不得併入它(語意是「勝利且非最後一場」)。
+			_retry_same_mission = true
 
 	# production/epics/game-shell/story-001 (AC5) — 接在既有勝敗文字顯示之後,
 	# 不覆蓋它(story-018 的端對端測試已釘住上面兩行會執行)。真人玩家靠這個
@@ -5595,6 +5598,11 @@ func _on_result_display_finished() -> void:
 			return
 		_:
 			pass
+	# story-056:戰役戰敗 -> 重打同一場。唯一重開途徑是 enter_battle()(經 start_mission_affinity_ledger()
+	# -> begin_mission()),不得就地重置。須在 _proceed_to_next_mission 判斷之前處理。
+	if _retry_same_mission:
+		SceneRouter.enter_battle(get_tree())
+		return
 	if not _proceed_to_next_mission:
 		return_to_title_screen()
 		return
@@ -5684,6 +5692,8 @@ func _trigger_support_conversations_for_finished_mission() -> void:
 var _completed_support_conversation_ids: Array[String] = []
 ## story-004:勝利且非最後一場時為 true(結果顯示後接下一場而非回標題)。
 var _proceed_to_next_mission: bool = false
+## story-056:戰役戰敗時為 true(結果顯示後重打同一場而非回標題)。與 [member _proceed_to_next_mission] 並列、互斥。
+var _retry_same_mission: bool = false
 
 ## game-shell story-008:教學場結果後的去向。NONE = 非教學(或教學資料讀取失敗 -> 回標題)。
 enum TutorialNext { NONE, TUTORIAL_BATTLE, CAMPAIGN }
@@ -5827,8 +5837,7 @@ func result_detail_text(outcome: BattleState.Outcome) -> String:
 				if victory:
 					next = TEXT_NEXT_MISSION if _proceed_to_next_mission else TEXT_NEXT_TITLE
 				else:
-					# 2026-11-13 實測:標題「開始戰鬥」進教學第 1 場而非同一場 ->
-					# 不寫「可再次開始戰鬥」(prototypes/story-046-defeat-restart-probe-2026-11-13)。
+					# story-056:戰役戰敗現在會重打同一場,字句與之一致(取代 story-046 當時的「回標題」字句)。
 					next = TEXT_NEXT_DEFEAT_CAMPAIGN
 	return Loc.localize(rule) + "\n" + Loc.localize(next)
 

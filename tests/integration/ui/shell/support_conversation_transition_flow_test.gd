@@ -161,18 +161,26 @@ func test_ac3_skipped_conversation_is_not_played_and_goes_to_next_battle() -> vo
 	await _release_current(original)
 
 
-# ── AC4:戰敗 / 戰役完成 -> 標題 ─────────────────────────────────────────────
-func test_ac4_defeat_returns_to_title() -> void:
+# ── AC4:戰敗重打同一場(story-056:原「戰敗 -> 標題」,已被管理者 2026-11-13 裁決取代)──
+func test_ac4_defeat_retries_same_mission() -> void:
 	var original: Node = get_tree().current_scene
 	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_DOOMED_PATH)
+	var mission_before: int = CampaignProgress.current_mission()
 	await battle._end_faction_phase_pressed()
 	assert_int(battle._controller.outcome()).is_equal(BattleState.Outcome.DEFEAT)
+	assert_object(get_tree().current_scene).is_same(battle)
 
 	battle._on_result_display_finished()
 	await _wait_swap()
 
-	assert_str(_scene_name()).is_equal("TitleScreen")
+	assert_str(_scene_name()).is_not_equal("TitleScreen")
+	assert_bool(get_tree().current_scene is BattleScreen).is_true()
+	assert_object(get_tree().current_scene).is_not_same(battle)
+	assert_int(CampaignProgress.current_mission()).is_equal(mission_before)
 	await _release_current(original)
+
+
+# ── AC4:戰役完成 -> 標題 ─────────────────────────────────────────────────────
 
 
 func test_ac4_campaign_complete_returns_to_title() -> void:

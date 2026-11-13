@@ -108,14 +108,15 @@ func test_victory_and_defeat_each_have_rule_and_next_lines_and_differ() -> void:
 	assert_bool((win.get_node("UILayer/ResultDetailLabel") as Label).visible).is_true()
 
 
-func test_campaign_defeat_next_line_does_not_promise_restart_same_mission() -> void:
+func test_campaign_defeat_next_line_promises_retry_same_mission() -> void:
 	var instance: BattleScreen = _load(null)
 	instance.campaign_ledger_override = CampaignProgress.start_mission_affinity_ledger()
 	instance._on_battle_ended(BattleState.Outcome.DEFEAT)
 	var next_line: String = _detail(instance).split("\n")[1]
 	assert_str(next_line).is_equal(Loc.localize(&"battle.result.next_defeat_campaign"))
-	# 2026-11-13 實測:標題「開始戰鬥」進教學第 1 場,故文字不得承諾「可再次開始戰鬥」。
-	assert_bool(next_line.contains("再次")).is_false()
+	# story-056:戰役戰敗改為直接重打同一場(不回標題)。防空洞:戰敗行不得退回「回標題」那句。
+	assert_str(next_line).is_not_empty()
+	assert_str(next_line).is_not_equal(Loc.localize(&"battle.result.next_title"))
 
 
 func test_campaign_victory_not_last_mission_next_is_next_mission() -> void:

@@ -227,7 +227,7 @@ battle.result.rule_victory,敵人已全數倒下，我方全員存活
 battle.result.rule_defeat,我方任何一人倒下，即判戰敗
 battle.result.next_mission,稍後自動進入下一場
 battle.result.next_title,稍後自動回到標題畫面
-battle.result.next_defeat_campaign,稍後回到標題畫面
+battle.result.next_defeat_campaign,稍後自動重來這一場
 battle.result.next_defeat_tutorial,稍後自動重來這一場
 battle.menu.objective_row,目標
 battle.menu.legend_row,圖例
