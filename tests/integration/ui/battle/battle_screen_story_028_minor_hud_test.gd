@@ -67,8 +67,13 @@ func test_move_highlight_repeated_calls_do_not_accumulate_or_crash() -> void:
 	assert_int(layer.get_child_count()).is_equal(0)
 
 
-func test_threat_fill_color_is_unchanged_red() -> void:
-	assert_object(BoardView.THREAT_FILL_COLOR).is_equal(Color(0.85, 0.15, 0.1, 0.3))
+func test_threat_has_no_full_cell_fill_after_story_044() -> void:
+	# story-044:整格紅底(原 alpha 0.3)已取消;守的是「威脅不再用實心底蓋住棋子」。
+	var view: BoardView = auto_free(load("res://src/ui/battle/BoardView.tscn").instantiate())
+	add_child(view)
+	view.set_threat_highlights([Vector2i(1, 1)] as Array[Vector2i])
+	for child: Node in view.get_node("ThreatHighlightLayer").get_children():
+		assert_bool(child is ColorRect).is_false()
 
 
 func test_sensitivity_proof_move_fill_detector_rejects_non_blue_fill() -> void:

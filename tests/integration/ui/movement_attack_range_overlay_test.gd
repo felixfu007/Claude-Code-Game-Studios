@@ -430,17 +430,17 @@ func test_set_attack_los_blocked_highlights_draws_outline_plus_one_diagonal() ->
 	# Act — 2 個範圍內但視線被擋的格
 	instance.set_attack_los_blocked_highlights([Vector2i(3, 3), Vector2i(6, 1)])
 
-	# Assert — 每格 2 個根節點（外框 + 斜線），共 4；外框共 4*2=8 個 ColorRect；
+	# Assert — story-044:每格恰 1 個根節點（角標章 + 斜線），共 2；章共 2 個 ColorRect；
 	# 斜線共 2 條 Line2D（每格恰 1 條，不是 X 記號的 2 條）
 	assert_int(layer.get_child_count()).append_failure_message(
-		"2 個格應各畫「外框 + 斜線」兩個根節點，共 4，實得 %d" % layer.get_child_count()
-	).is_equal(4)
+		"2 個格應各畫 1 個角標根節點，共 2，實得 %d" % layer.get_child_count()
+	).is_equal(2)
 	var rect_count: int = 0
 	var line_count: int = 0
 	for child: Node in layer.get_children():
 		rect_count += _count_colorrect_descendants(child)
 		line_count += _count_line2d_descendants(child)
-	assert_int(rect_count).is_equal(8)
+	assert_int(rect_count).is_equal(2)
 	assert_int(line_count).append_failure_message(
 		"每格應恰有 1 條 Line2D（單斜線，非 X 記號的 2 條），2 格共應為 2，實得 %d"
 		% line_count
@@ -468,7 +468,12 @@ class _MutantAttackLosBlockedMissingSlash extends BoardView:
 	func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
 		_clear_children(_attack_los_blocked_layer)
 		for cell: Vector2i in cells:
-			_attack_los_blocked_layer.add_child(_build_attack_los_blocked_outline(cell))
+			var stamp: Node2D = _build_attack_los_blocked_stamp(cell)
+			for part: Node in stamp.get_children():
+				if part is Line2D:
+					stamp.remove_child(part)
+					part.free()
+			_attack_los_blocked_layer.add_child(stamp)
 
 
 func test_sensitivity_proof_attack_los_blocked_missing_slash_regression_detected() -> void:

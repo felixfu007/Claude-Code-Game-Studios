@@ -114,7 +114,6 @@ const FINAL_PIECE_DIR: String = "res://assets/art/characters/pieces/"
 const FINAL_PIECE_CODES: Array[String] = ["jia", "yi", "bing", "ding", "wu"]
 
 const MOVE_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_move.png"
-const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_attack.png"
 
 ## Threat-range highlight — a hollow yellow ring, unlike the two solid
 ## translucent fills above. The shape difference is load-bearing, not
@@ -126,8 +125,16 @@ const ATTACK_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_at
 const THREAT_HIGHLIGHT_PATH: String = "res://assets/art/placeholder/highlight_threat.png"
 
 ## 攻擊範圍的半透明紅底與斜線染色,見 [method set_threat_highlights]。
-const THREAT_FILL_COLOR: Color = Color(0.85, 0.15, 0.1, 0.3)
-const THREAT_STRIPE_TINT: Color = Color(1.0, 0.45, 0.4, 1.0)
+## story-044 高亮層級(規格:docs/reviews/highlight-and-info-panel-art-spec-2026-11-12.md 第二節
+## 與補遺 highlight-art-spec-addendum-2026-11-12.md;補遺取代原規格被擋座標)。
+## 層級:可攻擊 > 被擋 > 威脅,同一格只畫其一(互斥由 [method _redraw_attack_family] 保證)。
+## 威脅:取消整格填色,只剩 1px 邊環 + 既有斜紋貼圖(斜紋是不靠顏色的通道,形狀保留)。
+## 色票:cloth_warm_highlight_01 #C97478。邊環 α0.55、斜紋 α0.25。
+const THREAT_RING_COLOR: Color = Color(0.788235, 0.455, 0.471, 0.55)
+const THREAT_RING_WIDTH: float = 1.0
+const THREAT_STRIPE_TINT: Color = Color(0.788235, 0.455, 0.471, 0.25)
+## 規格給定的斜紋像素覆蓋量(格面積 25%),只用於視覺權重 W 的計算,未實測貼圖。
+const THREAT_STRIPE_AREA_PX: float = 256.0
 
 ## 移動範圍的亮藍半透明底與框線染色,見 [method set_move_highlights](Story 028 I)。
 const MOVE_FILL_COLOR: Color = Color(0.2, 0.55, 1.0, 0.4)
@@ -160,7 +167,7 @@ const MOVE_BLOCKED_OUTLINE_WIDTH: float = 2.0
 ## MOVE_BLOCKED_OUTLINE_COLOR]'s outline — three short horizontal bars, a
 ## different pattern family from every diagonal-line mark elsewhere in this
 ## file ([method _build_card_target_illegal_mark]'s two-diagonal X,
-## [constant ATTACK_LOS_BLOCKED_OUTLINE_COLOR]'s single diagonal slash) so
+## [constant BLOCKED_SLASH_COLOR]'s single diagonal slash) so
 ## none of the three can be mistaken for one another under `P-F3`'s
 ## grayscale test. 🔴 Structurally always empty today — every terrain
 ## character in [code]Board.TERRAIN_TABLE[/code] is currently passable (see
@@ -210,11 +217,23 @@ const MOVE_OUT_OF_RANGE_DOT_SIZE: float = 6.0
 ## THREAT_HIGHLIGHT_PATH]'s plain ring, from [method
 ## _build_card_target_illegal_mark]'s two-diagonal X, and from [constant
 ## MOVE_TERRAIN_HATCH_COLOR]'s three horizontal bars.
-const ATTACK_LOS_BLOCKED_OUTLINE_COLOR: Color = Color(1.0, 0.55, 0.15, 0.9)
-const ATTACK_LOS_BLOCKED_OUTLINE_INSET: float = 4.0
-const ATTACK_LOS_BLOCKED_OUTLINE_WIDTH: float = 2.0
-const ATTACK_LOS_BLOCKED_SLASH_INSET: float = 8.0
-const ATTACK_LOS_BLOCKED_SLASH_WIDTH: float = 2.0
+## story-044 可攻擊(主訊號):2px 琥珀環,ui_state_warning_01 #FFBF4D α1.0。
+## 環省略 HP 文字條範圍(上邊整條不畫、左右邊從文字條下緣起)並在左邊留首字框缺口。
+const ATTACK_RING_COLOR: Color = Color(1.0, 0.749020, 0.301961, 1.0)
+const ATTACK_RING_WIDTH: float = 2.0
+## story-044 被擋視線:格內角標(補遺第一節座標,32 規格,格內座標)。
+## 章 nature_void_shadow_01 #0E0F14 α0.70;斜線 cloth_neutral_highlight_01 #B0A897 α0.95。
+## 斜線端點取像素中心,故 1px 線寬的外緣恰為章矩形 (21,8)-(27,14)。
+const BLOCKED_STAMP_RECT: Rect2 = Rect2(21.0, 8.0, 6.0, 6.0)
+const BLOCKED_STAMP_COLOR: Color = Color(0.054902, 0.058824, 0.078431, 0.70)
+const BLOCKED_SLASH_FROM: Vector2 = Vector2(21.5, 13.5)
+const BLOCKED_SLASH_TO: Vector2 = Vector2(26.5, 8.5)
+const BLOCKED_SLASH_WIDTH: float = 1.0
+const BLOCKED_SLASH_COLOR: Color = Color(0.690196, 0.658824, 0.592157, 0.95)
+## 斜線的像素數(6 格對角線),只用於視覺權重 W。
+const BLOCKED_SLASH_PIXELS: float = 6.0
+## story-044 身體核心禁區(補遺取代原規格 Z_BODY):(8,14)-(24,28)。啟發式範圍,非量測值。
+const BODY_CORE_RECT: Rect2 = Rect2(8.0, 14.0, 16.0, 14.0)
 
 ## Story U-013 — S2/S2p/S2q target-selection highlight. See [method
 ## set_card_target_highlights]'s own doc comment for why this is composed
@@ -227,7 +246,11 @@ const ATTACK_LOS_BLOCKED_SLASH_WIDTH: float = 2.0
 ## per `design/ux/skill-card-play.md`'s Component Inventory ("合法/不合法須
 ## 拆出成因") and this project's `P-F3` discipline ("無例外"), the outline vs
 ## outline+X shape difference is what separates legal from illegal, not hue.
-const CARD_TARGET_OUTLINE_COLOR: Color = Color(1.0, 1.0, 1.0, 0.9)
+## story-044(管理者 2026-11-12 裁決選牌時隱藏攻擊標記後):合法目標改琥珀 ui_state_warning_01 #FFBF4D,
+## 與游標白框拉開顏色通道;不合法目標(外框+X)改 ui_divider_01 #808080 α0.9。
+## 形狀(閉合外框 inset 3)本單未動,見回報「未涵蓋」。
+const CARD_TARGET_OUTLINE_COLOR: Color = Color(1.0, 0.749020, 0.301961, 1.0)
+const CARD_TARGET_ILLEGAL_COLOR: Color = Color(0.501961, 0.501961, 0.501961, 0.9)
 ## Distance, in pixels, the outline is inset from the cell's own edge —
 ## leaves a visible gap from [constant PIECE_SPRITE_HEIGHT]'s top overhang and
 ## from any adjacent cell's own outline.
@@ -797,8 +820,12 @@ func set_move_highlights(cells: Array[Vector2i]) -> void:
 
 ## Replaces the set of highlighted attack-range cells. Pass an empty array
 ## to clear all attack highlights.
+## story-044:改畫 2px 琥珀環(主訊號),見 [constant ATTACK_RING_COLOR]。
+## 三個攻擊族集合(可攻擊/被擋/威脅)由本節點記住並一起重畫,以結構保證
+## 「同一格只畫其一」,優先序 可攻擊 > 被擋 > 威脅,見 [method _redraw_attack_family]。
 func set_attack_highlights(cells: Array[Vector2i]) -> void:
-	_render_highlight_layer(_attack_highlight_layer, cells, ATTACK_HIGHLIGHT_PATH)
+	_attack_cells = cells.duplicate()
+	_redraw_attack_family()
 
 
 ## Story 014 — replaces the attack-range third layer: cells whose distance
@@ -807,19 +834,14 @@ func set_attack_highlights(cells: Array[Vector2i]) -> void:
 ## BattleController.attack_targets_blocked_by_los]'s own set). GDD Visual/
 ## Audio §1.3 / Core Rules #4: this layer must never be left undrawn for
 ## these cells — leaving it blank would make a LOS-blocked cell look
-## identical to "no overlay" (out of range entirely), and the player would
-## misjudge how many cells are actually attackable. Pass an empty array to
+## identical to "no overlay" (out of range entirely). Pass an empty array to
 ## clear.
 ##
-## Hollow outline + single diagonal slash — see [constant
-## ATTACK_LOS_BLOCKED_OUTLINE_COLOR]'s own doc comment for why this specific
-## shape (not threat's plain ring, not card-target's two-diagonal X, not
-## blocked_by_terrain's three horizontal bars).
+## story-044:縮成格內角標(深色章 + 1px 斜線,有畫,仍合 GDD),見
+## [constant BLOCKED_STAMP_RECT]。同格若已是「可攻擊」則不畫(優先序)。
 func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
-	_clear_children(_attack_los_blocked_layer)
-	for cell: Vector2i in cells:
-		_attack_los_blocked_layer.add_child(_build_attack_los_blocked_outline(cell))
-		_attack_los_blocked_layer.add_child(_build_attack_los_blocked_slash(cell))
+	_blocked_cells = cells.duplicate()
+	_redraw_attack_family()
 
 
 ## Replaces the set of highlighted threat-range cells — the cells this unit
@@ -827,26 +849,49 @@ func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
 ## [method set_attack_highlights]'s "can be hit from where it stands right
 ## now". Pass an empty array to clear all threat highlights.
 ##
-## The caller decides which cells to pass; this method draws exactly what it
-## is given and makes no rule decision of its own (same contract as every
-## other method on this node). [BattleScreen] passes the threat envelope
-## minus the move cells minus the currently-attackable cells, so the three
-## highlight kinds never overlap on screen.
+## The caller decides which cells to pass; [BattleScreen] passes the threat
+## envelope minus the move cells minus the currently-attackable cells.
+## story-044:取消整格紅底,只剩 1px 邊環 + 斜紋(形狀保留,不靠顏色的通道)。
+## 同格若已是「可攻擊」或「被擋」則不畫(優先序)。
 func set_threat_highlights(cells: Array[Vector2i]) -> void:
-	_render_highlight_layer(_threat_highlight_layer, cells, THREAT_HIGHLIGHT_PATH)
-	# 2026-10-28 管理者試玩回饋:「腳色移動前,看不出攻擊範圍。選擇腳色後要用視覺呈現攻擊範圍」。
-	# 原本只有細黃斜線,疊在黃褐色地面上幾乎看不見。每格再墊一層半透明紅底、斜線改染紅。
-	# 斜線形狀保留 —— 它是「不靠顏色也分得出」的那個通道(見 THREAT_HIGHLIGHT_PATH 說明)。
-	# 紅底透明度刻意低,這一層畫在棋子上方,不可把敵方棋子蓋掉。
+	_threat_cells = cells.duplicate()
+	_redraw_attack_family()
+
+
+# story-044 — 重畫攻擊族三層。優先序寫死:可攻擊 > 被擋 > 威脅。
+func _redraw_attack_family() -> void:
+	var attack_set: Dictionary[Vector2i, bool] = {}
+	for cell: Vector2i in _attack_cells:
+		attack_set[cell] = true
+	var blocked_set: Dictionary[Vector2i, bool] = {}
+	for cell: Vector2i in _blocked_cells:
+		if not attack_set.has(cell):
+			blocked_set[cell] = true
+
+	_clear_children(_attack_highlight_layer)
+	for cell: Vector2i in attack_set.keys():
+		_attack_highlight_layer.add_child(
+			_build_ring_marker(cell, attack_ring_rects_in_cell(), ATTACK_RING_COLOR)
+		)
+
+	_clear_children(_attack_los_blocked_layer)
+	for cell: Vector2i in blocked_set.keys():
+		_attack_los_blocked_layer.add_child(_build_attack_los_blocked_stamp(cell))
+
+	var threat_draw: Array[Vector2i] = []
+	var threat_seen: Dictionary[Vector2i, bool] = {}
+	for cell: Vector2i in _threat_cells:
+		if attack_set.has(cell) or blocked_set.has(cell) or threat_seen.has(cell):
+			continue
+		threat_seen[cell] = true
+		threat_draw.append(cell)
+	_render_highlight_layer(_threat_highlight_layer, threat_draw, THREAT_HIGHLIGHT_PATH)
 	for sprite: Node in _threat_highlight_layer.get_children():
 		(sprite as Sprite2D).modulate = THREAT_STRIPE_TINT
-		var fill: ColorRect = ColorRect.new()
-		fill.color = THREAT_FILL_COLOR
-		fill.size = Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE)
-		fill.position = (sprite as Sprite2D).position - fill.size / 2.0
-		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_threat_highlight_layer.add_child(fill)
-		_threat_highlight_layer.move_child(fill, 0)
+	for cell: Vector2i in threat_draw:
+		_threat_highlight_layer.add_child(
+			_build_ring_marker(cell, threat_ring_rects_in_cell(), THREAT_RING_COLOR)
+		)
 
 
 ## Story 014 — replaces the move-range THREE unreachable states from [method
@@ -916,7 +961,9 @@ func set_card_target_highlights(
 	for cell: Vector2i in legal_cells:
 		_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
 	for cell: Vector2i in illegal_cells:
-		_card_target_highlight_layer.add_child(_build_card_target_outline(cell))
+		_card_target_highlight_layer.add_child(
+			_build_card_target_outline(cell, CARD_TARGET_ILLEGAL_COLOR)
+		)
 		_card_target_highlight_layer.add_child(_build_card_target_illegal_mark(cell))
 
 
@@ -1000,6 +1047,11 @@ func _piece_label_settings(is_ally: bool) -> LabelSettings:
 # prototypes/piece-label-perf-2026-11-12/)。多餘的 Label 隱藏而非釋放。
 var _piece_label_layer: Node2D = null
 var _piece_label_pool: Array[Label] = []
+
+# story-044 — 攻擊族三層的來源集合(互斥重畫用,見 _redraw_attack_family)。
+var _attack_cells: Array[Vector2i] = []
+var _blocked_cells: Array[Vector2i] = []
+var _threat_cells: Array[Vector2i] = []
 
 
 # story-041 — 格內版面單一出處(座標相對格左上,格 32x32)。三個矩形垂直分帶:
@@ -1136,32 +1188,34 @@ func _build_hp_text(
 # illegal cells: four thin ColorRects forming a hollow square border, inset
 # CARD_TARGET_OUTLINE_INSET px from the cell's own edge. See that constant's
 # doc comment for why this is composed from primitives.
-func _build_card_target_outline(cell: Vector2i) -> Node2D:
+func _build_card_target_outline(
+	cell: Vector2i, color: Color = CARD_TARGET_OUTLINE_COLOR
+) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * CARD_TARGET_OUTLINE_INSET
 	var side: float = BoardCoords.CELL_SIZE - CARD_TARGET_OUTLINE_INSET * 2.0
 	var border_width: float = CARD_TARGET_OUTLINE_WIDTH
 
 	var top: ColorRect = ColorRect.new()
-	top.color = CARD_TARGET_OUTLINE_COLOR
+	top.color = color
 	top.position = top_left
 	top.size = Vector2(side, border_width)
 	root.add_child(top)
 
 	var bottom: ColorRect = ColorRect.new()
-	bottom.color = CARD_TARGET_OUTLINE_COLOR
+	bottom.color = color
 	bottom.position = top_left + Vector2(0.0, side - border_width)
 	bottom.size = Vector2(side, border_width)
 	root.add_child(bottom)
 
 	var left: ColorRect = ColorRect.new()
-	left.color = CARD_TARGET_OUTLINE_COLOR
+	left.color = color
 	left.position = top_left
 	left.size = Vector2(border_width, side)
 	root.add_child(left)
 
 	var right: ColorRect = ColorRect.new()
-	right.color = CARD_TARGET_OUTLINE_COLOR
+	right.color = color
 	right.position = top_left + Vector2(side - border_width, 0.0)
 	right.size = Vector2(border_width, side)
 	root.add_child(right)
@@ -1188,14 +1242,14 @@ func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
 	var diagonal_a: Line2D = Line2D.new()
 	diagonal_a.points = PackedVector2Array([top_left, bottom_right])
 	diagonal_a.width = CARD_TARGET_ILLEGAL_MARK_WIDTH
-	diagonal_a.default_color = CARD_TARGET_OUTLINE_COLOR
+	diagonal_a.default_color = CARD_TARGET_ILLEGAL_COLOR
 	diagonal_a.antialiased = false
 	root.add_child(diagonal_a)
 
 	var diagonal_b: Line2D = Line2D.new()
 	diagonal_b.points = PackedVector2Array([top_right, bottom_left])
 	diagonal_b.width = CARD_TARGET_ILLEGAL_MARK_WIDTH
-	diagonal_b.default_color = CARD_TARGET_OUTLINE_COLOR
+	diagonal_b.default_color = CARD_TARGET_ILLEGAL_COLOR
 	diagonal_b.antialiased = false
 	root.add_child(diagonal_b)
 
@@ -1281,65 +1335,85 @@ func _build_move_out_of_range_dot(cell: Vector2i) -> Node2D:
 	return root
 
 
-# Story 014 — hollow square outline for the attack-range third layer
-# (range内但視線被擋). Same border technique as _build_move_blocked_outline(),
-# dedicated colour/inset so the attack-family mark is never visually
-# conflated with the move-family one even though the two are never expected
-# simultaneously on the SAME cell (attack range and move range answer
-# different questions) — using the same colour for both would still read as
-# "the same state" at a glance.
-func _build_attack_los_blocked_outline(cell: Vector2i) -> Node2D:
-	var root: Node2D = Node2D.new()
-	var top_left: Vector2 = (
-		BoardCoords.grid_to_local(cell) + Vector2.ONE * ATTACK_LOS_BLOCKED_OUTLINE_INSET
+# story-044 — 環的矩形集合(格內座標,單一出處;建構與測試共用)。
+# 環省略 HP 文字條範圍(上邊整條不畫,左右邊從文字條下緣起),左邊再扣首字框缺口:
+# 左邊只畫首字框下緣以下。三個邊互不重疊(右邊止於底邊上緣,左邊同),像素數可逐一加總。
+# 所有切點都取自 041 的 hp_text_rect_in_cell() / piece_label_rect_in_cell(),不寫死數字。
+static func ring_rects_in_cell(width: float) -> Array[Rect2]:
+	var cell: float = BoardCoords.CELL_SIZE
+	var text_bottom: float = hp_text_rect_in_cell().end.y
+	var label_bottom: float = piece_label_rect_in_cell().end.y
+	var rects: Array[Rect2] = []
+	rects.append(Rect2(0.0, cell - width, cell, width))
+	rects.append(Rect2(cell - width, text_bottom, width, cell - width - text_bottom))
+	rects.append(Rect2(0.0, label_bottom, width, cell - width - label_bottom))
+	return rects
+
+
+static func attack_ring_rects_in_cell() -> Array[Rect2]:
+	return ring_rects_in_cell(ATTACK_RING_WIDTH)
+
+
+static func threat_ring_rects_in_cell() -> Array[Rect2]:
+	return ring_rects_in_cell(THREAT_RING_WIDTH)
+
+
+## 斜線外緣的包圍矩形(含線寬),給禁區測試用。
+static func blocked_slash_bounds_in_cell() -> Rect2:
+	var bounds: Rect2 = Rect2(BLOCKED_SLASH_FROM, Vector2.ZERO).expand(BLOCKED_SLASH_TO)
+	return bounds.grow(BLOCKED_SLASH_WIDTH * 0.5)
+
+
+## 視覺權重 W = 面積 × alpha 的總和(規格 2.2)。預言機:建構與測試共用同一份常數。
+static func attack_marker_weight() -> float:
+	var total: float = 0.0
+	for rect: Rect2 in attack_ring_rects_in_cell():
+		total += rect.get_area() * ATTACK_RING_COLOR.a
+	return total
+
+
+static func blocked_marker_weight() -> float:
+	return (
+		BLOCKED_STAMP_RECT.get_area() * BLOCKED_STAMP_COLOR.a
+		+ BLOCKED_SLASH_PIXELS * BLOCKED_SLASH_COLOR.a
 	)
-	var side: float = BoardCoords.CELL_SIZE - ATTACK_LOS_BLOCKED_OUTLINE_INSET * 2.0
-	var border_width: float = ATTACK_LOS_BLOCKED_OUTLINE_WIDTH
 
-	var top: ColorRect = ColorRect.new()
-	top.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
-	top.position = top_left
-	top.size = Vector2(side, border_width)
-	root.add_child(top)
 
-	var bottom: ColorRect = ColorRect.new()
-	bottom.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
-	bottom.position = top_left + Vector2(0.0, side - border_width)
-	bottom.size = Vector2(side, border_width)
-	root.add_child(bottom)
+static func threat_marker_weight() -> float:
+	var total: float = THREAT_STRIPE_AREA_PX * THREAT_STRIPE_TINT.a
+	for rect: Rect2 in threat_ring_rects_in_cell():
+		total += rect.get_area() * THREAT_RING_COLOR.a
+	return total
 
-	var left: ColorRect = ColorRect.new()
-	left.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
-	left.position = top_left
-	left.size = Vector2(border_width, side)
-	root.add_child(left)
 
-	var right: ColorRect = ColorRect.new()
-	right.color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
-	right.position = top_left + Vector2(side - border_width, 0.0)
-	right.size = Vector2(border_width, side)
-	root.add_child(right)
-
+# story-044 — 一格一個根節點,位置 = 格左上,子節點用格內座標。
+func _build_ring_marker(cell: Vector2i, rects: Array[Rect2], color: Color) -> Node2D:
+	var root: Node2D = Node2D.new()
+	root.position = BoardCoords.grid_to_local(cell)
+	for rect: Rect2 in rects:
+		var bar: ColorRect = ColorRect.new()
+		bar.color = color
+		bar.position = rect.position
+		bar.size = rect.size
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(bar)
 	return root
 
 
-# Story 014 — single diagonal slash drawn INSIDE
-# _build_attack_los_blocked_outline()'s border, distinguishing this mark from
-# a plain outline (move-range blocked_by_occupancy) and from a two-diagonal X
-# (card-target illegal mark).
-func _build_attack_los_blocked_slash(cell: Vector2i) -> Node2D:
+# story-044 — 被擋視線角標:深色章 + 1px 斜線,恰一個根節點(GDD §1.3 不留白,縮成角標仍算有畫)。
+func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
-	var top_left: Vector2 = (
-		BoardCoords.grid_to_local(cell) + Vector2.ONE * ATTACK_LOS_BLOCKED_SLASH_INSET
-	)
-	var side: float = BoardCoords.CELL_SIZE - ATTACK_LOS_BLOCKED_SLASH_INSET * 2.0
+	root.position = BoardCoords.grid_to_local(cell)
+	var stamp: ColorRect = ColorRect.new()
+	stamp.color = BLOCKED_STAMP_COLOR
+	stamp.position = BLOCKED_STAMP_RECT.position
+	stamp.size = BLOCKED_STAMP_RECT.size
+	stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(stamp)
 	var slash: Line2D = Line2D.new()
-	slash.points = PackedVector2Array([
-		top_left + Vector2(0.0, side),
-		top_left + Vector2(side, 0.0),
-	])
-	slash.width = ATTACK_LOS_BLOCKED_SLASH_WIDTH
-	slash.default_color = ATTACK_LOS_BLOCKED_OUTLINE_COLOR
+	slash.points = PackedVector2Array([BLOCKED_SLASH_FROM, BLOCKED_SLASH_TO])
+	slash.width = BLOCKED_SLASH_WIDTH
+	slash.default_color = BLOCKED_SLASH_COLOR
 	slash.antialiased = false
 	root.add_child(slash)
 	return root

@@ -349,7 +349,7 @@ func test_open_hand_detail_panel_shows_the_card_text() -> void:
 	assert_str(instance._hand_bar.diagnostic_detail_panel_text()).is_not_empty()
 
 
-func test_threat_cells_get_a_red_fill_under_the_stripes() -> void:
+func test_threat_cells_have_stripes_but_no_full_cell_fill_after_story_044() -> void:
 	# Arrange
 	var board_view: BoardView = auto_free(load("res://src/ui/battle/BoardView.tscn").instantiate())
 	add_child(board_view)
@@ -361,9 +361,15 @@ func test_threat_cells_get_a_red_fill_under_the_stripes() -> void:
 	# Assert
 	var fills: int = 0
 	for child: Node in board_view.get_node("ThreatHighlightLayer").get_children():
-		if child is ColorRect and (child as ColorRect).color == BoardView.THREAT_FILL_COLOR:
+		if child is ColorRect:
 			fills += 1
-	assert_int(fills).is_equal(cells.size())
+	# story-044:整格底色已取消(原斷言每格一塊紅底);斜線仍每格一張。
+	assert_int(fills).is_equal(0)
+	var stripes: int = 0
+	for child2: Node in board_view.get_node("ThreatHighlightLayer").get_children():
+		if child2 is Sprite2D:
+			stripes += 1
+	assert_int(stripes).is_equal(cells.size())
 
 
 func test_relation_toggle_button_is_smaller_than_before() -> void:

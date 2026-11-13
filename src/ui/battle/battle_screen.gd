@@ -4885,10 +4885,21 @@ func _refresh_view() -> void:
 				threat_result.cells, threat_excluded
 			)
 
+			# story-044(管理者 2026-11-12 裁決「選牌時隱藏攻擊標記」):選牌目標選取中,
+			# 攻擊族三種標記(可攻擊環/被擋角標/威脅)一律不畫,讓琥珀括弧獨佔「可選為目標」語意。
+			# 移動範圍與不可達標記不受影響;退出選牌後下一次 _refresh_view() 即恢復。
+			var attack_family_visible: bool = not _card_selecting_target
+			var threat_to_draw: Array[Vector2i] = []
+			var attack_to_draw: Array[Vector2i] = []
+			var blocked_to_draw: Array[Vector2i] = []
+			if attack_family_visible:
+				threat_to_draw = threat_cells_final
+				attack_to_draw = attack_cells
+				blocked_to_draw = attack_los_blocked_cells
 			_board_view.set_move_highlights(move_cells)
-			_board_view.set_threat_highlights(threat_cells_final)
-			_board_view.set_attack_highlights(attack_cells)
-			_board_view.set_attack_los_blocked_highlights(attack_los_blocked_cells)
+			_board_view.set_threat_highlights(threat_to_draw)
+			_board_view.set_attack_highlights(attack_to_draw)
+			_board_view.set_attack_los_blocked_highlights(blocked_to_draw)
 
 			# Story 014 — 移動範圍不可達三態(B\A / C\B / Grid\C)。排除
 			# attack_cells 與 threat_cells_final:已經帶攻擊/威脅標記的格改用
@@ -4898,9 +4909,11 @@ func _refresh_view() -> void:
 			# §1.1 要凸顯的主要情境(「先移動擋路的隊友」),而我方單位從不會是
 			# attack_cells 或 threat_cells_final 的成員,這條排除規則永遠不會
 			# 誤傷到它。
+			# story-044:排除集合必須用「閘門後」實際畫出的攻擊/威脅格;選牌時它們為空,
+			# 原本屬於這些格的不可達標記才會補畫,不留空白洞(art-director 2026-11-13 判定 (a))。
 			var move_breakdown_excluded: Array[Vector2i] = []
-			move_breakdown_excluded.append_array(attack_cells)
-			move_breakdown_excluded.append_array(threat_cells_final)
+			move_breakdown_excluded.append_array(attack_to_draw)
+			move_breakdown_excluded.append_array(threat_to_draw)
 
 			var breakdown: Dictionary = move_breakdown_result.breakdown
 			var blocked_occupancy_raw: Array[Vector2i] = breakdown["blocked_by_occupancy"]
