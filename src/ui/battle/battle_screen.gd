@@ -2838,6 +2838,19 @@ static func next_target_id(current_id: int, sorted_ids: Array[int], forward: boo
 	return sorted_ids[next_index]
 
 
+## story-052:把控制器回傳的「被擋集合」(純幾何、含空格)篩成「有存活敵兵站著的格」,
+## 保留原順序。只在顯示層做;存活判定取自 [method BattleState.units_of](已排除死者)。
+func _filter_blocked_to_enemy_cells(blocked: Array[Vector2i]) -> Array[Vector2i]:
+	var enemy_cells: Dictionary = {}
+	for enemy: Unit in _state.units_of(Unit.Faction.ENEMY):
+		enemy_cells[_state.position_of(enemy.id)] = true
+	var result: Array[Vector2i] = []
+	for cell: Vector2i in blocked:
+		if enemy_cells.has(cell):
+			result.append(cell)
+	return result
+
+
 ## Returns every cell of [param source] that does not appear in
 ## [param excluded], preserving [param source]'s existing order. Static and
 ## public purely so it is unit-testable without standing up a whole screen.
@@ -4977,7 +4990,13 @@ func _refresh_view() -> void:
 			threat_excluded.append_array(move_cells)
 			threat_excluded.append_array(attack_cells)
 			threat_excluded.append_array(ally_cells)
-			threat_excluded.append_array(attack_los_blocked_cells)
+			# story-052(管理者 2026-11-13 裁決「空格完全不畫,只畫在敵兵格」):被擋章只畫在
+			# 「被擋集合 ∩ 存活敵兵所在格」;威脅排除只套用在「真的畫了章的格」,被擋空格
+			# 若屬威脅集合照常畫威脅,不留洞。篩選只在顯示層做,控制器查詢不變。
+			var blocked_stamp_cells: Array[Vector2i] = _filter_blocked_to_enemy_cells(
+				attack_los_blocked_cells
+			)
+			threat_excluded.append_array(blocked_stamp_cells)
 
 			var threat_cells_final: Array[Vector2i] = cells_excluding(
 				threat_result.cells, threat_excluded
@@ -4993,7 +5012,7 @@ func _refresh_view() -> void:
 			if attack_family_visible:
 				threat_to_draw = threat_cells_final
 				attack_to_draw = attack_cells
-				blocked_to_draw = attack_los_blocked_cells
+				blocked_to_draw = blocked_stamp_cells
 			_board_view.set_move_highlights(move_cells)
 			_board_view.set_threat_highlights(threat_to_draw)
 			_board_view.set_attack_highlights(attack_to_draw)

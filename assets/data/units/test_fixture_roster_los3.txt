@@ -1,0 +1,6 @@
+# test_fixture_roster_los3.txt -- story-052 AC2b: pairs with test_fixture_terrain_los.txt (must stay compatible).
+# 與 test_fixture_roster_los.txt 相同,但我方 mp=3:移動後可從別處看見被擋格,使被擋格同時落在威脅集合
+# (threat_targets 含「先移動再攻擊」的聯集),用來考驗威脅排除只套用在有章的格。
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTSHOOT,PLAYER,999,10,0,3,1,4,0,0
+2,TESTTARGET,ENEMY,50,0,0,0,1,1,4,0

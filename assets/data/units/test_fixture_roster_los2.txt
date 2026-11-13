@@ -1,0 +1,6 @@
+# test_fixture_roster_los2.txt -- story-052 AC2: pairs with test_fixture_terrain_los.txt (must stay compatible).
+# 與 test_fixture_roster_los.txt 相同,另加第二名敵兵 (3,0)(同被密林 (2,0) 擋視線),用來證明殺一隻不影響另一隻的章。
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,TESTSHOOT,PLAYER,999,10,0,0,1,4,0,0
+2,TESTTARGET,ENEMY,50,0,0,0,1,1,4,0
+3,TESTTARGET2,ENEMY,50,0,0,0,1,1,3,0

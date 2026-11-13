@@ -150,6 +150,8 @@ func test_attack_family_layers_draw_above_pieces_in_documented_order() -> void:
 
 
 # ---- AC2 被擋縮成角標 ------------------------------------------------------------
+# story-052 註記:本測試是 BoardView 單元層級,「每個被餵入的格恰一章」由呼叫端決定餵哪些格;
+# 不代表「所有被擋格都畫」(BattleScreen 只餵被擋 ∩ 存活敵兵格)。
 
 func test_blocked_cell_draws_exactly_one_corner_stamp_outside_label_zone() -> void:
 	var view: BoardView = _board()

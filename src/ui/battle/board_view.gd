@@ -831,13 +831,13 @@ func set_attack_highlights(cells: Array[Vector2i]) -> void:
 ## Story 014 — replaces the attack-range third layer: cells whose distance
 ## from the selected unit falls within its weapon's range band but whose
 ## line of sight is blocked ([method
-## BattleController.attack_targets_blocked_by_los]'s own set). GDD Visual/
-## Audio §1.3 / Core Rules #4: this layer must never be left undrawn for
-## these cells — leaving it blank would make a LOS-blocked cell look
-## identical to "no overlay" (out of range entirely). Pass an empty array to
-## clear.
+## BattleController.attack_targets_blocked_by_los]'s own set). This method
+## draws exactly one stamp for every cell it is GIVEN; which cells to feed is
+## the caller's decision (story-052:BattleScreen 只餵「被擋 ∩ 存活敵兵格」,空格不畫;
+## GDD Core Rules #4 / Visual-Audio §1.3 已同步為只標敵兵格)。BoardView 自己不篩選。
+## Pass an empty array to clear.
 ##
-## story-044:縮成格內角標(深色章 + 1px 斜線,有畫,仍合 GDD),見
+## story-044:縮成格內角標(深色章 + 1px 斜線),見
 ## [constant BLOCKED_STAMP_RECT]。同格若已是「可攻擊」則不畫(優先序)。
 func set_attack_los_blocked_highlights(cells: Array[Vector2i]) -> void:
 	_blocked_cells = cells.duplicate()
@@ -1400,7 +1400,7 @@ func _build_ring_marker(cell: Vector2i, rects: Array[Rect2], color: Color) -> No
 	return root
 
 
-# story-044 — 被擋視線角標:深色章 + 1px 斜線,恰一個根節點(GDD §1.3 不留白,縮成角標仍算有畫)。
+# story-044 — 被擋視線角標:深色章 + 1px 斜線,恰一個根節點(每個被餵入的格畫一個;story-052 起呼叫端只餵敵兵格)。
 func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	root.position = BoardCoords.grid_to_local(cell)
