@@ -69,6 +69,18 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第一百零一批(2026-11-16,公司,08:54 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00 收工;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。
+- 開工:兩庫已最新(本庫 `0175093`、AI_IMG `6cf0d5f`);**外包無新交件**(39 第二階段、41 皆未回);CI 最近 4 支綠。
+- ⏳ story-053 實作(godot-gdscript-specialist,log `C:/tmp/run_053.log`)。
+- ⏳ game-designer 054 變暗觸發 `docs/reviews/story-054-dim-trigger-design-2026-11-16.md`。
+- 待開窗(午休):`prototypes/label-backdrop-compare-2026-11-13/`(首字底四版)。
+- 🔴 裁決(約 09:10):兩份設計文件「結束單位」=「**改(推薦)**」;敵方回合「選單」鈕無反應 → 管理者自填(逐字):「**敵方回合不能點開選單，必須等到敵方回合結束才能再次操作**」(= 現行行為是對的,不開單);roster/vs02/vs03 註解 =「**更新(推薦)**」;battle-menu 示意圖 =「**對齊(推薦)**」。
+- ✅ game-designer `docs/reviews/story-054-dim-trigger-design-2026-11-16.md`:推薦以 `is_done` 為準;查證 `unit_action_state()` 被結束與兩旗標用完都回 DONE、分不開(工單乙案退路不成立);DONE 單位不能被選 → 工單待決 2 自然消失。🔴 裁決:「**要變暗(遊戲設計師推薦)**」→ 054 待決 1 已解(派 054 時引此行)。
+- ⏳ ux(battle-menu 示意圖 + tactical-combat-screen 改名)、level-designer(roster/vs02/vs03 註解)。
+- ✅ game-designer skill-card:唯一命中 287 行「玩家主動結束單位行動」是 ADR-0001 修訂歷史轉述(寫入路徑名,非按鈕名)→ 協調者採 (a) 不改(管理者核准的是按鈕名稱統一,此處不屬之;收工報告說明)。
+- 🟡 053 實作者停在 AC7①(半成品在工作樹,未跑測試):✕ U+2715 Cubic 11 無字形(× U+00D7 有);「✕ 結束角色行動」約 7.64 em > 8 em 內縮後 7.6。已做:strings +2/改 2、controls_hint 序、hud_layout 第三顆+`leftmost_hud_action_button_rect`、battle_screen 按鈕/共用 `_perform_end_unit_turn()`/禁用/四處清單/結束隱藏底條。**未做**:`controls_hint_content_test` 55/64/72/73/80 行(現會紅)、2 新測試檔、mutant、028/029/`hud_overlap_fade_test` 96 行檢查、AC4/AC6-5/AC7②/AC9。協調者查:選單禁用列同樣用 Cubic 11 → 現有 ✕ 早是備援字形。⏳ art-director 決字形與寬度 `docs/reviews/story-053-disabled-glyph-art-2026-11-16.md` → 之後 SendMessage 原實作者(aabe77dd88967ecd3)續做。
+
 ## 🔴 第一百批(2026-11-13,公司,09:05 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
 - 開工:本庫已最新 `e3a7ef6`;AI_IMG pull 到 `992857a` —— **39 號第一階段已交**(棋子 4 張 48×60 + 地形 3 塊 48×48;報告 `C:/tmp/aiimg27/docs/team/handoff/39-piece-terrain-48px-2026-11-12-stage1-report.md`)。CI 最近 4 支皆綠。

@@ -427,7 +427,7 @@ GDD UI Requirements §3 的決定性排序要求(先列後行,`y` 升冪、同�
 | 確認移動 | `click_tile()` → `_apply_move()` | 單位位置改變、移動旗標消耗 | `unit_moved(id, from, to)` |
 | 確認攻擊(現況,單次) | `click_tile()` → `_apply_attack()` | 傷害套用、可能陣亡、攻擊旗標消耗 | `attack_resolved(attacker_id, target_id, damage, target_died)` |
 | **確認攻擊(規格新增,兩段)** | 見 5(a) | 第一次確認**零狀態變更**(僅開面板);第二次確認才觸發上列同一組狀態變更 | 沿用既有 `attack_resolved`,不新增訊號 |
-| 結束單位行動 | `end_unit_turn(id)` | 該單位轉「已行動」 | ⚠️ 未核對是否有專屬訊號 |
+| 結束角色行動(2026-11-16 管理者核准:全遊戲統一名稱,原「結束單位行動」) | `end_unit_turn(id)` | 該單位轉「已行動」 | ⚠️ 未核對是否有專屬訊號 |
 | 結束我方回合 | `end_faction_phase()` | 陣營切換、旗標重置 | `phase_changed(new_phase)` |
 | 戰鬥結束 | (內部判定) | — | `battle_ended(outcome)` |
 
