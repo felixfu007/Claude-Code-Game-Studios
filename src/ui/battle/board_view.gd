@@ -1279,16 +1279,21 @@ func _build_hp_text(
 	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(clip)
 	var label: Label = Label.new()
-	label.add_theme_font_size_override("font_size", HP_TEXT_FONT_SIZE)
+	# story-055:用 LabelSettings,不用 add_theme_font_size_override —— 後者在 Label 未進樹時
+	# 不影響 get_minimum_size()(實測 (43,23),見 prototypes/story-055-label-size-cause-2026-11-16/),
+	# 導致 size 寬 43 > 文字條 32、置中後右端被 clip 裁掉。LabelSettings 離樹即生效((22,12))。
+	var settings: LabelSettings = LabelSettings.new()
+	settings.font_size = HP_TEXT_FONT_SIZE
+	label.label_settings = settings
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if hp_preview >= 0:
 		label.text = "%d→%d" % [hp, hp_preview]
-		label.add_theme_color_override("font_color", HP_TEXT_COLOR_PREVIEW)
+		settings.font_color = HP_TEXT_COLOR_PREVIEW
 	else:
 		label.text = "%d/%d" % [hp, hp_max]
-		label.add_theme_color_override("font_color", HP_TEXT_COLOR_NORMAL)
+		settings.font_color = HP_TEXT_COLOR_NORMAL
 	label.size = Vector2(text_rect.size.x, label.get_minimum_size().y)
 	label.position = Vector2(0.0, (text_rect.size.y - label.size.y) * 0.5)
 	clip.add_child(label)
