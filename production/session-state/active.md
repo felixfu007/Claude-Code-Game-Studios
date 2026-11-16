@@ -84,6 +84,13 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ ux battle-menu 示意圖 + tactical-combat-screen 改名 → 提交 `e09aa85`;level-designer roster vs02~05 註解(資料列零變動,協調者 diff 驗)→ `e8919a5`。殘留待問:battle-menu.md 其他段仍寫「離開遊戲/三個項目」、`EgmStatusLabel` 未入規格、線框圖 3 後果文字未對 strings;vs04 檔頭「集團據點/丙的舊地盤」與「記憶造的地方」衝突(narrative 決);`mvp-five-levels-skeleton.md`「追蹤者」措辭。
 - ✅ narrative `docs/reviews/vs04-setting-wording-options-2026-11-16.md`(據點 = 祂照董振豪記憶造的假據點,可並存;第 4、5 場算胚或心魔 = 未決,不影響畫面)。🔴 裁決:「**只改措辭,據點變成記憶造景(劇情總監推薦)**」→ narrative 拒絕依協調者轉述改既有檔(正確)、交回逐字 diff → 協調者套用,提交 `bc2a1c5`(vs04 非註解變動 0 行)。
 - ✅ 053 交件(撞 20 回合一次續做):實作者全套 `ENGINE EXIT = 0` / `2122 … 0 failures` / `(206/206)`;寬度實量 6.5 em → 採 7.0 em;禁用灰 (0.5,0.54,0.6) 實作者自取、**未經 art 看**;常駐 mutant 6 + 手動 2;三條既有測試放寬(測 `compact_hint_text`,協調者驗 src 零呼叫端 = 死碼,屬實);待棄牌原因句無測試;截圖驅動 `prototypes/story-053-end-action-capture-2026-11-16/` 只 headless(變淡是直接設值,非真高亮壓框)。⏳ 協調者重跑 `C:/tmp/run_053_coord.log`。
+- ✅ **story-053 提交 `3759352`**(協調者重跑 `ENGINE EXIT = 100` / `2122 … 1 failures` / `(206/206)`,唯一紅 = 計時測試 31102ms;單跑 `ENGINE EXIT=0` 20909ms PASSED,在閒置基準 18.9~22.6s 內 → 負載雜訊)。覆核收穫:無(死碼宣稱查證屬實)= 0。實測 `open_hand() -> is_card_play_in_progress = true`。
+- ⏳ story-048 AC2(godot-gdscript-specialist,log `C:/tmp/run_048.log`):固定位置避開 vs01~05+教學全部敵方起始格,不得游標換邊。
+- 🟡 048 AC2 交件(**未提交**,在工作樹):`HudLayout.tile_info_panel_rect()`,右緣 = 第 7 欄左緣(全名冊敵方最小欄);實作者全套 `ENGINE EXIT = 0` / `2126 … 0 failures` / `(206/206)`。🔴 **協調者覆核疑點(假設錯型候選)**:AC2 字面只驗敵方起始格;新位置移到棋盤上方偏中,實作者手算預覽模式在 1920/2560/3840 蓋一致率計數器(新造成)、可能蓋我方/關係圖面板;將來捲動地圖會失效 → ⏳ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md` 判斷後才決定提交。⏳ 協調者重跑 `C:/tmp/run_048_coord.log`。午休驅動跑的是工作樹 = 會拍到新位置。
+- ✅ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md`:重疊計數器屬實(預覽卡 1080p 疊 28px、1440p 43、4K 203);固定位置無全解;實作者算術表有 4 處錯。🔴 裁決(約 10:10):「**位置維持右上,只保留「不透明底+框」**」(非推薦)→ 協調者 `git checkout` 還原 048 三檔(工作樹 = `3759352`,已驗)。**048 AC2 擱置**;工單 048 狀態改寫待問(既有文件)。覆核收穫 +1(AC2 字面過、目的落空)。
+- ⏳ story-051(godot-gdscript-specialist,log `C:/tmp/run_051.log`)。
+- 📌 午休腳本 `C:/tmp/lunch_capture_2026-11-16.sh`(三支驅動依序)。
+- 📌 午休待拍:053 驅動(灰禁用 4 態)、首字底四版、044 AC8/052 AC7 重拍、046 AC6、056 AC7 —— 禁用灰色值 (0.5,0.54,0.6) 拍完交 art 看。
 
 ## 🔴 第一百批(2026-11-13,公司,09:05 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
