@@ -80,6 +80,9 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ ux(battle-menu 示意圖 + tactical-combat-screen 改名)、level-designer(roster/vs02/vs03 註解)。
 - ✅ game-designer skill-card:唯一命中 287 行「玩家主動結束單位行動」是 ADR-0001 修訂歷史轉述(寫入路徑名,非按鈕名)→ 協調者採 (a) 不改(管理者核准的是按鈕名稱統一,此處不屬之;收工報告說明)。
 - 🟡 053 實作者停在 AC7①(半成品在工作樹,未跑測試):✕ U+2715 Cubic 11 無字形(× U+00D7 有);「✕ 結束角色行動」約 7.64 em > 8 em 內縮後 7.6。已做:strings +2/改 2、controls_hint 序、hud_layout 第三顆+`leftmost_hud_action_button_rect`、battle_screen 按鈕/共用 `_perform_end_unit_turn()`/禁用/四處清單/結束隱藏底條。**未做**:`controls_hint_content_test` 55/64/72/73/80 行(現會紅)、2 新測試檔、mutant、028/029/`hud_overlap_fade_test` 96 行檢查、AC4/AC6-5/AC7②/AC9。協調者查:選單禁用列同樣用 Cubic 11 → 現有 ✕ 早是備援字形。⏳ art-director 決字形與寬度 `docs/reviews/story-053-disabled-glyph-art-2026-11-16.md` → 之後 SendMessage 原實作者(aabe77dd88967ecd3)續做。
+- ✅ art `docs/reviews/story-053-disabled-glyph-art-2026-11-16.md`(推 d:左側獨立 ✕ + 9.5 em)→ 管理者未選,反問(逐字):「**不能按的按鈕，不是應該灰階或是變暗，比較符合直覺嗎?請評估**」→ ✅ ux `docs/reviews/story-053-disabled-state-gray-eval-2026-11-16.md`(✕ 非規格強制;風險 = 與 `OVERLAP_FADE_ALPHA 0.35` 混淆;更正:HUD 變淡觸發是高亮壓框,非敵方回合)。🔴 裁決:「**字變灰 + 底色拿掉變空心 + 框變細,不加叉叉(介面設計師推薦)**」→ 053 規則 5/7 改:無 ✕、寬度回 8 em(或量測後更窄);選單 ✕ 不動(兩處語彙不同 = 已知代價)。待開窗驗:灰階並排、禁用+變淡疊加可讀、啟用+變淡不像禁用、960 下 1px 空心框。
+- ✅ ux battle-menu 示意圖 + tactical-combat-screen 改名 → 提交 `e09aa85`;level-designer roster vs02~05 註解(資料列零變動,協調者 diff 驗)→ `e8919a5`。殘留待問:battle-menu.md 其他段仍寫「離開遊戲/三個項目」、`EgmStatusLabel` 未入規格、線框圖 3 後果文字未對 strings;vs04 檔頭「集團據點/丙的舊地盤」與「記憶造的地方」衝突(narrative 決);`mvp-five-levels-skeleton.md`「追蹤者」措辭。
+- ✅ narrative `docs/reviews/vs04-setting-wording-options-2026-11-16.md`(據點 = 祂照董振豪記憶造的假據點,可並存;第 4、5 場算胚或心魔 = 未決,不影響畫面)。🔴 裁決:「**只改措辭,據點變成記憶造景(劇情總監推薦)**」→ ⏳ narrative 改骨架第 2/3/4 場各一句 + vs04 檔頭 3 處。
 
 ## 🔴 第一百批(2026-11-13,公司,09:05 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact)。
