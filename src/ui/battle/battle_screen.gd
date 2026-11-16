@@ -4997,6 +4997,11 @@ func _refresh_view() -> void:
 			# Story 015 — 持久角標,不受選取/游標門控,每個存活單位都查一次
 			# (GDD:「常駐於棋盤上，不需要選取或開啟面板才看得到」)。
 			"action_flag": _action_flag_for_state(_controller.unit_action_state(unit.id)),
+			# Story 054 — 變暗/鞋劍圖示:被結束與兩旗標都用在 action_flag 上同為 DONE,
+			# 故另傳三個唯讀事實。
+			"done": _controller.unit_is_done(unit.id),
+			"move_used": _controller.unit_move_used(unit.id),
+			"attack_used": _controller.unit_attack_used(unit.id),
 		})
 	for unit: Unit in _state.units_of(Unit.Faction.ENEMY):
 		pieces.append({

@@ -269,6 +269,22 @@ func unit_action_state(id: int) -> TurnOrder.ActionState:
 	return _order.unit_action_state(id)
 
 
+## Story 054 — read-only forwards to [method TurnOrder.has_used_move] /
+## [method TurnOrder.has_used_attack] / [method TurnOrder.is_done]. Unlike
+## [method unit_action_state], these distinguish "ended early" from "both flags
+## spent". No state change, no phase gate.
+func unit_move_used(id: int) -> bool:
+	return _order.has_used_move(id)
+
+
+func unit_attack_used(id: int) -> bool:
+	return _order.has_used_attack(id)
+
+
+func unit_is_done(id: int) -> bool:
+	return _order.is_done(id)
+
+
 ## Returns the legal move tiles for the currently selected unit, ordered
 ## ascending by (y, x). Empty if nothing is selected, the selection cannot
 ## move this phase, or the controller is outside PLAYER_INPUT. Always a

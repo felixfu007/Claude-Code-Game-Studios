@@ -380,40 +380,118 @@ const HP_TEXT_BG_COLOR_TARGET_ILLEGAL: Color = Color(0.0, 0.0, 0.0, 0.90)
 ## field on every piece it is given, unconditionally.
 enum ActionFlag { NONE_USED, ATTACK_ONLY, MOVE_ONLY, DONE }
 
-## [enum ActionFlag] badge geometry — TWO small square "pips" anchored to the
-## piece SPRITE's top-right corner (not the cell's — contrast [constant
-## HP_BAR_WIDTH]'s doc comment, which anchors to the cell specifically so the
-## HP strip never leaves the 32x32 bounds). Anchoring to the sprite instead
-## deliberately places this badge in the [constant PIECE_SPRITE_HEIGHT]
-## overhang zone ABOVE the cell's own top edge, so it can never overlap
-## [method _build_hp_text]'s strip (which lives entirely inside the cell,
-## per that method's own "glyphs sliced in half" doc comment) — the two
-## persistent per-piece badges this file draws occupy disjoint vertical
-## bands by construction, not by coincidence.
-##
-## The left pip reports MOVE availability, the right pip reports ATTACK
-## availability (fixed order, see [method _build_action_flag_marker]) — HOLLOW
-## (outline only) means that action is still available, FILLED (solid) means
-## it has been spent. This directly encodes all four [enum ActionFlag] values
-## as two independent bits rather than one opaque 4-way code, and composes
-## into a shape family ("a PAIR of adjacent micro-badges, exactly one or
-## both or neither filled") that does not exist anywhere else in this file —
-## every other hollow-outline or solid-fill mark here is a SINGLE full-cell
-## (24-28px) shape, never a pair of ~5px pips glued to a piece's corner. See
-## [method _build_action_flag_marker]'s own doc comment for the full
-## distinguishability argument against this file's other seven shape
-## families (solid fill, ring, hollow outline, outline+3-bars, outline+
-## 1-slash, outline+X, centered dot).
-const ACTION_FLAG_PIP_SIZE: float = 5.0
-const ACTION_FLAG_PIP_GAP: float = 1.0
-const ACTION_FLAG_PIP_MARGIN: float = 1.0
-const ACTION_FLAG_PIP_BORDER_WIDTH: float = 1.0
-## Dedicated near-white constant rather than reusing [constant
-## CARD_TARGET_OUTLINE_COLOR] — same "two unrelated semantics never share one
-## source of truth" discipline [constant MOVE_BLOCKED_OUTLINE_COLOR]'s doc
-## comment already establishes, even though the two colours happen to look
-## similar today.
-const ACTION_FLAG_PIP_COLOR: Color = Color(0.95, 0.95, 0.95, 0.95)
+## Story 054 — action-state icons (art addendum 2026-11-13 section 1). A
+## SHOE means "has moved", a SWORD means "has attacked"; drawn only for the
+## action already spent ("做過才出現"), only for PLAYER pieces. Pixel art is
+## the addendum's character arrays verbatim. Textures are built once (lazily,
+## first use) and shared by every sprite — see [method shoe_texture] /
+## [method sword_texture].
+const SWORD_ICON_ROWS: PackedStringArray = [
+	"..O..",
+	".OLO.",
+	".OLO.",
+	".OLO.",
+	"OGGGO",
+	".OGO.",
+	".OOO.",
+]
+const SHOE_ICON_ROWS: PackedStringArray = [
+	"......",
+	"OOO...",
+	"OLO...",
+	"OLO...",
+	"OLLLO.",
+	"OGGGGO",
+	"OOOOOO",
+]
+const ICON_COLOR_O: Color = Color("26303D")
+const ICON_COLOR_SWORD_L: Color = Color("A9B2BD")
+const ICON_COLOR_SHOE_L: Color = Color("B0A897")
+const ICON_COLOR_G: Color = Color("7D766A")
+## Icon top sits 1px below the piece sprite's top edge, bottom edge at
+## cell-local y = -1.
+const ACTION_ICON_TOP_MARGIN: float = 1.0
+## Piece-sprite tint for a finished (is_done) PLAYER unit. Alpha stays 1 —
+## a see-through piece would read as a ghost/dead unit. Tunable 0.60-0.70.
+const DONE_PIECE_DIM: float = 0.65
+
+static var _shoe_texture: ImageTexture = null
+static var _sword_texture: ImageTexture = null
+
+
+## Shared 6x7 shoe texture, built on first call and reused afterwards.
+static func shoe_texture() -> ImageTexture:
+	if _shoe_texture == null:
+		_shoe_texture = _icon_texture_from_rows(SHOE_ICON_ROWS, ICON_COLOR_SHOE_L)
+	return _shoe_texture
+
+
+## Shared 5x7 sword texture, built on first call and reused afterwards.
+static func sword_texture() -> ImageTexture:
+	if _sword_texture == null:
+		_sword_texture = _icon_texture_from_rows(SWORD_ICON_ROWS, ICON_COLOR_SWORD_L)
+	return _sword_texture
+
+
+static func _icon_texture_from_rows(rows: PackedStringArray, light: Color) -> ImageTexture:
+	var h: int = rows.size()
+	var w: int = rows[0].length()
+	var img: Image = Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y: int in range(h):
+		for x: int in range(w):
+			var c: Color = Color(0.0, 0.0, 0.0, 0.0)
+			match rows[y][x]:
+				"O":
+					c = ICON_COLOR_O
+				"L":
+					c = light
+				"G":
+					c = ICON_COLOR_G
+			img.set_pixel(x, y, c)
+	return ImageTexture.create_from_image(img)
+
+
+## Shoe rectangle in cell-local pixels (x0-5, y-7..-1).
+static func shoe_icon_rect_in_cell() -> Rect2:
+	var top: float = -float(PIECE_SPRITE_HEIGHT - BoardCoords.CELL_SIZE) + ACTION_ICON_TOP_MARGIN
+	var size: Vector2 = Vector2(SHOE_ICON_ROWS[0].length(), SHOE_ICON_ROWS.size())
+	return Rect2(Vector2(0.0, top), size)
+
+
+## Sword rectangle in cell-local pixels (x27-31, y-7..-1).
+static func sword_icon_rect_in_cell() -> Rect2:
+	var top: float = -float(PIECE_SPRITE_HEIGHT - BoardCoords.CELL_SIZE) + ACTION_ICON_TOP_MARGIN
+	var size: Vector2 = Vector2(SWORD_ICON_ROWS[0].length(), SWORD_ICON_ROWS.size())
+	return Rect2(Vector2(BoardCoords.CELL_SIZE - size.x, top), size)
+
+
+## Whether [param piece] has spent its move flag. Optional "move_used" key
+## overrides; otherwise derived from "action_flag" (ATTACK_ONLY / DONE).
+static func piece_move_used(piece: Dictionary) -> bool:
+	if piece.has("move_used"):
+		return piece["move_used"]
+	var flag: int = piece.get("action_flag", ActionFlag.NONE_USED)
+	return flag == ActionFlag.ATTACK_ONLY or flag == ActionFlag.DONE
+
+
+## Whether [param piece] has spent its attack flag (MOVE_ONLY / DONE), with
+## an optional "attack_used" override.
+static func piece_attack_used(piece: Dictionary) -> bool:
+	if piece.has("attack_used"):
+		return piece["attack_used"]
+	var flag: int = piece.get("action_flag", ActionFlag.NONE_USED)
+	return flag == ActionFlag.MOVE_ONLY or flag == ActionFlag.DONE
+
+
+## Whether [param piece] is finished for this phase (dim trigger =
+## TurnOrder.is_done, manager ruling 2026-11-16). Optional "done" key;
+## otherwise action_flag == DONE. Enemy pieces are never dimmed.
+static func piece_is_done(piece: Dictionary) -> bool:
+	if piece.get("faction", "PLAYER") != "PLAYER":
+		return false
+	if piece.has("done"):
+		return piece["done"]
+	return int(piece.get("action_flag", ActionFlag.NONE_USED)) == ActionFlag.DONE
 
 ## Story 015 — terrain-impassability marker ([method
 ## Board.passable] == false) consumed by [method
@@ -472,7 +550,7 @@ const IMPASSABLE_TERRAIN_CHECKER_COLOR: Color = Color(0.05, 0.05, 0.05, 0.6)
 ## [member _cursor_sprite] — so this badge can never be hidden behind any
 ## highlight overlay (move/attack/threat/card-target) or the HP bar/text,
 ## matching GDD's "persistent, always visible" requirement for this exact
-## marker. See [constant ACTION_FLAG_PIP_SIZE]'s own doc comment for why this
+## marker. See [method shoe_icon_rect_in_cell] (story 054) for why this
 ## does not actually compete with [member _stats_layer]'s HP text for pixels
 ## despite being drawn above it.
 @onready var _action_flag_layer: Node2D = $ActionFlagLayer
@@ -565,6 +643,14 @@ func set_impassable_terrain_highlights(cells: Array[Vector2i]) -> void:
 ##                              # every piece — never gated on show_hp_text,
 ##                              # selection, or cursor focus (GDD: "常駐於
 ##                              # 棋盤上，不需要選取或開啟面板才看得到").
+##     "move_used": bool,      # OPTIONAL (story 054) — draw the SHOE icon.
+##                              # Absent = derived from action_flag.
+##     "attack_used": bool,    # OPTIONAL (story 054) — draw the SWORD icon.
+##                              # Absent = derived from action_flag.
+##     "done": bool,           # OPTIONAL (story 054) — dim the PLAYER piece
+##                              # sprite (TurnOrder.is_done: includes "ended
+##                              # early"). Absent = action_flag == DONE. Never
+##                              # dims ENEMY pieces.
 ## }
 ## [/codeblock]
 ## Replaces whatever pieces were previously rendered. This method does not
@@ -583,7 +669,7 @@ func set_impassable_terrain_highlights(cells: Array[Vector2i]) -> void:
 ## [constant PIECE_SPRITE_HEIGHT]), a stat block that also overhung would
 ## paint into the status bar above row-0 cells. The action-flag badge is the
 ## one exception: it is deliberately anchored to the SPRITE's overhang zone,
-## not the cell — see [constant ACTION_FLAG_PIP_SIZE]'s own doc comment.
+## not the cell — see [method shoe_icon_rect_in_cell] (story 054).
 func render_pieces(pieces: Array[Dictionary]) -> void:
 	_clear_children(_pieces_layer)
 	_clear_children(_stats_layer)
@@ -601,6 +687,8 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		piece_sprite.texture = load(piece_path)
 		piece_sprite.centered = true
 		piece_sprite.position = _piece_anchor(piece_cell)
+		if piece_is_done(piece):
+			piece_sprite.modulate = Color(DONE_PIECE_DIM, DONE_PIECE_DIM, DONE_PIECE_DIM, 1.0)
 		_pieces_layer.add_child(piece_sprite)
 	for data: Dictionary in pieces:
 		var cell: Vector2i = data["cell"]
@@ -609,7 +697,6 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		var hp_preview: int = data.get("hp_preview", -1)
 		var show_hp_text: bool = data.get("show_hp_text", false)
 		var card_target_illegal: bool = data.get("card_target_illegal", false)
-		var action_flag: ActionFlag = data.get("action_flag", ActionFlag.NONE_USED)
 
 		_stats_layer.add_child(_build_stat_block(
 			cell, hp, hp_max, hp_preview, show_hp_text, card_target_illegal
@@ -622,7 +709,8 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 			)
 			label_used += 1
 
-		_action_flag_layer.add_child(_build_action_flag_marker(cell, action_flag))
+		if data.get("faction", "PLAYER") == "PLAYER":
+			_action_flag_layer.add_child(_build_action_icons(cell, data))
 	for i: int in range(label_used, _piece_label_pool.size()):
 		_piece_label_pool[i].visible = false
 
@@ -1419,83 +1507,28 @@ func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 	return root
 
 
-# Story 015 — persistent per-unit action-flag badge: two adjacent pips
-# anchored to the piece SPRITE's top-right corner (see ACTION_FLAG_PIP_SIZE's
-# own doc comment for why the sprite, not the cell, and for the full
-# distinguishability argument). Left pip = move availability, right pip =
-# attack availability — this fixed order is the only place that mapping is
-# defined; _action_flag_for_state() callers (battle_screen.gd) never need to
-# know it, they only pick an ActionFlag ordinal.
-#
-# flag -> (move_used, attack_used), derived directly from TurnOrder's own
-# naming (ATTACK_ONLY means "only attack is LEFT", i.e. move has been used;
-# MOVE_ONLY means "only move is LEFT", i.e. attack has been used):
-#   NONE_USED    -> move available,  attack available  (both pips hollow)
-#   ATTACK_ONLY  -> move used,       attack available  (left filled, right hollow)
-#   MOVE_ONLY    -> move available,  attack used        (left hollow, right filled)
-#   DONE         -> move used,       attack used        (both pips filled)
-func _build_action_flag_marker(cell: Vector2i, flag: ActionFlag) -> Node2D:
+
+# Story 054 — action-state icons for one PLAYER piece: shoe (moved) at the
+# cell's top-left, sword (attacked) at the top-right, each only when that
+# action has been spent. Positions come from shoe_icon_rect_in_cell() /
+# sword_icon_rect_in_cell(); textures are the shared cached ones.
+func _build_action_icons(cell: Vector2i, piece: Dictionary) -> Node2D:
 	var root: Node2D = Node2D.new()
-	var cell_top_left: Vector2 = BoardCoords.grid_to_local(cell)
-	var sprite_top: float = (
-		cell_top_left.y + BoardCoords.CELL_SIZE - PIECE_SPRITE_HEIGHT
-	)
-	var sprite_right: float = cell_top_left.x + BoardCoords.CELL_SIZE
-	var badge_top: float = sprite_top + ACTION_FLAG_PIP_MARGIN
-	var attack_pip_left: float = sprite_right - ACTION_FLAG_PIP_MARGIN - ACTION_FLAG_PIP_SIZE
-	var move_pip_left: float = attack_pip_left - ACTION_FLAG_PIP_GAP - ACTION_FLAG_PIP_SIZE
-
-	var move_used: bool = flag == ActionFlag.ATTACK_ONLY or flag == ActionFlag.DONE
-	var attack_used: bool = flag == ActionFlag.MOVE_ONLY or flag == ActionFlag.DONE
-
-	root.add_child(_build_action_flag_pip(Vector2(move_pip_left, badge_top), move_used))
-	root.add_child(_build_action_flag_pip(Vector2(attack_pip_left, badge_top), attack_used))
+	var origin: Vector2 = BoardCoords.grid_to_local(cell)
+	if piece_move_used(piece):
+		root.add_child(_build_icon_sprite(shoe_texture(), origin + shoe_icon_rect_in_cell().position, "ShoeIcon"))
+	if piece_attack_used(piece):
+		root.add_child(_build_icon_sprite(sword_texture(), origin + sword_icon_rect_in_cell().position, "SwordIcon"))
 	return root
 
 
-# Story 015 — a single ACTION_FLAG_PIP_SIZE square pip, either FILLED (solid,
-# a used action) or HOLLOW (4-ColorRect border, same technique as
-# _build_card_target_outline()/_build_move_blocked_outline(), an available
-# action). top_left is the pip's own top-left corner in BoardView-local
-# coordinates.
-func _build_action_flag_pip(top_left: Vector2, filled: bool) -> Node2D:
-	var root: Node2D = Node2D.new()
-	if filled:
-		var fill: ColorRect = ColorRect.new()
-		fill.color = ACTION_FLAG_PIP_COLOR
-		fill.position = top_left
-		fill.size = Vector2(ACTION_FLAG_PIP_SIZE, ACTION_FLAG_PIP_SIZE)
-		root.add_child(fill)
-		return root
-
-	var side: float = ACTION_FLAG_PIP_SIZE
-	var border_width: float = ACTION_FLAG_PIP_BORDER_WIDTH
-
-	var top: ColorRect = ColorRect.new()
-	top.color = ACTION_FLAG_PIP_COLOR
-	top.position = top_left
-	top.size = Vector2(side, border_width)
-	root.add_child(top)
-
-	var bottom: ColorRect = ColorRect.new()
-	bottom.color = ACTION_FLAG_PIP_COLOR
-	bottom.position = top_left + Vector2(0.0, side - border_width)
-	bottom.size = Vector2(side, border_width)
-	root.add_child(bottom)
-
-	var left: ColorRect = ColorRect.new()
-	left.color = ACTION_FLAG_PIP_COLOR
-	left.position = top_left
-	left.size = Vector2(border_width, side)
-	root.add_child(left)
-
-	var right: ColorRect = ColorRect.new()
-	right.color = ACTION_FLAG_PIP_COLOR
-	right.position = top_left + Vector2(side - border_width, 0.0)
-	right.size = Vector2(border_width, side)
-	root.add_child(right)
-
-	return root
+func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) -> Sprite2D:
+	var sprite: Sprite2D = Sprite2D.new()
+	sprite.name = node_name
+	sprite.texture = tex
+	sprite.centered = false
+	sprite.position = top_left
+	return sprite
 
 
 # Story 015 — checkerboard half-fill for an impassable terrain cell: the

@@ -111,8 +111,8 @@ func test_ready_scans_board_and_forwards_unregistered_terrain_cells_to_board_vie
 	# 不多不少（呼叫專案既有的真實座標轉換函式 BoardCoords.local_to_grid() 反推，
 	# 不自行重新實作一份座標數學 —— technical-preferences.md「(A) 的精確定義」節）
 	# （讀 global_position 而非 position——依
-	# tests/integration/ui/action_flag_impassable_terrain_test.gd
-	# _filled_pip_x_positions() 既有先例，不假設中間任何圖層節點本身位移為零）
+	# 本檔其他測試讀 global_position 的做法為先例(姊妹檔 action_flag_impassable_terrain_test.gd
+	# 的舊 pip 位置輔助函式於 story-054 移除),不假設中間任何圖層節點本身位移為零)
 	var marked_cells: Array[Vector2i] = []
 	for marker: Node in layer.get_children():
 		var quadrant: Control = marker.get_child(0) as Control

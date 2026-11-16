@@ -89,6 +89,10 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 🟡 048 AC2 交件(**未提交**,在工作樹):`HudLayout.tile_info_panel_rect()`,右緣 = 第 7 欄左緣(全名冊敵方最小欄);實作者全套 `ENGINE EXIT = 0` / `2126 … 0 failures` / `(206/206)`。🔴 **協調者覆核疑點(假設錯型候選)**:AC2 字面只驗敵方起始格;新位置移到棋盤上方偏中,實作者手算預覽模式在 1920/2560/3840 蓋一致率計數器(新造成)、可能蓋我方/關係圖面板;將來捲動地圖會失效 → ⏳ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md` 判斷後才決定提交。⏳ 協調者重跑 `C:/tmp/run_048_coord.log`。午休驅動跑的是工作樹 = 會拍到新位置。
 - ✅ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md`:重疊計數器屬實(預覽卡 1080p 疊 28px、1440p 43、4K 203);固定位置無全解;實作者算術表有 4 處錯。🔴 裁決(約 10:10):「**位置維持右上,只保留「不透明底+框」**」(非推薦)→ 協調者 `git checkout` 還原 048 三檔(工作樹 = `3759352`,已驗)。**048 AC2 擱置**;工單 048 狀態改寫待問(既有文件)。覆核收穫 +1(AC2 字面過、目的落空)。
 - ✅ story-051 交件(撞 20 回合一次續做):實作者全套 `ENGINE EXIT = 0` / `2134 … 0 failures` / `(208/208)`;strings +4(多 `battle.enemy_kind.unknown,敵兵` 供退回,合理);名冊只加 `,,kind` 欄(協調者 diff 驗,數值零變動);型別對應與概念文件 124/219/220 行一致;`board_view.gd` 未動(label 由 battle_screen 帶入)。協調者疑「1/2/1/2/1」→ 測試順序 E1,E5,E2,E4,E3,**不成立**。⏳ 協調者重跑 `C:/tmp/run_051_coord.log`。
+- ✅ **story-051 提交 `0bd5295`**(協調者重跑 `ENGINE EXIT = 0` / `2134 … 0 failures` / `(208/208)`)。覆核收穫 0。
+- ⏳ story-054(godot-gdscript-specialist,**隔離 worktree**,避免干擾午休截圖;回報會給 worktree 路徑 → 協調者把 diff 套回主目錄再重跑;log `C:/tmp/run_054.log`)。
+- 🟡 054 交件(worktree `.claude/worktrees/agent-aaf462184bb1f104d`,未提交):AC1~7 完成,實作者全套 `ENGINE EXIT = 0` / `2142 … 0 failures` / `(209/209)`;AC8 驅動未做;舊小方塊測試刪除逐條有接手(「兩態畫成一樣」由顯示表四集合互異接手)。🔴 缺口:實機被提早結束的單位會畫「變暗 + 鞋劍都有」(TurnOrder 無 move_used/attack_used 公開查詢)。🔴 管理者裁決(約 11:05):「**授權,在這張單一起補(推薦)**」→ 範圍擴大:`turn_order.gd`、`battle_controller.gd` 各加一個唯讀 getter(不改行為)+ `battle_screen.gd` 傳 3 欄位。
+- ✅ 054 接線補完(實作者查主目錄 active.md 核准後動手;全套 `2145 … 0 failures` / `(210/210)`)。協調者把 worktree diff 以 `C:/tmp/story054.patch` 套回主目錄;**協調者自做 mutant**(battle_screen 刪三欄)→ 單跑接線測試 `ENGINE EXIT=100`、`test_battle_screen_ended_without_acting_dims_piece_and_draws_no_icons FAILED` → 已還原(numstat 5/0)。⏳ 協調者全套 `C:/tmp/run_054_coord.log`。worktree 待清。
 - 📌 午休腳本 `C:/tmp/lunch_capture_2026-11-16.sh`(三支驅動依序)。
 - 📌 午休待拍:053 驅動(灰禁用 4 態)、首字底四版、044 AC8/052 AC7 重拍、046 AC6、056 AC7 —— 禁用灰色值 (0.5,0.54,0.6) 拍完交 art 看。
 

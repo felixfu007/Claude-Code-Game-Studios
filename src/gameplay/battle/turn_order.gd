@@ -232,6 +232,18 @@ func unit_action_state(id: int) -> ActionState:
 	return ActionState.NONE_USED
 
 
+## Story 054 — read-only: whether [param id]'s move flag is spent, ignoring
+## [member _done] and the faction gate (so a unit ended early via
+## [method end_unit_turn] with no move still reads false). Unknown id → false.
+func has_used_move(id: int) -> bool:
+	return _move_used.get(id, false)
+
+
+## Story 054 — read-only counterpart of [method has_used_move] for the attack flag.
+func has_used_attack(id: int) -> bool:
+	return _attack_used.get(id, false)
+
+
 ## Returns the ids of the current faction's units that are not yet done —
 ## i.e. still have at least one unspent flag and were not actively ended.
 ## Order matches the faction's original construction order.
