@@ -174,6 +174,8 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 054 | story-054-action-state-icons-sword-shoe.md | — | Visual/UI | 鞋/劍行動圖示(做過才出現、我方限定)+ 做完變暗。⛔ Blocked(待 art 補遺併入) | 051 |
 | 055 | story-055-damage-preview-text-clipped.md | — | UI | 傷害預覽「23→7」截字。⛔ Blocked(待開窗量測 + 修法選擇) | 041 |
 | 056 | story-056-campaign-defeat-retry-same-mission.md | — | Logic + UI | 戰役戰敗改為直接重打同一場(不回標題)。📋 Ready(2026-11-13;「下一步」行用字待 game-designer 定稿) | 046 |
+| 057 | story-057-piece-initial-dark-backdrop.md | — | UI | 我方棋子首字加深色底(管理者 2026-11-16「A:全部加濃底」)。📋 Ready | 055 |
+| 058 | story-058-attackable-amber-ring-above-piece.md | — | UI | 可攻擊琥珀框畫成完整一圈(管理者 2026-11-16)。📋 Ready(步驟 1 先查成因) | 047、057 |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)
 

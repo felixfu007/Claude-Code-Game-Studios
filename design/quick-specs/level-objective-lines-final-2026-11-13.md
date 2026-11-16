@@ -45,7 +45,7 @@
 |---|---|---|---|---|
 | 教學 1 | `battle.objective.tut01_learn` | 選取角色，看移動範圍再走過去 | 14 | 沿用 |
 | 教學 2 | `battle.objective.tut02_learn` | 靠近敵人，看射程與傷害預覽再攻擊 | 16 | 沿用 |
-| 教學 3 | `battle.objective.tut03_learn` | 選中敵人看威脅範圍，小心踏入 | 14 | 沿用 |
+| 教學 3 | `battle.objective.tut03_learn` | 選中角色看威脅範圍，搶先出手 | 14 | 2026-11-16 管理者核准改(原句「選中敵人看威脅範圍，小心踏入」教玩家做遊戲沒有的事;見 `docs/reviews/tut03-learn-line-2026-11-16.md`) |
 | 教學 4 | `battle.objective.tut04_learn` | 看傷害預覽，換個位置再看一次 | 14 | **改寫** |
 
 **教學 4 的判斷:草稿「兩人並肩或拆開」確實過度提示,改掉。**
