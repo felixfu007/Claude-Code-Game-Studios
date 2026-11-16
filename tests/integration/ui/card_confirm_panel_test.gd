@@ -357,9 +357,10 @@ func test_confirm_panel_丙類_reflects_player_selected_pair_not_card_fields() -
 	var target_text: String = instance._card_confirm_panel.diagnostic_target_text()
 	assert_str(target_text).append_failure_message(
 		"確認面板應顯示玩家實際選取的 %s / %s，實得「%s」"
-		% [unit_1.code_name, unit_2.code_name, target_text]
-	).contains(unit_1.code_name)
-	assert_str(target_text).contains(unit_2.code_name)
+		% [BattleScreen.unit_display_name(unit_1), BattleScreen.unit_display_name(unit_2), target_text]
+	).contains(BattleScreen.unit_display_name(unit_1))
+	assert_str(target_text).contains(BattleScreen.unit_display_name(unit_2))
+	assert_str(target_text).not_contains(unit_1.code_name).not_contains(unit_2.code_name)  # story-051 AC8:不得出現代號
 	assert_int(instance._card_confirm_panel.diagnostic_category()).is_equal(
 		CardConfirmPanel.Category.PERMANENT_WRITE
 	)
@@ -382,7 +383,7 @@ func test_confirm_panel_丙類_pair_updates_after_reselecting_without_residue() 
 	_install_session(instance, [card], links, NullAffinityWritePort.new())
 
 	_drive_permanent_write_to_confirming(instance, unit_1, unit_2)
-	assert_str(instance._card_confirm_panel.diagnostic_target_text()).contains(unit_1.code_name)
+	assert_str(instance._card_confirm_panel.diagnostic_target_text()).contains(BattleScreen.unit_display_name(unit_1))
 
 	# Act —— 取消兩次，退回 S2p，改選另一對
 	instance._input(_real_pressed_event(&"battle_cancel"))  # S3 -> S2q
@@ -408,13 +409,13 @@ func test_confirm_panel_丙類_pair_updates_after_reselecting_without_residue() 
 	var target_text: String = instance._card_confirm_panel.diagnostic_target_text()
 	assert_str(target_text).append_failure_message(
 		"改選另一對後應顯示 %s / %s，不殘留 %s / %s，實得「%s」"
-		% [unit_3.code_name, unit_4.code_name, unit_1.code_name, unit_2.code_name, target_text]
-	).contains(unit_3.code_name)
-	assert_str(target_text).contains(unit_4.code_name)
+		% [BattleScreen.unit_display_name(unit_3), BattleScreen.unit_display_name(unit_4), BattleScreen.unit_display_name(unit_1), BattleScreen.unit_display_name(unit_2), target_text]
+	).contains(BattleScreen.unit_display_name(unit_3))
+	assert_str(target_text).contains(BattleScreen.unit_display_name(unit_4))
 	assert_str(target_text).append_failure_message(
 		"不得殘留前一對的姓名，實得「%s」" % target_text
-	).not_contains(unit_1.code_name)
-	assert_str(target_text).not_contains(unit_2.code_name)
+	).not_contains(BattleScreen.unit_display_name(unit_1))
+	assert_str(target_text).not_contains(BattleScreen.unit_display_name(unit_2))
 
 
 # ─── 甲類欄位（Δatk/Δdef 帶號含 0、逐條修正並列合併值）────────────────────────
@@ -441,7 +442,7 @@ func test_confirm_panel_甲類_shows_delta_atk_def_with_sign_and_zero_visible() 
 		"ΔDEF=0 仍必須顯示（0 是合法值不是缺資料），實得「%s」" % panel.diagnostic_delta_def_text()
 	).contains("+0")
 	assert_str(panel.diagnostic_duration_text()).contains("1")
-	assert_str(panel.diagnostic_target_text()).contains(target.code_name)
+	assert_str(panel.diagnostic_target_text()).contains(BattleScreen.unit_display_name(target))
 
 
 func test_confirm_panel_甲類_shows_per_entry_modifiers_alongside_merged_effective_value() -> void:

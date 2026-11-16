@@ -19,7 +19,6 @@
 class_name RelationMinimap
 extends Control
 
-const NAME_KEY_FORMAT: String = "character.name.%d"
 const TEXT_TITLE: StringName = &"battle.hud.relation_map_title"
 const TEXT_DEAD: StringName = &"battle.hud.relation_map_dead"
 const ROSTER_IDS: Array[int] = [1, 2, 3, 4, 5]
@@ -137,7 +136,7 @@ func _draw() -> void:
 		var alive: bool = id in _alive_ids
 		var color: Color = COLOR_NODE if alive else COLOR_DEAD
 		draw_circle(p, _font_size * 0.4, color)
-		var label: String = Loc.localize(StringName(NAME_KEY_FORMAT % id))
+		var label: String = Loc.character_name(id)
 		if not alive:
 			label += Loc.localize(TEXT_DEAD)
 		# 名字以點為中心水平置中;下半部的點把名字畫在點的下方,避免與上方的線和符號擠在一起。

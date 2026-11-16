@@ -262,6 +262,7 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# 🔴 2026-11-03 game-shell story-010:158 → 159(新增 shell.title.game_name 一列;依工作單 Affected Files)。
 	# 🔴 2026-11-12 tactical-combat story-039:163 → 165(新增 battle.tile_info.identity_line_format / enemy_name_format 兩列;依工作單 Affected Files)。
 	# 🔴 2026-11-12 tactical-combat story-040:165 → 170(新增 battle.tile_info.attack_line_format / attack_reason_* 共五列;依工作單 Affected Files)。
+	# 🔴 2026-11-16 tactical-combat story-051:226 → 230(新增 battle.enemy_kind.melee/mid/ranged/unknown 共四列,比工作單估的 +3 多一列 unknown 作為缺 enemy_kind 時退回「敵兵 N」的字;改 enemy_name_format 為 %s %d 不增列;依工作單 Affected Files)。
 	# 🔴 2026-11-06 audio-foundation story-002:159 → 163(新增 shell.settings.volume_master/volume_music/volume_sfx/mute_toggle 四列;依工作單 Affected Files)。
 	# 🔴 2026-10-28 再續四:148 → 150(tactical-combat story-022 新增 battle.hud.result_defeat_reason_format / _separator 共 2 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續三:145 → 148(relation-minimap story-001 新增 battle.hud.relation_map_* 共 3 列;依工作單 Affected Files,延續同日同一處理方式)。
@@ -298,7 +299,7 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 		"strings.csv 資料列數應為 226（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(226)
+	).is_equal(230)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

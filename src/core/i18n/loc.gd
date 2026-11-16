@@ -104,3 +104,14 @@ static func _missing_key_fallback(key: StringName, is_debug_build: bool) -> Stri
 	if is_debug_build:
 		return _MISSING_KEY_DEBUG_PREFIX + String(key) + _MISSING_KEY_DEBUG_SUFFIX
 	return _MISSING_KEY_RELEASE_VALUE
+
+
+## story-051 —— 角色正式姓名的【唯一出處】:鍵 [code]character.name.<id>[/code] 只在這裡拼接。
+## 戰鬥畫面、關係圖、對話畫面皆呼叫本函式,不得各自拼鍵。
+static func character_name_key(id: int) -> StringName:
+	return StringName("character.name.%d" % id)
+
+
+## 姓名字串(經 [method localize])。
+static func character_name(id: int) -> String:
+	return localize(character_name_key(id))

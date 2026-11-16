@@ -238,6 +238,7 @@ const TEXT_TILE_INFO_FACTION_ENEMY: StringName = &"battle.tile_info.faction_enem
 const TEXT_TILE_INFO_FACTION_LINE_FORMAT: StringName = &"battle.tile_info.faction_line_format"
 const TEXT_TILE_INFO_IDENTITY_LINE_FORMAT: StringName = &"battle.tile_info.identity_line_format"
 const TEXT_TILE_INFO_ENEMY_NAME_FORMAT: StringName = &"battle.tile_info.enemy_name_format"
+const TEXT_ENEMY_KIND_UNKNOWN: StringName = &"battle.enemy_kind.unknown"
 const TEXT_TILE_INFO_HP_LINE_FORMAT: StringName = &"battle.tile_info.hp_line_format"
 const TEXT_TILE_INFO_STATE_NONE_USED: StringName = &"battle.tile_info.state_none_used"
 const TEXT_TILE_INFO_STATE_ATTACK_ONLY: StringName = &"battle.tile_info.state_attack_only"
@@ -3293,14 +3294,53 @@ static func enemy_number_from_code_name(code_name: String) -> int:
 
 ## story-039 —— 我方單位正式姓名,一律經 Loc 取得(鍵與 relation_minimap 同格式)。
 static func player_display_name(unit_id: int) -> String:
-	return Loc.localize(StringName("character.name.%d" % unit_id))
+	return Loc.character_name(unit_id)
 
 
-## story-039 —— 棋子上的標記字:我方 = 正式姓名第一個字;敵方 = 編號數字 N。
-## 敵方 code_name 格式不符 → push_error + 回傳 ""(不畫標記)。
-static func piece_label_text(faction: Unit.Faction, unit_id: int, code_name: String) -> String:
+## story-051 —— 敵方顯示名稱的【唯一格式化出處】:「<型別名> <型別內序號>」(例「裂殼 1」)。
+## 資訊卡、攻擊確認面板、卡牌確認面板皆經 [method unit_display_name] 走到這裡,不得各自拼字串。
+## [param kind] 為空(名冊缺 enemy_kind)→ 退回「敵兵 <序號>」(序號由呼叫端給,見 [method display_name_of])。
+static func enemy_display_name(kind: StringName, ordinal: int) -> String:
+	var kind_key: StringName = (
+		StringName("battle.enemy_kind.%s" % String(kind)) if kind != &""
+		else TEXT_ENEMY_KIND_UNKNOWN
+	)
+	return Loc.localize(TEXT_TILE_INFO_ENEMY_NAME_FORMAT) % [Loc.localize(kind_key), ordinal]
+
+
+## story-051 —— 單位顯示名稱的核心(純資料版,供 [method unit_display_name] 與資訊卡共用):
+## 我方 = 正式姓名;敵方有 kind = 型別名+kind_ordinal;敵方缺 kind = 退回剖 code_name 的 E<N>
+## → 「敵兵 N」;格式不符 → push_error + 回傳 ""。
+static func display_name_of(
+	faction: Unit.Faction, unit_id: int, code_name: String,
+	enemy_kind: StringName = &"", kind_ordinal: int = 0
+) -> String:
+	if faction == Unit.Faction.PLAYER:
+		return player_display_name(unit_id)
+	if enemy_kind != &"":
+		return enemy_display_name(enemy_kind, kind_ordinal)
+	var n: int = enemy_number_from_code_name(code_name)
+	if n < 0:
+		push_error("display_name_of: enemy code_name '%s' is not E<number>" % code_name)
+		return ""
+	return enemy_display_name(&"", n)
+
+
+## story-051 —— 單位顯示名稱的【單一出處】(AC3/AC8)。
+static func unit_display_name(unit: Unit) -> String:
+	return display_name_of(unit.faction, unit.id, unit.code_name, unit.enemy_kind, unit.kind_ordinal)
+
+
+## story-039 —— 棋子上的標記字:我方 = 正式姓名第一個字;敵方 = 型別內序號(story-051,
+## 取自 kind_ordinal);缺 enemy_kind 的敵方退回剖 E<N>。格式不符 → push_error + ""。
+static func piece_label_text(
+	faction: Unit.Faction, unit_id: int, code_name: String,
+	enemy_kind: StringName = &"", kind_ordinal: int = 0
+) -> String:
 	if faction == Unit.Faction.PLAYER:
 		return player_display_name(unit_id).substr(0, 1)
+	if enemy_kind != &"":
+		return str(kind_ordinal)
 	var n: int = enemy_number_from_code_name(code_name)
 	if n < 0:
 		push_error("piece_label_text: enemy code_name '%s' is not E<number>" % code_name)
@@ -3308,24 +3348,19 @@ static func piece_label_text(faction: Unit.Faction, unit_id: int, code_name: Str
 	return str(n)
 
 
-## story-039 —— 資訊卡單位第一行:我方「藍亭萱（我方）」、敵方「敵兵 N（敵方）」。
-## 敵方 code_name 格式不符 → push_error + 退回原陣營行。
+## story-039 —— 資訊卡單位第一行:我方「藍亭萱（我方）」、敵方「裂殼 1（敵方）」。
+## 敵方 code_name 格式不符且無 enemy_kind → push_error + 退回原陣營行。
 static func format_tile_info_identity_line(
-	faction: Unit.Faction, unit_id: int, code_name: String
+	faction: Unit.Faction, unit_id: int, code_name: String,
+	enemy_kind: StringName = &"", kind_ordinal: int = 0
 ) -> String:
 	var faction_name: String = (
 		Loc.localize(TEXT_TILE_INFO_FACTION_PLAYER) if faction == Unit.Faction.PLAYER
 		else Loc.localize(TEXT_TILE_INFO_FACTION_ENEMY)
 	)
-	var who: String
-	if faction == Unit.Faction.PLAYER:
-		who = player_display_name(unit_id)
-	else:
-		var n: int = enemy_number_from_code_name(code_name)
-		if n < 0:
-			push_error("identity line: enemy code_name '%s' is not E<number>" % code_name)
-			return format_tile_info_faction_line(faction)
-		who = Loc.localize(TEXT_TILE_INFO_ENEMY_NAME_FORMAT) % n
+	var who: String = display_name_of(faction, unit_id, code_name, enemy_kind, kind_ordinal)
+	if who == "":
+		return format_tile_info_faction_line(faction)
 	return Loc.localize(TEXT_TILE_INFO_IDENTITY_LINE_FORMAT) % [who, faction_name]
 
 
@@ -3370,7 +3405,9 @@ static func build_tile_info_text(
 	occupant_max_range: int,
 	occupant_mp: int,
 	occupant_id: int = -1,
-	occupant_code_name: String = ""
+	occupant_code_name: String = "",
+	occupant_enemy_kind: StringName = &"",
+	occupant_kind_ordinal: int = 0
 ) -> String:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append(format_tile_info_terrain_line(terrain_char))
@@ -3380,7 +3417,8 @@ static func build_tile_info_text(
 		# story-039:呼叫端給了單位 id 就顯示姓名/敵兵編號行,否則維持舊「陣營」行。
 		if occupant_id >= 0:
 			lines.append(format_tile_info_identity_line(
-				occupant_faction, occupant_id, occupant_code_name
+				occupant_faction, occupant_id, occupant_code_name,
+				occupant_enemy_kind, occupant_kind_ordinal
 			))
 		else:
 			lines.append(format_tile_info_faction_line(occupant_faction))
@@ -4408,7 +4446,7 @@ func _open_card_confirm_panel() -> void:
 		var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical, _state.card_modifier_tuning)
 		var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical, _state.card_modifier_tuning)
 		_card_confirm_panel.show_temporary_modifier_confirmation(
-			card.id, flavor_text, target.code_name,
+			card.id, flavor_text, unit_display_name(target),
 			card.delta_atk, card.delta_def, card.duration_rounds,
 			existing, preview_atk, preview_def
 		)
@@ -4419,7 +4457,7 @@ func _open_card_confirm_panel() -> void:
 		if card_confirm_strength_provider.is_valid():
 			strength_result = card_confirm_strength_provider.call(target_a_id, target_b_id)
 		_card_confirm_panel.show_permanent_write_confirmation(
-			card.id, flavor_text, target_a.code_name, target_b.code_name,
+			card.id, flavor_text, unit_display_name(target_a), unit_display_name(target_b),
 			bool(strength_result.get("available", false)),
 			int(strength_result.get("current", 0)),
 			int(strength_result.get("projected", 0))
@@ -4965,7 +5003,7 @@ func _refresh_view() -> void:
 			"cell": _display_cell_override.get(unit.id, _state.position_of(unit.id)),
 			"faction": "ENEMY",
 			"sprite_index": 0,
-			"label": piece_label_text(Unit.Faction.ENEMY, unit.id, unit.code_name),
+			"label": piece_label_text(Unit.Faction.ENEMY, unit.id, unit.code_name, unit.enemy_kind, unit.kind_ordinal),
 			"hp": unit.hp,
 			"hp_max": unit.hp_max,
 			"hp_preview": preview_target_hp if unit.id == preview_target_id else -1,
@@ -5295,7 +5333,7 @@ func _update_tile_info_panel() -> void:
 			true, occupant.faction, occupant.hp, occupant.hp_max,
 			_controller.unit_action_state(occupant.id),
 			occupant.min_range, occupant.max_range, occupant.mp,
-			occupant.id, occupant.code_name
+			occupant.id, occupant.code_name, occupant.enemy_kind, occupant.kind_ordinal
 		)
 		# story-032 AC1/AC3:指到我方單位 → 加一列「目前所在格」的減傷(0 不顯示)。
 		var guard_text: String = ""
@@ -5367,7 +5405,7 @@ func _build_attack_preview_text(attacker_id: int, target_id: int) -> String:
 		return ""
 	var bd: Dictionary = result.breakdown
 	var lines: PackedStringArray = PackedStringArray([
-		Loc.localize(&"battle.attack_confirm.header_format") % [attacker.code_name, target.code_name],
+		Loc.localize(&"battle.attack_confirm.header_format") % [unit_display_name(attacker), unit_display_name(target)],
 		Loc.localize(&"battle.attack_confirm.atk_format") % int(bd["atk"]),
 		Loc.localize(&"battle.attack_confirm.def_format") % int(bd["def"]),
 		Loc.localize(&"battle.attack_confirm.damage_format") % int(bd["damage"]),
@@ -5538,13 +5576,13 @@ func _on_tree_exited_cursor_handoff() -> void:
 ## story-022:戰敗文字 =「戰敗」+ 倒下的我方角色名。倒下者讀
 ## [BattleState] 既有的存活資料([method Unit.is_alive]),不另記一份;
 ## 開局我方 id 清單([member _player_roster_ids])只用來枚舉「誰曾在場」。
-## 名稱走 character.name.N;查無倒下者時退回原本的純「戰敗」文字。
+## 名稱走 Loc.character_name;查無倒下者時退回原本的純「戰敗」文字。
 func _defeat_result_text() -> String:
 	var names: Array[String] = []
 	for id: int in _player_roster_ids:
 		var unit: Unit = _state.unit_by_id(id)
 		if unit != null and not unit.is_alive():
-			names.append(Loc.localize(StringName("character.name.%d" % id)))
+			names.append(Loc.character_name(id))
 	if names.is_empty():
 		return Loc.localize(TEXT_RESULT_DEFEAT)
 	return Loc.localize(TEXT_RESULT_DEFEAT_REASON_FORMAT) % Loc.localize(TEXT_RESULT_DEFEAT_REASON_SEPARATOR).join(names)

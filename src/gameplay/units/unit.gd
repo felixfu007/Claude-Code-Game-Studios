@@ -23,6 +23,17 @@ const FIELD_COUNT: int = 11
 ## effect (spec §2.2). Data-driven: no unit id or code name is hard-coded anywhere.
 const FIELD_COUNT_WITH_LONE_FLAG: int = 12
 
+## story-051: optional 13th column [code]enemy_kind[/code] (melee / mid / ranged; ENEMY rows only).
+const FIELD_COUNT_WITH_ENEMY_KIND: int = 13
+
+## story-051: legal [code]enemy_kind[/code] data keys.
+const ENEMY_KINDS: Array[StringName] = [&"melee", &"mid", &"ranged"]
+
+## story-051: enemy kind key (empty = none) and 1-based ordinal within that kind in the roster
+## (assigned by [method roster_from_text] by row order; 0 = unassigned).
+var enemy_kind: StringName = &""
+var kind_ordinal: int = 0
+
 ## story-031: true if the roster row carried lone_guard=1. Read by [BattleState].
 var lone_guard: bool = false
 
@@ -190,10 +201,14 @@ var _modifiers: Array[CardModifier] = []
 static func from_csv_line(line: String) -> Unit:
 	var fields: PackedStringArray = line.split(",")
 	# story-038:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
-	if fields.size() != FIELD_COUNT and fields.size() != FIELD_COUNT_WITH_LONE_FLAG:
+	if (
+		fields.size() != FIELD_COUNT
+		and fields.size() != FIELD_COUNT_WITH_LONE_FLAG
+		and fields.size() != FIELD_COUNT_WITH_ENEMY_KIND
+	):
 		push_error(
-			"Unit.from_csv_line: expected %d or %d fields, got %d in line: %s"
-			% [FIELD_COUNT, FIELD_COUNT_WITH_LONE_FLAG, fields.size(), line]
+			"Unit.from_csv_line: expected %d, %d or %d fields, got %d in line: %s"
+			% [FIELD_COUNT, FIELD_COUNT_WITH_LONE_FLAG, FIELD_COUNT_WITH_ENEMY_KIND, fields.size(), line]
 		)
 		return null
 
@@ -215,8 +230,18 @@ static func from_csv_line(line: String) -> Unit:
 	unit.min_range = int(fields[7])
 	unit.max_range = int(fields[8])
 	unit.start_pos = Vector2i(int(fields[9]), int(fields[10]))
-	if fields.size() == FIELD_COUNT_WITH_LONE_FLAG:
+	if fields.size() >= FIELD_COUNT_WITH_LONE_FLAG:
 		unit.lone_guard = fields[11].strip_edges() == "1"
+	if fields.size() == FIELD_COUNT_WITH_ENEMY_KIND:
+		var kind: String = fields[12].strip_edges()
+		if not kind.is_empty():
+			if not ENEMY_KINDS.has(StringName(kind)):
+				push_error("Unit.from_csv_line: unknown enemy_kind '%s' in line: %s" % [kind, line])
+				return null
+			if unit.faction != Faction.ENEMY:
+				push_error("Unit.from_csv_line: enemy_kind on a non-ENEMY row in line: %s" % line)
+				return null
+			unit.enemy_kind = StringName(kind)
 	return unit
 
 
@@ -256,6 +281,13 @@ static func roster_from_text(text: String) -> Array[Unit]:
 			)
 			return []
 		roster.append(unit)
+	# story-051: per-kind ordinal by roster row order (data-driven, not by id).
+	var counters: Dictionary = {}
+	for u: Unit in roster:
+		if u.enemy_kind != &"":
+			var n: int = int(counters.get(u.enemy_kind, 0)) + 1
+			counters[u.enemy_kind] = n
+			u.kind_ordinal = n
 	return roster
 
 

@@ -31,7 +31,6 @@ const CHARS_PER_SECOND: float = 30.0
 const MISSING_MARKER_PREFIX: String = "[MISSING] "
 const MIN_FONT_SIZE: int = 24
 const FONT_SIZE_DIVISOR: float = 30.0
-const SPEAKER_NAME_KEY_FORMAT: String = "character.name.%d"
 const TEXT_PREV: String = "support.ui.prev"
 const TEXT_SKIP: String = "support.ui.skip"
 const TEXT_SKIP_BODY: String = "support.ui.skip_confirm_body"
@@ -415,7 +414,7 @@ func _begin_conversation(index: int) -> bool:
 
 
 func _speaker_text_of(entry: Dictionary) -> String:
-	return resolve_text(SPEAKER_NAME_KEY_FORMAT % int(entry[SupportConversationScript.KEY_SPEAKER]))
+	return resolve_text(String(Loc.character_name_key(int(entry[SupportConversationScript.KEY_SPEAKER]))))
 
 
 func _show_line() -> void:

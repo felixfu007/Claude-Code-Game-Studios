@@ -173,7 +173,7 @@ shell.settings.volume_music,音樂
 shell.settings.volume_sfx,音效
 shell.settings.mute_toggle,靜音
 battle.tile_info.identity_line_format,%s（%s）
-battle.tile_info.enemy_name_format,敵兵 %d
+battle.tile_info.enemy_name_format,%s %d
 battle.tile_info.attack_line_format,攻擊：%s
 battle.tile_info.attack_reason_action_spent,已用完
 battle.tile_info.attack_reason_out_of_range,目前太遠
@@ -233,3 +233,7 @@ battle.result.next_defeat_campaign,稍後自動重來這一場
 battle.result.next_defeat_tutorial,稍後自動重來這一場
 battle.menu.objective_row,目標
 battle.menu.legend_row,圖例
+battle.enemy_kind.melee,裂殼
+battle.enemy_kind.mid,垂鉤
+battle.enemy_kind.ranged,聽環
+battle.enemy_kind.unknown,敵兵

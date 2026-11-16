@@ -153,3 +153,80 @@ func test_ac5_no_label_field_draws_no_label_and_hp_text_still_drawn() -> void:
 	assert_int(_piece_labels_in(view).size()).is_equal(0)
 	# HP 文字 Label(8px)仍在。
 	assert_int(_labels_in(view).size()).is_equal(1)
+
+
+# ---- story-051:敵方型別名稱 + 單一出處 + 我方姓名 -------------------------------
+# 讀版控唯讀名冊 assets/data/units/vs01_roster.txt(test-standards.md 登記例外①;不證明窮盡)。
+
+const _VS01_ROSTER: String = "res://assets/data/units/vs01_roster.txt"
+const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
+
+var _host_snap: CursorHostSnapshot = null
+
+
+func before_test() -> void:
+	_host_snap = CursorHostSnapshot.capture()
+
+
+func after_test() -> void:
+	_host_snap.restore()
+	var host: Node = get_tree().root.get_node_or_null("CursorStateHost")
+	if host == null:
+		return
+	var registry: CursorSurfaceRegistry = host.get(&"_registry")
+	registry.unregister(CursorTypes.SurfaceType.BOARD_TILE)
+
+
+func _vs01_units() -> Dictionary:
+	var f: FileAccess = FileAccess.open(_VS01_ROSTER, FileAccess.READ)
+	var by_code: Dictionary = {}
+	for u: Unit in Unit.roster_from_text(f.get_as_text()):
+		by_code[u.code_name] = u
+	return by_code
+
+
+func test_s051_enemy_names_by_kind_ordinal() -> void:
+	var u: Dictionary = _vs01_units()
+	var expected: Dictionary = {
+		"E1": "裂殼 1", "E5": "裂殼 2", "E2": "垂鉤 1", "E4": "垂鉤 2", "E3": "聽環 1",
+	}
+	for code: String in expected:
+		var unit: Unit = u[code]
+		assert_str(BattleScreen.unit_display_name(unit)).is_equal(expected[code])
+		assert_str(BattleScreen.format_tile_info_identity_line(
+			unit.faction, unit.id, unit.code_name, unit.enemy_kind, unit.kind_ordinal
+		)).is_equal(expected[code] + "（敵方）")
+
+
+func test_s051_piece_labels_are_kind_ordinals() -> void:
+	var u: Dictionary = _vs01_units()
+	var got: Array[String] = []
+	for code: String in ["E1", "E5", "E2", "E4", "E3"]:
+		var unit: Unit = u[code]
+		got.append(BattleScreen.piece_label_text(
+			unit.faction, unit.id, unit.code_name, unit.enemy_kind, unit.kind_ordinal
+		))
+	assert_array(got).is_equal(["1", "2", "1", "2", "1"])
+	# 缺 enemy_kind 退回剖 E<N>;我方不變
+	assert_str(BattleScreen.piece_label_text(Unit.Faction.ENEMY, 9, "E4")).is_equal("4")
+	assert_str(BattleScreen.piece_label_text(Unit.Faction.PLAYER, 1, "甲")).is_equal("藍")
+
+
+func test_s051_ac3_ac8_attack_preview_header_uses_unit_display_name() -> void:
+	var instance: BattleScreen = auto_free(load(_SCENE_PATH).instantiate())
+	add_child(instance)
+	var attacker: Unit = instance._state.units_of(Unit.Faction.PLAYER)[0]
+	var enemy: Unit = instance._state.units_of(Unit.Faction.ENEMY)[0]
+	var text: String = instance._build_attack_preview_text(attacker.id, enemy.id)
+	var header: String = Loc.localize(&"battle.attack_confirm.header_format") % [
+		BattleScreen.unit_display_name(attacker), BattleScreen.unit_display_name(enemy)
+	]
+	assert_str(text).contains(header)
+	assert_str(BattleScreen.unit_display_name(attacker)).is_equal(Loc.character_name(attacker.id))
+	assert_str(header).not_contains(attacker.code_name)
+	assert_str(header).not_contains(enemy.code_name)
+	assert_str(header).contains("藍亭萱")
+	# 資訊卡同一函式:同一敵方在資訊卡與面板標題名稱一致
+	assert_str(BattleScreen.format_tile_info_identity_line(
+		enemy.faction, enemy.id, enemy.code_name, enemy.enemy_kind, enemy.kind_ordinal
+	)).contains(BattleScreen.unit_display_name(enemy))

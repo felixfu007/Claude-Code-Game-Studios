@@ -88,7 +88,7 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ story-048 AC2(godot-gdscript-specialist,log `C:/tmp/run_048.log`):固定位置避開 vs01~05+教學全部敵方起始格,不得游標換邊。
 - 🟡 048 AC2 交件(**未提交**,在工作樹):`HudLayout.tile_info_panel_rect()`,右緣 = 第 7 欄左緣(全名冊敵方最小欄);實作者全套 `ENGINE EXIT = 0` / `2126 … 0 failures` / `(206/206)`。🔴 **協調者覆核疑點(假設錯型候選)**:AC2 字面只驗敵方起始格;新位置移到棋盤上方偏中,實作者手算預覽模式在 1920/2560/3840 蓋一致率計數器(新造成)、可能蓋我方/關係圖面板;將來捲動地圖會失效 → ⏳ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md` 判斷後才決定提交。⏳ 協調者重跑 `C:/tmp/run_048_coord.log`。午休驅動跑的是工作樹 = 會拍到新位置。
 - ✅ ux `docs/reviews/story-048-placement-ux-check-2026-11-16.md`:重疊計數器屬實(預覽卡 1080p 疊 28px、1440p 43、4K 203);固定位置無全解;實作者算術表有 4 處錯。🔴 裁決(約 10:10):「**位置維持右上,只保留「不透明底+框」**」(非推薦)→ 協調者 `git checkout` 還原 048 三檔(工作樹 = `3759352`,已驗)。**048 AC2 擱置**;工單 048 狀態改寫待問(既有文件)。覆核收穫 +1(AC2 字面過、目的落空)。
-- ⏳ story-051(godot-gdscript-specialist,log `C:/tmp/run_051.log`)。
+- ✅ story-051 交件(撞 20 回合一次續做):實作者全套 `ENGINE EXIT = 0` / `2134 … 0 failures` / `(208/208)`;strings +4(多 `battle.enemy_kind.unknown,敵兵` 供退回,合理);名冊只加 `,,kind` 欄(協調者 diff 驗,數值零變動);型別對應與概念文件 124/219/220 行一致;`board_view.gd` 未動(label 由 battle_screen 帶入)。協調者疑「1/2/1/2/1」→ 測試順序 E1,E5,E2,E4,E3,**不成立**。⏳ 協調者重跑 `C:/tmp/run_051_coord.log`。
 - 📌 午休腳本 `C:/tmp/lunch_capture_2026-11-16.sh`(三支驅動依序)。
 - 📌 午休待拍:053 驅動(灰禁用 4 態)、首字底四版、044 AC8/052 AC7 重拍、046 AC6、056 AC7 —— 禁用灰色值 (0.5,0.54,0.6) 拍完交 art 看。
 
