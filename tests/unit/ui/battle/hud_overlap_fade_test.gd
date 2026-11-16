@@ -93,7 +93,10 @@ func test_compact_hint_text_has_no_newline_and_fits_at_big_sizes() -> void:
 		assert_bool(text.is_empty() or text.contains("\n")).is_false()
 		var width: float = HudLayoutScaler.HUD_FONT.get_string_size(
 			text, HORIZONTAL_ALIGNMENT_LEFT, -1, HudLayout.font_size(size)).x
-		assert_float(width).is_less_equal(HudLayout.compact_hint_available_width(size))
+		# story-053:第三顆按鈕使可用寬度變窄;此舊鍵(已不用於顯示)的兩項版下限在大視窗可能放不下,
+		# 故改為「放得下,或已是兩項版下限」。顯示用的提示列寬度契約由 controls_hint_content_test 守。
+		var narrow_floor: bool = text.split("　", false).size() <= HudLayout.COMPACT_HINT_SEGMENT_COUNT
+		assert_bool(width <= HudLayout.compact_hint_available_width(size) or narrow_floor).is_true()
 
 
 # ---- AC4:說明列不蓋棋盤最下一列 -----------------------------------------------------------

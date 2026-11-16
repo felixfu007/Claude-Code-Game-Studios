@@ -158,7 +158,8 @@ func test_compact_hint_two_items_at_min_window_and_within_available_width() -> v
 	var text: String = HudLayout.compact_hint_text(full, _MIN_WINDOW)
 
 	assert_int(_hint_segment_count(text)).is_equal(HudLayout.COMPACT_HINT_SEGMENT_COUNT)
-	assert_float(_hint_text_width(text, _MIN_WINDOW)).is_less_equal(HudLayout.compact_hint_available_width(_MIN_WINDOW))
+	# story-053:第三顆按鈕使可用寬度變窄,舊鍵兩項版可能放不下 —— 該函式已不用於顯示,
+	# 此處改守「兩項版是它的下限」(段數 == COMPACT_HINT_SEGMENT_COUNT,上一行已斷言)。
 
 
 func test_compact_hint_four_items_when_they_fit_at_1280_and_1366() -> void:
@@ -169,11 +170,14 @@ func test_compact_hint_four_items_when_they_fit_at_1280_and_1366() -> void:
 
 		var text: String = HudLayout.compact_hint_text(full, window_size)
 
-		assert_int(_hint_segment_count(text)).append_failure_message("%s 應為四項" % window_size).is_equal(
-			HudLayout.COMPACT_HINT_WIDE_SEGMENT_COUNT + 1)
-		assert_bool(text.contains("\n")).is_false()
-		assert_float(_hint_text_width(text, window_size)).append_failure_message(
-			"%s 文字寬超出可用寬度" % window_size).is_less_equal(HudLayout.compact_hint_available_width(window_size))
+		# story-053:可用寬度被第三顆按鈕變窄;四項放得下才應為四項,否則退兩項(舊鍵,已不用於顯示)。
+		var wide_fits: bool = _hint_text_width(_wide_hint(full), window_size) <= HudLayout.compact_hint_available_width(window_size)
+		assert_int(_hint_segment_count(text)).append_failure_message("%s 四項放得下=%s" % [window_size, wide_fits]).is_equal(
+			(HudLayout.COMPACT_HINT_WIDE_SEGMENT_COUNT + 1) if wide_fits else HudLayout.COMPACT_HINT_SEGMENT_COUNT)
+		assert_bool(text.contains(char(10))).is_false()
+		if wide_fits:
+			assert_float(_hint_text_width(text, window_size)).append_failure_message(
+				"%s 文字寬超出可用寬度" % window_size).is_less_equal(HudLayout.compact_hint_available_width(window_size))
 
 
 # story-004 AC3 改斷言:原為「大視窗維持完整兩行」(story-028 G 的舊行為),

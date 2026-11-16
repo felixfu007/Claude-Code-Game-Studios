@@ -160,6 +160,8 @@ battle.hud.relation_map_dead,(陣亡)
 battle.hud.relation_map_toggle,關係圖 [R]
 battle.hud.hand_button,手牌 %d/%d
 battle.hud.menu_button,選單
+battle.hud.end_action_button,結束角色行動
+battle.hud.end_action_reason.no_selection,先選一個單位
 battle.hud.result_defeat_reason_format,戰敗——%s倒下了
 battle.hud.result_defeat_reason_separator,、
 shell.title.skip_tutorial,略過教學
@@ -192,7 +194,7 @@ battle.hud.hint.move.keyboard,移動 方向鍵
 battle.hud.hint.select.keyboard,選取 Enter
 battle.hud.hint.confirm.keyboard,確認 Enter
 battle.hud.hint.cancel.keyboard,取消 Esc
-battle.hud.hint.end_unit.keyboard,結束單位 Q
+battle.hud.hint.end_unit.keyboard,結束角色行動 Q
 battle.hud.hint.jump_target.keyboard,跳目標 Tab
 battle.hud.hint.hand.keyboard,手牌 C
 battle.hud.hint.menu.keyboard,選單 M
@@ -207,7 +209,7 @@ battle.hud.hint.move.gamepad,移動 十字鍵
 battle.hud.hint.select.gamepad,選取 A
 battle.hud.hint.confirm.gamepad,確認 A
 battle.hud.hint.cancel.gamepad,取消 B
-battle.hud.hint.end_unit.gamepad,結束單位 Back
+battle.hud.hint.end_unit.gamepad,結束角色行動 Back
 battle.hud.hint.jump_target.gamepad,跳目標 RB
 battle.hud.hint.hand.gamepad,手牌 X
 battle.hud.hint.menu.gamepad,選單 Start

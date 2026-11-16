@@ -105,7 +105,7 @@ const COMPACT_HINT_LABEL_INSET_PX: float = 4.0
 ## 單行模式可用於說明文字的寬度:說明列左緣到左側按鈕([code]index 1[/code])左緣,再扣標籤內縮。
 static func compact_hint_available_width(window_size: Vector2i) -> float:
 	var bar: Rect2 = controls_hint_bg_rect(window_size)
-	var left_button: Rect2 = hud_action_button_rect(window_size, 1)
+	var left_button: Rect2 = leftmost_hud_action_button_rect(window_size)
 	return left_button.position.x - bar.position.x - COMPACT_HINT_LABEL_INSET_PX
 
 
@@ -150,6 +150,9 @@ const RELATION_TOGGLE_HEIGHT_MULTIPLIER: float = 1.6
 ## 底部滑鼠按鈕(見 [method hud_action_button_rect])的寬與內縮,皆為字級倍數。
 const HUD_ACTION_BUTTON_WIDTH_MULTIPLIER: float = 5.0
 const HUD_ACTION_BUTTON_PAD_MULTIPLIER: float = 0.2
+## story-053:第三顆「結束角色行動」按鈕(index 2)的寬,字級倍數(實量「結束角色行動」約 6.5 em,取 7.0(上限 8))。
+const END_ACTION_BUTTON_INDEX: int = 2
+const END_ACTION_BUTTON_WIDTH_MULTIPLIER: float = 7.0
 
 
 ## HUD font size in pixels for [param window_size], per the A ruling
@@ -287,6 +290,11 @@ static func hud_action_button_rect(window_size: Vector2i, index: int) -> Rect2:
 		# Story 028 G:單行說明列放不下上下兩顆,改左右並排([param index] 0 在右、1 在左)。
 		var c_height: float = bg.size.y - 2.0 * pad
 		var c_left: float = bg.position.x + bg.size.x - pad - width - float(index) * (width + pad)
+		if index == END_ACTION_BUTTON_INDEX:
+			# 第三顆較寬:緊鄰 index 1 的左側(既有兩顆不位移)。
+			var wide: float = fpx * END_ACTION_BUTTON_WIDTH_MULTIPLIER
+			c_left = bg.position.x + bg.size.x - pad - width - (width + pad) - pad - wide
+			return Rect2(Vector2(c_left, bg.position.y + pad), Vector2(wide, c_height))
 		return Rect2(Vector2(c_left, bg.position.y + pad), Vector2(width, c_height))
 	var height: float = (bg.size.y - 3.0 * pad) / 2.0
 	var left: float = bg.position.x + bg.size.x - pad - width
@@ -393,3 +401,9 @@ static func relation_minimap_rect(window_size: Vector2i) -> Rect2:
 		Vector2(toggle.position.x, toggle.position.y + toggle.size.y + gap),
 		Vector2(counter.size.x, fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER)
 	)
+
+
+## story-053:最左那顆底部按鈕(目前是 index 2 的「結束角色行動」)的矩形。
+## [method compact_hint_available_width] 的單一出處:新增更左的按鈕時只改這裡。
+static func leftmost_hud_action_button_rect(window_size: Vector2i) -> Rect2:
+	return hud_action_button_rect(window_size, END_ACTION_BUTTON_INDEX)

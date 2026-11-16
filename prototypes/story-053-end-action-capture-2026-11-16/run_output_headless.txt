@@ -1,0 +1,18 @@
+HOST [(960, 540)] root.size=(960, 540)
+STATE [(960, 540) disabled_no_selection] disabled=true text='結束角色行動' tooltip='先選一個單位' modulate_a=1.00 rect=[P: (524.8, 473.4), S: (154.0, 35.2)] border_w_disabled=1
+SHOT disabled_no_selection -> get_image() is null (expected under headless)
+STATE [(960, 540) enabled_selected] disabled=false text='結束角色行動' tooltip='' modulate_a=1.00 rect=[P: (524.8, 473.4), S: (154.0, 35.2)] border_w_disabled=1
+SHOT enabled_selected -> get_image() is null (expected under headless)
+STATE [(960, 540) enabled_faded] disabled=false text='結束角色行動' tooltip='' modulate_a=0.35 rect=[P: (524.8, 473.4), S: (154.0, 35.2)] border_w_disabled=1
+SHOT enabled_faded -> get_image() is null (expected under headless)
+STATE [(960, 540) disabled_faded] disabled=true text='結束角色行動' tooltip='先選一個單位' modulate_a=0.35 rect=[P: (524.8, 473.4), S: (154.0, 35.2)] border_w_disabled=1
+SHOT disabled_faded -> get_image() is null (expected under headless)
+HOST [(1920, 1080)] root.size=(1920, 1080)
+STATE [(1920, 1080) disabled_no_selection] disabled=true text='結束角色行動' tooltip='先選一個單位' modulate_a=1.00 rect=[P: (1049.6, 946.8), S: (308.0, 70.4)] border_w_disabled=1
+SHOT disabled_no_selection -> get_image() is null (expected under headless)
+STATE [(1920, 1080) enabled_selected] disabled=false text='結束角色行動' tooltip='' modulate_a=1.00 rect=[P: (1049.6, 946.8), S: (308.0, 70.4)] border_w_disabled=1
+SHOT enabled_selected -> get_image() is null (expected under headless)
+STATE [(1920, 1080) enabled_faded] disabled=false text='結束角色行動' tooltip='' modulate_a=0.35 rect=[P: (1049.6, 946.8), S: (308.0, 70.4)] border_w_disabled=1
+SHOT enabled_faded -> get_image() is null (expected under headless)
+STATE [(1920, 1080) disabled_faded] disabled=true text='結束角色行動' tooltip='先選一個單位' modulate_a=0.35 rect=[P: (1049.6, 946.8), S: (308.0, 70.4)] border_w_disabled=1
+SHOT disabled_faded -> get_image() is null (expected under headless)

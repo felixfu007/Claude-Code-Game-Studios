@@ -47,7 +47,7 @@ static func _segment_names(state: HintState, device: HintDevice) -> Array[String
 		HintState.NO_SELECTION:
 			names = ["move", "select"] if mouse else ["move", "select", "hand", "menu"]
 		HintState.UNIT_SELECTED:
-			names = ["move", "confirm", "cancel"] if mouse else ["move", "confirm", "cancel", "end_unit", "jump_target", "hand", "menu"]
+			names = ["move", "confirm", "cancel"] if mouse else ["confirm", "cancel", "end_unit", "move", "jump_target", "hand", "menu"]
 		HintState.HAND_OPEN:
 			names = ["card_use", "cancel"] if mouse else ["card_pick", "card_use", "cancel", "hand_close"]
 		HintState.CARD_TARGET:

@@ -1304,11 +1304,72 @@ const TEXT_MENU_BUTTON: StringName = &"battle.hud.menu_button"
 
 var _hand_button: Button = null
 var _menu_button: Button = null
+## story-053:滑鼠「結束角色行動」按鈕(與 Q / Back 走同一個 [method _perform_end_unit_turn])。
+var _end_action_button: Button = null
+
+const TEXT_END_ACTION_BUTTON: StringName = &"battle.hud.end_action_button"
+const TEXT_END_ACTION_NO_SELECTION: StringName = &"battle.hud.end_action_reason.no_selection"
+const TEXT_REASON_NOT_PLAYER_TURN: StringName = &"battle.menu.reason_not_player_turn"
+const TEXT_REASON_CARD_PLAY: StringName = &"battle.menu.reason_card_play_in_progress"
+const TEXT_REASON_FORCED_DISCARD: StringName = &"battle.menu.rejection_forced_discard"
+## 禁用態外框寬(啟用為 [constant HUD_BUTTON_BORDER_WIDTH] = 2)。
+const HUD_BUTTON_DISABLED_BORDER_WIDTH: int = 1
+## 禁用態(2026-11-16 管理者裁決:字變灰 + 底色拿掉變空心 + 框變細,不加叉叉)。
+## 全為不透明/透明底的樣式色,不用 modulate;外框與字色是啟用色降明度(同色相,不另定色系)。
+const HUD_BUTTON_DISABLED_BG_COLOR: Color = Color(0.0, 0.0, 0.0, 0.0)
+const HUD_BUTTON_DISABLED_BORDER_COLOR: Color = Color(0.5, 0.54, 0.6, 1.0)
+const HUD_BUTTON_DISABLED_FONT_COLOR: Color = Color(0.5, 0.54, 0.6, 1.0)
 
 
 func _build_hud_action_buttons() -> void:
 	_hand_button = _make_hud_action_button("HandButton", TEXT_HAND_BUTTON, _handle_open_hand_pressed)
 	_menu_button = _make_hud_action_button("MenuButton", TEXT_MENU_BUTTON, _handle_battle_menu_pressed)
+	_end_action_button = _make_hud_action_button("EndActionButton", TEXT_END_ACTION_BUTTON, _perform_end_unit_turn)
+	# 禁用態:空心(底色透明)、外框寬 1 且降明度、字灰。
+	var disabled_style: StyleBoxFlat = _make_hud_button_style(&"normal")
+	disabled_style.bg_color = HUD_BUTTON_DISABLED_BG_COLOR
+	disabled_style.border_color = HUD_BUTTON_DISABLED_BORDER_COLOR
+	disabled_style.set_border_width_all(HUD_BUTTON_DISABLED_BORDER_WIDTH)
+	_end_action_button.add_theme_stylebox_override(&"disabled", disabled_style)
+	_end_action_button.add_theme_color_override(&"font_disabled_color", HUD_BUTTON_DISABLED_FONT_COLOR)
+	_refresh_end_action_button()
+
+
+## Q / Back / 滑鼠按鈕共用的唯一結束單位處理(不得另寫第二份)。
+func _perform_end_unit_turn() -> void:
+	_handle_end_unit_turn_result(_controller.end_unit_turn(_controller.selected_unit()))
+
+
+## 按鈕可按 ⇔ 玩家回合、有選取、無出牌/待棄牌/確認面板/猜測選擇器。
+func _end_action_available() -> bool:
+	return _controller.phase() == BattleController.Phase.PLAYER_INPUT \
+		and _controller.selected_unit() != -1 \
+		and not _controller.is_card_play_in_progress() \
+		and not _controller.has_pending_discard() \
+		and not _attack_confirm_panel.visible \
+		and not diagnostic_guess_selector_visible()
+
+
+## 禁用時的原因句(tooltip);可按或勝敗(FINISHED)回空字串。
+func _end_action_reason() -> String:
+	if _end_action_available() or _controller.phase() == BattleController.Phase.FINISHED:
+		return ""
+	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
+		return Loc.localize(TEXT_REASON_NOT_PLAYER_TURN)
+	if _controller.has_pending_discard():
+		return Loc.localize(TEXT_REASON_FORCED_DISCARD)
+	if _controller.is_card_play_in_progress() or _attack_confirm_panel.visible or diagnostic_guess_selector_visible():
+		return Loc.localize(TEXT_REASON_CARD_PLAY)
+	return Loc.localize(TEXT_END_ACTION_NO_SELECTION)
+
+
+func _refresh_end_action_button() -> void:
+	if _end_action_button == null or _controller == null:
+		return
+	var available: bool = _end_action_available()
+	_end_action_button.disabled = not available
+	# 文字永遠是同一句(禁用不改寫文字、不加前綴)。
+	_end_action_button.tooltip_text = _end_action_reason()
 
 
 ## Story 028 M:底部按鈕的常駐底色/外框(顏色具名;hover/pressed 只加亮底色,外框不變)。
@@ -1358,7 +1419,7 @@ func _apply_hud_action_buttons_layout(window_size: Vector2i) -> void:
 	if _hand_button == null:
 		return
 	var fpx: int = HudLayout.font_size(window_size)
-	for pair: Array in [[_menu_button, 0], [_hand_button, 1]]:
+	for pair: Array in [[_menu_button, 0], [_hand_button, 1], [_end_action_button, HudLayout.END_ACTION_BUTTON_INDEX]]:
 		var button: Button = pair[0]
 		var rect: Rect2 = HudLayout.hud_action_button_rect(window_size, pair[1])
 		# 先換字級再設尺寸:視窗縮小時若先設尺寸,舊的大字級會把按鈕撐寬且縮不回來,
@@ -1430,6 +1491,7 @@ func _update_hud_overlap_fade() -> void:
 	_set_frame_alpha(_controls_hint_bg, hint_alpha)
 	_set_frame_alpha(_hand_button, hint_alpha)
 	_set_frame_alpha(_menu_button, hint_alpha)
+	_set_frame_alpha(_end_action_button, hint_alpha)
 	_set_frame_alpha(_consistency_label, HudLayout.frame_alpha_for_cell(
 		has_cell, cell_rect, HudLayout.consistency_counter_rect(window_size)))
 	_set_frame_alpha(_relation_toggle_button, HudLayout.frame_alpha_for_cell(
@@ -1457,7 +1519,7 @@ func _alpha_of(node: CanvasItem) -> float:
 
 
 func _mouse_over_hud_action_buttons(window_pos: Vector2) -> bool:
-	for button: Button in [_hand_button, _menu_button]:
+	for button: Button in [_hand_button, _menu_button, _end_action_button]:
 		if button != null and button.is_visible_in_tree() and button.get_global_rect().has_point(window_pos):
 			return true
 	return false
@@ -2368,6 +2430,7 @@ func _process(_delta: float) -> void:
 
 	# story-045:提示列即時更新(此處是本檔唯一允許讀裝置權威的地方之一,見下方 Story U-013 註解)。
 	_refresh_controls_hint()
+	_refresh_end_action_button()
 
 	# battle-hud story-004:變淡依目前高亮格(鍵盤/手把/滑鼠共用的那一格);新面板出現則自動恢復隱藏的介面。
 	_restore_hud_if_new_panel_opened()
@@ -2671,7 +2734,7 @@ func _input(event: InputEvent) -> void:
 			# comment), so there is no separate "nothing selected" guard to
 			# duplicate here.
 			if event.is_action_pressed(&"battle_end_unit_turn"):
-				_handle_end_unit_turn_result(_controller.end_unit_turn(_controller.selected_unit()))
+				_perform_end_unit_turn()
 				return
 			# 2026-10-28 管理者試玩回饋:「選了腳色後,按滑鼠右鍵,應該要能取消選取」。
 			# 右鍵經 _dispatch_mouse_action 變成 battle_cancel,Esc/B 同一條路。
@@ -3607,7 +3670,7 @@ func _fail_load(failures: Dictionary[String, LoadFailure]) -> void:
 	_status_label.visible = false
 	_info_label.visible = false
 	_controls_hint_bg.visible = false
-	for button: Button in [_hand_button, _menu_button]:
+	for button: Button in [_hand_button, _menu_button, _end_action_button]:
 		if button != null:
 			button.visible = false
 
@@ -5490,6 +5553,9 @@ func _defeat_result_text() -> String:
 func _on_battle_ended(outcome: BattleState.Outcome) -> void:
 	# Story 025:遮罩 + 中央大字;狀態列(「第 N 回合・我方行動」)隱藏,因為戰鬥已結束。
 	_result_mask.visible = true
+	# story-053:結果畫面沒有任何可按的鍵,空底條隱藏(下一場是新實例,底條預設可見)。
+	_controls_hint_bg.visible = false
+	_refresh_end_action_button()
 	_status_label.visible = false
 	_result_label.visible = true
 	_result_label.text = Loc.localize(TEXT_RESULT_VICTORY) if outcome == BattleState.Outcome.VICTORY else _defeat_result_text()
