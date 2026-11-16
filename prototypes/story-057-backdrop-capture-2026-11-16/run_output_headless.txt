@@ -1,0 +1,38 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+DISPLAY_SERVER=headless
+=== RESOLUTION requested=(960, 540) actual root.size=(960, 540) ===
+PRE-OVERVIEW cursor_active=false (need false)
+HOST [1overview/real] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270) cursor_active=false cursor_cell=(0, 2)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:82)
+       [1] _frames (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:35)
+SHOT 960x540_1overview_real.png -> get_image() is null (expected under headless; skipped)
+CURSOR (0, 3) reached via mouse motion
+HOST [2cursor_xu/real] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270) cursor_active=true cursor_cell=(0, 3)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:82)
+       [1] _frames (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:35)
+SHOT 960x540_2cursor_xu_real.png -> get_image() is null (expected under headless; skipped)
+=== RESOLUTION requested=(1920, 1080) actual root.size=(1920, 1080) ===
+PRE-OVERVIEW cursor_active=false (need false)
+HOST [1overview/real] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270) cursor_active=false cursor_cell=(0, 2)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:82)
+       [1] _frames (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:35)
+SHOT 1920x1080_1overview_real.png -> get_image() is null (expected under headless; skipped)
+CURSOR (0, 3) reached via mouse motion
+HOST [2cursor_xu/real] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270) cursor_active=true cursor_cell=(0, 3)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:82)
+       [1] _frames (res://prototypes/story-057-backdrop-capture-2026-11-16/driver.gd:35)
+SHOT 1920x1080_2cursor_xu_real.png -> get_image() is null (expected under headless; skipped)
+TOTAL shots=4

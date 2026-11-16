@@ -343,6 +343,10 @@ const PIECE_LABEL_TOP_OFFSET_IN_CELL: int = 8
 const PIECE_LABEL_COLOR_ALLY: Color = Color("#FFFFFF")
 const PIECE_LABEL_COLOR_ENEMY: Color = Color("#FF5252")
 const PIECE_LABEL_OUTLINE_COLOR: Color = Color("#0E0F14")
+## story-057 — 我方首字襯底色:art 補遺 2.2 的 nature_void_shadow_01 #0E0F14,alpha 0.72
+## (art 預備階梯 0.72 -> 0.85,未過時只改本常數)。注意:與 HP_TEXT_BG_COLOR(純黑 RGB,
+## 僅 alpha 同為 0.72)RGB 不同,補遺稱兩者同值不實;本常數照補遺明文色。
+const PIECE_LABEL_BACKDROP_COLOR: Color = Color(14.0 / 255.0, 15.0 / 255.0, 20.0 / 255.0, 0.72)
 const HP_TEXT_BG_COLOR: Color = Color(0.0, 0.0, 0.0, 0.72)
 const HP_TEXT_COLOR_NORMAL: Color = Color.WHITE
 const HP_TEXT_COLOR_PREVIEW: Color = Color(1.0, 0.78, 0.28)
@@ -675,6 +679,7 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 	_clear_children(_stats_layer)
 	_clear_children(_action_flag_layer)
 	var label_used: int = 0
+	var backdrop_used: int = 0
 	# Sprites are added in draw order (cell y ascending) so a lower row's piece,
 	# whose head overhangs into the row above, paints over the upper piece's feet.
 	for piece_index: int in piece_draw_order(pieces):
@@ -703,6 +708,9 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 		))
 		var label_text: String = data.get("label", "")
 		if label_text != "":
+			if data.get("faction", "PLAYER") == "PLAYER":
+				_apply_piece_backdrop(backdrop_used, BoardCoords.grid_to_local(cell))
+				backdrop_used += 1
 			_apply_piece_label(
 				label_used, BoardCoords.grid_to_local(cell), label_text,
 				data.get("faction", "PLAYER") == "PLAYER"
@@ -713,6 +721,8 @@ func render_pieces(pieces: Array[Dictionary]) -> void:
 			_action_flag_layer.add_child(_build_action_icons(cell, data))
 	for i: int in range(label_used, _piece_label_pool.size()):
 		_piece_label_pool[i].visible = false
+	for j: int in range(backdrop_used, _piece_backdrop_pool.size()):
+		_piece_backdrop_pool[j].visible = false
 
 
 ## Resolves which texture path a piece should use (story-037). Enemy pieces
@@ -1188,12 +1198,38 @@ static func hp_bar_rect_in_cell() -> Rect2:
 	)
 
 
+# story-057 — 我方首字襯底池。獨立兄弟層 PieceLabelBackdropLayer,緊貼在 PieceLabelLayer
+# 之下(層序:StatsLayer < 襯底層 < 首字層 < ActionFlagLayer < CursorSprite),
+# 故襯底在首字之下、所有棋盤高亮層之上。不隨 render_pieces 清除,多餘者隱藏。
+var _piece_backdrop_layer: Node2D = null
+var _piece_backdrop_pool: Array[ColorRect] = []
+
+
+func _apply_piece_backdrop(index: int, cell_top_left: Vector2) -> void:
+	if _piece_backdrop_layer == null:
+		_piece_backdrop_layer = Node2D.new()
+		_piece_backdrop_layer.name = "PieceLabelBackdropLayer"
+		add_child(_piece_backdrop_layer)
+		move_child(_piece_backdrop_layer, _stats_layer.get_index() + 1)
+	if index >= _piece_backdrop_pool.size():
+		var created: ColorRect = ColorRect.new()
+		created.size = PIECE_LABEL_SIZE
+		created.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		created.color = PIECE_LABEL_BACKDROP_COLOR
+		_piece_backdrop_layer.add_child(created)
+		_piece_backdrop_pool.append(created)
+	var backdrop: ColorRect = _piece_backdrop_pool[index]
+	backdrop.position = cell_top_left + piece_label_rect_in_cell().position
+	backdrop.visible = true
+
+
 func _apply_piece_label(index: int, cell_top_left: Vector2, text: String, is_ally: bool) -> void:
 	if _piece_label_layer == null:
 		_piece_label_layer = Node2D.new()
 		_piece_label_layer.name = "PieceLabelLayer"
 		add_child(_piece_label_layer)
-		move_child(_piece_label_layer, _stats_layer.get_index() + 1)
+		var below: Node = _piece_backdrop_layer if _piece_backdrop_layer != null else _stats_layer
+		move_child(_piece_label_layer, below.get_index() + 1)
 	if index >= _piece_label_pool.size():
 		var created: Label = Label.new()
 		# 先指派 label_settings 再設 size:Label 的最小尺寸取決於字型,size 在字型就位前

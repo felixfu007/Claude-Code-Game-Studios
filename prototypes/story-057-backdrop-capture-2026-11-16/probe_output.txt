@@ -1,0 +1,39 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+DISPLAY_SERVER=headless
+CURSOR (0, 3) reached via mouse motion
+PROBE cursor ok=true probe_pt(local)=(38.0, 150.0)
+PROBE backdrop vis=true pos=(32.0, 111.0) size=(12.0, 14.0) modulate=(1.0, 1.0, 1.0, 1.0) color=(0.0549, 0.0588, 0.0784, 0.72) in_tree_vis=true
+PROBE backdrop vis=true pos=(32.0, 143.0) size=(12.0, 14.0) modulate=(1.0, 1.0, 1.0, 1.0) color=(0.0549, 0.0588, 0.0784, 0.72) in_tree_vis=true
+PROBE backdrop vis=true pos=(64.0, 143.0) size=(12.0, 14.0) modulate=(1.0, 1.0, 1.0, 1.0) color=(0.0549, 0.0588, 0.0784, 0.72) in_tree_vis=true
+PROBE backdrop vis=true pos=(32.0, 175.0) size=(12.0, 14.0) modulate=(1.0, 1.0, 1.0, 1.0) color=(0.0549, 0.0588, 0.0784, 0.72) in_tree_vis=true
+PROBE backdrop vis=true pos=(32.0, 207.0) size=(12.0, 14.0) modulate=(1.0, 1.0, 1.0, 1.0) color=(0.0549, 0.0588, 0.0784, 0.72) in_tree_vis=true
+PROBE children of BoardView in draw order, visible, whose bounds contain probe_pt or are Sprite/Control:
+  LAYER TerrainLayer idx=0 vis=true z=0 children=78
+    near-cell child @Sprite2D@60 pos=(48.0, 119.0) vis=true
+    near-cell child @Sprite2D@73 pos=(48.0, 151.0) vis=true
+  LAYER ImpassableTerrainLayer idx=1 vis=true z=0 children=0
+  LAYER MoveHighlightLayer idx=2 vis=true z=0 children=0
+  LAYER PiecesLayer idx=3 vis=true z=0 children=10
+    near-cell child @Sprite2D@379 pos=(48.0, 115.0) vis=true
+    near-cell child @Sprite2D@380 pos=(48.0, 147.0) vis=true
+  LAYER MoveUnreachableLayer idx=4 vis=true z=0 children=0
+  LAYER AffinityLineLayer idx=5 vis=true z=0 children=3
+  LAYER ThreatHighlightLayer idx=6 vis=true z=0 children=0
+  LAYER AttackHighlightLayer idx=7 vis=true z=0 children=0
+  LAYER AttackLosBlockedLayer idx=8 vis=true z=0 children=0
+  LAYER CardTargetHighlightLayer idx=9 vis=true z=0 children=0
+  LAYER StatsLayer idx=10 vis=true z=0 children=10
+  LAYER PieceLabelBackdropLayer idx=11 vis=true z=0 children=5
+    covering control @ColorRect@237 rect=[P: (32.0, 143.0), S: (12.0, 14.0)] vis=true
+  LAYER PieceLabelLayer idx=12 vis=true z=0 children=10
+    covering control @Label@238 rect=[P: (32.0, 143.0), S: (12.0, 14.0)] vis=true
+  LAYER ActionFlagLayer idx=13 vis=true z=0 children=5
+  LAYER CursorSprite idx=14 vis=true z=0 children=0
+    cursor pos=(48.0, 151.0) tex_size=(32.0, 32.0) modulate=(1.0, 1.0, 1.0, 1.0)
+    cursor texture centre pixel=(1.0, 1.0, 1.0, 0.149) corner=(1.0, 1.0, 1.0, 1.0)
+PROBE BattleScreen top-level children:
+  WorldViewportContainer SubViewportContainer
+  UILayer CanvasLayer
+  @Node@112 Node
+  ObjectiveTimer Timer
