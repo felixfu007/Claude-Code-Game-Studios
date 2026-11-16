@@ -2363,6 +2363,8 @@ func _ready() -> void:
 	# story-046:開場目標(一次性、不吞輸入;確認鍵/點擊或逾時關閉)。
 	_build_objective_overlay()
 	show_objective()
+	_build_legend_panel()
+	_battle_menu.legend_requested.connect(open_legend)
 
 	_refresh_view()
 
@@ -2428,6 +2430,13 @@ func _process(_delta: float) -> void:
 		# that Autoload.
 	else:
 		_update_cursor_visual()
+
+	# story-047:扳機放開後解除閂鎖;戰鬥結束時圖例自動關閉。
+	if _legend_trigger_down and not Input.is_action_pressed(&"battle_open_legend"):
+		_legend_trigger_down = false
+	if _legend_panel != null and _legend_panel.is_open() \
+			and _controller.phase() == BattleController.Phase.FINISHED:
+		close_legend()
 
 	# story-045:提示列即時更新(此處是本檔唯一允許讀裝置權威的地方之一,見下方 Story U-013 註解)。
 	_refresh_controls_hint()
@@ -2563,6 +2572,11 @@ func _input(event: InputEvent) -> void:
 	if _objective_panel != null and _objective_panel.visible:
 		if event.is_action_pressed(&"battle_confirm") or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed):
 			hide_objective()
+	# story-047:圖例開啟時是模態(唯讀疊層):吞掉全部輸入,只放行「關閉」。
+	# 放在 FINISHED 判斷之前,結果畫面期間圖例若仍開著也不會漏輸入(_process 會把它關掉)。
+	if _legend_panel != null and _legend_panel.is_open():
+		_handle_legend_open_input(event)
+		return
 	if _controller.phase() == BattleController.Phase.FINISHED:
 		return
 
@@ -2611,6 +2625,12 @@ func _input(event: InputEvent) -> void:
 		# 鍵盤 echo 一律忽略;敵方回合只能關、不能開(見 _relation_minimap_can_open)。
 		# battle-hud story-004 AC2:一鍵隱藏/恢復全部戰鬥介面(鍵盤 H / 手把左搖桿按下)。
 		# 與關係圖鍵同理放在吞鍵分支之前;echo 忽略。
+		# story-047:圖例專用鍵(L / 左扳機)。放在 H/R 檢查之前;敵方回合也可開。
+		if event.is_action(&"battle_open_legend"):
+			if _legend_toggle_edge(event):
+				open_legend()
+			return
+
 		if event.is_action(&"battle_toggle_hud"):
 			if event is InputEventKey and (event as InputEventKey).echo:
 				return
@@ -5840,6 +5860,100 @@ func _on_battle_menu_open_rejected(result: BattleMenu.OpenResult, message: Strin
 var _objective_panel: ColorRect = null
 var _objective_label: Label = null
 var _result_detail_label: Label = null
+
+
+# ---- story-047:圖例 -------------------------------------------------------------
+
+var _legend_panel: LegendPanel = null
+## 左扳機是類比軸:按住期間每個軸事件都會讓 is_action_pressed 為真,故用閂鎖只在
+## 「放開 → 按下」那一次觸發(放開由 _process 以 Input.is_action_pressed 偵測)。
+var _legend_trigger_down: bool = false
+
+
+func _build_legend_panel() -> void:
+	_legend_panel = LegendPanel.new()
+	$UILayer.add_child(_legend_panel)
+	_legend_panel.closed.connect(_on_legend_closed)
+	get_window().size_changed.connect(_on_legend_window_resized)
+
+
+## 圖例可由選單「圖例」列或專用鍵叫出。戰鬥結束後、選單開著時不開(不疊兩層)。
+## 開啟期間游標仲裁暫停(比照選單,[method CursorStateHost.suspend_arbitration]),但不暫停樹:
+## 敵方回合播放照常。
+func open_legend() -> void:
+	if _legend_panel == null or _legend_panel.is_open():
+		return
+	if _controller.phase() == BattleController.Phase.FINISHED:
+		return
+	if _battle_menu != null and _battle_menu.is_open():
+		return
+	CursorStateHost.suspend_arbitration()
+	_legend_panel.open(get_window().size)
+	_refresh_controls_hint(true)
+
+
+func close_legend() -> void:
+	if _legend_panel != null:
+		_legend_panel.close()
+
+
+func is_legend_open() -> bool:
+	return _legend_panel != null and _legend_panel.is_open()
+
+
+func legend_panel() -> LegendPanel:
+	return _legend_panel
+
+
+func _on_legend_closed() -> void:
+	CursorStateHost.resume_arbitration()
+	_refresh_controls_hint(true)
+
+
+func _on_legend_window_resized() -> void:
+	if _legend_panel != null and _legend_panel.is_open():
+		_legend_panel.apply_layout(get_window().size)
+
+
+## 專用鍵的「單次觸發」判定。鍵盤:按下且非 echo;手把按鈕:按下;左扳機(軸):只在放開→按下的那一次。
+func _legend_toggle_edge(event: InputEvent) -> bool:
+	if event is InputEventKey and (event as InputEventKey).echo:
+		return false
+	if event is InputEventJoypadMotion:
+		var down: bool = event.is_action_pressed(&"battle_open_legend")
+		var edge: bool = down and not _legend_trigger_down
+		_legend_trigger_down = down or _legend_trigger_down
+		return edge
+	return event.is_pressed()
+
+
+func _handle_legend_open_input(event: InputEvent) -> void:
+	var vp: Viewport = get_viewport()
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.pressed:
+			var inside: bool = _legend_panel.content_rect().has_point(mb.position)
+			var on_close: bool = Rect2(
+				_legend_panel.close_button().global_position, _legend_panel.close_button().size
+			).has_point(mb.position)
+			if mb.button_index == MOUSE_BUTTON_RIGHT or not inside or on_close:
+				close_legend()
+		vp.set_input_as_handled()
+		return
+	if event is InputEventMouseMotion:
+		vp.set_input_as_handled()
+		return
+	if event is InputEventKey or event is InputEventJoypadButton \
+			or event is InputEventJoypadMotion or event is InputEventAction:
+		var closing: bool = false
+		if event.is_action(&"battle_open_legend"):
+			closing = _legend_toggle_edge(event)
+		elif not (event is InputEventKey and (event as InputEventKey).echo):
+			closing = event.is_action_pressed(&"battle_cancel") \
+				or event.is_action_pressed(&"battle_confirm")
+		if closing:
+			close_legend()
+		vp.set_input_as_handled()
 
 
 ## 目標文字(唯一出處 strings.csv;教學場多一行「這關學什麼」)。測試與選單「目標」項共用。

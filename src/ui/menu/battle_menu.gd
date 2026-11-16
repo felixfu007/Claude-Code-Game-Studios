@@ -200,7 +200,7 @@ const OBJECTIVE_ROW: StringName = &"battle.menu.objective_row"
 const LEGEND_ROW: StringName = &"battle.menu.legend_row"
 ## story-046:圖例內容由 story-047 提供;false 時「圖例」列隱藏、不可聚焦,不得開出空白畫面。
 ## story-047 完成後改為 true(列順序固定:回到遊戲、目標、圖例、結束回合、離開戰鬥)。
-const LEGEND_AVAILABLE: bool = false
+const LEGEND_AVAILABLE: bool = true
 
 ## Story-002 續批 — M4(離開確認)對話框的兩個按鈕文字,同一批遷移,同一理由見
 ## [constant RETURN_TO_BATTLE_ROW] 的 doc comment。命名沿用 [constant LEAVE_CONFIRM_TITLE] /

@@ -195,14 +195,15 @@ func test_menu_lists_objective_and_legend_rows_in_fixed_order() -> void:
 	assert_bool(_menu_items_ok(menu)).is_true()
 
 
-func test_legend_row_hidden_until_story_047_and_not_in_focus_chain() -> void:
+func test_legend_row_visible_since_story_047_and_in_focus_chain() -> void:
 	var menu: BattleMenu = _menu_of(null)
 	var legend: Button = menu.get_node(_ROWS + "LegendRow")
 	var objective: Button = menu.get_node(_ROWS + "ObjectiveRow")
 	var end_row: Button = menu.get_node(_ROWS + "EndPhaseRow")
-	assert_bool(BattleMenu.LEGEND_AVAILABLE).is_false()
-	assert_bool(legend.visible).is_false()
-	assert_bool(objective.get_node(objective.focus_neighbor_bottom) == end_row).is_true()
+	assert_bool(BattleMenu.LEGEND_AVAILABLE).is_true()
+	assert_bool(legend.visible).is_true()
+	assert_bool(objective.get_node(objective.focus_neighbor_bottom) == legend).is_true()
+	assert_bool(legend.get_node(legend.focus_neighbor_bottom) == end_row).is_true()
 
 
 func test_objective_row_reachable_by_down_navigation_and_press_shows_objective() -> void:

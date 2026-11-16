@@ -198,6 +198,9 @@ func test_end_turn_via_menu_keyboard_path_actually_starts_enemy_phase() -> void:
 	await get_tree().process_frame
 	instance._battle_menu.get_viewport().push_input(_real_ui_down_key_event())
 	await get_tree().process_frame
+	# story-047:「圖例」列啟用後,回到遊戲→目標→圖例→結束回合,多按一次。
+	instance._battle_menu.get_viewport().push_input(_real_ui_down_key_event())
+	await get_tree().process_frame
 
 	assert_bool(_end_phase_row(instance).has_focus()).append_failure_message(
 		"真實 ui_down 導覽應該把焦點移到 EndPhaseRow"
@@ -232,6 +235,9 @@ func test_end_turn_via_menu_gamepad_path_actually_starts_enemy_phase() -> void:
 	# Act (ii) — 真實手把方向鍵導覽
 	instance._battle_menu.get_viewport().push_input(_real_ui_down_gamepad_event())
 	await get_tree().process_frame
+	instance._battle_menu.get_viewport().push_input(_real_ui_down_gamepad_event())
+	await get_tree().process_frame
+	# story-047:「圖例」列啟用後,多按一次才到結束回合。
 	instance._battle_menu.get_viewport().push_input(_real_ui_down_gamepad_event())
 	await get_tree().process_frame
 

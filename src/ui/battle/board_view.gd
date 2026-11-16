@@ -848,7 +848,7 @@ static func affinity_line_points(
 	return points
 
 
-func _make_affinity_stroke(points: PackedVector2Array, width: float, color: Color) -> Line2D:
+static func _make_affinity_stroke(points: PackedVector2Array, width: float, color: Color) -> Line2D:
 	var line: Line2D = Line2D.new()
 	line.points = points
 	line.width = width
@@ -863,7 +863,7 @@ func _make_affinity_stroke(points: PackedVector2Array, width: float, color: Colo
 
 # One plaque = a root Node2D holding a 7x7 dark ColorRect plus the glyph rects.
 # Top-left = centre - (3,3), glyph top-left = tile top-left + (1,1), all int.
-func _build_affinity_plaque(center: Vector2i, symbol: LineSymbol, color: Color) -> Node2D:
+static func _build_affinity_plaque(center: Vector2i, symbol: LineSymbol, color: Color) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var half: int = AFFINITY_PLAQUE_SIZE / 2
 	var tile_pos: Vector2 = Vector2(center - Vector2i(half, half))
@@ -892,18 +892,42 @@ func _build_affinity_plaque(center: Vector2i, symbol: LineSymbol, color: Color) 
 ## Replaces the set of highlighted move-range cells. Pass an empty array to
 ## clear all move highlights.
 func set_move_highlights(cells: Array[Vector2i]) -> void:
-	_render_highlight_layer(_move_highlight_layer, cells, MOVE_HIGHLIGHT_PATH)
+	_clear_children(_move_highlight_layer)
 	# Story 028 I:移動範圍改亮藍半透明,與攻擊範圍紅底形成「藍=走、紅=打」。
-	# 貼圖(美術資源)保留,只用 modulate 染亮藍,另墊一層半透明藍底(同 set_threat_highlights 手法)。
+	# story-047:單格的畫法抽成 _make_move_sprite / _make_move_fill,圖例範例呼叫同一組。
+	for cell: Vector2i in cells:
+		_move_highlight_layer.add_child(_make_move_sprite(BoardCoords.grid_to_local_center(cell)))
 	for sprite: Node in _move_highlight_layer.get_children():
-		(sprite as Sprite2D).modulate = MOVE_FRAME_TINT
-		var fill: ColorRect = ColorRect.new()
-		fill.color = MOVE_FILL_COLOR
-		fill.size = Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE)
-		fill.position = (sprite as Sprite2D).position - fill.size / 2.0
-		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var fill: ColorRect = _make_move_fill((sprite as Sprite2D).position)
 		_move_highlight_layer.add_child(fill)
 		_move_highlight_layer.move_child(fill, 0)
+
+
+static func _make_move_sprite(center: Vector2) -> Sprite2D:
+	var sprite: Sprite2D = Sprite2D.new()
+	sprite.texture = load(MOVE_HIGHLIGHT_PATH)
+	sprite.centered = true
+	sprite.position = center
+	sprite.modulate = MOVE_FRAME_TINT
+	return sprite
+
+
+static func _make_move_fill(center: Vector2) -> ColorRect:
+	var fill: ColorRect = ColorRect.new()
+	fill.color = MOVE_FILL_COLOR
+	fill.size = Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE)
+	fill.position = center - fill.size / 2.0
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return fill
+
+
+static func _make_threat_stripe_sprite(center: Vector2) -> Sprite2D:
+	var sprite: Sprite2D = Sprite2D.new()
+	sprite.texture = load(THREAT_HIGHLIGHT_PATH)
+	sprite.centered = true
+	sprite.position = center
+	sprite.modulate = THREAT_STRIPE_TINT
+	return sprite
 
 
 ## Replaces the set of highlighted attack-range cells. Pass an empty array
@@ -973,9 +997,9 @@ func _redraw_attack_family() -> void:
 			continue
 		threat_seen[cell] = true
 		threat_draw.append(cell)
-	_render_highlight_layer(_threat_highlight_layer, threat_draw, THREAT_HIGHLIGHT_PATH)
-	for sprite: Node in _threat_highlight_layer.get_children():
-		(sprite as Sprite2D).modulate = THREAT_STRIPE_TINT
+	_clear_children(_threat_highlight_layer)
+	for cell: Vector2i in threat_draw:
+		_threat_highlight_layer.add_child(_make_threat_stripe_sprite(BoardCoords.grid_to_local_center(cell)))
 	for cell: Vector2i in threat_draw:
 		_threat_highlight_layer.add_child(
 			_build_ring_marker(cell, threat_ring_rects_in_cell(), THREAT_RING_COLOR)
@@ -1070,7 +1094,7 @@ func clear_cursor() -> void:
 # piece standing in cell, with its sprite bottom aligned to the cell's bottom edge
 # rather than the cell's vertical center — the piece art is taller than one tile and
 # is meant to overhang the top, not straddle the tile boundary evenly.
-func _piece_anchor(cell: Vector2i) -> Vector2:
+static func _piece_anchor(cell: Vector2i) -> Vector2:
 	var cell_top_left: Vector2 = BoardCoords.grid_to_local(cell)
 	var cell_bottom_y: float = cell_top_left.y + BoardCoords.CELL_SIZE
 	var center_x: float = cell_top_left.x + BoardCoords.CELL_SIZE * 0.5
@@ -1276,7 +1300,7 @@ func _build_hp_text(
 # illegal cells: four thin ColorRects forming a hollow square border, inset
 # CARD_TARGET_OUTLINE_INSET px from the cell's own edge. See that constant's
 # doc comment for why this is composed from primitives.
-func _build_card_target_outline(
+static func _build_card_target_outline(
 	cell: Vector2i, color: Color = CARD_TARGET_OUTLINE_COLOR
 ) -> Node2D:
 	var root: Node2D = Node2D.new()
@@ -1317,7 +1341,7 @@ func _build_card_target_outline(
 # further, not the same amount). antialiased = false matches
 # set_affinity_lines()'s own pixel-art discipline at this project's 480x270
 # base resolution.
-func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
+static func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var top_left: Vector2 = (
 		BoardCoords.grid_to_local(cell) + Vector2.ONE * CARD_TARGET_ILLEGAL_MARK_INSET
@@ -1350,7 +1374,7 @@ func _build_card_target_illegal_mark(cell: Vector2i) -> Node2D:
 # visual vocabularies never share one source of truth (see
 # MOVE_BLOCKED_OUTLINE_COLOR's own doc comment for why that separation
 # matters on this project).
-func _build_move_blocked_outline(cell: Vector2i) -> Node2D:
+static func _build_move_blocked_outline(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * MOVE_BLOCKED_OUTLINE_INSET
 	var side: float = BoardCoords.CELL_SIZE - MOVE_BLOCKED_OUTLINE_INSET * 2.0
@@ -1387,7 +1411,7 @@ func _build_move_blocked_outline(cell: Vector2i) -> Node2D:
 # blocked_by_terrain, drawn INSIDE _build_move_blocked_outline()'s border.
 # antialiased = false matches every other Line2D in this file's pixel-art
 # discipline (set_affinity_lines() / _build_card_target_illegal_mark()).
-func _build_move_terrain_hatch(cell: Vector2i) -> Node2D:
+static func _build_move_terrain_hatch(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var top_left: Vector2 = BoardCoords.grid_to_local(cell) + Vector2.ONE * MOVE_TERRAIN_HATCH_INSET
 	var side: float = BoardCoords.CELL_SIZE - MOVE_TERRAIN_HATCH_INSET * 2.0
@@ -1412,7 +1436,7 @@ func _build_move_terrain_hatch(cell: Vector2i) -> Node2D:
 # root even though it is a single rect, matching every other builder in this
 # file's "one throwaway subtree per render" shape (see _clear_children()'s
 # own doc comment) rather than adding a bare Control under a Node2D layer.
-func _build_move_out_of_range_dot(cell: Vector2i) -> Node2D:
+static func _build_move_out_of_range_dot(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var dot: ColorRect = ColorRect.new()
 	dot.color = MOVE_OUT_OF_RANGE_DOT_COLOR
@@ -1475,7 +1499,7 @@ static func threat_marker_weight() -> float:
 
 
 # story-044 — 一格一個根節點,位置 = 格左上,子節點用格內座標。
-func _build_ring_marker(cell: Vector2i, rects: Array[Rect2], color: Color) -> Node2D:
+static func _build_ring_marker(cell: Vector2i, rects: Array[Rect2], color: Color) -> Node2D:
 	var root: Node2D = Node2D.new()
 	root.position = BoardCoords.grid_to_local(cell)
 	for rect: Rect2 in rects:
@@ -1489,7 +1513,7 @@ func _build_ring_marker(cell: Vector2i, rects: Array[Rect2], color: Color) -> No
 
 
 # story-044 — 被擋視線角標:深色章 + 1px 斜線,恰一個根節點(每個被餵入的格畫一個;story-052 起呼叫端只餵敵兵格)。
-func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
+static func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	root.position = BoardCoords.grid_to_local(cell)
 	var stamp: ColorRect = ColorRect.new()
@@ -1514,15 +1538,27 @@ func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 # sword_icon_rect_in_cell(); textures are the shared cached ones.
 func _build_action_icons(cell: Vector2i, piece: Dictionary) -> Node2D:
 	var root: Node2D = Node2D.new()
-	var origin: Vector2 = BoardCoords.grid_to_local(cell)
-	if piece_move_used(piece):
-		root.add_child(_build_icon_sprite(shoe_texture(), origin + shoe_icon_rect_in_cell().position, "ShoeIcon"))
-	if piece_attack_used(piece):
-		root.add_child(_build_icon_sprite(sword_texture(), origin + sword_icon_rect_in_cell().position, "SwordIcon"))
+	for spec: Dictionary in _action_icon_specs(cell, piece):
+		root.add_child(_build_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
 	return root
 
 
 func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) -> Sprite2D:
+	return _make_icon_sprite(tex, top_left, node_name)
+
+
+# story-047:鞋/劍圖示「畫什麼、畫在哪」的單一出處(棋盤的實例建構與圖例的靜態建構共用)。
+static func _action_icon_specs(cell: Vector2i, piece: Dictionary) -> Array[Dictionary]:
+	var specs: Array[Dictionary] = []
+	var origin: Vector2 = BoardCoords.grid_to_local(cell)
+	if piece_move_used(piece):
+		specs.append({"tex": shoe_texture(), "top_left": origin + shoe_icon_rect_in_cell().position, "name": "ShoeIcon"})
+	if piece_attack_used(piece):
+		specs.append({"tex": sword_texture(), "top_left": origin + sword_icon_rect_in_cell().position, "name": "SwordIcon"})
+	return specs
+
+
+static func _make_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) -> Sprite2D:
 	var sprite: Sprite2D = Sprite2D.new()
 	sprite.name = node_name
 	sprite.texture = tex
@@ -1531,12 +1567,19 @@ func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) ->
 	return sprite
 
 
+static func _build_action_icons_static(cell: Vector2i, piece: Dictionary) -> Node2D:
+	var root: Node2D = Node2D.new()
+	for spec: Dictionary in _action_icon_specs(cell, piece):
+		root.add_child(_make_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
+	return root
+
+
 # Story 015 — checkerboard half-fill for an impassable terrain cell: the
 # top-left and bottom-right quadrants solid, the other two left transparent.
 # See IMPASSABLE_TERRAIN_CHECKER_COLOR's own doc comment for why this shape
 # family (alternating quadrants) is used instead of any of this file's other
 # seven.
-func _build_impassable_terrain_marker(cell: Vector2i) -> Node2D:
+static func _build_impassable_terrain_marker(cell: Vector2i) -> Node2D:
 	var root: Node2D = Node2D.new()
 	var top_left: Vector2 = BoardCoords.grid_to_local(cell)
 	var half: float = BoardCoords.CELL_SIZE * 0.5
@@ -1557,7 +1600,7 @@ func _build_impassable_terrain_marker(cell: Vector2i) -> Node2D:
 
 
 # Maps LineTone -> stroke colour for set_affinity_lines().
-func _line_color_for_tone(tone: LineTone) -> Color:
+static func _line_color_for_tone(tone: LineTone) -> Color:
 	match tone:
 		LineTone.POSITIVE:
 			return AFFINITY_LINE_COLOR_POSITIVE
@@ -1589,3 +1632,136 @@ func _clear_children(layer: Node2D) -> void:
 	for child: Node in layer.get_children():
 		layer.remove_child(child)
 		child.free()
+
+
+# ---- story-047:圖例(標記種類清單 + 範例建構,與棋盤同源) -----------------------
+
+## story-047 — [b]BoardView 實際會畫的每一種標記/旗標[/b]的單一清單,是圖例完整性測試(AC1)的預言機。
+## 新增標記種類 = 在這裡加一個值;圖例([LegendPanel])沒有對應項時測試變紅。
+## 圖例圖示由 [method build_legend_sample] 產生,內部呼叫的是棋盤繪製同一批 _build_* 建構函式與常數。
+enum MarkerKind {
+	MOVE_RANGE,
+	ATTACK_RANGE,
+	ATTACK_LOS_BLOCKED,
+	THREAT_RANGE,
+	MOVE_BLOCKED_OCCUPANCY,
+	MOVE_BLOCKED_TERRAIN,
+	MOVE_OUT_OF_RANGE,
+	CARD_TARGET_LEGAL,
+	CARD_TARGET_ILLEGAL,
+	AFFINITY_SOLID_PLUS,
+	AFFINITY_SOLID_MINUS,
+	AFFINITY_ZIGZAG_PLUS,
+	AFFINITY_ZIGZAG_MINUS,
+	IMPASSABLE_TERRAIN,
+	CURSOR,
+	ACTION_MOVED,
+	ACTION_ATTACKED,
+	UNIT_DONE,
+}
+
+## 範例圖示的原生像素大小:一格寬、格高加上棋子上方的突出部分(鞋/劍圖示畫在突出部分)。
+const LEGEND_SAMPLE_SIZE: Vector2 = Vector2(32.0, 40.0)
+## 範例根節點在圖示區內的偏移(格左上相對於圖示區左上)。
+const LEGEND_SAMPLE_ORIGIN: Vector2 = Vector2(0.0, 8.0)
+
+
+## 圖例的【明文排除集】(管理者 2026-11-16 裁決,選項逐字「現在不列,等關卡真的有這種地形再加
+## (介面設計師推薦)」)。理由:現行所有地形皆 passable=true,這兩種標記(移動被地形擋、
+## 不可通行地形)今天不會在任何關卡出現,圖例列它們等於說明書列了看不到的東西。
+## 日後關卡真有不可通行地形時,從這裡移除並補圖例項目與字串。
+## 排除是明文的:測試斷言排除集恰好是這兩項,不是「漏補」。
+const LEGEND_EXCLUDED_KINDS: Array[int] = [
+	MarkerKind.MOVE_BLOCKED_TERRAIN,
+	MarkerKind.IMPASSABLE_TERRAIN,
+]
+
+
+## 圖例應涵蓋的標記種類 = [enum MarkerKind] 全集 − [constant LEGEND_EXCLUDED_KINDS]。
+static func legend_marker_kinds() -> Array[int]:
+	var out: Array[int] = []
+	for v: int in MarkerKind.values():
+		if not LEGEND_EXCLUDED_KINDS.has(v):
+			out.append(v)
+	return out
+
+
+## 畫一個標記範例:地面磚當底 + 該標記,格在 (0,0)。每個範例恰一個根節點。
+## 圖例面板把它縮放後放進圖示區;不得在面板端改顏色/形狀。
+static func build_legend_sample(kind: int) -> Node2D:
+	var root: Node2D = Node2D.new()
+	var cell: Vector2i = Vector2i.ZERO
+	var ground: Sprite2D = Sprite2D.new()
+	ground.texture = load(TERRAIN_TEXTURE_PATHS["."])
+	ground.centered = true
+	ground.position = BoardCoords.grid_to_local_center(cell)
+	root.add_child(ground)
+	match kind:
+		MarkerKind.MOVE_RANGE:
+			var center: Vector2 = BoardCoords.grid_to_local_center(cell)
+			root.add_child(_make_move_fill(center))
+			root.add_child(_make_move_sprite(center))
+		MarkerKind.ATTACK_RANGE:
+			root.add_child(_build_ring_marker(cell, attack_ring_rects_in_cell(), ATTACK_RING_COLOR))
+		MarkerKind.ATTACK_LOS_BLOCKED:
+			root.add_child(_build_attack_los_blocked_stamp(cell))
+		MarkerKind.THREAT_RANGE:
+			root.add_child(_make_threat_stripe_sprite(BoardCoords.grid_to_local_center(cell)))
+			root.add_child(_build_ring_marker(cell, threat_ring_rects_in_cell(), THREAT_RING_COLOR))
+		MarkerKind.MOVE_BLOCKED_OCCUPANCY:
+			root.add_child(_build_move_blocked_outline(cell))
+		MarkerKind.MOVE_BLOCKED_TERRAIN:
+			root.add_child(_build_move_blocked_outline(cell))
+			root.add_child(_build_move_terrain_hatch(cell))
+		MarkerKind.MOVE_OUT_OF_RANGE:
+			root.add_child(_build_move_out_of_range_dot(cell))
+		MarkerKind.CARD_TARGET_LEGAL:
+			root.add_child(_build_card_target_outline(cell))
+		MarkerKind.CARD_TARGET_ILLEGAL:
+			root.add_child(_build_card_target_outline(cell, CARD_TARGET_ILLEGAL_COLOR))
+			root.add_child(_build_card_target_illegal_mark(cell))
+		MarkerKind.AFFINITY_SOLID_PLUS:
+			_add_affinity_sample(root, LineShape.SOLID, LineTone.POSITIVE, LineSymbol.PLUS)
+		MarkerKind.AFFINITY_SOLID_MINUS:
+			_add_affinity_sample(root, LineShape.SOLID, LineTone.NEGATIVE, LineSymbol.MINUS)
+		MarkerKind.AFFINITY_ZIGZAG_PLUS:
+			_add_affinity_sample(root, LineShape.ZIGZAG, LineTone.POSITIVE, LineSymbol.PLUS)
+		MarkerKind.AFFINITY_ZIGZAG_MINUS:
+			_add_affinity_sample(root, LineShape.ZIGZAG, LineTone.NEGATIVE, LineSymbol.MINUS)
+		MarkerKind.IMPASSABLE_TERRAIN:
+			root.add_child(_build_impassable_terrain_marker(cell))
+		MarkerKind.CURSOR:
+			var cur: Sprite2D = Sprite2D.new()
+			cur.texture = load(CURSOR_PATH)
+			cur.centered = true
+			cur.position = BoardCoords.grid_to_local_center(cell)
+			root.add_child(cur)
+		MarkerKind.ACTION_MOVED, MarkerKind.ACTION_ATTACKED, MarkerKind.UNIT_DONE:
+			var piece: Dictionary = {"cell": cell, "faction": "PLAYER", "sprite_index": 0}
+			if kind == MarkerKind.ACTION_MOVED:
+				piece["move_used"] = true
+			elif kind == MarkerKind.ACTION_ATTACKED:
+				piece["attack_used"] = true
+			else:
+				piece["done"] = true
+			var ps: Sprite2D = Sprite2D.new()
+			ps.texture = load(resolve_piece_sprite_path("PLAYER", 0))
+			ps.centered = true
+			ps.position = _piece_anchor(cell)
+			if piece_is_done(piece):
+				ps.modulate = Color(DONE_PIECE_DIM, DONE_PIECE_DIM, DONE_PIECE_DIM, 1.0)
+			root.add_child(ps)
+			root.add_child(_build_action_icons_static(cell, piece))
+	return root
+
+
+static func _add_affinity_sample(
+	root: Node2D, shape: LineShape, tone: LineTone, symbol: LineSymbol
+) -> void:
+	var half: float = BoardCoords.CELL_SIZE * 0.5
+	var from_pos: Vector2 = Vector2(2.0, half)
+	var to_pos: Vector2 = Vector2(BoardCoords.CELL_SIZE - 2.0, half)
+	var points: PackedVector2Array = affinity_line_points(from_pos, to_pos, shape)
+	root.add_child(_make_affinity_stroke(points, AFFINITY_LINE_BACKING_WIDTH, AFFINITY_LINE_BACKING_COLOR))
+	root.add_child(_make_affinity_stroke(points, AFFINITY_LINE_STROKE_WIDTH, _line_color_for_tone(tone)))
+	root.add_child(_build_affinity_plaque(Vector2i(int(half), int(half)), symbol, _line_color_for_tone(tone)))

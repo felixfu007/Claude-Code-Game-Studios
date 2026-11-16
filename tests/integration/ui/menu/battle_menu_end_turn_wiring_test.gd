@@ -442,6 +442,9 @@ func test_navigating_down_from_return_row_skips_disabled_end_phase_row() -> void
 	await get_tree().process_frame
 	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
+	# story-047:「圖例」列啟用後,回到遊戲→目標→圖例→(略過停用的結束回合)→離開,多按一次。
+	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
 
 	# Assert
 	assert_bool(_quit_row(instance).has_focus()).append_failure_message(
@@ -492,6 +495,9 @@ func test_sensitivity_proof_navigation_skip_detection_catches_missing_neighbor_r
 	# Act
 	mutant.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
+	mutant.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
+	# story-047:「圖例」列啟用後,多按一次(與真測試同步)。
 	mutant.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
 
@@ -611,6 +617,9 @@ func test_gamepad_only_path_completes_open_menu_to_end_turn() -> void:
 	# navigation (headless-provable, see file header) to reach EndPhaseRow.
 	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
+	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
+	await get_tree().process_frame
+	# story-047:「圖例」列啟用後,多按一次才到結束回合。
 	instance.get_viewport().push_input(_real_ui_key_event(&"ui_down"))
 	await get_tree().process_frame
 
