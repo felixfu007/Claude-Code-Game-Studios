@@ -93,6 +93,15 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ story-054(godot-gdscript-specialist,**隔離 worktree**,避免干擾午休截圖;回報會給 worktree 路徑 → 協調者把 diff 套回主目錄再重跑;log `C:/tmp/run_054.log`)。
 - 🟡 054 交件(worktree `.claude/worktrees/agent-aaf462184bb1f104d`,未提交):AC1~7 完成,實作者全套 `ENGINE EXIT = 0` / `2142 … 0 failures` / `(209/209)`;AC8 驅動未做;舊小方塊測試刪除逐條有接手(「兩態畫成一樣」由顯示表四集合互異接手)。🔴 缺口:實機被提早結束的單位會畫「變暗 + 鞋劍都有」(TurnOrder 無 move_used/attack_used 公開查詢)。🔴 管理者裁決(約 11:05):「**授權,在這張單一起補(推薦)**」→ 範圍擴大:`turn_order.gd`、`battle_controller.gd` 各加一個唯讀 getter(不改行為)+ `battle_screen.gd` 傳 3 欄位。
 - ✅ 054 接線補完(實作者查主目錄 active.md 核准後動手;全套 `2145 … 0 failures` / `(210/210)`)。協調者把 worktree diff 以 `C:/tmp/story054.patch` 套回主目錄;**協調者自做 mutant**(battle_screen 刪三欄)→ 單跑接線測試 `ENGINE EXIT=100`、`test_battle_screen_ended_without_acting_dims_piece_and_draws_no_icons FAILED` → 已還原(numstat 5/0)。⏳ 協調者全套 `C:/tmp/run_054_coord.log`。worktree 待清。
+- ✅ **story-054 提交 `0582b98`**(協調者重跑 `ENGINE EXIT = 0` / `2145 … 0 failures` / `(210/210)`);worktree 已移除。覆核收穫:接線缺口(BoardView 層綠、實機會畫錯)= **+1**。
+- ✅ godot-specialist 055 步驟 1 驅動 `prototypes/story-055-hp-text-width-measure-2026-11-16/`(headless EXIT 0):字串寬全 ≤ 32(最長 `30→15`=27);**場上 HP Label 節點 size=(43,23) 而非設定的 (32,12)** → 推測(C)置中後右側出 clip。待開窗確認。
+- 🔴 裁決(約 11:40):047 範圍 =「**兩個都授權,專用鍵由介面設計師挑(推薦)**」→ 加入 `src/ui/menu/battle_menu.gd`/`BattleMenu.tscn`(LEGEND_AVAILABLE)與 `project.godot`(新動作)。⏳ ux 挑鍵。
+- ✅ ux `docs/reviews/story-047-legend-key-2026-11-16.md`:`battle_open_legend`,鍵盤 L、手把 LT(軸 4,未驗證;不成就手把只走選單);關閉/吞鍵規則;文案準則 8 條。🔴 裁決:提示列加「圖例 L」=「**先不做,只用選單與專用鍵**」(非推薦)→ 該檔第 X 節提示列部分(NO_SELECTION 末段、LEGEND_OPEN 狀態)**不做**。
+- ✅ **午休截圖 12:00:10~12:01:16**(準時;四組 EXIT 0、0 FAILED/WATCHDOG;78+16+16+4 張)。協調者自開 3 張:055「30→15」實機被切成「30→1」且左偏(與 Label size 43 推論一致);053 禁用灰空心 vs 啟用實心可分。⏳ ux `docs/reviews/lunch-capture-ux-review-2026-11-16.md` + art `docs/reviews/lunch-capture-art-review-2026-11-16.md`(含首字底四版選項、禁用灰色值、055 修法)。⚠️ `prototypes/story-053-end-action-capture-2026-11-16/` 缺 README(prototype 規則)。
+- ⏳ 047 實作(worktree `.claude/worktrees/agent-aedc4077c120887e9`,兩次撞上限續做中)。
+- ✅ ux 審 `docs/reviews/lunch-capture-ux-review-2026-11-16.md` + art 審 `docs/reviews/lunch-capture-art-review-2026-11-16.md`:053 四項目測通過、禁用灰色維持;044 有條件過;045 過;046/052/054/056 未拍到或無法判定(驅動只覆蓋 s041/044/045,用合成夾具);055 不通過,**兩位皆判:修 Label 尺寸=32(不動三帶、不改文案)**,步驟 2 甲~丁都不選。協調者查證不成立:戰敗畫面「回到標題」(夾具非戰役,正確)、`TESTDUMMY` push_error(僅夾具)、051 顯示「敵兵 N」(夾具無 kind 欄 = 退回)。新問題:資訊卡末行貼底被裁(中)、手牌展開說明字小壓卡(中)、結果畫面仍留禁用按鈕(低)、首字底在游標停時被蓋(art)。
+- 🔴 裁決(約 12:25):首字底 =「**A:全部加濃底(美術總監推薦)**」;琥珀框 =「**框畫在棋子上層,成完整一圈(美術總監推薦)**」→ 皆需新工單(lead)。
+- 📌 待補拍(下次午休/在家):046 選單五列、056 重打文案、051 型別名(真實 vs01)、054 圖示、052 vs01。驅動要先走到對應狀態。
 - 📌 午休腳本 `C:/tmp/lunch_capture_2026-11-16.sh`(三支驅動依序)。
 - 📌 午休待拍:053 驅動(灰禁用 4 態)、首字底四版、044 AC8/052 AC7 重拍、046 AC6、056 AC7 —— 禁用灰色值 (0.5,0.54,0.6) 拍完交 art 看。
 

@@ -1,0 +1,60 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+DISPLAY_SERVER=headless
+HOST [(960, 540)] root.size=(960, 540)
+HOST [(960, 540)] WorldViewportContainer position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 | WorldViewport.size=(480, 270)
+CONST HP_TEXT_FONT_SIZE=8 hp_text_rect_in_cell=[P: (0.0, 0.0), S: (32.0, 8.0)] avail_w=32.0
+FONT [(960, 540)] Open Sans SemiBold class=FontFile
+MEASURE [(960, 540)] str='22/22' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='23→7' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='30→15' string_size_w=27.0 label_min_w=27.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='9→0' string_size_w=18.0 label_min_w=18.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='30/30' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='30→30' string_size_w=27.0 label_min_w=27.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(960, 540)] str='30→0' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+REAL_LABELS [(960, 540)] count=1
+REAL_LABEL [(960, 540)] #0 text='30/30' size=(43.0, 23.0) position=(0.0, -7.5) min_size=(22.0, 12.0) parent_size=(32.0, 8.0)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:85)
+       [1] _run (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:71)
+       [2] _frames (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:19)
+SHOT normal -> get_image() is null (expected under headless)
+REAL_LABEL [(960, 540)] mutated #0 -> '30→15' min_size=(27.0, 12.0) size=(43.0, 23.0)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:85)
+       [1] _run (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:78)
+       [2] _frames (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:19)
+SHOT preview_30to15 -> get_image() is null (expected under headless)
+HOST [(1920, 1080)] root.size=(1920, 1080)
+HOST [(1920, 1080)] WorldViewportContainer position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 | WorldViewport.size=(480, 270)
+CONST HP_TEXT_FONT_SIZE=8 hp_text_rect_in_cell=[P: (0.0, 0.0), S: (32.0, 8.0)] avail_w=32.0
+FONT [(1920, 1080)] Open Sans SemiBold class=FontFile
+MEASURE [(1920, 1080)] str='22/22' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='23→7' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='30→15' string_size_w=27.0 label_min_w=27.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='9→0' string_size_w=18.0 label_min_w=18.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='30/30' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='30→30' string_size_w=27.0 label_min_w=27.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+MEASURE [(1920, 1080)] str='30→0' string_size_w=22.0 label_min_w=22.0 avail_w=32.0 overflow_by_string_size=false overflow_by_label_min=false
+REAL_LABELS [(1920, 1080)] count=1
+REAL_LABEL [(1920, 1080)] #0 text='30/30' size=(43.0, 23.0) position=(0.0, -7.5) min_size=(22.0, 12.0) parent_size=(32.0, 8.0)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:85)
+       [1] _run (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:71)
+       [2] _frames (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:19)
+SHOT normal -> get_image() is null (expected under headless)
+REAL_LABEL [(1920, 1080)] mutated #0 -> '30→15' min_size=(27.0, 12.0) size=(43.0, 23.0)
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:85)
+       [1] _run (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:78)
+       [2] _frames (res://prototypes/story-055-hp-text-width-measure-2026-11-16/driver.gd:19)
+SHOT preview_30to15 -> get_image() is null (expected under headless)
+DONE
