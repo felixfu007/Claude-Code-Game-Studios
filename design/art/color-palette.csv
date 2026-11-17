@@ -30,9 +30,9 @@
 # 並在需要時插入色相/材質描述詞,例:cloth_warm_shadow_01):
 #   _shadow_ / _base_ / _highlight_ — 明暗三階;_outline_ — 描邊色(依材質分開,非純黑)
 #
-# 總數:本版用 48 / 64(2026-11-11 新增地形 9 色 —— 倒木新三階 _02、水三階、懸崖/虛空三階,管理者 11-11 裁決「可以,兩邊色票一起更新」,依 design/art/terrain-tile-spec.md v0.2 第 3 節;舊倒木三階 _01 保留不改)(前版 39:2026-11-10 新增 cloth_green_base_01,管理者 11-06 裁決「色盤新增一個衣物綠」;初版為 38)(全專案共用上限,地形+介面+5 位角色共享,非單一角色配額,
+# 總數:本版用 49 / 64(2026-11-17 新增 ui_state_affinity_gain_01 淡金一色〔棋盤加成線用,色值 #F2DE8A 為建議試畫值、待試畫與列名待美術確認;須過 #FF00FF 檢查與和 ui_state_warning_01 並排辨識〕,管理者 11-17 裁決「新增淡金色(美術總監推薦)」)(前版 48:2026-11-11 新增地形 9 色 —— 倒木新三階 _02、水三階、懸崖/虛空三階,管理者 11-11 裁決「可以,兩邊色票一起更新」,依 design/art/terrain-tile-spec.md v0.2 第 3 節;舊倒木三階 _01 保留不改)(前版 39:2026-11-10 新增 cloth_green_base_01,管理者 11-06 裁決「色盤新增一個衣物綠」;初版為 38)(全專案共用上限,地形+介面+5 位角色共享,非單一角色配額,
 # 出處:design/art/art-direction.md 第二、三節與 06a 第一節)。
-#   skin 7 / cloth 11 / metal 4 / nature 19 / ui 6 / reserved 1 = 48。
+#   skin 7 / cloth 11 / metal 4 / nature 19 / ui 7 / reserved 1 = 49。
 #   剩餘 16 色為刻意保留的頭寸,供後續角色專屬子色盤挑選、地形演變新增地形種類
 #   (design/gdd/living-board-terrain.md)、或既有 UI 色一併納管時使用 —— 不是遺漏。
 #
@@ -133,3 +133,4 @@ hex,category,label
 #0E0F14,nature,nature_void_shadow_01
 #4B4A52,nature,nature_cliff_base_01
 #8C8A94,nature,nature_cliff_highlight_01
+#F2DE8A,ui,ui_state_affinity_gain_01
