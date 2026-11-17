@@ -25,6 +25,14 @@
 
 - [ ] **AC1 恰好 +1**:甲類確認、丙類確認各一條測試:確認前後 `combat_state_version` 差恰為 1(預言機取 `BattleState` 的公開讀取,不另設計數器)。
 - [ ] **AC2 失敗不遞增**:`confirm()` 回 `false`(例:非確認步驟、點名限制不符)時版本號不變。
+  > 🔴 **2026-11-17 technical-director 裁決加註(AC2 原文不改)**:本條只涵蓋**進窗口之前**的失敗路徑。
+  > **丙類卡在窗口內被 `PermanentAffinityWriteRules.play()` 拒絕**(`INVALID_PAIR` / `DEAD_PAIR_FORBIDDEN` /
+  > `ZERO_MAGNITUDE` / `NO_PORT_CONFIGURED`)時,`confirm()` 回 `false`、Session 留在 `CONFIRMING`、牌不離手,
+  > **但版本號 +1** —— 這是已知且接受的保守多算(提交入口沒有中止機制,與 `battle_controller.gd`
+  > 的 `_apply_move` / `end_unit_turn` 同形)。多算只會造成查詢結果被判過期而重算,不會造成漏判。
+  > 該路徑的測試(`test_commit_entry_affinity_port_rejection_keeps_session_and_card_state`)釘住牌仍在手、步驟仍為 `CONFIRMING`;**版本號未釘**(實作者刻意不把有爭議行為寫死,2026-11-17 協調者依實際測試更正 TD 原稿此句)。
+  > 🔴 **前提**:窗口內 `play()` 必須是丙類分支的第一個寫入,之前不得有任何寫入(否則拒絕時會部分寫入)。
+  > 裁決全文:`docs/reviews/story-010-version-bump-on-reject-ruling-2026-11-17.md`
 - [ ] **AC3 窗口內寫入被接受**:對 `Unit.hp` 的受守衛賦值**在確認的提交內**不被拒(用一條測試性探針卡/注入 mutator 證明窗口確實開著;`diagnostic_*` 讀取 `write_window_is_open()` 在 mutator 內為 true、離開後為 false)。
 - [ ] **AC4 共用同一入口**:測試以掛載的守衛 `Callable`(`authoritative_write_in_progress_check`)觀察到卡牌確認期間窗口為開;同時 `BattleController` 既有攻擊路徑測試不受影響。
 - [ ] **AC5 不新增提交包裝**:`grep -rn "commit_authoritative_change" src --include=*.gd | grep -v "##"` 回報原始輸出,Session 內只有**呼叫**、沒有**定義**第二個同名入口。🔴 搜尋指令不得寫進被搜尋檔的註解。
