@@ -1,7 +1,7 @@
 # Story 017:補血卡與雙人甲類(距離過濾、夾限、免選目標路徑)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 010、011、015;另卡 F7「距離函式用哪一份」須先查(派工前第 1 題)。
+> **Status**: Ready(依序:010、011、015 完成後才可派工)—— 派工前三題皆為實作者第一步查證,不是待裁決;原寫「卡 F7 距離函式」是 lead-programmer 自問,不擋派工。
 > **Type**: Logic
 > **Estimate**: M~L(2~2.5 天,粗估未驗證;data-format S3)
 > **依據**:規格 v1.0 第 0 節(c04~c14 沿用 v0.3 第 4 節卡池;c05~c11 沿用 `TEMPORARY_STAT_MODIFIER`,c06「ATK+3 且 DEF−2」現有欄位可表達);`docs/reviews/card-rework-data-format-2026-11-12.md` F7、F8、F9。c04「≤1」、c07「≤2」、c13「≤3」、c14「≤2」補血/雙人距離每張不同(`target_range` 欄,011)。v0.3 第 4 節卡池原文**本單撰寫者未讀**(`design/quick-specs/card-rework-cost-and-pool-2026-11-12.md`,實作者第一步讀)。
@@ -17,6 +17,7 @@
 - 補血:提交窗口內走受守衛 `hp` setter,夾限最大 HP;不使用 `take_damage()` 的反向。
 - 雙人甲類:兩人**皆存活**且距離 ≤ `target_range` 才可打(F8);對兩人各掛一個 `CardModifier`(沿用 story-001/002 模型)。
 - 有向卡(c13 徐→藍、c14 秦→董):付款人/承受者有向,但好感度配對無向(`AffinityTypes.pair_of`),有向只用於誰付/誰收。
+- **已決(答案檔題 1)**:補血卡 c13/c14 `named_unit_id` = 付款人、`partner_unit_id` = 承受者;NONE 時只有付款人付血(`hp>cost`);雙人加成 c09~c11 則兩人皆付(015 的純函式決定,本單只接收結果)。
 - 全部在 010 的提交窗口內、015 的「先驗證後扣款」順序之後。
 
 ## Acceptance Criteria

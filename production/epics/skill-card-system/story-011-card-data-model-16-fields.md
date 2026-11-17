@@ -1,7 +1,7 @@
 # Story 011:卡牌資料模型擴欄(16 欄、新列舉、confirm 的 else 改 match)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 卡在三題裁決:①F1 付款人語意(`docs/reviews/card-rework-data-format-2026-11-12.md` 第 5 節 F1)②卡 id 命名 `c01` vs `card_01`(同檔 2.7 末段)③F7 直傷是否尊重視線(同檔 F7 末段;影響是否需要某欄,見下)
+> **Status**: Ready(2026-11-17 三題皆已決,見「派工前須先決定」;下列為原卡點,留作紀錄)—— 原:卡在三題裁決:①F1 付款人語意(`docs/reviews/card-rework-data-format-2026-11-12.md` 第 5 節 F1)②卡 id 命名 `c01` vs `card_01`(同檔 2.7 末段)③F7 直傷是否尊重視線(同檔 F7 末段;影響是否需要某欄,見下)
 > **Type**: Logic
 > **Estimate**: M(1.5~2 天,粗估未驗證)
 > **依據**:
@@ -11,9 +11,13 @@
 ## 派工前須先決定
 
 1. **F1 付款人**:新卡的 `named_unit_id` 是「付款人」還是沿用現行「承受者(ONLY)/出手者(EXCLUDE)」語意?建議(data-format 文件):新 Category 一律 `named_unit_id` = 付款人、`named_mode` 對新 Category 無作用(填 ONLY)。**設計師 + lead-programmer 裁決**;若改為獨立第 17 欄,本單欄數與 AC 全變。
+   - **已決:不加第 17 欄,欄數集合維持 {8,9,10,16}。** `named_unit_id` 一律 = 付款人(凡 `cost_type ≠ NONE` 的卡),`named_mode` 對這類卡無作用(填 `ONLY`,載入器不驗)。付款人集合由 `cost_type` + 卡類別導出(**屬 015 的純函式,不在本單**):`PAIR` 且雙人加成(c09~c11)/合擊(c12)→ `named` 與 `partner` 兩人皆付;`PAIR` 且補血(c13/c14)→ 只有 `named` 付、`partner` 是承受者。(答案檔題 1;v0.3 第 3 節規則 1;設計師直接定,日後出現例外卡再升級為第 17 欄。)
 2. **卡 id 命名**:`c01` 或沿用 `card_01`(game-designer)。
+   - **已決:`card_11`~`card_24`**(c01 = `card_11`,依此類推 c14 = `card_24`);**不可**用 `card_01`~`card_08`(現行 `vs02_cards.txt` 已佔用,會撞 id)。`cNN` 只是閱讀簡稱。(答案檔題 2;v0.3 第 3 節規則 13。)
 3. **F7 視線**:直傷是否受視線阻擋 —— 若「是」,不影響欄位,但影響 018;若直傷需要「射程下限/上限」欄(c02 董振豪射程 2~6)則本單欄位集合要多。**請設計師同時確認 c02 的射程是用現有單位射程還是卡面指定**(規格第 4 節 c02 原文本單撰寫時未重讀,**未驗證**)。
+   - **已決:直傷尊重視線;c02 射程 = 施放者的單位射程(董振豪 2~6),不是卡面指定 → 不需要任何射程欄位,欄位集合不變。** 直傷卡 `target_range = -1`(不適用/用付款人攻擊射程)。(答案檔題 3;v0.3 第 3 節規則 2、7。)控制區對直傷無影響(設計師直接定,影響 018 不影響本單)。
 4. (lead-programmer 自問,不需管理者)`effect_kind` 併入 `Category` 追加值的名稱:`DIRECT_DAMAGE` / `HEAL` / `COMBO_DAMAGE`(沿用 data-format 2.1)。
+   - **補充(答案檔題 5、題 12)**:卡表資料**只使用 `PAIR`**、不使用 `AFFINITY`(列舉保留該值——列舉只能尾端追加,不刪既有值;載入器遇 `AFFINITY` 的處置由實作者依 AC3 決定並於回報說明)。`effect_value` 維持「由建構者/載入器傳入、不寫死」(023 本批不做,營火批再追加覆寫入口,屬追加式小改)。
 
 ## 規則
 

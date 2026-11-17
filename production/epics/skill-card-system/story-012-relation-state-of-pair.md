@@ -1,7 +1,7 @@
 # Story 012:共用關係狀態判定 `state_of(pair)` + 冷淡區旋鈕(k=0 回歸)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(以 `k=0` 先行;`k` 的正式值待 025 量測,**不得用占位值 50 上線**)—— 但 ⚠️ 見「派工前須先決定」第 1 題(ADR-0002 是否需補一行)
+> **Status**: Ready(以 `k=0` 先行;`k` 的正式值待 025 量測,**不得用占位值 50 上線**)—— 第 1 題已由技術總監裁決(2026-11-17,`docs/reviews/state-of-adr0002-ruling-2026-11-17.md`:不修訂 ADR-0002,新檔 `AffinityRelation`);`k=0` 先行已由管理者 2026-11-17 裁決「冷淡區量測前先設 0」
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程文件 N1)
 > **依據**:
@@ -12,8 +12,12 @@
 ## 派工前須先決定
 
 1. **放哪裡/是否動 ADR-0002**:`state_of(pair)` 是好感度池的**唯讀判定**。放在池(`affinity_data_pool.gd`)還是 `AffinityPhiProvider`?加在已 `Accepted` 的池介面上是否算契約變更(ADR-0002 契約「不變,新增的是呼叫者」是規格 4.3 對營火寫入說的,對**新讀取函式**未驗證)。**lead-programmer 須先對照 ADR-0002 與 `docs/registry/architecture.yaml` 的 interfaces 節回答;若算契約變更 → 停下問技術總監,不自行改 ADR。**
+
+   > **✅ 2026-11-17 技術總監建議(`docs/reviews/state-of-adr0002-ruling-2026-11-17.md`)**:不放池、不放 `AffinityPhiProvider`;新增 `src/gameplay/affinity/affinity_relation.gd`(`AffinityRelation.state_of(pool, pair, neutral_band) -> RelationState`,靜態純函式),`k` 經 `AffinityTuning` 載入。**不觸及 ADR-0002 契約,不修訂 ADR。** 本單不改 `affinity_phi_provider.gd` 與 `affinity_data_pool.gd`(第 3 分支改讀 `state_of` 屬 story-013)。
 2. **`n` 的讀取來源**:`n_pair`(互動筆數)現有讀取介面是什麼(`combat_strength_read(pair)` 是否已含 `n`)—— 規格 3 節標二手。實作者第一步當場查。
+   - **已決(TD 裁決檔第 4 節末)**:`n` 取自 `combat_strength_read(pair)` 回傳的 `AffinityReadResult.n_pair`;不需要新的讀取介面。必須先確認 `result.rejection == AffinityDataPool.ReadRejection.NONE` 才讀其他欄位,拒絕時 `push_error` + 回傳 `NONE`(拒絕時 `value` 為 `NAN`,必須是明確分支)。
 3. `k` 初值:本單預設 `0`(現狀行為);正式值由 025 的 M9 量測後由管理者/數值設計師定。
+   - **已決:量測前先設 `k=0`**(管理者 2026-11-17 裁決「量測前先設 0(設計師推薦)」;`docs/reviews/straddle-q3-q4-recommendation-2026-11-17.md` Q4-A)。k=0 是唯一有回歸保證的值(與現行 `_link_for_pair` 逐位相同)。若試玩覺得麥子健太快失去騎牆,正確動作是提前做 025,不是塞暫定非零值。
 
 ## 規則
 
@@ -39,7 +43,8 @@
 
 ## Affected Files
 
-- `src/gameplay/affinity/affinity_phi_provider.gd` 或 `src/gameplay/affinity_pool/affinity_data_pool.gd`(依派工前第 1 題結論)
+- `src/gameplay/affinity/affinity_relation.gd`(新檔)
+- `src/gameplay/tuning/affinity_tuning.gd`、`src/gameplay/tuning/tuning_knobs.gd`(加 `neutral_band_centi`,當場確認載入路徑)
 - `assets/data/` 旋鈕檔 + 對應載入端(`src/gameplay/tuning/tuning_knobs.gd`,當場確認)
 - 新測試:`tests/unit/gameplay/affinity/relation_state_of_pair_test.gd`
 

@@ -1,7 +1,7 @@
 # Story 018:直傷卡(敵方目標步驟、擊殺鏈、勝負判定掛點)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 010、011、015;卡在 F7(直傷是否尊重視線)與「直傷擊殺是否有反擊」兩題裁決。
+> **Status**: Ready(依序:010、011、015 完成後才可派工)—— F7 與「直傷擊殺是否有反擊」兩題已於 2026-11-17 決定(答案檔題 3、4),見「派工前須先決定」第 1、2 題。
 > **Type**: Logic + Integration(控制器鏈);選敵 UI 部分見 020 的邊界
 > **Estimate**: L(3~4 天,粗估未驗證;data-format S4,其稱風險最大之一)
 > **依據**:規格 v1.0(直傷沿用 v0.3 卡池 c01~c03,無視 DEF 與 Φ、無隨機,符合 `rng_in_combat_settlement` 禁令);`docs/reviews/card-rework-data-format-2026-11-12.md` F4(死亡鏈三段在 `BattleState.resolve_attack()` → `BattleController._apply_attack()` → `_check_outcome_and_finish()`,Session 碰不到)、F10。
@@ -9,7 +9,9 @@
 ## 派工前須先決定
 
 1. **F7 視線/控制區**:直傷是否受 `BattleState.is_attack_range_blocked_by_los()` 阻擋?c02(董振豪射程 2~6)的實際價值取決於此。**game-designer 裁決**,工單在回答前不得開工。
+   - **已決:直傷尊重視線**(視線被擋的敵人不可選為目標;射程 = 施放者當前位置的單位攻擊射程 `min_range`~`max_range`)。(v0.3 第 3 節規則 7;答案檔題 3。)**控制區:直傷不受影響**(設計師直接定)。**必須沿用「一般攻擊的目標合法性」同一個函式,不得另寫第二份視線判斷**(格式審查 F7 的重點);實作者第一步確認該函式是哪一個並於回報說明。⚠️ 設計師只讀了 ZoC 邊界情況表、未讀其規則本文,「ZoC 另有影響攻擊的條款」為**未驗證**,實作者確認同一函式時順帶看。
 2. **直傷擊殺有無反擊**:現行規則**未驗證**(沒讀 `combat_rules.gd` 全檔)。實作者第一步讀;若現行攻擊有反擊而直傷設計未定 → 停下問。
+   - **已決:現行沒有反擊,直傷(擊殺與否)不引發反擊。** 依據:`src/` grep `retaliat|counter_attack|反擊` 零命中;`design/gdd/tactical-combat-system.md` 第 173 行「現階段核心戰鬥規則不含任何防守方自動迎擊/反擊機制」(答案檔題 4,設計師直接定)。⚠️ 設計師沒逐行讀 `battle_controller.gd` 攻擊流程,「是否有未用『反擊』字樣的迎擊邏輯」為**未驗證**——實作者讀 `_apply_attack()` 時順手確認,發現有迎擊邏輯才停下問。
 3. **新訊號形狀**:`card_damage_resolved`(名稱暫定;snake_case 過去式)由 `BattleController` 發出、`BoardView` 播擊殺;與 020 的選敵 UI 邊界 —— 本單只做**邏輯與控制器鏈 + 訊號**,不做選敵畫面。
 4. **「牌打出後戰鬥立刻結束(FINISHED)」**:`BattleScreen._apply_pending_card_confirm()` 現在是否預期 `FINISHED` **未驗證**。若不預期且修補需動 `battle_screen.gd`(大檔)→ 範圍超出時停下問。
 

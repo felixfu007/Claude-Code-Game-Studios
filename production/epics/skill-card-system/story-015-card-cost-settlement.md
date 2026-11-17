@@ -1,7 +1,7 @@
 # Story 015:卡牌代價結算(付血、付好感度折損、PAIR 依當下 S、先驗證後扣款)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 010、011、012(尚未完成);另卡在派工前第 1、2 題裁決。
+> **Status**: Ready(依序:010、011、012 完成後才可派工)—— 派工前第 2、3 題已決(答案檔題 1、5);第 1 題不是設計裁決,為實作者第一步查證。
 > **Type**: Logic
 > **Estimate**: L(2~3 天,粗估未驗證;data-format S2 + 排程 N4/N5)
 > **依據**:規格 v1.0 第 4.1 節(`PAIR`:S∈{POS,NEG} 走本場折損 `cost_amount` 點;S=NONE 付款人各付 `hp_cost_none` 點血,條件 `hp>cost`)、第 4.2 節(基礎卡不再要求人設關係線、不再「含麥子健拒絕」;打牌合法性只剩兩人存活 + 距離 ≤`target_range` + 付得起 + 折損未達上限)、第 6.1(`hp ≤ cost` 不可打、不扣款)、第 8 節旋鈕;`docs/reviews/card-rework-data-format-2026-11-12.md` F5、F6。裁決:丙類只加深、好感度代價只在這場戰鬥、付血須 `hp>cost`。
@@ -9,8 +9,11 @@
 ## 派工前須先決定
 
 1. **折損計數器歸屬**:每場每配對累計折損 `N`(上限 `pair_cost_cap`)放 `BattleState`(data-format F6-2 建議,**未驗證** `BattleScreen` 切關時是否重建 `BattleState`)。lead-programmer 第一步查證;若不重建,停下問。
+   - **非設計裁決,答案檔未涵蓋**:設計面只確認「折損不寫池、計數器放 `BattleState`」(答案檔題 5);`BattleScreen` 切關是否重建 `BattleState` 仍為**未驗證**,實作者第一步查,查到會重建才停下問。
 2. **配對合法性重用**:F6-1 要求驗證階段重用 `PermanentAffinityWriteRules` 的合法性判斷、不另寫一份;但規格 4.2 說基礎雙人卡**不再**依 `legal_pairs()`。兩者看似衝突 —— **以規格為準**:PAIR 卡不查 `legal_pairs()`;「付好感度」的**折損不寫池**(規格 5.2/第 3 節「折損不改 S」),因此**本單不呼叫 `AffinityWritePort`**,F6-1/F6-3 的「抽 `validate_pair()`」**不在本單**(僅丙類寫池才需要)。⚠️ 若管理者最終要「好感度代價真的寫池」(`cost_type=AFFINITY` 的原意),本單範圍要重估 —— 請設計師確認 `AFFINITY` 與 `PAIR` 的分工(規格 4.1 只定義了 PAIR;`AFFINITY` 是否仍用在單人卡:**未驗證**)。
+   - **已決:卡表資料只用 `PAIR`;折損從不寫池、不呼叫 `AffinityWritePort`**(列舉仍保留 `AFFINITY` 值,不刪)。F6 的「好感度代價寫入 append-only 池」前提已被 v0.3 第 3 節規則 4 與 v1.0 第 3、5.2 節取代,只有「每場每配對一個計數器放 `BattleState`」仍有效。折損與血都在 `BattleState`/單位上、同一提交內,不再有寫池才有的不可逆風險,「先驗證後扣款」可適度簡化。(答案檔題 5,設計師直接定;管理者裁決 1「甲 代價只在這場戰鬥」亦同。)
 3. 單付款人卡(c13、c14)在 NONE 時「僅付款人付」(規格 4.1)—— 付款人欄來自 011 的 F1 裁決。
+   - **已決(答案檔題 1)**:`named_unit_id` 一律 = 付款人;付款人集合由 `cost_type` + 卡類別導出,寫成**一個純函式**:`PAIR` 且雙人加成(c09~c11)/合擊(c12)→ `named` 與 `partner` 兩人皆付;`PAIR` 且補血(c13/c14)→ 只有 `named` 付。NONE 時各付 `hp_cost_none`,條件 `hp>cost`(v1.0 4.1、6.1)。
 4. 付血是否可讓付款人 HP 到 1(`hp>cost` ⇒ 付後至少 1):規格已定,無待裁決,僅列出。
 
 ## 規則

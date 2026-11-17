@@ -1,7 +1,7 @@
 # Story 024:既有好感度測試中「固定兩對」假設的盤點與改寫
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 013、014(行為改後才知道哪些斷言失效)。
+> **Status**: Blocked —— 依賴 013、014(行為改後才知道哪些斷言失效);兩者仍 Blocked,等 `affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B)。
 > **Type**: Logic(測試重構)
 > **Estimate**: M(1~2 天,粗估未驗證;排程 N9「改幾支未量」)
 > **依據**:排程 `docs/reviews/card-campfire-schedule-v1-2026-11-12.md` N9;規格 v1.0 第 0 節被推翻前提 1、2(「只有 2 對有關係」)。受影響測試清單**本單撰寫者未量**。

@@ -1,14 +1,14 @@
 # Story 013:好感度位置系統改讀關係狀態(`_link_for_pair` 第 3 分支、10 組全掃不看名字)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 卡在 **`design/gdd/affinity-position-chain.md` 的「公式五(麥子健恆無線)」須先修訂**(既有文件,須管理者逐檔核准;排程文件 `docs/reviews/card-campfire-schedule-v1-2026-11-12.md` 第 2 節稱此為 N2 的阻擋)。另依賴 story-012。
+> **Status**: Blocked —— 等 `design/gdd/affinity-position-chain.md` **整份重寫完成**(管理者 2026-11-17 裁決 B:整份重寫,進行中;013/014/016 一併等它)。原卡點(已被取代,留作紀錄):**公式五「麥子健恆無線」須先修訂**(既有文件,須管理者逐檔核准;排程文件 `docs/reviews/card-campfire-schedule-v1-2026-11-12.md` 第 2 節稱此為 N2 的阻擋)。另依賴 story-012。
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程 N2)
 > **依據**:規格 v1.0 第 7 節(`_link_for_pair` 第 3 分支 `value==0.0` 併入 `|v|≤k`;公式五須修訂)、第 3 節。現況:`src/gameplay/affinity/affinity_phi_provider.gd` 第 105 行 `links()`、第 169 行 `_link_for_pair(`(**撰寫者未逐行讀,實作者第一步讀全函式**)。程式側 `legal_pairs()`/`INVALID_PAIR` 受「任何兩人」裁決影響,範圍見下。
 
 ## 派工前須先決定
 
-1. **文件先改**:`affinity-position-chain.md` 公式五、`characters.md` 第三節、`affinity-data-pool.md`、`skill-card-system.md` 的連帶修訂(規格第 7 節「文件連帶」)—— 須先逐檔取得管理者核准並完成。**本單開工條件 = 公式五已改完。** 不要自己改文件。
+1. **文件先改**:`affinity-position-chain.md` 公式五、`characters.md` 第三節、`affinity-data-pool.md`、`skill-card-system.md` 的連帶修訂(規格第 7 節「文件連帶」)—— 須先逐檔取得管理者核准並完成。**本單開工條件 = `affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B,取代原「公式五已改完」)。** 不要自己改文件。
 2. `legal_pairs()` 對丙類卡 card_07/08 的約束(`skill-card-system.md` 界線 3/4)是否重寫 —— 規格 4.2 / 10B 交 creative-director,**本單不動丙類合法性**,只動「位置系統讀關係」。
 3. 位置系統對 `NEG` 配對的距離規則(`delta()`、`DELTA_*`)是否沿用既有 POS/NEG 兩張表:規格 5.1 稱沿用(已自讀 `affinity_rules.gd` 第 35~98 行),**非人設配對的 NEG/POS 沿用同一表是否是設計意圖:未驗證**。
 

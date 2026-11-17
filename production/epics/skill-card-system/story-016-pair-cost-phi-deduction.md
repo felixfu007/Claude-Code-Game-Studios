@@ -1,7 +1,7 @@
 # Story 016:折損扣減並肩貢獻(規格 5.1,依 S 分列)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 012、013、015;`affinity-position-chain.md` 公式五修訂後(同 013)才能在文件一致的前提下實作。
+> **Status**: Blocked —— 依賴 012、013、015;另等 `affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B,進行中;同 013)才能在文件一致的前提下實作。原寫「公式五修訂後」已被此取代。
 > **Type**: Logic
 > **Estimate**: M(1.5 天,粗估未驗證)
 > **依據**:規格 v1.0 第 5.1 節(表:NONE→0;POS:`c0>0` 時 `max(0, c0−N×phi_loss_positive)`、`c0≤0` 維持 `c0`;NEG:`c0−N×phi_loss_negative`,無下限)與算例、「扣減疊在 `delta()` 結果上、總和夾限之前;夾限仍只在 `bonus_breakdown_for_at` 內做一次;不改 `amp`」、第 9 節驗收 (3)。`delta()`、`PHI_MIN=−4`、`PHI_MAX=12` 規格稱已自讀 `affinity_rules.gd` 第 35~98 行;`bonus_breakdown_for_at` 位置**撰寫者未查**。
