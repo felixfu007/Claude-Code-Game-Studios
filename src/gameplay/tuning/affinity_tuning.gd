@@ -26,6 +26,7 @@ const KEY_DELTA_NEGATIVE_FAR: String = "delta_negative_far"
 const KEY_DELTA_NEUTRAL: String = "delta_neutral"
 const KEY_PHI_MIN: String = "phi_min"
 const KEY_PHI_MAX: String = "phi_max"
+const KEY_NEUTRAL_BAND_CENTI: String = "neutral_band_centi"
 
 var _delta_positive_adjacent: int = 0
 var _delta_positive_far: int = 0
@@ -34,6 +35,7 @@ var _delta_negative_far: int = 0
 var _delta_neutral: int = 0
 var _phi_min: int = 0
 var _phi_max: int = 0
+var _neutral_band_centi: int = 0
 
 
 ## 今日值(來自 TuningKnobs.defaults())。
@@ -46,6 +48,9 @@ static func from_knobs(knobs: TuningKnobs) -> Variant:
 	var tuning: AffinityTuning = _build(knobs)
 	if tuning._phi_min > tuning._phi_max:
 		push_error("AffinityTuning: affinity.phi_min (%d) must be <= phi_max (%d)" % [tuning._phi_min, tuning._phi_max])
+		return null
+	if tuning._neutral_band_centi < 0:
+		push_error("AffinityTuning: affinity.neutral_band_centi (%d) must be >= 0" % tuning._neutral_band_centi)
 		return null
 	return tuning
 
@@ -67,6 +72,7 @@ static func _build(knobs: TuningKnobs) -> AffinityTuning:
 	t._delta_neutral = knobs.get_int(SECTION, KEY_DELTA_NEUTRAL)
 	t._phi_min = knobs.get_int(SECTION, KEY_PHI_MIN)
 	t._phi_max = knobs.get_int(SECTION, KEY_PHI_MAX)
+	t._neutral_band_centi = knobs.get_int(SECTION, KEY_NEUTRAL_BAND_CENTI)
 	return t
 
 
@@ -96,3 +102,13 @@ func phi_min() -> int:
 
 func phi_max() -> int:
 	return _phi_max
+
+## 冷淡區旋鈕(整數,百分之一單位)。
+func neutral_band_centi() -> int:
+	return _neutral_band_centi
+
+
+## k = neutral_band_centi / 100.0,餵給 [method AffinityRelation.state_of]。
+func neutral_band() -> float:
+	return float(_neutral_band_centi) / 100.0
+

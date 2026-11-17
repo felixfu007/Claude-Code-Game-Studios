@@ -75,6 +75,7 @@ affinity,delta_negative_far,2
 affinity,delta_neutral,0
 affinity,phi_min,-4
 affinity,phi_max,12
+affinity,neutral_band_centi,0
 "
 	return CombatTuning.from_text(base.replace(from_a, to_a).replace(from_b, to_b)) as CombatTuning
 
