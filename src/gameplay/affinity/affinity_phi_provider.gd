@@ -232,6 +232,29 @@ func positions_with(unit_id: int, origin: Vector2i) -> Dictionary[int, Vector2i]
 	return result
 
 
+## story-014:騎牆有效 ⇔ [param unit_id] 與場上【還活著】的其餘我方每一組
+## [method AffinityRelation.state_of] 皆為 NONE(門檻 k 來自 affinity_tuning,不自寫)。
+## 每次呼叫即時讀池;無法對映角色的 id(敵方)視為無關係回 true。
+## 簽章對應 [member BattleState._straddle_provider]。
+func straddle_valid(unit_id: int) -> bool:
+	var own: Variant = AffinityRosterCharacterMapper.character_for_roster_id(unit_id)
+	if own == null:
+		return true
+	for other: Unit in _state.units_of(Unit.Faction.PLAYER):
+		if other.id == unit_id:
+			continue
+		var other_char: Variant = AffinityRosterCharacterMapper.character_for_roster_id(other.id)
+		if other_char == null:
+			continue
+		var pair: AffinityTypes.Pair = AffinityTypes.pair_of(own, other_char)
+		var state: AffinityRelation.RelationState = AffinityRelation.state_of(
+			_pool, pair, _state.affinity_tuning.neutral_band()
+		)
+		if state != AffinityRelation.RelationState.NONE:
+			return false
+	return true
+
+
 ## Satisfies [BattleController]'s [code]phi_provider: Callable[/code]
 ## contract. Returns [param attacker_id]'s current affinity bonus via
 ## [method AffinityRules.bonus_for], evaluated against a freshly rebuilt

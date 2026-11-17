@@ -2192,6 +2192,8 @@ func _ready() -> void:
 	# story-031: defender-side Φ for guard (spec §1.5). _phi is a member, so the
 	# bound Callable stays valid for this screen's lifetime.
 	_state.attach_defense_phi_provider(Callable(_phi, "phi_of"))
+	# story-014: 騎牆有效與否只看關係三態(live)。
+	_state.attach_straddle_provider(Callable(_phi, "straddle_valid"))
 
 	# Story U-003 — the two halves this story's merge exists to wire: a real
 	# CardDeck (rng=null here means production, time-seeded

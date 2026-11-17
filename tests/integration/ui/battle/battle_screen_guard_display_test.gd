@@ -129,7 +129,9 @@ func test_ac2_move_preview_shows_guard_arrow_beside_affinity() -> void:
 
 func test_ac3_hide_removes_affinity_text_and_card_row_keeps_lone() -> void:
 	var instance: BattleScreen = _battle(true)
-	var u: Unit = _player(instance, 0)
+	# story-014:騎牆須「與場上存活者 4 組全 NONE」才有效;原夾具把 idx0(甲,真實資料裡有關係)標成獨行,
+	# 新規則下它本就不該有獨行減傷。改標真正的戊(id=5)以保留本測試意圖(隱藏好感度時獨行減傷仍顯示)。
+	var u: Unit = instance._state.unit_by_id(5)
 	u.lone_guard = true
 	assert_bool(instance._controller.select_unit(u.id)).is_true()
 	var aff_marker: String = Loc.localize(&"battle.hud.affinity_preview_format").substr(0, 3)
@@ -200,7 +202,8 @@ func test_sensitivity_proof_ignoring_hide_is_detected() -> void:
 
 func test_lone_guard_part_still_shown_after_unit_attacked() -> void:
 	var instance: BattleScreen = _battle(true)   # 隱藏好感度 → 只剩獨行段,隔離變因
-	var u: Unit = _player(instance, 0)
+	# story-014:改標真正的戊(id=5),理由同 test_ac3_hide_removes_*。
+	var u: Unit = instance._state.unit_by_id(5)
 	u.lone_guard = true
 	var cell: Vector2i = Vector2i(-1, -1)
 	for c: Vector2i in instance._state.legal_moves(u.id):
@@ -229,11 +232,11 @@ func _hold_back_text_at(instance: BattleScreen, u: Unit, want_d2: bool) -> Strin
 func test_attack_preview_shows_hold_back_row_only_at_d2() -> void:
 	var row: String = Loc.localize(&"battle.attack_confirm.hold_back_format") % 1
 	var a: BattleScreen = _battle(false)
-	var ua: Unit = _player(a, 0)
+	var ua: Unit = a._state.unit_by_id(5)   # story-014:同上,改標戊
 	ua.lone_guard = true
 	assert_str(_hold_back_text_at(a, ua, true)).contains(row)
 	var b: BattleScreen = _battle(false)
-	var ub: Unit = _player(b, 0)
+	var ub: Unit = b._state.unit_by_id(5)   # story-014:同上,改標戊
 	ub.lone_guard = true
 	var other: String = _hold_back_text_at(b, ub, false)
 	assert_str(other).is_not_equal("NO_CELL")

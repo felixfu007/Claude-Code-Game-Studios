@@ -728,6 +728,25 @@ func _defender_phi(target: Unit) -> int:
 	return int(_defense_phi_provider.call(target.id))
 
 
+## story-014: optional hook returning whether a flagged unit's 騎牆 is currently valid
+## ([code]func(unit_id: int) -> bool[/code], e.g. [method AffinityPhiProvider.straddle_valid]).
+## Selective mount: unset -> always valid (no relations are knowable, = pre-story behaviour).
+## One boolean drives 貼身 -1 / +2 (lone_guard) AND hold_back together; evaluated per query.
+var _straddle_provider: Callable = Callable()
+
+
+## Attaches the straddle-validity hook; see [member _straddle_provider].
+func attach_straddle_provider(provider: Callable) -> void:
+	_straddle_provider = provider
+
+
+## Whether [param unit]'s 騎牆 is valid right now (live, never cached).
+func straddle_is_valid(unit: Unit) -> bool:
+	if not _straddle_provider.is_valid():
+		return true
+	return bool(_straddle_provider.call(unit.id))
+
+
 # Lone-guard of [param target] (spec §2.2): 0 unless the unit is flagged
 # ([member Unit.lone_guard], roster-data driven) and PLAYER. Uses the nearest
 # living PLAYER ally's Manhattan distance via AffinityRules.manhattan_distance().
@@ -743,6 +762,8 @@ func _lone_guard_of(target: Unit) -> int:
 # flagged ([member Unit.lone_guard]) PLAYER unit. Shares the single d_min loop.
 func _hold_back_of(attacker: Unit) -> int:
 	if attacker.faction != Unit.Faction.PLAYER or not attacker.lone_guard:
+		return 0
+	if not straddle_is_valid(attacker):
 		return 0
 	return CombatRules.hold_back(true, _nearest_ally_distance(attacker, position_of(attacker.id)), combat_tuning)
 
@@ -768,6 +789,8 @@ func _nearest_ally_distance(unit: Unit, tile: Vector2i) -> int:
 func lone_guard_if_at(unit_id: int, tile: Vector2i) -> int:
 	var target: Unit = unit_by_id(unit_id)
 	if target == null or target.faction != Unit.Faction.PLAYER or not target.lone_guard:
+		return 0
+	if not straddle_is_valid(target):
 		return 0
 	var d_min: int = _nearest_ally_distance(target, tile)
 	return CombatRules.lone_guard(d_min, combat_tuning)
