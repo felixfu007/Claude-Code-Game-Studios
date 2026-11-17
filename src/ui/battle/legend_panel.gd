@@ -43,6 +43,11 @@ const CLOSE_KEY: StringName = &"battle.legend.close"
 const COLUMNS: int = 2
 const MASK_COLOR: Color = Color(0.0, 0.0, 0.0, 0.78)
 
+## story-059 版面間距(皆為字級 fpx 的比例,取整;測試讀同一組函式,不另設常數)。
+## 圖示右緣到文字左緣的間距 / 同欄相鄰列之間的間距 / 名稱與說明兩行之間的行距。
+const TEXT_GAP_FONT_FRACTION: float = 0.5
+const ROW_GAP_FONT_FRACTION: float = 0.25
+
 var _mask: ColorRect = null
 var _title: Label = null
 var _close_button: Button = null
@@ -52,10 +57,14 @@ var _name_labels: Dictionary = {}
 var _desc_labels: Dictionary = {}
 var _holders: Dictionary = {}
 var _content_rect: Rect2 = Rect2()
+## story-059:圖示區(範例節點座標系)= [method BoardView.legend_sample_area] 與每個範例
+## 【實際外框】([method BoardView.legend_sample_bounds])的聯集。擺位與列高全由它推得。
+var _icon_area: Rect2 = Rect2()
 
 
 func _init() -> void:
 	name = "LegendPanel"
+	_icon_area = BoardView.legend_sample_area()
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_mask = ColorRect.new()
@@ -81,6 +90,7 @@ func _init() -> void:
 		var sample: Node2D = BoardView.build_legend_sample(kind)
 		holder.add_child(sample)
 		_icons[kind] = sample
+		_icon_area = _icon_area.merge(BoardView.legend_sample_bounds(sample))
 		_holders[kind] = holder
 		var name_label: Label = _make_label("Name%d" % kind)
 		add_child(name_label)
@@ -145,6 +155,39 @@ static func icon_scale_for(window_size: Vector2i) -> int:
 	return maxi(1, WorldLayout.compute_scale(window_size) >> 1)
 
 
+## 圖示右緣到文字左緣的間距(視窗像素)。
+static func text_gap(window_size: Vector2i) -> float:
+	return floorf(float(HudLayout.font_size(window_size)) * TEXT_GAP_FONT_FRACTION)
+
+
+## 同欄相鄰列之間的間距(視窗像素)。
+static func row_gap(window_size: Vector2i) -> float:
+	return floorf(float(HudLayout.font_size(window_size)) * ROW_GAP_FONT_FRACTION)
+
+
+## 單行 Label 的實際高度(視窗像素):字型在該字級下的行高(Label 的最小高度即此值,
+## 小於它的 size 會被引擎撐大,故版面必須用它而不是 fpx)。
+static func label_height(window_size: Vector2i) -> float:
+	var fpx: int = HudLayout.font_size(window_size)
+	return maxf(ceilf(HudLayoutScaler.HUD_FONT.get_height(fpx)), float(fpx))
+
+
+## 範例節點的擺位:把圖示區左上角對到 holder 原點。
+## 測試的突變子類別覆寫這幾個 hook 以重現舊缺陷;正式版不得另寫死偏移。
+func _sample_position(iscale: int, _window_size: Vector2i) -> Vector2:
+	return -_icon_area.position * float(iscale)
+
+
+## 一列的高度 = 內容高 + 列間距。
+func _row_height(content_h: float, row_gap_px: float, _window_size: Vector2i) -> float:
+	return content_h + row_gap_px
+
+
+## 文字左緣 = 圖示區右緣 + 間距。
+func _text_left(col_x: float, icon_w_px: float, gap_px: float, _iscale: int, _window_size: Vector2i) -> float:
+	return col_x + icon_w_px + gap_px
+
+
 func apply_layout(window_size: Vector2i) -> void:
 	position = Vector2.ZERO
 	size = Vector2(window_size)
@@ -155,7 +198,16 @@ func apply_layout(window_size: Vector2i) -> void:
 	var iscale: int = icon_scale_for(window_size)
 	var rows: int = ceili(float(ENTRIES.size()) / float(COLUMNS))
 	var top_h: float = fpx * 1.5
-	var row_h: float = maxf(fpx * 2.0, BoardView.LEGEND_SAMPLE_SIZE.y * float(iscale))
+	var icon_w: float = _icon_area.size.x * float(iscale)
+	var icon_h: float = _icon_area.size.y * float(iscale)
+	var gap: float = text_gap(window_size)
+	var label_h: float = label_height(window_size)
+	var text_h: float = label_h * 2.0
+	var content_h: float = maxf(icon_h, text_h)
+	# 列間距取名義值,但視窗放不下時往 0 收(不縮圖示/不改欄數;仍放不下則溢出,見 README 回報)。
+	var avail_for_gaps: float = safe.size.y - top_h - content_h * float(rows)
+	var row_gap_px: float = clampf(floorf(avail_for_gaps / float(rows)), 0.0, row_gap(window_size))
+	var row_h: float = _row_height(content_h, row_gap_px, window_size)
 	var total_h: float = top_h + row_h * float(rows)
 	var top: float = safe.position.y + maxf((safe.size.y - total_h) * 0.5, 0.0)
 	_content_rect = Rect2(safe.position.x, top, safe.size.x, total_h)
@@ -167,7 +219,6 @@ func apply_layout(window_size: Vector2i) -> void:
 	_close_button.size = Vector2(btn_w, top_h)
 	_close_button.add_theme_font_size_override(&"font_size", int(fpx))
 	var col_w: float = safe.size.x / float(COLUMNS)
-	var icon_w: float = BoardView.LEGEND_SAMPLE_SIZE.x * float(iscale)
 	for i: int in range(ENTRIES.size()):
 		var kind: int = ENTRIES[i]["kind"]
 		var col: int = floori(float(i) / float(rows))
@@ -175,20 +226,21 @@ func apply_layout(window_size: Vector2i) -> void:
 		var x: float = safe.position.x + col_w * float(col)
 		var y: float = top + top_h + row_h * float(row)
 		var holder: Control = _holders[kind]
-		holder.position = Vector2(x, y)
-		holder.size = BoardView.LEGEND_SAMPLE_SIZE * float(iscale)
+		holder.position = Vector2(x, y + (content_h - icon_h) * 0.5)
+		holder.size = _icon_area.size * float(iscale)
 		var sample: Node2D = _icons[kind]
 		sample.scale = Vector2(iscale, iscale)
-		sample.position = BoardView.LEGEND_SAMPLE_ORIGIN * float(iscale)
-		var text_x: float = x + icon_w + fpx * 0.5
-		var text_w: float = col_w - icon_w - fpx
+		sample.position = _sample_position(iscale, window_size)
+		var text_x: float = _text_left(x, icon_w, gap, iscale, window_size)
+		var text_w: float = x + col_w - fpx * 0.5 - text_x
+		var text_y: float = y + (content_h - text_h) * 0.5
 		var name_label: Label = _name_labels[kind]
-		name_label.position = Vector2(text_x, y)
-		name_label.size = Vector2(text_w, fpx)
+		name_label.position = Vector2(text_x, text_y)
+		name_label.size = Vector2(text_w, label_h)
 		name_label.add_theme_font_size_override(&"font_size", int(fpx))
 		var desc_label: Label = _desc_labels[kind]
-		desc_label.position = Vector2(text_x, y + fpx)
-		desc_label.size = Vector2(text_w, fpx)
+		desc_label.position = Vector2(text_x, text_y + label_h)
+		desc_label.size = Vector2(text_w, label_h)
 		desc_label.add_theme_font_size_override(&"font_size", int(fpx))
 
 

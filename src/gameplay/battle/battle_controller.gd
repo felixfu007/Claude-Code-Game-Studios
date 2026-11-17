@@ -182,7 +182,9 @@ func _init(
 	card_deck: CardDeck = null,
 	affinity_links: Array[AffinityLink] = [],
 	write_port: AffinityWritePort = null,
-	authoritative_write_in_progress_check: Callable = Callable()
+	authoritative_write_in_progress_check: Callable = Callable(),
+	affinity_pool: AffinityDataPool = null,
+	cost_tuning: CardCostTuning = null
 ) -> void:
 	_state = state
 	_order = order
@@ -197,6 +199,10 @@ func _init(
 			card_deck, _state, affinity_links, effective_write_port,
 			authoritative_write_in_progress_check
 		)
+		# story-026: 代價結算的生產接線 -- 單一建構入口內、任何 open_hand() 之前注入。
+		# affinity_pool 必須是 BattleScreen 那個同一實例(ADR-0002 機制一),不得另建。
+		_card_play_session.attach_affinity_pool(affinity_pool)
+		_card_play_session.attach_cost_tuning(cost_tuning)
 	# story-002-modifier-lifecycle.md: a fresh controller's initial _phase is
 	# already PLAYER_INPUT (see the field default above) without ever routing
 	# through _order.advance_faction() — the round-1 player phase never takes

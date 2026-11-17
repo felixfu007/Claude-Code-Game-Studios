@@ -1721,6 +1721,61 @@ const LEGEND_SAMPLE_SIZE: Vector2 = Vector2(32.0, 40.0)
 const LEGEND_SAMPLE_ORIGIN: Vector2 = Vector2(0.0, 8.0)
 
 
+## story-059:範例【基本圖示區】在範例節點座標系內的矩形(單一出處)。
+## [method build_legend_sample] 把格畫在 [method BoardCoords.grid_to_local],含
+## [constant BoardCoords.BOARD_ORIGIN] 偏移;面板擺位必須扣掉這個偏移,否則圖示會偏離圖示區
+## (原缺陷)。圖示區 = 格矩形向上延伸 [code]LEGEND_SAMPLE_SIZE.y - CELL_SIZE[/code](棋子突出部分)。
+static func legend_sample_area() -> Rect2:
+	var headroom: float = LEGEND_SAMPLE_SIZE.y - float(BoardCoords.CELL_SIZE)
+	return Rect2(
+		BoardCoords.grid_to_local(Vector2i.ZERO) - Vector2(0.0, headroom), LEGEND_SAMPLE_SIZE)
+
+
+## story-059:範例節點【實際畫出】的外框(節點座標系)。遞迴聯集全部
+## [Sprite2D] / [ColorRect] / [Line2D](含 Node2D 的位置與縮放),不用任何假設尺寸。
+## 無圖形時回傳空 Rect2。
+static func legend_sample_bounds(root: Node2D) -> Rect2:
+	var acc: Array[Rect2] = []
+	_collect_legend_bounds(root, Transform2D.IDENTITY, acc)
+	if acc.is_empty():
+		return Rect2()
+	var out: Rect2 = acc[0]
+	for r: Rect2 in acc:
+		out = out.merge(r)
+	return out
+
+
+static func _collect_legend_bounds(node: Node, xf: Transform2D, acc: Array[Rect2]) -> void:
+	for child: Node in node.get_children():
+		if child is Sprite2D:
+			var spr: Sprite2D = child
+			if spr.texture == null or not spr.visible:
+				continue
+			var tsize: Vector2 = spr.texture.get_size()
+			var top_left: Vector2 = -tsize * 0.5 if spr.centered else Vector2.ZERO
+			acc.append(xf * Transform2D(spr.rotation, spr.scale, 0.0, spr.position) * Rect2(top_left, tsize))
+		elif child is ColorRect:
+			var cr: ColorRect = child
+			if cr.visible:
+				acc.append(xf * Rect2(cr.position, cr.size))
+		elif child is Line2D:
+			var ln: Line2D = child
+			if ln.visible and ln.points.size() > 0:
+				var lxf: Transform2D = xf * Transform2D(ln.rotation, ln.scale, 0.0, ln.position)
+				var lo: Vector2 = lxf * ln.points[0]
+				var hi: Vector2 = lo
+				for pt: Vector2 in ln.points:
+					var q: Vector2 = lxf * pt
+					lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+					hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+				var half_w: float = ln.width * 0.5
+				acc.append(Rect2(lo - Vector2(half_w, half_w), hi - lo + Vector2(ln.width, ln.width)))
+		elif child is Node2D:
+			var n2: Node2D = child
+			if n2.visible:
+				_collect_legend_bounds(n2, xf * Transform2D(n2.rotation, n2.scale, 0.0, n2.position), acc)
+
+
 ## 圖例的【明文排除集】(管理者 2026-11-16 裁決,選項逐字「現在不列,等關卡真的有這種地形再加
 ## (介面設計師推薦)」)。理由:現行所有地形皆 passable=true,這兩種標記(移動被地形擋、
 ## 不可通行地形)今天不會在任何關卡出現,圖例列它們等於說明書列了看不到的東西。
@@ -1814,9 +1869,11 @@ static func _add_affinity_sample(
 	root: Node2D, shape: LineShape, tone: LineTone, symbol: LineSymbol
 ) -> void:
 	var half: float = BoardCoords.CELL_SIZE * 0.5
-	var from_pos: Vector2 = Vector2(2.0, half)
-	var to_pos: Vector2 = Vector2(BoardCoords.CELL_SIZE - 2.0, half)
+	# story-059:原本以格內座標(0..32)畫,沒加格原點 BOARD_ORIGIN,線與銘牌因此畫在底磚之外。
+	var cell_origin: Vector2 = BoardCoords.grid_to_local(Vector2i.ZERO)
+	var from_pos: Vector2 = cell_origin + Vector2(2.0, half)
+	var to_pos: Vector2 = cell_origin + Vector2(BoardCoords.CELL_SIZE - 2.0, half)
 	var points: PackedVector2Array = affinity_line_points(from_pos, to_pos, shape)
 	root.add_child(_make_affinity_stroke(points, AFFINITY_LINE_BACKING_WIDTH, AFFINITY_LINE_BACKING_COLOR))
 	root.add_child(_make_affinity_stroke(points, AFFINITY_LINE_STROKE_WIDTH, _line_color_for_tone(tone)))
-	root.add_child(_build_affinity_plaque(Vector2i(int(half), int(half)), symbol, _line_color_for_tone(tone)))
+	root.add_child(_build_affinity_plaque(Vector2i(cell_origin + Vector2(half, half)), symbol, _line_color_for_tone(tone)))

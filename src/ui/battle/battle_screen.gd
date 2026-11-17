@@ -588,6 +588,9 @@ const TUNING_PATH: String = "res://assets/data/tuning/tuning_knobs.txt"
 ## 載入失敗時畫面不會進入戰鬥,故此預設值只是讓成員永遠非 null。
 var _deck_tuning: DeckTuning = DeckTuning.defaults()
 
+## story-026: 出卡代價旋鈕(card.hp_cost_none / card.pair_cost_cap);載入失敗走 PARSE_ERROR,不靜默退回預設。
+var _card_cost_tuning: CardCostTuning = CardCostTuning.defaults()
+
 ## 裁決①第二輪(production/epics/support-conversation/
 ## story-003-cross-mission-affinity-continuity.md)—— 讓戰役層累積記錄
 ## ([CampaignAffinityLedger])能透過與 [constant AFFINITY_PATH] 靜態灌入
@@ -2021,6 +2024,13 @@ func _ready() -> void:
 			# story-005:affinity 七項(phi_min<=phi_max)驗證;失敗同樣是載入失敗(大聲報錯)。
 			if tuning_failure == LoadFailure.NONE and AffinityTuning.from_knobs(tuning_knobs) == null:
 				tuning_failure = LoadFailure.PARSE_ERROR
+			# story-026:card 兩項(值域 2~5)驗證;失敗同樣是載入失敗,不靜默退回預設。
+			if tuning_failure == LoadFailure.NONE:
+				var parsed_cost: Variant = CardCostTuning.from_knobs(tuning_knobs)
+				if parsed_cost == null:
+					tuning_failure = LoadFailure.PARSE_ERROR
+				else:
+					_card_cost_tuning = parsed_cost
 
 	# story-003 下一輪接線 —— 不論載入成功或失敗都先記下這次實際解析出的四個
 	# 路徑(見 [member _diagnostic_resolved_data_paths] 文件註解),失敗時這份
@@ -2208,7 +2218,8 @@ func _ready() -> void:
 	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(_affinity_pool)
 
 	_controller = BattleController.new(
-		_state, _order, Callable(_phi, "phi"), Callable(), card_deck, links, write_port
+		_state, _order, Callable(_phi, "phi"), Callable(), card_deck, links, write_port,
+		Callable(), _affinity_pool, _card_cost_tuning
 	)
 
 	_controller.unit_selected.connect(func(_id: int) -> void:
