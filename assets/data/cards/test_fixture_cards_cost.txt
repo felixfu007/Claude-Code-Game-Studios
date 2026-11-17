@@ -1,0 +1,4 @@
+# story-026 夾具:兩張含代價的牌(16 欄)。cost_amount 皆為 2,刻意 != 旋鈕夾具 hp_cost_none(4)。
+# id,category,dAtk,dDef,dur,affA,affB,mag,named,mode,cost_type,cost_amount,effect,partner,range,source
+hp_card,TEMPORARY_STAT_MODIFIER,1,0,1,-1,-1,0,1,ONLY,HP,2,0,-1,-1,BASE
+pair_card,TEMPORARY_STAT_MODIFIER,1,0,1,-1,-1,0,1,ONLY,PAIR,2,0,2,-1,BASE

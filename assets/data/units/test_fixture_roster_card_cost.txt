@@ -1,0 +1,6 @@
+# story-026 夾具:出卡代價接線整合測試用。兩位我方(1,2 = 甲乙,關係配對 C1_C2)+ 一位遠處敵方。
+# 與 vs01_terrain.txt(13x6)相容:所有座標落在範圍內。
+# id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,P1,PLAYER,20,10,3,1,1,1,0,0
+2,P2,PLAYER,20,8,2,1,1,1,1,0
+9,E1,ENEMY,20,5,3,1,1,1,12,5
