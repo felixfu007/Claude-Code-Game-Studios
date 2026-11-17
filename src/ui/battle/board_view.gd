@@ -1503,8 +1503,22 @@ static func ring_rects_in_cell(width: float) -> Array[Rect2]:
 	return rects
 
 
+# story-058 — 可攻擊環 = 閉合版:補一條上邊,右邊改自上邊下緣起畫(上邊與右邊、右邊與底邊
+# 在角落相接)。上邊與右邊上段落在 HP 文字條範圍內:游標停在該敵時 StatsLayer 文字條蓋住它們(預期);
+# 游標不在時沒有文字條,環仍是完整一圈(只剩左邊首字框缺口,044 設計保留)。
+# 建構、圖例範例、權重預言機都讀本函式。威脅環不補(044 降調設計),仍用 ring_rects_in_cell。
 static func attack_ring_rects_in_cell() -> Array[Rect2]:
-	return ring_rects_in_cell(ATTACK_RING_WIDTH)
+	var width: float = ATTACK_RING_WIDTH
+	var cell: float = BoardCoords.CELL_SIZE
+	var label_bottom: float = piece_label_rect_in_cell().end.y
+	var rects: Array[Rect2] = []
+	rects.append(Rect2(0.0, 0.0, cell, width))
+	rects.append(Rect2(0.0, cell - width, cell, width))
+	rects.append(Rect2(cell - width, width, width, cell - 2.0 * width))
+	rects.append(Rect2(0.0, label_bottom, width, cell - width - label_bottom))
+	# 管理者 2026-11-17 裁決 A:左邊補上首字框上方那一小段(切點取自 041 函式),只留首字框本身的缺口
+	rects.append(Rect2(0.0, width, width, piece_label_rect_in_cell().position.y - width))
+	return rects
 
 
 static func threat_ring_rects_in_cell() -> Array[Rect2]:

@@ -65,6 +65,17 @@ func _forbidden_zones() -> Array[Rect2]:
 	]
 
 
+## story-058:可攻擊環補了上邊(並讓右邊自上邊下緣起畫),它們刻意落在 HP 文字條範圍內
+## (游標停在該敵時 StatsLayer 文字條蓋住;游標不在時沒有文字條,環才是閉合的一圈)。
+## 故 AttackHighlightLayer 只豁免「HP 文字條」這一個禁區;首字框、血條、身體核心仍禁。
+## 其他兩層(被擋、威脅)仍適用全部四個禁區,未放寬。
+func _zones_for(layer_name: String) -> Array[Rect2]:
+	var zones: Array[Rect2] = _forbidden_zones()
+	if layer_name == "AttackHighlightLayer":
+		zones.erase(BoardView.hp_text_rect_in_cell())
+	return zones
+
+
 func _marker_roots(layer: Node) -> Array[Node2D]:
 	var roots: Array[Node2D] = []
 	for child: Node in layer.get_children():
@@ -236,7 +247,7 @@ func test_markers_stay_out_of_label_text_bar_and_body_zones() -> void:
 		assert_int(roots.size()).append_failure_message("%s 應有標記" % name).is_equal(1)
 		for root: Node2D in roots:
 			for rect: Rect2 in _rects_of(root):
-				for zone: Rect2 in _forbidden_zones():
+				for zone: Rect2 in _zones_for(name):
 					assert_bool(rect.intersects(zone)).append_failure_message(
 						"%s 的矩形 %s 與禁區 %s 相交" % [name, rect, zone]
 					).is_false()
@@ -258,7 +269,7 @@ func test_real_scene_markers_on_unit_cells_avoid_forbidden_zones() -> void:
 			if occupied.has(_cell_of(root)):
 				on_units += 1
 			for rect: Rect2 in _rects_of(root):
-				for zone: Rect2 in _forbidden_zones():
+				for zone: Rect2 in _zones_for(name):
 					assert_bool(rect.intersects(zone)).is_false()
 	assert_int(on_units).append_failure_message("防空洞:至少一個標記落在含單位的格上").is_greater(0)
 

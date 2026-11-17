@@ -1,0 +1,50 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+=== RESOLUTION requested=(960, 540) actual=(960, 540) ===
+select: selected sel_unit=3
+HOST [select_only] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+CELL (4, 0) local_origin=(160, 39) img=480x270 cursor_active=true cursor_cell=(0, 2)
+ROW [select_only] y=-2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [select_only] y=-1: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [select_only] y=0: #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d 
+ROW [select_only] y=1: #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d 
+ROW [select_only] y=2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+ROW [select_only] y=3: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+ROW [select_only] y=4: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+EDGE [select_only] left(0,16)=#2d0f37 right(31,16)=#ffbf4d bottom(16,31)=#ffbf4d
+CURSOR (4, 0) via set_target result=0 reached=true
+HOST [cursor_on_enemy] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+CELL (4, 0) local_origin=(160, 39) img=480x270 cursor_active=true cursor_cell=(4, 0)
+ROW [cursor_on_enemy] y=-2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [cursor_on_enemy] y=-1: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [cursor_on_enemy] y=0: #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff 
+ROW [cursor_on_enemy] y=1: #ffffff #625338 #625338 #856f41 #cca655 #625338 #625338 #625338 #facb61 #625338 #625338 #ffffff 
+ROW [cursor_on_enemy] y=2: #ffffff #312933 #312933 #4b3f39 #3d3335 #312933 #312933 #322a33 #cca657 #312933 #625338 #ffffff 
+ROW [cursor_on_enemy] y=3: #ffffff #312933 #312933 #312933 #65533f #312933 #312933 #9c804b #c9a557 #312933 #625338 #ffffff 
+ROW [cursor_on_enemy] y=4: #ffffff #312933 #312933 #312933 #312933 #a8894e #b29151 #e6bb5c #725d42 #312933 #625338 #ffffff 
+EDGE [cursor_on_enemy] left(0,16)=#ffffff right(31,16)=#ffffff bottom(16,31)=#ffffff
+=== RESOLUTION requested=(1920, 1080) actual=(1920, 1080) ===
+select: selected sel_unit=3
+HOST [select_only] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+CELL (4, 0) local_origin=(160, 39) img=480x270 cursor_active=true cursor_cell=(0, 2)
+ROW [select_only] y=-2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [select_only] y=-1: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [select_only] y=0: #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d 
+ROW [select_only] y=1: #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d #ffbf4d 
+ROW [select_only] y=2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+ROW [select_only] y=3: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+ROW [select_only] y=4: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #ffbf4d #ffbf4d 
+EDGE [select_only] left(0,16)=#2d0f37 right(31,16)=#ffbf4d bottom(16,31)=#ffbf4d
+CURSOR (4, 0) via set_target result=0 reached=true
+HOST [cursor_on_enemy] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+CELL (4, 0) local_origin=(160, 39) img=480x270 cursor_active=true cursor_cell=(4, 0)
+ROW [cursor_on_enemy] y=-2: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [cursor_on_enemy] y=-1: #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 #2d0f37 
+ROW [cursor_on_enemy] y=0: #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff #ffffff 
+ROW [cursor_on_enemy] y=1: #ffffff #625338 #625338 #856f41 #cca655 #625338 #625338 #625338 #facb61 #625338 #625338 #ffffff 
+ROW [cursor_on_enemy] y=2: #ffffff #312933 #312933 #4b3f39 #3d3335 #312933 #312933 #322a33 #cca657 #312933 #625338 #ffffff 
+ROW [cursor_on_enemy] y=3: #ffffff #312933 #312933 #312933 #65533f #312933 #312933 #9c804b #c9a557 #312933 #625338 #ffffff 
+ROW [cursor_on_enemy] y=4: #ffffff #312933 #312933 #312933 #312933 #a8894e #b29151 #e6bb5c #725d42 #312933 #625338 #ffffff 
+EDGE [cursor_on_enemy] left(0,16)=#ffffff right(31,16)=#ffffff bottom(16,31)=#ffffff
