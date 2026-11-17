@@ -1,0 +1,24 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+DISPLAY_SERVER=headless
+HOST WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+OBJ [Q2 t=0 after load (menu not yet opened)] visible=true timer.time_left=7.73 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+Q2 menu_open=true paused=true
+OBJ [Q2 menu opened] visible=true timer.time_left=7.73 timer.can_process=false tree.paused=true screen.process_mode=0 timer.process_mode=0
+OBJ [Q2 after 10.0s REAL wall time with menu open] visible=true timer.time_left=7.73 timer.can_process=false tree.paused=true screen.process_mode=0 timer.process_mode=0
+Q2 timer.time_left delta over 10s paused = 0.000 (0 = Timer frozen)
+OBJ [Q2 menu closed] visible=true timer.time_left=7.71 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+OBJ [Q2 8.5s after close (unpaused)] visible=false timer.time_left=0.00 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+OBJ [Q1 fresh] visible=true timer.time_left=7.86 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+OBJ [Q1 8.5s real, no input] visible=false timer.time_left=0.00 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+Q1 sync enemy phase steps=10 phase_after=0 took_ms=183 (driver-style: zero real time)
+OBJ [Q1 right after enemy phase + back to player (driver-style, ~0s real)] visible=true timer.time_left=7.66 timer.can_process=true tree.paused=false screen.process_mode=0 timer.process_mode=0
+Q3 fresh: selected=-1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+Q3 select 甲 click_tile(0,2)={ "action": &"selected", "unit_id": 1 } selected=1
+Q3 after select, before end phase: selected=1 layers: move=48 attack=0 threat=12 unreach=47 los=0
+Q3 right after end_faction_phase (before any frame): selected=-1 phase=1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+Q3 enemy phase after 4 frames: selected=-1 phase=1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+Q3 mid enemy phase step2: selected=-1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+Q3 back to PLAYER: phase=0 selected=-1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+Q3 scenario-07 (fresh, end phase, 0.4s): selected=-1 phase=1 layers: move=0 attack=0 threat=0 unreach=0 los=0
+PROBE DONE

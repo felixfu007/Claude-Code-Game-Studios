@@ -1,0 +1,190 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+DISPLAY_SERVER=headless
+=== RESOLUTION requested=(960, 540) actual root.size=(960, 540) ===
+STATE_RESULT [s046_menu_five_rows] REACHED rows=5
+HOST [menu_five_rows] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [menu_five_rows] menu_open=true paused=true rows='回到遊戲'(visible=true,disabled=false) ; '目標'(visible=true,disabled=false) ; '圖例'(visible=true,disabled=false) ; '結束回合'(visible=true,disabled=false) ; '離開戰鬥'(visible=true,disabled=false) egm_label=''
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 00_960x540_s046_menu_five_rows.png -> get_image() is null (expected under headless; skipped)
+STATE_RESULT [s056_campaign_defeat_retry_text] REACHED outcome=2 retry_same_mission=true
+HOST [campaign_defeat] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [campaign_defeat] outcome=2 retry_same_mission=true result_label='戰敗——藍亭萱倒下了' detail='我方任何一人倒下，即判戰敗 | 稍後自動重來這一場' campaign_ledger_set=true
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 01_960x540_s056_campaign_defeat.png -> get_image() is null (expected under headless; skipped)
+CURSOR (10, 0) reached via mouse motion
+S051 cursor=(10, 0) kind=melee reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 裂殼 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6'
+HOST [cursor_on_enemy_melee] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [cursor_on_enemy_melee] cursor_cell=(10, 0) info_visible=true info_text='地形：開闊地 | 移動成本：1 | 擋視線：否 | 裂殼 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6'
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 02_960x540_s051_cursor_on_enemy_melee.png -> get_image() is null (expected under headless; skipped)
+CURSOR (9, 4) reached via mouse motion
+S051 cursor=(9, 4) kind=ranged reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 聽環 1（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3'
+HOST [cursor_on_enemy_ranged] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [cursor_on_enemy_ranged] cursor_cell=(9, 4) info_visible=true info_text='地形：開闊地 | 移動成本：1 | 擋視線：否 | 聽環 1（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3'
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 03_960x540_s051_cursor_on_enemy_ranged.png -> get_image() is null (expected under headless; skipped)
+CURSOR (7, 5) reached via mouse motion
+S051 cursor=(7, 5) kind=mid reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 垂鉤 2（敵方） | HP：22/22 | 狀態：皆未用 | 武器射程：1–2 | MP：5'
+STATE_RESULT [s051_enemy_kind_names] REACHED 3 cursor targets (see S051 lines for info text)
+STATE_RESULT [s054_shoe_sword_dim] REACHED select甲={ "action": &"selected", "unit_id": 1 } ; move甲->(1,2)={ "action": &"moved", "unit_id": 1, "from": (0, 2), "to": (1, 2) } ; select乙={ "action": &"selected", "unit_id": 2 } ; attack乙->E1(2,3)={ "action": &"attacked", "damage": 8, "target_id": 6, "target_died": false } ; end丁=true
+HOST [shoe_sword_ended_fresh] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [shoe_sword_ended_fresh] 甲=鞋(已移動) 乙=劍(已攻擊) 丁=結束角色行動(變暗無圖示) 戊=全新 | 甲@(1, 2) move_used=true atk_used=false done=false | 乙@(0, 3) move_used=false atk_used=true done=false | 丙@(1, 5) move_used=false atk_used=false done=false | 丁@(0, 4) move_used=false atk_used=false done=true | 戊@(0, 5) move_used=false atk_used=false done=false | E1@(2, 3) move_used=false atk_used=false done=false | E2@(11, 1) move_used=false atk_used=false done=false | E3@(9, 4) move_used=false atk_used=false done=false | E4@(7, 5) move_used=false atk_used=false done=false | E5@(11, 5) move_used=false atk_used=false done=false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 04_960x540_s054_shoe_sword_ended_fresh.png -> get_image() is null (expected under headless; skipped)
+S052 vs01 丙 move target farthest-x candidate=(3, 2)
+S052 vs01 丙@(3, 2) selected=3 blocked_all=11 blocked_on_enemy=[]
+STATE_RESULT [s052_blocked_stamp_REAL_vs01] UNREACHABLE vs01 無法構成(丙移動後重選仍無被擋敵兵格)
+STATE_RESULT [s052_blocked_stamp_SYNTHETIC_fixture] REACHED stamp cells=[(8, 3), (7, 5)] (合成夾具 fixture_roster_052,非真實 vs01)
+HOST [blocked_stamp_SYNTHETIC] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [blocked_stamp_SYNTHETIC] dataset=SYNTHETIC_fixture_052 selected=3 blocked_all=21 stamp_on_enemy_cells=[(8, 3), (7, 5)]
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 05_960x540_s052_blocked_stamp_SYNTHETIC.png -> get_image() is null (expected under headless; skipped)
+STATE_RESULT [s047_legend] REACHED opened via battle_open_legend action
+HOST [legend_open] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [legend_open] legend_open=true via=battle_open_legend action content_rect=[P: (48.0, 77.5), S: (864.0, 385.0)]
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 06_960x540_s047_legend_open.png -> get_image() is null (expected under headless; skipped)
+S053 hint_bg_rect=[P: (48.0, 469.0), S: (864.0, 44.0)] first overlapping cell=(-1, -1)
+STATE_RESULT [s053_end_button_disabled_and_enabled_faded] UNREACHABLE 此尺寸找不到與提示列框重疊的格子
+STATE_RESULT [s049_enemy_banner] REACHED phase=1 should_show=true kind=1 (1=ENEMY 2=PLAYER) banner_elapsed=0.201 banner_rect=[P: (392.0, 27.0), S: (176.0, 33.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 0.3216, 0.3216, 1.0) status_text='第 1 回合．敵方行動' has_pending_discard=false
+HOST [enemy_banner] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [enemy_banner] phase=1 should_show=true kind=1 (1=ENEMY 2=PLAYER) banner_elapsed=0.201 banner_rect=[P: (392.0, 27.0), S: (176.0, 33.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 0.3216, 0.3216, 1.0) status_text='第 1 回合．敵方行動' has_pending_discard=false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 07_960x540_s049_enemy_banner.png -> get_image() is null (expected under headless; skipped)
+S049 player: steps=10 phase_after=0 outcome=0
+STATE_RESULT [s049_player_banner] REACHED phase=0 should_show=true kind=2 (1=ENEMY 2=PLAYER) banner_elapsed=0.203 banner_rect=[P: (392.0, 27.0), S: (176.0, 33.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 1.0, 1.0, 1.0) status_text='第 2 回合．我方行動' has_pending_discard=true
+HOST [player_banner] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [player_banner] phase=0 should_show=true kind=2 (1=ENEMY 2=PLAYER) banner_elapsed=0.203 banner_rect=[P: (392.0, 27.0), S: (176.0, 33.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 1.0, 1.0, 1.0) status_text='第 2 回合．我方行動' has_pending_discard=true
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 08_960x540_s049_player_banner.png -> get_image() is null (expected under headless; skipped)
+=== RESOLUTION requested=(1920, 1080) actual root.size=(1920, 1080) ===
+STATE_RESULT [s046_menu_five_rows] REACHED rows=5
+HOST [menu_five_rows] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [menu_five_rows] menu_open=true paused=true rows='回到遊戲'(visible=true,disabled=false) ; '目標'(visible=true,disabled=false) ; '圖例'(visible=true,disabled=false) ; '結束回合'(visible=true,disabled=false) ; '離開戰鬥'(visible=true,disabled=false) egm_label=''
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 09_1920x1080_s046_menu_five_rows.png -> get_image() is null (expected under headless; skipped)
+STATE_RESULT [s056_campaign_defeat_retry_text] REACHED outcome=2 retry_same_mission=true
+HOST [campaign_defeat] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [campaign_defeat] outcome=2 retry_same_mission=true result_label='戰敗——藍亭萱倒下了' detail='我方任何一人倒下，即判戰敗 | 稍後自動重來這一場' campaign_ledger_set=true
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 10_1920x1080_s056_campaign_defeat.png -> get_image() is null (expected under headless; skipped)
+CURSOR (10, 0) reached via mouse motion
+S051 cursor=(10, 0) kind=melee reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 裂殼 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6'
+HOST [cursor_on_enemy_melee] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [cursor_on_enemy_melee] cursor_cell=(10, 0) info_visible=true info_text='地形：開闊地 | 移動成本：1 | 擋視線：否 | 裂殼 1（敵方） | HP：23/23 | 狀態：皆未用 | 武器射程：1–1 | MP：6'
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 11_1920x1080_s051_cursor_on_enemy_melee.png -> get_image() is null (expected under headless; skipped)
+CURSOR (9, 4) reached via mouse motion
+S051 cursor=(9, 4) kind=ranged reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 聽環 1（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3'
+HOST [cursor_on_enemy_ranged] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [cursor_on_enemy_ranged] cursor_cell=(9, 4) info_visible=true info_text='地形：開闊地 | 移動成本：1 | 擋視線：否 | 聽環 1（敵方） | HP：18/18 | 狀態：皆未用 | 武器射程：2–4 | MP：3'
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 12_1920x1080_s051_cursor_on_enemy_ranged.png -> get_image() is null (expected under headless; skipped)
+CURSOR (7, 5) reached via mouse motion
+S051 cursor=(7, 5) kind=mid reached=true info_visible=true info='地形：開闊地 | 移動成本：1 | 擋視線：否 | 垂鉤 2（敵方） | HP：22/22 | 狀態：皆未用 | 武器射程：1–2 | MP：5'
+STATE_RESULT [s051_enemy_kind_names] REACHED 3 cursor targets (see S051 lines for info text)
+STATE_RESULT [s054_shoe_sword_dim] REACHED select甲={ "action": &"selected", "unit_id": 1 } ; move甲->(1,2)={ "action": &"moved", "unit_id": 1, "from": (0, 2), "to": (1, 2) } ; select乙={ "action": &"selected", "unit_id": 2 } ; attack乙->E1(2,3)={ "action": &"attacked", "damage": 8, "target_id": 6, "target_died": false } ; end丁=true
+HOST [shoe_sword_ended_fresh] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [shoe_sword_ended_fresh] 甲=鞋(已移動) 乙=劍(已攻擊) 丁=結束角色行動(變暗無圖示) 戊=全新 | 甲@(1, 2) move_used=true atk_used=false done=false | 乙@(0, 3) move_used=false atk_used=true done=false | 丙@(1, 5) move_used=false atk_used=false done=false | 丁@(0, 4) move_used=false atk_used=false done=true | 戊@(0, 5) move_used=false atk_used=false done=false | E1@(2, 3) move_used=false atk_used=false done=false | E2@(11, 1) move_used=false atk_used=false done=false | E3@(9, 4) move_used=false atk_used=false done=false | E4@(7, 5) move_used=false atk_used=false done=false | E5@(11, 5) move_used=false atk_used=false done=false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 13_1920x1080_s054_shoe_sword_ended_fresh.png -> get_image() is null (expected under headless; skipped)
+S052 vs01 丙 move target farthest-x candidate=(3, 2)
+S052 vs01 丙@(3, 2) selected=3 blocked_all=11 blocked_on_enemy=[]
+STATE_RESULT [s052_blocked_stamp_REAL_vs01] UNREACHABLE vs01 無法構成(丙移動後重選仍無被擋敵兵格)
+STATE_RESULT [s052_blocked_stamp_SYNTHETIC_fixture] REACHED stamp cells=[(8, 3), (7, 5)] (合成夾具 fixture_roster_052,非真實 vs01)
+HOST [blocked_stamp_SYNTHETIC] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [blocked_stamp_SYNTHETIC] dataset=SYNTHETIC_fixture_052 selected=3 blocked_all=21 stamp_on_enemy_cells=[(8, 3), (7, 5)]
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 14_1920x1080_s052_blocked_stamp_SYNTHETIC.png -> get_image() is null (expected under headless; skipped)
+STATE_RESULT [s047_legend] REACHED opened via battle_open_legend action
+HOST [legend_open] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [legend_open] legend_open=true via=battle_open_legend action content_rect=[P: (96.0, 155.0), S: (1728.0, 770.0)]
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 15_1920x1080_s047_legend_open.png -> get_image() is null (expected under headless; skipped)
+S053 hint_bg_rect=[P: (96.0, 938.0), S: (1728.0, 88.0)] first overlapping cell=(-1, -1)
+STATE_RESULT [s053_end_button_disabled_and_enabled_faded] UNREACHABLE 此尺寸找不到與提示列框重疊的格子
+STATE_RESULT [s049_enemy_banner] REACHED phase=1 should_show=true kind=1 (1=ENEMY 2=PLAYER) banner_elapsed=0.203 banner_rect=[P: (784.0, 54.0), S: (352.0, 66.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 0.3216, 0.3216, 1.0) status_text='第 1 回合．敵方行動' has_pending_discard=false
+HOST [enemy_banner] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [enemy_banner] phase=1 should_show=true kind=1 (1=ENEMY 2=PLAYER) banner_elapsed=0.203 banner_rect=[P: (784.0, 54.0), S: (352.0, 66.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 0.3216, 0.3216, 1.0) status_text='第 1 回合．敵方行動' has_pending_discard=false
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 16_1920x1080_s049_enemy_banner.png -> get_image() is null (expected under headless; skipped)
+S049 player: steps=10 phase_after=0 outcome=0
+STATE_RESULT [s049_player_banner] REACHED phase=0 should_show=true kind=2 (1=ENEMY 2=PLAYER) banner_elapsed=0.207 banner_rect=[P: (784.0, 54.0), S: (352.0, 66.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 1.0, 1.0, 1.0) status_text='第 2 回合．我方行動' has_pending_discard=true
+HOST [player_banner] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [player_banner] phase=0 should_show=true kind=2 (1=ENEMY 2=PLAYER) banner_elapsed=0.207 banner_rect=[P: (784.0, 54.0), S: (352.0, 66.0)] banner_modulate_a=1.000 status_label_font_color_override=(1.0, 1.0, 1.0, 1.0) status_text='第 2 回合．我方行動' has_pending_discard=true
+ERROR: Parameter "t" is null.
+   at: texture_2d_get (./servers/rendering/dummy/storage/texture_storage.h:110)
+   GDScript backtrace (most recent call first):
+       [0] _shot (res://prototypes/lunch-capture-2026-11-17/driver.gd:78)
+       [1] _frames (res://prototypes/lunch-capture-2026-11-17/driver.gd:41)
+SHOT 17_1920x1080_s049_player_banner.png -> get_image() is null (expected under headless; skipped)
+TOTAL shots=18 states_done=20

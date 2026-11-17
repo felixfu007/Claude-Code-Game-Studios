@@ -1,0 +1,12 @@
+# 合成夾具(story-054 三態):vs01 地形搭配。我方四人縱列 (0,2)~(0,5) + 丙 (1,5);敵兵 E1 緊貼乙的射程 (2,3),其餘敵兵照 vs01 遠端。
+# 欄位:id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y[,lone_guard[,kind]]
+1,甲,PLAYER,30,16,8,6,1,1,0,2
+2,乙,PLAYER,26,14,6,5,1,2,0,3
+3,丙,PLAYER,22,20,7,3,2,6,1,5
+4,丁,PLAYER,26,14,6,5,1,2,0,4
+5,戊,PLAYER,30,16,8,6,1,1,0,5,1
+6,E1,ENEMY,60,14,6,6,1,1,2,3,,melee
+7,E2,ENEMY,20,13,5,5,1,2,11,1,,mid
+8,E3,ENEMY,18,14,3,3,2,4,9,4,,ranged
+9,E4,ENEMY,22,13,5,5,1,2,7,5,,mid
+10,E5,ENEMY,24,14,6,6,1,1,11,5,,melee
