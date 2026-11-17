@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第一百零二批(2026-11-17,公司)收工。** 程式提交 11 張:058/049(可讀性收尾)、卡牌改造 010~015 + 026 接線、060 目標框、059 圖例版面。測試 2169 → **2335**(全套唯一紅 = 計時測試,單跑綠,待 performance-analyst)。文件:好感度—位置 GDD 整份重寫、角色文件、登記表、卡牌工單 010~026、059/060/061。
+Feature: 🔴 今日裁決(逐字見第一百零二批節):橫幅照方案 + 我方也做(非推薦);GDD 整份重寫 B(非推薦);三態用詞「好感/冷淡/敵意」(自填);騎牆三項同歸零;冷淡區量測前 0;淡金新增;琥珀框左上補段 A;圖例一起修;鞋劍放大 B。
+Task: 🔴 **下次第一件:git pull 兩庫 + CI;讀 `docs/reviews/timing-test-full-suite-red-2026-11-17.md` 呈管理者;第二件:卡牌 016 → 017/018 → 019,020/021;061 轉 Ready 待問。待問清單見第一百零二批「收工交接」。** 全程台灣繁體中文;對管理者用角色姓名。
+以下為第一百零一批原狀態列。
 Epic: **第一百零一批(2026-11-16,公司)收工。** 程式提交 6 張:053 結束角色行動按鈕 `3759352`、051 敵方型別命名 `0bd5295`、054 鞋劍圖示+變暗 `0582b98`、047 圖例 `f877533`、055 血量字被切 `1a5e886`、057 首字深底 `7cc0d1f`(協調者每張重跑,最新 `2169 test cases | 0 failures` / `(213/213)` / EXIT 0);048 AC2 位置改動依裁決撤回。文件:`e09aa85`/`e8919a5`/`bc2a1c5`/`1c5d70b`/`36b71f7`/`f0f505e`/`db708c2`。外包無新交件。午休 12:00:10 開窗截圖(四組)+ ux/art 審。
 Feature: 🔴 今日裁決(逐字見第一百零一批節):禁用按鈕 =「字變灰+空心+細框,不加叉叉」(管理者反問後);被結束也變暗;資訊卡維持右上(048 AC2 擱置,非推薦);首字 A 濃底;琥珀框完整一圈;好感線圖例只講形狀與距離;地形擋/不可通行不列;tut03 改文字;第 4 場據點 = 記憶造景;敵方回合不能開選單(現行為正確);圖例提示列不做;游標格首字洗淡可接受(非推薦)。
 Task: 🔴 **下次第一件:git pull 兩庫 + `gh run list`;查 AI_IMG 39 第二階段 / 41 交件 → art-director。第二件:story-058 琥珀框(lead 已查:上緣原設計不畫,步驟 1 先開窗確認)→ 049 敵方回合橫幅。第三件:待開窗補拍(046 選單五列、056 重打文案、051 型別名真實 vs01、054 圖示、052 vs01、047 圖例畫面 AC6)—— 需新驅動走到對應狀態。** 全程台灣繁體中文;對管理者用角色姓名。
@@ -83,7 +87,84 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ ux 第 9 節我方橫幅(同矩形;重用 `battle.hud.faction_player`「我方行動」協調者驗存在;第一個玩家按下即消失不吞輸入;同時長;開場第一回合不出)+ 第 10 節工單逐字改文 12 項(Estimate S→M)。⏳ art 補我方配色。之後與 producer 對帳 diff 一起呈核。
 - ✅ art 第 7 節我方配色:底 `cloth_cool_base_01` #3A6B9C α0.78、白字白線、玩家標題維持 #FFFFFF;最壞對比 4.61(手算,未驗證)。
 - 🔴 裁決(約 09:20,管理者逐字選項):049 工單改文 =「**套用(推薦)**」(ux 檔第 10 節 12 項 + art 檔配色);工作單狀態對帳 =「**全部改正(推薦)**」(producer 報告第四節 4-1 + 4-2,含 053 列「結束角色行動」改名)。→ ⏳ ux 套用 049 工單、producer 套用對帳 diff;協調者逐檔 diff 核對後提交。
-- ⏳ 049 前置:art `docs/reviews/story-049-enemy-phase-banner-art-2026-11-17.md`(色)+ ux `docs/reviews/story-049-enemy-phase-banner-ux-2026-11-17.md`(位置/時長/文字)。
+- ✅ 文件提交 `aeb9dd4`(對帳 42 處由協調者 node 腳本套用,每處恰好命中 1;producer/ux 皆依規則拒改既有檔、交回 diff/全文 = 正確)。📌 art 檔第 4、5 節位置敘述已被工單取代(art 檔本身未加註,低優先)。
+- 🟡 058 交件(主目錄未提交):步驟 1 開窗探針證實 = **上緣根本沒畫**(格外同色 #2d0f37),裁決「畫在棋子上層」前提不成立、已按意圖補上邊 + 右邊改自 y=2 起;實作者全套 `2175 … 0 failures` / `(214/214)`;6 mutant 皆紅(#6 只單元層、未做像素層);AC4 游標白框與環重疊 1px(下/右邊早就如此);左邊首字框缺口 y2..22 保留(工單明文)。⏳ 協調者全套 `C:/tmp/run_058_coord.log`;⏳ art 判 AC4 + 左缺口 `docs/reviews/story-058-ring-art-check-2026-11-17.md`。
+- ✅ art `docs/reviews/story-058-ring-art-check-2026-11-17.md`:AC4 重疊 1px 可接受(白在外琥珀在內無縫);左缺口字面不算完整。🔴 裁決(約 09:35):「**A:補上那一小段(美術總監推薦)**」= 左邊加 `Rect2(0, width, width, piece_label_rect_in_cell().position.y - width)`(偏離 044 缺口設計,管理者知情)→ ⏳ 058 實作者補 + 測試同步 + 重截圖。
+- ✅ 協調者重跑 058(補段前):`ENGINE EXIT = 0` / `2175 … 0 failures` / `(214/214)`;補段後須再跑。
+- 🟡 049 第二次撞上限:正式碼已寫(battle_screen +195、hud_layout +17),測試未寫未跑;已續派「先寫 AC1~4 測試 → 跑 → 全套」,mutant 下一輪。
+- ✅ **story-058 提交 `2ad8e5b`**(左上段補完;協調者重跑 `ENGINE EXIT = 0` / `2175 … 0 failures` / `(214/214)`)。覆核收穫:裁決前提「畫在棋子上層」不成立(實為沒畫上邊)+ 左缺口不算完整一圈 → +1。AC8 管理者人眼待補(截圖 `prototypes/story-058-attack-ring-evidence-2026-11-17/out/`,補段前版本;午休重拍)。
+- 🟡 049 交件(worktree):實作者全套 `2189 … 0 failures` / `(214/214)`;常駐 sensitivity 7 條(協調者查證 `test-standards.md` 126 行「手動注入已淘汰」屬實 —— 派工單照抄工單 AC5 過期寫法 = 協調者疏失);實測:換手後提示列是 **FORCED_DISCARD**(真實資料抽牌後待棄牌,非工單假設的 NO_SELECTION)→ AC3 改斷言 `_current_hint_state()`;selected=-1、InfoLabel 空 皆符合。透明度不用 modulate(游標單一寫入者測試)。協調者手動 mutant(標題恆白)→ AC1 紅、已還原。已套回主目錄,⏳ 全套 `C:/tmp/run_049_coord.log`。
+- ✅ **story-049 提交 `9baff10`**(協調者重跑 `ENGINE EXIT = 0` / `2195 … 0 failures` / `(215/215)`;手動 mutant 標題恆白 → AC1 紅已還原);worktree 已移除。覆核收穫:換手後是待棄牌非 NO_SELECTION(工單假設錯,實作者實測更正)→ +1;協調者疏失:派工單照抄過期「手動注入」寫法。午休驅動已加 s049 敵/我橫幅兩態(headless REACHED;960 橫幅下緣 y60 < 棋盤上緣 y78)。
+- ✅ lead-programmer 卡牌戰鬥工單 010~025 + 總覽 `docs/reviews/card-combat-story-breakdown-2026-11-17.md` → 提交 `ca7ae58`。Ready:010、012(012 待 TD 判 ADR-0002);其餘 Blocked 於 13 題 + 文件(公式五)+ ux 規格(020/021)。lead 自承未讀 v0.3/創意確認/冷淡區提案。
+- ⏳ 010 實作(godot-gdscript-specialist,主目錄,log `C:/tmp/run_c010.log`)。
+- ✅ game-designer 逐題答完:**需管理者 0 題**(3 題 v0.3 已答:id `card_11~24`、直傷尊重視線+單位射程、D4 vs02~05 退役;10A-1 已裁決;設計師直接定:付款人由 cost_type 導出不加欄、直傷無反擊、只用 PAIR 折損不寫池、c12 各 6 依序同一提交、戰敗保留牌組;023 設計上不必要 → 協調者判)。協調者抽查:GDD 173 行「不展開反擊」、assets 現有 card_01~08 → 屬實。待:把答案寫回 011/015/017/018/019/022 工單(既有檔須問,與 TD/公式五一起呈)。
+- (舊)⏳ game-designer 逐題答 `docs/reviews/card-combat-design-answers-2026-11-17.md`(先查規格是否已答)。
+- ✅ technical-director `docs/reviews/state-of-adr0002-ruling-2026-11-17.md`:放池外(新類別 `src/gameplay/affinity/affinity_relation.gd` 靜態 `state_of`,k 進 `AffinityTuning`)→ 不觸 ADR-0002;需登記 architecture.yaml 條目 `affinity_relation_state_single_judgment`(第 3 節逐字,`campfire` 代號待換正式名);012 工單須補 2 處(第 4 節逐字,既有檔須問)。n 從 `combat_strength_read` 的 `n_pair` 讀。
+- ✅ systems-designer 公式五草稿(C1~C12;目標檔已第 6 次以上修訂 —— 協調者 `git log` 14 筆屬實)。待管理者 Q1 路線(A 新檔+一行指標推薦/B 重寫/C 宣告)、Q2 characters.md 第三節先改、Q3 騎牆失效時 −1 是否一併關、Q4 k=0 量測前行為;技術 T1/T2 交 TD。⏳ game-designer Q3/Q4 推薦 `docs/reviews/straddle-q3-q4-recommendation-2026-11-17.md`;✅ narrative-director `docs/reviews/characters-sec3-draft-2026-11-17.md`(路徑實為 `design/narrative/characters.md`;6 必改 + 2 選用;Q2 戊改「開場與四人皆冷淡」推薦接受)。協調者 `git log`:2 筆(建立 + 1 次修訂)→ 本次 = 第 2 次修訂,規則 4 允許。
+- 🔴 裁決(約 10:30,管理者逐字選項):騎牆失效 =「**三項一起歸零(設計師推薦)**」;冷淡區 =「**量測前先設 0(設計師推薦)**」;位置系統文件 =「**B:整份重寫**」(非推薦;推薦為 A 新檔+一行指標);文件包 =「**全部核准(推薦)**」= ①characters.md 第三節依 `docs/reviews/characters-sec3-draft-2026-11-17.md`(含戊「開場與四人皆冷淡」)②story-012 補兩句 + architecture.yaml 新條目(依 `docs/reviews/state-of-adr0002-ruling-2026-11-17.md` 第 3、4 節)③設計師 10 題答案寫回卡牌工單 ④023 本批不做。
+- ✅ 文件提交 `507b83f`:characters.md(N1~N7 + N8 第一句;N8 第二句無逐字原文未套)、architecture.yaml 新介面(營火暫填 `campfire-system`)。⏳ systems-designer 整份重寫 `docs/reviews/affinity-position-chain-rewrite-2026-11-17.md` + 對帳表;⏳ lead 工單逐字改文 `docs/reviews/card-stories-answer-diffs-2026-11-17.md`(含 012 兩句、023 Deferred)。
+- 🟡 010 交件(主目錄未提交):confirm() 三動作包進同一提交;13 新測試 + 4 常駐證明;實作者全套 `2208 … 0 failures` / `(216/216)`。缺口:丙類被寫入埠拒絕時版本仍 +1(AC2 字面不成立)→ ⏳ TD 判 `docs/reviews/story-010-version-bump-on-reject-ruling-2026-11-17.md`;⏳ 協調者全套 `C:/tmp/run_c010_coord.log`。
+- ✅ 卡牌工單改文 40 處提交 `5170c77`(011/012 Ready;015/017/018/019 Ready-依序;013/014/016 等重寫;020/021 等 ux;022/024/025 依賴;023 Deferred)。
+- ⏳ 012 實作(godot-gdscript-specialist,**隔離 worktree**,log `C:/tmp/run_c012.log`)。011 等 010 提交後派(同改 confirm())。
+- ✅ TD `docs/reviews/story-010-version-bump-on-reject-ruling-2026-11-17.md`:採 (a) 接受現況(版本號內部計數、唯一讀者 `_refresh_view` 同次重建,實際影響零;前例 battle_controller 845/1540)+ 硬規定「好感度寫入須為丙類分支第一個寫入」;TD 直接定、不需管理者;工單 AC2 加註(第 3.2 節逐字)須問。
+- ✅ **GDD 整份重寫提交 `8213cfe`**(670→411 行,對帳 121 列/25 依裁決/0 無據;協調者抽查原檔所有數值皆在、OQ-8 更正為已登記)→ 013/014/016 解鎖條件已成立(工單 Status 改寫須問)。R6 (A) 級無腳本路徑(原檔既有,未降級,待決)。
+- ✅ ux `design/ux/card-rework-ui-2026-11-17.md`(新檔):待 art 9 項、待管理者 3 題(三態用詞「好感/冷淡/惡感」推薦、冷淡列文字推薦、丙類預告麥子健失去騎牆推薦);衝突:020/021 截圖解析度應 1280×720、`design/ux/affinity-line-display.md` 仍寫綠色/十條全畫(與 11-12 裁決不符)。⏳ art 9 項 `docs/reviews/card-rework-ui-art-2026-11-17.md`。
+- ✅ **story-010(卡牌)提交 `2137de1`**(協調者重跑 `ENGINE EXIT = 0` / `2208 … 0 failures` / `(216/216)`)。覆核收穫:實作者自揭版本 +1 缺口 → TD 裁定;協調者讀 diff 無新發現 = 0。
+- ⏳ 011 實作(主目錄,log `C:/tmp/run_c011.log`)。
+- ✅ art `docs/reviews/card-rework-ui-art-2026-11-17.md`(9 項 + 第三節 affinity-line-display.md 須改清單)。
+- 🔴 裁決(約 10:45,管理者逐字):三態用詞 =「**好感/冷淡/敵意**」(**自填,非選項**;ux 推「好感/冷淡/惡感」、工單原「友好/冷淡/敵對」);淡金 =「**新增淡金色(美術總監推薦)**」(色票 48→49);顯示細節 =「**兩項都要(介面設計師推薦)**」(冷淡列文字 + 丙類預告麥子健失去騎牆);文件包 =「**全部核准(推薦)**」= ①010 AC2 加註 TD 3.2 ②013/014/016 → Ready ③020/021 接 ux 規格、截圖 1280×720 ④affinity-line-display.md 依 art 第三節同步。
+- ✅ 提交 `f2a7cce`:010 AC2 加註(TD 3.2;協調者把「另以測試釘住版本 +1」改為依實際測試「版本號未釘」並註明)、013/014/016 → Ready(依序前置)、ux 規格 + art 決定入庫。⏳ ux 逐字 diff `docs/reviews/card-ui-apply-diffs-2026-11-17.md`(敵意用詞、020/021、affinity-line-display、色票淡金)→ 協調者套用。
+- ✅ ux diff 61 組全套用(專家自報 63 為誤算)→ 提交(見 git log「三態用詞」)。📌 021 派工時必寫:`src/ui/battle/board_view.gd` 276 行註解與 `design/ux/relation-minimap.md` 仍用「惡感」須同步為「敵意」;淡金列名 `ui_state_affinity_gain_01` 待美術確認。
+- 🟡 011 交件:16 欄 + CostType/Source + 新 Category 在窗口前拒;`.category` 讀取點全改 match(含 battle_screen `_open_card_confirm_panel`,依 AC6 範圍條款);偏差:named_mode 對所有類別驗、接受 AFFINITY 字串;實作者全套 `2241 … 0 failures` / `(217/217)`。常駐證明多為測試內重現形狀(類別 A 自承)→ 協調者手動 mutant(未知代價字串回 NONE)→ `test_unknown_cost_type_rejected` 紅,已還原。⏳ 協調者全套 `C:/tmp/run_c011_coord.log`。
+- ✅ **story-011 提交 `ec35ee1`**(協調者重跑 `ENGINE EXIT = 0` / `2241 … 0 failures` / `(217/217)`)。
+- 🟡 012 交件(worktree;已套回主目錄未提交):`AffinityRelation.state_of`、`affinity.neutral_band_centi=0`;偏離:①缺鍵依專案「缺行一律載入失敗」而非工單「給 0+警告」(工單錯)②範圍外動 13 個夾具檔 + 5 支 tuning 測試(各加一行,機械必要 —— 收工時揭露)。實作者全套 1 紅 = 計時測試(單跑 19.7s 過)。協調者手動 mutant(`>` 改 `>=`)→ AC1 紅已還原。⏳ 協調者全套 `C:/tmp/run_c012_coord.log`。
+- ✅ **story-012 提交 `fe29e86`**(協調者重跑 `ENGINE EXIT = 0` / `2257 … 0 failures` / `(218/218)`);worktree 已移除。覆核收穫:工單 AC5「缺鍵給 0」與專案規則衝突(實作者抓到)= 0(非協調者覆核所得)。
+- 🟡 013 交件:`_link_for_pair` 有無線/極性只由 `state_of` 決定(保留診斷分支,池讀兩次);新測試 11 條含真實 BattleScreen AC5;實作者全套 `2268 … 0 failures` / `(219/219)`;工單說的「名字分支」現況不存在。協調者手動 mutant(band 寫死 0)→ AC3 紅已還原。⏳ 協調者全套 `C:/tmp/run_c013_coord.log`。
+- 🟡 015 第二次撞上限(worktree,進度檔 `STORY_C015_PROGRESS.md`):協調者覆核攔下「另開 card_cost_knobs.txt 獨立載入器繞過缺行即失敗規則」→ 已指示改進 TuningKnobs + 同步夾具(依 012 前例,協調者授權機械必要的範圍外夾具)。覆核收穫 +1(兩套旋鈕機制 = 假設錯型)。📌 **生產接線缺口**:015 不含 BattleController attach → 代價在實際遊戲中尚未生效 → 須另開工單或擴範圍(待問)。
+- ✅ **story-013 提交 `32b6460`**(協調者重跑 `ENGINE EXIT = 0` / `2268 … 0 failures` / `(219/219)`)。
+- 🟡 015 交件(worktree `agent-a61a535a476aef783`,基底 fe29e86 不含 013):改回 TuningKnobs(`card.hp_cost_none`/`card.pair_cost_cap`,13 夾具 + 6 測試各補兩行);實作者全套 `2291 … 0 failures` / `(220/220)`(sandbox 拒 wrapper,改直跑);新測試 34 條、9 常駐證明。**生產接線未做**(BattleController 未 attach → 實際遊戲代價未生效;PAIR 卡未接池時一律不可打)。待協調者確認語意 a~e(見回報)。已打包 `C:/tmp/story_c015.patch` + `C:/tmp/c015new/`(src/tu/ti)→ **等 014 提交後套回**(兩者都改 battle_state.gd)。
+- ✅ **午休截圖** 12:01:21~12:01:56(兩組開窗共約 35 秒,`--audio-driver Dummy --title=x`,皆 EXIT 0):lunch 18 張(052 真 vs01、053 真壓框 UNREACHABLE 照預期)+ 058 重拍。協調者開 16/17 號:敵紅/我藍橫幅在棋盤上方、未蓋格。協調者注意未判:目標框在敵方回合仍顯示、敵方回合仍見移動範圍、換手待棄牌面板蓋敵兵。⏳ ux `docs/reviews/lunch-capture-ux-review-2026-11-17.md` + art `docs/reviews/lunch-capture-art-review-2026-11-17.md`。
+- ✅ lead 新工單 story-026 生產接線(寫在 015 worktree,已另存 `C:/tmp/c015new/story-026-card-cost-production-wiring.md`;建議順序 015→026→017/018;建構子注入優於事後 attach;013 接線無缺口但缺真實場景 k>0 測試)。
+- ✅ art 午休審 `docs/reviews/lunch-capture-art-review-2026-11-17.md`:橫幅通過;**圖例 1920 讀不了(嚴重)**—— 協調者開 15 號屬實(文字與圖示錯位重疊);鞋/劍 6px 太小、圖例未示範真符號;058 截圖是 480×270 緩衝區(類 C)完整一圈未驗;中:棄牌牌面空白+提示疊字、目標框常駐、資訊卡底被截、敵方回合殘留範圍格。覆核收穫 +1(圖例幾何缺陷測試全綠)。⏳ lead 查圖例成因 + 新工單 `story-059-legend-panel-layout-at-scale.md`。
+- ✅ ux 午休審 `docs/reviews/lunch-capture-ux-review-2026-11-17.md`:046 有條件過(目標框蓋「回到遊戲」)、056 過、051 過、054 無法判定、052 僅合成、047 不過、049 過(保留)。🔴 協調者更正:ux 判 058「左緣 y≥8 缺」= **裁決 A 保留的首字框缺口,設計如此,非缺陷**。⏳ godot-specialist 探針 `prototypes/godot-specialist-objective-range-probe-2026-11-17/`(目標框 Timer 在選單暫停時?敵方回合殘留範圍?)。
+- ✅ lead story-059 圖例版面(成因:範例圖示多帶 `BOARD_ORIGIN=(32,39)` 偏移 + 列無間距;047 測試無矩形相交斷言)。🔴 裁決(約 12:20):「**一起修(主程式推薦)**」(含鞋/劍示範);鞋劍大小 =「**先請美術總監提放大方案再決定(推薦)**」。
+- ✅ godot-specialist 探針 `prototypes/godot-specialist-objective-range-probe-2026-11-17/`:Q1 目標框敵方回合仍在 = 驅動假象(8 秒內);**Q2 真缺陷:選單開著樹暫停 → 目標框 Timer 停走,框一直蓋選單「回到遊戲」**(10 秒 delta 0.000);Q3 綠/灰藍十字 = vs01 地形非範圍格(ux 新問題 4 撤回)。建議修:選單開啟時 `hide_objective()`。
+- 🟡 014 交件(主目錄):`straddle_is_valid` 閘門關三項;provider `straddle_valid` 只看存活者;battle_screen +2 行接線;改 3 條既有顯示測試夾具(甲有關係不該獨行 → 改標戊),未刪斷言;實作者全套 `2277 … 0 failures` / `(220/220)`。
+- ✅ 提交 `da131fd`(午休證據 + 審查 + 探針 + story-059 轉 Ready)。協調者手動 mutant 014(拿掉 _hold_back_of 閘門)→ `test_lone_guard_one_relation_zeroes_all_three_items` 紅,已還原。⏳ 014 協調者全套 `C:/tmp/run_c014_coord.log`;⏳ lead story-060(目標框選單暫停);⏳ art 鞋劍放大方案 `docs/reviews/action-icon-enlarge-proposal-2026-11-17.md`。之後:套 015 patch(等 014 提交)→ 026 → 017/018。
+- ✅ lead story-060 提交 `bcd0e05`(修法 A:選單可見時 hide_objective + 停 Timer;S 0.5 天;只動 battle_screen.gd)。
+- ✅ art `docs/reviews/action-icon-enlarge-proposal-2026-11-17.md`。🔴 裁決(約 13:40):鞋劍 =「**B:移進格內右側、加深色襯底(美術總監推薦)**」(襯底 x12~30 y9~21;位置寫成相對首字框右緣算式)→ ⏳ lead 新工單 story-061。
+- ✅ story-061 工單 `2064c7a`(Draft,M 1.5~2 天;建議 059 先做)+ art 陣列/襯底規則 `298612e`(整塊 18×12 固定;鞋外框在深底近隱形 = AC5 特別看)。061 待:Status 轉 Ready(既有檔須問)、「054 AC8 補拍/盲測併入 061 AC5」待管理者。
+- ✅ **story-014 提交 `62b71b4`**(協調者全套 EXIT 100 唯一紅 = 計時測試 34s;閒置單跑 19.8/19.6s PASSED → 雜訊,非 014 變慢)。
+- 🟡 015 以 3-way 套回主目錄(無衝突,已 stage);協調者手動 mutant(hp>cost 改 >=)→ AC1 紅已還原。⏳ 全套 `C:/tmp/run_c015_coord.log`。之後:提交 015 + story-026(從 `C:/tmp/c015new/` 複製)→ 派 026、059(worktree)、060。
+- 🔴 015 合併後協調者全套 `EXIT 100` / `2304 … 30 errors | 1 failures`:013 測試內嵌旋鈕文字缺 015 新增 `card,hp_cost_none`/`card,pair_cost_cap`(015 基底不含 013)→ 協調者補一行(值取 tuning_knobs.txt 36/37 行)→ ⏳ 重跑 `C:/tmp/run_c015_coord2.log`。覆核收穫:平行 worktree 合併的跨工單夾具缺口 = 合併流程問題(非實作者錯)。
+- ✅ **story-015 提交 `bf3375c`**(含 story-026 工單 + 013 測試夾具補行;協調者全套 EXIT 100 唯一紅計時 34.6s,單跑 23.3s PASSED)。015 worktree 已移除。
+- ⏳ 060(主目錄,log `C:/tmp/run_060.log`);⏳ 026(worktree,第二次派;第一次建立隔離區失敗留下殘骸 `.claude/worktrees/agent-adb47be471acf80ec`(locked)—— **清理指令被權限擋下,未繞過,收工時告知管理者**)。
+- 🟡 060 交件(主目錄):battle_screen +12;8 測試 + 3 常駐證明;開窗證據 `prototypes/story-060-objective-menu-evidence-2026-11-17/`(協調者開 1920 圖:選單五列無遮蔽);實作者全套 `2319 … 0 failures` / `(223/223)`。協調者手動 mutant(hide 改 pass)→ AC1 紅已還原。⏳ 協調者全套 `C:/tmp/run_060_coord.log`。AC8 管理者人眼待。
+- 🟡 026:第一位撞上限後 worktree 無法驗證、無法續派 → 新派一位在同目錄 `.claude/worktrees/agent-a47483a74523952cc` 接手寫測試(正式接線已完成:controller 建構子尾加 2 個帶預設參數)。
+- 🟡 059 交件(worktree `agent-a6f25519bd6ce2de7`,基底 62b71b4):成因實測屬實 + 另修兩處(關係線範例未加格原點、名稱/說明 Label 用 fpx 非實際行高 27 → 本就重疊);列距自適應(fpx×0.25 放不下收到 0,未設計溢出處理);4 尺寸開窗截圖 `production/qa/evidence/story-059/`(協調者開 1080p:對齊可讀;小問題:圖例暗幕偏淡背景字透出);實作者全套 EXIT 100 唯一紅計時 32s、單跑 22s;🔴 **全套已逼近 wrapper 預設 TEST_TIMEOUT_SEC=900(負載下逾時 exit 124)**。已打包 `C:/tmp/story059.patch` + `C:/tmp/s059b/`(test/evidence/proto)→ 等 060 提交後套。
+- 🔴 060 協調者全套第一次 **EXIT 124 逾時**(900s,三組引擎同時跑)→ 不算驗證;重跑 `TEST_TIMEOUT_SEC=2400` → `C:/tmp/run_060_coord2.log`。📌 收工待問:wrapper 預設逾時 900s 已不夠(負載下)。
+- 🟡 026 交件(worktree `agent-a47483a74523952cc`,基底 bf3375c):8 測試(真實 BattleScreen 付血卡 HP 減、PAIR 依同池、旋鈕載入失敗大聲)、3 常駐證明;④「靜默退回預設」證明不了(D 類,無 seam);實作者全套 `2319 … 0 failures` / `(223/223)`;新增夾具 4 檔(含範圍外 out_of_range,協調者接受)。已打包 `C:/tmp/story026.patch` + `C:/tmp/s026/`。合併順序:060 → 059 → 026。
+- ✅ **story-060 提交 `20d05a4`**(全套 EXIT 100 唯一紅計時 43.9s 同時有他人全套;閒置單跑 23.1s PASSED)。
+- 🟡 059 + 026 已 3-way 套回主目錄(無衝突);協調者手動 mutant:026 拿掉 attach_affinity_pool → AC2 紅;059 sample 偏移改 ZERO → AC1 紅(4 failures);皆已還原。⏳ 閒置全套 `C:/tmp/run_059_026_coord.log`(TEST_TIMEOUT_SEC=2400)。
+- ✅ **story-059 `b8f2702`、story-026 `e2c5c66`**(059+026 合併後閒置全套 `ENGINE EXIT = 100` / `2335 … 1 failures` / `(225/225)`,唯一紅計時 40.7s;單跑 19.4/21.5s)。026 worktree 已移除。⏳ performance-analyst `docs/reviews/timing-test-full-suite-red-2026-11-17.md`(計時測試全套內連 5 紅、全套 16.5 分、900s 逾時)。
+### 🔴 第一百零二批收工交接(約 16:00)
+- **程式提交 11 張**:058 `2ad8e5b`、049 `9baff10`、卡牌 010 `2137de1`、011 `ec35ee1`、012 `fe29e86`、013 `32b6460`、014 `62b71b4`、015 `bf3375c`、060 `20d05a4`、059 `b8f2702`、026 `e2c5c66`。每張協調者重跑 + 手動 mutant 抽查。測試 2169 → **2335**。
+- **文件**:對帳 22 檔、049 擴充、卡牌工單 010~026、GDD 好感度—位置整份重寫、characters.md、architecture.yaml 新介面、友敵線畫法同步、色票淡金、工單 059/060/061。
+- **覆核收穫**:058 前提不成立 + 左缺口、049 待棄牌假設、015 另開旋鈕機制、047 圖例幾何(午休像素)、平行合併夾具缺口 → 連續零收穫 = 0。
+- **協調者疏失**:派工單照抄過期「手動注入」寫法(049);未預期平行 worktree 基底差異(015 合併紅)。
+- **下次待辦**:①016(012/013/015 已齊)→ 017/018 → 019;020/021(依序前置);②061 待轉 Ready(陣列已到);③022/024/025 依賴;④計時測試處置(待 performance-analyst)。
+- **待問管理者**:①061 轉 Ready + 「054 AC8 補拍/盲測併入 061 AC5」②計時測試處置與 wrapper 900s 逾時 ③兩個鎖住的殘留 worktree(`agent-a6f25519bd6ce2de7`、`agent-adb47be471acf80ec`)清理被權限擋 —— 請管理者決定是否授權 `git worktree unlock/remove` ④今天 11 張工單 Status 欄同步(既有檔)⑤人眼確認:058 完整一圈、059 圖例四張(`production/qa/evidence/story-059/`)、060 選單(`prototypes/story-060-objective-menu-evidence-2026-11-17/out/`)、049 橫幅(`prototypes/lunch-capture-2026-11-17/out/07,08,16,17`)。
+- 📌 小問題未開單:圖例暗幕偏淡背景字透出;資訊卡末行被截;棄牌面板牌面空白+提示疊字;敵方回合標題紅字對灰底對比約 2:1(art 估)。
+- (舊)⏳ 059(worktree,撞上限,等其背景工作自動續報)。
+- (舊)⏳ 014(主目錄,log `C:/tmp/run_c014.log`;與 015 同改 battle_state.gd 不同函式)。
+- (舊)⏳ 013(主目錄,log `C:/tmp/run_c013.log`);⏳ 015(**worktree**,log `C:/tmp/run_c015.log`)。
+- 📌 12:00 午休:開窗跑 `prototypes/lunch-capture-2026-11-17/`(README 第 9 行)+ 058 driver 重拍 → 交 ux/art 審;**開窗前先確認 013 沒在主目錄跑全套**(避免負載)。
+- (舊)⏳ 011(主目錄,撞上限續做)、012(worktree,撞上限續做)。
+- (已問)📌 下一批待問(累積):010 AC2 加註;013/014/016 Status → Ready;ux Q1~Q3;020/021 解析度;affinity-line-display.md 同步(待 art 列)。
+- (舊)⏳ systems-designer 公式五改文草稿 `docs/reviews/affinity-position-chain-formula5-draft-2026-11-17.md`(擋 013/014/016)。
+- 📌 午休:跑 `prototypes/lunch-capture-2026-11-17/` README 指令(約 50~70s)+ 058 重拍(`prototypes/story-058-attack-ring-evidence-2026-11-17/` driver)→ 交 ux/art 審。
+- (舊)⏳ story-049 實作(godot-gdscript-specialist,**隔離 worktree**,log `C:/tmp/run_049.log`;不碰 board_view.gd)。
+- (舊)049 前置:art `docs/reviews/story-049-enemy-phase-banner-art-2026-11-17.md`(色)+ ux `docs/reviews/story-049-enemy-phase-banner-ux-2026-11-17.md`(位置/時長/文字)。
 - ✅ 午休驅動備妥(headless EXIT 0,14 張):046/056 戰役/051 真 vs01/054 四態/052 合成/047 REACHED;**052 真 vs01 UNREACHABLE**(被擋 11 格無敵兵格)、**053 真壓框 UNREACHABLE**(提示列框 y469 起,棋盤下緣 ~462,不相交;未試其他會變淡的框)。協調者驗 log:戰敗 detail「稍後自動重來這一場」、資訊卡「裂殼 1/聽環 1」。🔴 **午休執行指令 = README 第 9 行**(timeout 100,約 40~60s)。
 - (舊)godot-specialist 午休補拍驅動 `prototypes/lunch-capture-2026-11-17/`(046/056 戰役/051 真 vs01/054 三態/052/047 AC6/053 真壓框;午休協調者開窗跑)。
 - ✅ producer 對帳交件(233 行):落差 22 張(021、033、036~042、044~048、050~057;檔頭 21 檔 + 總表),第四節有逐字 diff(4-1 檔頭、4-2 總表;053 列順改「結束角色行動」超範圍已標)。協調者抽查:055 檔頭 Blocked 屬實、`bf05f56` 存在 → 屬實。結構觀察:總表同步腳本比對 `Complete` 但 epic 用 `Done`(推論未跑)。⏳ 與 049 工單改文一起呈核。
