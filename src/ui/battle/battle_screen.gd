@@ -2385,6 +2385,8 @@ func _ready() -> void:
 	_battle_menu.objective_requested.connect(show_objective)
 	# story-045:選單開啟時整棵樹暫停、_process 不跑,故以可見性變化即時換提示列。
 	_battle_menu.visibility_changed.connect(_refresh_controls_hint.bind(true))
+	# story-060:選單開啟(樹暫停、目標 Timer 停走)時收起開場目標框,免得蓋住「回到遊戲」列。
+	_battle_menu.visibility_changed.connect(_on_battle_menu_visibility_for_objective)
 	# audio-foundation story-003:取得場景級音效宿主並接 M2~M9;取不到(測試直接載入)靜默不接。
 	var sfx_host: SfxPlayerHost = get_tree().get_first_node_in_group(SfxPlayerHost.GROUP_NAME) as SfxPlayerHost
 	if sfx_host != null:
@@ -6049,6 +6051,16 @@ func show_objective() -> void:
 func hide_objective() -> void:
 	if _objective_panel != null:
 		_objective_panel.visible = false
+	# story-060:同時停掉 Timer,免得重看目標後被舊倒數提早關掉。
+	var timer: Timer = get_node_or_null("ObjectiveTimer") as Timer
+	if timer != null:
+		timer.stop()
+
+
+## story-060:只在選單【變可見】時收起目標框;關閉時不動(「目標」列是先 close 再 show_objective)。
+func _on_battle_menu_visibility_for_objective() -> void:
+	if _battle_menu != null and _battle_menu.visible:
+		hide_objective()
 
 
 func is_objective_visible() -> bool:

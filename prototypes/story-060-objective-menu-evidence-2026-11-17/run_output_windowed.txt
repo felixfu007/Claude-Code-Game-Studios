@@ -1,0 +1,12 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+[(960, 540)] objective visible after load = true
+HOST [(960, 540)] WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+FACTS [(960, 540)] paused=true menu.visible=true objective_visible=false timer.is_stopped=true return_row_rect=[P: (381.0, 149.0), S: (198.0, 44.0)]
+SHOT 960x540_menu_open_within_8s.png (960, 540) save=0
+[(1920, 1080)] objective visible after load = true
+HOST [(1920, 1080)] WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+FACTS [(1920, 1080)] paused=true menu.visible=true objective_visible=false timer.is_stopped=true return_row_rect=[P: (762.0, 298.0), S: (396.0, 88.0)]
+SHOT 1920x1080_menu_open_within_8s.png (1920, 1080) save=0
