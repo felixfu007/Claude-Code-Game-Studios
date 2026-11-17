@@ -183,20 +183,25 @@ func _link_for_pair(
 		_diagnostic_rejected_pair_count += 1
 		return null
 
-	if result.n_pair == 0:
+	# story-013:有無線與極性唯一來自 AffinityRelation.state_of(契約
+	# affinity_relation_state_single_judgment)——此處不再自寫 n==0 / 正負號 / 門檻判斷。
+	# 上方 result 只用於「被拒絕」診斷分支與零值診斷計數,不參與有無線的決定。
+	var state: AffinityRelation.RelationState = AffinityRelation.state_of(
+		_pool, pair, _state.affinity_tuning.neutral_band()
+	)
+	if state == AffinityRelation.RelationState.NONE:
+		if result.n_pair > 0 and result.value == 0.0:
+			_diagnostic_zero_value_pair_count += 1
 		return null
 
 	var link: AffinityLink = AffinityLink.new()
 	link.unit_a = unit_a_id
 	link.unit_b = unit_b_id
 	link.amp = AffinityLink.AMP_EXPECTED
-	if result.value > 0.0:
+	if state == AffinityRelation.RelationState.POS:
 		link.polarity = AffinityLink.Polarity.POSITIVE
-	elif result.value < 0.0:
-		link.polarity = AffinityLink.Polarity.NEGATIVE
 	else:
-		_diagnostic_zero_value_pair_count += 1
-		return null
+		link.polarity = AffinityLink.Polarity.NEGATIVE
 	return link
 
 
