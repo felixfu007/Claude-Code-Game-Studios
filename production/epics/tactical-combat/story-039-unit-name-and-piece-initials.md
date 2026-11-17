@@ -1,7 +1,7 @@
 # Story 039:資訊卡顯示正式姓名 + 棋子標姓名首字/敵兵編號
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)
+> **Status**: ✅ Done(2026-11-12,提交 `487b6e0`)(原狀態:Ready(2026-11-12))
 > **Type**: UI
 > **Estimate**: S~M
 > **依據**:

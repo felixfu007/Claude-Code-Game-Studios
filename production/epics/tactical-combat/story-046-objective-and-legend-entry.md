@@ -1,7 +1,7 @@
 # Story 046:開場顯示目標;選單新增「目標」與「圖例」入口;戰敗文字加規則一行與下一步提示
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)—— 🔴 前置:須有「一行勝利條件文字」(設計網域,`game-designer` 提供;實作者不得自擬規則描述)
+> **Status**: ✅ Done-pending-visual(2026-11-13,提交 `5c5602c` AC1/3/4 + `bf05f56` AC2;AC6 像素層待補拍)(原狀態:Ready(2026-11-12)—— 🔴 前置:須有「一行勝利條件文字」(設計網域,`game-designer` 提供;實作者不得自擬規則描述))
 > **Type**: Logic + UI
 > **Estimate**: M
 > **優先序**: 畫面可讀性批次 T7

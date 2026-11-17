@@ -1,7 +1,7 @@
 # Story 045:提示列依裝置與目前狀態只顯示相關按鍵;勝敗/敵方回合不再顯示「移動…確認」
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)—— 🔴 含一項須先裁決的設計缺口(見「派工前須先決定」第 1 點)
+> **Status**: ✅ Done-pending-visual(2026-11-13,提交 `278fb77`;AC7 像素層待補拍三態 × 兩解析度)(原狀態:Ready(2026-11-12)—— 🔴 含一項須先裁決的設計缺口(見「派工前須先決定」第 1 點))
 > **Type**: Logic + UI
 > **Estimate**: M
 > **優先序**: 畫面可讀性批次 T6

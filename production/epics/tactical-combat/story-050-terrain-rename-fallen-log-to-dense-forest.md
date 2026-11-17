@@ -1,7 +1,7 @@
 # Story 050: 地形名稱「倒木」改為「密林」
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-13 草擬;待管理者看過後轉 Ready 亦可,無待決題)
+> **Status**: ✅ Done(2026-11-13,提交 `49ff7ca`)(原狀態:Ready(2026-11-13 草擬;待管理者看過後轉 Ready 亦可,無待決題))
 > **Type**: UI / Data(文字)
 > **Estimate**: S(約 0.5 天,純字串 + 2 條測試斷言)
 > **依據**: 管理者 2026-11-13 裁決(`production/session-state/active.md` 第一百批節);`docs/reviews/log-line-of-sight-rule-options-2026-11-13.md` 第六節

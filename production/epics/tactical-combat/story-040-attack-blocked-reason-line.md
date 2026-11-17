@@ -1,7 +1,7 @@
 # Story 040:資訊卡顯示「攻擊:原因」(打不到時說明為什麼)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)—— 2026-11-12 依 lead-programmer 審查改寫 AC。🔴 須在 story-039 提交後才開工(同一個檔)
+> **Status**: ✅ Done-pending-visual(2026-11-12,提交 `c28bde9`;AC6 像素層待開窗)(原狀態:Ready(2026-11-12)—— 2026-11-12 依 lead-programmer 審查改寫 AC。🔴 須在 story-039 提交後才開工(同一個檔))
 > **Type**: Logic + UI
 > **Estimate**: S~M
 > **依據**:

@@ -1,7 +1,7 @@
 # Story 053:滑鼠「結束角色行動」按鈕 + 結束畫面隱藏空提示底條
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-13,依 ux 定稿與命名/段落序裁決更新)—— 文案與禁用態**已由 ux-designer 定稿**(`docs/reviews/story-053-copy-final-2026-11-13.md`,**第 8 節取代前文**);🔴 兩項【未驗】須實作者落字前實測(AC7),不符停下回報
+> **Status**: ✅ Done-pending-visual(2026-11-16,提交 `3759352`;AC9 像素層 2026-11-16 四項目測通過,真實高亮壓框下的變淡待補拍)(原狀態:Ready(2026-11-13,依 ux 定稿與命名/段落序裁決更新)—— 文案與禁用態**已由 ux-designer 定稿**(`docs/reviews/story-053-copy-final-2026-11-13.md`,**第 8 節取代前文**);🔴 兩項【未驗】須實作者落字前實測(AC7),不符停下回報)
 > **Type**: UI + Logic(按鈕可用狀態、提示列段落序)
 > **Estimate**: L-(約 3 天:按鈕 + 禁用三層 + 可用狀態 0.9、矩形 8 em 與 `compact_hint_available_width` 改扣 0.5、提示列段落序與 `controls_hint_content_test` 改寫含敏感度 0.6、兩處實測(✕ 字形/tooltip)0.3、底條隱藏與恢復 0.25、在地化與列數 0.15、測試 0.3)。原估 M(2 天)。
 > **依據**:

@@ -1,7 +1,7 @@
 # Story 047:圖例 —— 叫出後列出所有標記(顏色 + 形狀 + 一句話)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)—— 🔴 前置:story-044(T5 高亮層級)定稿、story-046(選單入口)落地
+> **Status**: ✅ Done-pending-visual(2026-11-16,提交 `f877533`;AC6 像素層待補拍)(原狀態:Ready(2026-11-12)—— 🔴 前置:story-044(T5 高亮層級)定稿、story-046(選單入口)落地)
 > **Type**: UI
 > **Estimate**: M
 > **優先序**: 畫面可讀性批次 T8

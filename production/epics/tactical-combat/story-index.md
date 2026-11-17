@@ -146,35 +146,35 @@ M3 原五組切面拆為 **M3a**(切面 2/3/4/5,不依賴 M2,可與 M2 同日開
 | 018 | story-018-battle-outcome-end-to-end.md | — | Integration | 整場戰鬥端到端結算(畫面側第一條防線)。✅ Done(2026-10-16)(2026-10-30 補列) | — |
 | 019 | story-019-real-level-battle-terminates.md | — | Integration | 真實關卡打完一整場(5 對 5、真實地形、真實 AI)。✅ Done(2026-10-16)(2026-10-30 補列) | — |
 | 020 | story-020-test-policy-survives-multiple-rounds.md | — | Integration | 讓測試的我方打法不自殺,跑進多回合。✅ Done(2026-10-16)(2026-10-30 補列) | — |
-| 021 | story-021-battle-loop-phi-provider.md | — | Logic | 自動對戰迴圈接上好感度加成。Ready(2026-10-28)(依檔頭;2026-10-30 補列) | — |
+| 021 | story-021-battle-loop-phi-provider.md | — | Logic | 自動對戰迴圈接上好感度加成。✅ Done(`2ab702a`,2026-10-28)(2026-10-30 補列) | — |
 | 022 | story-022-defeat-reason-text.md | — | UI | 戰敗畫面顯示「誰倒下了」。✅ Done-pending-visual(2026-10-28)(2026-10-30 補列) | — |
 | 031 | story-031-affinity-guard-and-lone-guard.md | — | Logic + Integration | 好感度減傷(guard)+ 戊獨行減傷。✅ Done-pending-visual(2026-10-30) | — |
 | 032 | story-032-guard-display-and-hide-leaks.md | — | UI | 減傷顯示(指到我方角色 + 移動預覽)+ 隱藏好感度設定補漏。✅ Done-pending-visual(2026-10-30) | 031 |
-| 033 | story-033-lone-guard-conditional-and-negative-ceil.md | — | Logic | 戊獨行減傷條件化(本回合未出手才有)+ 負向 Φ 減傷改進位。✅ Done(依提交 `e7751fc`,檔頭待改;檔頭現寫 Ready(2026-10-30)) | 031 |
+| 033 | story-033-lone-guard-conditional-and-negative-ceil.md | — | Logic | 戊獨行減傷條件化(本回合未出手才有)+ 負向 Φ 減傷改進位。✅ Done(`e7751fc`,2026-10-30) | 031 |
 | 034 | story-034-straddle-and-hold-back.md | — | Logic + UI | 戊「騎牆」(距離 2 減傷 +2、距離 1 −1)+「留一手」(距離 2 出手傷害 −1)。✅ Done(`ace389b`,2026-10-30) | — |
 | 035 | story-035-wu-dead-code-step2.md | — | Logic(重構,零行為變更) | 戊舊機制死碼清理第二步(`lone_guard_effective` / `will_attack` / `attacked_this_phase`)。✅ Done(`45a20de`,2026-11-05) | — |
-| 036 | story-036-vs03-vs04-roster-adjust.md | — | Config/Data | 第 3、4 場名冊站位調整(依難度裁定書)。✅ Done(`289c837`;第 4 場 E3 改站保留、第 3 場整案退回零改動;檔頭 Status 行仍寫 Ready,其下 2026-11-10 加註已記完成) | — |
-| 037 | story-037-piece-sprites.md | — | UI / Visual(含少量 Logic) | 我方 5 人棋子改畫 32×40 正式圖,缺圖安靜退回佔位圖;下列棋子畫在上列前面。✅ 程式完成(`34c2f2d`;正式圖 `86fde93` 入庫;AC-5~7 待在家驗收;檔頭 Status 行仍寫 Blocked,其下 2026-11-11 兩則加註已記改 Ready 與程式完成) | — |
-| 038 | story-038-release-safe-data-parsing.md | — | Logic | 資料檔解析防呆改為發行版也有效(assert → push_error + 整表拒絕)。✅ Done(`f0884ac`;檔頭 Status 行仍寫 Ready,其下 2026-11-11 加註已記完成) | — |
-| 039 | story-039-unit-name-and-piece-initials.md | — | UI | 資訊卡顯示正式姓名 + 棋子標姓名首字/敵兵編號。✅ Done(依提交 `487b6e0`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | — |
-| 040 | story-040-attack-blocked-reason-line.md | — | Logic + UI | 資訊卡顯示「攻擊:原因」(打不到時說明為什麼)。✅ Done(依提交 `c28bde9`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | 039 |
-| 041 | story-041-hp-text-vs-piece-label-overlap.md | — | Logic + UI(世界層) | 血量數字與棋子首字/敵兵編號重疊修正(story-039 回歸)。✅ Done(依提交 `74fbce7`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | — |
-| 042 | story-042-tile-info-line-of-sight-wording.md | — | UI(文案) | 資訊卡「遮蔽」改「擋視線」。✅ Done(依提交 `74fbce7`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | — |
+| 036 | story-036-vs03-vs04-roster-adjust.md | — | Config/Data | 第 3、4 場名冊站位調整(依難度裁定書)。✅ Done(`289c837`;第 4 場 E3 改站保留、第 3 場整案退回零改動) | — |
+| 037 | story-037-piece-sprites.md | — | UI / Visual(含少量 Logic) | 我方 5 人棋子改畫 32×40 正式圖,缺圖安靜退回佔位圖;下列棋子畫在上列前面。✅ Done-pending-visual(`34c2f2d`;正式圖 `86fde93` 入庫;AC-5~7 待在家驗收) | — |
+| 038 | story-038-release-safe-data-parsing.md | — | Logic | 資料檔解析防呆改為發行版也有效(assert → push_error + 整表拒絕)。✅ Done(`f0884ac`) | — |
+| 039 | story-039-unit-name-and-piece-initials.md | — | UI | 資訊卡顯示正式姓名 + 棋子標姓名首字/敵兵編號。✅ Done(`487b6e0`) | — |
+| 040 | story-040-attack-blocked-reason-line.md | — | Logic + UI | 資訊卡顯示「攻擊:原因」(打不到時說明為什麼)。✅ Done-pending-visual(`c28bde9`;AC6 待開窗) | 039 |
+| 041 | story-041-hp-text-vs-piece-label-overlap.md | — | Logic + UI(世界層) | 血量數字與棋子首字/敵兵編號重疊修正(story-039 回歸)。✅ Done-pending-visual(`74fbce7`;AC6 待補拍) | — |
+| 042 | story-042-tile-info-line-of-sight-wording.md | — | UI(文案) | 資訊卡「遮蔽」改「擋視線」。✅ Done-pending-visual(`74fbce7`;AC5 待補拍) | — |
 | 043 | story-043-hand-bar-must-not-hide-enemies.md | — | UI | 收合/不可用手牌列不得蓋住敵兵。✅ Done(AC1,`74fbce7`);AC2 展開態併入大地圖捲動、最小間隙延到 48 格改造(管理者裁決延後) | — |
-| 044 | story-044-highlight-hierarchy-rework.md | — | Visual/UI + Logic | 高亮層級重做(可攻擊為主、被擋縮角章、威脅降調)。✅ Done(依提交 `7c0333e`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | 041 |
-| 045 | story-045-contextual-controls-hint.md | — | Logic + UI | 提示列依裝置與狀態只顯示相關按鍵。✅ Done(依提交 `278fb77`,檔頭待改;檔頭現寫 Ready(2026-11-12)) | 043 |
-| 046 | story-046-objective-and-legend-entry.md | — | Logic + UI | 開場目標 + 選單「目標」「圖例」入口 + 勝敗畫面「規則」「下一步」兩行。🟡 部分完成(依提交 `5c5602c`:AC1/3/4;AC2 選單入口未提交,檔頭待改;檔頭現寫 Ready(2026-11-12)) | 045 |
-| 047 | story-047-legend-panel.md | — | UI | 圖例面板:列出所有標記(顏色 + 形狀 + 一句話)。📋 Ready(2026-11-12) | 044、046 |
-| 048 | story-048-tile-info-panel-frame-and-placement.md | — | UI | 資訊卡不透明底與框、位置避開敵兵。🟡 部分完成(依提交 `1c07b32`:AC1;AC2 起未提交,檔頭待改;檔頭現寫 Ready(2026-11-12)) | 046 |
+| 044 | story-044-highlight-hierarchy-rework.md | — | Visual/UI + Logic | 高亮層級重做(可攻擊為主、被擋縮角章、威脅降調)。✅ Done-pending-visual(`7c0333e`;AC8 有條件過,48 格後重拍) | 041 |
+| 045 | story-045-contextual-controls-hint.md | — | Logic + UI | 提示列依裝置與狀態只顯示相關按鍵。✅ Done-pending-visual(`278fb77`;AC7 待補拍) | 043 |
+| 046 | story-046-objective-and-legend-entry.md | — | Logic + UI | 開場目標 + 選單「目標」「圖例」入口 + 勝敗畫面「規則」「下一步」兩行。✅ Done-pending-visual(`5c5602c` AC1/3/4 + `bf05f56` AC2;AC6 待補拍) | 045 |
+| 047 | story-047-legend-panel.md | — | UI | 圖例面板:列出所有標記(顏色 + 形狀 + 一句話)。✅ Done-pending-visual(`f877533`;AC6 待補拍) | 044、046 |
+| 048 | story-048-tile-info-panel-frame-and-placement.md | — | UI | 資訊卡不透明底與框、位置避開敵兵。✅ Done(AC1,`1c07b32`);AC2 管理者 2026-11-16 裁決擱置(位置維持右上) | 046 |
 | 049 | story-049-enemy-phase-banner.md | — | UI | 敵方回合明顯變化(標題色/橫幅,與提示列同步)。📋 Ready(2026-11-12) | 045、048 |
 | 050 | story-050-terrain-rename-fallen-log-to-dense-forest.md | — | Config/Data + UI | 地形顯示名「倒木」→「密林」(規則與符號不動)。✅ Done(`49ff7ca`,2026-11-13) | — |
-| 051 | story-051-enemy-kind-data-and-per-kind-names.md | — | Logic + UI | 敵方型別資料欄 + 分種類名稱(裂殼/垂鉤/聽環)+ 確認面板我方改姓名 + 姓名鍵收斂。📋 Ready(2026-11-13) | 048 |
-| 052 | story-052-blocked-stamp-only-on-enemy-cells.md | — | Visual/UI + Logic | 被擋章只畫敵兵格(空格不畫;GDD 已於 2026-11-13 同步)。📋 Ready(2026-11-13) | 044 |
-| 053 | story-053-end-action-button-and-hide-finished-hint-bar.md | — | UI | 滑鼠「結束行動」按鈕 + 結束畫面隱藏空底條。📋 Ready(文案待 ux 覆核) | 045、046 |
-| 054 | story-054-action-state-icons-sword-shoe.md | — | Visual/UI | 鞋/劍行動圖示(做過才出現、我方限定)+ 做完變暗。⛔ Blocked(待 art 補遺併入) | 051 |
-| 055 | story-055-damage-preview-text-clipped.md | — | UI | 傷害預覽「23→7」截字。⛔ Blocked(待開窗量測 + 修法選擇) | 041 |
-| 056 | story-056-campaign-defeat-retry-same-mission.md | — | Logic + UI | 戰役戰敗改為直接重打同一場(不回標題)。📋 Ready(2026-11-13;「下一步」行用字待 game-designer 定稿) | 046 |
-| 057 | story-057-piece-initial-dark-backdrop.md | — | UI | 我方棋子首字加深色底(管理者 2026-11-16「A:全部加濃底」)。📋 Ready | 055 |
+| 051 | story-051-enemy-kind-data-and-per-kind-names.md | — | Logic + UI | 敵方型別資料欄 + 分種類名稱(裂殼/垂鉤/聽環)+ 確認面板我方改姓名 + 姓名鍵收斂。✅ Done-pending-visual(`0bd5295`;AC7 待真 vs01 補拍) | 048 |
+| 052 | story-052-blocked-stamp-only-on-enemy-cells.md | — | Visual/UI + Logic | 被擋章只畫敵兵格(空格不畫;GDD 已於 2026-11-13 同步)。✅ Done-pending-visual(`8b8e339`;AC7 待補拍) | 044 |
+| 053 | story-053-end-action-button-and-hide-finished-hint-bar.md | — | UI | 滑鼠「結束角色行動」按鈕 + 結束畫面隱藏空底條。✅ Done-pending-visual(`3759352`;AC9 真壓框待補拍) | 045、046 |
+| 054 | story-054-action-state-icons-sword-shoe.md | — | Visual/UI | 鞋/劍行動圖示(做過才出現、我方限定)+ 做完變暗。✅ Done-pending-visual(`0582b98`;AC8 補拍 + 管理者盲測未做) | 051 |
+| 055 | story-055-damage-preview-text-clipped.md | — | UI | 傷害預覽「23→7」截字。✅ Done-pending-visual(`1a5e886`;AC2 其餘字串 × 兩解析度待補) | 041 |
+| 056 | story-056-campaign-defeat-retry-same-mission.md | — | Logic + UI | 戰役戰敗改為直接重打同一場(不回標題)。✅ Done-pending-visual(`034ae30`;AC7 待補拍) | 046 |
+| 057 | story-057-piece-initial-dark-backdrop.md | — | UI | 我方棋子首字加深色底(管理者 2026-11-16「A:全部加濃底」)。✅ Done-pending-visual(`7cc0d1f`;AC7 管理者逐張看五位待確認) | 055 |
 | 058 | story-058-attackable-amber-ring-above-piece.md | — | UI | 可攻擊琥珀框畫成完整一圈(管理者 2026-11-16)。📋 Ready(步驟 1 先查成因) | 047、057 |
 
 ## 執行層序列化(寫進每張 M4/M5/M6 story 的 Dependencies 節,不只寫在這裡)

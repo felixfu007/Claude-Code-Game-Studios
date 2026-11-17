@@ -1,7 +1,7 @@
 # Story 052:視線被擋章只畫在敵兵格(空格不畫)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-13)—— ✅ **GDD 已由協調者同步**(`tactical-combat-system.md` 第 105/557/563/565 行共 4 行;下節建議文字保留作決策紀錄,以 GDD 現文為準)
+> **Status**: ✅ Done-pending-visual(2026-11-13,提交 `8b8e339`;AC7 像素層待補拍)(原狀態:Ready(2026-11-13)—— ✅ **GDD 已由協調者同步**(`tactical-combat-system.md` 第 105/557/563/565 行共 4 行;下節建議文字保留作決策紀錄,以 GDD 現文為準))
 > **Type**: Visual/UI(世界層)+ Logic(篩選規則)
 > **Estimate**: S(約 0.5~1 天:篩選 0.25、改測試 0.25、補拍 0.25)
 > **依據**:

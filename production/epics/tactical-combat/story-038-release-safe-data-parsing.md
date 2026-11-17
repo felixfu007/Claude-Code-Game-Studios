@@ -1,7 +1,7 @@
 # Story 038:資料檔解析的防呆改為發行版也有效(assert → push_error + 整表拒絕)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`(橫跨名冊/關係/卡表解析,掛此 epic 因三者皆餵戰鬥)
-> **Status**: Ready(2026-11-11 協調者起草)
+> **Status**: ✅ Done(2026-11-11,提交 `f0884ac`)(原狀態:Ready(2026-11-11 協調者起草))
 > ✅ **2026-11-11 加註(管理者核准狀態欄加註):已完成,提交 `f0884ac`。** 原句保留。
 > **Type**: Logic
 > **指派**: `godot-gdscript-specialist`

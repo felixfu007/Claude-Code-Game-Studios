@@ -1,7 +1,7 @@
 # Story 055:傷害預覽血量字被截(「23→7」最後一字被裁)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: 🔴 **Blocked(2026-11-13)—— 步驟 1 量測可先做;步驟 2 修法若動三帶版面,須 art-director + ux-designer 先選修法**(選項見下)
+> **Status**: ✅ Done-pending-visual(2026-11-16,提交 `1a5e886`;修法 = 血量 Label 改用 LabelSettings,未動三帶;AC2 僅 `30→15` 一例經開窗驗,其餘字串 × 兩解析度待補)(原狀態:🔴 **Blocked(2026-11-13)—— 步驟 1 量測可先做;步驟 2 修法若動三帶版面,須 art-director + ux-designer 先選修法**(選項見下))
 > **Type**: Visual/UI(世界層);story-041 後續
 > **Estimate**: S~M:步驟 1 開窗量測 S(0.25~0.5 天);步驟 2 修法 S(縮字級/去箭頭,約 0.5 天)或 M(改兩行/動三帶,約 1.5~2 天)
 > **依據**:

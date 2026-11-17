@@ -1,7 +1,7 @@
 # Story 051: 敵方型別資料 + 依型別命名編號(裂殼 / 垂鉤 / 聽環)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-13,三題皆已定,無待決)
+> **Status**: ✅ Done-pending-visual(2026-11-16,提交 `0bd5295`;AC7 像素層待用真 vs01 補拍)(原狀態:Ready(2026-11-13,三題皆已定,無待決))
 > **Type**: Logic + UI(資料解析 + 顯示)
 > **Estimate**: M+(約 2.5~3 天:解析 0.5、敵方顯示 + 規則 0.5、我方姓名併入與 3 處面板 0.5、名冊補欄 0.25、姓名鍵收斂 0.25、測試 0.75)
 > **依據**:

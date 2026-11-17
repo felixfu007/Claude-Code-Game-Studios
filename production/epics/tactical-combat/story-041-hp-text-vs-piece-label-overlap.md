@@ -1,7 +1,7 @@
 # Story 041:修正血量數字與棋子首字/敵兵編號互相重疊(story-039 回歸)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)
+> **Status**: ✅ Done-pending-visual(2026-11-12,提交 `74fbce7`;AC6 像素層待補拍)(原狀態:Ready(2026-11-12))
 > **Type**: Logic + UI(世界層)
 > **Estimate**: S
 > **優先序**: 畫面可讀性批次 T1 —— **最優先,先做**(今天 story-039 引進、管理者眼前可見的回歸)

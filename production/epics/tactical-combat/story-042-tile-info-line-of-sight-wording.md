@@ -1,7 +1,7 @@
 # Story 042:資訊卡「遮蔽」行改字為「擋視線」,消除與「攻擊:視線被擋」的矛盾
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12)
+> **Status**: ✅ Done-pending-visual(2026-11-12,提交 `74fbce7`;AC5 像素層待補拍)(原狀態:Ready(2026-11-12))
 > **Type**: UI(文案/在地化資料)
 > **Estimate**: S
 > **優先序**: 畫面可讀性批次 T2

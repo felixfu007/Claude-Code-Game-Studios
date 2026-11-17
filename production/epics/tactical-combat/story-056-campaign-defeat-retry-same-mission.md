@@ -1,7 +1,7 @@
 # Story 056:戰役戰敗改為直接重打同一場(不回標題)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-13)—— 🔴 「下一步」行用字須 game-designer 定稿(見 AC4 與待決題 1);其餘可動工
+> **Status**: ✅ Done-pending-visual(2026-11-13,提交 `034ae30`;AC7 戰敗畫面像素層待補拍)(原狀態:Ready(2026-11-13)—— 🔴 「下一步」行用字須 game-designer 定稿(見 AC4 與待決題 1);其餘可動工)
 > **Type**: Logic + UI(結果分流、一行文字)
 > **Estimate**: S(約 1 天:分流 + 旗標 0.25、文字與列數 0.1、既有測試改寫 0.25、新測試含無殘留 0.25、敏感度 0.15)
 > **依據**:
