@@ -198,6 +198,42 @@ const TEXT_NEXT_DEFEAT_TUTORIAL: StringName = &"battle.result.next_defeat_tutori
 ## story-046:開場目標自動淡出秒數(可被確認鍵/滑鼠點擊提前關閉,不吞輸入)。
 const OBJECTIVE_AUTO_HIDE_SECONDS: float = 8.0
 
+## story-049:換手標題色與回合橫幅配色(art-director 2026-11-17,皆為 design/art/color-palette.csv 既有色)。
+const TITLE_COLOR_ENEMY: Color = Color("#FF5252")      # ui_state_negative_01
+const TITLE_COLOR_PLAYER: Color = Color("#FFFFFF")     # ui_text_primary_01
+const TITLE_OUTLINE_COLOR: Color = Color("#0E0F14")    # 同 BoardView.PIECE_LABEL_OUTLINE_COLOR 慣例
+const BANNER_BG_ENEMY: Color = Color(0x5C / 255.0, 0x1F / 255.0, 0x22 / 255.0, 0.78)   # cloth_warm_shadow_01 α0.78
+const BANNER_BG_PLAYER: Color = Color(0x3A / 255.0, 0x6B / 255.0, 0x9C / 255.0, 0.78)  # cloth_cool_base_01 α0.78
+const BANNER_LINE_ENEMY: Color = Color("#FF5252")
+const BANNER_LINE_PLAYER: Color = Color("#FFFFFF")
+const BANNER_TEXT_COLOR: Color = Color("#FFFFFF")
+## story-049:橫幅淡入/停留/淡出秒數(UX 決定)。只做透明度,不位移不縮放。
+const PHASE_BANNER_FADE_IN_SECONDS: float = 0.15
+const PHASE_BANNER_HOLD_SECONDS: float = 0.9
+const PHASE_BANNER_FADE_OUT_SECONDS: float = 0.25
+
+enum PhaseBanner { NONE, ENEMY, PLAYER }
+
+
+## story-049:橫幅透明度乘數(純函式)。[param elapsed] 為自橫幅出現起的秒數。
+## 日後「減少動態」設定可把淡入/淡出秒數歸零,此函式即為唯一接點。
+static func banner_alpha(elapsed: float) -> float:
+	if elapsed < 0.0:
+		return 0.0
+	if elapsed < PHASE_BANNER_FADE_IN_SECONDS:
+		return elapsed / PHASE_BANNER_FADE_IN_SECONDS
+	var hold_end: float = PHASE_BANNER_FADE_IN_SECONDS + PHASE_BANNER_HOLD_SECONDS
+	if elapsed < hold_end:
+		return 1.0
+	if elapsed < hold_end + PHASE_BANNER_FADE_OUT_SECONDS:
+		return 1.0 - (elapsed - hold_end) / PHASE_BANNER_FADE_OUT_SECONDS
+	return 0.0
+
+
+## story-049:橫幅總時長(秒)。
+static func phase_banner_total_seconds() -> float:
+	return PHASE_BANNER_FADE_IN_SECONDS + PHASE_BANNER_HOLD_SECONDS + PHASE_BANNER_FADE_OUT_SECONDS
+
 ## [member _info_label] text for the cursor preview (see [method _refresh_view]'s
 ## Mode A/B/C). [constant TEXT_AFFINITY_PREVIEW_FORMAT] is Mode A ("if I move
 ## here"); [constant TEXT_AFFINITY_CURRENT_FORMAT] is Mode B (cursor resting on
@@ -2192,7 +2228,10 @@ func _ready() -> void:
 		func(_attacker_id: int, _target_id: int, _damage: int, _target_died: bool) -> void:
 			_refresh_view()
 	)
-	_controller.phase_changed.connect(func(_new_phase: BattleController.Phase) -> void: _update_status_label())
+	_controller.phase_changed.connect(func(new_phase: BattleController.Phase) -> void:
+		_on_phase_changed_for_banner(new_phase)
+		_update_status_label()
+	)
 	_controller.battle_ended.connect(_on_battle_ended)
 
 	_board_view.render_terrain(terrain_rows)
@@ -2363,6 +2402,7 @@ func _ready() -> void:
 	# story-046:開場目標(一次性、不吞輸入;確認鍵/點擊或逾時關閉)。
 	_build_objective_overlay()
 	show_objective()
+	_build_phase_banner()
 	_build_legend_panel()
 	_battle_menu.legend_requested.connect(open_legend)
 
@@ -2404,6 +2444,7 @@ func _process(_delta: float) -> void:
 	# comment for why this read must happen here and nowhere else.
 	_tile_info_cursor_valid = CursorStateHost.is_current_target_valid()
 	_track_forced_discard_arming()
+	_tick_phase_banner(_delta)
 
 	if _controller.phase() == BattleController.Phase.ENEMY_ACTING:
 		_diagnostic_enemy_acting_process_frame_count += 1
@@ -2572,6 +2613,9 @@ func _input(event: InputEvent) -> void:
 	if _objective_panel != null and _objective_panel.visible:
 		if event.is_action_pressed(&"battle_confirm") or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed):
 			hide_objective()
+	# story-049 AC2b:我方回合橫幅被第一個玩家輸入(按下)關閉;不消耗事件、不 return。
+	if _phase_banner_kind == PhaseBanner.PLAYER and _banner_dismiss_on_input(event):
+		_hide_phase_banner()
 	# story-047:圖例開啟時是模態(唯讀疊層):吞掉全部輸入,只放行「關閉」。
 	# 放在 FINISHED 判斷之前,結果畫面期間圖例若仍開著也不會漏輸入(_process 會把它關掉)。
 	if _legend_panel != null and _legend_panel.is_open():
@@ -5293,6 +5337,16 @@ static func _unit_has_link(unit_id: int, links: Array[AffinityLink]) -> bool:
 func _update_status_label() -> void:
 	var faction_text: String = Loc.localize(TEXT_FACTION_PLAYER) if _order.current_faction() == TurnOrder.Side.PLAYER else Loc.localize(TEXT_FACTION_ENEMY)
 	_status_label.text = Loc.localize(TEXT_STATUS_FORMAT) % [_order.round_number(), faction_text]
+	# story-049:標題色隨階段(敵方回合紅、其餘還原為具名常數白)+ 深色描邊保證在地形上可讀。
+	_status_label.add_theme_color_override(&"font_color", _title_color_for_phase(_controller.phase()))
+	_status_label.add_theme_color_override(&"font_outline_color", TITLE_OUTLINE_COLOR)
+	_status_label.add_theme_constant_override(
+		&"outline_size", WorldLayout.compute_scale(get_window().size))
+
+
+## story-049:階段 → 標題色(AC1)。獨立成函式供敏感度證明的 mutant 覆寫。
+func _title_color_for_phase(phase: BattleController.Phase) -> Color:
+	return TITLE_COLOR_ENEMY if phase == BattleController.Phase.ENEMY_ACTING else TITLE_COLOR_PLAYER
 
 
 ## Story 024 — 資訊框顯示與否的唯一判斷(純函式,可直接單測)。
@@ -6070,3 +6124,152 @@ func _show_result_detail(outcome: BattleState.Outcome) -> void:
 		return
 	_result_detail_label.text = result_detail_text(outcome)
 	_result_detail_label.visible = true
+
+
+# ---------------------------------------------------------------------------
+# story-049:敵方/我方回合橫幅
+# ---------------------------------------------------------------------------
+
+var _phase_banner_kind: PhaseBanner = PhaseBanner.NONE
+var _phase_banner_elapsed: float = 0.0
+var _banner_prev_phase: BattleController.Phase = BattleController.Phase.PLAYER_INPUT
+var _phase_banner_bg: Color = BANNER_BG_ENEMY
+var _phase_banner_line: Color = BANNER_LINE_ENEMY
+var _phase_banner_root: ColorRect = null
+var _phase_banner_label: Label = null
+var _phase_banner_top_line: ColorRect = null
+var _phase_banner_bottom_line: ColorRect = null
+
+
+## 離散的「應顯示」旗標(測試一律斷言它,不斷言透明度)。
+func phase_banner_should_show() -> bool:
+	return _phase_banner_kind != PhaseBanner.NONE
+
+
+func phase_banner_kind() -> PhaseBanner:
+	return _phase_banner_kind
+
+
+## 橫幅節點(測試讀矩形/mouse_filter 用)。
+func phase_banner_node() -> Control:
+	return _phase_banner_root
+
+
+## 階段轉換 → 該出哪一種橫幅。我方橫幅只在「敵方→我方」出(開場第一個玩家回合、FINISHED 都不出)。
+func _banner_kind_for_transition(prev: BattleController.Phase, new_phase: BattleController.Phase) -> PhaseBanner:
+	if new_phase == BattleController.Phase.ENEMY_ACTING:
+		return PhaseBanner.ENEMY
+	if new_phase == BattleController.Phase.PLAYER_INPUT and prev == BattleController.Phase.ENEMY_ACTING:
+		return PhaseBanner.PLAYER
+	return PhaseBanner.NONE
+
+
+func _on_phase_changed_for_banner(new_phase: BattleController.Phase) -> void:
+	var kind: PhaseBanner = _banner_kind_for_transition(_banner_prev_phase, new_phase)
+	_banner_prev_phase = new_phase
+	if kind == PhaseBanner.NONE:
+		_hide_phase_banner()
+	else:
+		_show_phase_banner(kind)
+
+
+## 第一個玩家輸入「按下」(按鍵/手把按鈕/滑鼠按鍵,不含滑鼠移動、搖桿漂移、按鍵 echo)。
+func _banner_dismiss_on_input(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		return (event as InputEventKey).pressed and not (event as InputEventKey).echo
+	if event is InputEventJoypadButton:
+		return (event as InputEventJoypadButton).pressed
+	if event is InputEventMouseButton:
+		return (event as InputEventMouseButton).pressed
+	return false
+
+
+## 橫幅矩形的唯一取得點(視窗座標);測試的 mutant 覆寫此函式以驗證「不得蓋到棋盤」斷言。
+func _phase_banner_rect_for(window_size: Vector2i) -> Rect2:
+	return HudLayout.phase_banner_rect(window_size)
+
+
+func _build_phase_banner() -> void:
+	_phase_banner_root = ColorRect.new()
+	_phase_banner_root.name = "PhaseBanner"
+	_phase_banner_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_phase_banner_root.visible = false
+	$UILayer.add_child(_phase_banner_root)
+	# z 序:在 InfoLabel 之下(同層先加入者先畫)。
+	$UILayer.move_child(_phase_banner_root, _info_label.get_index())
+	_phase_banner_label = Label.new()
+	_phase_banner_label.name = "PhaseBannerLabel"
+	_phase_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_phase_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_phase_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_phase_banner_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+	_phase_banner_label.add_theme_color_override(&"font_color", BANNER_TEXT_COLOR)
+	_phase_banner_root.add_child(_phase_banner_label)
+	_phase_banner_top_line = ColorRect.new()
+	_phase_banner_top_line.name = "PhaseBannerTopLine"
+	_phase_banner_top_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_phase_banner_root.add_child(_phase_banner_top_line)
+	_phase_banner_bottom_line = ColorRect.new()
+	_phase_banner_bottom_line.name = "PhaseBannerBottomLine"
+	_phase_banner_bottom_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_phase_banner_root.add_child(_phase_banner_bottom_line)
+	_banner_prev_phase = _controller.phase()
+	_apply_phase_banner_layout()
+	get_window().size_changed.connect(_apply_phase_banner_layout)
+
+
+func _apply_phase_banner_layout() -> void:
+	if _phase_banner_root == null:
+		return
+	var window_size: Vector2i = get_window().size
+	var rect: Rect2 = _phase_banner_rect_for(window_size)
+	var line_px: float = float(WorldLayout.compute_scale(window_size))
+	_phase_banner_root.position = rect.position
+	_phase_banner_root.size = rect.size
+	_phase_banner_label.position = Vector2.ZERO
+	_phase_banner_label.size = rect.size
+	_phase_banner_label.add_theme_font_size_override(&"font_size", HudLayout.font_size(window_size))
+	_phase_banner_top_line.position = Vector2.ZERO
+	_phase_banner_top_line.size = Vector2(rect.size.x, line_px)
+	_phase_banner_bottom_line.position = Vector2(0.0, rect.size.y - line_px)
+	_phase_banner_bottom_line.size = Vector2(rect.size.x, line_px)
+
+
+func _show_phase_banner(kind: PhaseBanner) -> void:
+	if _phase_banner_root == null:
+		return
+	_phase_banner_kind = kind
+	_phase_banner_elapsed = 0.0
+	var enemy: bool = kind == PhaseBanner.ENEMY
+	_phase_banner_bg = BANNER_BG_ENEMY if enemy else BANNER_BG_PLAYER
+	_phase_banner_line = BANNER_LINE_ENEMY if enemy else BANNER_LINE_PLAYER
+	_phase_banner_label.text = Loc.localize(TEXT_FACTION_ENEMY if enemy else TEXT_FACTION_PLAYER)
+	_apply_phase_banner_layout()
+	_apply_phase_banner_alpha(banner_alpha(0.0))
+	_phase_banner_root.visible = true
+
+
+## 透明度乘數套到各部件顏色的 alpha(不用 CanvasItem.modulate:ADR-0005 的
+## cursor_modulate_alpha_single_writer 測試規定 modulate.a 只有游標節點可寫)。
+func _apply_phase_banner_alpha(multiplier: float) -> void:
+	_phase_banner_root.color = Color(_phase_banner_bg, _phase_banner_bg.a * multiplier)
+	_phase_banner_top_line.color = Color(_phase_banner_line, multiplier)
+	_phase_banner_bottom_line.color = Color(_phase_banner_line, multiplier)
+	_phase_banner_label.add_theme_color_override(&"font_color", Color(BANNER_TEXT_COLOR, multiplier))
+
+
+func _hide_phase_banner() -> void:
+	_phase_banner_kind = PhaseBanner.NONE
+	_phase_banner_elapsed = 0.0
+	if _phase_banner_root != null:
+		_phase_banner_root.visible = false
+
+
+func _tick_phase_banner(delta: float) -> void:
+	if _phase_banner_kind == PhaseBanner.NONE or _phase_banner_root == null:
+		return
+	_phase_banner_elapsed += delta
+	if _phase_banner_elapsed >= phase_banner_total_seconds():
+		_hide_phase_banner()
+		return
+	_apply_phase_banner_alpha(banner_alpha(_phase_banner_elapsed))

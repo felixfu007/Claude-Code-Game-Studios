@@ -407,3 +407,20 @@ static func relation_minimap_rect(window_size: Vector2i) -> Rect2:
 ## [method compact_hint_available_width] 的單一出處:新增更左的按鈕時只改這裡。
 static func leftmost_hud_action_button_rect(window_size: Vector2i) -> Rect2:
 	return hud_action_button_rect(window_size, END_ACTION_BUTTON_INDEX)
+
+
+## story-049:回合橫幅的寬,字級倍數(「敵方行動」「我方行動」皆四字全形,8 倍字級有餘裕)。
+const PHASE_BANNER_WIDTH_MULTIPLIER: float = 8.0
+
+
+## story-049:敵方/我方回合橫幅矩形(敵我共用,單一出處)。
+## 位置 = 棋盤上緣空帶、水平置中、與回合標題([method status_label_rect])同一列;
+## 高 = [method font_size] × [constant LABEL_HEIGHT_MULTIPLIER]、寬 = [method font_size] × [constant PHASE_BANNER_WIDTH_MULTIPLIER]。
+## N 一律經 [method font_size],不自算。
+## 不得與棋盤任何一格相交的性質由測試斷言(逐格取 [method cell_window_rect] 聯集)。
+static func phase_banner_rect(window_size: Vector2i) -> Rect2:
+	var status: Rect2 = status_label_rect(window_size)
+	var fpx: float = float(font_size(window_size))
+	var width: float = fpx * PHASE_BANNER_WIDTH_MULTIPLIER
+	var left: float = (float(window_size.x) - width) / 2.0
+	return Rect2(Vector2(left, status.position.y), Vector2(width, status.size.y))

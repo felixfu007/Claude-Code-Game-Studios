@@ -309,3 +309,15 @@ func test_load_error_label_wrapped_message_fits_within_rect_height_at_minimum_wi
 			font_px, wrapped_size.y, rect.size.y
 		]
 	).is_less_equal(rect.size.y)
+
+
+func test_phase_banner_rect_centered_same_row_as_status_and_font_multiples() -> void:
+	# story-049: 純函式 —— 置中、與標題同列、寬高為字級倍數、N 經 font_size。
+	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3440, 1440)]:
+		var rect: Rect2 = HudLayout.phase_banner_rect(ws)
+		var status: Rect2 = HudLayout.status_label_rect(ws)
+		var fpx: float = float(HudLayout.font_size(ws))
+		assert_float(rect.position.y).is_equal(status.position.y)
+		assert_float(rect.size.x).is_equal(fpx * HudLayout.PHASE_BANNER_WIDTH_MULTIPLIER)
+		assert_float(rect.size.y).is_equal(fpx * HudLayout.LABEL_HEIGHT_MULTIPLIER)
+		assert_float(rect.get_center().x).is_equal_approx(float(ws.x) / 2.0, 0.5)
