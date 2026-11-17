@@ -881,6 +881,49 @@ interfaces:
       - production/epics/affinity-data-pool/story-007-weighted-reads.md
     added: 2026-09-16
     revised: ""
+  - contract: affinity_relation_state_single_judgment
+    status: active
+    pattern: method_call
+    producer: affinity-position-linkage    # 判定住在 src/gameplay/affinity/,不在池裡
+    consumers:
+      - affinity-position-linkage   # story-013:_link_for_pair 改讀 RelationState
+      - tactical-combat-system      # story-014:騎牆 lone_guard/hold_back 的「身上沒關係」閘門
+      - skill-card-system           # story-015/016:PAIR 代價依打牌當下的 RelationState
+      - affinity-visual-ui          # story-021:友好/冷淡/敵對三態顯示
+      - campfire-system             # 營火(v1.0 規格),戰鬥外呼叫。系統尚未建檔,正式系統名待系統索引登記後改(2026-11-17 協調者暫填)
+    adr: none                       # 技術總監 2026-11-17 建議(docs/reviews/state-of-adr0002-ruling-2026-11-17.md)。
+                                    # 刻意【不】修訂 ADR-0002:本契約只呼叫其已列出的
+                                    # combat_strength_read(),不改任何簽章或語意;放進池會讓
+                                    # ADR 的方法清單、機制四之四的 8 入口清單與 VC#12 同時漏列,
+                                    # 且劑量規則 3/4 都指向不再修訂 ADR-0002。
+    signal_signature: "AffinityRelation.state_of(pool: AffinityDataPool, pair: AffinityTypes.Pair, neutral_band: float) -> AffinityRelation.RelationState  # enum { NONE = 0, POS = 1, NEG = 2 }"
+    notes: >
+      ONE JUDGMENT, ONE PLACE. Every system that needs "do these two have a relationship,
+      and which sign" calls AffinityRelation.state_of(). Rule: NONE if n_pair == 0 or
+      |value| <= k; POS if value > k; NEG if value < -k. Ten pairs, one formula — no branch
+      may test which characters a pair contains.
+      k (neutral band) comes ONLY from AffinityTuning (data key affinity,neutral_band_centi,
+      integer / 100). Callers must not hardcode it, read it from anywhere else, or apply a
+      second threshold of their own (e.g. inside CombatRules) — that is exactly the
+      "two implementations that merely agree today" shape this project has registered before.
+      k = 0 MUST reproduce the pre-2026-11-17 behaviour of AffinityPhiProvider._link_for_pair
+      bit-for-bit (story-012 AC3).
+      The pool deliberately does NOT own k — same reasoning as n_gate_min in
+      affinity_calibration_knobs_constructor_injected: the pool returns a signed value and
+      n_pair; thresholds on that value are consumer policy.
+      Obligations inherited from ADR-0002 (not new rules): check result.rejection first; on
+      any rejection return NONE with push_error (value is NAN on rejection, so the branch must
+      be explicit, not an accident of NaN comparisons); never cache; never write the pool.
+      Dead pairs: combat_strength_read defaults t_query to t_death, so a dead pair's state is
+      frozen at death. Unreachable in battle (any PLAYER death = DEFEAT); for campfire /
+      post-battle contexts this was NOT verified as of 2026-11-17.
+      No lint, hook or gate checks any of this — compliance is unobservable; this entry buys
+      a written rule a reviewer can check against, not enforcement.
+    referenced_by:
+      - production/epics/skill-card-system/story-012-relation-state-of-pair.md
+      - docs/reviews/affinity-zero-state-proposal-2026-11-12.md
+      - design/quick-specs/card-campfire-rework-v1-2026-11-12.md
+    added: 2026-11-17
 # Example:
 #
 # interfaces:
