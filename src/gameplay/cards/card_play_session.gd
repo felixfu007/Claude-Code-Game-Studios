@@ -327,31 +327,50 @@ func confirm() -> bool:
 	if _step != Step.CONFIRMING:
 		return false
 
-	if _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
-		var rejection: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
-			_selected_card, _selected_target_a, _selected_target_b, _links, _write_port
+	# story-010 / ADR-0001 path 6: every write below happens inside ONE
+	# BattleState.commit_authoritative_change() call (the shared entry), so
+	# combat_state_version rises by exactly 1 per confirmed card, whatever its
+	# category. Everything that can be validated is validated BEFORE the
+	# window opens; a failure here leaves the version untouched.
+	if not _deck.hand().has(_selected_card):
+		push_error(
+			"CardPlaySession.confirm: selected card '%s' is no longer in the hand" % _selected_card.id
 		)
-		if rejection != AffinityWritePort.Rejection.NONE:
+		return false
+	var is_affinity: bool = _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE
+	var target: Unit = null
+	if not is_affinity:
+		target = _state.unit_by_id(_selected_target_a)
+		if target == null:
+			push_error("CardPlaySession.confirm: target unit %d does not exist" % _selected_target_a)
 			return false
-	else:
-		var target: Unit = _state.unit_by_id(_selected_target_a)
-		target.add_modifier(CardModifier.new(
-			_selected_card.id,
-			_selected_card.delta_atk,
-			_selected_card.delta_def,
-			_selected_card.duration_rounds
-		))
 
-	var moved: bool = _deck.play_card(_selected_card)
-	assert(
-		moved,
-		(
-			"CardPlaySession.confirm: selected card '%s' was not found in the hand " +
-			"at confirm time -- something outside this session moved it away " +
-			"between select_card() and confirm(), which no caller in this system's " +
-			"synchronous flow should ever do"
-		) % _selected_card.id
+	# Lambdas capture primitives by value; a one-element array carries the result out.
+	var rejection_box: Array[int] = [AffinityWritePort.Rejection.NONE]
+	_state.commit_authoritative_change(func() -> void:
+		if is_affinity:
+			rejection_box[0] = PermanentAffinityWriteRules.play(
+				_selected_card, _selected_target_a, _selected_target_b, _links, _write_port
+			)
+			# The port's own rejection (liveness, magnitude) can only be
+			# known by calling it, so it is decided inside the window; nothing
+			# has been written yet at that point, so we simply stop here.
+			if rejection_box[0] != AffinityWritePort.Rejection.NONE:
+				return
+		else:
+			target.add_modifier(CardModifier.new(
+				_selected_card.id,
+				_selected_card.delta_atk,
+				_selected_card.delta_def,
+				_selected_card.duration_rounds
+			))
+		if not _deck.play_card(_selected_card):
+			push_error(
+				"CardPlaySession.confirm: play_card('%s') failed inside the commit window" % _selected_card.id
+			)
 	)
+	if rejection_box[0] != AffinityWritePort.Rejection.NONE:
+		return false
 	_reset_to_closed()
 	return true
 
