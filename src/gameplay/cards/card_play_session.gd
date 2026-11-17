@@ -118,6 +118,14 @@ var _write_port: AffinityWritePort
 # why an unset Callable means "never blocked".
 var _authoritative_write_in_progress_check: Callable
 
+# story-015: injected read source for PAIR cards' relation state S. null = no pool
+# attached; a PAIR card is then unplayable (RELATION_UNRESOLVED), never silently NONE.
+# The session only READS it ([method AffinityRelation.state_of]); wear never writes it.
+var _affinity_pool: AffinityDataPool = null
+
+# story-015: hp_cost_none / pair_cost_cap. Defaults until [method attach_cost_tuning].
+var _cost_tuning: CardCostTuning = CardCostTuning.defaults()
+
 var _step: Step = Step.CLOSED
 var _selected_card: Card = null
 var _selected_target_a: int = -1
@@ -136,6 +144,19 @@ func _init(
 	_links = links
 	_write_port = write_port
 	_authoritative_write_in_progress_check = authoritative_write_in_progress_check
+
+
+## story-015: attaches the affinity pool PAIR cards read their relation state from
+## (read-only use). Not a constructor parameter so the existing constructor call
+## sites stay unchanged; production wiring is a separate step (see story hand-off).
+func attach_affinity_pool(pool: AffinityDataPool) -> void:
+	_affinity_pool = pool
+
+
+## story-015: attaches the cost knobs ([CardCostTuning]). A null argument is ignored.
+func attach_cost_tuning(tuning: CardCostTuning) -> void:
+	if tuning != null:
+		_cost_tuning = tuning
 
 
 ## Returns the current [enum Step]. [constant Step.CLOSED] is the only step
@@ -223,15 +244,35 @@ func select_card(card: Card) -> bool:
 ## [code]true[/code] here (丙類 pair legality is decided at target selection,
 ## unchanged). Pure query; a UI may use it to render a card as unplayable.
 func is_card_playable(card: Card) -> bool:
+	return card_unplayable_reason(card) == CardCostPlan.Reason.NONE
+
+
+## story-015: why [param card] cannot be played right now, or
+## [constant CardCostPlan.Reason.NONE] (ordinal 0 = playable, the project's
+## convention) if it can. Category resolvability and the 甲類 named-target check come
+## first (story 009/011), then the cost checks (payer/partner present, distance,
+## affordability, wear cap). For a card whose payer is chosen later (named_unit_id < 1)
+## the payer-dependent checks are deferred to [method confirm].
+func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 	match card.category:
 		Card.Category.TEMPORARY_STAT_MODIFIER:
-			return not _legal_targets_for_stat_card(card).is_empty()
+			if _legal_targets_for_stat_card(card).is_empty():
+				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.PERMANENT_AFFINITY_WRITE:
-			return true
+			pass
 		_:
-			# story-011: new categories cannot be resolved yet (015+); not playable.
+			# story-011: new categories cannot be resolved yet (017~019); not playable.
 			push_error("CardPlaySession.is_card_playable: unhandled category %s" % card.category)
-			return false
+			return CardCostPlan.Reason.UNRESOLVED_CATEGORY
+	return _build_cost_plan(card, -1, true).reason
+
+
+## story-015: the cost [param card] would charge if confirmed now with
+## [param caster_id] as the payer for cards whose [member Card.named_unit_id] is < 1.
+## This is the SAME object [method confirm] settles from (one builder,
+## [method _build_cost_plan]) — a confirm panel must read this, never recompute.
+func preview_cost(card: Card, caster_id: int = -1) -> CardCostPlan:
+	return _build_cost_plan(card, caster_id, false)
 
 
 ## Returns the set of unit ids [method select_target] (at
@@ -373,9 +414,23 @@ func confirm() -> bool:
 			)
 			return false
 
+	# story-015: validate the COST before the window opens (payer/partner present,
+	# distance, hp > cost, wear cap, relation state S). A failure here writes nothing:
+	# no hp, no wear, card stays in hand, version untouched. Nothing inside the window
+	# below may fail on cost grounds -- that is what makes "pay, then the effect
+	# refuses" unreachable (TD ruling 2026-11-17).
+	var cost_plan: CardCostPlan = _build_cost_plan(_selected_card, _selected_target_a, false)
+	if not _validate_cost_before_window(cost_plan):
+		return false
+
 	# Lambdas capture primitives by value; a one-element array carries the result out.
 	var rejection_box: Array[int] = [AffinityWritePort.Rejection.NONE]
 	_state.commit_authoritative_change(func() -> void:
+		# 甲類 has no rejection path, so its cost is taken first (cost, then effect).
+		# 丙類's affinity write stays the FIRST write of the window (it can be rejected
+		# by the port) and its cost is taken only after that write was accepted.
+		if category != Card.Category.PERMANENT_AFFINITY_WRITE:
+			_apply_cost_in_window(cost_plan)
 		match category:
 			Card.Category.PERMANENT_AFFINITY_WRITE:
 				# TD ruling 2026-11-17: the affinity write MUST stay the FIRST
@@ -388,6 +443,7 @@ func confirm() -> bool:
 				# has been written yet at that point, so we simply stop here.
 				if rejection_box[0] != AffinityWritePort.Rejection.NONE:
 					return
+				_apply_cost_in_window(cost_plan)
 			Card.Category.TEMPORARY_STAT_MODIFIER:
 				target.add_modifier(CardModifier.new(
 					_selected_card.id,
@@ -441,6 +497,116 @@ func cancel() -> void:
 					_reset_to_closed()
 		Step.CLOSED:
 			pass
+
+
+# ---- story-015: cost settlement ---------------------------------------------
+# Every method below up to _apply_cost_in_window is a deliberate seam: tests'
+# sensitivity-proof subclasses override exactly one of them to plant a defect.
+
+## The ONE builder both [method preview_cost] and [method confirm] use. Pure read:
+## writes nothing. [param allow_unknown_payer]: for a card whose named_unit_id < 1
+## and no caster yet (card selection stage) the payer-dependent checks are deferred.
+func _build_cost_plan(card: Card, caster_id: int, allow_unknown_payer: bool) -> CardCostPlan:
+	match card.cost_type:
+		Card.CostType.NONE:
+			return CardCostPlan.new()
+		Card.CostType.HP, Card.CostType.PAIR:
+			pass
+		_:
+			return CardCostPlan.rejected(CardCostPlan.Reason.UNSUPPORTED_COST_TYPE)
+	var payers: Array[int] = CardCostPlan.payers_of(card, caster_id)
+	if payers.is_empty():
+		if allow_unknown_payer and card.named_unit_id < 1:
+			return CardCostPlan.new()
+		return CardCostPlan.rejected(CardCostPlan.Reason.PAYER_MISSING)
+	var is_pair: bool = card.cost_type == Card.CostType.PAIR
+	var present: Array[int] = payers.duplicate()
+	if is_pair and not present.has(card.partner_unit_id):
+		present.append(card.partner_unit_id)
+	for unit_id: int in present:
+		var unit: Unit = _state.unit_by_id(unit_id)
+		if unit == null or not unit.is_alive():
+			return CardCostPlan.rejected(CardCostPlan.Reason.PARTNER_ABSENT)
+	var plan: CardCostPlan = CardCostPlan.new()
+	plan.payer_ids = payers
+	if not is_pair:
+		plan.kind = CardCostPlan.Kind.HP
+		plan.amount = card.cost_amount
+		return _check_affordable(plan)
+	if card.target_range >= 1:
+		var distance: int = AffinityRules.manhattan_distance(
+			_state.position_of(payers[0]), _state.position_of(card.partner_unit_id)
+		)
+		if distance > card.target_range:
+			return CardCostPlan.rejected(CardCostPlan.Reason.OUT_OF_RANGE)
+	var pair: Variant = CardCostPlan.pair_of_units(payers[0], card.partner_unit_id)
+	if pair == null or _affinity_pool == null:
+		return CardCostPlan.rejected(CardCostPlan.Reason.RELATION_UNRESOLVED)
+	plan.pair = int(pair)
+	plan.relation = _resolve_relation(plan.pair)
+	if plan.relation == AffinityRelation.RelationState.NONE:
+		plan.kind = CardCostPlan.Kind.HP
+		plan.amount = _hp_cost_none()
+		return _check_affordable(plan)
+	if _state.pair_wear(plan.pair) >= _pair_cost_cap():
+		return CardCostPlan.rejected(CardCostPlan.Reason.WEAR_CAP_REACHED)
+	plan.kind = CardCostPlan.Kind.WEAR
+	plan.amount = card.cost_amount
+	return plan
+
+
+func _check_affordable(plan: CardCostPlan) -> CardCostPlan:
+	for unit_id: int in plan.payer_ids:
+		if not _hp_affordable(_state.unit_by_id(unit_id).hp, plan.amount):
+			return CardCostPlan.rejected(CardCostPlan.Reason.CANNOT_AFFORD_HP)
+	return plan
+
+
+## Paying HP must leave the payer alive: hp > cost, strictly (spec 4.1 / 6.1).
+func _hp_affordable(hp: int, amount: int) -> bool:
+	return hp > amount
+
+
+## Relation state S of the pair, via the single shared judgment (never re-derived here).
+func _resolve_relation(pair: int) -> int:
+	return AffinityRelation.state_of(
+		_affinity_pool, pair as AffinityTypes.Pair, _state.affinity_tuning.neutral_band()
+	)
+
+
+func _pair_cost_cap() -> int:
+	return _cost_tuning.pair_cost_cap()
+
+
+func _hp_cost_none() -> int:
+	return _cost_tuning.hp_cost_none()
+
+
+## Pre-window gate: false (nothing written anywhere) if the cost is not payable.
+func _validate_cost_before_window(plan: CardCostPlan) -> bool:
+	return plan.is_payable()
+
+
+## Charges [param plan] INSIDE the commit window. Cannot fail on cost grounds: the plan
+## was validated before the window opened.
+func _apply_cost_in_window(plan: CardCostPlan) -> void:
+	if not plan.is_payable():
+		push_error("CardPlaySession._apply_cost_in_window: unpayable plan reached the commit window")
+		return
+	match plan.kind:
+		CardCostPlan.Kind.HP:
+			for unit_id: int in plan.payer_ids:
+				_pay_hp(_state.unit_by_id(unit_id), plan.amount)
+		CardCostPlan.Kind.WEAR:
+			_state.add_pair_wear(plan.pair, plan.amount, _pair_cost_cap())
+		_:
+			pass
+
+
+## HP payment goes through the GUARDED hp setter (not take_damage(), which bypasses the
+## guard and would run death cleanup).
+func _pay_hp(unit: Unit, amount: int) -> void:
+	unit.hp = unit.hp - amount
 
 
 func _is_authoritative_write_in_progress() -> bool:

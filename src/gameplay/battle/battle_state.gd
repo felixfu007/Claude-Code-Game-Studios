@@ -190,6 +190,32 @@ func write_window_is_open() -> bool:
 	return _authoritative_write_depth > 0
 
 
+# story-015: accumulated "wear" (本場折損) per pair, keyed by AffinityTypes.Pair ordinal.
+# Lives here, not in the affinity pool: wear never touches the pool and never changes
+# the relation state S (design answers 2026-11-17, Q5). A fresh BattleState starts at 0
+# for every pair, so a new battle resets it automatically (BattleScreen builds exactly
+# one BattleState per level load: `grep -n "BattleState.create(" src/ui/battle/battle_screen.gd`).
+var _pair_wear: Dictionary = {}
+
+
+## Accumulated wear for [param pair] this battle (0 if never worn). Read-only.
+func pair_wear(pair: int) -> int:
+	return int(_pair_wear.get(pair, 0))
+
+
+## Adds [param amount] wear to [param pair], capped at [param cap]. Must be called
+## inside [method commit_authoritative_change]; outside a write window it is rejected
+## (push_error, nothing written). Never touches the affinity pool.
+func add_pair_wear(pair: int, amount: int, cap: int) -> void:
+	if not write_window_is_open():
+		push_error("BattleState.add_pair_wear: rejected -- write window is not open (pair=%d)" % pair)
+		return
+	if amount < 0:
+		push_error("BattleState.add_pair_wear: negative amount %d rejected" % amount)
+		return
+	_pair_wear[pair] = mini(cap, pair_wear(pair) + amount)
+
+
 ## Builds a [BattleState] from a terrain grid and a roster text blob: parses
 ## both, then places every unit on the board at its [member Unit.start_pos].
 ##
