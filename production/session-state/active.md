@@ -157,6 +157,7 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 🔴 裁決(約 16:05,皆推薦):061 =「**可以,開工 + 盲測併到新圖**」(054 AC8 盲測併入 061 AC5);殘留 worktree =「**授權你清理這兩個**」;11 張狀態欄 =「**要,你逐張核對後改**」。
 - ✅ performance-analyst `docs/reviews/timing-test-full-suite-red-2026-11-17.md`:非邏輯退化;上午全套內 18.8s、下午機器整體變慢且不均(畫面型 suite 慢 2~3 倍);門檻原意防卡死、另有 _ROUND_CAP 等兩道防線;推薦 A(全套只驗打得完,耗時移獨立效能檢查)、wrapper 逾時 900→1800(`tools/build/run_tests_with_import.sh` 51 行,10-15 裁決入口,須問)。專家更正協調者:35143ms 那筆查無(協調者誤記)。
 - 🔴 裁決(約 16:10):計時測試 =「**A:全套只驗打得完,耗時移成單獨效能檢查(效能專家推薦)**」→ ⏳ lead 工單 story-062;全套等待上限 =「**維持 15 分鐘**」(非推薦;協調者忙時以 `TEST_TIMEOUT_SEC` 手動放寬)。worktree 兩個已清除。
+- ✅ story-062 工單已建並隨收工提交(S 0.5~0.75 天;效能檢查放 `tests/perf/` 刻意不加進 FORCED_ARGS;3 場取中位數 < 30000ms;待核准既有檔:story-019/020 AC-5 加註、coding-standards FORCED_ARGS 例外一行、tests/README 補 perf)。狀態欄已同步 `fcb33c2`。
 - 📌 小問題未開單:圖例暗幕偏淡背景字透出;資訊卡末行被截;棄牌面板牌面空白+提示疊字;敵方回合標題紅字對灰底對比約 2:1(art 估)。
 - (舊)⏳ 059(worktree,撞上限,等其背景工作自動續報)。
 - (舊)⏳ 014(主目錄,log `C:/tmp/run_c014.log`;與 015 同改 battle_state.gd 不同函式)。
