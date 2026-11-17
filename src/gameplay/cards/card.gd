@@ -33,7 +33,22 @@ extends RefCounted
 ## separately. 丙類 carries no duration — it is a single fire-and-forget
 ## write, not an ongoing effect. See the class doc comment for why 乙類 has
 ## no entry here.
-enum Category { TEMPORARY_STAT_MODIFIER, PERMANENT_AFFINITY_WRITE }
+enum Category {
+	TEMPORARY_STAT_MODIFIER,
+	PERMANENT_AFFINITY_WRITE,
+	## story-011: appended (never reordered). Not yet resolvable by CardPlaySession
+	## (015/017~019); confirm() rejects them loudly until then.
+	DIRECT_DAMAGE,
+	HEAL,
+	COMBO_DAMAGE,
+}
+
+## story-011: who/what pays for a card (column 11). APPEND-ONLY. Card tables use
+## only [constant PAIR]; [constant AFFINITY] stays in the enum but is not authored.
+enum CostType { NONE, HP, AFFINITY, PAIR }
+
+## story-011: where a card comes from (column 16). APPEND-ONLY.
+enum Source { BASE, CAMP }
 
 ## Number of comma-separated fields expected per card-table line, in fixed
 ## order: [code]id,category,delta_atk,delta_def,duration_rounds,
@@ -54,6 +69,11 @@ const FIELD_COUNT_WITH_NAMED_UNIT: int = 9
 ## OPTIONAL 10th column, [code]named_mode[/code], the literal string
 ## [code]ONLY[/code] or [code]EXCLUDE[/code] (see [enum NamedMode]). Omitted = ONLY.
 const FIELD_COUNT_WITH_NAMED_MODE: int = 10
+
+## story-011: the extended layout adds six columns 11~16, in order:
+## [code]cost_type,cost_amount,effect_value,partner_unit_id,target_range,source[/code].
+## The legal field-count SET is {8, 9, 10, 16}; 11~15 and 17+ are rejected.
+const FIELD_COUNT_WITH_COST: int = 16
 
 ## How [member named_unit_id] restricts a 甲類 card's targets.
 ## [constant ONLY]: only the named unit (card face: the named character is the
@@ -143,6 +163,27 @@ var named_unit_id: int = UNRESTRICTED_TARGET
 ## 甲類 only — how [member named_unit_id] is applied; see [enum NamedMode].
 var named_mode: NamedMode = NamedMode.ONLY
 
+## story-011 (column 11). Defaults to [constant CostType.NONE] for 8~10-column lines.
+## Per the 2026-11-17 ruling, any card with cost_type != NONE has
+## [member named_unit_id] = the payer; [member named_mode] is then meaningless.
+var cost_type: CostType = CostType.NONE
+
+## story-011 (column 12). >= 0; must be 0 when [member cost_type] is NONE.
+var cost_amount: int = 0
+
+## story-011 (column 13). Resolved by later stories (015+); not read in this story.
+var effect_value: int = 0
+
+## story-011 (column 14). Second named unit of a pair card; >= 1 when
+## [member cost_type] is AFFINITY or PAIR, otherwise -1 (unset).
+var partner_unit_id: int = -1
+
+## story-011 (column 15). -1 = not applicable / unlimited (also every legacy line).
+var target_range: int = -1
+
+## story-011 (column 16). Defaults to [constant Source.BASE].
+var source: Source = Source.BASE
+
 
 ## Builds a 甲類 (temporary stat modifier) card. [param p_duration_rounds]
 ## is not validated against [code]{1, 2}[/code] here — see the class doc
@@ -212,14 +253,29 @@ static func new_permanent_affinity_write(
 ## that method's doc comment.
 static func from_csv_line(line: String) -> Card:
 	var fields: PackedStringArray = line.split(",")
-	# story-038:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
-	if fields.size() < FIELD_COUNT or fields.size() > FIELD_COUNT_WITH_NAMED_MODE:
+	# story-038 / story-011:欄數檢查必須在發行版也有效(assert 在 release 匯出會被整條移除)。
+	# 合法欄數是【集合】{8,9,10,16};11~15 與 17+ 一律拒絕(比舊的區間式更嚴)。
+	var n: int = fields.size()
+	if n != FIELD_COUNT and n != FIELD_COUNT_WITH_NAMED_UNIT \
+			and n != FIELD_COUNT_WITH_NAMED_MODE and n != FIELD_COUNT_WITH_COST:
 		push_error(
-			"Card.from_csv_line: expected %d to %d fields, got %d in line: %s"
-			% [FIELD_COUNT, FIELD_COUNT_WITH_NAMED_MODE, fields.size(), line]
+			"Card.from_csv_line: expected 8, 9, 10 or 16 fields, got %d in line: %s" % [n, line]
 		)
 		return null
+	var card: Card = _parse_legacy_prefix(fields, line)
+	if card == null:
+		return null
+	if n == FIELD_COUNT_WITH_COST and not _parse_cost_suffix(card, fields, line):
+		return null
+	return card
 
+
+## story-011: parses columns 1~10 (id .. named_mode) — the pre-016 layout — and
+## builds the [Card]. Returns [code]null[/code] (after [method push_error]) on an
+## unknown category or named_mode. 甲類 reads cols 3~5 + the named columns; 丙類
+## reads cols 6~8; the three story-011 categories carry only the named columns
+## (their numbers live in the cost suffix, resolved by later stories).
+static func _parse_legacy_prefix(fields: PackedStringArray, line: String) -> Card:
 	var id: String = fields[0]
 	var category: Variant = _category_from_string(fields[1])
 	if category == null:
@@ -227,28 +283,81 @@ static func from_csv_line(line: String) -> Card:
 			"Card.from_csv_line: unknown category '%s' in line: %s" % [fields[1], line]
 		)
 		return null
-	if category == Category.TEMPORARY_STAT_MODIFIER:
-		var named_unit: int = UNRESTRICTED_TARGET
-		if fields.size() >= FIELD_COUNT_WITH_NAMED_UNIT:
-			named_unit = int(fields[8])
-		var mode: NamedMode = NamedMode.ONLY
-		if fields.size() == FIELD_COUNT_WITH_NAMED_MODE:
-			match fields[9].strip_edges():
-				"ONLY":
-					mode = NamedMode.ONLY
-				"EXCLUDE":
-					mode = NamedMode.EXCLUDE
-				_:
-					# Loud null, not assert (see this method's doc comment).
-					push_error(
-						"Card.from_csv_line: unknown named_mode '%s' in line: %s"
-						% [fields[9], line]
-					)
-					return null
-		return new_temporary_stat_modifier(
-			id, int(fields[2]), int(fields[3]), int(fields[4]), named_unit, mode
+	var named_unit: int = UNRESTRICTED_TARGET
+	if fields.size() >= FIELD_COUNT_WITH_NAMED_UNIT:
+		named_unit = int(fields[8])
+	var mode: NamedMode = NamedMode.ONLY
+	if fields.size() >= FIELD_COUNT_WITH_NAMED_MODE:
+		match fields[9].strip_edges():
+			"ONLY":
+				mode = NamedMode.ONLY
+			"EXCLUDE":
+				mode = NamedMode.EXCLUDE
+			_:
+				# Loud null, not assert (see this method's doc comment).
+				push_error(
+					"Card.from_csv_line: unknown named_mode '%s' in line: %s"
+					% [fields[9], line]
+				)
+				return null
+	match category:
+		Category.TEMPORARY_STAT_MODIFIER:
+			return new_temporary_stat_modifier(
+				id, int(fields[2]), int(fields[3]), int(fields[4]), named_unit, mode
+			)
+		Category.PERMANENT_AFFINITY_WRITE:
+			return new_permanent_affinity_write(id, int(fields[5]), int(fields[6]), int(fields[7]))
+		_:
+			var other: Card = Card.new()
+			other.id = id
+			other.category = category as Category
+			other.named_unit_id = named_unit
+			other.named_mode = mode
+			return other
+
+
+## story-011: parses columns 11~16 (cost_type, cost_amount, effect_value,
+## partner_unit_id, target_range, source) into [param card]. Returns
+## [code]false[/code] (after [method push_error]) on any invalid value; the
+## caller turns that into [code]null[/code]. Integer columns are checked with
+## [method String.is_valid_int] first (a non-numeric string must not become 0).
+static func _parse_cost_suffix(card: Card, fields: PackedStringArray, line: String) -> bool:
+	var cost_type: Variant = _cost_type_from_string(fields[10].strip_edges())
+	if cost_type == null:
+		push_error("Card.from_csv_line: unknown cost_type '%s' in line: %s" % [fields[10], line])
+		return false
+	var source: Variant = _source_from_string(fields[15].strip_edges())
+	if source == null:
+		push_error("Card.from_csv_line: unknown source '%s' in line: %s" % [fields[15], line])
+		return false
+	for i: int in [11, 12, 13, 14]:
+		if not fields[i].strip_edges().is_valid_int():
+			push_error(
+				"Card.from_csv_line: column %d is not an integer ('%s') in line: %s"
+				% [i + 1, fields[i], line]
+			)
+			return false
+	var cost_amount: int = fields[11].strip_edges().to_int()
+	var partner: int = fields[13].strip_edges().to_int()
+	if cost_amount < 0:
+		push_error("Card.from_csv_line: cost_amount must be >= 0 in line: %s" % line)
+		return false
+	if cost_type == CostType.NONE and cost_amount != 0:
+		push_error("Card.from_csv_line: cost_type NONE requires cost_amount 0 in line: %s" % line)
+		return false
+	if (cost_type == CostType.AFFINITY or cost_type == CostType.PAIR) and partner < 1:
+		push_error(
+			"Card.from_csv_line: cost_type %s requires partner_unit_id >= 1 in line: %s"
+			% [fields[10], line]
 		)
-	return new_permanent_affinity_write(id, int(fields[5]), int(fields[6]), int(fields[7]))
+		return false
+	card.cost_type = cost_type as CostType
+	card.cost_amount = cost_amount
+	card.effect_value = fields[12].strip_edges().to_int()
+	card.partner_unit_id = partner
+	card.target_range = fields[14].strip_edges().to_int()
+	card.source = source as Source
+	return true
 
 
 ## Parses an entire card-table text blob (as read from a card data file) into
@@ -328,5 +437,39 @@ static func _category_from_string(value: String) -> Variant:
 			return Category.TEMPORARY_STAT_MODIFIER
 		"PERMANENT_AFFINITY_WRITE":
 			return Category.PERMANENT_AFFINITY_WRITE
+		"DIRECT_DAMAGE":
+			return Category.DIRECT_DAMAGE
+		"HEAL":
+			return Category.HEAL
+		"COMBO_DAMAGE":
+			return Category.COMBO_DAMAGE
+		_:
+			return null
+
+
+## story-011: [enum CostType] from its card-table string; [code]null[/code] if
+## unknown. [code]match[/code], never an enum-name subscript (forbidden pattern
+## [code]raw_enum_name_subscript_from_untrusted_string[/code]).
+static func _cost_type_from_string(value: String) -> Variant:
+	match value:
+		"NONE":
+			return CostType.NONE
+		"HP":
+			return CostType.HP
+		"AFFINITY":
+			return CostType.AFFINITY
+		"PAIR":
+			return CostType.PAIR
+		_:
+			return null
+
+
+## story-011: [enum Source] from its card-table string; [code]null[/code] if unknown.
+static func _source_from_string(value: String) -> Variant:
+	match value:
+		"BASE":
+			return Source.BASE
+		"CAMP":
+			return Source.CAMP
 		_:
 			return null

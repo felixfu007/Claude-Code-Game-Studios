@@ -223,9 +223,15 @@ func select_card(card: Card) -> bool:
 ## [code]true[/code] here (丙類 pair legality is decided at target selection,
 ## unchanged). Pure query; a UI may use it to render a card as unplayable.
 func is_card_playable(card: Card) -> bool:
-	if card.category != Card.Category.TEMPORARY_STAT_MODIFIER:
-		return true
-	return not _legal_targets_for_stat_card(card).is_empty()
+	match card.category:
+		Card.Category.TEMPORARY_STAT_MODIFIER:
+			return not _legal_targets_for_stat_card(card).is_empty()
+		Card.Category.PERMANENT_AFFINITY_WRITE:
+			return true
+		_:
+			# story-011: new categories cannot be resolved yet (015+); not playable.
+			push_error("CardPlaySession.is_card_playable: unhandled category %s" % card.category)
+			return false
 
 
 ## Returns the set of unit ids [method select_target] (at
@@ -248,9 +254,14 @@ func is_card_playable(card: Card) -> bool:
 func legal_targets() -> Array[int]:
 	match _step:
 		Step.SELECTING_TARGET:
-			if _selected_card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
-				return _legal_targets_for_stat_card(_selected_card)
-			return _s2p_legal_first_targets()
+			match _selected_card.category:
+				Card.Category.TEMPORARY_STAT_MODIFIER:
+					return _legal_targets_for_stat_card(_selected_card)
+				Card.Category.PERMANENT_AFFINITY_WRITE:
+					return _s2p_legal_first_targets()
+				_:
+					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
+					return []
 		Step.SELECTING_TARGET_B:
 			return _s2q_legal_second_targets(_selected_target_a)
 		_:
@@ -268,11 +279,16 @@ func select_target(unit_id: int) -> bool:
 		return false
 	if not legal_targets().has(unit_id):
 		return false
-	_selected_target_a = unit_id
-	if _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
-		_step = Step.SELECTING_TARGET_B
-	else:
-		_step = Step.CONFIRMING
+	match _selected_card.category:
+		Card.Category.PERMANENT_AFFINITY_WRITE:
+			_selected_target_a = unit_id
+			_step = Step.SELECTING_TARGET_B
+		Card.Category.TEMPORARY_STAT_MODIFIER:
+			_selected_target_a = unit_id
+			_step = Step.CONFIRMING
+		_:
+			push_error("CardPlaySession.select_target: unhandled category %s" % _selected_card.category)
+			return false
 	return true
 
 
@@ -337,33 +353,52 @@ func confirm() -> bool:
 			"CardPlaySession.confirm: selected card '%s' is no longer in the hand" % _selected_card.id
 		)
 		return false
-	var is_affinity: bool = _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE
+	# story-011 (F3): the category is dispatched with an explicit match; any
+	# category this class cannot resolve yet is rejected HERE, before the commit
+	# window opens -- nothing consumed, no modifier attached, version untouched.
+	var category: Card.Category = _selected_card.category
 	var target: Unit = null
-	if not is_affinity:
-		target = _state.unit_by_id(_selected_target_a)
-		if target == null:
-			push_error("CardPlaySession.confirm: target unit %d does not exist" % _selected_target_a)
+	match category:
+		Card.Category.TEMPORARY_STAT_MODIFIER:
+			target = _state.unit_by_id(_selected_target_a)
+			if target == null:
+				push_error("CardPlaySession.confirm: target unit %d does not exist" % _selected_target_a)
+				return false
+		Card.Category.PERMANENT_AFFINITY_WRITE:
+			pass
+		_:
+			push_error(
+				"CardPlaySession.confirm: category %s of card '%s' is not resolvable yet"
+				% [category, _selected_card.id]
+			)
 			return false
 
 	# Lambdas capture primitives by value; a one-element array carries the result out.
 	var rejection_box: Array[int] = [AffinityWritePort.Rejection.NONE]
 	_state.commit_authoritative_change(func() -> void:
-		if is_affinity:
-			rejection_box[0] = PermanentAffinityWriteRules.play(
-				_selected_card, _selected_target_a, _selected_target_b, _links, _write_port
-			)
-			# The port's own rejection (liveness, magnitude) can only be
-			# known by calling it, so it is decided inside the window; nothing
-			# has been written yet at that point, so we simply stop here.
-			if rejection_box[0] != AffinityWritePort.Rejection.NONE:
+		match category:
+			Card.Category.PERMANENT_AFFINITY_WRITE:
+				# TD ruling 2026-11-17: the affinity write MUST stay the FIRST
+				# write in this window for 丙類 (rejection must precede any write).
+				rejection_box[0] = PermanentAffinityWriteRules.play(
+					_selected_card, _selected_target_a, _selected_target_b, _links, _write_port
+				)
+				# The port's own rejection (liveness, magnitude) can only be
+				# known by calling it, so it is decided inside the window; nothing
+				# has been written yet at that point, so we simply stop here.
+				if rejection_box[0] != AffinityWritePort.Rejection.NONE:
+					return
+			Card.Category.TEMPORARY_STAT_MODIFIER:
+				target.add_modifier(CardModifier.new(
+					_selected_card.id,
+					_selected_card.delta_atk,
+					_selected_card.delta_def,
+					_selected_card.duration_rounds
+				))
+			_:
+				# Unreachable: filtered before the window opened. Loud, writes nothing.
+				push_error("CardPlaySession.confirm: unhandled category %s inside the commit window" % category)
 				return
-		else:
-			target.add_modifier(CardModifier.new(
-				_selected_card.id,
-				_selected_card.delta_atk,
-				_selected_card.delta_def,
-				_selected_card.duration_rounds
-			))
 		if not _deck.play_card(_selected_card):
 			push_error(
 				"CardPlaySession.confirm: play_card('%s') failed inside the commit window" % _selected_card.id
@@ -394,12 +429,16 @@ func cancel() -> void:
 			_selected_target_a = -1
 			_step = Step.SELECTING_TARGET
 		Step.CONFIRMING:
-			if _selected_card.category == Card.Category.PERMANENT_AFFINITY_WRITE:
-				_selected_target_b = -1
-				_step = Step.SELECTING_TARGET_B
-			else:
-				_selected_target_a = -1
-				_step = Step.SELECTING_TARGET
+			match _selected_card.category:
+				Card.Category.PERMANENT_AFFINITY_WRITE:
+					_selected_target_b = -1
+					_step = Step.SELECTING_TARGET_B
+				Card.Category.TEMPORARY_STAT_MODIFIER:
+					_selected_target_a = -1
+					_step = Step.SELECTING_TARGET
+				_:
+					push_error("CardPlaySession.cancel: unhandled category %s" % _selected_card.category)
+					_reset_to_closed()
 		Step.CLOSED:
 			pass
 

@@ -4484,48 +4484,53 @@ func _open_card_confirm_panel() -> void:
 	var target_a_id: int = _controller.selected_target_a()
 	var target_b_id: int = _controller.selected_target_b()
 
-	if card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
-		var target: Unit = _state.unit_by_id(target_a_id)
-		var existing: Array[Dictionary] = []
-		for modifier: CardModifier in target.active_modifiers():
-			existing.append({
-				"source_name": modifier.source_name,
-				"atk_delta": modifier.atk_delta,
-				"def_delta": modifier.def_delta,
-				"remaining_turns": modifier.remaining_turns,
-			})
-		# Preview of ATK_eff/DEF_eff AFTER this card applies — confirm() has
-		# not run yet at S3, so target.effective_atk()/effective_def() still
-		# reflect the CURRENT (pre-card) value. This calls the SAME real
-		# CardModifierRules functions Unit.effective_atk()/effective_def()
-		# themselves call (per that file's own doc comment: base + clamped
-		# sum, then floored at 0) against a hypothetical modifier list, rather
-		# than approximating with target.effective_atk() + card.delta_atk —
-		# the clamp is non-linear near its bounds, so a plain addition could
-		# silently disagree with what confirm() will actually produce.
-		var hypothetical: Array[CardModifier] = target.active_modifiers()
-		hypothetical.append(
-			CardModifier.new(card.id, card.delta_atk, card.delta_def, card.duration_rounds)
-		)
-		var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical, _state.card_modifier_tuning)
-		var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical, _state.card_modifier_tuning)
-		_card_confirm_panel.show_temporary_modifier_confirmation(
-			card.id, flavor_text, unit_display_name(target),
-			card.delta_atk, card.delta_def, card.duration_rounds,
-			existing, preview_atk, preview_def
-		)
-	else:
-		var target_a: Unit = _state.unit_by_id(target_a_id)
-		var target_b: Unit = _state.unit_by_id(target_b_id)
-		var strength_result: Dictionary = {"available": false, "current": 0, "projected": 0}
-		if card_confirm_strength_provider.is_valid():
-			strength_result = card_confirm_strength_provider.call(target_a_id, target_b_id)
-		_card_confirm_panel.show_permanent_write_confirmation(
-			card.id, flavor_text, unit_display_name(target_a), unit_display_name(target_b),
-			bool(strength_result.get("available", false)),
-			int(strength_result.get("current", 0)),
-			int(strength_result.get("projected", 0))
-		)
+	match card.category:
+		Card.Category.TEMPORARY_STAT_MODIFIER:
+			var target: Unit = _state.unit_by_id(target_a_id)
+			var existing: Array[Dictionary] = []
+			for modifier: CardModifier in target.active_modifiers():
+				existing.append({
+					"source_name": modifier.source_name,
+					"atk_delta": modifier.atk_delta,
+					"def_delta": modifier.def_delta,
+					"remaining_turns": modifier.remaining_turns,
+				})
+			# Preview of ATK_eff/DEF_eff AFTER this card applies — confirm() has
+			# not run yet at S3, so target.effective_atk()/effective_def() still
+			# reflect the CURRENT (pre-card) value. This calls the SAME real
+			# CardModifierRules functions Unit.effective_atk()/effective_def()
+			# themselves call (per that file's own doc comment: base + clamped
+			# sum, then floored at 0) against a hypothetical modifier list, rather
+			# than approximating with target.effective_atk() + card.delta_atk —
+			# the clamp is non-linear near its bounds, so a plain addition could
+			# silently disagree with what confirm() will actually produce.
+			var hypothetical: Array[CardModifier] = target.active_modifiers()
+			hypothetical.append(
+				CardModifier.new(card.id, card.delta_atk, card.delta_def, card.duration_rounds)
+			)
+			var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical, _state.card_modifier_tuning)
+			var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical, _state.card_modifier_tuning)
+			_card_confirm_panel.show_temporary_modifier_confirmation(
+				card.id, flavor_text, unit_display_name(target),
+				card.delta_atk, card.delta_def, card.duration_rounds,
+				existing, preview_atk, preview_def
+			)
+		Card.Category.PERMANENT_AFFINITY_WRITE:
+			var target_a: Unit = _state.unit_by_id(target_a_id)
+			var target_b: Unit = _state.unit_by_id(target_b_id)
+			var strength_result: Dictionary = {"available": false, "current": 0, "projected": 0}
+			if card_confirm_strength_provider.is_valid():
+				strength_result = card_confirm_strength_provider.call(target_a_id, target_b_id)
+			_card_confirm_panel.show_permanent_write_confirmation(
+				card.id, flavor_text, unit_display_name(target_a), unit_display_name(target_b),
+				bool(strength_result.get("available", false)),
+				int(strength_result.get("current", 0)),
+				int(strength_result.get("projected", 0))
+			)
+		_:
+			push_error("BattleScreen: _open_card_confirm_panel() unhandled Card.Category %s -- no confirm panel for it yet" % card.category)
+			_card_confirming = false
+			return
 
 
 ## Story U-014 (AC-U11) — consumed once per frame from [method _process],
