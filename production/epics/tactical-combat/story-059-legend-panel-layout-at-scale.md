@@ -1,7 +1,7 @@
 # Story 059:圖例面板在各解析度下的版面修正(圖示錯位、列距過擠)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-17)—— 鞋/劍示範併入本單:管理者 2026-11-17 約 12:20 裁決「一起修(主程式推薦)」(紀錄 `production/session-state/active.md` grep「一起修(主程式推薦)」)。⚠️ 鞋/劍**本身的尺寸**另由 art 提放大方案再決(同日裁決),本單圖例示範沿用 BoardView 現行常數,日後放大自動同源。(原狀態:Draft —— 「派工前須先決定」一項待裁決後轉 Ready)
+> **Status**: ✅ Done-pending-visual(2026-11-17,提交 `b8f2702`;AC6 管理者看四張 `production/qa/evidence/story-059/` 待)(原狀態:Ready(2026-11-17)—— 鞋/劍示範併入本單:管理者 2026-11-17 約 12:20 裁決「一起修(主程式推薦)」(紀錄 `production/session-state/active.md` grep「一起修(主程式推薦)」)。⚠️ 鞋/劍**本身的尺寸**另由 art 提放大方案再決(同日裁決),本單圖例示範沿用 BoardView 現行常數,日後放大自動同源。(原狀態:Draft —— 「派工前須先決定」一項待裁決後轉 Ready))
 > **Type**: UI(版面幾何)+ Visual(開窗實拍)
 > **Estimate**: S~M(約 1 天:修成因 0.25、幾何測試與預言機 0.25、常駐敏感度證明 0.25、四解析度開窗實拍 0.25;若含鞋/劍示範列加 0.25~0.5)
 > **依據**:story-047(`f877533`)開窗實拍缺陷。證據圖:`prototypes/lunch-capture-2026-11-17/out/15_1920x1080_s047_legend_open.png`(嚴重)、`06_960x540_s047_legend_open.png`(較輕仍擠);美術審 `docs/reviews/lunch-capture-art-review-2026-11-17.md` 第 3 節。

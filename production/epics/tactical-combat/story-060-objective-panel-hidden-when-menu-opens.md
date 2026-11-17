@@ -1,7 +1,7 @@
 # Story 060:開戰鬥選單時隱藏開場目標框(目標框不得蓋住選單「回到遊戲」列)
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-17)—— 缺陷由 godot-specialist 探針實測證實;修法選擇見下方,推薦 A,待管理者/協調者核可。
+> **Status**: ✅ Done-pending-visual(2026-11-17,提交 `20d05a4`;AC8 管理者人眼待)(原狀態:Ready(2026-11-17)—— 缺陷由 godot-specialist 探針實測證實;修法選擇見下方,推薦 A,待管理者/協調者核可。)
 > **Type**: UI(行為)+ Logic(可見性狀態)
 > **Estimate**: S(約 0.5 天:修法 0.1、整合測試 0.15、常駐敏感度證明 0.15、開窗兩尺寸實拍 0.1;全套跑一次約 95 秒)
 > **依據**:

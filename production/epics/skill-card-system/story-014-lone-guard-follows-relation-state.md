@@ -1,7 +1,7 @@
 # Story 014:麥子健騎牆改為「場上 4 組全 NONE 才有效」,減傷與留守同開同關
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-17:整份重寫已完成 `8213cfe`;依序:012、013 完成後才可派工)(原狀態:Blocked —— 等 `design/gdd/affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B,進行中;同 story-013);另依賴 012、013。)原卡點「公式五須先修訂」已被此取代。
+> **Status**: ✅ Done(2026-11-17,提交 `62b71b4`)(原狀態:Ready(2026-11-17:整份重寫已完成 `8213cfe`;依序:012、013 完成後才可派工)(原狀態:Blocked —— 等 `design/gdd/affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B,進行中;同 story-013);另依賴 012、013。)原卡點「公式五須先修訂」已被此取代。)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程 N3)
 > **依據**:規格 v1.0 第 3 節「麥子健騎牆」(身上沒關係時有效、一有關係即失效;`lone_guard` 與 `hold_back` 同開同關,**不得只關一項**;判定範圍只看場上存活者;結果以布林交給 `CombatRules`)、第 9 節驗收 (6)。現況:`grep -rln "lone_guard\|hold_back" src` 命中 `battle_state.gd`、`combat_rules.gd`、`combat_tuning.gd`、`tuning_knobs.gd`、`unit.gd`、`battle_screen.gd`(2026-11-17 查);各自如何判定騎牆:**未驗證,實作者第一步全讀**。

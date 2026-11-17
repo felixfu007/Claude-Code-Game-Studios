@@ -1,7 +1,7 @@
 # Story 049:換手明顯變化 —— 敵方回合標題色,敵方/我方回合橫幅,與提示列同步
 
 > **Epic**: `production/epics/tactical-combat/EPIC.md`
-> **Status**: Ready(2026-11-12;2026-11-17 範圍擴充,見「依據」)—— 依賴 story-045(T6 提示列狀態映射);另依賴美術配色(已由 `docs/reviews/story-049-enemy-phase-banner-art-2026-11-17.md` 指定)
+> **Status**: ✅ Done-pending-visual(2026-11-17,提交 `9baff10`;AC6 午休實拍 ux/art 判過,管理者人眼待)(原狀態:Ready(2026-11-12;2026-11-17 範圍擴充,見「依據」)—— 依賴 story-045(T6 提示列狀態映射);另依賴美術配色(已由 `docs/reviews/story-049-enemy-phase-banner-art-2026-11-17.md` 指定))
 > **Type**: UI
 > **Estimate**: M(原 S;2026-11-17 新增我方橫幅、輸入關閉、7 個 mutant、三組實拍)
 > **優先序**: 畫面可讀性批次 T11

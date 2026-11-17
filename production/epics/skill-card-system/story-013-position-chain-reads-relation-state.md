@@ -1,7 +1,7 @@
 # Story 013:好感度位置系統改讀關係狀態(`_link_for_pair` 第 3 分支、10 組全掃不看名字)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-17:`affinity-position-chain.md` 整份重寫已完成,提交 `8213cfe`;依序:012 完成後才可派工)(原狀態:Blocked —— 等 `design/gdd/affinity-position-chain.md` **整份重寫完成**(管理者 2026-11-17 裁決 B:整份重寫,進行中;013/014/016 一併等它))。原卡點(已被取代,留作紀錄):**公式五「麥子健恆無線」須先修訂**(既有文件,須管理者逐檔核准;排程文件 `docs/reviews/card-campfire-schedule-v1-2026-11-12.md` 第 2 節稱此為 N2 的阻擋)。另依賴 story-012。
+> **Status**: ✅ Done(2026-11-17,提交 `32b6460`)(原狀態:Ready(2026-11-17:`affinity-position-chain.md` 整份重寫已完成,提交 `8213cfe`;依序:012 完成後才可派工)(原狀態:Blocked —— 等 `design/gdd/affinity-position-chain.md` **整份重寫完成**(管理者 2026-11-17 裁決 B:整份重寫,進行中;013/014/016 一併等它))。原卡點(已被取代,留作紀錄):**公式五「麥子健恆無線」須先修訂**(既有文件,須管理者逐檔核准;排程文件 `docs/reviews/card-campfire-schedule-v1-2026-11-12.md` 第 2 節稱此為 N2 的阻擋)。另依賴 story-012。)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程 N2)
 > **依據**:規格 v1.0 第 7 節(`_link_for_pair` 第 3 分支 `value==0.0` 併入 `|v|≤k`;公式五須修訂)、第 3 節。現況:`src/gameplay/affinity/affinity_phi_provider.gd` 第 105 行 `links()`、第 169 行 `_link_for_pair(`(**撰寫者未逐行讀,實作者第一步讀全函式**)。程式側 `legal_pairs()`/`INVALID_PAIR` 受「任何兩人」裁決影響,範圍見下。

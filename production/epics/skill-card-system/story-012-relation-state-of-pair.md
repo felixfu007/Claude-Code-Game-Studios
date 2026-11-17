@@ -1,7 +1,7 @@
 # Story 012:共用關係狀態判定 `state_of(pair)` + 冷淡區旋鈕(k=0 回歸)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(以 `k=0` 先行;`k` 的正式值待 025 量測,**不得用占位值 50 上線**)—— 第 1 題已由技術總監裁決(2026-11-17,`docs/reviews/state-of-adr0002-ruling-2026-11-17.md`:不修訂 ADR-0002,新檔 `AffinityRelation`);`k=0` 先行已由管理者 2026-11-17 裁決「冷淡區量測前先設 0」
+> **Status**: ✅ Done(2026-11-17,提交 `fe29e86`;k=0 先行,正式值待 025)(原狀態:Ready(以 `k=0` 先行;`k` 的正式值待 025 量測,**不得用占位值 50 上線**)—— 第 1 題已由技術總監裁決(2026-11-17,`docs/reviews/state-of-adr0002-ruling-2026-11-17.md`:不修訂 ADR-0002,新檔 `AffinityRelation`);`k=0` 先行已由管理者 2026-11-17 裁決「冷淡區量測前先設 0」)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程文件 N1)
 > **依據**:

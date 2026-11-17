@@ -1,7 +1,7 @@
 # Story 015:卡牌代價結算(付血、付好感度折損、PAIR 依當下 S、先驗證後扣款)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(依序:010、011、012 完成後才可派工)—— 派工前第 2、3 題已決(答案檔題 1、5);第 1 題不是設計裁決,為實作者第一步查證。
+> **Status**: ✅ Done(2026-11-17,提交 `bf3375c`;生產接線由 story-026 完成)(原狀態:Ready(依序:010、011、012 完成後才可派工)—— 派工前第 2、3 題已決(答案檔題 1、5);第 1 題不是設計裁決,為實作者第一步查證。)
 > **Type**: Logic
 > **Estimate**: L(2~3 天,粗估未驗證;data-format S2 + 排程 N4/N5)
 > **依據**:規格 v1.0 第 4.1 節(`PAIR`:S∈{POS,NEG} 走本場折損 `cost_amount` 點;S=NONE 付款人各付 `hp_cost_none` 點血,條件 `hp>cost`)、第 4.2 節(基礎卡不再要求人設關係線、不再「含麥子健拒絕」;打牌合法性只剩兩人存活 + 距離 ≤`target_range` + 付得起 + 折損未達上限)、第 6.1(`hp ≤ cost` 不可打、不扣款)、第 8 節旋鈕;`docs/reviews/card-rework-data-format-2026-11-12.md` F5、F6。裁決:丙類只加深、好感度代價只在這場戰鬥、付血須 `hp>cost`。

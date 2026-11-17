@@ -1,7 +1,7 @@
 # Story 011:卡牌資料模型擴欄(16 欄、新列舉、confirm 的 else 改 match)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-17 三題皆已決,見「派工前須先決定」;下列為原卡點,留作紀錄)—— 原:卡在三題裁決:①F1 付款人語意(`docs/reviews/card-rework-data-format-2026-11-12.md` 第 5 節 F1)②卡 id 命名 `c01` vs `card_01`(同檔 2.7 末段)③F7 直傷是否尊重視線(同檔 F7 末段;影響是否需要某欄,見下)
+> **Status**: ✅ Done(2026-11-17,提交 `ec35ee1`)(原狀態:Ready(2026-11-17 三題皆已決,見「派工前須先決定」;下列為原卡點,留作紀錄)—— 原:卡在三題裁決:①F1 付款人語意(`docs/reviews/card-rework-data-format-2026-11-12.md` 第 5 節 F1)②卡 id 命名 `c01` vs `card_01`(同檔 2.7 末段)③F7 直傷是否尊重視線(同檔 F7 末段;影響是否需要某欄,見下))
 > **Type**: Logic
 > **Estimate**: M(1.5~2 天,粗估未驗證)
 > **依據**:

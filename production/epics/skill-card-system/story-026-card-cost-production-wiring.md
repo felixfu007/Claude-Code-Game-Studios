@@ -1,7 +1,7 @@
 # Story 026:代價結算的生產接線(建立 session 處注入好感度池與 `CardCostTuning`)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 等 story-015 併入 main(本單依賴 `CardPlaySession.attach_affinity_pool()` / `attach_cost_tuning()` 與 `CardCostTuning` 存在;該實作目前在 worktree `agent-a61a535a476aef783`、尚未併入 main)。015 併入後轉 `Ready`。
+> **Status**: ✅ Done(2026-11-17,提交 `e2c5c66`)(原狀態:Blocked —— 等 story-015 併入 main(本單依賴 `CardPlaySession.attach_affinity_pool()` / `attach_cost_tuning()` 與 `CardCostTuning` 存在;該實作目前在 worktree `agent-a61a535a476aef783`、尚未併入 main)。015 併入後轉 `Ready`。)
 > **Type**: Integration
 > **Estimate**: S~M(約 1 天,粗估未驗證;改動面只有 2 個 `src/` 檔,時間主要花在整合測試與敏感度證明)
 > **依據**:story-015 交付註記「生產接線不在其範圍」—— 015 只新增注入點,沒有任何呼叫端。現況(2026-11-17 當場查):`grep -rn "attach_affinity_pool\|attach_cost_tuning" src/` 在 015 worktree 只命中 `card_play_session.gd` 的兩個定義,**零呼叫端**;`BattleController._init()`(`src/gameplay/battle/battle_controller.gd` 約第 196 行)以五參數建立 `CardPlaySession` 後即止。後果:**實際遊戲中付血/付好感度代價不生效,PAIR 卡未接池時一律「不可打」(`RELATION_UNRESOLVED`)**,而 015 的單元測試全綠、完全看不出來。

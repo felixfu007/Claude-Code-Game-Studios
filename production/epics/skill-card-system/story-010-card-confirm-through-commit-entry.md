@@ -1,7 +1,7 @@
 # Story 010:卡牌確認走 ADR-0001 提交入口(路徑⑥)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(前置;與卡牌改版獨立,可立刻做)—— ⚠️ 事實前提經 lead-programmer 2026-11-17 重新 grep 一次,工單開工第一步仍須當場重查
+> **Status**: ✅ Done(2026-11-17,提交 `2137de1`)(原狀態:Ready(前置;與卡牌改版獨立,可立刻做)—— ⚠️ 事實前提經 lead-programmer 2026-11-17 重新 grep 一次,工單開工第一步仍須當場重查)
 > **Type**: Logic
 > **Estimate**: S~M(約 0.5~1 天)
 > **依據**:
