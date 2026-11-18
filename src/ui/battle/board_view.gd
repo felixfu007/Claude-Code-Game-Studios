@@ -390,31 +390,46 @@ enum ActionFlag { NONE_USED, ATTACK_ONLY, MOVE_ONLY, DONE }
 ## the addendum's character arrays verbatim. Textures are built once (lazily,
 ## first use) and shared by every sprite — see [method shoe_texture] /
 ## [method sword_texture].
+## Story 061 — enlarged art (art-director 2026-11-17,
+## docs/reviews/story-061-icon-arrays-art-2026-11-17.md, arrays verbatim):
+## sword 7x10, shoe 9x10.
 const SWORD_ICON_ROWS: PackedStringArray = [
-	"..O..",
-	".OLO.",
-	".OLO.",
-	".OLO.",
-	"OGGGO",
-	".OGO.",
-	".OOO.",
+	"...L...",
+	"..LLL..",
+	"..LLL..",
+	"..LLL..",
+	"..LLL..",
+	"LLLLLLL",
+	"..GGG..",
+	"...G...",
+	"...G...",
+	"...O...",
 ]
 const SHOE_ICON_ROWS: PackedStringArray = [
-	"......",
-	"OOO...",
-	"OLO...",
-	"OLO...",
-	"OLLLO.",
-	"OGGGGO",
-	"OOOOOO",
+	"OOOO.....",
+	"OLLO.....",
+	"OLLO.....",
+	"OLLO.....",
+	"OLLLOOO..",
+	"OLLLLLLO.",
+	"OLLLLLLLO",
+	"OGGGGGGGO",
+	"OGGGGGGGO",
+	"OOOOOOOOO",
 ]
 const ICON_COLOR_O: Color = Color("26303D")
 const ICON_COLOR_SWORD_L: Color = Color("A9B2BD")
 const ICON_COLOR_SHOE_L: Color = Color("B0A897")
 const ICON_COLOR_G: Color = Color("7D766A")
-## Icon top sits 1px below the piece sprite's top edge, bottom edge at
-## cell-local y = -1.
-const ACTION_ICON_TOP_MARGIN: float = 1.0
+## Story 061 — icons live INSIDE the cell, on a dark backdrop right of the
+## piece-label box. All geometry derives from piece_label_rect_in_cell() /
+## hp_text_rect_in_cell() / BoardCoords.CELL_SIZE (no absolute coordinates),
+## so a 48px cell only needs those inputs to change.
+const ACTION_ICON_BACKDROP_HEIGHT: float = 12.0
+const ACTION_ICON_BACKDROP_RIGHT_MARGIN: float = 2.0
+const ACTION_ICON_BACKDROP_TOP_GAP: float = 1.0
+const ACTION_ICON_BACKDROP_PAD: float = 1.0
+const ACTION_ICON_BACKDROP_NODE_NAME: String = "ActionIconBackdrop"
 ## Piece-sprite tint for a finished (is_done) PLAYER unit. Alpha stays 1 —
 ## a see-through piece would read as a ghost/dead unit. Tunable 0.60-0.70.
 const DONE_PIECE_DIM: float = 0.65
@@ -423,14 +438,14 @@ static var _shoe_texture: ImageTexture = null
 static var _sword_texture: ImageTexture = null
 
 
-## Shared 6x7 shoe texture, built on first call and reused afterwards.
+## Shared 9x10 shoe texture, built on first call and reused afterwards.
 static func shoe_texture() -> ImageTexture:
 	if _shoe_texture == null:
 		_shoe_texture = _icon_texture_from_rows(SHOE_ICON_ROWS, ICON_COLOR_SHOE_L)
 	return _shoe_texture
 
 
-## Shared 5x7 sword texture, built on first call and reused afterwards.
+## Shared 7x10 sword texture, built on first call and reused afterwards.
 static func sword_texture() -> ImageTexture:
 	if _sword_texture == null:
 		_sword_texture = _icon_texture_from_rows(SWORD_ICON_ROWS, ICON_COLOR_SWORD_L)
@@ -455,18 +470,30 @@ static func _icon_texture_from_rows(rows: PackedStringArray, light: Color) -> Im
 	return ImageTexture.create_from_image(img)
 
 
-## Shoe rectangle in cell-local pixels (x0-5, y-7..-1).
-static func shoe_icon_rect_in_cell() -> Rect2:
-	var top: float = -float(PIECE_SPRITE_HEIGHT - BoardCoords.CELL_SIZE) + ACTION_ICON_TOP_MARGIN
+## Story 061 — backdrop behind the action icons, cell-local. Left edge = label
+## box right edge (shared edge), top = HP text strip bottom + gap, right edge =
+## cell width - right margin, fixed height. 32px cell: x12..30, y9..21.
+## [param label_rect] is injectable so tests can prove the layout follows it.
+static func action_icon_backdrop_rect_in_cell(label_rect: Rect2 = piece_label_rect_in_cell()) -> Rect2:
+	var left: float = label_rect.end.x
+	var top: float = hp_text_rect_in_cell().end.y + ACTION_ICON_BACKDROP_TOP_GAP
+	var right: float = BoardCoords.CELL_SIZE - ACTION_ICON_BACKDROP_RIGHT_MARGIN
+	return Rect2(left, top, right - left, ACTION_ICON_BACKDROP_HEIGHT)
+
+
+## Shoe rectangle in cell-local pixels (9x10; 32px cell: x13..22, y10..20).
+static func shoe_icon_rect_in_cell(label_rect: Rect2 = piece_label_rect_in_cell()) -> Rect2:
+	var backdrop: Rect2 = action_icon_backdrop_rect_in_cell(label_rect)
 	var size: Vector2 = Vector2(SHOE_ICON_ROWS[0].length(), SHOE_ICON_ROWS.size())
-	return Rect2(Vector2(0.0, top), size)
+	return Rect2(backdrop.position + Vector2(ACTION_ICON_BACKDROP_PAD, ACTION_ICON_BACKDROP_PAD), size)
 
 
-## Sword rectangle in cell-local pixels (x27-31, y-7..-1).
-static func sword_icon_rect_in_cell() -> Rect2:
-	var top: float = -float(PIECE_SPRITE_HEIGHT - BoardCoords.CELL_SIZE) + ACTION_ICON_TOP_MARGIN
+## Sword rectangle in cell-local pixels (7x10, directly right of the shoe;
+## 32px cell: x22..29, y10..20).
+static func sword_icon_rect_in_cell(label_rect: Rect2 = piece_label_rect_in_cell()) -> Rect2:
+	var shoe: Rect2 = shoe_icon_rect_in_cell(label_rect)
 	var size: Vector2 = Vector2(SWORD_ICON_ROWS[0].length(), SWORD_ICON_ROWS.size())
-	return Rect2(Vector2(BoardCoords.CELL_SIZE - size.x, top), size)
+	return Rect2(Vector2(shoe.end.x, shoe.position.y), size)
 
 
 ## Whether [param piece] has spent its move flag. Optional "move_used" key
@@ -1587,15 +1614,34 @@ static func _build_attack_los_blocked_stamp(cell: Vector2i) -> Node2D:
 
 
 
-# Story 054 — action-state icons for one PLAYER piece: shoe (moved) at the
-# cell's top-left, sword (attacked) at the top-right, each only when that
-# action has been spent. Positions come from shoe_icon_rect_in_cell() /
-# sword_icon_rect_in_cell(); textures are the shared cached ones.
+# Story 054/061 — action-state icons for one PLAYER piece: shoe (moved) left,
+# sword (attacked) right, each only when that action has been spent, on one
+# fixed backdrop that exists iff at least one icon is drawn. Positions come
+# from the *_in_cell() rect functions; textures are the shared cached ones.
 func _build_action_icons(cell: Vector2i, piece: Dictionary) -> Node2D:
 	var root: Node2D = Node2D.new()
-	for spec: Dictionary in _action_icon_specs(cell, piece):
-		root.add_child(_build_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
+	for spec: Dictionary in _action_icon_specs(cell, piece, _label_rect_for_icons()):
+		if spec.has("backdrop_rect"):
+			root.add_child(_make_icon_backdrop(spec["backdrop_rect"]))
+		else:
+			root.add_child(_build_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
 	return root
+
+
+## Hook: the label box the icon layout derives from. Overridable by tests
+## (static layout functions cannot be overridden).
+func _label_rect_for_icons() -> Rect2:
+	return piece_label_rect_in_cell()
+
+
+static func _make_icon_backdrop(rect: Rect2) -> ColorRect:
+	var backdrop: ColorRect = ColorRect.new()
+	backdrop.name = ACTION_ICON_BACKDROP_NODE_NAME
+	backdrop.color = PIECE_LABEL_BACKDROP_COLOR
+	backdrop.position = rect.position
+	backdrop.size = rect.size
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return backdrop
 
 
 func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) -> Sprite2D:
@@ -1603,13 +1649,24 @@ func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) ->
 
 
 # story-047:鞋/劍圖示「畫什麼、畫在哪」的單一出處(棋盤的實例建構與圖例的靜態建構共用)。
-static func _action_icon_specs(cell: Vector2i, piece: Dictionary) -> Array[Dictionary]:
+# story-061:用了任一圖示 → 第一筆為襯底(含 "backdrop_rect",絕對座標),其後鞋、劍。
+static func _action_icon_specs(
+	cell: Vector2i, piece: Dictionary, label_rect: Rect2 = piece_label_rect_in_cell()
+) -> Array[Dictionary]:
 	var specs: Array[Dictionary] = []
 	var origin: Vector2 = BoardCoords.grid_to_local(cell)
-	if piece_move_used(piece):
-		specs.append({"tex": shoe_texture(), "top_left": origin + shoe_icon_rect_in_cell().position, "name": "ShoeIcon"})
-	if piece_attack_used(piece):
-		specs.append({"tex": sword_texture(), "top_left": origin + sword_icon_rect_in_cell().position, "name": "SwordIcon"})
+	var moved: bool = piece_move_used(piece)
+	var attacked: bool = piece_attack_used(piece)
+	if moved or attacked:
+		var backdrop: Rect2 = action_icon_backdrop_rect_in_cell(label_rect)
+		specs.append({
+			"backdrop_rect": Rect2(origin + backdrop.position, backdrop.size),
+			"name": ACTION_ICON_BACKDROP_NODE_NAME,
+		})
+	if moved:
+		specs.append({"tex": shoe_texture(), "top_left": origin + shoe_icon_rect_in_cell(label_rect).position, "name": "ShoeIcon"})
+	if attacked:
+		specs.append({"tex": sword_texture(), "top_left": origin + sword_icon_rect_in_cell(label_rect).position, "name": "SwordIcon"})
 	return specs
 
 
@@ -1625,7 +1682,10 @@ static func _make_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: Stri
 static func _build_action_icons_static(cell: Vector2i, piece: Dictionary) -> Node2D:
 	var root: Node2D = Node2D.new()
 	for spec: Dictionary in _action_icon_specs(cell, piece):
-		root.add_child(_make_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
+		if spec.has("backdrop_rect"):
+			root.add_child(_make_icon_backdrop(spec["backdrop_rect"]))
+		else:
+			root.add_child(_make_icon_sprite(spec["tex"], spec["top_left"], spec["name"]))
 	return root
 
 

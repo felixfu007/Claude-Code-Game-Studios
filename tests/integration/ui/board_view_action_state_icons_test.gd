@@ -14,7 +14,7 @@
 # 斷言偵測器(與 AC 測試相同的量測函式)確實抓到植入缺陷。mutant 一律在
 # add_child() 之前 set_script()(Case A,已驗證安全的時機)。
 #   ① 敵方也畫 → AC1   ② 鞋劍左右對調 → AC1   ③ 出現語意反轉 → AC1
-#   ④ 變暗連 HP 一起暗 → AC4   ⑤ 貼圖每次重建 → AC2   ⑥ 圖示 x 挪進血條範圍 → AC3
+#   ④ 變暗連 HP 一起暗 → AC4   ⑤ 貼圖每次重建 → AC2   ⑥ 圖示上移 14px 落入正上方單位血條範圍 → AC3(story-061 後圖示在格內,舊的 x 挪移已不構成重疊)
 extends GdUnitTestSuite
 
 const _SCENE_PATH: String = "res://src/ui/battle/BoardView.tscn"
@@ -123,7 +123,10 @@ func test_action_icons_shoe_is_strictly_left_of_sword() -> void:
 	assert_object(shoe).is_not_null()
 	assert_object(sword).is_not_null()
 	var shoe_right: float = shoe.position.x + shoe.texture.get_width()
-	assert_float(shoe_right).is_less(sword.position.x)
+	# story-061:art 規定鞋劍 0px 緊接(外框自成分隔線)→ 由 is_less 放寬為 is_less_equal;
+	# 「鞋在劍左、不重疊」的性質不變,嚴格不相交另由 enlarge 測試的矩形相交斷言保證。
+	assert_float(shoe_right).is_less_equal(sword.position.x)
+	assert_float(shoe.position.x).is_less(sword.position.x)
 
 
 func test_sensitivity_proof_enemy_also_drawn_detected() -> void:
@@ -170,10 +173,11 @@ func _texture_mismatches(tex: Texture2D, rows: PackedStringArray, light: String)
 
 
 func test_action_icon_textures_match_art_addendum_arrays_and_sizes() -> void:
-	assert_int(BoardView.shoe_texture().get_width()).is_equal(6)
-	assert_int(BoardView.shoe_texture().get_height()).is_equal(7)
-	assert_int(BoardView.sword_texture().get_width()).is_equal(5)
-	assert_int(BoardView.sword_texture().get_height()).is_equal(7)
+	# story-061:6×7/5×7 → 9×10/7×10(art 2026-11-17 陣列)
+	assert_int(BoardView.shoe_texture().get_width()).is_equal(9)
+	assert_int(BoardView.shoe_texture().get_height()).is_equal(10)
+	assert_int(BoardView.sword_texture().get_width()).is_equal(7)
+	assert_int(BoardView.sword_texture().get_height()).is_equal(10)
 	assert_int(_texture_mismatches(
 		BoardView.shoe_texture(), BoardView.SHOE_ICON_ROWS, "b0a897")).is_equal(0)
 	assert_int(_texture_mismatches(
@@ -231,9 +235,10 @@ func test_action_icons_positions_and_zero_overlap_with_bar_above() -> void:
 	# 位置 = 函式(常數)給的矩形
 	assert_bool(rects.has(BoardView.shoe_icon_rect_in_cell())).is_true()
 	assert_bool(rects.has(BoardView.sword_icon_rect_in_cell())).is_true()
-	# 工單數字也釘一次(art 補遺 1.2):鞋 (0,-7,6,7)、劍 (27,-7,5,7)
-	assert_bool(rects.has(Rect2(0, -7, 6, 7))).is_true()
-	assert_bool(rects.has(Rect2(27, -7, 5, 7))).is_true()
+	# story-061 取代 054 數字:鞋 (13,10,9,10)、劍 (22,10,7,10)
+	# (互不相交等完整幾何見 board_view_action_icon_enlarge_test.gd)
+	assert_bool(rects.has(Rect2(13, 10, 9, 10))).is_true()
+	assert_bool(rects.has(Rect2(22, 10, 7, 10))).is_true()
 	# 與正上方單位血條零交集
 	assert_bool(_overlaps_bar_above(rects)).is_false()
 	# 與本格 HP 文字條、首字框不相交
@@ -246,7 +251,7 @@ func test_sensitivity_proof_icon_moved_into_bar_range_detected() -> void:
 	var view: BoardView = _make_view(_MutantIconIntoBarRange)
 	_render_one(view, "PLAYER", {"action_flag": BoardView.ActionFlag.DONE})
 	assert_bool(_overlaps_bar_above(_icon_rects_in_cell(view))).append_failure_message(
-		"mutant⑥ 把圖示挪進血條 x 範圍,量測應判為重疊"
+		"mutant⑥ 把圖示上移進正上方單位血條範圍,量測應判為重疊"
 	).is_true()
 
 
@@ -354,7 +359,7 @@ class _MutantTextureRebuilt extends BoardView:
 
 class _MutantIconIntoBarRange extends BoardView:
 	func _build_icon_sprite(tex: Texture2D, top_left: Vector2, node_name: String) -> Sprite2D:
-		return super._build_icon_sprite(tex, top_left + Vector2(10.0, 0.0), node_name)
+		return super._build_icon_sprite(tex, top_left + Vector2(0.0, -14.0), node_name)
 
 
 class _MutantDimsStatsToo extends BoardView:

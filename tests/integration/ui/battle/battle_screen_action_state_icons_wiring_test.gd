@@ -66,8 +66,9 @@ func _icon_names_for_unit(screen: BattleScreen) -> Array[String]:
 	var stack: Array[Node] = [layer]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n is Sprite2D and (n as Sprite2D).position.y < origin.y \
-				and absf((n as Sprite2D).position.x - origin.x) < BoardCoords.CELL_SIZE:
+		# story-061:圖示移進格內 → 歸屬判定由「在格上方」改為「圖示左上角落在該單位的格內」。
+		var cell_rect: Rect2 = Rect2(origin, Vector2(BoardCoords.CELL_SIZE, BoardCoords.CELL_SIZE))
+		if n is Sprite2D and cell_rect.has_point((n as Sprite2D).position):
 			names.append(String(n.name))
 		stack.append_array(n.get_children())
 	names.sort()

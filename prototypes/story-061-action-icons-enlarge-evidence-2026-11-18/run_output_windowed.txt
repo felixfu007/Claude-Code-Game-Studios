@@ -1,0 +1,30 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DISPLAY_SERVER=Windows
+HOST [960x540] root.size=(960, 540) WVC position=(0.0, 0.0) size=(960.0, 540.0) stretch_shrink=2 WorldViewport.size=(480, 270)
+SHOT closeup_char0_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT closeup_char1_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT closeup_char2_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT closeup_char3_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT closeup_char4_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT closeup_char0_cursor_hover_960x540.png crop=[P: (192, 206), S: (192, 192)] size=(192, 192) save=0
+SHOT column_960x540.png crop=[P: (192, 142), S: (192, 256)] size=(192, 256) save=0
+LEGEND-ROW [960x540] kind=15 icon_bounds_global=[P: (480.0, 349.5), S: (32.0, 40.0)]
+SHOT legend_kind15_960x540.png crop=[P: (472, 341), S: (48, 56)] size=(48, 56) save=0
+LEGEND-ROW [960x540] kind=16 icon_bounds_global=[P: (480.0, 405.5), S: (32.0, 40.0)]
+SHOT legend_kind16_960x540.png crop=[P: (472, 397), S: (48, 56)] size=(48, 56) save=0
+SHOT legend_full_960x540.png crop=[P: (0, 0), S: (960, 540)] size=(960, 540) save=0
+HOST [1920x1080] root.size=(1920, 1080) WVC position=(0.0, 0.0) size=(1920.0, 1080.0) stretch_shrink=4 WorldViewport.size=(480, 270)
+SHOT closeup_char0_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT closeup_char1_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT closeup_char2_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT closeup_char3_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT closeup_char4_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT closeup_char0_cursor_hover_1920x1080.png crop=[P: (384, 412), S: (384, 384)] size=(384, 384) save=0
+SHOT column_1920x1080.png crop=[P: (384, 284), S: (384, 512)] size=(384, 512) save=0
+LEGEND-ROW [1920x1080] kind=15 icon_bounds_global=[P: (960.0, 698.0), S: (64.0, 80.0)]
+SHOT legend_kind15_1920x1080.png crop=[P: (952, 690), S: (80, 96)] size=(80, 96) save=0
+LEGEND-ROW [1920x1080] kind=16 icon_bounds_global=[P: (960.0, 811.0), S: (64.0, 80.0)]
+SHOT legend_kind16_1920x1080.png crop=[P: (952, 803), S: (80, 96)] size=(80, 96) save=0
+SHOT legend_full_1920x1080.png crop=[P: (0, 0), S: (1920, 1080)] size=(1920, 1080) save=0
