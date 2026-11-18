@@ -21,7 +21,9 @@ tests/
   unit/              單元測試 —— 一個系統一個子目錄(公式、狀態機、純邏輯)
     harness/         測試骨架自我檢查(見下方)
   integration/       整合測試 —— 跨系統、存檔讀取往返
+  perf/              效能檢查 —— 刻意【不】被全套收集(不在 gdunit4_runner.gd 的 FORCED_ARGS),手動執行,見 tests/perf/README.md
   smoke/             關鍵路徑清單,供 /smoke-check 讀取
+  helpers/           測試共用輔助(例:CursorHostSnapshot、RealBattleDriver)
   gdunit4_runner.gd  headless 執行入口
 
 production/qa/evidence/   視覺/回饋類與 UI 類故事的證據落點(**不在 tests/ 底下**)

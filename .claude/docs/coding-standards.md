@@ -778,6 +778,7 @@ DEBUG actual='' len=0 expected='戰敗' len=2 eq=false
       `-a` 可重複給:GdUnit4 的 `add_test_suites()` 是 `append_array()` 不是覆寫。
       📌 **日後新增任何測試層級(例:`tests/smoke/`)必須同時加進 `tests/gdunit4_runner.gd`
       的 `FORCED_ARGS`**,否則會重演同一件事。
+      ⚠️ **唯一例外:`tests/perf/` 刻意不收集**(2026-11-18 管理者核准,story-062)—— 效能檢查在全套內會因機器負載誤報,改為手動執行,見 `tests/perf/README.md`。**不要把它當疏漏加回去。**
       `--ignoreHeadlessMode` is mandatory (without it: `Headless mode is not supported!`,
       exit 103) because the engine delivers no `InputEvent`s headless, so UI-interaction tests
       would silently do nothing.

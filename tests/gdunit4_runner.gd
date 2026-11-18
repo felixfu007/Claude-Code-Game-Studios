@@ -67,6 +67,11 @@ const RUNNER_CANDIDATES: Array[String] = [
 # (addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd)。已實測 386 → 391。
 #
 # 📌 新增測試層級(例如 tests/smoke/)時**必須同時加進本陣列**,否則會重演同一件事。
+#
+# 🔴 唯一刻意例外:`tests/perf/`(story-062,管理者 2026-11-17 裁決方案 A)。它量的是
+# 真實牆鐘耗時,耗時隨機器時段 2~3 倍浮動,放進全套會讓全套無故變紅,所以【刻意不收集】。
+# 這不是漏加 —— 請勿「補上」它,否則計時測試回到全套、重演當天的紅燈。
+# 手動執行指令與何時該跑見 tests/perf/README.md。
 const FORCED_ARGS: PackedStringArray = [
     "GdUnitCmdTool.gd",
     "-a", "tests/unit",
