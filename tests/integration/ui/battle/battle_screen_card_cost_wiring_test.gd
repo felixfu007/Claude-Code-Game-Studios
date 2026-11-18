@@ -111,7 +111,7 @@ func _play(instance: BattleScreen, card: Card, target: int) -> bool:
 	if not controller.select_card(card):
 		controller.cancel()
 		return false
-	if not controller.select_target(target):
+	if controller._card_play_session.step() != CardPlaySession.Step.CONFIRMING and not controller.select_target(target):
 		controller.cancel()
 		return false
 	return controller.confirm()

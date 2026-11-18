@@ -4161,6 +4161,17 @@ func _confirm_selected_card() -> void:
 		return
 	if _controller.select_card(hand[index]):
 		_card_selecting_from_hand = false
+		# story-017 (F9) — a card whose face fixes its targets (two-person buff,
+		# fixed-recipient heal) makes CardPlaySession skip target selection and
+		# land in CONFIRMING directly, with selected_target_a() already set (a normal
+		# card leaves it at -1 here). BOARD_TILE is still unregistered from the hand
+		# opening, exactly as after a normal advance into CONFIRMING, so we only open
+		# the confirm panel -- no registration, no cursor seeding.
+		if _controller.selected_target_a() >= 1:
+			_card_selecting_target = false
+			_open_card_confirm_panel()
+			_refresh_view()
+			return
 		# Story U-014 (2026-09-24 "消除重複" ruling) — no local mirror to
 		# write here anymore; _open_card_confirm_panel() reads
 		# BattleController.selected_card() directly once CONFIRMING is
@@ -4500,8 +4511,14 @@ func _open_card_confirm_panel() -> void:
 	var target_b_id: int = _controller.selected_target_b()
 
 	match card.category:
-		Card.Category.TEMPORARY_STAT_MODIFIER:
-			var target: Unit = _state.unit_by_id(target_a_id)
+		Card.Category.TEMPORARY_STAT_MODIFIER, Card.Category.HEAL:
+			# story-017 placeholder (the real heal / two-person panel content is
+			# story-020's): HEAL reuses this layout with the card's own 0/0/0 stat fields,
+			# showing the recipient; a fixed two-person buff shows the payer (target A).
+			# Both exist only so the panel opens and confirm/cancel work end to end.
+			var target: Unit = _state.unit_by_id(
+				target_b_id if (card.category == Card.Category.HEAL and target_b_id >= 1) else target_a_id
+			)
 			var existing: Array[Dictionary] = []
 			for modifier: CardModifier in target.active_modifiers():
 				existing.append({
@@ -4612,6 +4629,13 @@ func _apply_pending_card_confirm() -> void:
 func _handle_card_confirm_cancel_transition() -> void:
 	_card_confirming = false
 	_card_confirm_panel.hide_panel()
+	if _controller.selected_card() == null:
+		# story-017 (F9): a fixed-target card never had a target step; the session
+		# stepped back to SELECTING_CARD (card cleared). Back to the hand (S1);
+		# BOARD_TILE stays unregistered, as it is throughout S1.
+		_card_selecting_target = false
+		_card_selecting_from_hand = true
+		return
 	_card_selecting_target = true
 	var register_result: CursorSurfaceRegistry.RegisterResult = CursorStateHost.register_surface(CursorTypes.SurfaceType.BOARD_TILE, self)
 	if register_result != CursorSurfaceRegistry.RegisterResult.REGISTERED:

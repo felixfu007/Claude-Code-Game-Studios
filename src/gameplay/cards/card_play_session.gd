@@ -234,6 +234,13 @@ func select_card(card: Card) -> bool:
 	if not is_card_playable(card):
 		return false
 	_selected_card = card
+	if _is_fixed_target_card(card):
+		# story-017 (F9): the card face fixes its targets (named + partner), so there is
+		# nothing to pick -- go straight to CONFIRMING with both ids recorded.
+		_selected_target_a = card.named_unit_id
+		_selected_target_b = card.partner_unit_id
+		_step = Step.CONFIRMING
+		return true
 	_step = Step.SELECTING_TARGET
 	return true
 
@@ -256,7 +263,16 @@ func is_card_playable(card: Card) -> bool:
 func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 	match card.category:
 		Card.Category.TEMPORARY_STAT_MODIFIER:
-			if _legal_targets_for_stat_card(card).is_empty():
+			if not _is_fixed_target_card(card) and _legal_targets_for_stat_card(card).is_empty():
+				return CardCostPlan.Reason.NO_LEGAL_TARGET
+		Card.Category.HEAL:
+			if _is_fixed_target_card(card):
+				# A fixed recipient who is present but not wounded cannot be healed
+				# (spec rule 6); an absent one is reported by the cost plan below.
+				var fixed_recipient: Unit = _state.unit_by_id(card.partner_unit_id)
+				if _is_present(fixed_recipient) and fixed_recipient.hp >= fixed_recipient.hp_max:
+					return CardCostPlan.Reason.NO_LEGAL_TARGET
+			elif _legal_targets_for_heal(card).is_empty():
 				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
@@ -300,6 +316,8 @@ func legal_targets() -> Array[int]:
 					return _legal_targets_for_stat_card(_selected_card)
 				Card.Category.PERMANENT_AFFINITY_WRITE:
 					return _s2p_legal_first_targets()
+				Card.Category.HEAL:
+					return _legal_targets_for_heal(_selected_card)
 				_:
 					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
 					return []
@@ -324,7 +342,7 @@ func select_target(unit_id: int) -> bool:
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			_selected_target_a = unit_id
 			_step = Step.SELECTING_TARGET_B
-		Card.Category.TEMPORARY_STAT_MODIFIER:
+		Card.Category.TEMPORARY_STAT_MODIFIER, Card.Category.HEAL:
 			_selected_target_a = unit_id
 			_step = Step.CONFIRMING
 		_:
@@ -398,12 +416,26 @@ func confirm() -> bool:
 	# category this class cannot resolve yet is rejected HERE, before the commit
 	# window opens -- nothing consumed, no modifier attached, version untouched.
 	var category: Card.Category = _selected_card.category
-	var target: Unit = null
+	var fixed_targets: bool = _is_fixed_target_card(_selected_card)
+	var recipient_ids: Array[int] = []
+	var heal_recipient: Unit = null
 	match category:
 		Card.Category.TEMPORARY_STAT_MODIFIER:
-			target = _state.unit_by_id(_selected_target_a)
-			if target == null:
-				push_error("CardPlaySession.confirm: target unit %d does not exist" % _selected_target_a)
+			recipient_ids.append(_selected_target_a)
+			if fixed_targets:
+				recipient_ids.append(_selected_target_b)
+			for recipient_id: int in recipient_ids:
+				if _state.unit_by_id(recipient_id) == null:
+					push_error("CardPlaySession.confirm: target unit %d does not exist" % recipient_id)
+					return false
+		Card.Category.HEAL:
+			heal_recipient = _state.unit_by_id(_selected_target_b if fixed_targets else _selected_target_a)
+			# story-017: validated BEFORE the window (and before any cost): present and wounded.
+			if not _is_present(heal_recipient) or heal_recipient.hp >= heal_recipient.hp_max:
+				push_error("CardPlaySession.confirm: heal recipient is absent or not wounded")
+				return false
+			if not fixed_targets and not _legal_targets_for_heal(_selected_card).has(heal_recipient.id):
+				push_error("CardPlaySession.confirm: heal recipient %d is not a legal target" % heal_recipient.id)
 				return false
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
@@ -445,12 +477,9 @@ func confirm() -> bool:
 					return
 				_apply_cost_in_window(cost_plan)
 			Card.Category.TEMPORARY_STAT_MODIFIER:
-				target.add_modifier(CardModifier.new(
-					_selected_card.id,
-					_selected_card.delta_atk,
-					_selected_card.delta_def,
-					_selected_card.duration_rounds
-				))
+				_attach_stat_modifiers(_selected_card, recipient_ids)
+			Card.Category.HEAL:
+				_apply_heal_in_window(heal_recipient, _heal_amount(heal_recipient, _selected_card.effect_value))
 			_:
 				# Unreachable: filtered before the window opened. Loud, writes nothing.
 				push_error("CardPlaySession.confirm: unhandled category %s inside the commit window" % category)
@@ -485,11 +514,18 @@ func cancel() -> void:
 			_selected_target_a = -1
 			_step = Step.SELECTING_TARGET
 		Step.CONFIRMING:
+			if _is_fixed_target_card(_selected_card):
+				# F9: no target was ever picked, so cancelling steps back to the hand.
+				_selected_card = null
+				_selected_target_a = -1
+				_selected_target_b = -1
+				_step = Step.SELECTING_CARD
+				return
 			match _selected_card.category:
 				Card.Category.PERMANENT_AFFINITY_WRITE:
 					_selected_target_b = -1
 					_step = Step.SELECTING_TARGET_B
-				Card.Category.TEMPORARY_STAT_MODIFIER:
+				Card.Category.TEMPORARY_STAT_MODIFIER, Card.Category.HEAL:
 					_selected_target_a = -1
 					_step = Step.SELECTING_TARGET
 				_:
@@ -524,8 +560,7 @@ func _build_cost_plan(card: Card, caster_id: int, allow_unknown_payer: bool) -> 
 	if is_pair and not present.has(card.partner_unit_id):
 		present.append(card.partner_unit_id)
 	for unit_id: int in present:
-		var unit: Unit = _state.unit_by_id(unit_id)
-		if unit == null or not unit.is_alive():
+		if not _is_present(_state.unit_by_id(unit_id)):
 			return CardCostPlan.rejected(CardCostPlan.Reason.PARTNER_ABSENT)
 	var plan: CardCostPlan = CardCostPlan.new()
 	plan.payer_ids = payers
@@ -537,7 +572,7 @@ func _build_cost_plan(card: Card, caster_id: int, allow_unknown_payer: bool) -> 
 		var distance: int = AffinityRules.manhattan_distance(
 			_state.position_of(payers[0]), _state.position_of(card.partner_unit_id)
 		)
-		if distance > card.target_range:
+		if not _within_range(distance, card.target_range):
 			return CardCostPlan.rejected(CardCostPlan.Reason.OUT_OF_RANGE)
 	var pair: Variant = CardCostPlan.pair_of_units(payers[0], card.partner_unit_id)
 	if pair == null or _affinity_pool == null:
@@ -609,6 +644,91 @@ func _pay_hp(unit: Unit, amount: int) -> void:
 	unit.hp = unit.hp - amount
 
 
+# ---- story-017: heal and two-person buff cards ---------------------------------
+# The seams below (_within_range / _is_present / _heal_amount / _apply_heal_in_window /
+# _attach_stat_modifiers) are where tests plant one defect each.
+
+## F9: true when the card face fixes its targets -- a PAIR-cost card (HEAL or 甲類) with
+## both [member Card.named_unit_id] (payer) and [member Card.partner_unit_id] set. Such a
+## card has no target-selection step: the session goes straight to CONFIRMING.
+func _is_fixed_target_card(card: Card) -> bool:
+	if card.cost_type != Card.CostType.PAIR:
+		return false
+	if card.named_unit_id < 1 or card.partner_unit_id < 1:
+		return false
+	return card.category == Card.Category.TEMPORARY_STAT_MODIFIER or card.category == Card.Category.HEAL
+
+
+## 2026-11-18 ruling: an HP-cost card with a fixed payer, no partner and target_range >= 1
+## (c04, c07) lets the player pick ONE ally within range of the payer; the payer is excluded.
+func _is_ranged_pick_card(card: Card) -> bool:
+	if card.cost_type != Card.CostType.HP:
+		return false
+	if card.named_unit_id < 1 or card.partner_unit_id >= 1 or card.target_range < 1:
+		return false
+	return card.category == Card.Category.TEMPORARY_STAT_MODIFIER or card.category == Card.Category.HEAL
+
+
+## Alive PLAYER allies, not the payer, within target_range of the payer (distance from the
+## single shared [method AffinityRules.manhattan_distance]). [param wounded_only]: heal rule 6.
+func _ranged_pick_candidates(card: Card, wounded_only: bool) -> Array[int]:
+	var result: Array[int] = []
+	var payer: Unit = _state.unit_by_id(card.named_unit_id)
+	if not _is_present(payer) or payer.faction != Unit.Faction.PLAYER:
+		return result
+	var origin: Vector2i = _state.position_of(payer.id)
+	for ally: Unit in _state.units_of(Unit.Faction.PLAYER):
+		if ally.id == payer.id:
+			continue
+		if wounded_only and ally.hp >= ally.hp_max:
+			continue
+		var distance: int = AffinityRules.manhattan_distance(origin, _state.position_of(ally.id))
+		if _within_range(distance, card.target_range):
+			result.append(ally.id)
+	return result
+
+
+## Legal heal recipients. Fixed-recipient card: the partner when present and wounded.
+## Ranged-pick card: wounded allies in range, payer excluded. Any other HEAL shape has no
+## legal recipient (data error -> unplayable, never a silent self-heal).
+func _legal_targets_for_heal(card: Card) -> Array[int]:
+	var result: Array[int] = []
+	if _is_fixed_target_card(card):
+		var fixed: Unit = _state.unit_by_id(card.partner_unit_id)
+		if _is_present(fixed) and fixed.hp < fixed.hp_max:
+			result.append(fixed.id)
+		return result
+	if _is_ranged_pick_card(card):
+		return _ranged_pick_candidates(card, true)
+	return result
+
+
+func _within_range(distance: int, range_limit: int) -> bool:
+	return distance <= range_limit
+
+
+func _is_present(unit: Unit) -> bool:
+	return unit != null and unit.is_alive()
+
+
+## Spec rule 8: min(effect_value, hp_max - hp).
+func _heal_amount(unit: Unit, effect_value: int) -> int:
+	return mini(effect_value, unit.hp_max - unit.hp)
+
+
+## Heal goes through the GUARDED hp setter (inside the commit window), never take_damage().
+func _apply_heal_in_window(unit: Unit, amount: int) -> void:
+	unit.hp = unit.hp + amount
+
+
+## One CardModifier per recipient (a fresh instance each; fields copied from the card).
+func _attach_stat_modifiers(card: Card, unit_ids: Array[int]) -> void:
+	for unit_id: int in unit_ids:
+		_state.unit_by_id(unit_id).add_modifier(CardModifier.new(
+			card.id, card.delta_atk, card.delta_def, card.duration_rounds
+		))
+
+
 func _is_authoritative_write_in_progress() -> bool:
 	if not _authoritative_write_in_progress_check.is_valid():
 		return false
@@ -616,6 +736,8 @@ func _is_authoritative_write_in_progress() -> bool:
 
 
 func _legal_targets_for_stat_card(card: Card) -> Array[int]:
+	if _is_ranged_pick_card(card):
+		return _ranged_pick_candidates(card, false)
 	var alive: Array[int] = _alive_player_unit_ids()
 	if card.named_unit_id == Card.UNRESTRICTED_TARGET:
 		return alive

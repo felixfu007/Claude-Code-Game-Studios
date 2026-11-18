@@ -52,7 +52,7 @@ func _play(session: CardPlaySession, card: Card, target: int) -> bool:
 	if not session.select_card(card):
 		session.cancel()
 		return false
-	if not session.select_target(target):
+	if session.step() != CardPlaySession.Step.CONFIRMING and not session.select_target(target):
 		session.cancel()
 		return false
 	return session.confirm()
