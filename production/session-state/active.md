@@ -77,6 +77,16 @@ Epic(85): **第八十五批(2026-10-19)收工。** 今天結了 **10 張工作�
 Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡住的 MVP 項目(#8 支援對話系統、#11 支援對話 UI、設定畫面)共用同一個根因,而那個根因**從來沒有人寫下來過** —— 它是上週五做設定畫面時偶然撞到的。
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
+## 🔴 第一百零三批(2026-11-18,公司,09:08 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00 收工;專業問題派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。
+- 開工:兩庫已最新(本庫 `b1d07cf`、AI_IMG `6cf0d5f`);外包無新交件;CI 最近 4 支綠。
+- ⏳ 卡牌 story-016(lead-programmer,主目錄,log `C:/tmp/run_016.log`;若接真實戰鬥需動範圍外檔會先停下回報)。
+- ⏳ story-062 計時測試拆分(godot-gdscript-specialist,**隔離 worktree**,log `C:/tmp/run_062.log`;回報給 worktree 路徑 → 協調者套回主目錄重跑;基準須閒置時重量)。
+- ✅ writer 14 張牌面草稿 `design/narrative/card-face-text-14-2026-11-18.md`(改名 4:聯手破門/合力防守/臨時搭檔/順手包紮;14 項待覆核)。協調者驗:c10/c11 規格無距離條件屬實。⏳ narrative-director 措辭覆核 `docs/reviews/card-face-text-narrative-review-2026-11-18.md`;⏳ game-designer 規則空白 `docs/reviews/card-rule-gaps-answers-2026-11-18.md`(c04 含己否、c07 單/全、c10/c11 距離、c12 冷淡代價、佔位樣板)。
+- ✅ narrative 覆核 + game-designer 規則空白交件;協調者驗:story-019 引用的「v0.3 第 3.8 節距離 ≤2」不存在、規則 10 無距離 → 屬實。🔴 裁決(約 10:00,皆推薦):c04 =「**不能補自己**」;c07 =「**選一名 2 格內隊友**」;距離 =「**c10/c11 限 2 格內,c12 不限**」(019 AC3 須改);牌面 =「**四項全部採用**」(再撐一下→緊急補血、並肩折損→配合折損〔UX 文件 4 處同步〕、三成語保留、牌面數字用 %d 樣板)。⏳ 待落實:草稿/UX 文件/工單 017/019/022 改文(既有文件,逐字 diff 在兩份 review 檔)。
+- 🟡 062 實作者動工前停下(輔助函式依賴 suite 的 auto_free/assert_*;tests/support 不存在)→ 協調者定:放 `tests/helpers/`、抽法 (b) 驅動持有 suite 參照(唯一不改行為),已續派。待問文件:tests/README 加 perf/ + helpers/ 兩行。
+- 📌 下一張:061(board_view.gd,等 016/062 落地再派,避免三套全套同時跑);之後 017/018 → 019、020/021。
+
 ## 🔴 第一百零二批(2026-11-17,公司,08:40 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00 收工;專業問題派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。
 - 開工:兩庫已最新(本庫 `fe07c6e`、AI_IMG `6cf0d5f`);**外包無新交件**(39 第二階段、41 皆未回);CI 最近 4 支綠。
