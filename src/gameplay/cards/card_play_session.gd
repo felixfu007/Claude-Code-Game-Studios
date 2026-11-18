@@ -128,6 +128,9 @@ var _last_damage_target_id: int = -1
 var _last_damage_caster_id: int = -1
 var _last_damage_amount: int = 0
 var _last_damage_killed: bool = false
+# story-019: the enemy chosen for a COMBO_DAMAGE card. (_selected_target_a/_b hold the
+# two fixed attackers, so the enemy cannot reuse _selected_target_b the way 直傷 does.)
+var _selected_enemy_id: int = -1
 
 # story-015: injected read source for PAIR cards' relation state S. null = no pool
 # attached; a PAIR card is then unplayable (RELATION_UNRESOLVED), never silently NONE.
@@ -276,6 +279,12 @@ func select_card(card: Card) -> bool:
 		_selected_target_a = card.named_unit_id
 		_step = Step.SELECTING_ENEMY_TARGET
 		return true
+	if card.category == Card.Category.COMBO_DAMAGE:
+		# story-019: both attackers are fixed by the card face; only the enemy is picked.
+		_selected_target_a = card.named_unit_id
+		_selected_target_b = card.partner_unit_id
+		_step = Step.SELECTING_ENEMY_TARGET
+		return true
 	if _is_fixed_target_card(card):
 		# story-017 (F9): the card face fixes its targets (named + partner), so there is
 		# nothing to pick -- go straight to CONFIRMING with both ids recorded.
@@ -320,6 +329,10 @@ func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 			pass
 		Card.Category.DIRECT_DAMAGE:
 			pass
+		Card.Category.COMBO_DAMAGE:
+			# story-019: a combo card must name BOTH attackers on its face.
+			if card.named_unit_id < 1 or card.partner_unit_id < 1:
+				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		_:
 			# story-011: new categories cannot be resolved yet (017~019); not playable.
 			push_error("CardPlaySession.is_card_playable: unhandled category %s" % card.category)
@@ -369,6 +382,8 @@ func legal_targets() -> Array[int]:
 					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
 					return []
 		Step.SELECTING_ENEMY_TARGET:
+			if _selected_card != null and _selected_card.category == Card.Category.COMBO_DAMAGE:
+				return _combo_legal_enemies(_selected_target_a, _selected_target_b)
 			return _legal_enemy_targets(_selected_target_a)
 		Step.SELECTING_TARGET_B:
 			return _s2q_legal_second_targets(_selected_target_a)
@@ -387,7 +402,10 @@ func select_target(unit_id: int) -> bool:
 		# story-018: the enemy pick of a 直傷 card.
 		if not legal_targets().has(unit_id):
 			return false
-		_selected_target_b = unit_id
+		if _selected_card.category == Card.Category.COMBO_DAMAGE:
+			_selected_enemy_id = unit_id
+		else:
+			_selected_target_b = unit_id
 		_step = Step.CONFIRMING
 		return true
 	if _step != Step.SELECTING_TARGET:
@@ -506,6 +524,12 @@ func confirm() -> bool:
 			if not _legal_enemy_targets(_selected_target_a).has(_selected_target_b):
 				push_error("CardPlaySession.confirm: enemy %d is not a legal direct-damage target" % _selected_target_b)
 				return false
+		Card.Category.COMBO_DAMAGE:
+			# story-019: validated BEFORE the window: the enemy must still be in reach of
+			# BOTH attackers (alive, range, line of sight) -- the same query as the pick step.
+			if not _combo_legal_enemies(_selected_target_a, _selected_target_b).has(_selected_enemy_id):
+				push_error("CardPlaySession.confirm: enemy %d is not a legal combo-damage target" % _selected_enemy_id)
+				return false
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
 		_:
@@ -551,6 +575,10 @@ func confirm() -> bool:
 				_apply_heal_in_window(heal_recipient, _heal_amount(heal_recipient, _selected_card.effect_value))
 			Card.Category.DIRECT_DAMAGE:
 				_apply_direct_damage_in_window(_selected_target_a, _selected_target_b, _selected_card.effect_value)
+			Card.Category.COMBO_DAMAGE:
+				_apply_combo_damage_in_window(
+					_selected_target_a, _selected_target_b, _selected_enemy_id, _selected_card.effect_value
+				)
 			_:
 				# Unreachable: filtered before the window opened. Loud, writes nothing.
 				push_error("CardPlaySession.confirm: unhandled category %s inside the commit window" % category)
@@ -589,11 +617,16 @@ func cancel() -> void:
 			if _selected_card.named_unit_id >= 1:
 				_selected_card = null
 				_selected_target_a = -1
+				_selected_target_b = -1
 				_step = Step.SELECTING_CARD
 			else:
 				_selected_target_a = -1
 				_step = Step.SELECTING_TARGET
 		Step.CONFIRMING:
+			if _selected_card.category == Card.Category.COMBO_DAMAGE:
+				_selected_enemy_id = -1
+				_step = Step.SELECTING_ENEMY_TARGET
+				return
 			if _selected_card.category == Card.Category.DIRECT_DAMAGE:
 				_selected_target_b = -1
 				_step = Step.SELECTING_ENEMY_TARGET
@@ -827,6 +860,52 @@ func _apply_direct_damage_in_window(caster_id: int, enemy_id: int, effect_value:
 	_last_damage_killed = killed
 
 
+## story-019: enemies inside the reach of BOTH attackers (intersection, never union). Each
+## side asks [method _legal_enemy_targets], i.e. the 018 range + line-of-sight predicate.
+## No distance condition between the two attackers (ruling 2026-11-18: c12 is unlimited).
+func _combo_legal_enemies(attacker_a: int, attacker_b: int) -> Array[int]:
+	var result: Array[int] = []
+	var reach_b: Array[int] = _legal_enemy_targets(attacker_b)
+	for enemy_id: int in _legal_enemy_targets(attacker_a):
+		if reach_b.has(enemy_id):
+			result.append(enemy_id)
+	return result
+
+
+## story-019: the two attackers, in resolution order.
+func _combo_attackers(attacker_a: int, attacker_b: int) -> Array[int]:
+	return [attacker_a, attacker_b]
+
+
+## story-019: whether a hit may still land -- false once the enemy is dead (first hit killed).
+func _combo_hit_allowed(enemy: Unit) -> bool:
+	return enemy.is_alive()
+
+
+## story-019: ONE hit of a combo. Delegates to the 018 settlement; no second copy.
+func _combo_hit(caster_id: int, enemy_id: int, effect_value: int) -> void:
+	_apply_direct_damage_in_window(caster_id, enemy_id, effect_value)
+
+
+## story-019: runs inside the commit window. Two independent hits in order; a kill by the
+## first skips the second (no refund, kill chain once). The last_direct_damage_* getters
+## report the combo as a whole: first caster, total amount, killed = any hit killed.
+func _apply_combo_damage_in_window(attacker_a: int, attacker_b: int, enemy_id: int, effect_value: int) -> void:
+	var enemy: Unit = _state.unit_by_id(enemy_id)
+	var total: int = 0
+	var killed: bool = false
+	for caster_id: int in _combo_attackers(attacker_a, attacker_b):
+		if not _combo_hit_allowed(enemy):
+			continue
+		_combo_hit(caster_id, enemy_id, effect_value)
+		total += _last_damage_amount
+		killed = killed or _last_damage_killed
+	_last_damage_caster_id = attacker_a
+	_last_damage_target_id = enemy_id
+	_last_damage_amount = total
+	_last_damage_killed = killed
+
+
 func _notify_kill(unit_id: int) -> void:
 	if _kill_hook.is_valid():
 		_kill_hook.call(unit_id)
@@ -924,3 +1003,4 @@ func _reset_to_closed() -> void:
 	_selected_card = null
 	_selected_target_a = -1
 	_selected_target_b = -1
+	_selected_enemy_id = -1
