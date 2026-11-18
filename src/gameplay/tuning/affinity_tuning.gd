@@ -27,6 +27,8 @@ const KEY_DELTA_NEUTRAL: String = "delta_neutral"
 const KEY_PHI_MIN: String = "phi_min"
 const KEY_PHI_MAX: String = "phi_max"
 const KEY_NEUTRAL_BAND_CENTI: String = "neutral_band_centi"
+const KEY_PHI_LOSS_POSITIVE: String = "phi_loss_positive"
+const KEY_PHI_LOSS_NEGATIVE: String = "phi_loss_negative"
 
 var _delta_positive_adjacent: int = 0
 var _delta_positive_far: int = 0
@@ -36,6 +38,9 @@ var _delta_neutral: int = 0
 var _phi_min: int = 0
 var _phi_max: int = 0
 var _neutral_band_centi: int = 0
+# story-016: 折損扣減係數(規格 5.1),資料檔旋鈕 affinity.phi_loss_positive/negative(預設 2/1,管理者 2026-11-18 裁決搬資料檔)。
+var _phi_loss_positive: int = 0
+var _phi_loss_negative: int = 0
 
 
 ## 今日值(來自 TuningKnobs.defaults())。
@@ -51,6 +56,9 @@ static func from_knobs(knobs: TuningKnobs) -> Variant:
 		return null
 	if tuning._neutral_band_centi < 0:
 		push_error("AffinityTuning: affinity.neutral_band_centi (%d) must be >= 0" % tuning._neutral_band_centi)
+		return null
+	if tuning._phi_loss_positive < 0 or tuning._phi_loss_negative < 0:
+		push_error("AffinityTuning: affinity.phi_loss_positive (%d) / phi_loss_negative (%d) must be >= 0" % [tuning._phi_loss_positive, tuning._phi_loss_negative])
 		return null
 	return tuning
 
@@ -73,6 +81,8 @@ static func _build(knobs: TuningKnobs) -> AffinityTuning:
 	t._phi_min = knobs.get_int(SECTION, KEY_PHI_MIN)
 	t._phi_max = knobs.get_int(SECTION, KEY_PHI_MAX)
 	t._neutral_band_centi = knobs.get_int(SECTION, KEY_NEUTRAL_BAND_CENTI)
+	t._phi_loss_positive = knobs.get_int(SECTION, KEY_PHI_LOSS_POSITIVE)
+	t._phi_loss_negative = knobs.get_int(SECTION, KEY_PHI_LOSS_NEGATIVE)
 	return t
 
 
@@ -102,6 +112,16 @@ func phi_min() -> int:
 
 func phi_max() -> int:
 	return _phi_max
+
+## story-016:POS 線每點折損扣的加成(預設 2)。
+func phi_loss_positive() -> int:
+	return _phi_loss_positive
+
+
+## story-016:NEG 線每點折損扣的加成(預設 1)。
+func phi_loss_negative() -> int:
+	return _phi_loss_negative
+
 
 ## 冷淡區旋鈕(整數,百分之一單位)。
 func neutral_band_centi() -> int:

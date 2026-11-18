@@ -50,6 +50,9 @@ const KNOWN_KEYS: Dictionary = {
 	"affinity.phi_max": AffinityRules.PHI_MAX,
 	# story-012(skill-card-system):冷淡區旋鈕(k = centi / 100)。量測前恆為 0,正式值待 story-025。
 	"affinity.neutral_band_centi": AffinityRelation.NEUTRAL_BAND_CENTI_DEFAULT,
+	# story-016(skill-card-system):折損扣減係數(規格 5.1;預設值單一來源在 AffinityRules 常數)。
+	"affinity.phi_loss_positive": AffinityRules.PHI_LOSS_POSITIVE_DEFAULT,
+	"affinity.phi_loss_negative": AffinityRules.PHI_LOSS_NEGATIVE_DEFAULT,
 	# story-015(skill-card-system):代價結算兩鍵(預設值指向 CardCostTuning 常數;值域 2~5 由 CardCostTuning 驗證)。
 	"card.hp_cost_none": CardCostTuning.HP_COST_NONE_DEFAULT,
 	"card.pair_cost_cap": CardCostTuning.PAIR_COST_CAP_DEFAULT,

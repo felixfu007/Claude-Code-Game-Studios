@@ -275,4 +275,24 @@ func phi(attacker_id: int, _target_id: int) -> int:
 ## Signature [code]func(unit_id: int) -> int[/code] matches
 ## [member BattleState._defense_phi_provider].
 func phi_of(unit_id: int) -> int:
-	return AffinityRules.bonus_for(unit_id, positions(), links(), _state.affinity_tuning)
+	return AffinityRules.bonus_for(unit_id, positions(), links(), _state.affinity_tuning, wear_callable())
+
+
+## story-016: the Callable handed to [AffinityRules] so it can read N (this battle's accumulated wear
+## for a pair) -- (unit_id, partner_id) -> int, read live from [BattleState.pair_wear] each call.
+## Bound to [code]self[/code]; the caller of [method phi_of] already holds a strong reference to this
+## provider for the duration of the call, so the usual Callable-on-RefCounted lifetime caveat does not apply here.
+## Public so every Φ read in the UI (preview, tooltips) uses this SAME wear source -- no second implementation.
+func wear_callable() -> Callable:
+	return _wear_between
+
+
+## Wear N for the pair of roster units [param unit_a_id]/[param unit_b_id]; 0 if either has no
+## character mapping (such a pair never produces a link either, see [method links]).
+func _wear_between(unit_a_id: int, unit_b_id: int) -> int:
+	var ca: Variant = AffinityRosterCharacterMapper.character_for_roster_id(unit_a_id)
+	var cb: Variant = AffinityRosterCharacterMapper.character_for_roster_id(unit_b_id)
+	if ca == null or cb == null:
+		return 0
+	var pair: AffinityTypes.Pair = AffinityTypes.pair_of(ca as AffinityTypes.Character, cb as AffinityTypes.Character)
+	return _state.pair_wear(int(pair))

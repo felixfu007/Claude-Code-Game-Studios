@@ -27,5 +27,7 @@ affinity,delta_neutral,0
 affinity,phi_min,-4
 affinity,phi_max,12
 affinity,neutral_band_centi,0
+affinity,phi_loss_positive,2
+affinity,phi_loss_negative,1
 card,hp_cost_none,3
 card,pair_cost_cap,3

@@ -70,6 +70,14 @@ const PHI_MIN: int = -4
 ## (4 × [constant DELTA_POSITIVE_ADJACENT]).
 const PHI_MAX: int = 12
 
+## story-016: default wear deduction per accumulated wear point on a POSITIVE pair line
+## (spec 5.1, 預設 2). Source of [method AffinityTuning.defaults] only; live value is
+## [method AffinityTuning.phi_loss_positive] (data-file knob `affinity.phi_loss_positive`).
+const PHI_LOSS_POSITIVE_DEFAULT: int = 2
+
+## story-016: same for a NEGATIVE pair line (spec 5.1, 預設 1).
+const PHI_LOSS_NEGATIVE_DEFAULT: int = 1
+
 
 ## tuning-data story-005: the constants above are now only the SOURCE of [method AffinityTuning.defaults]
 ## (via TuningKnobs.KNOWN_KEYS); live values come from an injected [AffinityTuning] (null -> defaults()).
@@ -111,11 +119,12 @@ static func bonus_for(
 	unit_id: int,
 	positions: Dictionary[int, Vector2i],
 	links: Array[AffinityLink],
-	tuning: AffinityTuning = null
+	tuning: AffinityTuning = null,
+	pair_wear: Callable = Callable()
 ) -> int:
 	if not positions.has(unit_id):
 		return 0
-	return bonus_for_at(unit_id, positions[unit_id], positions, links, tuning)
+	return bonus_for_at(unit_id, positions[unit_id], positions, links, tuning, pair_wear)
 
 
 ## Same as [method bonus_for] but evaluates the unit as if it were standing on
@@ -139,9 +148,10 @@ static func bonus_for_at(
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
 	links: Array[AffinityLink],
-	tuning: AffinityTuning = null
+	tuning: AffinityTuning = null,
+	pair_wear: Callable = Callable()
 ) -> int:
-	return bonus_breakdown_for_at(unit_id, origin, positions, links, tuning).clamped_sum
+	return bonus_breakdown_for_at(unit_id, origin, positions, links, tuning, pair_wear).clamped_sum
 
 
 ## Same as [method bonus_for_at] but discloses the pre-clamp raw sum and,
@@ -159,15 +169,44 @@ static func bonus_breakdown_for_at(
 	origin: Vector2i,
 	positions: Dictionary[int, Vector2i],
 	links: Array[AffinityLink],
-	tuning: AffinityTuning = null
+	tuning: AffinityTuning = null,
+	pair_wear: Callable = Callable()
 ) -> AffinityBonusBreakdown:
 	var t: AffinityTuning = tuning if tuning != null else AffinityTuning.defaults()
 	var raw_sum: int = 0
 	for status: AffinityLineStatus in lines_for_at(unit_id, origin, positions, links, t):
-		raw_sum += status.delta
+		# story-016: wear deduction happens HERE (the only place), per line, before the single clamp below.
+		raw_sum += _wear_adjusted_delta(status, _wear_of(pair_wear, status), t)
 	# 夾限只在此處、對加總後的總和夾一次(phi_clamp_treated_as_a_safety_net)。
 	var clamped_sum: int = clampi(raw_sum, t.phi_min(), t.phi_max())
 	return AffinityBonusBreakdown.create(raw_sum, clamped_sum)
+
+
+## story-016 (spec 5.1): the line contribution after wear. [param wear] = N, the pair's accumulated
+## wear this battle. S is already encoded in the line (an S==NONE pair has no line at all, so it
+## contributes 0 and wear has nothing to act on). POSITIVE: only a positive c0 is reduced, floored
+## at 0; c0 <= 0 is kept. NEGATIVE: c0 - N * phi_loss_negative, no floor. No clamping here.
+static func _wear_adjusted_delta(status: AffinityLineStatus, wear: int, t: AffinityTuning) -> int:
+	var c0: int = status.delta
+	if wear <= 0:
+		return c0
+	if status.polarity == AffinityLink.Polarity.POSITIVE:
+		if c0 > 0:
+			return maxi(0, c0 - wear * t.phi_loss_positive())
+		return c0
+	return c0 - wear * t.phi_loss_negative()
+
+
+## Reads N for one line through the injected [param pair_wear] Callable (unit_id, partner_id) -> int.
+## An unset/invalid Callable or a negative result means N = 0 (negative is reported, not trusted).
+static func _wear_of(pair_wear: Callable, status: AffinityLineStatus) -> int:
+	if not pair_wear.is_valid():
+		return 0
+	var n: int = int(pair_wear.call(status.unit_id, status.partner_id))
+	if n < 0:
+		push_error("AffinityRules: pair_wear returned negative %d for %d/%d; treated as 0" % [n, status.unit_id, status.partner_id])
+		return 0
+	return n
 
 
 ## Same as [method bonus_breakdown_for_at] but evaluates [param unit_id] at
@@ -182,11 +221,12 @@ static func bonus_breakdown_for(
 	unit_id: int,
 	positions: Dictionary[int, Vector2i],
 	links: Array[AffinityLink],
-	tuning: AffinityTuning = null
+	tuning: AffinityTuning = null,
+	pair_wear: Callable = Callable()
 ) -> AffinityBonusBreakdown:
 	if not positions.has(unit_id):
 		return AffinityBonusBreakdown.create(0, 0)
-	return bonus_breakdown_for_at(unit_id, positions[unit_id], positions, links, tuning)
+	return bonus_breakdown_for_at(unit_id, positions[unit_id], positions, links, tuning, pair_wear)
 
 
 ## Every affinity link touching [param unit_id], with its current distance,
