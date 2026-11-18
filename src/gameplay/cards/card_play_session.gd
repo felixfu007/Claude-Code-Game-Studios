@@ -87,6 +87,10 @@ enum Step {
 	                    ## partners.
 	CONFIRMING,         ## S3 — every target chosen; only confirm() or
 	                    ## cancel() are valid from here.
+	## story-018: appended (never reordered). 直傷 only: the caster is fixed (named or
+	## picked at SELECTING_TARGET); now picking the ENEMY. legal_targets() / select_target()
+	## answer for the enemy at this step.
+	SELECTING_ENEMY_TARGET,
 }
 
 # Injected — the hand this session plays cards from. Not owned by this class;
@@ -117,6 +121,13 @@ var _write_port: AffinityWritePort
 # now". See the class doc comment's "Structural mutual exclusion" section for
 # why an unset Callable means "never blocked".
 var _authoritative_write_in_progress_check: Callable
+
+# story-018: injected by the controller (attach_kill_hook); func(unit_id: int) -> void.
+var _kill_hook: Callable = Callable()
+var _last_damage_target_id: int = -1
+var _last_damage_caster_id: int = -1
+var _last_damage_amount: int = 0
+var _last_damage_killed: bool = false
 
 # story-015: injected read source for PAIR cards' relation state S. null = no pool
 # attached; a PAIR card is then unplayable (RELATION_UNRESOLVED), never silently NONE.
@@ -151,6 +162,32 @@ func _init(
 ## sites stay unchanged; production wiring is a separate step (see story hand-off).
 func attach_affinity_pool(pool: AffinityDataPool) -> void:
 	_affinity_pool = pool
+
+
+## story-018: attaches the "unit died inside the commit window" hook, signature
+## func(unit_id: int) -> void. The controller wires TurnOrder.remove_unit through it so
+## the kill is removed from the action order INSIDE the card's single window (version +1).
+## Unset = no-op (a bare session in a unit test has no TurnOrder).
+func attach_kill_hook(hook: Callable) -> void:
+	_kill_hook = hook
+
+
+## story-018: the result of the last confirmed 直傷 card (target id -1 = none).
+## [method confirm] resets these at its start and fills them inside the window.
+func last_direct_damage_target_id() -> int:
+	return _last_damage_target_id
+
+
+func last_direct_damage_caster_id() -> int:
+	return _last_damage_caster_id
+
+
+func last_direct_damage_amount() -> int:
+	return _last_damage_amount
+
+
+func last_direct_damage_killed() -> bool:
+	return _last_damage_killed
 
 
 ## story-015: attaches the cost knobs ([CardCostTuning]). A null argument is ignored.
@@ -234,6 +271,11 @@ func select_card(card: Card) -> bool:
 	if not is_card_playable(card):
 		return false
 	_selected_card = card
+	if card.category == Card.Category.DIRECT_DAMAGE and card.named_unit_id >= 1:
+		# story-018: the card names its caster/payer -- skip straight to the enemy pick.
+		_selected_target_a = card.named_unit_id
+		_step = Step.SELECTING_ENEMY_TARGET
+		return true
 	if _is_fixed_target_card(card):
 		# story-017 (F9): the card face fixes its targets (named + partner), so there is
 		# nothing to pick -- go straight to CONFIRMING with both ids recorded.
@@ -275,6 +317,8 @@ func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 			elif _legal_targets_for_heal(card).is_empty():
 				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.PERMANENT_AFFINITY_WRITE:
+			pass
+		Card.Category.DIRECT_DAMAGE:
 			pass
 		_:
 			# story-011: new categories cannot be resolved yet (017~019); not playable.
@@ -318,9 +362,14 @@ func legal_targets() -> Array[int]:
 					return _s2p_legal_first_targets()
 				Card.Category.HEAL:
 					return _legal_targets_for_heal(_selected_card)
+				Card.Category.DIRECT_DAMAGE:
+					# c03: the payer is player-chosen -- any alive PLAYER unit.
+					return _alive_player_unit_ids()
 				_:
 					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
 					return []
+		Step.SELECTING_ENEMY_TARGET:
+			return _legal_enemy_targets(_selected_target_a)
 		Step.SELECTING_TARGET_B:
 			return _s2q_legal_second_targets(_selected_target_a)
 		_:
@@ -334,11 +383,21 @@ func legal_targets() -> Array[int]:
 ## for 丙類, moves to [constant Step.SELECTING_TARGET_B] (丙類's second pick,
 ## S2q).
 func select_target(unit_id: int) -> bool:
+	if _step == Step.SELECTING_ENEMY_TARGET:
+		# story-018: the enemy pick of a 直傷 card.
+		if not legal_targets().has(unit_id):
+			return false
+		_selected_target_b = unit_id
+		_step = Step.CONFIRMING
+		return true
 	if _step != Step.SELECTING_TARGET:
 		return false
 	if not legal_targets().has(unit_id):
 		return false
 	match _selected_card.category:
+		Card.Category.DIRECT_DAMAGE:
+			_selected_target_a = unit_id
+			_step = Step.SELECTING_ENEMY_TARGET
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			_selected_target_a = unit_id
 			_step = Step.SELECTING_TARGET_B
@@ -401,6 +460,10 @@ func select_second_target(unit_id: int) -> bool:
 func confirm() -> bool:
 	if _step != Step.CONFIRMING:
 		return false
+	_last_damage_target_id = -1
+	_last_damage_caster_id = -1
+	_last_damage_amount = 0
+	_last_damage_killed = false
 
 	# story-010 / ADR-0001 path 6: every write below happens inside ONE
 	# BattleState.commit_authoritative_change() call (the shared entry), so
@@ -436,6 +499,12 @@ func confirm() -> bool:
 				return false
 			if not fixed_targets and not _legal_targets_for_heal(_selected_card).has(heal_recipient.id):
 				push_error("CardPlaySession.confirm: heal recipient %d is not a legal target" % heal_recipient.id)
+				return false
+		Card.Category.DIRECT_DAMAGE:
+			# story-018: validated BEFORE the window: the enemy must still be a legal target
+			# of the caster (alive, in range, line of sight) -- the same query as the pick step.
+			if not _legal_enemy_targets(_selected_target_a).has(_selected_target_b):
+				push_error("CardPlaySession.confirm: enemy %d is not a legal direct-damage target" % _selected_target_b)
 				return false
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
@@ -480,6 +549,8 @@ func confirm() -> bool:
 				_attach_stat_modifiers(_selected_card, recipient_ids)
 			Card.Category.HEAL:
 				_apply_heal_in_window(heal_recipient, _heal_amount(heal_recipient, _selected_card.effect_value))
+			Card.Category.DIRECT_DAMAGE:
+				_apply_direct_damage_in_window(_selected_target_a, _selected_target_b, _selected_card.effect_value)
 			_:
 				# Unreachable: filtered before the window opened. Loud, writes nothing.
 				push_error("CardPlaySession.confirm: unhandled category %s inside the commit window" % category)
@@ -513,7 +584,20 @@ func cancel() -> void:
 		Step.SELECTING_TARGET_B:
 			_selected_target_a = -1
 			_step = Step.SELECTING_TARGET
+		Step.SELECTING_ENEMY_TARGET:
+			# story-018: back to the payer pick (c03) or, for a named caster, to the hand.
+			if _selected_card.named_unit_id >= 1:
+				_selected_card = null
+				_selected_target_a = -1
+				_step = Step.SELECTING_CARD
+			else:
+				_selected_target_a = -1
+				_step = Step.SELECTING_TARGET
 		Step.CONFIRMING:
+			if _selected_card.category == Card.Category.DIRECT_DAMAGE:
+				_selected_target_b = -1
+				_step = Step.SELECTING_ENEMY_TARGET
+				return
 			if _is_fixed_target_card(_selected_card):
 				# F9: no target was ever picked, so cancelling steps back to the hand.
 				_selected_card = null
@@ -701,6 +785,51 @@ func _legal_targets_for_heal(card: Card) -> Array[int]:
 	if _is_ranged_pick_card(card):
 		return _ranged_pick_candidates(card, true)
 	return result
+
+
+## story-018: alive ENEMY units the caster could attack from where it stands. Delegates to
+## [method BattleState.can_attack] -- the very predicate the ordinary attack uses (faction,
+## alive, range band, terrain line of sight) -- so there is no second visibility rule.
+## Zone of control is not consulted (ruling 2026-11-17: direct damage ignores it).
+func _legal_enemy_targets(caster_id: int) -> Array[int]:
+	var result: Array[int] = []
+	var caster: Unit = _state.unit_by_id(caster_id)
+	if not _is_present(caster):
+		return result
+	for enemy: Unit in _state.units_of(Unit.Faction.ENEMY):
+		if _is_present(enemy) and _enemy_in_reach(caster_id, enemy.id):
+			result.append(enemy.id)
+	return result
+
+
+func _enemy_in_reach(caster_id: int, enemy_id: int) -> bool:
+	return _state.can_attack(caster_id, enemy_id)
+
+
+## story-018: the damage the card deals to [param enemy], min(effect_value, hp). No DEF/phi.
+func _direct_damage_amount(enemy: Unit, effect_value: int) -> int:
+	return mini(effect_value, enemy.hp)
+
+
+## story-018: runs inside the commit window. The damage and the death cleanup go through
+## [method BattleState.resolve_direct_damage]; a kill is reported to the injected hook so
+## the action order drops the unit in the same window.
+func _apply_direct_damage_in_window(caster_id: int, enemy_id: int, effect_value: int) -> void:
+	var enemy: Unit = _state.unit_by_id(enemy_id)
+	var amount: int = _direct_damage_amount(enemy, effect_value)
+	var dealt: int = _state.resolve_direct_damage(enemy_id, amount)
+	var killed: bool = not enemy.is_alive()
+	if killed:
+		_notify_kill(enemy_id)
+	_last_damage_caster_id = caster_id
+	_last_damage_target_id = enemy_id
+	_last_damage_amount = maxi(dealt, 0)
+	_last_damage_killed = killed
+
+
+func _notify_kill(unit_id: int) -> void:
+	if _kill_hook.is_valid():
+		_kill_hook.call(unit_id)
 
 
 func _within_range(distance: int, range_limit: int) -> bool:

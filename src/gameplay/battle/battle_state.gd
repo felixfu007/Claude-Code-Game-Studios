@@ -576,12 +576,38 @@ func resolve_attack(attacker_id: int, target_id: int, phi: int) -> int:
 	var dealt: int = _compute_attack_damage(attacker_id, target_id, phi)
 	var target: Unit = unit_by_id(target_id)
 	commit_authoritative_change(func() -> void:
-		target.take_damage(dealt)
-		if not target.is_alive():
-			board._clear_occupant(position_of(target_id))
-			_positions.erase(target_id)
+		_apply_damage_and_clear_if_dead(target, dealt)
 	)
 	return dealt
+
+
+## story-018: fixed (direct) damage from a card -- no DEF, no phi, no RNG. Deals
+## min([param amount], target hp) and returns the amount actually dealt, or -1 (with
+## push_error, nothing written) if called OUTSIDE an open authoritative write window or
+## the target is missing/dead. Unlike [method resolve_attack] it does NOT open its own
+## commit: the card session's single window must own the version bump (+1 per card).
+## The death cleanup is the SAME private helper [method resolve_attack] uses.
+func resolve_direct_damage(target_id: int, amount: int) -> int:
+	if not write_window_is_open():
+		push_error("BattleState.resolve_direct_damage: rejected for id %d -- write window is not open" % target_id)
+		return -1
+	var target: Unit = unit_by_id(target_id)
+	if target == null or not target.is_alive():
+		push_error("BattleState.resolve_direct_damage: target %d is missing or dead" % target_id)
+		return -1
+	var dealt: int = mini(maxi(amount, 0), target.hp)
+	_apply_damage_and_clear_if_dead(target, dealt)
+	return dealt
+
+
+## The ONE death-cleanup path shared by [method resolve_attack] and
+## [method resolve_direct_damage]: apply the damage; if the target died, free its tile
+## and drop it from the position table. Must run inside an open write window.
+func _apply_damage_and_clear_if_dead(target: Unit, dealt: int) -> void:
+	target.take_damage(dealt)
+	if not target.is_alive():
+		board._clear_occupant(position_of(target.id))
+		_positions.erase(target.id)
 
 
 ## Returns the damage a hypothetical attack from attacker_id on target_id

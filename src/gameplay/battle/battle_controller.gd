@@ -66,6 +66,10 @@ signal unit_moved(id: int, from: Vector2i, to: Vector2i)
 signal attack_resolved(attacker_id: int, target_id: int, damage: int, target_died: bool)
 
 ## Emitted every time [method phase] transitions to a new value.
+## story-018: a direct-damage card resolved. [param damage] is the amount actually dealt;
+## [param target_died] true when it killed. Emitted after the card's commit window closed
+## and BEFORE the win/lose check, so a listener sees the kill before battle_ended.
+signal card_damage_resolved(caster_id: int, target_id: int, damage: int, target_died: bool)
 signal phase_changed(new_phase: Phase)
 
 ## Emitted exactly once, the moment [method BattleState.outcome] first
@@ -203,6 +207,10 @@ func _init(
 		# affinity_pool 必須是 BattleScreen 那個同一實例(ADR-0002 機制一),不得另建。
 		_card_play_session.attach_affinity_pool(affinity_pool)
 		_card_play_session.attach_cost_tuning(cost_tuning)
+		# story-018: a direct-damage kill leaves the action order inside the card's window.
+		_card_play_session.attach_kill_hook(func(unit_id: int) -> void:
+			_order.remove_unit(unit_id)
+		)
 	# story-002-modifier-lifecycle.md: a fresh controller's initial _phase is
 	# already PLAYER_INPUT (see the field default above) without ever routing
 	# through _order.advance_faction() — the round-1 player phase never takes
@@ -745,7 +753,17 @@ func confirm() -> bool:
 		return false
 	if _state.has_pending_discard():
 		return false
-	return _card_play_session.confirm()
+	var confirmed: bool = _card_play_session.confirm()
+	if confirmed and _card_play_session.last_direct_damage_target_id() >= 1:
+		# story-018: same tail as _apply_attack() -- signal, then the shared outcome check.
+		card_damage_resolved.emit(
+			_card_play_session.last_direct_damage_caster_id(),
+			_card_play_session.last_direct_damage_target_id(),
+			_card_play_session.last_direct_damage_amount(),
+			_card_play_session.last_direct_damage_killed()
+		)
+		_check_outcome_and_finish()
+	return confirmed
 
 
 ## story-008-play-session-wiring.md AC-P3: forwards to [method
