@@ -1,7 +1,7 @@
 # Story 019:合擊直傷卡 c12(雙人各一擊同一敵人、射程交集)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(依序:015、018 完成後才可派工)—— 018 的 F7/反擊裁決與 c12 細節皆已於 2026-11-17 決定(答案檔題 3、4、6)。
+> **Status**: Done(2026-11-18,`0d64ab2`;c12 不限距離依當日裁決)(原狀態:Ready(依序:015、018 完成後才可派工)—— 018 的 F7/反擊裁決與 c12 細節皆已於 2026-11-17 決定(答案檔題 3、4、6)。)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 天,粗估未驗證;data-format S5)
 > **依據**:規格 v1.0 第 3.8 節(沿用 v0.3:合擊距離 ≤2)與 v0.3 第 4 節 c12;data-format 文件 F8。**c12 的逐字規格本單撰寫者未讀**(`design/quick-specs/card-rework-cost-and-pool-2026-11-12.md` 第 4 節),實作者第一步讀。

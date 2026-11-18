@@ -1,7 +1,7 @@
 # Story 018:直傷卡(敵方目標步驟、擊殺鏈、勝負判定掛點)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(依序:010、011、015 完成後才可派工)—— F7 與「直傷擊殺是否有反擊」兩題已於 2026-11-17 決定(答案檔題 3、4),見「派工前須先決定」第 1、2 題。
+> **Status**: Done(2026-11-18,`976cc8a`;選敵畫面屬 020;c03「與另一名我方距離 ≤2」尚無欄位 → 022)(原狀態:Ready(依序:010、011、015 完成後才可派工)—— F7 與「直傷擊殺是否有反擊」兩題已於 2026-11-17 決定(答案檔題 3、4),見「派工前須先決定」第 1、2 題。)
 > **Type**: Logic + Integration(控制器鏈);選敵 UI 部分見 020 的邊界
 > **Estimate**: L(3~4 天,粗估未驗證;data-format S4,其稱風險最大之一)
 > **依據**:規格 v1.0(直傷沿用 v0.3 卡池 c01~c03,無視 DEF 與 Φ、無隨機,符合 `rng_in_combat_settlement` 禁令);`docs/reviews/card-rework-data-format-2026-11-12.md` F4(死亡鏈三段在 `BattleState.resolve_attack()` → `BattleController._apply_attack()` → `_check_outcome_and_finish()`,Session 碰不到)、F10。

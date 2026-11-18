@@ -1,7 +1,7 @@
 # Story 017:補血卡與雙人甲類(距離過濾、夾限、免選目標路徑)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(依序:010、011、015 完成後才可派工)—— 派工前三題皆為實作者第一步查證,不是待裁決;原寫「卡 F7 距離函式」是 lead-programmer 自問,不擋派工。
+> **Status**: Done(2026-11-18,`26ed7c6`;免選目標卡接上畫面、015 三支舊測試驅動調整皆為管理者當日核准)(原狀態:Ready(依序:010、011、015 完成後才可派工)—— 派工前三題皆為實作者第一步查證,不是待裁決;原寫「卡 F7 距離函式」是 lead-programmer 自問,不擋派工。)
 > **Type**: Logic
 > **Estimate**: M~L(2~2.5 天,粗估未驗證;data-format S3)
 > **依據**:規格 v1.0 第 0 節(c04~c14 沿用 v0.3 第 4 節卡池;c05~c11 沿用 `TEMPORARY_STAT_MODIFIER`,c06「ATK+3 且 DEF−2」現有欄位可表達);`docs/reviews/card-rework-data-format-2026-11-12.md` F7、F8、F9。c04「≤1」、c07「≤2」、c13「≤3」、c14「≤2」補血/雙人距離每張不同(`target_range` 欄,011)。v0.3 第 4 節卡池原文**本單撰寫者未讀**(`design/quick-specs/card-rework-cost-and-pool-2026-11-12.md`,實作者第一步讀)。
