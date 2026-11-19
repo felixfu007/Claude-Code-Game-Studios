@@ -151,3 +151,14 @@
 - 新增鍵:**34**(1.1 共 7;1.2 共 1;1.3 共 9;1.4 共 2;1.5 共 8(#7 沿用);1.6 共 2(`direct_line_format`、`can_kill`);1.7 共 5)。
 - 沿用既有鍵:3 個(`attack_reason_los_blocked`、`attack_reason_out_of_range`、`attack_reason_too_close`)。
 - 待決:7 項(其中 1、2、4、6 影響實作者動工前的決定;3、5、7 屬提醒)。
+
+## 補登(2026-11-19 收工,協調者;管理者同日核准「逐項核對後改」)
+
+以 `git diff e4423d9 c1984ab` 的 strings.csv 新增列逐鍵比對本表,已提交但本表未列者 2 個:
+
+| 鍵 | zh_TW | 來源 |
+|---|---|---|
+| `battle.card_confirm.strike_single_format` | `%s → %s　−%d　HP %d → %d` | story-020c 單擊直傷列(實作者新增,本表原無) |
+| `battle.card_hand.pair_names_format` | `%s×%s` | ux 裁定 `card-rework-loc-keys-ux-ruling-2026-11-19.md` 待決 4,story-021 加入 |
+
+⚠️ story-020d(worktree `agent-af3bfd0e6f621b7cc`,未合入)另加 7 列(含 `battle.relation.straddle.will_lose_format`)、ux 空白判定 `card-confirm-panel-ux-gaps-2026-11-19.md` 提議 3 鍵 —— 合入時再補登。

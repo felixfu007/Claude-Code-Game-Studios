@@ -723,6 +723,16 @@ DEBUG actual='' len=0 expected='戰敗' len=2 eq=false
       「漏 `quit()` 的 headless 引擎會永遠空轉」),**不是效能門檻**。
       原始版本設 120 秒,而當天實測只剩約 40 秒餘裕、測試數一天內從 1159 長到 1203;
       一旦越過,`timeout` 會砍掉測試並回報 exit 124 —— **那是一個新的假訊號。**
+    - 🔴 **2026-11-19 實測,三個新坑(管理者同日核准登記)**:
+      ①**900 秒已不寬鬆**:全套 2452 條單獨跑約 9~14 分鐘;與另一套(例如 worktree)同時跑時,
+      協調者那套在跑完 2373 條、零失敗的情況下被砍成 **exit 124**(`C:/tmp/run_020a_coord.log`)。
+      平行跑或機器有負載時加 `TEST_TIMEOUT_SEC=2400`。
+      ②🔴 **匯入逾時是「繼續跑」,不是拒絕**:log 逐字 `Asset import timed out (budget exceeded, but continuing anyway)`。
+      新 git worktree 第一次匯入超過 120 秒 → 字型沒匯入完就開跑 → `Could not preload resource file "res://assets/fonts/Cubic_11.ttf"` → **exit 105**。
+      這與上方「匯入失敗 → WRAPPER EXIT 1 明文拒絕」是**不同路徑**:逾時不算失敗。新 worktree 一律加 `IMPORT_TIMEOUT_SEC=600`。
+      ⚠️ 若逾時發生在改了 `strings.csv` 之後,就可能重演上方那次舊翻譯快取的假綠燈 —— 本次未實測這個組合。
+      ③**新 worktree 缺 `addons/gdUnit4/bin/`**(`.gitignore` 的 `bin/` 擋掉),單檔指令 `-s res://addons/gdUnit4/bin/GdUnitCmdTool.gd` 會報 `File not found`;
+      包裝腳本走 `tests/gdunit4_runner.gd` 不受影響。單檔跑前從主目錄複製該目錄(不進版控)。
   - **Godot(CI,不受本次改動影響)**: `godot --headless --path . -s tests/gdunit4_runner.gd`
     ✅ CI 用的 `godot-gdunit-labs/gdUnit4-action@v1` **自己會匯入**(2026-08-26 已驗證),
     故上述事故**只發生在本機** —— 而本機是大多數人唯一會跑的地方。

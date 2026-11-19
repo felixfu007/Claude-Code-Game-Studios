@@ -1,7 +1,7 @@
 # Story 027:c03 出牌站位條件 —— 付款人 2 格內須有另一名存活我方
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-19 管理者裁決「借用現成距離欄(推薦)」;選項分析 `docs/reviews/c03-distance-condition-options-2026-11-19.md` 選項 B)
+> **Status**: ✅ Done(2026-11-19,提交 `3611c49`)(原狀態:Ready(2026-11-19 管理者裁決「借用現成距離欄(推薦)」;選項分析 `docs/reviews/c03-distance-condition-options-2026-11-19.md` 選項 B))
 > **Type**: Logic
 > **Estimate**: S(半天內,粗估未驗證)
 > **依據**:`design/quick-specs/card-rework-cost-and-pool-2026-11-12.md`(c03「成立條件:付款人與另一名我方單位距離 ≤2」,當場 grep「成立條件」);創意審查 `docs/reviews/card-rework-creative-review-2026-11-12.md`(至少一張直傷卡綁站位);UX 提示文案 `design/ux/card-rework-ui-2026-11-17.md`(「需有隊友在 2 格內」)。

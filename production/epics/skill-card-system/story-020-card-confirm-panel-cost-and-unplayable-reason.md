@@ -1,7 +1,7 @@
 # Story 020:出牌確認面板顯示代價 + 手牌不可打原因 + 選敵(戰鬥畫面)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-17 管理者核准文件包)—— **前置工單 015、018 須先 Done 才可開工**(依序:015 → 018 → 本單)。UX 規格已存在:`design/ux/card-rework-ui-2026-11-17.md`(第 1~3 節、AC-1~AC-7、AC-14~AC-16);美術決定:`docs/reviews/card-rework-ui-art-2026-11-17.md`。
+> **Status**: In Progress(2026-11-19:020a `77b674f` AC1/AC2;020b `dc37e52` AC3 5/9;020c `ea0f0c6` AC4 + 018 第 4 題 + 1920 面板重疊修正;020d 在 worktree `agent-af3bfd0e6f621b7cc` 已完成 AC3 其餘 4 種 + 雙人兩列 + 補血預覽,未合入;**AC4b 騎牆預告未做**:引擎無「預覽寫入後狀態」函式,待決放哪支檔;AC5 管理者人眼內容通過、重疊修後待重拍)(原狀態:Ready(2026-11-17 管理者核准文件包)—— **前置工單 015、018 須先 Done 才可開工**(依序:015 → 018 → 本單)。UX 規格已存在:`design/ux/card-rework-ui-2026-11-17.md`(第 1~3 節、AC-1~AC-7、AC-14~AC-16);美術決定:`docs/reviews/card-rework-ui-art-2026-11-17.md`。)
 > **Type**: UI(世界層/介面層混合,視版面而定)+ Logic(資料物件已在 015)
 > **Estimate**: L(2~3 天,粗估未驗證;data-format S6 估 2)
 > **依據**:規格 v1.0 第 4.1(確認面板**必須在出牌前寫明本次走哪一種代價及數字**)、第 6.1(付不起者面板顯示)、第 6.3 (2)(4)(手牌卡面不得只靠顏色)、`design/art/screen-architecture.md`(介面不得依賴「棋盤旁邊有空位」,須疊在棋盤上)。

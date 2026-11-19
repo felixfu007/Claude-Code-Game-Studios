@@ -1,7 +1,7 @@
 # Story 022:資料遷移 — 14 張卡牌表 + 牌面文字 + id 一致性測試擴成 5 關
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-18:依賴 011/015/017/018/019 皆已完成;牌面文字已定稿 `design/narrative/card-face-text-14-2026-11-18.md`;待決:c03「與另一名我方距離 ≤2」用哪個欄位表達)(原狀態:Blocked —— 派工前三題(卡 id、10A-1、D4)已於 2026-11-17 全部決定(答案檔題 2、7、8);**仍卡**:①依賴 011、015、017、018、019 尚未完成 ②14 張卡的牌名/牌面文字須由 `narrative-director`/`writer` 交付(是否已交付:**未驗證**,派工前須向其索取)。)
+> **Status**: ✅ Done(2026-11-19,提交 `1046399`;管理者同日裁決:c03 借用 target_range=2、D4 vs02~05 退役 card_01~06、牌組照規格 14 張不放 c13/c14;已知缺陷:新牌面單行溢出 Z3 → story-029)(原狀態:Ready(2026-11-18:依賴 011/015/017/018/019 皆已完成;牌面文字已定稿 `design/narrative/card-face-text-14-2026-11-18.md`;待決:c03「與另一名我方距離 ≤2」用哪個欄位表達)(原狀態:Blocked —— 派工前三題(卡 id、10A-1、D4)已於 2026-11-17 全部決定(答案檔題 2、7、8);**仍卡**:①依賴 011、015、017、018、019 尚未完成 ②14 張卡的牌名/牌面文字須由 `narrative-director`/`writer` 交付(是否已交付:**未驗證**,派工前須向其索取)。))
 > **Type**: Config/Data + Logic(一致性測試)
 > **Estimate**: M(1~1.5 天,粗估未驗證;data-format S7)
 > **依據**:規格 v1.0 第 6.2(c11/c14 敘事前提;**預設採甲案中性改名**)、v0.3 第 4 節 14 張卡池;data-format 2.7、2.5(5 份牌表逐列相同:資料列 vs02~05 與 vs01 相同,2026-11-12 量);`tests/integration/gameplay/cards/card_table_id_consistency_test.gd` 目前只檢 vs01。**5 份 `vsNN_cards.txt` 是否仍逐列相同 2026-11-17 未重驗**,實作者第一步 `diff` 資料列。
