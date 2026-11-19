@@ -295,3 +295,8 @@ battle.card_confirm.strike_first_format,第一擊　%s → %s　−%d　HP %d �
 battle.card_confirm.strike_second_format,第二擊　%s → %s　−%d　HP %d → %d
 battle.card_confirm.strike_second_skipped_format,第二擊　%s　略過(目標已倒下)
 battle.card_confirm.cost_not_refunded,代價照付，不退
+battle.relation.straddle.on,有效
+battle.relation.straddle.off,失效
+battle.relation.straddle.line_format,騎牆：%s
+battle.tile_info.relation_line_format,與%s：%s
+battle.card_hand.pair_names_format,%s×%s

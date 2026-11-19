@@ -354,6 +354,9 @@ func _ready() -> void:
 ##   "delta_def": int,          # 甲類 only. default: 0.
 ##   "duration_rounds": int,    # 甲類 only. default: 0.
 ##   "unplayable_reason": String, # story-020b: full reason line; default "" (playable).
+##   "relation_state": int,     # story-021: AffinityRelation.RelationState of the card's two named people
+##                              # (read by the caller via state_of; this file never judges). default -1 = not a two-person card.
+##   "pair_names": String,      # story-021: Z3 two-name line ("A×B"); default "" (none).
 ## }
 ## [/codeblock]
 ## Whether a card is 甲類 or 丙類 is read from [param slot_kinds] (already
@@ -971,7 +974,11 @@ func _update_detail_panel_content() -> void:
 		index < _slot_kinds.size() and _slot_kinds[index] == SlotKind.PERMANENT_WRITE
 	)
 
-	_detail_text_label.text = String(face.get("flavor_text", ""))
+	# story-021 Z3:雙人卡多一行該對兩人姓名(文字置於卡面文字上方;單人卡不變)。
+	var pair_names: String = String(face.get("pair_names", ""))
+	_detail_text_label.text = (
+		(pair_names + "\n" if pair_names != "" else "") + String(face.get("flavor_text", ""))
+	)
 	_detail_reason_label.text = String(face.get("unplayable_reason", ""))
 	if is_permanent:
 		_detail_effect_label.text = Loc.localize(TEXT_PERMANENT_MARK)
@@ -1030,6 +1037,24 @@ func _position_slots(window_size: Vector2i, fpx: float) -> void:
 			icon_mark.position = Vector2(icon_margin, icon_margin)
 			icon_mark.pivot_offset = icon_mark.size / 2.0
 			icon_mark.rotation_degrees = 45.0 if is_diamond else 0.0
+
+		_position_relation_marks(panel, fpx)
+
+
+## story-021:徽記貼卡內緣右下、2 字在其左側(美術 2026-11-17 第 9 項;換算未驗證,須截圖)。
+func _position_relation_marks(panel: Panel, fpx: float) -> void:
+	var badge: RelationBadge = panel.get_node_or_null("RelationBadge") as RelationBadge
+	var label: Label = panel.get_node_or_null("RelationLabel") as Label
+	if badge == null or label == null:
+		return
+	var unit: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
+	badge.unit_px = unit
+	var margin: float = 2.0 * float(unit)
+	badge.position = panel.size - badge.size - Vector2(margin, margin)
+	var text_px: int = maxi(HudLayout.GLYPH_PX, roundi(fpx * DETAIL_TEXT_FONT_FPX_MULTIPLIER))
+	label.add_theme_font_size_override(&"font_size", text_px)
+	label.size = label.get_minimum_size()
+	label.position = Vector2(badge.position.x - label.size.x, panel.size.y - label.size.y - margin)
 
 
 ## 2026-10-28 管理者試玩回饋第 4 點(全程只用滑鼠):回傳 [param window_pos] 落在哪一張
@@ -1115,6 +1140,46 @@ func _rebuild_slots() -> void:
 				FILLED_SLOT_BORDER_ALPHA * _current_dim_factor()
 			)
 			panel.add_child(icon_mark)
+			_add_relation_marks(panel, i)
+
+
+## story-021:雙人卡的三態(0/1/2 = RelationState),非雙人卡 -1。值由呼叫端經 state_of 取得,本檔不判斷。
+func _relation_state_of_slot(index: int) -> int:
+	if index < 0 or index >= _card_faces.size():
+		return -1
+	return int(_card_faces[index].get("relation_state", -1))
+
+
+## story-021 Z2:雙人卡右下角加三態徽記 + 2 字(字 + 形 + 位置;顏色不是唯一通道)。
+## 徽記與字掛在卡格底下(子節點索引 0 仍是 icon_mark,不動既有版面程式)。
+func _add_relation_marks(panel: Panel, index: int) -> void:
+	var state: int = _relation_state_of_slot(index)
+	var key: StringName = RelationBadge.text_key_for_state(state)
+	if key == &"":
+		return
+	var badge: RelationBadge = RelationBadge.new()
+	badge.name = &"RelationBadge"
+	badge.kind = RelationBadge.kind_for_state(state)
+	panel.add_child(badge)
+	var label: Label = Label.new()
+	label.name = &"RelationLabel"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = Loc.localize(key)
+	label.add_theme_font_override(&"font", HUD_FONT)
+	label.add_theme_color_override(&"font_color", Color(1.0, 1.0, 1.0, _current_dim_factor()))
+	panel.add_child(label)
+
+
+## story-021:測試用 —— 第 [param index] 張卡 Z2 的關係標記(has=false 代表該卡沒有)。
+func diagnostic_slot_relation(index: int) -> Dictionary:
+	if index < 0 or index >= _slot_nodes.size():
+		return {"has": false}
+	var panel: Panel = _slot_nodes[index]
+	var badge: RelationBadge = panel.get_node_or_null("RelationBadge") as RelationBadge
+	var label: Label = panel.get_node_or_null("RelationLabel") as Label
+	if badge == null or label == null:
+		return {"has": false}
+	return {"has": true, "badge_kind": badge.kind, "text": label.text}
 
 
 # S5's "降對比" multiplier — see LOCKED_DIM_FACTOR's own doc comment for why

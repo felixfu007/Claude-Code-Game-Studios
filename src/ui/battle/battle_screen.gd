@@ -5434,6 +5434,8 @@ func _refresh_view() -> void:
 			"delta_def": card.delta_def,
 			"duration_rounds": card.duration_rounds,
 			"unplayable_reason": card_unplayable_reason_text(card),
+			"relation_state": card_relation_state(card),
+			"pair_names": card_pair_names_text(card),
 		})
 	_hand_bar.render(
 		hand_bar_slot_kinds(hand),
@@ -5544,6 +5546,7 @@ func _update_tile_info_panel() -> void:
 	)
 
 	if not resolved:
+		_set_tile_info_relation_rows([])
 		_set_tile_info_preview_mode(false)
 		_tile_info_panel_label.text = Loc.localize(TEXT_TILE_INFO_UNRESOLVED)
 		return
@@ -5563,6 +5566,7 @@ func _update_tile_info_panel() -> void:
 	if preview_target_id != -1:
 		var preview_text: String = _build_attack_preview_text(preview_attacker_id, preview_target_id)
 		if preview_text != "":
+			_set_tile_info_relation_rows([])
 			_tile_info_panel_label.text = preview_text
 			return
 
@@ -5591,12 +5595,145 @@ func _update_tile_info_panel() -> void:
 		if extra_text != "":
 			unit_text += "\n" + extra_text
 		_tile_info_panel_label.text = unit_text
+		_set_tile_info_relation_rows(_tile_info_relation_rows_for(occupant))
 	else:
+		_set_tile_info_relation_rows([])
 		_set_tile_info_extra_line(false)
 		_tile_info_panel_label.text = build_tile_info_text(
 			terrain_char, cost, blocks_sight,
 			false, Unit.Faction.PLAYER, 0, 0, TurnOrder.ActionState.NOT_FOUND, 0, 0, 0
 		)
+
+
+## story-021 —— [param a_id]、[param b_id] 兩名我方角色當下的關係三態(RelationState 的 int 值);
+## 無法對映(非法 id、同一人、池不存在)回 -1。三態【只】來自 [method AffinityRelation.state_of],
+## 門檻 k 取 [member BattleState.affinity_tuning],本函式不判斷、不快取。
+func relation_state_between(a_id: int, b_id: int) -> int:
+	if _affinity_pool == null or _state == null:
+		return -1
+	var pair: Variant = CardCostPlan.pair_of_units(a_id, b_id)
+	if pair == null:
+		return -1
+	return int(AffinityRelation.state_of(
+		_affinity_pool, int(pair) as AffinityTypes.Pair, _state.affinity_tuning.neutral_band()
+	))
+
+
+## story-021 —— 雙人卡(cost_type 為 PAIR/AFFINITY 且付款人、夥伴皆已指定)的兩人關係三態;其他牌 -1。
+func card_relation_state(card: Card) -> int:
+	if not _is_two_person_card(card):
+		return -1
+	return relation_state_between(card.named_unit_id, card.partner_unit_id)
+
+
+## story-021 Z3 —— 雙人卡的兩人姓名行(「A×B」,鍵 battle.card_hand.pair_names_format);其他牌 ""。
+func card_pair_names_text(card: Card) -> String:
+	if not _is_two_person_card(card):
+		return ""
+	return Loc.localize(&"battle.card_hand.pair_names_format") % [
+		player_display_name(card.named_unit_id), player_display_name(card.partner_unit_id)
+	]
+
+
+func _is_two_person_card(card: Card) -> bool:
+	return (
+		(card.cost_type == Card.CostType.PAIR or card.cost_type == Card.CostType.AFFINITY)
+		and card.named_unit_id >= 1 and card.partner_unit_id >= 1
+	)
+
+
+## story-021 —— 資訊卡底部的關係列內容。游標在我方單位:另有選取的我方單位 → 「與X：三態」;
+## 該單位是騎牆者(lone_guard 旗標)→ 「騎牆：有效/失效」(有效與否讀 [method BattleState.straddle_is_valid],
+## 不自算)。隱藏好感度的戰鬥一律無列。回傳每列 {kind: RelationBadge.Kind, text: String}。
+func _tile_info_relation_rows_for(occupant: Unit) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	if _hide_affinity_display_for_this_battle or occupant == null or occupant.faction != Unit.Faction.PLAYER:
+		return rows
+	var selected_id: int = _controller.selected_unit()
+	if selected_id != -1 and selected_id != occupant.id:
+		var selected: Unit = _state.unit_by_id(selected_id)
+		if selected != null and selected.faction == Unit.Faction.PLAYER:
+			var state: int = relation_state_between(selected_id, occupant.id)
+			var word_key: StringName = RelationBadge.text_key_for_state(state)
+			if word_key != &"":
+				rows.append({
+					"kind": RelationBadge.kind_for_state(state),
+					"text": Loc.localize(&"battle.tile_info.relation_line_format") % [
+						unit_display_name(selected), Loc.localize(word_key)
+					],
+				})
+	if occupant.lone_guard:
+		var valid: bool = _state.straddle_is_valid(occupant)
+		rows.append({
+			"kind": RelationBadge.Kind.STRADDLE_ON if valid else RelationBadge.Kind.STRADDLE_OFF,
+			"text": Loc.localize(&"battle.relation.straddle.line_format") % Loc.localize(
+				&"battle.relation.straddle.on" if valid else &"battle.relation.straddle.off"
+			),
+		})
+	return rows
+
+
+## story-021 —— 資訊卡底部關係列(徽記 + 文字),列數變動才重排版面,內容每次更新(不快取)。
+var _tile_info_relation_row_nodes: Array[Control] = []
+var _tile_info_relation_row_count: int = 0
+
+
+func _set_tile_info_relation_rows(rows: Array[Dictionary]) -> void:
+	while _tile_info_relation_row_nodes.size() < rows.size():
+		var row: Control = Control.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.name = "RelationRow%d" % _tile_info_relation_row_nodes.size()
+		var badge: RelationBadge = RelationBadge.new()
+		badge.name = &"RelationBadge"
+		row.add_child(badge)
+		var label: Label = Label.new()
+		label.name = &"RelationText"
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
+		row.add_child(label)
+		_tile_info_panel_bg.add_child(row)
+		_tile_info_relation_row_nodes.append(row)
+	for i: int in range(_tile_info_relation_row_nodes.size()):
+		var node: Control = _tile_info_relation_row_nodes[i]
+		node.visible = i < rows.size()
+		if i < rows.size():
+			(node.get_node("RelationBadge") as RelationBadge).kind = int(rows[i]["kind"]) as RelationBadge.Kind
+			(node.get_node("RelationText") as Label).text = String(rows[i]["text"])
+	if rows.size() != _tile_info_relation_row_count:
+		_tile_info_relation_row_count = rows.size()
+		_apply_tile_info_panel_layout()
+
+
+## story-021 —— 關係列貼資訊框底部,徽記在左(整數倍放大)、文字在右。
+func _layout_tile_info_relation_rows(
+	height: float, fpx: float, u: int, pad_h: float, pad_v: float
+) -> void:
+	var line_h: float = fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER
+	var badge_unit: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
+	for i: int in range(_tile_info_relation_row_nodes.size()):
+		var row: Control = _tile_info_relation_row_nodes[i]
+		var badge: RelationBadge = row.get_node("RelationBadge") as RelationBadge
+		var label: Label = row.get_node("RelationText") as Label
+		badge.unit_px = badge_unit
+		label.add_theme_font_size_override(&"font_size", int(fpx))
+		var top: float = height - (float(u) + pad_v) - float(_tile_info_relation_row_count - i) * line_h
+		row.position = Vector2(float(u) + pad_h, top)
+		row.size = Vector2(0.0, line_h)
+		badge.position = Vector2(0.0, maxf(0.0, (line_h - badge.size.y) / 2.0))
+		label.position = Vector2(badge.size.x + float(badge_unit), 0.0)
+		label.size = Vector2(maxf(0.0, _tile_info_panel_bg.offset_right - _tile_info_panel_bg.offset_left - badge.size.x - 2.0 * (float(u) + pad_h)), line_h)
+
+
+## story-021 —— 測試用:目前顯示的關係列(僅可見者)。
+func diagnostic_tile_info_relation_rows() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for i: int in range(_tile_info_relation_row_count):
+		var node: Control = _tile_info_relation_row_nodes[i]
+		result.append({
+			"kind": (node.get_node("RelationBadge") as RelationBadge).kind,
+			"text": (node.get_node("RelationText") as Label).text,
+		})
+	return result
 
 
 ## story-032 —— 單位資訊多一列減傷時,資訊框高度多算一列(8 → 9)。
@@ -5756,11 +5893,13 @@ func _apply_tile_info_panel_layout() -> void:
 	var u: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
 	var pad_h: float = fpx * _TILE_INFO_PANEL_PAD_H_MULTIPLIER
 	var pad_v: float = fpx * _TILE_INFO_PANEL_PAD_V_MULTIPLIER
+	if _tile_info_relation_row_count > 0 and not _tile_info_preview_mode:
+		width += fpx * 1.5
 	width += 2.0 * (pad_h + float(u))
 	var height: float = fpx * (
 		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * (_TILE_INFO_PANEL_LINE_COUNT + (1 if _tile_info_extra_line else 0))
 		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
-	) + 2.0 * float(u)
+	) + 2.0 * float(u) + fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * float(_tile_info_relation_row_count)
 	var left: float = safe.position.x + safe.size.x - width
 	var top: float = status.position.y + status.size.y + gap
 
@@ -5784,7 +5923,8 @@ func _apply_tile_info_panel_layout() -> void:
 	_tile_info_panel_label.offset_left = float(u) + pad_h
 	_tile_info_panel_label.offset_right = -(float(u) + pad_h)
 	_tile_info_panel_label.offset_top = float(u) + pad_v
-	_tile_info_panel_label.offset_bottom = -(float(u) + pad_v)
+	_tile_info_panel_label.offset_bottom = -(float(u) + pad_v + fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * float(_tile_info_relation_row_count))
+	_layout_tile_info_relation_rows(height, fpx, u, pad_h, pad_v)
 
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)
 	_tile_info_panel_label.add_theme_font_size_override(&"font_size", int(fpx))
