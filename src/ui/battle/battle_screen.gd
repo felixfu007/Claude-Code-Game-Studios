@@ -4512,10 +4512,12 @@ func _open_card_confirm_panel() -> void:
 
 	match card.category:
 		Card.Category.TEMPORARY_STAT_MODIFIER, Card.Category.HEAL:
-			# story-017 placeholder (the real heal / two-person panel content is
-			# story-020's): HEAL reuses this layout with the card's own 0/0/0 stat fields,
-			# showing the recipient; a fixed two-person buff shows the payer (target A).
-			# Both exist only so the panel opens and confirm/cancel work end to end.
+			# story-020a(取代 story-017 佔位):補血卡不再顯示 0/0 的 ΔATK/ΔDEF 列;固定雙人
+			# 甲類(target_b 已定)的兩人都會吃到修正(CardPlaySession.confirm 的 recipient_ids),
+			# 故「作用對象」顯示兩人、並隱藏只對單一對象成立的「既有修正/合併後」列。
+			var is_heal: bool = card.category == Card.Category.HEAL
+			var two_recipients: bool = (not is_heal) and target_b_id >= 1
+			var cost_block: CardConfirmPanel.CostBlock = _build_cost_block(card, target_a_id)
 			var target: Unit = _state.unit_by_id(
 				target_b_id if (card.category == Card.Category.HEAL and target_b_id >= 1) else target_a_id
 			)
@@ -4545,8 +4547,14 @@ func _open_card_confirm_panel() -> void:
 			_card_confirm_panel.show_temporary_modifier_confirmation(
 				card.id, flavor_text, unit_display_name(target),
 				card.delta_atk, card.delta_def, card.duration_rounds,
-				existing, preview_atk, preview_def
+				existing, preview_atk, preview_def,
+				cost_block, not is_heal, not two_recipients
 			)
+			if two_recipients:
+				_card_confirm_panel.show_pair_target(
+					unit_display_name(_state.unit_by_id(target_a_id)),
+					unit_display_name(_state.unit_by_id(target_b_id))
+				)
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			var target_a: Unit = _state.unit_by_id(target_a_id)
 			var target_b: Unit = _state.unit_by_id(target_b_id)
@@ -4557,12 +4565,70 @@ func _open_card_confirm_panel() -> void:
 				card.id, flavor_text, unit_display_name(target_a), unit_display_name(target_b),
 				bool(strength_result.get("available", false)),
 				int(strength_result.get("current", 0)),
-				int(strength_result.get("projected", 0))
+				int(strength_result.get("projected", 0)),
+				_build_cost_block(card, target_a_id)
 			)
 		_:
 			push_error("BattleScreen: _open_card_confirm_panel() unhandled Card.Category %s -- no confirm panel for it yet" % card.category)
 			_card_confirming = false
 			return
+
+
+## story-020a — 確認鈕是否可用(讀面板當下狀態)。獨立成函式,讓敏感度證明的 mutant 有可覆寫的接縫。
+func _confirm_button_enabled() -> bool:
+	return _card_confirm_panel.is_confirm_enabled()
+
+
+## story-020a — 把 015 的 [CardCostPlan](唯一來源;與 [method CardPlaySession.confirm]
+## 實際結算用同一個建構函式)逐欄搬進面板的純顯示資料。caster = 目前選定的 target A
+## (與 confirm() 傳給建構函式的 [code]_selected_target_a[/code] 相同)。
+## 揭露:①「HP 前 → 後」的後值 = 現值 − plan.amount(plan 不帶後值;與 [method CardPlaySession._pay_hp]
+## 同一減法);②付不起時 plan 不帶付款人/數字,故只點名「付款人中血量最低者」
+## (hp > cost 對 hp 單調,任一人付不起則血量最低者必付不起;並列則全列)。
+func _build_cost_block(card: Card, caster_id: int) -> CardConfirmPanel.CostBlock:
+	var plan: CardCostPlan = _controller._card_play_session.preview_cost(card, caster_id)
+	var block: CardConfirmPanel.CostBlock = CardConfirmPanel.CostBlock.new()
+	block.show_relation = card.cost_type == Card.CostType.PAIR
+	if plan.reason == CardCostPlan.Reason.CANNOT_AFFORD_HP:
+		block.show_relation = false
+		block.kind = CardConfirmPanel.CostBlock.Kind.UNAFFORDABLE
+		var payers: Array[int] = CardCostPlan.payers_of(card, caster_id)
+		var lowest: int = 1 << 30
+		for unit_id: int in payers:
+			lowest = mini(lowest, _state.unit_by_id(unit_id).hp)
+		for unit_id: int in payers:
+			if _state.unit_by_id(unit_id).hp == lowest:
+				block.unaffordable_names.append(unit_display_name(_state.unit_by_id(unit_id)))
+		return block
+	if not plan.is_payable():
+		block.show_relation = false
+		block.kind = CardConfirmPanel.CostBlock.Kind.BLOCKED
+		return block
+	block.amount = plan.amount
+	match plan.relation:
+		AffinityRelation.RelationState.POS:
+			block.relation = CardConfirmPanel.CostBlock.Relation.POS
+		AffinityRelation.RelationState.NEG:
+			block.relation = CardConfirmPanel.CostBlock.Relation.NEG
+		_:
+			block.relation = CardConfirmPanel.CostBlock.Relation.NONE
+	match plan.kind:
+		CardCostPlan.Kind.HP:
+			block.kind = CardConfirmPanel.CostBlock.Kind.HP
+			for unit_id: int in plan.payer_ids:
+				var payer: Unit = _state.unit_by_id(unit_id)
+				block.payer_names.append(unit_display_name(payer))
+				block.hp_before.append(payer.hp)
+				block.hp_after.append(payer.hp - plan.amount)
+		CardCostPlan.Kind.WEAR:
+			block.kind = CardConfirmPanel.CostBlock.Kind.WEAR
+			block.wear_names.append(unit_display_name(_state.unit_by_id(plan.payer_ids[0])))
+			block.wear_names.append(unit_display_name(_state.unit_by_id(card.partner_unit_id)))
+			block.wear_now = _state.pair_wear(plan.pair)
+			block.wear_cap = _card_cost_tuning.pair_cost_cap()
+		_:
+			block.kind = CardConfirmPanel.CostBlock.Kind.NONE
+	return block
 
 
 ## Story U-014 (AC-U11) — consumed once per frame from [method _process],
@@ -4576,6 +4642,9 @@ func _open_card_confirm_panel() -> void:
 ## keeps that from ever actually happening.
 func _apply_pending_card_confirm() -> void:
 	if not _card_confirming:
+		return
+	# story-020a AC2:付不起(確認鈕停用)時拒絕確認 —— 面板不關、零寫入(連 controller 都不呼叫)。
+	if not _confirm_button_enabled():
 		return
 	if _controller.confirm():
 		_card_confirming = false

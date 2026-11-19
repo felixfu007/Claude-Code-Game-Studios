@@ -49,7 +49,7 @@ const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
 ## comment) — tall enough for 丙類's five stacked rows or 甲類's six, at the
 ## smallest supported window (960x540, N=2).
 const PANEL_WIDTH_FPX_MULTIPLIER: float = 24.0
-const PANEL_HEIGHT_FPX_MULTIPLIER: float = 18.0
+const PANEL_HEIGHT_FPX_MULTIPLIER: float = 22.0
 
 ## Inner content margin / row gap, in fpx — mirrors `battle_menu.gd`'s
 ## `CONTENT_MARGIN_FPX_MULTIPLIER` convention.
@@ -126,6 +126,50 @@ const TEXT_EFFECTIVE_FORMAT: StringName = &"battle.card_confirm.effective_format
 ## [code]%s[/code]。
 const TEXT_STRENGTH_LABEL_FORMAT: StringName = &"battle.card_confirm.strength_label_format"
 
+## story-020a 代價區塊文案鍵(鍵名表 `docs/reviews/card-rework-loc-keys-2026-11-19.md` 1.3/1.4;
+## 文案逐字出自 `design/ux/card-rework-ui-2026-11-17.md` 1.1/1.2,不得自改)。
+const TEXT_COST_HP_FORMAT: StringName = &"battle.card_confirm.cost_hp_format"
+const TEXT_HP_CHANGE_FORMAT: StringName = &"battle.card_confirm.hp_change_format"
+const TEXT_COST_FRAY_FORMAT: StringName = &"battle.card_confirm.cost_fray_format"
+const TEXT_FRAY_PROGRESS_FORMAT: StringName = &"battle.card_confirm.fray_progress_format"
+const TEXT_COST_BOTH_FORMAT: StringName = &"battle.card_confirm.cost_both_format"
+const TEXT_COST_BOTH_ROW_FORMAT: StringName = &"battle.card_confirm.cost_both_row_format"
+const TEXT_RELATION_CURRENT_FORMAT: StringName = &"battle.card_confirm.relation_current_format"
+const TEXT_RELATION_NONE_PAYS_HP: StringName = &"battle.card_confirm.relation_none_pays_hp"
+const TEXT_UNAFFORDABLE_ROW_FORMAT: StringName = &"battle.card_confirm.unaffordable_row_format"
+const TEXT_BUTTON_UNPLAYABLE: StringName = &"battle.card_confirm.button_unplayable"
+const TEXT_BUTTON_CONFIRM: StringName = &"battle.card_confirm.button_confirm"
+## 三態詞(單一詞表,鍵名表 1.1)。
+const TEXT_RELATION_POS: StringName = &"battle.relation.state.pos"
+const TEXT_RELATION_NONE: StringName = &"battle.relation.state.none"
+const TEXT_RELATION_NEG: StringName = &"battle.relation.state.neg"
+
+
+## story-020a —— 代價區塊的【純顯示】資料。由 battle_screen.gd 從 015 的
+## [CardCostPlan](唯一來源)逐欄搬運而來;本檔不算任何扣款,只格式化。
+## 本檔自己的顯示用詞彙(同 [enum Category]),不引用 [CardCostPlan]。
+class CostBlock extends RefCounted:
+	## NONE=無代價;HP=付血(1 人單列、2 人各付);WEAR=折損;UNAFFORDABLE=付不起。
+	## BLOCKED = 其他不可打原因(確認鈕停用;原因文案由 AC3 段落負責)。
+	enum Kind { NONE, HP, WEAR, UNAFFORDABLE, BLOCKED }
+	enum Relation { NONE, POS, NEG }
+	var kind: Kind = Kind.NONE
+	## 每位付款人付的點數(HP)或折損點數(WEAR)。
+	var amount: int = 0
+	var payer_names: Array[String] = []
+	var hp_before: Array[int] = []
+	var hp_after: Array[int] = []
+	## 雙人卡才為 true:顯示「目前關係」行。
+	var show_relation: bool = false
+	var relation: Relation = Relation.NONE
+	## WEAR:配對兩人姓名、本場已折損、上限。
+	var wear_names: Array[String] = []
+	var wear_now: int = 0
+	var wear_cap: int = 0
+	## UNAFFORDABLE:付不起者姓名。
+	var unaffordable_names: Array[String] = []
+
+
 var _category: Category = Category.NONE
 
 var _mask: ColorRect
@@ -140,6 +184,14 @@ var _existing_modifiers_label: Label
 var _effective_label: Label
 var _permanent_warning_label: Label
 var _strength_label: Label
+var _relation_label: Label
+var _cost_label: Label
+var _cost_detail_label: Label
+var _cost_note_label: Label
+var _unaffordable_label: Label
+var _button_label: Label
+## story-020a:確認鈕目前是否可用(false = 付不起,鈕面 [constant TEXT_BUTTON_UNPLAYABLE])。
+var _confirm_enabled: bool = true
 
 ## story-032 AC3②:true 時丙類(永久寫入)的「好感度:」列不顯示(隱藏好感度設定)。
 ## 由 battle_screen.gd 在 _ready() 依設定寫入;在 show_*_confirmation() 之前設定才會生效。
@@ -192,7 +244,10 @@ func show_temporary_modifier_confirmation(
 	duration_rounds: int,
 	existing_modifiers: Array[Dictionary],
 	effective_atk: int,
-	effective_def: int
+	effective_def: int,
+	cost_block: CostBlock = null,
+	show_stat_rows: bool = true,
+	show_merged_rows: bool = true
 ) -> void:
 	_category = Category.TEMPORARY_MODIFIER
 	_title_label.text = _format_title(card_id, flavor_text)
@@ -219,6 +274,13 @@ func show_temporary_modifier_confirmation(
 	_effective_label.text = Loc.localize(TEXT_EFFECTIVE_FORMAT) % [effective_atk, effective_def]
 
 	_set_row_visibility(true)
+	# story-020a:補血卡沒有 ΔATK/ΔDEF/存續/既有修正/合併值,不得再顯示 0/0 佔位。
+	_delta_atk_label.visible = show_stat_rows
+	_delta_def_label.visible = show_stat_rows
+	_duration_label.visible = show_stat_rows
+	_existing_modifiers_label.visible = show_stat_rows and show_merged_rows
+	_effective_label.visible = show_stat_rows and show_merged_rows
+	_apply_cost_block(cost_block)
 
 	visible = true
 	_apply_layout()
@@ -243,7 +305,8 @@ func show_permanent_write_confirmation(
 	target_b_name: String,
 	strength_available: bool,
 	current_strength: int,
-	projected_strength: int
+	projected_strength: int,
+	cost_block: CostBlock = null
 ) -> void:
 	_category = Category.PERMANENT_WRITE
 	_title_label.text = _format_title(card_id, flavor_text)
@@ -257,6 +320,7 @@ func show_permanent_write_confirmation(
 	_narrative_label.text = Loc.localize(TEXT_NARRATIVE)
 
 	_set_row_visibility(false)
+	_apply_cost_block(cost_block)
 
 	visible = true
 	_apply_layout()
@@ -268,6 +332,7 @@ func show_permanent_write_confirmation(
 ## no-op).
 func hide_panel() -> void:
 	_category = Category.NONE
+	_confirm_enabled = true
 	visible = false
 
 
@@ -461,6 +526,110 @@ func diagnostic_narrative_text() -> String:
 	return _narrative_label.text
 
 
+## story-020a —— 把 [param block] 格式化進代價區塊各列(UX 1.1/1.2)。[param block] 為
+## null 視同無代價(列全隱藏、確認鈕可用)。付不起時:確認鈕改 `無法出牌`、付不起者那列
+## 前綴 `✕` + 文字(不靠顏色)、不顯示代價數字(015 的拒絕結果不帶數字)。
+func _apply_cost_block(block: CostBlock) -> void:
+	_confirm_enabled = true
+	for label: Label in [_relation_label, _cost_label, _cost_detail_label, _cost_note_label, _unaffordable_label]:
+		label.visible = false
+		label.text = ""
+	if block != null:
+		if block.show_relation:
+			_relation_label.text = Loc.localize(TEXT_RELATION_CURRENT_FORMAT) % _relation_word(block.relation)
+			_relation_label.visible = true
+		match block.kind:
+			CostBlock.Kind.HP:
+				_format_hp_cost(block)
+			CostBlock.Kind.WEAR:
+				_cost_label.text = Loc.localize(TEXT_COST_FRAY_FORMAT) % block.amount
+				_cost_detail_label.text = Loc.localize(TEXT_FRAY_PROGRESS_FORMAT) % [
+					block.wear_names[0], block.wear_names[1], block.wear_now, block.wear_cap,
+				]
+				_cost_label.visible = true
+				_cost_detail_label.visible = true
+			CostBlock.Kind.UNAFFORDABLE:
+				var rows: Array[String] = []
+				var row_format: String = Loc.localize(TEXT_UNAFFORDABLE_ROW_FORMAT)
+				for person: String in block.unaffordable_names:
+					rows.append(row_format % person)
+				_unaffordable_label.text = "\n".join(PackedStringArray(rows))
+				_unaffordable_label.visible = true
+				_confirm_enabled = false
+			CostBlock.Kind.BLOCKED:
+				_confirm_enabled = false
+			_:
+				pass
+	_button_label.text = Loc.localize(TEXT_BUTTON_CONFIRM if _confirm_enabled else TEXT_BUTTON_UNPLAYABLE)
+
+
+func _format_hp_cost(block: CostBlock) -> void:
+	if block.payer_names.size() >= 2:
+		_cost_label.text = Loc.localize(TEXT_COST_BOTH_FORMAT) % block.amount
+		var rows: Array[String] = []
+		var row_format: String = Loc.localize(TEXT_COST_BOTH_ROW_FORMAT)
+		for i: int in block.payer_names.size():
+			rows.append(row_format % [block.payer_names[i], block.hp_before[i], block.hp_after[i]])
+		_cost_detail_label.text = "\n".join(PackedStringArray(rows))
+	elif block.payer_names.size() == 1:
+		_cost_label.text = Loc.localize(TEXT_COST_HP_FORMAT) % [block.payer_names[0], block.amount]
+		_cost_detail_label.text = Loc.localize(TEXT_HP_CHANGE_FORMAT) % [block.hp_before[0], block.hp_after[0]]
+	else:
+		return
+	_cost_label.visible = true
+	_cost_detail_label.visible = true
+	if block.show_relation and block.relation == CostBlock.Relation.NONE:
+		_cost_note_label.text = Loc.localize(TEXT_RELATION_NONE_PAYS_HP)
+		_cost_note_label.visible = true
+
+
+func _relation_word(relation: CostBlock.Relation) -> String:
+	match relation:
+		CostBlock.Relation.POS:
+			return Loc.localize(TEXT_RELATION_POS)
+		CostBlock.Relation.NEG:
+			return Loc.localize(TEXT_RELATION_NEG)
+		_:
+			return Loc.localize(TEXT_RELATION_NONE)
+
+
+## 固定雙人甲類:兩人都吃到修正,「作用對象」改顯示「A ↔ B」(沿用 [constant TEXT_TARGET_FORMAT_PAIR])。
+## 須在 [method show_temporary_modifier_confirmation] 之後呼叫。
+func show_pair_target(name_a: String, name_b: String) -> void:
+	_target_label.text = Loc.localize(TEXT_TARGET_FORMAT_PAIR) % [name_a, name_b]
+
+
+## 確認鈕目前是否可用。付不起時為 false(battle_screen.gd 據此拒絕確認,零寫入)。
+func is_confirm_enabled() -> bool:
+	return _confirm_enabled
+
+
+func diagnostic_relation_text() -> String:
+	return _relation_label.text if _relation_label.visible else ""
+
+
+func diagnostic_cost_text() -> String:
+	return _cost_label.text if _cost_label.visible else ""
+
+
+## 代價下方細節(付血 `HP a → b` / 各付血逐人列 / 折損進度),各列以換行相接。
+func diagnostic_cost_detail_text() -> String:
+	return _cost_detail_label.text if _cost_detail_label.visible else ""
+
+
+func diagnostic_cost_note_text() -> String:
+	return _cost_note_label.text if _cost_note_label.visible else ""
+
+
+func diagnostic_unaffordable_text() -> String:
+	return _unaffordable_label.text if _unaffordable_label.visible else ""
+
+
+## 確認鈕鈕面文字(`確認` 或付不起時的 `無法出牌`)。
+func diagnostic_button_text() -> String:
+	return _button_label.text
+
+
 func _set_row_visibility(is_temporary_modifier: bool) -> void:
 	_delta_atk_label.visible = is_temporary_modifier
 	_delta_def_label.visible = is_temporary_modifier
@@ -503,11 +672,21 @@ func _ensure_nodes() -> void:
 	_permanent_warning_label.add_theme_color_override(&"font_color", WARNING_COLOR)
 	_strength_label = _build_label()
 	_narrative_label = _build_label()
+	_relation_label = _build_label()
+	_cost_label = _build_label()
+	_cost_detail_label = _build_label()
+	_cost_note_label = _build_label()
+	_unaffordable_label = _build_label()
+	_unaffordable_label.add_theme_color_override(&"font_color", WARNING_COLOR)
+	_button_label = _build_label()
 
 	_labels = [
-		_title_label, _target_label, _delta_atk_label, _delta_def_label,
+		_title_label, _target_label,
+		_relation_label, _cost_label, _cost_detail_label, _cost_note_label, _unaffordable_label,
+		_delta_atk_label, _delta_def_label,
 		_duration_label, _existing_modifiers_label, _effective_label,
 		_permanent_warning_label, _strength_label, _narrative_label,
+		_button_label,
 	]
 	for label: Label in _labels:
 		_content.add_child(label)

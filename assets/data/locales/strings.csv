@@ -271,3 +271,18 @@ battle.legend.action_attacked.name,已攻擊
 battle.legend.action_attacked.desc,這回合已攻擊過
 battle.legend.unit_done.name,已完成
 battle.legend.unit_done.desc,行動完畢，棋子變暗
+battle.card_confirm.cost_hp_format,代價：%s 付出 %d 點血
+battle.card_confirm.hp_change_format,HP %d → %d
+battle.card_confirm.cost_fray_format,代價：配合折損 %d
+battle.card_confirm.fray_progress_format,%s×%s　本場已折損 %d/%d
+battle.card_confirm.cost_both_format,代價：兩人各付 %d 點血
+battle.card_confirm.cost_both_row_format,%s　HP %d → %d
+battle.card_confirm.relation_current_format,目前關係：%s
+battle.card_confirm.relation_none_pays_hp,關係冷淡，改付血
+battle.card_confirm.unaffordable_row_format,✕ %s　血量不足
+battle.card_confirm.button_unplayable,無法出牌
+battle.card_confirm.button_confirm,確認
+battle.card_reason.hp_insufficient_format,%s血量不足
+battle.relation.state.pos,好感
+battle.relation.state.none,冷淡
+battle.relation.state.neg,敵意
