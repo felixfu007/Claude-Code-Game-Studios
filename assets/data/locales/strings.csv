@@ -286,3 +286,7 @@ battle.card_reason.hp_insufficient_format,%s血量不足
 battle.relation.state.pos,好感
 battle.relation.state.none,冷淡
 battle.relation.state.neg,敵意
+battle.card_reason.partner_absent,夥伴不在場
+battle.card_reason.fray_full,配合折損已滿
+battle.card_reason.need_ally_within_2,需有隊友在 2 格內
+battle.card_reason.too_far_apart,兩人距離太遠

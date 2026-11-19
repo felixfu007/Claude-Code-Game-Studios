@@ -5393,6 +5393,7 @@ func _refresh_view() -> void:
 			"delta_atk": card.delta_atk,
 			"delta_def": card.delta_def,
 			"duration_rounds": card.duration_rounds,
+			"unplayable_reason": card_unplayable_reason_text(card),
 		})
 	_hand_bar.render(
 		hand_bar_slot_kinds(hand),
@@ -6402,3 +6403,39 @@ func _tick_phase_banner(delta: float) -> void:
 		_hide_phase_banner()
 		return
 	_apply_phase_banner_alpha(banner_alpha(_phase_banner_elapsed))
+
+
+## story-020b —— 手牌不可打原因的 UX 字串鍵(UX 1.3 表)。原因【只】來自引擎
+## [method CardPlaySession.card_unplayable_reason];本表只把引擎回傳的 [enum CardCostPlan.Reason]
+## 翻成 UX 指定的鍵,不自行判斷任何原因。優先序(UX 1.3「多原因顯示最高者」)由引擎單一回傳值
+## 的檢查順序決定,UI 不重排。回 &"" = 該原因沒有 UX 文案(不顯示任何行)。
+## 揭露:UX 1.3 #6 射程內沒有敵人 / #7 視線被擋 / #8 打不到 / #9 對象血量已滿 目前引擎回傳不出來
+## (NO_LEGAL_TARGET 一值涵蓋多種原因,UI 無法區分),故不在此表 —— 待引擎補上對應 Reason 再加。
+static func unplayable_reason_key(reason: CardCostPlan.Reason) -> StringName:
+	match reason:
+		CardCostPlan.Reason.PARTNER_ABSENT:
+			return &"battle.card_reason.partner_absent"
+		CardCostPlan.Reason.WEAR_CAP_REACHED:
+			return &"battle.card_reason.fray_full"
+		CardCostPlan.Reason.NEED_ALLY_NEARBY:
+			return &"battle.card_reason.need_ally_within_2"
+		CardCostPlan.Reason.CANNOT_AFFORD_HP:
+			return &"battle.card_reason.hp_insufficient_format"
+		CardCostPlan.Reason.OUT_OF_RANGE:
+			return &"battle.card_reason.too_far_apart"
+	return &""
+
+
+## story-020b —— 手牌 Z3 的不可打原因整行文字;可打或無文案原因 = ""。
+## 血量不足帶付款人姓名:沿用 [method _build_cost_block] 的付不起者(同一份答案,不另算)。
+func card_unplayable_reason_text(card: Card) -> String:
+	if _controller == null or _controller._card_play_session == null:
+		return ""
+	var reason: CardCostPlan.Reason = _controller._card_play_session.card_unplayable_reason(card)
+	var key: StringName = unplayable_reason_key(reason)
+	if key == &"":
+		return ""
+	if reason == CardCostPlan.Reason.CANNOT_AFFORD_HP:
+		var names: Array[String] = _build_cost_block(card, -1).unaffordable_names
+		return Loc.localize(key) % ("、".join(PackedStringArray(names)))
+	return Loc.localize(key)

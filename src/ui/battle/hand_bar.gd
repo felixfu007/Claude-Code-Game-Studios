@@ -258,6 +258,8 @@ var _backing: ColorRect = null
 var _detail_panel: Panel = null
 var _detail_text_label: Label = null
 var _detail_effect_label: Label = null
+## story-020b:Z3 不可打原因行(文字;可打 = 空字串)。
+var _detail_reason_label: Label = null
 
 var _slot_kinds: Array[SlotKind] = []
 var _max_slots: int = 0
@@ -351,6 +353,7 @@ func _ready() -> void:
 ##   "delta_atk": int,          # 甲類 only. default: 0.
 ##   "delta_def": int,          # 甲類 only. default: 0.
 ##   "duration_rounds": int,    # 甲類 only. default: 0.
+##   "unplayable_reason": String, # story-020b: full reason line; default "" (playable).
 ## }
 ## [/codeblock]
 ## Whether a card is 甲類 or 丙類 is read from [param slot_kinds] (already
@@ -537,6 +540,11 @@ func diagnostic_detail_panel_visible() -> bool:
 ## merely that SOME text is showing.
 func diagnostic_detail_panel_text() -> String:
 	return _detail_text_label.text if _detail_text_label != null else ""
+
+
+## story-020b:Z3 不可打原因行目前顯示的文字(可打 = "")。
+func diagnostic_detail_reason_text() -> String:
+	return _detail_reason_label.text if _detail_reason_label != null else ""
 
 
 ## Z3's effect-summary line — either [constant TEXT_PERMANENT_MARK] (丙類) or
@@ -937,6 +945,7 @@ func _position_detail_panel(window_size: Vector2i) -> void:
 	var text_px: int = roundi(float(HudLayout.font_size(window_size)) * DETAIL_TEXT_FONT_FPX_MULTIPLIER)
 	_detail_text_label.add_theme_font_size_override(&"font_size", text_px)
 	_detail_effect_label.add_theme_font_size_override(&"font_size", text_px)
+	_detail_reason_label.add_theme_font_size_override(&"font_size", text_px)
 
 
 # Shows/hides and fills [member _detail_panel] from [member _card_faces] at
@@ -963,6 +972,7 @@ func _update_detail_panel_content() -> void:
 	)
 
 	_detail_text_label.text = String(face.get("flavor_text", ""))
+	_detail_reason_label.text = String(face.get("unplayable_reason", ""))
 	if is_permanent:
 		_detail_effect_label.text = Loc.localize(TEXT_PERMANENT_MARK)
 	else:
@@ -1173,20 +1183,29 @@ func _ensure_detail_panel() -> void:
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_label.anchor_right = 1.0
-	text_label.anchor_bottom = 0.6
+	text_label.anchor_bottom = 0.5
 	panel.add_child(text_label)
 
 	var effect_label: Label = Label.new()
 	effect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effect_label.anchor_top = 0.6
+	effect_label.anchor_top = 0.5
 	effect_label.anchor_right = 1.0
-	effect_label.anchor_bottom = 1.0
+	effect_label.anchor_bottom = 0.75
 	panel.add_child(effect_label)
+
+	# story-020b:不可打原因行(文字,不只靠灰化)。
+	var reason_label: Label = Label.new()
+	reason_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reason_label.anchor_top = 0.75
+	reason_label.anchor_right = 1.0
+	reason_label.anchor_bottom = 1.0
+	panel.add_child(reason_label)
 
 	add_child(panel)
 	_detail_panel = panel
 	_detail_text_label = text_label
 	_detail_effect_label = effect_label
+	_detail_reason_label = reason_label
 
 
 # Builds the lock glyph once — 4 ColorRects on an 8x8 grid
