@@ -290,3 +290,8 @@ battle.card_reason.partner_absent,夥伴不在場
 battle.card_reason.fray_full,配合折損已滿
 battle.card_reason.need_ally_within_2,需有隊友在 2 格內
 battle.card_reason.too_far_apart,兩人距離太遠
+battle.card_confirm.strike_single_format,%s → %s　−%d　HP %d → %d
+battle.card_confirm.strike_first_format,第一擊　%s → %s　−%d　HP %d → %d
+battle.card_confirm.strike_second_format,第二擊　%s → %s　−%d　HP %d → %d
+battle.card_confirm.strike_second_skipped_format,第二擊　%s　略過(目標已倒下)
+battle.card_confirm.cost_not_refunded,代價照付，不退

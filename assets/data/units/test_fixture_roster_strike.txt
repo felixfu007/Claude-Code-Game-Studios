@@ -1,0 +1,10 @@
+# test_fixture_roster_strike.txt — 測試專用合成夾具,供
+# tests/integration/ui/battle/battle_screen_card_strike_confirm_test.gd(story-020c)使用。
+# 搭配 test_fixture_terrain_duel.txt(5x3 全平地)。兩名我方射程 1~4、三名敵人皆在 5x3 範圍內:
+# P1(0,0) / P2(1,0);E1(3,0) 距 P1=3、距 P2=2;E2(2,1) 距 P1=3、距 P2=2;E3(4,2) 距 P1=6(射程外)、距 P2=5(射程外)。
+# 欄位順序同 vs01_roster.txt:id,code_name,faction,hp_max,atk,def,mp,min_range,max_range,start_x,start_y
+1,P1,PLAYER,20,10,3,1,1,4,0,0
+2,P2,PLAYER,20,8,2,1,1,4,1,0
+9,E1,ENEMY,20,5,3,1,1,1,3,0
+10,E2,ENEMY,20,5,3,1,1,1,2,1
+11,E3,ENEMY,20,5,3,1,1,1,4,2

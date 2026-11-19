@@ -39,7 +39,7 @@ extends Control
 ## Which of the two MVP card categories the panel is currently showing — this
 ## file's own display vocabulary (see class doc comment). [constant NONE] is
 ## the panel's at-rest / hidden state.
-enum Category { NONE, TEMPORARY_MODIFIER, PERMANENT_WRITE }
+enum Category { NONE, TEMPORARY_MODIFIER, PERMANENT_WRITE, STRIKE }
 
 const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
 
@@ -50,6 +50,9 @@ const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
 ## smallest supported window (960x540, N=2).
 const PANEL_WIDTH_FPX_MULTIPLIER: float = 24.0
 const PANEL_HEIGHT_FPX_MULTIPLIER: float = 22.0
+
+## story-020c:面板底緣與底部說明列頂緣的最小間距(fpx 倍數)。
+const BOTTOM_BAR_GAP_FPX_MULTIPLIER: float = 0.5
 
 ## Inner content margin / row gap, in fpx — mirrors `battle_menu.gd`'s
 ## `CONTENT_MARGIN_FPX_MULTIPLIER` convention.
@@ -137,6 +140,11 @@ const TEXT_COST_BOTH_ROW_FORMAT: StringName = &"battle.card_confirm.cost_both_ro
 const TEXT_RELATION_CURRENT_FORMAT: StringName = &"battle.card_confirm.relation_current_format"
 const TEXT_RELATION_NONE_PAYS_HP: StringName = &"battle.card_confirm.relation_none_pays_hp"
 const TEXT_UNAFFORDABLE_ROW_FORMAT: StringName = &"battle.card_confirm.unaffordable_row_format"
+const TEXT_STRIKE_SINGLE_FORMAT: StringName = &"battle.card_confirm.strike_single_format"
+const TEXT_STRIKE_FIRST_FORMAT: StringName = &"battle.card_confirm.strike_first_format"
+const TEXT_STRIKE_SECOND_FORMAT: StringName = &"battle.card_confirm.strike_second_format"
+const TEXT_STRIKE_SECOND_SKIPPED_FORMAT: StringName = &"battle.card_confirm.strike_second_skipped_format"
+const TEXT_COST_NOT_REFUNDED: StringName = &"battle.card_confirm.cost_not_refunded"
 const TEXT_BUTTON_UNPLAYABLE: StringName = &"battle.card_confirm.button_unplayable"
 const TEXT_BUTTON_CONFIRM: StringName = &"battle.card_confirm.button_confirm"
 ## 三態詞(單一詞表,鍵名表 1.1)。
@@ -189,6 +197,9 @@ var _cost_label: Label
 var _cost_detail_label: Label
 var _cost_note_label: Label
 var _unaffordable_label: Label
+## story-020c:直傷/合擊的逐擊列(換行相接)與其下的「代價照付，不退」提示。
+var _strike_label: Label
+var _strike_note_label: Label
 var _button_label: Label
 ## story-020a:確認鈕目前是否可用(false = 付不起,鈕面 [constant TEXT_BUTTON_UNPLAYABLE])。
 var _confirm_enabled: bool = true
@@ -324,6 +335,57 @@ func show_permanent_write_confirmation(
 
 	visible = true
 	_apply_layout()
+
+
+## story-020c(UX 第 2~3 節)—— 直傷(1 列)/合擊 c12(2 列)確認面板。
+## [param strikes] 每筆 {caster_name, enemy_name, damage, hp_before, hp_after, skipped},
+## 由呼叫端從 [method CardPlaySession.preview_strikes] 映射(UI 不算傷害)。
+## 合擊且第二擊 skipped 時,第二列改為略過文案,並在其下加 [constant TEXT_COST_NOT_REFUNDED]。
+func show_strike_confirmation(
+	card_id: String,
+	flavor_text: String,
+	strikes: Array[Dictionary],
+	is_combo: bool,
+	cost_block: CostBlock = null
+) -> void:
+	_category = Category.STRIKE
+	_title_label.text = _format_title(card_id, flavor_text)
+	var rows: Array[String] = []
+	var any_skipped: bool = false
+	for i: int in strikes.size():
+		var e: Dictionary = strikes[i]
+		if bool(e.get("skipped", false)):
+			any_skipped = true
+			rows.append(Loc.localize(TEXT_STRIKE_SECOND_SKIPPED_FORMAT) % String(e.get("caster_name", "")))
+			continue
+		var key: StringName = TEXT_STRIKE_SINGLE_FORMAT
+		if is_combo:
+			key = TEXT_STRIKE_FIRST_FORMAT if i == 0 else TEXT_STRIKE_SECOND_FORMAT
+		rows.append(Loc.localize(key) % [
+			String(e.get("caster_name", "")), String(e.get("enemy_name", "")),
+			int(e.get("damage", 0)), int(e.get("hp_before", 0)), int(e.get("hp_after", 0)),
+		])
+	_strike_label.text = "
+".join(PackedStringArray(rows))
+	_strike_note_label.text = Loc.localize(TEXT_COST_NOT_REFUNDED)
+
+	_set_row_visibility(true)
+	for label: Label in [_target_label, _delta_atk_label, _delta_def_label, _duration_label, _existing_modifiers_label, _effective_label]:
+		label.visible = false
+	_strike_label.visible = true
+	_strike_note_label.visible = any_skipped
+	_apply_cost_block(cost_block)
+
+	visible = true
+	_apply_layout()
+
+
+func diagnostic_strike_text() -> String:
+	return _strike_label.text if _strike_label.visible else ""
+
+
+func diagnostic_strike_note_text() -> String:
+	return _strike_note_label.text if _strike_note_label.visible else ""
 
 
 ## Closes the panel — reverses whatever the most recent [method
@@ -631,6 +693,8 @@ func diagnostic_button_text() -> String:
 
 
 func _set_row_visibility(is_temporary_modifier: bool) -> void:
+	_strike_label.visible = false
+	_strike_note_label.visible = false
 	_delta_atk_label.visible = is_temporary_modifier
 	_delta_def_label.visible = is_temporary_modifier
 	_duration_label.visible = is_temporary_modifier
@@ -678,10 +742,13 @@ func _ensure_nodes() -> void:
 	_cost_note_label = _build_label()
 	_unaffordable_label = _build_label()
 	_unaffordable_label.add_theme_color_override(&"font_color", WARNING_COLOR)
+	_strike_label = _build_label()
+	_strike_note_label = _build_label()
+	_strike_note_label.add_theme_color_override(&"font_color", WARNING_COLOR)
 	_button_label = _build_label()
 
 	_labels = [
-		_title_label, _target_label,
+		_title_label, _target_label, _strike_label, _strike_note_label,
 		_relation_label, _cost_label, _cost_detail_label, _cost_note_label, _unaffordable_label,
 		_delta_atk_label, _delta_def_label,
 		_duration_label, _existing_modifiers_label, _effective_label,
@@ -729,8 +796,16 @@ func _apply_layout() -> void:
 static func panel_rect(window_size: Vector2i) -> Rect2:
 	var fpx: float = float(HudLayout.font_size(window_size))
 	var safe: Rect2 = HudLayout.safe_rect(window_size)
-	var size: Vector2 = Vector2(fpx * PANEL_WIDTH_FPX_MULTIPLIER, fpx * PANEL_HEIGHT_FPX_MULTIPLIER)
-	var pos: Vector2 = safe.position + (safe.size - size) / 2.0
+	# story-020c:高度上限 = 底部說明列/按鈕列頂緣以上(020a 把倍率 18→22 後,1920×1080
+	# 面板底緣蓋到右下按鈕列)。上限取自真實版面函式 controls_hint_bg_rect,不重刻公式;
+	# 在 [safe.top, bar.top - gap] 區間內垂直置中。後續加列時面板最多長到這條線。
+	var bar: Rect2 = HudLayout.controls_hint_bg_rect(window_size)
+	var gap: float = fpx * BOTTOM_BAR_GAP_FPX_MULTIPLIER
+	var avail_height: float = maxf(bar.position.y - gap - safe.position.y, 0.0)
+	var size: Vector2 = Vector2(fpx * PANEL_WIDTH_FPX_MULTIPLIER, minf(fpx * PANEL_HEIGHT_FPX_MULTIPLIER, avail_height))
+	var pos: Vector2 = Vector2(
+		safe.position.x + (safe.size.x - size.x) / 2.0,
+		safe.position.y + (avail_height - size.y) / 2.0)
 	return Rect2(pos, size)
 
 

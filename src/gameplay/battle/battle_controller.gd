@@ -665,6 +665,21 @@ func selected_target_b() -> int:
 	return _card_play_session.selected_target_b()
 
 
+## story-020c: forwards [method CardPlaySession.selected_enemy_id] (-1 without a deck).
+func selected_enemy_id() -> int:
+	if _card_play_session == null:
+		return -1
+	return _card_play_session.selected_enemy_id()
+
+
+## story-020c: forwards [method CardPlaySession.preview_strikes] (empty without a deck).
+func preview_strikes() -> Array[Dictionary]:
+	if _card_play_session == null:
+		var none: Array[Dictionary] = []
+		return none
+	return _card_play_session.preview_strikes()
+
+
 ## story-008-play-session-wiring.md: forwards to [method
 ## CardPlaySession.open_hand]. Returns [code]false[/code] without touching
 ## anything if no [CardDeck] is attached to this battle (AC-P6) or the

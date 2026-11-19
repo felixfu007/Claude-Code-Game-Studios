@@ -607,6 +607,47 @@ func confirm() -> bool:
 	return true
 
 
+## story-020c: the enemy picked for the current 直傷/合擊 card, -1 if none yet. COMBO_DAMAGE keeps it in
+## its own field; 直傷 keeps it in [member _selected_target_b].
+func selected_enemy_id() -> int:
+	if _selected_card != null and _selected_card.category == Card.Category.COMBO_DAMAGE:
+		return _selected_enemy_id
+	return _selected_target_b
+
+
+## story-020c: read-only preview of the strike(s) the current selection would settle, for the confirm
+## panel (UI computes nothing). One entry per attacker in resolution order:
+## {caster_id, enemy_id, damage, hp_before, hp_after, skipped}. A combo whose first hit kills
+## marks the second [code]skipped[/code] (damage 0, hp unchanged) -- same rule as
+## [method _combo_hit_allowed]. Empty unless a 直傷/合擊 card has an enemy selected. Writes nothing.
+func preview_strikes() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if _selected_card == null:
+		return result
+	var enemy_id: int = selected_enemy_id()
+	var enemy: Unit = _state.unit_by_id(enemy_id) if enemy_id >= 1 else null
+	if enemy == null:
+		return result
+	var casters: Array[int] = []
+	match _selected_card.category:
+		Card.Category.DIRECT_DAMAGE:
+			casters = [_selected_target_a]
+		Card.Category.COMBO_DAMAGE:
+			casters = _combo_attackers(_selected_target_a, _selected_target_b)
+		_:
+			return result
+	var hp: int = enemy.hp
+	for caster_id: int in casters:
+		var skipped: bool = hp <= 0
+		var damage: int = 0 if skipped else _damage_for_hp(_selected_card.effect_value, hp)
+		result.append({
+			"caster_id": caster_id, "enemy_id": enemy_id, "damage": damage,
+			"hp_before": hp, "hp_after": hp - damage, "skipped": skipped,
+		})
+		hp -= damage
+	return result
+
+
 ## Step "取消" — valid from any of [constant Step.SELECTING_CARD],
 ## [constant Step.SELECTING_TARGET], [constant Step.SELECTING_TARGET_B], or
 ## [constant Step.CONFIRMING]. Steps back exactly one stage
@@ -854,7 +895,13 @@ func _enemy_in_reach(caster_id: int, enemy_id: int) -> bool:
 
 ## story-018: the damage the card deals to [param enemy], min(effect_value, hp). No DEF/phi.
 func _direct_damage_amount(enemy: Unit, effect_value: int) -> int:
-	return mini(effect_value, enemy.hp)
+	return _damage_for_hp(effect_value, enemy.hp)
+
+
+## story-020c: the ONE formula for a strike's damage (min(effect_value, hp)); settlement
+## ([method _direct_damage_amount]) and [method preview_strikes] both call it, no second copy.
+static func _damage_for_hp(effect_value: int, hp: int) -> int:
+	return mini(effect_value, hp)
 
 
 ## story-018: runs inside the commit window. The damage and the death cleanup go through

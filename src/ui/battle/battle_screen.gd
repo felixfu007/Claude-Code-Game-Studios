@@ -4167,7 +4167,9 @@ func _confirm_selected_card() -> void:
 		# card leaves it at -1 here). BOARD_TILE is still unregistered from the hand
 		# opening, exactly as after a normal advance into CONFIRMING, so we only open
 		# the confirm panel -- no registration, no cursor seeding.
-		if _controller.selected_target_a() >= 1:
+		# story-020c:具名直傷/合擊卡 target_a 一開始就已定,但仍在選敵(合法目標非空)——
+		# 不得誤判為已到確認步驟;唯有合法目標為空才是 CONFIRMING。
+		if _controller.selected_target_a() >= 1 and _controller.legal_targets().is_empty():
 			_card_selecting_target = false
 			_open_card_confirm_panel()
 			_refresh_view()
@@ -4574,10 +4576,41 @@ func _open_card_confirm_panel() -> void:
 				int(strength_result.get("projected", 0)),
 				_build_cost_block(card, target_a_id)
 			)
+		Card.Category.DIRECT_DAMAGE, Card.Category.COMBO_DAMAGE:
+			# story-020c:逐擊預告全部來自 CardPlaySession.preview_strikes()(與結算同一個傷害公式),
+			# 這裡只把 id 換成顯示名。
+			var strike_rows: Array[Dictionary] = []
+			for entry: Dictionary in _controller.preview_strikes():
+				strike_rows.append({
+					"caster_name": unit_display_name(_state.unit_by_id(int(entry["caster_id"]))),
+					"enemy_name": unit_display_name(_state.unit_by_id(int(entry["enemy_id"]))),
+					"damage": int(entry["damage"]),
+					"hp_before": int(entry["hp_before"]),
+					"hp_after": int(entry["hp_after"]),
+					"skipped": bool(entry["skipped"]),
+				})
+			_card_confirm_panel.show_strike_confirmation(
+				card.id, flavor_text, strike_rows,
+				card.category == Card.Category.COMBO_DAMAGE,
+				_build_cost_block(card, target_a_id)
+			)
 		_:
 			push_error("BattleScreen: _open_card_confirm_panel() unhandled Card.Category %s -- no confirm panel for it yet" % card.category)
 			_card_confirming = false
 			return
+
+
+## story-020c — 目前是否正在為直傷/合擊卡「選敵」(付款人已定、等玩家挑敵人)。
+## 只在選牌目標選取中成立;確認面板開啟後(_card_selecting_target 已為 false)不成立。
+func _is_selecting_enemy_for_damage_card() -> bool:
+	if not _card_selecting_target:
+		return false
+	var card: Card = _controller.selected_card()
+	if card == null:
+		return false
+	if card.category != Card.Category.DIRECT_DAMAGE and card.category != Card.Category.COMBO_DAMAGE:
+		return false
+	return _controller.selected_target_a() >= 1
 
 
 ## story-020a — 確認鈕是否可用(讀面板當下狀態)。獨立成函式,讓敏感度證明的 mutant 有可覆寫的接縫。
@@ -5302,6 +5335,10 @@ func _refresh_view() -> void:
 				threat_to_draw = threat_cells_final
 				attack_to_draw = attack_cells
 				blocked_to_draw = blocked_stamp_cells
+			# story-020c(UX 2.2 第 2 點 / AC-5):直傷/合擊選敵期間,移動範圍也一併隱藏。
+			var hide_move_layer: bool = _is_selecting_enemy_for_damage_card()
+			if hide_move_layer:
+				move_cells = []
 			_board_view.set_move_highlights(move_cells)
 			_board_view.set_threat_highlights(threat_to_draw)
 			_board_view.set_attack_highlights(attack_to_draw)
@@ -5325,11 +5362,14 @@ func _refresh_view() -> void:
 			var blocked_occupancy_raw: Array[Vector2i] = breakdown["blocked_by_occupancy"]
 			var blocked_terrain_raw: Array[Vector2i] = breakdown["blocked_by_terrain"]
 			var out_of_range_raw: Array[Vector2i] = breakdown["out_of_range"]
-			_board_view.set_move_unreachable_highlights(
-				cells_excluding(blocked_occupancy_raw, move_breakdown_excluded),
-				cells_excluding(blocked_terrain_raw, move_breakdown_excluded),
-				cells_excluding(out_of_range_raw, move_breakdown_excluded)
-			)
+			if hide_move_layer:
+				_board_view.set_move_unreachable_highlights([], [], [])
+			else:
+				_board_view.set_move_unreachable_highlights(
+					cells_excluding(blocked_occupancy_raw, move_breakdown_excluded),
+					cells_excluding(blocked_terrain_raw, move_breakdown_excluded),
+					cells_excluding(out_of_range_raw, move_breakdown_excluded)
+				)
 	else:
 		_board_view.set_move_highlights([])
 		_board_view.set_threat_highlights([])
