@@ -65,3 +65,54 @@ static func flavor_texts_from_text(text: String) -> Dictionary[String, String]:
 			return {}
 		result[fields[0]] = fields[1]
 	return result
+
+
+## 2026-11-19 story-028:牌面數字樣板。可用的具名記號(白名單,全為 [Card] 的 int 欄位):
+## [code]{cost_amount}[/code]、[code]{effect_value}[/code]、[code]{target_range}[/code]、
+## [code]{delta_atk}[/code]、[code]{delta_def}[/code]、[code]{duration_rounds}[/code]、
+## [code]{affinity_magnitude}[/code]。
+const _TEMPLATE_PATTERN: String = "[{]([A-Za-z_][A-Za-z0-9_]*)[}]"
+
+## 負數顯示用的減號:U+2212(與 design/narrative/card-face-text-14-2026-11-18.md 一致),
+## 非 ASCII 連字號。正數不加正號(要「+3」的牌面由樣板作者寫成 "+{delta_atk}")。
+const MINUS_SIGN: String = "\u2212"
+
+
+## 把 [param text] 內的 [code]{欄位名}[/code] 以 [param card] 對應欄位的數字取代並回傳。
+## 不含記號的文字原樣回傳。未知記號 -> [code]push_error[/code] 並【保留原記號字樣】
+## (畫面看得出錯,不靜默變成空字串或 0);不用 assert(release 匯出會被剝除)。
+## 集中於此一處:battle_screen.gd 所有牌面文字取用處皆須走本函式。
+static func render(card: Card, text: String) -> String:
+	if card == null or text.find("{") == -1:
+		return text
+	var regex: RegEx = RegEx.new()
+	regex.compile(_TEMPLATE_PATTERN)
+	var out: String = ""
+	var cursor: int = 0
+	for m: RegExMatch in regex.search_all(text):
+		out += text.substr(cursor, m.get_start() - cursor)
+		cursor = m.get_end()
+		var token: String = m.get_string(1)
+		if not _is_known_token(token):
+			push_error(
+				"CardText.render: unknown template token {%s} in card '%s' text; kept verbatim."
+				% [token, card.id]
+			)
+			out += m.get_string()
+			continue
+		out += _format_number(int(card.get(token)))
+	out += text.substr(cursor)
+	return out
+
+
+static func _is_known_token(token: String) -> bool:
+	return token in [
+		"cost_amount", "effect_value", "target_range", "delta_atk", "delta_def",
+		"duration_rounds", "affinity_magnitude",
+	]
+
+
+static func _format_number(value: int) -> String:
+	if value < 0:
+		return MINUS_SIGN + str(-value)
+	return str(value)

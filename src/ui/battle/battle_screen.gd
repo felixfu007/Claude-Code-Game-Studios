@@ -4452,6 +4452,12 @@ func _after_target_selection_advanced() -> void:
 	_refresh_view()
 
 
+## story-028:牌面文字的唯一取用入口 —— 查 [member _card_flavor_texts] 後經
+## [method CardText.render] 帶入卡表數字。確認面板與手牌兩處都必須走這裡,不得各自替換。
+func _card_face_text(card: Card) -> String:
+	return CardText.render(card, _card_flavor_texts.get(card.id, ""))
+
+
 ## Story U-014 — builds every value the S3 confirm panel needs, reading the
 ## selected card/targets straight from [method BattleController.selected_card]/
 ## [method BattleController.selected_target_a]/[method
@@ -4506,7 +4512,7 @@ func _open_card_confirm_panel() -> void:
 		)
 		return
 	_card_confirming = true
-	var flavor_text: String = _card_flavor_texts.get(card.id, "")
+	var flavor_text: String = _card_face_text(card)
 	var target_a_id: int = _controller.selected_target_a()
 	var target_b_id: int = _controller.selected_target_b()
 
@@ -5383,7 +5389,7 @@ func _refresh_view() -> void:
 	var card_faces: Array[Dictionary] = []
 	for card: Card in hand:
 		card_faces.append({
-			"flavor_text": _card_flavor_texts.get(card.id, ""),
+			"flavor_text": _card_face_text(card),
 			"delta_atk": card.delta_atk,
 			"delta_def": card.delta_def,
 			"duration_rounds": card.duration_rounds,
