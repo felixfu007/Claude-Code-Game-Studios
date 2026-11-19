@@ -228,7 +228,15 @@ func test_every_real_card_table_names_the_expected_unit_that_exists_in_its_roste
 		cards.assign(parsed)
 		var state: BattleState = BattleState.create(PackedStringArray(), roster_text)
 		for card: Card in cards:
-			if card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
+			if card.cost_type != Card.CostType.NONE:
+				# story-022:有代價的牌 named_unit_id = 付款人(-1 = 打牌時選);>=1 者須是我方單位。
+				if card.named_unit_id != Card.UNRESTRICTED_TARGET:
+					var payer: Unit = state.unit_by_id(card.named_unit_id)
+					assert_bool(payer != null and payer.faction == Unit.Faction.PLAYER).is_true()
+				if card.partner_unit_id >= 1:
+					var partner: Unit = state.unit_by_id(card.partner_unit_id)
+					assert_bool(partner != null and partner.faction == Unit.Faction.PLAYER).is_true()
+			elif card.category == Card.Category.TEMPORARY_STAT_MODIFIER:
 				var expected: Array = _EXPECTED_NAMED[card.id]
 				assert_int(card.named_unit_id).is_equal(expected[0])
 				assert_int(card.named_mode).is_equal(expected[1])

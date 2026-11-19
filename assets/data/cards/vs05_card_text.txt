@@ -7,11 +7,17 @@
 # (見 vs02_card_text.txt 檔頭 2026-10-27 更正);本檔由程式設計師接線時才會生效。
 #
 # id,flavor_text
-card_01,甲:「我先上、別管我」——最後一仗,這股衝勁讓她這回合下手更狠
-card_02,乙在耳邊喊了聲「我挺你」——那股底氣撐得住兩回合
-card_03,乙一句「別衝、我在」——讓人放心地把後背交出去
-card_04,丁一個手勢穩住陣腳——這回合誰都攻不進來
-card_05,戊看準一個空檔——「機會來了」
-card_06,丙壓低身形——山裡練出的警覺讓他這兩回合穩得住
+card_11,【破門一擊】藍亭萱對射程內可視敵人造成 {effect_value} 點固定傷害；代價：藍亭萱付出 {cost_amount} 點血
+card_12,【遠距壓制】董振豪對射程內可視敵人造成 {effect_value} 點固定傷害；代價：董振豪付出 {cost_amount} 點血
+card_13,【孤注一擲】選我方一人，對射程內可視敵人造成 {effect_value} 點固定傷害；條件：該單位 {target_range} 格內有隊友；代價：該單位付出 {cost_amount} 點血
+card_14,【輸血】徐培恩讓 {target_range} 格內缺血的隊友最多回復 {effect_value} 點血；代價：徐培恩付出 {cost_amount} 點血
+card_15,【豁出去】選我方一人，自身攻擊 +{delta_atk}，持續 {duration_rounds} 回合；代價：該單位付出 {cost_amount} 點血
+card_16,【咬牙衝刺】藍亭萱攻擊 +{delta_atk}、防禦 {delta_def}，持續 {duration_rounds} 回合；代價：藍亭萱付出 {cost_amount} 點血
+card_17,【扛下】麥子健讓 {target_range} 格內一名隊友防禦 +{delta_def}，持續 {duration_rounds} 回合；代價：麥子健付出 {cost_amount} 點血
+card_18,【破釜沉舟】董振豪攻擊 +{delta_atk}，持續 {duration_rounds} 回合；代價：董振豪付出 {cost_amount} 點血
+card_19,【聯手破門】藍亭萱與徐培恩攻擊 +{delta_atk}，持續 {duration_rounds} 回合；條件：兩人相距 {target_range} 格內；代價：配合折損 {cost_amount}；關係冷淡時改為各付血
+card_20,【合力防守】藍亭萱與徐培恩防禦 +{delta_def}，持續 {duration_rounds} 回合；條件：兩人相距 {target_range} 格內；代價：配合折損 {cost_amount}；關係冷淡時改為各付血
+card_21,【臨時搭檔】董振豪與秦亦柔攻擊 +{delta_atk}，持續 {duration_rounds} 回合；條件：兩人相距 {target_range} 格內；代價：配合折損 {cost_amount}；關係冷淡時改為各付血
+card_22,【交叉火力】董振豪與秦亦柔各對同一名敵人造成 {effect_value} 點固定傷害；條件：敵人須同時在兩人射程與視線內；代價：配合折損 {cost_amount}；關係冷淡時改為各付血
 card_07,甲在乙耳邊說了句「謝了、剛才那手漂亮」——兩人之間的默契又深了一分
 card_08,丙眼神閃避不敢與丁對視——這份心虛丁看得一清二楚

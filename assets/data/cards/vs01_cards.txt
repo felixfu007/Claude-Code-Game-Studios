@@ -76,6 +76,23 @@
 # 目前沒有任何驗收條件可查證。已登記為已知缺口,見
 # design/gdd/skill-card-system.md Core Rules 一之三界線 1(2026-09-15 補述)。
 #
+# ── 【選填第 11~16 欄】story-011/022(vs02~vs05 的 card_11 起各列用 16 欄;本檔 8~10 欄列不變)──
+# 合法欄數是集合 {8,9,10,16}。16 欄的完整順序:
+# id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,named_unit_id,named_mode,cost_type,cost_amount,effect_value,partner_unit_id,target_range,source
+#
+# category(新增三值) DIRECT_DAMAGE(直傷)/ HEAL(補血)/ COMBO_DAMAGE(合擊直傷);其數值在 effect_value。
+# cost_type           NONE / HP(付血)/ PAIR(雙人,本場好感度折損);AFFINITY 保留在 enum 但不使用。
+# cost_amount         >= 0;cost_type NONE 時必為 0。
+# effect_value        直傷/補血的點數;其餘類別填 0。
+# partner_unit_id     雙人卡的第二人(>= 1);其餘填 -1。cost_type != NONE 時 named_unit_id = 付款人(-1 = 打牌時選)。
+# target_range        -1 = 不適用/用付款人攻擊射程;0 = 付款人自己;N>=1 = 距離 <= N。
+#                     🔴 c03(card_13)借用此欄表達「付款人與另一名我方單位距離 <= 2」,必須填 2
+#                     (2026-11-19 管理者裁決;填 -1 會靜默失去條件,由資料測試鎖死)。
+# source              BASE / CAMP。
+# 牌面文字表(vsNN_card_text.txt)可用 {cost_amount} {effect_value} {target_range} {delta_atk}
+# {delta_def} {duration_rounds} {affinity_magnitude} 記號帶入本表數字(CardText.render)。
+# 其餘四份 vs02~vs05_cards.txt 的欄位定義一律指向本檔。
+#
 # id,category,delta_atk,delta_def,duration_rounds,affinity_character_a,affinity_character_b,affinity_magnitude,named_unit_id,named_mode
 card_01,TEMPORARY_STAT_MODIFIER,3,0,1,-1,-1,0,1,ONLY
 card_02,TEMPORARY_STAT_MODIFIER,1,0,2,-1,-1,0,2,EXCLUDE

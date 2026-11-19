@@ -70,6 +70,9 @@ func test_ac2_real_card_text_files_unchanged_by_render() -> void:
 			FileAccess.get_file_as_string(path)
 		)
 		for id: String in table:
+			# story-022:新牌面刻意含 {記號};本測試只鎖「不含記號的舊牌面」不被 render 改動。
+			if table[id].contains("{"):
+				continue
 			checked += 1
 			assert_str(CardText.render(card, table[id])).append_failure_message(
 				"%s / %s 被 render 改動" % [path, id]
