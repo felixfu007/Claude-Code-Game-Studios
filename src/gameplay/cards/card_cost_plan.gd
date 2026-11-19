@@ -23,6 +23,7 @@ enum Reason {
 	WEAR_CAP_REACHED, ## 該配對本場折損已達上限。
 	RELATION_UNRESOLVED, ## 無法解析配對關係態(缺池或單位編號非法)。
 	NO_LEGAL_TARGET, ## 甲類:目前沒有合法承受者(story-009 的點名者不在場)。
+	NEED_ALLY_NEARBY, ## 直傷卡 target_range >= 1:付款人範圍內沒有另一名存活我方(story-027;UX 鍵 battle.card_reason.need_ally_within_2)。
 }
 
 var kind: Kind = Kind.NONE

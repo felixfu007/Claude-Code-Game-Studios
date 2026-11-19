@@ -328,7 +328,9 @@ func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
 		Card.Category.DIRECT_DAMAGE:
-			pass
+			# story-027 (c03): target_range >= 1 = the payer needs another living ally in range.
+			if _needs_ally_nearby(card) and not _any_payer_has_ally_nearby(card):
+				return CardCostPlan.Reason.NEED_ALLY_NEARBY
 		Card.Category.COMBO_DAMAGE:
 			# story-019: a combo card must name BOTH attackers on its face.
 			if card.named_unit_id < 1 or card.partner_unit_id < 1:
@@ -376,8 +378,16 @@ func legal_targets() -> Array[int]:
 				Card.Category.HEAL:
 					return _legal_targets_for_heal(_selected_card)
 				Card.Category.DIRECT_DAMAGE:
-					# c03: the payer is player-chosen -- any alive PLAYER unit.
-					return _alive_player_unit_ids()
+					# c03: the payer is player-chosen -- any alive PLAYER unit (story-027:
+					# with target_range >= 1 only those with another living ally in range).
+					var payers: Array[int] = _alive_player_unit_ids()
+					if not _needs_ally_nearby(_selected_card):
+						return payers
+					var qualified: Array[int] = []
+					for payer_id: int in payers:
+						if _ally_within_proximity(payer_id, _selected_card.target_range):
+							qualified.append(payer_id)
+					return qualified
 				_:
 					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
 					return []
@@ -521,6 +531,9 @@ func confirm() -> bool:
 		Card.Category.DIRECT_DAMAGE:
 			# story-018: validated BEFORE the window: the enemy must still be a legal target
 			# of the caster (alive, in range, line of sight) -- the same query as the pick step.
+			if _needs_ally_nearby(_selected_card) and not _ally_within_proximity(_selected_target_a, _selected_card.target_range):
+				push_error("CardPlaySession.confirm: payer %d has no living ally within range" % _selected_target_a)
+				return false
 			if not _legal_enemy_targets(_selected_target_a).has(_selected_target_b):
 				push_error("CardPlaySession.confirm: enemy %d is not a legal direct-damage target" % _selected_target_b)
 				return false
@@ -909,6 +922,43 @@ func _apply_combo_damage_in_window(attacker_a: int, attacker_b: int, enemy_id: i
 func _notify_kill(unit_id: int) -> void:
 	if _kill_hook.is_valid():
 		_kill_hook.call(unit_id)
+
+
+## story-027: a direct-damage card with target_range >= 1 requires another living ally
+## within that range of the payer (-1 = no condition).
+func _needs_ally_nearby(card: Card) -> bool:
+	return card.category == Card.Category.DIRECT_DAMAGE and card.target_range >= 1
+
+
+## Named payer: that unit must satisfy the condition (an absent payer is left to the cost
+## plan's own PARTNER_ABSENT report). Payer chosen later: at least one living PLAYER unit must.
+func _any_payer_has_ally_nearby(card: Card) -> bool:
+	if card.named_unit_id >= 1:
+		if not _is_present(_state.unit_by_id(card.named_unit_id)):
+			return true
+		return _ally_within_proximity(card.named_unit_id, card.target_range)
+	for payer_id: int in _alive_player_unit_ids():
+		if _ally_within_proximity(payer_id, card.target_range):
+			return true
+	return false
+
+
+## Another living PLAYER unit (not the payer) within [param range_limit] of the payer,
+## distance from the single shared [method AffinityRules.manhattan_distance].
+func _ally_within_proximity(payer_id: int, range_limit: int) -> bool:
+	var origin: Vector2i = _state.position_of(payer_id)
+	for ally: Unit in _proximity_candidates():
+		if ally.id == payer_id:
+			continue
+		if _within_range(AffinityRules.manhattan_distance(origin, _state.position_of(ally.id)), range_limit):
+			return true
+	return false
+
+
+## Candidate allies for the proximity condition: living PLAYER units only
+## ([method BattleState.units_of] already excludes the fallen).
+func _proximity_candidates() -> Array[Unit]:
+	return _state.units_of(Unit.Faction.PLAYER)
 
 
 func _within_range(distance: int, range_limit: int) -> bool:
