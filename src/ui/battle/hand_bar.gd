@@ -976,8 +976,12 @@ func _update_detail_panel_content() -> void:
 
 	# story-021 Z3:雙人卡多一行該對兩人姓名(文字置於卡面文字上方;單人卡不變)。
 	var pair_names: String = String(face.get("pair_names", ""))
+	# story-029:Z3 = [雙人姓名行] + [牌名行,空牌名不顯示] + 效果行。
+	var card_name: String = String(face.get("card_name", ""))
 	_detail_text_label.text = (
-		(pair_names + "\n" if pair_names != "" else "") + String(face.get("flavor_text", ""))
+		(pair_names + "\n" if pair_names != "" else "")
+		+ (card_name + "\n" if card_name != "" else "")
+		+ String(face.get("flavor_text", ""))
 	)
 	_detail_reason_label.text = String(face.get("unplayable_reason", ""))
 	if is_permanent:

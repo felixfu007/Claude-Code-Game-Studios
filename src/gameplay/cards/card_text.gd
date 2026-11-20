@@ -1,13 +1,15 @@
-## Card-face flavor text table: parses `id,flavor_text` rows (as read from
-## `assets/data/cards/vs01_card_text.txt`) into an `id -> flavor_text` lookup a caller can
-## query alongside [Card]'s mechanical data.
+## Card-face text table: parses `id,card_name,effect_line` rows (as read from
+## `assets/data/cards/vs0N_card_text.txt`) into lookups a caller can query alongside
+## [Card]'s mechanical data.
 ##
 ## Deliberately separate from [Card] (2026-09-15 manager ruling, transcribed in
 ## `vs01_card_text.txt`'s header): [Card] has no field for display text and this class
-## never writes one into a [Card] instance. The file header's own suggested seam is for a
-## future loader (not yet implemented — U-003 is the first place both tables are loaded
-## together) to parse both tables independently and look each one up by [code]id[/code]
-## separately.
+## never writes one into a [Card] instance.
+##
+## 2026-11-20 story-029:文字表由 `id,flavor_text` 兩欄改為 `id,card_name,effect_line` 三欄
+## (ux 判定方案 A:牌名獨立欄、條件與代價不放牌面)。🔴 [b]拒絕舊兩欄格式,不做相容[/b]:
+## 全部資料檔(vs01~05、教學場)已一次遷移完畢;相容會讓「漏遷的檔案」靜默被當成
+## 「牌名=整句、效果=空」或反之而不報錯。舊格式列只有 2 欄 -> 整表拒絕並 push_error。
 ##
 ## Parsing is deliberately split from file reading (this class never touches
 ## [FileAccess]) — mirrors [method Unit.roster_from_text] and
@@ -15,55 +17,68 @@
 class_name CardText
 extends RefCounted
 
-## Number of comma-separated fields a parsed line must resolve to: id, flavor_text.
-## Unlike [Unit] / [AffinityLink]'s per-line parsers, this format has no enum field to
-## validate — the only structural failure this checks is a missing separator (a line with
-## no comma at all resolves to 1 field, not 2).
+## Number of fields a parsed line must resolve to: id, card_name, effect_line.
 ##
-## 2026-11-11 管理者裁決(story-038):欄數檢查改為 push_error + 整表拒絕,發行版也有效
-## (assert 在 release 匯出會被整條移除,檢查會消失)。見
-## production/epics/tactical-combat/story-038-release-safe-data-parsing.md。
-const FIELD_COUNT: int = 2
+## 2026-11-11 管理者裁決(story-038):欄數檢查為 push_error + 整表拒絕,發行版也有效
+## (assert 在 release 匯出會被整條移除,檢查會消失)。
+const FIELD_COUNT: int = 3
+
+## [method faces_from_text] 每筆值([PackedStringArray])內的欄位索引。
+const FACE_NAME: int = 0
+const FACE_EFFECT: int = 1
 
 
-## Parses an entire card-text-table blob into a [code]Dictionary[String, String][/code]
-## keyed by card [code]id[/code], one entry per non-skipped line. Blank lines and lines
-## starting with [code]#[/code] are skipped.
+## Parses an entire card-text-table blob into [code]id -> [card_name, effect_line][/code].
+## Blank lines and lines starting with [code]#[/code] are skipped.
 ##
-## Splits each line on the FIRST comma only ([code]split(",", true, 1)[/code]), never on
-## every comma — per [code]vs01_card_text.txt[/code]'s own header warning that
-## [code]flavor_text[/code] content is not guaranteed comma-free (no quote-escaping
-## convention exists in this table format). Limiting the split means a stray comma inside
-## [code]flavor_text[/code] degrades to "the comma stayed in the text, no third field", not
-## a silently-truncated string or a thrown exception.
+## Splits each line on the FIRST TWO commas only ([code]split(",", true, 2)[/code]):
+## [code]card_name[/code] is comma-free by contract, and any further comma stays inside
+## [code]effect_line[/code] (no quote-escaping convention exists in this table format).
+## 🔴 副作用(誠實登記):一列舊格式但內文含逗號(例 [code]card_99,甲說,「x」[/code])
+## 會被讀成三欄(牌名「甲說」)而【不會】被拒絕 —— 欄數檢查只抓得到「不足 3 欄」。
+## 防線是:資料檔已全數遷移(測試掃描),而非解析器。
 ##
-## 🔴 [b]壞列的處置已決(2026-11-11 管理者裁決,見 story-038):整表拒絕。[/b]
-## 任何一列缺逗號 -> [code]push_error()[/code](含行號)後回傳 [b]空字典[/b],整張表不採用
-## (比照 [method Unit.roster_from_text] / [method AffinityLink.links_from_text])。本方法回傳
-## 具型別 [code]Dictionary[/code],無法表達 null,故以空字典表示失敗;接收端
-## (battle_screen.gd 的 [code]_card_flavor_texts[/code])對缺牌面文字本來就以 [code]""[/code]
-## 退回,所以不需改動。
-##
-## 🔴 重複 [code]id[/code] 仍【未裁決】:目前後者覆蓋前者,屬「尚未決定」的副產品,
-## 不是背書的設計。
-static func flavor_texts_from_text(text: String) -> Dictionary[String, String]:
-	var result: Dictionary[String, String] = {}
+## 任何一列不足 3 欄(含舊兩欄格式、缺逗號)-> [code]push_error()[/code](含行號)後回傳
+## [b]空字典[/b],整張表不採用。接收端對缺牌面文字本來就以 [code]""[/code] 退回。
+## 🔴 重複 [code]id[/code] 仍【未裁決】:目前後者覆蓋前者。
+static func faces_from_text(text: String) -> Dictionary[String, PackedStringArray]:
+	var result: Dictionary[String, PackedStringArray] = {}
 	var line_number: int = 0
 	for raw_line: String in text.split("\n"):
 		line_number += 1
 		var line: String = raw_line.strip_edges()
 		if line.is_empty() or line.begins_with("#"):
 			continue
-		var fields: PackedStringArray = line.split(",", true, 1)
+		var fields: PackedStringArray = line.split(",", true, FIELD_COUNT - 1)
 		if fields.size() != FIELD_COUNT:
 			push_error(
 				(
-					"CardText.flavor_texts_from_text: aborting -- expected %d fields (a line "
-					+ "with no comma at all?), got %d at line %d: %s"
+					"CardText.faces_from_text: aborting -- expected %d fields "
+					+ "(id,card_name,effect_line; old 2-column format is rejected), got %d "
+					+ "at line %d: %s"
 				) % [FIELD_COUNT, fields.size(), line_number, line]
 			)
 			return {}
-		result[fields[0]] = fields[1]
+		result[fields[0]] = PackedStringArray([fields[1], fields[2]])
+	return result
+
+
+## id -> effect_line([code]{記號}[/code] 尚未替換,取用處須走 [method render])。
+## 壞表 -> 空字典(見 [method faces_from_text])。
+static func flavor_texts_from_text(text: String) -> Dictionary[String, String]:
+	var result: Dictionary[String, String] = {}
+	var faces: Dictionary[String, PackedStringArray] = faces_from_text(text)
+	for id: String in faces:
+		result[id] = faces[id][FACE_EFFECT]
+	return result
+
+
+## id -> card_name(可為空字串:空牌名 UI 不顯示標題列)。壞表 -> 空字典。
+static func card_names_from_text(text: String) -> Dictionary[String, String]:
+	var result: Dictionary[String, String] = {}
+	var faces: Dictionary[String, PackedStringArray] = faces_from_text(text)
+	for id: String in faces:
+		result[id] = faces[id][FACE_NAME]
 	return result
 
 
@@ -75,7 +90,7 @@ const _TEMPLATE_PATTERN: String = "[{]([A-Za-z_][A-Za-z0-9_]*)[}]"
 
 ## 負數顯示用的減號:U+2212(與 design/narrative/card-face-text-14-2026-11-18.md 一致),
 ## 非 ASCII 連字號。正數不加正號(要「+3」的牌面由樣板作者寫成 "+{delta_atk}")。
-const MINUS_SIGN: String = "\u2212"
+const MINUS_SIGN: String = "−"
 
 
 ## 把 [param text] 內的 [code]{欄位名}[/code] 以 [param card] 對應欄位的數字取代並回傳。

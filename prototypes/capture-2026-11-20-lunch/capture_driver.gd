@@ -111,6 +111,23 @@ func _capture_one(scn: String, res: Vector2i) -> void:
 					c22 != null, want, hand.size(), inst._hand_bar.diagnostic_detail_reason_text()]
 	for i in 3:
 		await get_tree().process_frame
+	# 2026-11-20 findings: HandBar 展開補間 0.15s 會把手動 1.0 蓋回 <1.0 -> Z3 隱藏;等補間跑完再讀/拍。
+	await get_tree().create_timer(0.5).timeout
+	for i in 3:
+		await get_tree().process_frame
+	var diag: String = "DIAG cursor_cell=%s active=%s valid=%s tile_panel_vis=%s label='%s' relrows=%d sel=%d" % [
+		inst._cursor_cell, inst._cursor_active, inst._tile_info_cursor_valid,
+		inst._tile_info_panel_bg.visible, inst._tile_info_panel_label.text.replace("\n", "|"),
+		inst._tile_info_relation_row_count, inst._controller.selected_unit()]
+	diag += " panel_h=%s" % (inst._tile_info_panel_bg.offset_bottom - inst._tile_info_panel_bg.offset_top)
+	diag += " auth=%s" % CursorStateHost.get_device_authority()
+	var tgt: CursorTarget = CursorStateHost.get_current_target()
+	diag += " host_target=%s" % (str(tgt.id) if tgt != null else "null")
+	diag += " hand_expanded=%s prog=%s z3_vis=%s z3_text='%s'" % [
+		inst._hand_bar._expanded, inst._hand_bar._expand_progress,
+		inst._hand_bar.diagnostic_detail_panel_visible(),
+		inst._hand_bar.diagnostic_detail_panel_text().replace("\n", "|")]
+	print(diag)
 	var wvc: SubViewportContainer = inst.get_node("WorldViewportContainer")
 	var wv: SubViewport = inst.get_node("WorldViewportContainer/WorldViewport")
 	print("HOSTCHAIN scn=%s res=%s window=%s WVC.pos=%s WVC.size=%s stretch_shrink=%d WV.size=%s %s" % [
@@ -175,6 +192,12 @@ func _write(screen: BattleScreen, a: int, b: int, m: float) -> void:
 
 func _cursor_on(screen: BattleScreen, unit_id: int) -> void:
 	screen._cursor_cell = screen._state.position_of(unit_id)
+	# findings 2026-11-20: _update_cursor_visual() 每幀以 CursorStateHost 目標覆寫 _cursor_cell
+	# (鍵盤權威),所以必須把【宿主目標】移到該格,而不只是改 _cursor_cell。
+	var set_res: Variant = CursorStateHost.set_target(CursorTarget.make(
+		CursorTypes.SurfaceType.BOARD_TILE,
+		CursorTypes.encode_tile(screen._cursor_cell, BoardCoords.BOARD_COLS)))
+	print("SET_TARGET result=", set_res, " cell=", screen._cursor_cell)
 	screen._cursor_active = true
 	screen._tile_info_cursor_valid = true
 	screen._update_tile_info_panel()

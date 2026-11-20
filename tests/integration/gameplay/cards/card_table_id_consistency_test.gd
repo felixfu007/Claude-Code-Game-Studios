@@ -195,7 +195,7 @@ const _GOOD_CARDS: String = (
 	"card_a,TEMPORARY_STAT_MODIFIER,1,0,1,-1,-1,0,1,ONLY\n"
 	+ "card_b,PERMANENT_AFFINITY_WRITE,0,0,0,1,2,2,-1,ONLY\n"
 )
-const _GOOD_TEXT: String = "card_a,文字甲\ncard_b,文字乙\n"
+const _GOOD_TEXT: String = "card_a,名甲,文字甲\ncard_b,名乙,文字乙\n"
 
 
 func test_sensitivity_proof_baseline_substitute_tables_pass() -> void:
@@ -204,7 +204,7 @@ func test_sensitivity_proof_baseline_substitute_tables_pass() -> void:
 
 # ① 牌面文字表少一列 -> AC2 紅
 func test_sensitivity_proof_missing_text_row_is_caught() -> void:
-	assert_bool(_id_sets_match(_GOOD_CARDS, "card_a,文字甲\n")).is_false()
+	assert_bool(_id_sets_match(_GOOD_CARDS, "card_a,名甲,文字甲\n")).is_false()
 
 
 # ② 牌表多一列、無文字 -> AC2 紅

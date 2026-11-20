@@ -344,7 +344,10 @@ func test_open_hand_detail_panel_shows_the_card_text() -> void:
 	# Assert — 卡面文字來自卡面文字表,不是空白
 	assert_bool(instance._hand_bar.diagnostic_detail_panel_visible()).is_true()
 	assert_str(instance._hand_bar.diagnostic_detail_panel_text()).is_equal(
-		instance._card_flavor_texts.get(hand[0].id, "")
+		(
+			instance._card_names.get(hand[0].id, "") + "\n"
+			+ CardText.render(hand[0], instance._card_flavor_texts.get(hand[0].id, ""))
+		)
 	)
 	assert_str(instance._hand_bar.diagnostic_detail_panel_text()).is_not_empty()
 

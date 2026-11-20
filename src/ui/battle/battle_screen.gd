@@ -855,6 +855,8 @@ var _card_confirm_pending_press: bool = false
 ## prove the table loads cleanly, then discarded — "no screen in this slice
 ## consumes flavor text yet"). This story is the first consumer.
 var _card_flavor_texts: Dictionary[String, String] = {}
+## story-029:id -> 牌名(card_name 欄;可為空 = 不顯示標題列)。與 [member _card_flavor_texts] 同源同時載入。
+var _card_names: Dictionary[String, String] = {}
 
 ## Story U-014 — injectable seam for the confirm panel's 丙類「好感度數值
 ## (現值 → 打完後)」欄位(`skill-card-play.md` UX-13:`combat_strength_read`
@@ -2073,6 +2075,7 @@ func _ready() -> void:
 		# discarded). Kept in _card_flavor_texts so _open_card_confirm_panel()
 		# can show the confirm panel's "卡名與牌面文字" field.
 		_card_flavor_texts = CardText.flavor_texts_from_text(card_text_text)
+		_card_names = CardText.card_names_from_text(card_text_text)
 
 	# tuning-data story-001 —— 調整旋鈕:MISSING/UNREADABLE 與解析失敗(null)皆為載入失敗,
 	# 不靜默回預設。空檔(零鍵)為合法狀態。
@@ -4538,6 +4541,12 @@ func _card_face_text(card: Card) -> String:
 	return CardText.render(card, _card_flavor_texts.get(card.id, ""))
 
 
+## story-029:牌名(card_name 欄)的唯一取用入口。確認面板標題與手牌 Z3 標題行共用;
+## 無此 id 或空牌名 -> ""(確認面板退回卡片編號,Z3 不顯示標題行)。牌名不含 {記號},不需 render。
+func _card_face_name(card: Card) -> String:
+	return _card_names.get(card.id, "")
+
+
 ## Story U-014 — builds every value the S3 confirm panel needs, reading the
 ## selected card/targets straight from [method BattleController.selected_card]/
 ## [method BattleController.selected_target_a]/[method
@@ -4592,7 +4601,7 @@ func _open_card_confirm_panel() -> void:
 		)
 		return
 	_card_confirming = true
-	var flavor_text: String = _card_face_text(card)
+	var card_title: String = _card_face_name(card)
 	var target_a_id: int = _controller.selected_target_a()
 	var target_b_id: int = _controller.selected_target_b()
 
@@ -4631,7 +4640,7 @@ func _open_card_confirm_panel() -> void:
 			var preview_atk: int = CardModifierRules.effective_atk(target.atk, hypothetical, _state.card_modifier_tuning)
 			var preview_def: int = CardModifierRules.effective_def(target.def, hypothetical, _state.card_modifier_tuning)
 			_card_confirm_panel.show_temporary_modifier_confirmation(
-				card.id, flavor_text, unit_display_name(target),
+				card.id, card_title, unit_display_name(target),
 				card.delta_atk, card.delta_def, card.duration_rounds,
 				existing, preview_atk, preview_def,
 				cost_block, not is_heal, not two_recipients
@@ -4667,7 +4676,7 @@ func _open_card_confirm_panel() -> void:
 			if card_confirm_strength_provider.is_valid():
 				strength_result = card_confirm_strength_provider.call(target_a_id, target_b_id)
 			_card_confirm_panel.show_permanent_write_confirmation(
-				card.id, flavor_text, unit_display_name(target_a), unit_display_name(target_b),
+				card.id, card_title, unit_display_name(target_a), unit_display_name(target_b),
 				bool(strength_result.get("available", false)),
 				int(strength_result.get("current", 0)),
 				int(strength_result.get("projected", 0)),
@@ -4687,7 +4696,7 @@ func _open_card_confirm_panel() -> void:
 					"skipped": bool(entry["skipped"]),
 				})
 			_card_confirm_panel.show_strike_confirmation(
-				card.id, flavor_text, strike_rows,
+				card.id, card_title, strike_rows,
 				card.category == Card.Category.COMBO_DAMAGE,
 				_build_cost_block(card, target_a_id)
 			)
@@ -5526,6 +5535,7 @@ func _refresh_view() -> void:
 	var card_faces: Array[Dictionary] = []
 	for card: Card in hand:
 		card_faces.append({
+			"card_name": _card_face_name(card),
 			"flavor_text": _card_face_text(card),
 			"delta_atk": card.delta_atk,
 			"delta_def": card.delta_def,

@@ -8,6 +8,9 @@
 # 「只有手牌那處」敏感;兩處各自的斷言(下方兩條 test_ac4_*)分別守各自的顯示結果。
 extends GdUnitTestSuite
 
+## story-029:牌名欄。Z3 顯示 牌名+換行+效果;確認面板標題只顯示牌名。
+const _NAME: String = "測試牌名"
+const _EXPECTED_Z3: String = _NAME + "\n" + "付出 3 點血,防禦 −2"
 const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const _TEMPLATE: String = "付出 {cost_amount} 點血,防禦 {delta_def}"
 const _EXPECTED: String = "付出 3 點血,防禦 \u22122"
@@ -19,6 +22,15 @@ var _host_snap: CursorHostSnapshot = null
 class _MutantBypass extends BattleScreen:
 	func _card_face_text(card: Card) -> String:
 		return _card_flavor_texts.get(card.id, "")
+
+
+## story-029 AC6①:牌名欄與效果欄對調。
+class _MutantSwapColumns extends BattleScreen:
+	func _card_face_text(card: Card) -> String:
+		return _card_names.get(card.id, "")
+
+	func _card_face_name(card: Card) -> String:
+		return CardText.render(card, _card_flavor_texts.get(card.id, ""))
 
 
 func before_test() -> void:
@@ -58,6 +70,8 @@ func _install_card(instance: BattleScreen) -> Card:
 	card.cost_type = Card.CostType.HP
 	card.cost_amount = 3
 	instance._card_flavor_texts["t028_face"] = _TEMPLATE
+	instance._card_names["t028_face"] = _NAME
+	instance._card_names["t028_face"] = _NAME
 	var cards: Array[Card] = [card]
 	var deck: CardDeck = CardDeck.new(cards)
 	instance._state.attach_card_deck(deck)
@@ -96,16 +110,22 @@ func _confirm_text(script: GDScript = null) -> String:
 
 
 func _scn_ac4(script: GDScript = null) -> bool:
-	return _hand_text(script) == _EXPECTED and _confirm_text(script) == _EXPECTED
+	return _hand_text(script) == _EXPECTED_Z3 and _confirm_text(script) == _NAME
 
 
 func test_ac4_hand_detail_panel_shows_substituted_numbers() -> void:
-	assert_str(_hand_text()).is_equal(_EXPECTED)
+	assert_str(_hand_text()).is_equal(_EXPECTED_Z3)
 
 
 func test_ac4_confirm_panel_shows_substituted_numbers() -> void:
-	assert_str(_confirm_text()).is_equal(_EXPECTED)
+	assert_str(_confirm_text()).is_equal(_NAME)
 
 
 func test_sensitivity_proof_bypass_render_goes_red() -> void:
 	assert_bool(_scn_ac4(_MutantBypass)).is_false()
+
+
+## story-029 AC6①:欄位對調 -> AC4 情境回 false(基準:未對調時為 true)。
+func test_sensitivity_proof_swapped_name_and_effect_columns_goes_red() -> void:
+	assert_bool(_scn_ac4()).is_true()
+	assert_bool(_scn_ac4(_MutantSwapColumns)).is_false()

@@ -101,6 +101,18 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - 兩支全套結果:付款人 `2534 … 1 failures`(只剩 027 夾具,如預期);021 `ENGINE EXIT = 0` / `2527 … 0 failures` / `(241/241)`(10:29 跑,晚於最後提交 10:28,有效)。
 - 協調者自修 027 夾具(實作者已死):`far_unit` 分支加敵 10 (1,1)、敵 11 (12,4)(後者讓「隊友條件」成為排除遠方 3 號的唯一理由,否則敏感度證明分不出);兩檔 17 綠。協調者 mutant(`_legal_payers` 不看敵人)→ `test_payer_reach_split_fixture_card_is_unplayable` 紅,已還原。⏳ 全套 `C:/tmp/run_payer_coord.log` → 提交。
 - 021 修補檔 `C:/tmp/story021r2.patch`(7 檔)。既有 `battle_screen_relation_minimap_test.gd` 未改;新測試 `test_relation_map_and_detail_card_clear_of_hud_rects_and_inside_window` 有斷言(5 矩形 × 4 解析度)。**該新測試無敏感度證明 → 協調者合入時做**(拿掉高度上限)。舊 MEASURE 測試註解「尚未解決」已過時。strings 列數合入 → 303。
+- ✅ **付款人修正提交 `0bd4ac4` 並推送**(協調者全套 `ENGINE EXIT = 0` / `2539 … 0 failures` / `(244/244)`;含今日三份 review 檔)。
+- 🟡 021 第二輪套入主目錄(列數衝突解為 303);協調者版面 mutant(拿掉高度上限)→ 新測試紅(960/1920 圖本體壓手牌列),已還原。⏳ 全套 `C:/tmp/run_021_coord.log` → 提交。
+- ⏳ godot-specialist:午休截圖驅動 `prototypes/capture-2026-11-20-lunch/`(確認面板、關係圖+浮出卡、資訊卡三態/騎牆、手牌原因 + 長牌面;960/1920)。
+- ✅ 截圖驅動 `prototypes/capture-2026-11-20-lunch/`(12 張 = 6 態 × 960/1920;headless exit 0;開窗指令在 README;態 2/3 好感紀錄為注入、態 5/6 手牌為塞入)。🔴 **驅動順帶發現無聲遺漏**(協調者驗證):`hand_bar_slot_kind_for()` 只對應甲/丙兩類,直傷/補血/合擊走預設分支 push_error + 畫成甲類形狀;無任何規格/工單提到。⏳ ux-designer → `docs/reviews/hand-thumbnail-new-card-kinds-ux-2026-11-20.md` → 再交 art-director → 呈管理者。
+- ✅ ux 判定 `docs/reviews/hand-thumbnail-new-card-kinds-ux-2026-11-20.md`:4 種 SlotKind(正方=加成、菱形=改關係、三角=傷敵[直傷+合擊]、十字=補血)。協調者驗:圖示是單一 `ColorRect`(菱形=轉 45°),畫不出三角十字。🔴 裁決(約 11:05):「**分 4 種,排進這批卡牌改造(推薦)**」→ ⏳ art-director 像素遮罩 `docs/reviews/hand-thumbnail-shapes-art-spec-2026-11-20.md` → 開工單 + 派實作(029 之後,同碰 hand_bar)。`design/ux/skill-card-play.md` 第 143 行需改四類(既有文件,收工前請示)。
+- ✅ **021 第二輪提交 `aa126ca` 並推送**(協調者全套 `ENGINE EXIT = 0` / `2548 … 0 failures` / `(244/244)`)。worktree `agent-ae7d87c8b52f2a5d8` 待清。
+- ⏳ 029(godot-gdscript-specialist,**新 worktree**(isolation),log `C:/tmp/run_029.log`):拆欄 + 8 張舊卡改人名,文案逐字照 narrative 判定。
+- ✅ art-director 遮罩規格 `docs/reviews/hand-thumbnail-shapes-art-spec-2026-11-20.md`(7×7 原生像素、四形同色、Z2 同遮罩放大、十字 N=2 可能與正方混淆 → 9×9 備案)。✅ 新開 **story-030**(Ready,029 合入後開工)並提交 `8a39f20`。
+- 🟡 029 交件(worktree `agent-a35559e8a6c725235` `158b3f8`,實作者全套 `2554 … 0 failures` / EXIT 0);協調者接受斷言改動 3/4(AC4 契約:標題=牌名);三方套入主目錄(乾淨),node 驗資料檔無甲乙丙丁戊/【】/代價：(⚠️ grep 中括號中文在本機語系誤判,改用 node)。⏳ 協調者全套 `C:/tmp/run_029_coord.log` → mutant → 提交。
+- ✅ **午休開窗 12:00:11~12:00:24**(含 029 未提交改動),12 張 `prototypes/capture-2026-11-20-lunch/out/`,視窗尺寸皆符。協調者看:①確認面板 960/1920 內容完整、不壓按鈕列 ✓ ②🔴 關係圖詳情浮出卡字極小 + 方向詞飄在卡右緣遠處(成因:`relation_minimap.gd` `_detail_badge_unit()` 寫死 1、詳情字級固定;卡寬 = 圖寬)③❓資訊卡看不到關係行/騎牆行,且兩態都顯示藍亭萱 ④❓手牌展開 Z3(牌名/效果/原因)完全沒出現 ⑤新卡縮圖皆正方(030)。⏳ godot-specialist 查③④是遊戲還是驅動 → `prototypes/capture-2026-11-20-lunch/findings.md`。
+- 📌 午休 12:00 後:開窗跑 `prototypes/capture-2026-11-20-lunch/`(README 指令)→ 協調者看 + 交 art-director/ux → 管理者人眼。
+- 📌 之後:029 牌面拆欄(依 narrative 判定 + 8 張改人名)。覆核收穫今日:付款人一致性(錯假設)、027 夾具分不出(第二次)、UX 方案漏算左欄 → 連續零收穫 = 0。
 - ✅ narrative-director 029 判定 `docs/reviews/card-face-columns-narrative-ruling-2026-11-20.md`:5 張有條件(card_13/19/20/21/22)全寫進效果行「須…」;代價不上牌面。協調者驗:card_01~08 牌面用甲乙丙丁戊屬實(vs01~05,tutorial 無);「冷淡改付血」原因句已存在(`battle.card_confirm.relation_none_pays_hp`);vs04 card_08 半形逗號屬實。🔴 裁決(約 09:00):「**8 張一起改成人名(推薦)**」→ 已請 narrative 補 card_01~06 文案。card_22 31 字;card_16 負值 → 028 已用 U+2212。✅ narrative 已補第三之二節(card_01~06 名稱+效果;07/08 補名「一聲謝了」「不敢對視」;vs04 card_08 場景版保留)→ 029 可派(等付款人修正與 021 合入後,都碰 battle_screen)。
 ## 🔴 第一百零四批(2026-11-19,公司,08:37 開工)—— 已收工,位階高於下方
 管理者指示同前(推進到 17:00 收工;專業問題派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。🔴 午休 12:00~13:00 以外不開窗。
