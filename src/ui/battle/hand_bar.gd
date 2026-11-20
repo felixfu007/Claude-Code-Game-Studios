@@ -59,7 +59,8 @@ extends Control
 ## project's own display vocabulary, not [enum Card.Category] itself (see the
 ## class doc comment). [code]battle_screen.gd[/code]'s
 ## [code]hand_bar_slot_kind_for()[/code] is the sole mapping point.
-enum SlotKind { TEMPORARY_MODIFIER, PERMANENT_WRITE }
+## story-030:追加 DAMAGE(直傷 + 合擊共用)、HEAL 於尾端,不改既有序號。
+enum SlotKind { TEMPORARY_MODIFIER, PERMANENT_WRITE, DAMAGE, HEAL }
 
 ## Whether the whole bar is currently usable. [constant LOCKED] covers S5
 ## (enemy turn) — see [code]battle_screen.gd[/code]'s
@@ -70,7 +71,23 @@ enum Availability { NORMAL, LOCKED }
 
 ## Placeholder shape vocabulary for a filled slot's category — see the class
 ## doc comment's "placeholder art, not final art" note.
-enum IconShape { SQUARE, DIAMOND }
+enum IconShape { SQUARE, DIAMOND, TRIANGLE, CROSS }
+
+## story-030:圖示 7x7 遮罩(美術規格 2026-11-20 第 1 節,逐格照抄;# 實心 . 透明)。
+const ICON_MASK_SQUARE: PackedStringArray = [
+	"#######", "#######", "#######", "#######", "#######", "#######", "#######",
+]
+const ICON_MASK_DIAMOND: PackedStringArray = [
+	"...#...", "..###..", ".#####.", "#######", ".#####.", "..###..", "...#...",
+]
+const ICON_MASK_TRIANGLE: PackedStringArray = [
+	"...#...", "..###..", "..###..", ".#####.", ".#####.", "#######", "#######",
+]
+const ICON_MASK_CROSS: PackedStringArray = [
+	"..###..", "..###..", "#######", "#######", "#######", "..###..", "..###..",
+]
+## Z2 展開時的整數倍放大(美術規格第 2 節建議 x2)。
+const ICON_Z2_SCALE: int = 2
 
 const HUD_FONT: FontFile = preload("res://assets/fonts/Cubic_11.ttf")
 
@@ -145,7 +162,6 @@ const LOCK_GLYPH_SIZE_FPX_MULTIPLIER: float = 1.2
 const LOCK_GLYPH_GAP_FPX_MULTIPLIER: float = 0.6
 
 ## Icon-mark (category-shape child inside a filled slot) geometry.
-const ICON_MARK_SIZE_FPX_MULTIPLIER: float = 0.7
 const ICON_MARK_MARGIN_FPX_MULTIPLIER: float = 0.25
 
 ## S5's "降對比" channel — a multiplier applied directly to each element's OWN
@@ -613,8 +629,25 @@ static func icon_shape_for(kind: SlotKind) -> IconShape:
 	match kind:
 		SlotKind.PERMANENT_WRITE:
 			return IconShape.DIAMOND
+		SlotKind.DAMAGE:
+			return IconShape.TRIANGLE
+		SlotKind.HEAL:
+			return IconShape.CROSS
 		_:
 			return IconShape.SQUARE
+
+
+## story-030:[param shape] 對應的 7x7 遮罩。
+static func icon_mask_for(shape: IconShape) -> PackedStringArray:
+	match shape:
+		IconShape.DIAMOND:
+			return ICON_MASK_DIAMOND
+		IconShape.TRIANGLE:
+			return ICON_MASK_TRIANGLE
+		IconShape.CROSS:
+			return ICON_MASK_CROSS
+		_:
+			return ICON_MASK_SQUARE
 
 
 ## Formats the [constant TEXT_COUNT_FORMAT] "n/max" readout.
@@ -1028,19 +1061,19 @@ func _position_slots(window_size: Vector2i, fpx: float) -> void:
 		panel.pivot_offset = panel.size / 2.0
 
 		var filled: bool = i < _slot_kinds.size()
-		var is_diamond: bool = filled and icon_shape_for(_slot_kinds[i]) == IconShape.DIAMOND
-		# Story 029 E2:卡格本身永不旋轉(旋轉 45° 的整張卡會與相鄰卡片重疊);
-		# 類別(丙=永久寫入)改由卡面圖示旋轉 45° 的菱形表達,形狀通道不變。
+		# Story 029 E2:卡格本身永不旋轉(旋轉 45° 的整張卡會與相鄰卡片重疊)。
+		# story-030:類別由 7x7 遮罩圖示表達(不再旋轉色塊)。
 		panel.rotation_degrees = 0.0
 
-		if panel.get_child_count() > 0:
-			var icon_mark: ColorRect = panel.get_child(0)
-			var icon_size: float = ICON_MARK_SIZE_FPX_MULTIPLIER * fpx
-			var icon_margin: float = ICON_MARK_MARGIN_FPX_MULTIPLIER * fpx
-			icon_mark.size = Vector2(icon_size, icon_size)
-			icon_mark.position = Vector2(icon_margin, icon_margin)
-			icon_mark.pivot_offset = icon_mark.size / 2.0
-			icon_mark.rotation_degrees = 45.0 if is_diamond else 0.0
+		if filled and panel.get_child_count() > 0:
+			var icon_mark: HandKindIcon = panel.get_child(0) as HandKindIcon
+			if icon_mark != null:
+				# 格邊長 = 原生像素 N(fpx/11)× 縮放(Z2 為 x2),恆為整數。
+				var unit: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
+				var zoom: int = ICON_Z2_SCALE if _expand_progress >= 0.5 else 1
+				icon_mark.configure(icon_mask_for(icon_shape_for(_slot_kinds[i])), unit * zoom)
+				var icon_margin: int = 3 * unit
+				icon_mark.position = Vector2(icon_margin, icon_margin)
 
 		_position_relation_marks(panel, fpx)
 
@@ -1137,7 +1170,7 @@ func _rebuild_slots() -> void:
 		_slot_nodes.append(panel)
 
 		if i < _slot_kinds.size():
-			var icon_mark: ColorRect = ColorRect.new()
+			var icon_mark: HandKindIcon = HandKindIcon.new()
 			icon_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			icon_mark.color = Color(
 				SLOT_OUTLINE_COLOR.r, SLOT_OUTLINE_COLOR.g, SLOT_OUTLINE_COLOR.b,

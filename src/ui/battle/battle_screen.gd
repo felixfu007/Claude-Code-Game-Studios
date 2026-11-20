@@ -3207,6 +3207,11 @@ static func hand_bar_slot_kind_for(category: Card.Category) -> HandBar.SlotKind:
 			return HandBar.SlotKind.TEMPORARY_MODIFIER
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			return HandBar.SlotKind.PERMANENT_WRITE
+		# story-030:直傷與合擊同為「傷敵」(三角),補血為十字。
+		Card.Category.DIRECT_DAMAGE, Card.Category.COMBO_DAMAGE:
+			return HandBar.SlotKind.DAMAGE
+		Card.Category.HEAL:
+			return HandBar.SlotKind.HEAL
 		_:
 			push_error(
 				"BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category %s -- Z1 falls back to 甲類's shape, but this is now logged rather than silent"

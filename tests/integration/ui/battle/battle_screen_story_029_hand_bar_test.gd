@@ -160,10 +160,12 @@ func test_e2_category_is_kept_as_rotated_icon_on_card_face() -> void:
 	var bar: HandBar = _fresh_bar()
 	var kinds: Array[HandBar.SlotKind] = [HandBar.SlotKind.PERMANENT_WRITE, HandBar.SlotKind.TEMPORARY_MODIFIER]
 	bar.render(kinds, _MAX_SLOTS, HandBar.Availability.NORMAL)
-	var perm_icon: ColorRect = bar._slot_nodes[0].get_child(0)
-	var temp_icon: ColorRect = bar._slot_nodes[1].get_child(0)
+	# story-030:不再旋轉色塊;兩類改以遮罩區分(菱形 vs 正方),圖示皆不旋轉。
+	var perm_icon: HandKindIcon = bar._slot_nodes[0].get_child(0)
+	var temp_icon: HandKindIcon = bar._slot_nodes[1].get_child(0)
 	assert_float(temp_icon.rotation_degrees).append_failure_message("PRECONDITION: 甲類圖示不旋轉").is_equal(0.0)
-	assert_float(perm_icon.rotation_degrees).is_equal(45.0)
+	assert_float(perm_icon.rotation_degrees).is_equal(0.0)
+	assert_bool(perm_icon.mask == temp_icon.mask).append_failure_message("丙類與甲類遮罩應不同").is_false()
 
 
 # ---- N ---------------------------------------------------------------------------------
