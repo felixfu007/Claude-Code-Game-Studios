@@ -1,7 +1,7 @@
 # Story 029:牌面文字表拆成「牌名、效果」兩欄 —— 修正新卡牌面溢出手牌說明框
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-19 管理者裁決「先合入,另開單拆欄(推薦)」)—— 依賴 022 合入 main。
+> **Status**: 程式完成,待 AC5 人眼(2026-11-20 `501cd75`;含管理者 11-20 裁決「8 張一起改成人名(推薦)」)(原狀態:Ready(2026-11-19 管理者裁決「先合入,另開單拆欄(推薦)」)—— 依賴 022 合入 main。)
 > **Type**: Logic(解析)+ UI
 > **Estimate**: M(約 1 天,粗估未驗證)
 > **依據**:ux-designer 判定 `docs/reviews/card-face-one-line-ux-ruling-2026-11-19.md`(方案 A);story-022 實作者回報(文字表只能單行、無牌名欄,牌面被串成「【牌名】效果；條件；代價」)。

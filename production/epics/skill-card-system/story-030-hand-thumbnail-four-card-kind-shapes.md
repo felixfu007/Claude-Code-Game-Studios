@@ -1,7 +1,7 @@
 # Story 030:手牌縮圖卡類別形狀改為四種(加成/改關係/傷敵/補血)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Ready(2026-11-20 管理者裁決「分 4 種,排進這批卡牌改造(推薦)」)—— 須在 story-029 合入 main 之後開工(兩者皆動 `hand_bar.gd` / `battle_screen.gd`)。
+> **Status**: 程式完成,待 AC4 人眼(2026-11-20 `f15094a`)(原狀態:Ready(2026-11-20 管理者裁決「分 4 種,排進這批卡牌改造(推薦)」)—— 須在 story-029 合入 main 之後開工(兩者皆動 `hand_bar.gd` / `battle_screen.gd`)。)
 > **Type**: UI
 > **Estimate**: S~M(粗估未驗證)
 > **依據**:UX 判定 `docs/reviews/hand-thumbnail-new-card-kinds-ux-2026-11-20.md`;美術規格 `docs/reviews/hand-thumbnail-shapes-art-spec-2026-11-20.md`(7×7 原生像素遮罩;有出入以該檔為準)。

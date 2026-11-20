@@ -1,7 +1,7 @@
 # Story 025:量測 M9(關係狀態分布)與冷淡區 `k` 的候選值 + 卡牌戰鬥側 M6
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: Blocked —— 依賴 012、016、019、022(要有完整卡牌戰鬥才量得到);其中 016 仍等 `affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B)。**M8(營火三策略對照)屬營火部分,不在本批。**
+> **Status**: Deferred(管理者 2026-11-20 裁決「暫緩 025,等營火(推薦)」;理由見 `docs/reviews/story-025-k-criteria-2026-11-20.md`:現行資料只有兩組關係線、麥子健零條,量不到)(原狀態:Blocked —— 依賴 012、016、019、022(要有完整卡牌戰鬥才量得到);其中 016 仍等 `affinity-position-chain.md` 整份重寫完成(管理者 2026-11-17 裁決 B)。**M8(營火三策略對照)屬營火部分,不在本批。**)
 > **Type**: Config/Data(量測證據)
 > **Estimate**: M(1.5~2 天,粗估未驗證;排程 N11 含 M8 共 1.5~2.5)
 > **依據**:規格 v1.0 第 9 節 M9(各關開場、戰末各組 S 的 POS/NEG/NONE 次數,用於決定 `k`)、第 5.1 節末(POS 距離 2 不付戰場代價縫隙 → M6 追蹤)、第 8 節(`k` 占位 50,不得直接上線);`docs/reviews/affinity-zero-state-proposal-2026-11-12.md` 第四節三步(**撰寫者未讀,二手**)。

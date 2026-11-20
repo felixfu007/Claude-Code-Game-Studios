@@ -1,7 +1,7 @@
 # Story 021:戰場資訊卡/手牌顯示兩人當前關係三態(好感/冷淡/敵意,不得只靠顏色)
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
-> **Status**: In Progress(2026-11-19:第一輪資訊卡 + 手牌 `c1984ab`;第二輪友敵線 + 關係圖詳情在 worktree `agent-ae7d87c8b52f2a5d8` `29ea8e9` 未合入 —— 管理者 2026-11-19 裁決「面板往上長(推薦)」「要,寫方向詞(推薦)」,須重做版面與加效果方向詞後合入;AC4 截圖未做)(原狀態:Ready(2026-11-17 管理者核准文件包)—— **前置工單 012 須先 Done 才可開工**(與 020 共用 UX 規格,兩單互不阻擋)。UX 規格已存在:`design/ux/card-rework-ui-2026-11-17.md`(第 4 節、AC-8~AC-13、AC-16);美術決定:`docs/reviews/card-rework-ui-art-2026-11-17.md`。)
+> **Status**: 程式完成,待 AC 人眼(2026-11-20:第二輪 `aa126ca`、詳情字級修正 `227c3d4`;版面依管理者 11-20 裁決「圖設高度上限,詳情改右側浮出(推薦)」;待午休截圖人眼)(原狀態:In Progress(2026-11-19:第一輪資訊卡 + 手牌 `c1984ab`;第二輪友敵線 + 關係圖詳情在 worktree `agent-ae7d87c8b52f2a5d8` `29ea8e9` 未合入 —— 管理者 2026-11-19 裁決「面板往上長(推薦)」「要,寫方向詞(推薦)」,須重做版面與加效果方向詞後合入;AC4 截圖未做)(原狀態:Ready(2026-11-17 管理者核准文件包)—— **前置工單 012 須先 Done 才可開工**(與 020 共用 UX 規格,兩單互不阻擋)。UX 規格已存在:`design/ux/card-rework-ui-2026-11-17.md`(第 4 節、AC-8~AC-13、AC-16);美術決定:`docs/reviews/card-rework-ui-art-2026-11-17.md`。))
 > **Type**: UI
 > **Estimate**: M(1~1.5 天,粗估未驗證;排程 N7)
 > **依據**:規格 v1.0 第 6.3 (3)(4);數值提案原建議三態名稱「友好/冷淡/敵對」,**管理者 2026-11-17 裁決改為「好感/冷淡/敵意」**(自填;見 `production/session-state/active.md` grep「好感/冷淡/敵意」)(`docs/reviews/affinity-zero-state-proposal-2026-11-12.md`)。
