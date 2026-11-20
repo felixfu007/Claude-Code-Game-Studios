@@ -145,6 +145,9 @@ const TEXT_STRIKE_FIRST_FORMAT: StringName = &"battle.card_confirm.strike_first_
 const TEXT_STRIKE_SECOND_FORMAT: StringName = &"battle.card_confirm.strike_second_format"
 const TEXT_STRIKE_SECOND_SKIPPED_FORMAT: StringName = &"battle.card_confirm.strike_second_skipped_format"
 const TEXT_COST_NOT_REFUNDED: StringName = &"battle.card_confirm.cost_not_refunded"
+const TEXT_EFFECTIVE_PAIR_ROW_FORMAT: StringName = &"battle.card_confirm.effective_pair_row_format"
+const TEXT_HEAL_PREVIEW_FORMAT: StringName = &"battle.card_confirm.heal_preview_format"
+const TEXT_HEAL_PREVIEW_CAPPED_FORMAT: StringName = &"battle.card_confirm.heal_preview_capped_format"
 const TEXT_BUTTON_UNPLAYABLE: StringName = &"battle.card_confirm.button_unplayable"
 const TEXT_BUTTON_CONFIRM: StringName = &"battle.card_confirm.button_confirm"
 ## 三態詞(單一詞表,鍵名表 1.1)。
@@ -659,6 +662,30 @@ func _relation_word(relation: CostBlock.Relation) -> String:
 ## 須在 [method show_temporary_modifier_confirmation] 之後呼叫。
 func show_pair_target(name_a: String, name_b: String) -> void:
 	_target_label.text = Loc.localize(TEXT_TARGET_FORMAT_PAIR) % [name_a, name_b]
+
+
+## story-020d(UX 缺口一)—— 固定雙人加成卡:兩人各一行「姓名　合併後：ATK a／DEF d」,取代隱藏的
+## 合併值列(重用 [member _effective_label],以換行相接,甲先乙後)。[param rows] 每筆
+## {name, atk, def},數值由呼叫端用引擎既有合併函式逐人算出(本檔不算)。須在
+## [method show_temporary_modifier_confirmation] 之後呼叫。
+func show_pair_effective_rows(rows: Array[Dictionary]) -> void:
+	var format: String = Loc.localize(TEXT_EFFECTIVE_PAIR_ROW_FORMAT)
+	var lines: Array[String] = []
+	for entry: Dictionary in rows:
+		lines.append(format % [String(entry.get("name", "")), int(entry.get("atk", 0)), int(entry.get("def", 0))])
+	_effective_label.text = "\n".join(PackedStringArray(lines))
+	_effective_label.visible = true
+	_apply_layout()
+
+
+## story-020d(UX 缺口二)—— 補血卡「回復：HP 前 → 後」(補滿上限時用 capped 版)。
+## 前後值與 capped 旗標來自 [method CardPlaySession.preview_heal](與結算同源)。
+## 重用 [member _effective_label];須在 [method show_temporary_modifier_confirmation] 之後呼叫。
+func show_heal_preview(hp_before: int, hp_after: int, capped: bool) -> void:
+	var key: StringName = TEXT_HEAL_PREVIEW_CAPPED_FORMAT if capped else TEXT_HEAL_PREVIEW_FORMAT
+	_effective_label.text = Loc.localize(key) % [hp_before, hp_after]
+	_effective_label.visible = true
+	_apply_layout()
 
 
 ## 確認鈕目前是否可用。付不起時為 false(battle_screen.gd 據此拒絕確認,零寫入)。

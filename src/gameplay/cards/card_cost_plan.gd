@@ -24,6 +24,10 @@ enum Reason {
 	RELATION_UNRESOLVED, ## 無法解析配對關係態(缺池或單位編號非法)。
 	NO_LEGAL_TARGET, ## 甲類:目前沒有合法承受者(story-009 的點名者不在場)。
 	NEED_ALLY_NEARBY, ## 直傷卡 target_range >= 1:付款人範圍內沒有另一名存活我方(story-027;UX 鍵 battle.card_reason.need_ally_within_2)。
+	NO_ENEMY_IN_RANGE, ## 直傷:射程內沒有任何存活敵人(story-020d;UX 1.3 #6)。
+	LOS_BLOCKED, ## 直傷:射程內有敵人但視線全被擋(story-020d;UX 1.3 #7)。
+	COMBO_CANNOT_REACH, ## 合擊:兩人打不到同一個敵人;打不到者由 combo_unreachable_unit_id() 取(story-020d;UX 1.3 #8)。
+	TARGET_HP_FULL, ## 補血:所有可選對象血量皆已滿(story-020d;UX 1.3 #9)。
 }
 
 var kind: Kind = Kind.NONE

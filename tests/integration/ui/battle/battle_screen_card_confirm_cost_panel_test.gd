@@ -304,7 +304,9 @@ func test_heal_panel_no_longer_shows_zero_stat_rows() -> void:
 	var panel: CardConfirmPanel = s._card_confirm_panel
 	assert_bool(panel._delta_atk_label.visible).append_failure_message("補血卡不顯示 ΔATK").is_false()
 	assert_bool(panel._delta_def_label.visible).is_false()
-	assert_bool(panel._effective_label.visible).is_false()
+	# story-020d:補血卡的「合併後」列改顯示「回復：HP 前 → 後」(UX 缺口二),不再隱藏。
+	assert_str(panel.diagnostic_effective_text()).contains("回復：HP")
+	assert_str(panel.diagnostic_effective_text()).contains("→")
 	assert_str(panel.diagnostic_target_text()).contains(_name_of(recipient))
 
 

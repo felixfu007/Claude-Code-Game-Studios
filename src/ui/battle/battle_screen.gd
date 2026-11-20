@@ -4563,6 +4563,25 @@ func _open_card_confirm_panel() -> void:
 					unit_display_name(_state.unit_by_id(target_a_id)),
 					unit_display_name(_state.unit_by_id(target_b_id))
 				)
+				# story-020d:兩人各一行合併後數值,逐人呼叫同一個引擎合併函式(同單人卡),UI 不自算。
+				var pair_rows: Array[Dictionary] = []
+				for pair_id: int in [target_a_id, target_b_id]:
+					var pair_unit: Unit = _state.unit_by_id(pair_id)
+					var pair_mods: Array[CardModifier] = pair_unit.active_modifiers()
+					pair_mods.append(CardModifier.new(card.id, card.delta_atk, card.delta_def, card.duration_rounds))
+					pair_rows.append({
+						"name": unit_display_name(pair_unit),
+						"atk": CardModifierRules.effective_atk(pair_unit.atk, pair_mods, _state.card_modifier_tuning),
+						"def": CardModifierRules.effective_def(pair_unit.def, pair_mods, _state.card_modifier_tuning),
+					})
+				_card_confirm_panel.show_pair_effective_rows(pair_rows)
+			if is_heal:
+				# story-020d:補血預覽值由引擎 preview_heal 提供(與結算同一個 _heal_amount)。
+				var heal_preview: Dictionary = _controller._card_play_session.preview_heal(card, target.id)
+				if not heal_preview.is_empty():
+					_card_confirm_panel.show_heal_preview(
+						int(heal_preview["before"]), int(heal_preview["after"]), bool(heal_preview["capped"])
+					)
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			var target_a: Unit = _state.unit_by_id(target_a_id)
 			var target_b: Unit = _state.unit_by_id(target_b_id)
@@ -6589,8 +6608,7 @@ func _tick_phase_banner(delta: float) -> void:
 ## [method CardPlaySession.card_unplayable_reason];本表只把引擎回傳的 [enum CardCostPlan.Reason]
 ## 翻成 UX 指定的鍵,不自行判斷任何原因。優先序(UX 1.3「多原因顯示最高者」)由引擎單一回傳值
 ## 的檢查順序決定,UI 不重排。回 &"" = 該原因沒有 UX 文案(不顯示任何行)。
-## 揭露:UX 1.3 #6 射程內沒有敵人 / #7 視線被擋 / #8 打不到 / #9 對象血量已滿 目前引擎回傳不出來
-## (NO_LEGAL_TARGET 一值涵蓋多種原因,UI 無法區分),故不在此表 —— 待引擎補上對應 Reason 再加。
+## story-020d:UX 1.3 #6~#9 已由引擎各回獨立 Reason,本表補齊。NO_LEGAL_TARGET 仍無文案(UX 表沒有對應列)。
 static func unplayable_reason_key(reason: CardCostPlan.Reason) -> StringName:
 	match reason:
 		CardCostPlan.Reason.PARTNER_ABSENT:
@@ -6603,6 +6621,14 @@ static func unplayable_reason_key(reason: CardCostPlan.Reason) -> StringName:
 			return &"battle.card_reason.hp_insufficient_format"
 		CardCostPlan.Reason.OUT_OF_RANGE:
 			return &"battle.card_reason.too_far_apart"
+		CardCostPlan.Reason.NO_ENEMY_IN_RANGE:
+			return &"battle.card_reason.no_enemy_in_range"
+		CardCostPlan.Reason.LOS_BLOCKED:
+			return &"battle.tile_info.attack_reason_los_blocked"
+		CardCostPlan.Reason.COMBO_CANNOT_REACH:
+			return &"battle.card_reason.cannot_reach_format"
+		CardCostPlan.Reason.TARGET_HP_FULL:
+			return &"battle.card_reason.target_hp_full"
 	return &""
 
 
@@ -6618,4 +6644,7 @@ func card_unplayable_reason_text(card: Card) -> String:
 	if reason == CardCostPlan.Reason.CANNOT_AFFORD_HP:
 		var names: Array[String] = _build_cost_block(card, -1).unaffordable_names
 		return Loc.localize(key) % ("、".join(PackedStringArray(names)))
+	if reason == CardCostPlan.Reason.COMBO_CANNOT_REACH:
+		var unreachable_id: int = _controller._card_play_session.combo_unreachable_unit_id(card)
+		return Loc.localize(key) % unit_display_name(_state.unit_by_id(unreachable_id))
 	return Loc.localize(key)

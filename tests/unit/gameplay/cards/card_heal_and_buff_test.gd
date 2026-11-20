@@ -248,8 +248,8 @@ func test_heal_ac1_full_health_recipient_makes_card_unplayable() -> void:
 	var c04: Card = _c04(1)
 	var c13: Card = _directed_heal("c13", 3, 4, 12, 3)
 	var session: CardPlaySession = _session(CardPlaySession, state, [c04, c13])
-	assert_int(session.card_unplayable_reason(c04)).is_equal(CardCostPlan.Reason.NO_LEGAL_TARGET)
-	assert_int(session.card_unplayable_reason(c13)).is_equal(CardCostPlan.Reason.NO_LEGAL_TARGET)
+	assert_int(session.card_unplayable_reason(c04)).is_equal(CardCostPlan.Reason.TARGET_HP_FULL)
+	assert_int(session.card_unplayable_reason(c13)).is_equal(CardCostPlan.Reason.TARGET_HP_FULL)
 
 
 func test_heal_ac1_c04_payer_is_never_a_legal_recipient_even_when_wounded() -> void:

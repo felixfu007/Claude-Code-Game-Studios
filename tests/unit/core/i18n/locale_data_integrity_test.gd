@@ -269,6 +269,7 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# 🔴 2026-11-19 skill-card-system story-020c:283 → 288(新增直傷/合擊確認面板 5 列 battle.card_confirm.strike_* / cost_not_refunded;其中 strike_single_format 為單擊列,鍵名表 docs/reviews/card-rework-loc-keys-2026-11-19.md 未列,待登記;管理者 2026-11-19 核准本批卡牌工單改本數字)。
 	# 🔴 2026-11-19 skill-card-system story-021(第一輪):283 → 288(新增騎牆 on/off/line_format 三列、battle.tile_info.relation_line_format、battle.card_hand.pair_names_format 共 5 列;三態詞 020a 已加,沿用;管理者 2026-11-19 核准本批卡牌工單改本數字)。
 	# 🔴 2026-11-19 協調者合併 020c 與 021:兩者各自 283 → 288,合併後 293。
+	# 🔴 2026-11-19 skill-card-system story-020d:293 → 300(新增 no_enemy_in_range/cannot_reach_format/target_hp_full、straddle.will_lose_format、effective_pair_row_format、heal_preview_format、heal_preview_capped_format 共 7 列;管理者 2026-11-19 核准本批直接更新本數字)。
 	# 🔴 2026-11-06 audio-foundation story-002:159 → 163(新增 shell.settings.volume_master/volume_music/volume_sfx/mute_toggle 四列;依工作單 Affected Files)。
 	# 🔴 2026-10-28 再續四:148 → 150(tactical-combat story-022 新增 battle.hud.result_defeat_reason_format / _separator 共 2 列;依工作單 Affected Files,延續同日同一處理方式)。
 	# 🔴 2026-10-28 再續三:145 → 148(relation-minimap story-001 新增 battle.hud.relation_map_* 共 3 列;依工作單 Affected Files,延續同日同一處理方式)。
@@ -302,10 +303,10 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# story-046:新增 11 列(battle.objective.* 5、battle.result.* 6),211 → 222 → 224(選單加「目標」「圖例」兩列)。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 293（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 300（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(293)
+	).is_equal(300)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

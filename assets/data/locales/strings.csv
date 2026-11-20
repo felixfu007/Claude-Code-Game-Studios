@@ -300,3 +300,10 @@ battle.relation.straddle.off,失效
 battle.relation.straddle.line_format,騎牆：%s
 battle.tile_info.relation_line_format,與%s：%s
 battle.card_hand.pair_names_format,%s×%s
+battle.card_reason.no_enemy_in_range,射程內沒有敵人
+battle.card_reason.cannot_reach_format,%s打不到
+battle.card_reason.target_hp_full,對象血量已滿
+battle.relation.straddle.will_lose_format,%s將失去騎牆
+battle.card_confirm.effective_pair_row_format,%s　合併後：ATK %d／DEF %d
+battle.card_confirm.heal_preview_format,回復：HP %d → %d
+battle.card_confirm.heal_preview_capped_format,回復：HP %d → %d (已達上限)

@@ -317,13 +317,10 @@ func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 			if not _is_fixed_target_card(card) and _legal_targets_for_stat_card(card).is_empty():
 				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.HEAL:
-			if _is_fixed_target_card(card):
-				# A fixed recipient who is present but not wounded cannot be healed
-				# (spec rule 6); an absent one is reported by the cost plan below.
-				var fixed_recipient: Unit = _state.unit_by_id(card.partner_unit_id)
-				if _is_present(fixed_recipient) and fixed_recipient.hp >= fixed_recipient.hp_max:
-					return CardCostPlan.Reason.NO_LEGAL_TARGET
-			elif _legal_targets_for_heal(card).is_empty():
+			# "target already at full HP" (story-020d, spec rule 6) is decided AFTER the cost
+			# checks, see _target_availability_reason(); only a shape with no recipient at all
+			# is rejected here.
+			if not _is_fixed_target_card(card) and not _is_ranged_pick_card(card):
 				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.PERMANENT_AFFINITY_WRITE:
 			pass
@@ -339,7 +336,106 @@ func card_unplayable_reason(card: Card) -> CardCostPlan.Reason:
 			# story-011: new categories cannot be resolved yet (017~019); not playable.
 			push_error("CardPlaySession.is_card_playable: unhandled category %s" % card.category)
 			return CardCostPlan.Reason.UNRESOLVED_CATEGORY
-	return _build_cost_plan(card, -1, true).reason
+	var cost_reason: CardCostPlan.Reason = _build_cost_plan(card, -1, true).reason
+	if cost_reason != CardCostPlan.Reason.NONE:
+		return cost_reason
+	return _target_availability_reason(card)
+
+
+## story-020d (UX 1.3 #6~#9): the reasons that depend on WHO can be targeted, evaluated
+## only once every cost check passed (UX priority: cost reasons #1~#5 come first).
+func _target_availability_reason(card: Card) -> CardCostPlan.Reason:
+	match card.category:
+		Card.Category.HEAL:
+			if _is_fixed_target_card(card):
+				var fixed_recipient: Unit = _state.unit_by_id(card.partner_unit_id)
+				if _is_present(fixed_recipient) and fixed_recipient.hp >= fixed_recipient.hp_max:
+					return CardCostPlan.Reason.TARGET_HP_FULL
+			elif _legal_targets_for_heal(card).is_empty():
+				if not _ranged_pick_candidates(card, false).is_empty():
+					return CardCostPlan.Reason.TARGET_HP_FULL
+				return CardCostPlan.Reason.NO_LEGAL_TARGET
+		Card.Category.DIRECT_DAMAGE:
+			var casters: Array[int] = []
+			if card.named_unit_id >= 1:
+				casters.append(card.named_unit_id)
+			else:
+				casters = _alive_player_unit_ids()
+			return _enemy_reach_reason(casters)
+		Card.Category.COMBO_DAMAGE:
+			return _combo_reach_reason(card.named_unit_id, card.partner_unit_id)
+	return CardCostPlan.Reason.NONE
+
+
+## story-020d: NONE if any of [param casters] has a legal enemy ([method _legal_enemy_targets],
+## the 018 predicate); otherwise LOS_BLOCKED when some enemy is inside a caster's range band but
+## hidden behind terrain, else NO_ENEMY_IN_RANGE. An absent caster is skipped (the cost plan
+## reports it).
+func _enemy_reach_reason(casters: Array[int]) -> CardCostPlan.Reason:
+	var blocked_seen: bool = false
+	for caster_id: int in casters:
+		if not _is_present(_state.unit_by_id(caster_id)):
+			continue
+		if not _legal_enemy_targets(caster_id).is_empty():
+			return CardCostPlan.Reason.NONE
+		if _has_los_blocked_enemy(caster_id):
+			blocked_seen = true
+	if blocked_seen:
+		return CardCostPlan.Reason.LOS_BLOCKED
+	return CardCostPlan.Reason.NO_ENEMY_IN_RANGE
+
+
+## story-020d: an alive enemy inside [param caster_id]'s range band but behind an occluder.
+## Same [method BattleState.is_attack_range_blocked_by_los] the board's "被擋住章" uses.
+func _has_los_blocked_enemy(caster_id: int) -> bool:
+	var origin: Vector2i = _state.position_of(caster_id)
+	for enemy: Unit in _state.units_of(Unit.Faction.ENEMY):
+		if _is_present(enemy) and _state.is_attack_range_blocked_by_los(caster_id, origin, _state.position_of(enemy.id)):
+			return true
+	return false
+
+
+## story-020d: combo reach. NONE when the two attackers share an enemy. If exactly one of them
+## reaches nothing -> COMBO_CANNOT_REACH (named by [method combo_unreachable_unit_id]). If neither
+## reaches anything -> the direct-damage reasons over both. If both reach someone but never the
+## same enemy -> COMBO_CANNOT_REACH naming the second attacker (disclosed choice).
+func _combo_reach_reason(attacker_a: int, attacker_b: int) -> CardCostPlan.Reason:
+	if not _is_present(_state.unit_by_id(attacker_a)) or not _is_present(_state.unit_by_id(attacker_b)):
+		return CardCostPlan.Reason.NONE
+	if not _combo_legal_enemies(attacker_a, attacker_b).is_empty():
+		return CardCostPlan.Reason.NONE
+	var a_empty: bool = _legal_enemy_targets(attacker_a).is_empty()
+	var b_empty: bool = _legal_enemy_targets(attacker_b).is_empty()
+	if a_empty and b_empty:
+		return _enemy_reach_reason([attacker_a, attacker_b])
+	return CardCostPlan.Reason.COMBO_CANNOT_REACH
+
+
+## story-020d: for a combo card whose reason is COMBO_CANNOT_REACH, the roster id to name in
+## "%s打不到" (the attacker with no reachable enemy; the second attacker when both reach someone
+## but never the same one). -1 when the card is not a combo or there is nothing to name.
+func combo_unreachable_unit_id(card: Card) -> int:
+	if card.category != Card.Category.COMBO_DAMAGE:
+		return -1
+	if card_unplayable_reason(card) != CardCostPlan.Reason.COMBO_CANNOT_REACH:
+		return -1
+	if _legal_enemy_targets(card.named_unit_id).is_empty():
+		return card.named_unit_id
+	return card.partner_unit_id
+
+
+## story-020d: heal preview for [param unit_id] -- {"before": hp, "after": hp after the heal,
+## "capped": true when the cap cut the heal short}. Same [method _heal_amount] the settlement
+## uses, so panel and result cannot drift. Read-only; empty Dictionary when the unit is absent
+## or the card is not a HEAL.
+func preview_heal(card: Card, unit_id: int) -> Dictionary:
+	if card.category != Card.Category.HEAL:
+		return {}
+	var unit: Unit = _state.unit_by_id(unit_id)
+	if not _is_present(unit):
+		return {}
+	var amount: int = _heal_amount(unit, card.effect_value)
+	return {"before": unit.hp, "after": unit.hp + amount, "capped": amount < card.effect_value}
 
 
 ## story-015: the cost [param card] would charge if confirmed now with
