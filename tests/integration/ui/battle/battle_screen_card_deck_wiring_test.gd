@@ -28,6 +28,7 @@ func after_test() -> void:
 
 const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const _MISSING_CARDS_PATH: String = "res://assets/data/cards/does_not_exist.txt"
+const _SeedExpectation = preload("res://tests/helpers/affinity_seed_expectation.gd")
 
 
 # ---- classify_card_parse() ---------------------------------------------------
@@ -300,23 +301,36 @@ func test_ready_seeds_affinity_pool_from_static_table_links_match_polarity() -> 
 
 	# Assert — 靜態檔恰有兩條關係：1-2 POSITIVE、3-4 NEGATIVE。灌入後
 	# _phi.links() 必須逐一命中，而不只是「非空」。
-	assert_int(links.size()).is_equal(2)
+	# story-024 改寫:原本保護「灌入後 links 與種子檔逐條(條數+配對+極性)一致」;
+	# 改後仍保護同一件事,只是期望值由種子檔推導,不再寫死「兩條、1-2 正、3-4 負」。
+	var expected: Array[AffinityLink] = _SeedExpectation.expected_links()
+	assert_int(expected.size()).append_failure_message("種子檔解析失敗或為空").is_greater(0)
+	assert_str(_SeedExpectation.mismatch(links, expected)).is_empty()
 
-	var polarity_by_pair: Dictionary = {}
-	for link: AffinityLink in links:
-		var key: Vector2i = Vector2i(
-			mini(link.unit_a, link.unit_b), maxi(link.unit_a, link.unit_b)
-		)
-		polarity_by_pair[key] = link.polarity
 
-	assert_bool(polarity_by_pair.has(Vector2i(1, 2))).append_failure_message(
-		"預期靜態檔第一條關係（roster id 1-2）出現在 _phi.links() 裡，實得 %s"
-		% [polarity_by_pair.keys()]
-	).is_true()
-	assert_int(polarity_by_pair.get(Vector2i(1, 2), -1)).is_equal(AffinityLink.Polarity.POSITIVE)
-
-	assert_bool(polarity_by_pair.has(Vector2i(3, 4))).append_failure_message(
-		"預期靜態檔第二條關係（roster id 3-4）出現在 _phi.links() 裡，實得 %s"
-		% [polarity_by_pair.keys()]
-	).is_true()
-	assert_int(polarity_by_pair.get(Vector2i(3, 4), -1)).is_equal(AffinityLink.Polarity.NEGATIVE)
+# story-024 敏感度證明:比對器對「多一條」與「極性反」都必須判不符。
+func test_sensitivity_proof_seed_mismatch_detects_extra_link_and_flipped_polarity() -> void:
+	var expected: Array[AffinityLink] = _SeedExpectation.expected_links()
+	assert_str(_SeedExpectation.mismatch(expected, expected)).is_empty()
+	# mutant 1:多出一條麥子健配對(舊寫死 2 的斷言正是要抓這種)
+	var extra: Array[AffinityLink] = expected.duplicate()
+	var added: AffinityLink = AffinityLink.new()
+	added.unit_a = 3
+	added.unit_b = 5
+	added.polarity = AffinityLink.Polarity.POSITIVE
+	extra.append(added)
+	assert_str(_SeedExpectation.mismatch(extra, expected)).is_not_empty()
+	# mutant 2:條數相同但第一條極性反轉
+	var flipped: Array[AffinityLink] = []
+	for link: AffinityLink in expected:
+		var copy: AffinityLink = AffinityLink.new()
+		copy.unit_a = link.unit_a
+		copy.unit_b = link.unit_b
+		copy.amp = link.amp
+		copy.polarity = link.polarity
+		flipped.append(copy)
+	flipped[0].polarity = (
+		AffinityLink.Polarity.NEGATIVE if flipped[0].polarity == AffinityLink.Polarity.POSITIVE
+		else AffinityLink.Polarity.POSITIVE
+	)
+	assert_str(_SeedExpectation.mismatch(flipped, expected)).is_not_empty()

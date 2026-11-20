@@ -54,6 +54,7 @@ func after_test() -> void:
 
 
 const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
+const _SeedExpectation = preload("res://tests/helpers/affinity_seed_expectation.gd")
 
 
 func _load_instance_with_ledger(ledger: CampaignAffinityLedger) -> BattleScreen:
@@ -76,11 +77,15 @@ func test_defeat_then_replay_same_mission_starts_from_identical_affinity_state()
 	# 第一次開局時,戰役層累積記錄還是空的 —— 用 _phi.links()(與既有迴歸鎖測試
 	# battle_screen_campaign_affinity_ledger_seeding_test.gd 同一個既有慣例)確認
 	# 只有靜態 AFFINITY_PATH 灌入的那兩條關係
+	# story-024 改寫:原本保護「第一次開局只有靜態種子的關係」;改後仍保護,
+	# 條數由種子檔推導而非寫死 2。
 	var links_run1_opening: int = instance1._phi.links().size()
+	var seed_links_count: int = _SeedExpectation.expected_links().size()
+	assert_int(seed_links_count).append_failure_message("種子檔解析失敗或為空").is_greater(0)
 	assert_int(links_run1_opening).append_failure_message(
 		"precondition:第一次開局應只看到靜態 AFFINITY_PATH 的關係,ledger 還是空的," +
 		"實得 %d 條" % links_run1_opening
-	).is_equal(2)
+	).is_equal(seed_links_count)
 
 	# Act —— 模擬「這一場打到一半,產生了新的好感度變化」:直接 append 進
 	# campaign_ledger_override 持有的同一個 ledger 參照(本輪沒有接真正的寫入口,

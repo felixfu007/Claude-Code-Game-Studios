@@ -46,6 +46,7 @@ func after_test() -> void:
 
 
 const _SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
+const _SeedExpectation = preload("res://tests/helpers/affinity_seed_expectation.gd")
 
 
 # ---- 迴歸鎖：不注入 campaign_ledger_override 時，開局行為與本輪改動之前逐字相同 ----
@@ -77,25 +78,14 @@ func test_ready_without_campaign_ledger_override_matches_existing_static_seed_be
 	# Assert — 與本輪改動之前的既有斷言逐字相同：靜態檔恰有兩條關係，
 	# 1-2 POSITIVE、3-4 NEGATIVE，不多不少
 	var links: Array[AffinityLink] = instance._phi.links()
-	assert_int(links.size()).append_failure_message(
-		(
-			"不注入 campaign_ledger_override 時，_phi.links() 應該恰好是靜態 "
-			+ "AFFINITY_PATH 的 2 條關係，實得 %d 條——這代表新增的 if 守衛沒有" +
-			"正確地在 null 時整個跳過"
-		) % links.size()
-	).is_equal(2)
-
-	var polarity_by_pair: Dictionary = {}
-	for link: AffinityLink in links:
-		var key: Vector2i = Vector2i(
-			mini(link.unit_a, link.unit_b), maxi(link.unit_a, link.unit_b)
-		)
-		polarity_by_pair[key] = link.polarity
-
-	assert_bool(polarity_by_pair.has(Vector2i(1, 2))).is_true()
-	assert_int(polarity_by_pair.get(Vector2i(1, 2), -1)).is_equal(AffinityLink.Polarity.POSITIVE)
-	assert_bool(polarity_by_pair.has(Vector2i(3, 4))).is_true()
-	assert_int(polarity_by_pair.get(Vector2i(3, 4), -1)).is_equal(AffinityLink.Polarity.NEGATIVE)
+	# story-024 改寫:原本保護「null 時守衛整個跳過 → links 恰為靜態種子檔的關係,
+	# 不多不少、極性不變」;改後仍保護同一件事,期望值由種子檔推導而非寫死 2 條。
+	var expected: Array[AffinityLink] = _SeedExpectation.expected_links()
+	assert_int(expected.size()).append_failure_message("種子檔解析失敗或為空").is_greater(0)
+	assert_str(_SeedExpectation.mismatch(links, expected)).append_failure_message(
+		"不注入 campaign_ledger_override 時，_phi.links() 應該恰好等於靜態 AFFINITY_PATH "
+		+ "的關係——這代表新增的 if 守衛沒有正確地在 null 時整個跳過"
+	).is_empty()
 
 
 # ---- 新功能：注入帶兩筆記錄的 ledger，開局後池子查得到那兩筆的效果 ----

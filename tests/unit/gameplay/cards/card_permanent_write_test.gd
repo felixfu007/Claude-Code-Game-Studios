@@ -175,23 +175,91 @@ func test_ac7b_bypassing_selection_with_dead_pair_is_rejected_by_the_port_not_up
 # ---- AC-8a：對無關係線的配對作用（含戊）→ 不在合法集合中 -----------------------
 
 func test_ac8a_pair_without_any_relationship_line_is_not_in_legal_set_including_wu() -> void:
-	# Arrange — 全員存活；真實配對表只有兩條（甲乙、丙丁），戊(5) 與其餘任何
-	# 未登記的組合皆無關係線
+	# story-024 改寫。原本保護:「沒有關係線的配對(含戊)不在合法集合」。
+	# 改後仍保護同一件事,但判準由關係線資料推導,不再寫死「戊必不合法、恰 2 條」——
+	# 關係不再固定,戊一旦在資料裡有線就該合法;沒有線才不合法。
+	# Arrange — 全員存活
 	var links: Array[AffinityLink] = _vs01_links()
 
-	# Act / Assert — 逐一確認含戊的配對皆不合法
+	# Act / Assert — 10 組配對,每一組「合法 ⇔ 關係線資料裡有這一對」
+	assert_str(_legality_mismatch(PermanentAffinityWriteRules.is_legal_target, links)).is_empty()
+
+	# 現行真實資料下的具體後果仍逐條保留(資料推導的特例,不是規則本身):
+	# 含戊的 4 組與甲丙都沒有線 → 不合法
 	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, JIA, WU)).is_false()
 	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, YI, WU)).is_false()
 	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, BING, WU)).is_false()
 	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, DING, WU)).is_false()
-	# 補一個不含戊、但同樣沒有關係線的配對（甲丙），確認界線不是「只排戊」
 	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, JIA, BING)).is_false()
 
-	# Assert — 合法集合本身沒有任何一條牽涉到戊
+	# Assert — 合法集合恰等於資料列(全員存活時),不多不少
 	var legal: Array[AffinityLink] = PermanentAffinityWriteRules.legal_pairs(links, _all_alive)
-	for link: AffinityLink in legal:
-		assert_bool(link.involves(WU)).is_false()
-	assert_int(legal.size()).is_equal(2)  # 真實資料只有兩條：甲乙、丙丁
+	assert_int(legal.size()).is_equal(links.size())
+
+
+# story-024 新增(規格驗收 (2),含麥子健配對的對照):合成一份「麥子健也有線」的表,
+# 麥子健的配對必須因為有線而合法;沒有線的非人設配對(甲丙)仍不合法。
+# 證明合法性只看「資料有沒有這條線」,與名字(是不是戊)無關。
+func test_ac8a_contrast_wu_pair_is_legal_when_data_has_the_line() -> void:
+	# Arrange — 合成表:丙戊(正)、甲戊(負);經正式解析路徑建立
+	var parsed: Variant = AffinityLink.links_from_text("3,5,POSITIVE,1\n1,5,NEGATIVE,1\n")
+	var links: Array[AffinityLink] = parsed
+
+	# Assert
+	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, BING, WU)).is_true()
+	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, WU, JIA)).is_true()
+	assert_bool(PermanentAffinityWriteRules.is_legal_target(links, _all_alive, JIA, BING)).is_false()
+	assert_str(_legality_mismatch(PermanentAffinityWriteRules.is_legal_target, links)).is_empty()
+	assert_int(PermanentAffinityWriteRules.legal_pairs(links, _all_alive).size()).is_equal(2)
+
+
+## 10 組(甲乙丙丁戊兩兩)逐一核對 legal_fn 的結果是否 = 「links 裡有這一對」。
+## 回傳空字串 = 全部相符;否則回傳第一個不符的配對描述。
+func _legality_mismatch(legal_fn: Callable, links: Array[AffinityLink]) -> String:
+	var ids: Array[int] = [JIA, YI, BING, DING, WU]
+	for i in range(ids.size()):
+		for j in range(i + 1, ids.size()):
+			var want: bool = PermanentAffinityWriteRules.has_canon_link(links, ids[i], ids[j])
+			var got: bool = legal_fn.call(links, _all_alive, ids[i], ids[j])
+			if got != want:
+				return "配對 (%d,%d) 合法性=%s,但資料有線=%s" % [ids[i], ids[j], got, want]
+	return ""
+
+
+## mutant:仍以名字排除戊(舊假設「戊永遠沒線」的實作形狀)。
+func _mutant_excludes_wu(
+	links: Array[AffinityLink], is_alive: Callable, a: int, b: int
+) -> bool:
+	if a == WU or b == WU:
+		return false
+	return PermanentAffinityWriteRules.is_legal_target(links, is_alive, a, b)
+
+
+## mutant:恆認為「甲乙、丙丁」兩對合法,不看資料。
+func _mutant_hardcoded_two_pairs(
+	_links: Array[AffinityLink], _is_alive: Callable, a: int, b: int
+) -> bool:
+	return (
+		(a == JIA and b == YI) or (a == YI and b == JIA)
+		or (a == BING and b == DING) or (a == DING and b == BING)
+	)
+
+
+# story-024 敏感度證明:上面兩個 mutant 都必須被「資料推導」檢查器判為不符
+# (在含戊線的合成表上);真實實作則通過。各自獨立一條測試。
+func test_sensitivity_proof_legality_check_accepts_real_implementation_on_wu_table() -> void:
+	var links: Array[AffinityLink] = AffinityLink.links_from_text("3,5,POSITIVE,1\n1,5,NEGATIVE,1\n")
+	assert_str(_legality_mismatch(PermanentAffinityWriteRules.is_legal_target, links)).is_empty()
+
+
+func test_sensitivity_proof_name_based_wu_exclusion_is_caught_on_wu_table() -> void:
+	var links: Array[AffinityLink] = AffinityLink.links_from_text("3,5,POSITIVE,1\n1,5,NEGATIVE,1\n")
+	assert_str(_legality_mismatch(_mutant_excludes_wu, links)).is_not_empty()
+
+
+func test_sensitivity_proof_hardcoded_two_pairs_is_caught_on_wu_table() -> void:
+	var links: Array[AffinityLink] = AffinityLink.links_from_text("3,5,POSITIVE,1\n1,5,NEGATIVE,1\n")
+	assert_str(_legality_mismatch(_mutant_hardcoded_two_pairs, links)).is_not_empty()
 
 
 # ---- 新增：繞過選擇介面，直接對無關係線的配對呼叫 play() → 被拒絕，且從未
@@ -222,6 +290,30 @@ func test_play_rejects_pair_with_no_canon_relationship_line_bypassing_selection(
 	assert_int(port.calls.size()).is_equal(0)
 	assert_int(port.accepted_count).is_equal(0)
 
+
+# story-024 新增(含麥子健配對的對照):同一條 play() 路徑,當資料裡有甲戊的線時,
+# 甲戊必須送達埠(而不是因為「是戊」被擋)。與上一條合起來證明 play() 的拒絕只看資料。
+func test_play_passes_wu_pair_through_to_port_when_data_has_the_line() -> void:
+	# Arrange
+	var links: Array[AffinityLink] = AffinityLink.links_from_text("1,5,POSITIVE,1\n")
+	var port: _FakeAffinityWritePort = _FakeAffinityWritePort.new()
+	var card: Card = Card.new_permanent_affinity_write("bond_wu_contrast", JIA, YI, 1)
+
+	# Act
+	var result: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, JIA, WU, links, port
+	)
+
+	# Assert
+	assert_int(result).is_equal(AffinityWritePort.Rejection.NONE)
+	assert_int(port.calls.size()).is_equal(1)
+	assert_int(port.calls[0]["character_a"]).is_equal(JIA)
+	assert_int(port.calls[0]["character_b"]).is_equal(WU)
+
+
+# 敏感度證明:本條【證明不了】—— A 類(斷言對象是 static 純函式 PermanentAffinityWriteRules.play,
+# 無繼承鏈可覆寫;已知證明不了的五類之一)。不硬做假證明。其下游判準(合法性只看資料)
+# 已由上方 test_sensitivity_proof_name_based_wu_exclusion_* / hardcoded_two_pairs_* 兩條常駐證明覆蓋。
 
 # ---- AC-8b：正面控制組 —— 甲乙可選定、寫入成功、筆數 +1、極性不變 --------------
 

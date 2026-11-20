@@ -149,6 +149,33 @@ func test_non_canon_pair_write_via_port_returns_validation_rejection_with_no_cou
 	assert_int(pool._t_now).is_equal(0)
 
 
+# story-024 新增(含麥子健配對的對照):與上一條同一路徑(真實埠 + 既有 play()),
+# 差別只在資料:當關係線表裡有甲戊時,甲戊必須寫進池的 C1_C5。證明 8c 的拒絕
+# 來自「資料沒有這條線」,不是「戊天生不能配對」。其餘 9 個配對維持 0 筆。
+func test_wu_pair_write_via_port_is_accepted_when_data_has_the_line() -> void:
+	# Arrange
+	var pool: AffinityDataPool = AffinityDataPool.new()
+	var port: AffinityPoolWritePort = AffinityPoolWritePort.new(pool)
+	var links: Array[AffinityLink] = AffinityLink.links_from_text("1,5,POSITIVE,1\n")
+	var card: Card = Card.new_permanent_affinity_write("c_ac8c_contrast", 1, 5, 2)
+	var wu_pair: AffinityTypes.Pair = AffinityTypes.pair_of(
+		AffinityTypes.Character.CHARACTER_1, AffinityTypes.Character.CHARACTER_5
+	)
+
+	# Act
+	var rejection: AffinityWritePort.Rejection = PermanentAffinityWriteRules.play(
+		card, 1, 5, links, port
+	)
+
+	# Assert
+	assert_int(rejection).is_equal(AffinityWritePort.Rejection.NONE)
+	for pair: AffinityTypes.Pair in AffinityTypes.Pair.values():
+		var want: int = 1 if pair == wu_pair else 0
+		assert_int(pool._records[pair].size()).is_equal(want)
+	# 敏感度證明:證明不了(A 類:static 純函式 play(),無繼承鏈可覆寫);
+	# 對照組的反向(同路徑、表裡沒有線 → INVALID_PAIR)由上方既有 8c 測試承擔。
+
+
 # ---- 陷阱一:roster id -> Character 序數的對映,經驗證、不是裸算式 -----------
 
 func test_roster_id_to_character_ordinal_mapping_is_off_by_one_and_validated() -> void:

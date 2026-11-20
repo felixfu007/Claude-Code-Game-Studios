@@ -22,6 +22,8 @@ const _TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 const _TERRAIN_DUEL_PATH: String = "res://assets/data/levels/test_fixture_terrain_duel.txt"
 const _ROSTER_VICTORY_ALLY_PATH: String = "res://assets/data/units/test_fixture_roster_victory_with_ally.txt"
 const _ROSTER_DOOMED_PATH: String = "res://assets/data/units/test_fixture_roster_doomed.txt"
+# story-024:開局起始關係筆數 = 種子檔解析出的條數,不寫死「2」。
+const _SeedExpectation = preload("res://tests/helpers/affinity_seed_expectation.gd")
 
 
 ## 常駐變種(敏感度證明):拿掉「勝利時觸發支援對話」這一步。
@@ -101,10 +103,14 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	var battle1: BattleScreen = await _enter_fixture_battle(_ROSTER_VICTORY_ALLY_PATH)
 	assert_object(battle1).is_not_null()
 	var ledger: CampaignAffinityLedger = CampaignProgress.start_mission_affinity_ledger()
+	# story-024 改寫:原本保護「勝利前只有起始關係、沒有支援對話」;改後仍保護,
+	# 只是「起始關係幾筆」改由種子檔推導(關係不再固定為兩對)。
+	var seed_count: int = _SeedExpectation.expected_links().size()
+	assert_int(seed_count).append_failure_message("種子檔解析失敗或為空").is_greater(0)
 	assert_int(ledger.records().size()).append_failure_message(
-		"precondition:勝利之前累積記錄應只有 2 筆起始關係(STORY_EVENT),沒有支援對話"
-	).is_equal(2)
-	assert_int(_count_source(ledger, AffinityTypes.Source.STORY_EVENT)).is_equal(2)
+		"precondition:勝利之前累積記錄應只有 %d 筆起始關係(STORY_EVENT),沒有支援對話" % seed_count
+	).is_equal(seed_count)
+	assert_int(_count_source(ledger, AffinityTypes.Source.STORY_EVENT)).is_equal(seed_count)
 	# Act
 	_win(battle1)
 
@@ -117,9 +123,9 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
 		"勝利後累積記錄應恰有 1 筆 SC-01,實得 %d(總筆數 %d)" % [_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION), records.size()]
 	).is_equal(1)
-	assert_int(records.size()).is_equal(3)
-	assert_int(records[2].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
-	assert_int(records[2].pair).is_equal(AffinityTypes.Pair.C1_C2)
+	assert_int(records.size()).is_equal(seed_count + 1)
+	assert_int(records[seed_count].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
+	assert_int(records[seed_count].pair).is_equal(AffinityTypes.Pair.C1_C2)
 
 	# Act 2 — 釋放第一場,經 production 入口進入下一場
 	await _release(battle1, original)
