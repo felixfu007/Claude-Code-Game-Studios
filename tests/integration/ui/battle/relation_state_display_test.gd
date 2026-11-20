@@ -505,12 +505,13 @@ func test_relation_map_with_detail_fits_above_hand_bar_and_window() -> void:
 	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		var m: RelationMinimap = RelationMinimap.new()
 		m.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(ws), WorldLayout.compute_scale(ws))
+		m.set_detail_font_size(HudLayout.small_font_size(ws))
 		var dummy: Array[Dictionary] = []
 		for i: int in range(11):
 			dummy.append({"kind": RelationBadge.Kind.NONE, "text": "x"})
 		m.set_detail_rows(dummy)
 		var rect: Rect2 = HudLayout.relation_minimap_rect(ws)
-		var bottom: float = rect.end.y + m.detail_height_px()
+		var bottom: float = rect.position.y + m.detail_height_px()  # 2026-11-20 起詳情是右側浮出卡,頂緣與圖本體齊平,不再疊在圖下方
 		var bar: Rect2 = HandBar.slot_bar_rect(ws, 7)
 		var overlaps_x: bool = rect.position.x < bar.end.x and rect.end.x > bar.position.x
 		report.append("MEASURE %s minimap_top=%s base_bottom=%s detail_h=%s bottom=%s window_h=%s bar_top=%s bar_x=[%s,%s] minimap_x=[%s,%s]" % [
@@ -565,6 +566,7 @@ func test_relation_map_and_detail_card_clear_of_hud_rects_and_inside_window() ->
 	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]:
 		var m: RelationMinimap = RelationMinimap.new()
 		m.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(ws), WorldLayout.compute_scale(ws))
+		m.set_detail_font_size(HudLayout.small_font_size(ws))
 		var dummy: Array[Dictionary] = []
 		for i: int in range(11):
 			dummy.append({"kind": RelationBadge.Kind.NONE, "text": "x"})
@@ -586,3 +588,82 @@ func test_relation_map_and_detail_card_clear_of_hud_rects_and_inside_window() ->
 				assert_bool(r.intersects(o)).override_failure_message(
 					"%s 與%s相交 %s: %s vs %s" % [mine["n"], name, ws, r, o]).is_false()
 		assert_bool(panel.intersects(card)).override_failure_message("圖與卡相交 %s" % ws).is_false()
+
+
+## 2026-11-20 詳情字級/徽記隨倍率放大 + 方向詞貼列(試玩截圖缺陷)。
+class _MutantFixed1x extends RelationMinimap:
+	func _detail_font_size() -> int:
+		return HudLayout.GLYPH_PX
+
+	func _detail_badge_unit() -> int:
+		return 1
+
+
+func _detail_probe(m: RelationMinimap, ws: Vector2i) -> void:
+	m.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(ws), WorldLayout.compute_scale(ws))
+	m.set_detail_font_size(HudLayout.small_font_size(ws))
+	var rows: Array[Dictionary] = []
+	for t: String in ["甲與乙 互助", "丙與丁 不合"]:
+		rows.append({"kind": RelationBadge.Kind.NONE, "text": t, "effect": "加成"})
+	m.set_detail_rows(rows)
+	m.set_detail_rect(Rect2(Vector2(100, 10), Vector2(300, m.detail_height_px())))
+
+
+## 字級 >= 節點名字級(= HudLayout.font_size);徽記倍率 = 字級/11;方向詞距該列文字右緣 <= 3 個字級。
+func _detail_ok(m: RelationMinimap, ws: Vector2i) -> String:
+	_detail_probe(m, ws)
+	var fs: int = HudLayout.font_size(ws)
+	var small: int = HudLayout.small_font_size(ws)
+	if m._detail_font_size() < small:
+		return "字級 %d < %d @%s" % [m._detail_font_size(), small, ws]
+	if m._detail_badge_unit() < WorldLayout.compute_scale(ws):
+		return "徽記倍率 %d @%s" % [m._detail_badge_unit(), ws]
+	for i: int in range(2):
+		var gap: float = m.detail_effect_x() - m.detail_text_right(i)
+		if gap > 3.0 * float(fs):
+			return "方向詞距文字 %s > %s @%s" % [gap, 3 * fs, ws]
+	return ""
+
+
+func test_detail_font_and_effect_word_scale_with_window_and_hug_text() -> void:
+	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1920, 1080)]:
+		var m: RelationMinimap = RelationMinimap.new()
+		var msg: String = _detail_ok(m, ws)
+		print("MEASURE_DETAIL ", ws, " font=", m._detail_font_size(), " unit=", m._detail_badge_unit(),
+				" detail_h=", m.detail_height_px(), " effect_x=", m.detail_effect_x())
+		m.free()
+		assert_str(msg).is_equal("")
+
+
+func test_sensitivity_proof_detail_fixed_1x_is_caught() -> void:
+	var m: RelationMinimap = _MutantFixed1x.new()
+	assert_str(_detail_ok(m, Vector2i(1920, 1080))).is_not_equal("")
+	m.free()
+
+
+## 真實接線:宿主 _apply_relation_minimap_layout 必須把 small_font_size 與 compute_scale 傳進關係圖。
+class _MutantHostSkipsDetailFont extends BattleScreen:
+	func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
+		_relation_minimap_window_size = window_size
+		_relation_minimap.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(window_size), WorldLayout.compute_scale(window_size))
+		_place_relation_minimap()
+
+
+func _wiring_mismatch(script: GDScript) -> String:
+	var s: BattleScreen = _load_screen(script)
+	var msg: String = ""
+	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1920, 1080)]:
+		s._apply_relation_minimap_layout(ws)
+		var got: Dictionary = s._relation_minimap.diagnostic_detail_metrics()
+		if int(got["font"]) != HudLayout.small_font_size(ws) or int(got["unit"]) != WorldLayout.compute_scale(ws):
+			msg += "%s got=%s want font=%d unit=%d; " % [ws, got, HudLayout.small_font_size(ws), WorldLayout.compute_scale(ws)]
+	_discard(s)
+	return msg
+
+
+func test_real_screen_passes_small_font_and_scale_to_relation_minimap() -> void:
+	assert_str(_wiring_mismatch(null)).is_equal("")
+
+
+func test_sensitivity_proof_host_skipping_detail_font_setter_is_caught() -> void:
+	assert_str(_wiring_mismatch(_MutantHostSkipsDetailFont)).is_not_equal("")

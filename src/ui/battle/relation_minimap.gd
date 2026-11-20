@@ -77,18 +77,46 @@ func set_detail_rows(rows: Array[Dictionary]) -> void:
 		queue_redraw()
 
 
-## Detail font = the HUD font one glyph step below the panel font (never below 1x the 11px glyph).
+## 詳情字級:宿主傳入(HudLayout.small_font_size(視窗)),本節點不含任何字級公式。
+var _detail_font_px: int = HudLayout.GLYPH_PX
+
+
+func set_detail_font_size(px: int) -> void:
+	_detail_font_px = maxi(1, px)
+	queue_redraw()
+
+
 func _detail_font_size() -> int:
-	# 固定 1 倍字級(不隨視窗放大):放大版在 1920x1080 實測溢出視窗底緣 104px(見測試 MEASURE 行)。
-	return HudLayout.GLYPH_PX
+	return _detail_font_px
 
 
 func _detail_row_height() -> float:
 	return float(maxi(_detail_font_size() + 1, (RelationBadge.RESERVED_SIZE.y + 2) * _detail_badge_unit()))
 
 
+## 徽記倍率 = 宿主傳入的 _scale_n(WorldLayout.compute_scale 的結果),不自算。
 func _detail_badge_unit() -> int:
-	return 1  # 詳情字級固定 1 倍,徽記放大倍率亦固定 1(不在此自算視窗倍率)
+	return _scale_n
+
+
+## 詳情文字區左緣(本節點座標)。
+func _detail_text_left() -> float:
+	var badge_side: float = float(RelationBadge.RESERVED_SIZE.x + 2) * float(_detail_badge_unit())
+	return _detail_rect.position.x + 4.0 + badge_side + float(_detail_badge_unit())
+
+
+## 第 [param i] 列文字右緣(以實際字寬量,供方向詞固定欄與測試使用)。
+func detail_text_right(i: int) -> float:
+	var w: float = _font.get_string_size(String(_detail_rows[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _detail_font_size()).x
+	return _detail_text_left() + w
+
+
+## 方向詞固定欄 x:最寬那列文字右緣 + 一個字級間隙,讓詞緊貼各列而非飄到卡右緣。
+func detail_effect_x() -> float:
+	var right: float = _detail_text_left()
+	for i: int in range(_detail_rows.size()):
+		right = maxf(right, detail_text_right(i))
+	return right + float(_detail_font_size())
 
 
 ## Extra panel height the detail area needs; the host adds it to the base panel height.
@@ -191,22 +219,21 @@ func _draw_detail(top: float) -> void:
 	var unit: int = _detail_badge_unit()
 	var badge_side: float = float(RelationBadge.RESERVED_SIZE.x + 2) * float(unit)
 	var ox: float = _detail_rect.position.x
-	var cw: float = _detail_rect.size.x
+	var effect_x: float = detail_effect_x()
+	var effect_w_max: float = _detail_rect.end.x - effect_x - 4.0
 	for i: int in range(_detail_rows.size()):
 		var y: float = top + float(i) * row_h
 		var baseline: float = y + (row_h + float(fsize)) / 2.0 - 1.0
-		# 「目前效果」方向詞(加成/懲罰/無)靠右;冷淡列與騎牆列的 "effect" 為空 → 不畫。
-		var effect: String = String(_detail_rows[i].get("effect", ""))
-		var effect_w: float = 0.0
-		if effect != "":
-			effect_w = _font.get_string_size(effect, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x
-			draw_string(_font, Vector2(ox + cw - effect_w - 4.0, baseline), effect,
-					HORIZONTAL_ALIGNMENT_LEFT, -1, fsize, COLOR_NODE)
 		RelationBadge.draw_badge(self, Vector2(ox + 4.0, y + (row_h - badge_side) / 2.0),
 				int(_detail_rows[i]["kind"]) as RelationBadge.Kind, unit)
-		var text_w: float = cw - badge_side - 8.0 - (effect_w + 4.0 if effect != "" else 0.0)
-		draw_string(_font, Vector2(ox + 4.0 + badge_side + float(unit), baseline),
+		var text_w: float = maxf(1.0, _detail_rect.end.x - _detail_text_left() - 4.0)
+		draw_string(_font, Vector2(_detail_text_left(), baseline),
 				String(_detail_rows[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, text_w, fsize, COLOR_NODE)
+		# 「目前效果」方向詞(加成/懲罰/無)放固定欄,緊貼文字;冷淡列與騎牆列的 "effect" 為空 → 不畫。
+		var effect: String = String(_detail_rows[i].get("effect", ""))
+		if effect != "":
+			draw_string(_font, Vector2(effect_x, baseline), effect,
+					HORIZONTAL_ALIGNMENT_LEFT, maxf(1.0, effect_w_max), fsize, COLOR_NODE)
 
 
 static func _tone_color(tone: BoardView.LineTone) -> Color:
@@ -241,3 +268,8 @@ func set_detail_rect(local_rect: Rect2) -> void:
 func _draw_detail_card() -> void:
 	draw_rect(_detail_rect, COLOR_BG)
 	_draw_detail(_detail_rect.position.y)
+
+
+## For tests: the detail font px and badge unit actually in effect.
+func diagnostic_detail_metrics() -> Dictionary:
+	return {"font": _detail_font_size(), "unit": _detail_badge_unit()}

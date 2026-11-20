@@ -1400,6 +1400,7 @@ func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	_relation_minimap_window_size = window_size
 	var fpx: int = HudLayout.font_size(window_size)
 	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx, WorldLayout.compute_scale(window_size))
+	_relation_minimap.set_detail_font_size(HudLayout.small_font_size(window_size))
 	# 詳情區額外高度由關係圖自己算(story-021);基準高度仍來自 HudLayout。
 	_place_relation_minimap()
 	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
