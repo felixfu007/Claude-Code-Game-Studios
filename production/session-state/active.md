@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第一百零五批(2026-11-20,公司)收工。** 程式 8 提交:020d `8a1b2c9`、付款人一致性 `0bd4ac4`、021 第二輪 `aa126ca`、029 `501cd75`、詳情字級 `227c3d4`、030 `f15094a`、024 `f406e6f`;測試 2518 → **2576**(全綠)。營火 EPIC 草稿 12 張 `2ef4288` + 專家三份 + UX 兩份。
+Feature: 🔴 今日裁決(逐字見第一百零五批節與 `docs/reviews/campfire-rulings-2026-11-20.md`):騎牆預告暫緩、8 張舊卡改人名、關係圖高度上限+詳情右側浮出、手牌四形、確認面板驗收通過、025 暫緩等營火、文件同步四項、營火 9 項(打輸兩種都做/勝利>營火>對話>編牌組/每輪 3 次採設計師/預設 12 上限 14/標題「繼續」「新遊戲」/不變加一句/最小 1280×720/其餘照專家)。
+Task: 🔴 **下次第一件:git pull + CI;第二件:依 `campfire-rulings-2026-11-20.md` 改營火 EPIC/工單(既有文件,先請示)→ 派 campfire story-001(Ready);第三件:午休重拍 `prototypes/capture-2026-11-20-lunch/`(驅動已修)→ 021/029/030 人眼。** 全程台灣繁體中文;對管理者用角色姓名;午休外不開窗。
+以下為第一百零四批原狀態列。
 Epic: **第一百零四批(2026-11-19,公司)收工。** 程式 7 提交:020a/027/028/020b/022/020c/021 第一輪;測試 2444 → **2518**(全綠)。未合入 2 件在 worktree:020d、021 第二輪。
 Feature: 🔴 今日裁決(逐字見第一百零四批節):c03 借用距離欄、D4 退役免費卡、牌面先做帶入、牌組 14 張不放補血卡、單行牌面先合入另開 029、列數本批免問、4 原因排進下一段、controller 轉接保留、面板內容可/重疊要修、關係圖往上長、詳情寫方向詞、文件同步。
 Task: 🔴 **下次第一件:git pull + CI;第二件:合入 020d(worktree `agent-af3bfd0e6f621b7cc` `4a0cbf8`,全套已綠 2532)→ 協調者全套 + mutant;第三件:021 第二輪依裁決重做(面板往上長、詳情加方向詞)後合入(worktree `agent-ae7d87c8b52f2a5d8` `29ea8e9`);AC4b 騎牆預告需新增引擎預覽函式 → 先派專家出方案再問;午休拍確認面板/三態/手牌原因;之後 029。** 全程台灣繁體中文;對管理者用角色姓名;午休外不開窗。
@@ -121,6 +125,14 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ 024(godot-gdscript-specialist,新 worktree,log `C:/tmp/run_024.log`):工單 Status 寫 Blocked 但依賴 013/014 已 Done(協調者查證),視為可開工;>15 支先停。
 - ⏳ systems-designer:025 的 k 候選與判準 → `docs/reviews/story-025-k-criteria-2026-11-20.md`(提示:現行資料只有兩組關係線,k 可能幾乎量不到)。
 - ✅ systems-designer `docs/reviews/story-025-k-criteria-2026-11-20.md`:k 只影響 1–2、3–4 兩組,麥子健零條 → 量不到;候選以單次增量 d 的倍數表示(d 未查)。協調者更正其理由 3(016 已 11-18 Done,非卡 GDD)。🔴 裁決(約 14:30):「**暫緩 025,等營火(推薦)**」。⚠️ 已揭露給管理者:營火前「任何兩人可變」在戰鬥中看不到、騎牆永遠有效。
+- ✅ 提交:詳情修正 `227c3d4`、030 `f15094a`(協調者全套 `ENGINE EXIT = 0` / `2569 … 0 failures` / `(246/246)`);4 個 worktree 已清。🔴 文件同步裁決(約 14:50):「**可以,四項都改(推薦)**」→ `c25d666`(020 Done、021/029/030 待人眼、024 進行中、025 Deferred、skill-card-play.md 143 行改四類)。
+- 📌 查證:排程 N5(移除基礎雙人卡人設線限制)已在 015 完成;card_07/08 丙類仍限人設線屬規格 10B 交 creative-director(未決)→ 今日告訴管理者「任意兩人靠營火」正確。
+- 🔴 發現:**營火無任何 epic/工單**,而 12/11 檢查點後即是營火(01-22,把握四到五成)。⏳ producer 起草 `production/epics/campfire/`(EPIC + 工單草稿 + 待決清單)。
+- 📌 Ready 狀態過時(實際已完成):audio-foundation 001/005/006、relation-minimap 002、card-play-interface u020 → 下次文件同步一併請示。
+- ✅ producer 營火 EPIC + 12 工單草稿 `2ef4288`(僅 001 Ready);lead `campfire-technical-answers`(不需新許可、來源推薦 SUPPORT_CONVERSATION、牌組放 CampaignProgress 下 RefCounted、重打不回滾營火寫入;**回標題再開始現在會接續場次**,讀碼推論未實跑)、game-designer `campfire-rules-gd`、ux `design/ux/campfire-screen.md` + `deck-edit-screen.md`(草稿)。🔴 管理者 9 項裁決 → `docs/reviews/campfire-rulings-2026-11-20.md`(第 1、2、5 題非推薦/自填)。
+- ✅ **024 提交 `f406e6f`**(協調者全套 `ENGINE EXIT = 0` / `2576 … 0 failures` / `(246/246)`;協調者 mutant:vs01 關係線暫加 1–5 → 改寫 4 支照綠、只有守資料的 `affinity_link_test` 紅,已還原)。⚠️ 本提交夾帶 19 個 `.uid`(專案本就追蹤 779 個,符合慣例)。
+- 覆核收穫今日:付款人一致性、027 夾具、UX 漏算左欄、詳情公式複本、接線無測試、手牌類別無聲遺漏 → 連續零收穫 = 0。
+- 協調者疏失:兩次 `cd` 進 worktree 使工作目錄漂移(改用絕對路徑);`git add tests/` 夾帶 .uid;本機 grep 中括號中文誤判(改 node)。
 - 📌 收工前一次請示的文件:020 Status(AC4b 暫緩、AC5 通過)、021/029/030 Status → Done、024/025 Status(Blocked 已過時)、`design/ux/skill-card-play.md` 第 143 行改四類、coding-standards 補「本機 grep 中括號中文誤判」(可選)。
 - 📌 **下次午休重拍**:`prototypes/capture-2026-11-20-lunch/`(已修驅動)+ 加拍 030 四形(若已合入)。
 - 📌 午休 12:00 後:開窗跑 `prototypes/capture-2026-11-20-lunch/`(README 指令)→ 協調者看 + 交 art-director/ux → 管理者人眼。
