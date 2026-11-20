@@ -356,12 +356,13 @@ func _target_availability_reason(card: Card) -> CardCostPlan.Reason:
 					return CardCostPlan.Reason.TARGET_HP_FULL
 				return CardCostPlan.Reason.NO_LEGAL_TARGET
 		Card.Category.DIRECT_DAMAGE:
-			var casters: Array[int] = []
 			if card.named_unit_id >= 1:
-				casters.append(card.named_unit_id)
-			else:
-				casters = _alive_player_unit_ids()
-			return _enemy_reach_reason(casters)
+				return _enemy_reach_reason([card.named_unit_id] as Array[int])
+			# Payer chosen later: playable iff the single payer definition is non-empty;
+			# otherwise explain why using only the payers that met the ally condition.
+			if not _legal_payers(card).is_empty():
+				return CardCostPlan.Reason.NONE
+			return _enemy_reach_reason(_ally_qualified_payers(card))
 		Card.Category.COMBO_DAMAGE:
 			return _combo_reach_reason(card.named_unit_id, card.partner_unit_id)
 	return CardCostPlan.Reason.NONE
@@ -474,16 +475,9 @@ func legal_targets() -> Array[int]:
 				Card.Category.HEAL:
 					return _legal_targets_for_heal(_selected_card)
 				Card.Category.DIRECT_DAMAGE:
-					# c03: the payer is player-chosen -- any alive PLAYER unit (story-027:
-					# with target_range >= 1 only those with another living ally in range).
-					var payers: Array[int] = _alive_player_unit_ids()
-					if not _needs_ally_nearby(_selected_card):
-						return payers
-					var qualified: Array[int] = []
-					for payer_id: int in payers:
-						if _ally_within_proximity(payer_id, _selected_card.target_range):
-							qualified.append(payer_id)
-					return qualified
+					# The payer is player-chosen -- the single payer definition
+					# ([method _legal_payers]), shared with the playable check.
+					return _legal_payers(_selected_card)
 				_:
 					push_error("CardPlaySession.legal_targets: unhandled category %s" % _selected_card.category)
 					return []
@@ -627,6 +621,9 @@ func confirm() -> bool:
 		Card.Category.DIRECT_DAMAGE:
 			# story-018: validated BEFORE the window: the enemy must still be a legal target
 			# of the caster (alive, in range, line of sight) -- the same query as the pick step.
+			if _selected_card.named_unit_id < 1 and not _legal_payers(_selected_card).has(_selected_target_a):
+				push_error("CardPlaySession.confirm: payer %d is no longer a legal payer" % _selected_target_a)
+				return false
 			if _needs_ally_nearby(_selected_card) and not _ally_within_proximity(_selected_target_a, _selected_card.target_range):
 				push_error("CardPlaySession.confirm: payer %d has no living ally within range" % _selected_target_a)
 				return false
@@ -1071,6 +1068,26 @@ func _notify_kill(unit_id: int) -> void:
 ## within that range of the payer (-1 = no condition).
 func _needs_ally_nearby(card: Card) -> bool:
 	return card.category == Card.Category.DIRECT_DAMAGE and card.target_range >= 1
+
+
+## Alive PLAYER units meeting the story-027 ally condition (all of them when the card has none).
+func _ally_qualified_payers(card: Card) -> Array[int]:
+	var out: Array[int] = []
+	for payer_id: int in _alive_player_unit_ids():
+		if not _needs_ally_nearby(card) or _ally_within_proximity(payer_id, card.target_range):
+			out.append(payer_id)
+	return out
+
+
+## THE definition of a legal player-chosen direct-damage payer: alive ∧ (if the card needs it)
+## an ally in range ∧ at least one legal enemy for that payer (the payer is the attacker).
+## Used by [method legal_targets], the playable check and the confirm re-validation.
+func _legal_payers(card: Card) -> Array[int]:
+	var out: Array[int] = []
+	for payer_id: int in _ally_qualified_payers(card):
+		if not _legal_enemy_targets(payer_id).is_empty():
+			out.append(payer_id)
+	return out
 
 
 ## Named payer: that unit must satisfy the condition (an absent payer is left to the cost

@@ -22,6 +22,12 @@ func _build_state(ally_x: int, ally_alive: bool = true, far_unit: bool = false) 
 	lines.append("2,P2,PLAYER,22,10,3,1,1,1,%d,0" % ally_x)
 	if far_unit:
 		lines.append("3,P3,PLAYER,20,10,3,1,1,1,12,5")
+		# 敵人 10 在 (1,1):讓我方 2(射程 1)也打得到敵人 —— 合法付款人須「有隊友 ∧ 打得到敵人」
+		# (付款人單一定義,story-020 付款人一致性修正),本測試只驗隊友條件。
+		lines.append("10,E2,ENEMY,30,5,50,1,1,1,1,1")
+		# 敵人 11 在 (12,4):遠方我方 3 也打得到敵人 —— 排除他的唯一理由必須是隊友條件,
+		# 否則「不過濾隊友」的突變版也會因打不到而排除他,敏感度證明就分不出來。
+		lines.append("11,E3,ENEMY,30,5,50,1,1,1,12,4")
 	lines.append("9,E1,ENEMY,30,5,50,1,1,1,0,1")
 	var state: BattleState = BattleState.create(rows, "\n".join(lines))
 	if not ally_alive:
