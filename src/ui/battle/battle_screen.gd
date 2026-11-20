@@ -1255,6 +1255,13 @@ const TEXT_RELATION_MAP_TOGGLE: StringName = &"battle.hud.relation_map_toggle"
 
 ## 關係圖面板與常駐開關按鈕(滑鼠用)。預設關閉。唯讀顯示,不持有好感度。
 var _relation_minimap: RelationMinimap = null
+var _relation_minimap_window_size: Vector2i = Vector2i.ZERO
+
+func diagnostic_relation_detail_rows() -> Array[Dictionary]:
+	if _relation_minimap == null:
+		return []
+	return _relation_minimap.diagnostic_detail_rows()
+
 var _relation_toggle_button: Button = null
 
 ## 唯讀診斷:面板目前是否開著。
@@ -1313,15 +1320,86 @@ func _update_relation_minimap(line_statuses: Array[AffinityLineStatus], position
 	for id: int in positions.keys():
 		alive.append(id)
 	_relation_minimap.set_lines(line_statuses, alive)
+	_relation_line_statuses = line_statuses
+	_relation_minimap.set_detail_rows(_relation_detail_rows())
+	_place_relation_minimap()
+
+## 關係圖詳情列的「目前效果」方向詞鍵(UX 2026-11-19 第二節:方向,不是數字)。
+const TEXT_EFFECT_POS: StringName = &"battle.relation.effect.pos"
+const TEXT_EFFECT_NEG: StringName = &"battle.relation.effect.neg"
+const TEXT_EFFECT_NONE: StringName = &"battle.relation.effect.none"
+
+## 最近一次 [method _update_relation_minimap] 收到的連線狀態(與棋盤連線同一份,單一來源)。
+var _relation_line_statuses: Array[AffinityLineStatus] = []
+
+## 一組的「目前效果」詞:冷淡(三態 NONE)沒有效果概念 → "";否則取該組連線狀態
+## ([enum AffinityLineStatus.State],與棋盤線/關係圖線同一份判定):POSITIVE=加成、NEGATIVE=懲罰,
+## NEUTRAL 或沒有連線(站位不到/效果 0)=「無」。不在此另寫規則。
+func _relation_effect_word(a_id: int, b_id: int, state: int) -> String:
+	if state == AffinityRelation.RelationState.NONE:
+		return ""
+	for s: AffinityLineStatus in _relation_line_statuses:
+		if (s.unit_id == a_id and s.partner_id == b_id) or (s.unit_id == b_id and s.partner_id == a_id):
+			match s.state:
+				AffinityLineStatus.State.POSITIVE:
+					return Loc.localize(TEXT_EFFECT_POS)
+				AffinityLineStatus.State.NEGATIVE:
+					return Loc.localize(TEXT_EFFECT_NEG)
+				_:
+					return Loc.localize(TEXT_EFFECT_NONE)
+	return Loc.localize(TEXT_EFFECT_NONE)
+
+
+## story-021 UX AC-11/AC-13 —— 關係圖詳情區的每一列 {kind, text}:場上存活我方每一組(皆經
+## [method relation_state_between] = state_of,冷淡也列)+ 騎牆者一列(有效與否讀 [method BattleState.straddle_is_valid],
+## 失效時另列非冷淡的那幾位)。不快取、不自判。隱藏好感度的戰鬥一律空。
+func _relation_detail_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	if _state == null or _hide_affinity_display_for_this_battle:
+		return rows
+	var players: Array[Unit] = []
+	for u: Unit in _state.units_of(Unit.Faction.PLAYER):
+		if u.id >= 1 and u.id <= 5:
+			players.append(u)
+	for i: int in range(players.size()):
+		for j: int in range(i + 1, players.size()):
+			var state: int = relation_state_between(players[i].id, players[j].id)
+			var word_key: StringName = RelationBadge.text_key_for_state(state)
+			if word_key == &"":
+				continue
+			rows.append({
+				"kind": RelationBadge.kind_for_state(state),
+				"text": Loc.localize(&"battle.card_hand.pair_names_format") % [
+					unit_display_name(players[i]), unit_display_name(players[j])
+				] + " " + Loc.localize(word_key),
+				"a": players[i].id, "b": players[j].id, "state": state,
+				"effect": _relation_effect_word(players[i].id, players[j].id, state),
+			})
+	for u: Unit in players:
+		if not u.lone_guard:
+			continue
+		var valid: bool = _state.straddle_is_valid(u)
+		var text: String = Loc.localize(&"battle.relation.straddle.line_format") % Loc.localize(
+			&"battle.relation.straddle.on" if valid else &"battle.relation.straddle.off"
+		)
+		if not valid:
+			for other: Unit in players:
+				if other.id != u.id and relation_state_between(u.id, other.id) != AffinityRelation.RelationState.NONE:
+					text += " " + unit_display_name(other)
+		rows.append({
+			"kind": RelationBadge.Kind.STRADDLE_ON if valid else RelationBadge.Kind.STRADDLE_OFF,
+			"text": text, "a": u.id, "b": -1, "state": -1,
+		})
+	return rows
 
 func _apply_relation_minimap_layout(window_size: Vector2i) -> void:
 	if _relation_minimap == null:
 		return
-	var rect: Rect2 = HudLayout.relation_minimap_rect(window_size)
-	_relation_minimap.position = rect.position
-	_relation_minimap.size = rect.size
+	_relation_minimap_window_size = window_size
 	var fpx: int = HudLayout.font_size(window_size)
 	_relation_minimap.configure(HudLayoutScaler.HUD_FONT, fpx, WorldLayout.compute_scale(window_size))
+	# 詳情區額外高度由關係圖自己算(story-021);基準高度仍來自 HudLayout。
+	_place_relation_minimap()
 	var trect: Rect2 = HudLayout.relation_minimap_toggle_rect(window_size)
 	# 先換字級再設尺寸(理由同 _apply_hud_action_buttons_layout)。
 	_relation_toggle_button.add_theme_font_size_override(&"font_size", HudLayout.small_font_size(window_size))
@@ -6648,3 +6726,14 @@ func card_unplayable_reason_text(card: Card) -> String:
 		var unreachable_id: int = _controller._card_play_session.combo_unreachable_unit_id(card)
 		return Loc.localize(key) % unit_display_name(_state.unit_by_id(unreachable_id))
 	return Loc.localize(key)
+
+
+## 關係圖面板位置/尺寸(封頂於開關按鈕與手牌列之間)+ 右側詳情浮出卡位置(詳情列數變動時重算)。矩形一律來自 HudLayout。
+func _place_relation_minimap() -> void:
+	if _relation_minimap == null or _relation_minimap_window_size == Vector2i.ZERO:
+		return
+	var rect: Rect2 = HudLayout.relation_minimap_rect(_relation_minimap_window_size)
+	_relation_minimap.position = rect.position
+	_relation_minimap.size = rect.size
+	var card: Rect2 = HudLayout.relation_detail_rect(_relation_minimap_window_size, _relation_minimap.detail_height_px())
+	_relation_minimap.set_detail_rect(Rect2(card.position - rect.position, card.size))

@@ -122,24 +122,42 @@ static func _shield_pixels(solid: bool) -> Array[Vector2i]:
 	return result
 
 
+## 固定保留區(源像素,不含描邊):一律 7x7,不論形狀高矮(art-director 2026-11-19 待辦:
+## 三態徽記以 7x7 為固定保留區垂直置中,切換三態時旁邊 2 字文字不跳位)。
+const RESERVED_SIZE: Vector2i = Vector2i(7, 7)
+
+
+## 形狀在保留區內的垂直偏移(源像素,整數;垂直置中,水平靠左)。
+static func vertical_offset_of(p_kind: Kind) -> int:
+	return (RESERVED_SIZE.y - size_of(p_kind).y) / 2
+
+
 func _refresh_size() -> void:
-	var s: Vector2i = size_of(kind)
-	custom_minimum_size = Vector2(float(s.x + 2) * unit_px, float(s.y + 2) * unit_px)
+	custom_minimum_size = Vector2(
+		float(RESERVED_SIZE.x + 2) * unit_px, float(RESERVED_SIZE.y + 2) * unit_px
+	)
 	size = custom_minimum_size
 
 
 func _draw() -> void:
-	var cells: Array[Vector2i] = pixels_of(kind)
+	draw_badge(self, Vector2.ZERO, kind, unit_px)
+
+
+## 在 [param canvas] 的 [param origin](保留區左上角含描邊)畫出 [param p_kind] 徽記,
+## 關係圖詳情區與本元件自己共用(單一畫法)。
+static func draw_badge(canvas: CanvasItem, origin: Vector2, p_kind: Kind, p_unit_px: int) -> void:
+	var cells: Array[Vector2i] = pixels_of(p_kind)
 	var fill: Dictionary = {}
 	for c: Vector2i in cells:
 		fill[c] = true
-	var u: float = float(unit_px)
+	var u: float = float(p_unit_px)
+	var shift: Vector2i = Vector2i.ONE + Vector2i(0, vertical_offset_of(p_kind))
 	# 先畫描邊(每個像素向八鄰域擴張 1),再畫白色本體;偏移 1 源像素容納描邊。
 	for c: Vector2i in cells:
 		for dy: int in range(-1, 2):
 			for dx: int in range(-1, 2):
 				var n: Vector2i = c + Vector2i(dx, dy)
 				if not fill.has(n):
-					draw_rect(Rect2(Vector2(n + Vector2i.ONE) * u, Vector2(u, u)), OUTLINE_COLOR)
+					canvas.draw_rect(Rect2(origin + Vector2(n + shift) * u, Vector2(u, u)), OUTLINE_COLOR)
 	for c: Vector2i in cells:
-		draw_rect(Rect2(Vector2(c + Vector2i.ONE) * u, Vector2(u, u)), FILL_COLOR)
+		canvas.draw_rect(Rect2(origin + Vector2(c + shift) * u, Vector2(u, u)), FILL_COLOR)

@@ -1,0 +1,514 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+HOSTCHAIN scn=1_confirm_panel res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) confirming=true
+HEADLESS: skip capture 1_confirm_panel (960, 540)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:73)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:73)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:75)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:75)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+HOSTCHAIN scn=2_relation_map_detail res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) minimap_visible=true detail_rows=11
+HEADLESS: skip capture 2_relation_map_detail (960, 540)
+HOSTCHAIN scn=3_infocard_relation res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) rows=[{ "kind": 0, "text": "與藍亭萱：好感" }]
+HEADLESS: skip capture 3_infocard_relation (960, 540)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:84)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:84)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:84)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+HOSTCHAIN scn=4_infocard_straddle res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) rows=[{ "kind": 3, "text": "騎牆：有效" }]
+HEADLESS: skip capture 4_infocard_straddle (960, 540)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _handle_open_hand_pressed (res://src/ui/battle/battle_screen.gd:4146)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:102)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:109)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+HOSTCHAIN scn=5_hand_unplayable_reason res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) card22_found=true want=cap_hp hand=2 reason='藍亭萱血量不足'
+HEADLESS: skip capture 5_hand_unplayable_reason (960, 540)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _handle_open_hand_pressed (res://src/ui/battle/battle_screen.gd:4146)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:102)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:109)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+HOSTCHAIN scn=6_hand_card22_long_face res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) card22_found=true want=card_22 hand=2 reason='射程內沒有敵人'
+HEADLESS: skip capture 6_hand_card22_long_face (960, 540)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+HOSTCHAIN scn=1_confirm_panel res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) confirming=true
+HEADLESS: skip capture 1_confirm_panel (1920, 1080)
+HOSTCHAIN scn=2_relation_map_detail res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) minimap_visible=true detail_rows=11
+HEADLESS: skip capture 2_relation_map_detail (1920, 1080)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] <anonymous lambda> (res://src/ui/battle/battle_screen.gd:2309)
+       [4] _select_unit_internal (res://src/gameplay/battle/battle_controller.gd:1271)
+       [5] select_unit (res://src/gameplay/battle/battle_controller.gd:816)
+       [6] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:80)
+       [7] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:81)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+HOSTCHAIN scn=3_infocard_relation res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) rows=[{ "kind": 0, "text": "與藍亭萱：好感" }]
+HEADLESS: skip capture 3_infocard_relation (1920, 1080)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:84)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _cursor_on (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:181)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:84)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+HOSTCHAIN scn=4_infocard_straddle res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) rows=[{ "kind": 3, "text": "騎牆：有效" }]
+HEADLESS: skip capture 4_infocard_straddle (1920, 1080)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 2 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _handle_open_hand_pressed (res://src/ui/battle/battle_screen.gd:4146)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:102)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:109)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+HOSTCHAIN scn=5_hand_unplayable_reason res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) card22_found=true want=cap_hp hand=2 reason='藍亭萱血量不足'
+HEADLESS: skip capture 5_hand_unplayable_reason (1920, 1080)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _ready (res://src/ui/battle/battle_screen.gd:2502)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 3 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _update_cursor_visual (res://src/ui/battle/battle_screen.gd:5138)
+       [4] _process (res://src/ui/battle/battle_screen.gd:2566)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _handle_open_hand_pressed (res://src/ui/battle/battle_screen.gd:4146)
+       [4] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:102)
+       [5] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+ERROR: BattleScreen.hand_bar_slot_kind_for: unmapped Card.Category 4 -- Z1 falls back to 甲類's shape, but this is now logged rather than silent
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] hand_bar_slot_kind_for (res://src/ui/battle/battle_screen.gd:3207)
+       [1] hand_bar_slot_kinds (res://src/ui/battle/battle_screen.gd:3222)
+       [2] _refresh_view (res://src/ui/battle/battle_screen.gd:5537)
+       [3] _capture_one (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:109)
+       [4] _new_screen (res://prototypes/capture-2026-11-20-lunch/capture_driver.gd:50)
+HOSTCHAIN scn=6_hand_card22_long_face res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) card22_found=true want=card_22 hand=2 reason='射程內沒有敵人'
+HEADLESS: skip capture 6_hand_card22_long_face (1920, 1080)
+DONE (headless=true)
+WARNING: 357 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 22 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

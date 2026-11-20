@@ -391,16 +391,30 @@ static func small_font_size(window_size: Vector2i) -> int:
 ## [method controls_hint_bg_rect]. Left column, so it cannot meet the tile
 ## info panel (right-aligned) and sits left of the centred hand bar; the
 ## no-overlap claim is asserted by test against the real rect functions.
+##
+## 2026-11-20 管理者裁決(UX 方案 1):圖本體高度【封頂】在「開關按鈕下緣 + 間隙」到
+## 「手牌列頂 - 間隙」之間 —— 上界取 [method relation_minimap_toggle_rect],下界取
+## [method HandBar.slot_bar_rect](手牌列頂與格數無關,故以 1 格取頂;不抄座標)。
+## 高度 = min(基準高, 可用高度),所以詳情不展開時也不會壓到按鈕或手牌列。
+## 詳情改在 [method relation_detail_rect] 的浮出卡,不在左欄疊高。左欄其他元件位置不動。
 static func relation_minimap_rect(window_size: Vector2i) -> Rect2:
 	var toggle: Rect2 = relation_minimap_toggle_rect(window_size)
 	var counter: Rect2 = consistency_counter_rect(window_size)
 	var fpx: float = float(font_size(window_size))
 	var gap: float = fpx * LABEL_GAP_MULTIPLIER
+	var top: float = toggle.position.y + toggle.size.y + gap
+	var bottom: float = HandBar.slot_bar_rect(window_size, 1).position.y - gap
+	var height: float = minf(fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER, bottom - top)
 	# 寬度取計數器寬(按鈕縮小後不再與面板同寬,面板維持原寬)。
-	return Rect2(
-		Vector2(toggle.position.x, toggle.position.y + toggle.size.y + gap),
-		Vector2(counter.size.x, fpx * RELATION_MINIMAP_HEIGHT_MULTIPLIER)
-	)
+	return Rect2(Vector2(toggle.position.x, top), Vector2(counter.size.x, height))
+
+
+## 詳情浮出卡:貼在 [method relation_minimap_rect] 右側(隔一個間隙),頂端對齊、寬度同圖本體,
+## 高度 = [param detail_height](RelationMinimap 自算的列高總和)。
+static func relation_detail_rect(window_size: Vector2i, detail_height: float) -> Rect2:
+	var panel: Rect2 = relation_minimap_rect(window_size)
+	var gap: float = float(font_size(window_size)) * LABEL_GAP_MULTIPLIER
+	return Rect2(Vector2(panel.end.x + gap, panel.position.y), Vector2(panel.size.x, detail_height))
 
 
 ## story-053:最左那顆底部按鈕(目前是 index 2 的「結束角色行動」)的矩形。

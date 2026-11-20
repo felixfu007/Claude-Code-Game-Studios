@@ -286,6 +286,9 @@ battle.card_reason.hp_insufficient_format,%s血量不足
 battle.relation.state.pos,好感
 battle.relation.state.none,冷淡
 battle.relation.state.neg,敵意
+battle.relation.effect.pos,加成
+battle.relation.effect.neg,懲罰
+battle.relation.effect.none,無
 battle.card_reason.partner_absent,夥伴不在場
 battle.card_reason.fray_full,配合折損已滿
 battle.card_reason.need_ally_within_2,需有隊友在 2 格內

@@ -338,3 +338,251 @@ func test_sensitivity_proof_cached_display_is_caught_by_ac2_scenario() -> void:
 
 func test_sensitivity_proof_straddle_always_on_is_caught_by_straddle_scenario() -> void:
 	assert_bool(_scn_straddle_flips(_MutantStraddleAlwaysOn)).is_false()
+
+
+# ==== 第二輪:棋盤友敵線 / 關係圖詳情區 / 徽記保留區 / 版面量測 ====================
+# 目前效果(UX 4.3「每列:對象名 + 關係詞 + 目前效果」)未做,待 UX 確認(詳情區只列關係詞)。
+
+func _line2d_strokes(screen: BattleScreen) -> Array[Line2D]:
+	var out: Array[Line2D] = []
+	for child: Node in screen._board_view._affinity_line_layer.get_children():
+		if child is Line2D and (child as Line2D).width < BoardView.AFFINITY_LINE_BACKING_WIDTH:
+			out.append(child as Line2D)
+	return out
+
+
+## AC-9/AC-10 棋盤:冷淡不產生線節點;好感 = 實線(2 點)、敵意 = 鋸齒(>2 點)。
+func _scn_board_lines(script: GDScript = null) -> bool:
+	var s: BattleScreen = _load_screen(script)
+	if s._load_failed or s._controller == null:
+		_discard(s)
+		return false
+	s._refresh_view()
+	var ok: bool = _line2d_strokes(s).is_empty()
+	ok = _write(s, 1, 2, 1.0) and ok
+	s._refresh_view()
+	var strokes: Array[Line2D] = _line2d_strokes(s)
+	ok = (strokes.size() == 1 and strokes[0].points.size() == 2) and ok
+	var guard: int = 0
+	while _oracle(s, 2, 3) != AffinityRelation.RelationState.NEG and guard < 12:
+		ok = _write(s, 2, 3, -1.0) and ok
+		guard += 1
+	s._refresh_view()
+	strokes = _line2d_strokes(s)
+	var solid: int = 0
+	var zig: int = 0
+	for l: Line2D in strokes:
+		if l.points.size() == 2:
+			solid += 1
+		else:
+			zig += 1
+	ok = (solid == 1 and zig == 1) and ok
+	_discard(s)
+	return ok
+
+
+## mutant:詳情區每組都標「冷淡」(只換形狀/顏色不換字的同類缺陷)。
+class _MutantDetailAllCold extends BattleScreen:
+	func _relation_detail_rows() -> Array[Dictionary]:
+		var rows: Array[Dictionary] = super._relation_detail_rows()
+		for r: Dictionary in rows:
+			if int(r["b"]) >= 1:
+				r["text"] = String(r["text"]).trim_suffix(Loc.localize(&"battle.relation.state.pos")).trim_suffix(
+					Loc.localize(&"battle.relation.state.neg")) if int(r["state"]) != 0 else String(r["text"])
+				if int(r["state"]) != 0:
+					r["text"] = String(r["text"]) + Loc.localize(&"battle.relation.state.none")
+					r["state"] = 0
+		return rows
+
+
+## mutant:騎牆列恆「有效」(自算而非讀判定)。
+class _MutantDetailStraddleAlwaysOn extends BattleScreen:
+	func _relation_detail_rows() -> Array[Dictionary]:
+		var rows: Array[Dictionary] = super._relation_detail_rows()
+		for r: Dictionary in rows:
+			if int(r["b"]) < 1:
+				r["text"] = Loc.localize(&"battle.relation.straddle.line_format") % Loc.localize(&"battle.relation.straddle.on")
+		return rows
+
+
+func test_sensitivity_proof_detail_all_cold_is_caught() -> void:
+	assert_bool(_scn_detail_rows(_MutantDetailAllCold)).is_false()
+
+
+func test_sensitivity_proof_detail_straddle_always_on_is_caught() -> void:
+	assert_bool(_scn_detail_rows(_MutantDetailStraddleAlwaysOn)).is_false()
+
+
+func test_board_lines_cold_none_pos_solid_neg_zigzag() -> void:
+	assert_bool(_scn_board_lines()).is_true()
+
+
+## AC-11/AC-13 詳情區:十組皆列且文字 = state_of;冷淡也有字;騎牆列只在 5 號。
+func _scn_detail_rows(script: GDScript = null) -> bool:
+	var s: BattleScreen = _load_screen(script)
+	if s._load_failed or s._controller == null:
+		_discard(s)
+		return false
+	s._refresh_view()
+	var rows: Array[Dictionary] = s.diagnostic_relation_detail_rows()
+	var cold_word: String = Loc.localize(&"battle.relation.state.none")
+	var ok: bool = rows.size() == 11
+	var cold_rows: int = 0
+	for r: Dictionary in rows:
+		if int(r["b"]) >= 1:
+			var expected: int = _oracle(s, int(r["a"]), int(r["b"]))
+			ok = (int(r["state"]) == expected) and ok
+			if String(r["text"]).ends_with(cold_word):
+				cold_rows += 1
+		else:
+			ok = (int(r["a"]) == 5) and ok
+	ok = (cold_rows == 10) and ok
+	var on_text: String = Loc.localize(_KEY_STRADDLE_LINE) % Loc.localize(_KEY_STRADDLE_ON)
+	ok = (String(rows[rows.size() - 1]["text"]) == on_text) and ok
+	ok = _write(s, 5, 3, 1.0) and ok
+	s._refresh_view()
+	rows = s.diagnostic_relation_detail_rows()
+	var off_text: String = Loc.localize(_KEY_STRADDLE_LINE) % Loc.localize(_KEY_STRADDLE_OFF)
+	ok = String(rows[rows.size() - 1]["text"]).begins_with(off_text) and ok
+	ok = String(rows[rows.size() - 1]["text"]).contains(Loc.character_name(3)) and ok
+	var pos_word: String = Loc.localize(&"battle.relation.state.pos")
+	var pos_rows: int = 0
+	for r: Dictionary in rows:
+		if int(r["state"]) == AffinityRelation.RelationState.POS and String(r["text"]).ends_with(pos_word):
+			pos_rows += 1
+	ok = (pos_rows == 1) and ok
+	_discard(s)
+	return ok
+
+
+func test_relation_map_detail_lists_cold_pairs_and_straddle_only_on_5() -> void:
+	assert_bool(_scn_detail_rows()).is_true()
+
+
+func test_badge_reserved_area_same_for_all_kinds_and_shapes_centered() -> void:
+	var kinds: Array[RelationBadge.Kind] = [
+		RelationBadge.Kind.POS, RelationBadge.Kind.NEG, RelationBadge.Kind.NONE,
+		RelationBadge.Kind.STRADDLE_ON, RelationBadge.Kind.STRADDLE_OFF,
+	]
+	var sizes: Dictionary = {}
+	for k: RelationBadge.Kind in kinds:
+		var b: RelationBadge = RelationBadge.new()
+		b.kind = k
+		sizes[b.custom_minimum_size] = true
+		b.free()
+		var h: int = RelationBadge.size_of(k).y
+		assert_int(RelationBadge.vertical_offset_of(k) * 2 + h).is_equal(7)
+	assert_int(sizes.size()).is_equal(1)
+
+
+func _rows_in_use(kind: RelationBadge.Kind) -> int:
+	var ys: Dictionary = {}
+	for c: Vector2i in RelationBadge.pixels_of(kind):
+		ys[c.y] = true
+	return ys.size()
+
+
+func _longest_horizontal_run(kind: RelationBadge.Kind) -> int:
+	var cells: Array[Vector2i] = RelationBadge.pixels_of(kind)
+	var best: int = 0
+	for c: Vector2i in cells:
+		var n: int = 1
+		while cells.has(c + Vector2i(n, 0)):
+			n += 1
+		best = maxi(best, n)
+	return best
+
+
+func test_badge_none_height_5_pos_height_1_and_none_has_no_long_run() -> void:
+	assert_int(_rows_in_use(RelationBadge.Kind.NONE)).is_equal(5)
+	assert_int(_rows_in_use(RelationBadge.Kind.POS)).is_equal(1)
+	assert_int(_longest_horizontal_run(RelationBadge.Kind.NONE)).is_less(5)
+
+
+## 溢出量測:關係圖面板(含 11 列詳情)底緣 vs 手牌列頂緣 / 視窗底。數字印在 log(MEASURE 行)。
+func test_relation_map_with_detail_fits_above_hand_bar_and_window() -> void:
+	var report: Array[String] = []
+	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1280, 720), Vector2i(1920, 1080)]:
+		var m: RelationMinimap = RelationMinimap.new()
+		m.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(ws), WorldLayout.compute_scale(ws))
+		var dummy: Array[Dictionary] = []
+		for i: int in range(11):
+			dummy.append({"kind": RelationBadge.Kind.NONE, "text": "x"})
+		m.set_detail_rows(dummy)
+		var rect: Rect2 = HudLayout.relation_minimap_rect(ws)
+		var bottom: float = rect.end.y + m.detail_height_px()
+		var bar: Rect2 = HandBar.slot_bar_rect(ws, 7)
+		var overlaps_x: bool = rect.position.x < bar.end.x and rect.end.x > bar.position.x
+		report.append("MEASURE %s minimap_top=%s base_bottom=%s detail_h=%s bottom=%s window_h=%s bar_top=%s bar_x=[%s,%s] minimap_x=[%s,%s]" % [
+			ws, rect.position.y, rect.end.y, m.detail_height_px(), bottom, ws.y, bar.position.y,
+			bar.position.x, bar.end.x, rect.position.x, rect.end.x])
+		m.free()
+		assert_bool(bottom <= float(ws.y)).override_failure_message(report[-1]).is_true()
+		# 與手牌列的相交【只印數字,不斷言】:960x540 / 1920x1080 實測面板(連基準高度本身在 960x540)
+		# 都與手牌列有 14~28px 水平重疊並垂直相交,需 HudLayout 層級裁決,尚未解決(不寫成綠的)。
+		print("MEASURE_OVERLAP_BAR ", ws, " x_overlap=", overlaps_x, " panel_bottom=", bottom, " bar_top=", bar.position.y)
+	for line: String in report:
+		print(line)
+
+
+## 2026-11-20 詳情「目前效果」詞:冷淡列留空;非冷淡列的詞 = 同一份連線狀態(加成/懲罰/無)。
+func test_detail_effect_word_blank_for_cold_and_follows_line_status() -> void:
+	var s: BattleScreen = _load_screen()
+	assert_bool(s._load_failed or s._controller == null).is_false()
+	var w_pos: String = Loc.localize(&"battle.relation.effect.pos")
+	var w_neg: String = Loc.localize(&"battle.relation.effect.neg")
+	var w_none: String = Loc.localize(&"battle.relation.effect.none")
+	s._refresh_view()
+	for r: Dictionary in s.diagnostic_relation_detail_rows():
+		if int(r["b"]) >= 1:
+			assert_str(String(r.get("effect", "x"))).is_equal("")  # 全冷淡 → 全留空,不寫「無」
+	assert_bool(_write(s, 1, 2, 1.0)).is_true()
+	assert_bool(_write(s, 3, 4, -1.0)).is_true()
+	s._refresh_view()
+	var seen_non_cold: int = 0
+	for r: Dictionary in s.diagnostic_relation_detail_rows():
+		if int(r["b"]) < 1:
+			assert_bool(r.has("effect")).is_false()
+			continue
+		var effect: String = String(r["effect"])
+		if int(r["state"]) == AffinityRelation.RelationState.NONE:
+			assert_str(effect).is_equal("")
+			continue
+		seen_non_cold += 1
+		var expected: String = w_none
+		for st: AffinityLineStatus in s._relation_line_statuses:
+			if (st.unit_id == int(r["a"]) and st.partner_id == int(r["b"])) or (st.unit_id == int(r["b"]) and st.partner_id == int(r["a"])):
+				expected = w_pos if st.state == AffinityLineStatus.State.POSITIVE else (w_neg if st.state == AffinityLineStatus.State.NEGATIVE else w_none)
+		assert_str(effect).is_equal(expected)
+		assert_bool(effect in [w_pos, w_neg, w_none]).is_true()
+	assert_int(seen_non_cold).is_equal(2)
+	_discard(s)
+
+
+## 2026-11-20 管理者裁決(方案 1):圖本體封頂、詳情改右側浮出卡。圖本體 + 11 列浮出卡,與手牌列、開關按鈕、
+## 一致率計數器、狀態列、右上格位資訊框皆不相交且不出視窗(4 種解析度)。矩形全取自真實函式。
+func test_relation_map_and_detail_card_clear_of_hud_rects_and_inside_window() -> void:
+	for ws: Vector2i in [Vector2i(960, 540), Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+		var m: RelationMinimap = RelationMinimap.new()
+		m.configure(HudLayoutScaler.HUD_FONT, HudLayout.font_size(ws), WorldLayout.compute_scale(ws))
+		var dummy: Array[Dictionary] = []
+		for i: int in range(11):
+			dummy.append({"kind": RelationBadge.Kind.NONE, "text": "x"})
+		m.set_detail_rows(dummy)
+		var panel: Rect2 = HudLayout.relation_minimap_rect(ws)
+		var card: Rect2 = HudLayout.relation_detail_rect(ws, m.detail_height_px())
+		m.free()
+		var win: Rect2 = Rect2(Vector2.ZERO, Vector2(ws))
+		var others: Dictionary = {
+			"手牌列": HandBar.slot_bar_rect(ws, 7), "開關按鈕": HudLayout.relation_minimap_toggle_rect(ws),
+			"一致率計數器": HudLayout.consistency_counter_rect(ws), "狀態列": HudLayout.status_label_rect(ws),
+			"格位資訊框": HudLayout.info_label_rect(ws),
+		}
+		for mine: Dictionary in [{"n": "圖本體", "r": panel}, {"n": "浮出卡", "r": card}]:
+			var r: Rect2 = mine["r"]
+			assert_bool(win.encloses(r)).override_failure_message("出視窗 %s %s %s" % [ws, mine["n"], r]).is_true()
+			for name: String in others.keys():
+				var o: Rect2 = others[name]
+				assert_bool(r.intersects(o)).override_failure_message(
+					"%s 與%s相交 %s: %s vs %s" % [mine["n"], name, ws, r, o]).is_false()
+		assert_bool(panel.intersects(card)).override_failure_message("圖與卡相交 %s" % ws).is_false()
