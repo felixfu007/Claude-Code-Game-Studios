@@ -80,6 +80,12 @@ func test_ac1_panel_outer_size_follows_spec_formula() -> void:
 	var fpx: float = float(HudLayout.small_font_size(screen.get_window().size))
 	var bg: ColorRect = screen._tile_info_panel_bg
 	var want_w: float = fpx * 8.0 + 2.0 * (fpx * 0.5 + float(u))
-	var want_h: float = fpx * (1.2 * 8.0 + 0.8) + 2.0 * float(u)
+	# 2026-11-23 管理者裁決「卡片變高,照字型實際高度」:行高 = max(1.2 x fpx, 字型實際行高 + 行距),
+	# 實際行高在此從 Label 自己的字型與行距獨立算出(不呼叫 production 的 _tile_info_line_height)。
+	# docs/reviews/highlight-and-info-panel-art-spec-2026-11-12.md 的面板外尺寸高度公式已被此裁決取代。
+	var lbl: Label = screen._tile_info_panel_label
+	var actual_line: float = lbl.get_theme_font(&"font").get_height(int(fpx)) + float(lbl.get_theme_constant(&"line_spacing"))
+	var line_h: float = maxf(1.2 * fpx, actual_line)
+	var want_h: float = line_h * 8.0 + fpx * 0.8 + 2.0 * float(u)
 	assert_float(bg.offset_right - bg.offset_left).is_equal_approx(want_w, 0.001)
 	assert_float(bg.offset_bottom - bg.offset_top).is_equal_approx(want_h, 0.001)

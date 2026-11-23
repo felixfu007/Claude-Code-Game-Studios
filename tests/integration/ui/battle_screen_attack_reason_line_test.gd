@@ -159,4 +159,9 @@ func test_panel_extra_line_height_one_more_line_and_mutually_exclusive_with_guar
 	var h_without: float = screen._tile_info_panel_bg.offset_bottom - screen._tile_info_panel_bg.offset_top
 	assert_bool(h_with > h_without).is_true()
 	var fpx: float = float(HudLayout.small_font_size(screen.get_window().size))
-	assert_float(h_with - h_without).is_equal_approx(fpx * BattleScreen._TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER, 0.01)
+	# 2026-11-23 管理者裁決「照字型實際高度」:一行 = max(1.2 x fpx, 字型實際行高 + 行距),
+	# 從 Label 自己的字型與行距獨立算出(不呼叫 production 的 _tile_info_line_height);
+	# docs/reviews/highlight-and-info-panel-art-spec-2026-11-12.md 的面板外尺寸公式已被取代。
+	var lbl: Label = screen._tile_info_panel_label
+	var actual_line: float = lbl.get_theme_font(&"font").get_height(int(fpx)) + float(lbl.get_theme_constant(&"line_spacing"))
+	assert_float(h_with - h_without).is_equal_approx(maxf(fpx * BattleScreen._TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER, actual_line), 0.01)

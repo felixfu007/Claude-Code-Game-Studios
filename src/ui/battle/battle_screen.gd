@@ -5820,7 +5820,7 @@ func _set_tile_info_relation_rows(rows: Array[Dictionary]) -> void:
 func _layout_tile_info_relation_rows(
 	height: float, fpx: float, u: int, pad_h: float, pad_v: float
 ) -> void:
-	var line_h: float = fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER
+	var line_h: float = _tile_info_line_height(fpx)
 	var badge_unit: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
 	for i: int in range(_tile_info_relation_row_nodes.size()):
 		var row: Control = _tile_info_relation_row_nodes[i]
@@ -5846,6 +5846,16 @@ func diagnostic_tile_info_relation_rows() -> Array[Dictionary]:
 			"text": (node.get_node("RelationText") as Label).text,
 		})
 	return result
+
+
+## 資訊卡每列高度 = max(規格倍率 x 字級, 字型實際行高 + Label 行距)。
+## 2026-11-23 午休截圖缺陷:實際行高比 1.2x 大,9 行文字溢出,壓到底部關係列。
+func _tile_info_line_height(fpx: float) -> float:
+	var nominal: float = fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER
+	if _tile_info_panel_label == null:
+		return nominal
+	var actual: float = HudLayoutScaler.HUD_FONT.get_height(int(fpx)) + float(_tile_info_panel_label.get_theme_constant(&"line_spacing"))
+	return maxf(nominal, actual)
 
 
 ## story-032 —— 單位資訊多一列減傷時,資訊框高度多算一列(8 → 9)。
@@ -6008,10 +6018,11 @@ func _apply_tile_info_panel_layout() -> void:
 	if _tile_info_relation_row_count > 0 and not _tile_info_preview_mode:
 		width += fpx * 1.5
 	width += 2.0 * (pad_h + float(u))
-	var height: float = fpx * (
-		_TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * (_TILE_INFO_PANEL_LINE_COUNT + (1 if _tile_info_extra_line else 0))
-		+ _TILE_INFO_PANEL_PADDING_MULTIPLIER
-	) + 2.0 * float(u) + fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * float(_tile_info_relation_row_count)
+	var line_h: float = _tile_info_line_height(fpx)
+	var height: float = (
+		line_h * float(_TILE_INFO_PANEL_LINE_COUNT + (1 if _tile_info_extra_line else 0))
+		+ fpx * _TILE_INFO_PANEL_PADDING_MULTIPLIER
+	) + 2.0 * float(u) + line_h * float(_tile_info_relation_row_count)
 	var left: float = safe.position.x + safe.size.x - width
 	var top: float = status.position.y + status.size.y + gap
 
@@ -6035,7 +6046,7 @@ func _apply_tile_info_panel_layout() -> void:
 	_tile_info_panel_label.offset_left = float(u) + pad_h
 	_tile_info_panel_label.offset_right = -(float(u) + pad_h)
 	_tile_info_panel_label.offset_top = float(u) + pad_v
-	_tile_info_panel_label.offset_bottom = -(float(u) + pad_v + fpx * _TILE_INFO_PANEL_LINE_HEIGHT_MULTIPLIER * float(_tile_info_relation_row_count))
+	_tile_info_panel_label.offset_bottom = -(float(u) + pad_v + line_h * float(_tile_info_relation_row_count))
 	_layout_tile_info_relation_rows(height, fpx, u, pad_h, pad_v)
 
 	_tile_info_panel_label.add_theme_font_override(&"font", HudLayoutScaler.HUD_FONT)

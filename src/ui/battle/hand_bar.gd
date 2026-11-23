@@ -1019,12 +1019,43 @@ func _update_detail_panel_content() -> void:
 	_detail_reason_label.text = String(face.get("unplayable_reason", ""))
 	if is_permanent:
 		_detail_effect_label.text = Loc.localize(TEXT_PERMANENT_MARK)
-	else:
+	elif index < _slot_kinds.size() and _slot_kinds[index] == SlotKind.TEMPORARY_MODIFIER:
 		_detail_effect_label.text = _format_temporary_effect_summary(
 			int(face.get("delta_atk", 0)),
 			int(face.get("delta_def", 0)),
 			int(face.get("duration_rounds", 0))
 		)
+	else:
+		# 傷害/補血牌沒有 ATK/DEF/存續回合,不顯示加成行(2026-11-23 午休截圖缺陷)。
+		_detail_effect_label.text = ""
+	_layout_detail_labels()
+
+
+# 2026-11-23 午休截圖缺陷:Z3 三行原本各佔固定比例高度,文字一長就互相壓住、溢出框外。
+# 改為依序往下排(牌名/效果行、加成行、原因行),每行高度取實際排版後的最小高度;
+# 空行不佔高度。面板高度 = max(規格高度, 內容總高),向上長(下緣仍貼著 Z2 上方),
+# 因此 [method detail_panel_rect] 仍是「最小矩形」,規格推導不動。
+func _layout_detail_labels() -> void:
+	var window_size: Vector2i = get_window().size
+	var fpx: float = float(HudLayout.font_size(window_size))
+	var base: Rect2 = detail_panel_rect(
+		clampi(_cursor_index, 0, maxi(_slot_kinds.size() - 1, 0)), window_size
+	)
+	var pad: float = float(maxi(1, int(fpx) / HudLayout.GLYPH_PX))
+	var inner_w: float = maxf(1.0, base.size.x - 2.0 * pad)
+	var y: float = pad
+	for label: Label in [_detail_text_label, _detail_effect_label, _detail_reason_label]:
+		label.visible = label.text != ""
+		if not label.visible:
+			continue
+		label.position = Vector2(pad, y)
+		label.size = Vector2(inner_w, 1.0)
+		var h: float = label.get_minimum_size().y
+		label.size = Vector2(inner_w, h)
+		y += h
+	var height: float = maxf(base.size.y, y + pad)
+	_detail_panel.position = Vector2(base.position.x, base.position.y + base.size.y - height)
+	_detail_panel.size = Vector2(base.size.x, height)
 
 
 # "ATK+3 · DEF+0 · 剩2回合" — both channels always shown, never just the
@@ -1084,6 +1115,10 @@ func _position_relation_marks(panel: Panel, fpx: float) -> void:
 	var label: Label = panel.get_node_or_null("RelationLabel") as Label
 	if badge == null or label == null:
 		return
+	# UX 規格「Z1 縮圖不放」:收合態不畫關係徽記與字(2026-11-23 午休截圖缺陷)。
+	var show_marks: bool = _expand_progress >= 0.5
+	badge.visible = show_marks
+	label.visible = show_marks
 	var unit: int = maxi(1, int(fpx) / HudLayout.GLYPH_PX)
 	badge.unit_px = unit
 	var margin: float = 2.0 * float(unit)
@@ -1284,23 +1319,18 @@ func _ensure_detail_panel() -> void:
 	var text_label: Label = Label.new()
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_label.anchor_right = 1.0
-	text_label.anchor_bottom = 0.5
 	panel.add_child(text_label)
 
+	# 三個 Label 的位置與高度由 _layout_detail_labels() 依序排,不用錨點(2026-11-23 疊字缺陷)。
 	var effect_label: Label = Label.new()
 	effect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effect_label.anchor_top = 0.5
-	effect_label.anchor_right = 1.0
-	effect_label.anchor_bottom = 0.75
+	effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(effect_label)
 
 	# story-020b:不可打原因行(文字,不只靠灰化)。
 	var reason_label: Label = Label.new()
 	reason_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	reason_label.anchor_top = 0.75
-	reason_label.anchor_right = 1.0
-	reason_label.anchor_bottom = 1.0
+	reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(reason_label)
 
 	add_child(panel)
