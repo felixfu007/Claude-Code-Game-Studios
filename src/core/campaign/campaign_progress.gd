@@ -70,6 +70,16 @@ static var _has_entered_campaign_mission: bool = false
 ## [method CampaignAffinityLedger.clear],不是把這個變數換一個新實例)。
 static var _affinity_ledger: CampaignAffinityLedger = CampaignAffinityLedger.new()
 
+## campfire story-004:牌組與收藏區,比照 [member _affinity_ledger] 先例由本類別
+## 掛成第二份靜態資料(管理者 2026-11-20 第 8 題:不算第三個靜態持有者)。
+## 終生一個實例,[method reset_campaign] 呼叫它的 clear()。
+static var _deck: CampaignDeck = CampaignDeckDefaultsLoader.load_defaults()
+
+
+## 戰役層牌組(營火編牌、新卡入帳、戰鬥取已確認牌組都走這個實例)。
+static func deck() -> CampaignDeck:
+	return _deck
+
 
 ## 本次遊玩是否已進入過任一戰役場次([method reset_campaign] 後為 false)。
 static func has_progress() -> bool:
@@ -133,3 +143,4 @@ static func reset_campaign() -> void:
 	_current_mission = FIRST_MISSION_INDEX
 	_has_entered_campaign_mission = false
 	_affinity_ledger.clear()
+	_deck.clear()

@@ -1,0 +1,22 @@
+# 戰役預設牌組與收藏區(campfire story-004)。.txt,不得 .csv。
+# 格式:key,value。key = deck_min / deck_max(整數)、deck(牌 id,依序)、collection(牌 id,依序)。
+# 預設 12 張 = vs02~vs05 牌表的 card_11~22 拿掉 card_19、card_21,再加 card_07、card_08
+# (管理者 2026-11-20 第 4 題、2026-11-23 第 1 題;docs/reviews/campfire-rulings-2026-11-23.md)。第 1 場 8 張不走本檔。
+# 🔴 收藏區初始內容【未定】:card_19、card_21 進收藏區、card_23/24 不放,是 producer 推論的占位,
+#    未經 game-designer 確認(工單第 3 題)。deck_min/deck_max 的 8/14 同樣待 systems-designer 在抽牌公式查定後重定(第 4 題)。
+deck_min,8
+deck_max,14
+deck,card_11
+deck,card_12
+deck,card_13
+deck,card_14
+deck,card_15
+deck,card_16
+deck,card_17
+deck,card_18
+deck,card_20
+deck,card_22
+deck,card_07
+deck,card_08
+collection,card_19
+collection,card_21
