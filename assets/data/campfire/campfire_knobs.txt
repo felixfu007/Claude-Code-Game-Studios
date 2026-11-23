@@ -1,0 +1,10 @@
+# campfire_knobs -- fixed format: key,value (one per line; '#' lines and blanks ignored)
+# Spec: production/epics/campfire/story-002-campfire-write-port.md
+# Load path REQUIRES both keys; unknown or duplicate keys are a parse failure.
+#
+# WARNING: PLACEHOLDER VALUES -- DO NOT SHIP AS-IS ("不得直接上線").
+# Calibration owner: systems-designer (story-002 table row 4).
+# Hard constraint on m: m must be <= one support-conversation write (SupportConversationRules.MAGNITUDE_ABS = 1.0).
+# camp_actions_per_round: game-designer suggested range 2~4 (campfire-rules-gd-2026-11-20 Q1); ruling 2026-11-20 Q3 = 3.
+m,0.5
+camp_actions_per_round,3
