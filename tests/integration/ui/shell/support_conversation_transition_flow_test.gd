@@ -99,6 +99,9 @@ func test_ac1_victory_with_triggered_conversation_goes_to_conversation_then_next
 
 	battle._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題,docs/reviews/campfire-rulings-2026-11-20.md),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).append_failure_message(
@@ -107,6 +110,9 @@ func test_ac1_victory_with_triggered_conversation_goes_to_conversation_then_next
 	assert_array(screen.conversation_ids).is_equal(["SC-01"])
 
 	screen.all_conversations_finished.emit()
+	await _wait_swap()
+	# story-006:對話之後先進牌組編輯,確認牌組才進下一場(同上裁決)。
+	(get_tree().current_scene as DeckEditShellScreen).confirmed.emit()
 	await _wait_swap()
 	var next_battle: BattleScreen = get_tree().current_scene as BattleScreen
 	assert_object(next_battle).append_failure_message(
@@ -128,6 +134,11 @@ func test_ac2_victory_without_conversation_goes_straight_to_next_battle() -> voi
 	# 2026-10-28:原本手動清空播放清單模擬;現為真實第 4 場(槽位 4 無對話記錄)
 
 	battle._on_result_display_finished()
+	await _wait_swap()
+	# story-006:營火 -> 牌組編輯 -> 確認才進下一場(管理者 2026-11-20 第 2 題)。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
+	(get_tree().current_scene as DeckEditShellScreen).confirmed.emit()
 	await _wait_swap()
 
 	assert_bool(get_tree().current_scene is SupportConversationScreen).append_failure_message(
@@ -151,6 +162,11 @@ func test_ac3_skipped_conversation_is_not_played_and_goes_to_next_battle() -> vo
 		"SC-01 的參與者乙不存活 -> SKIPPED -> 不得列入要播的清單"
 	).is_empty()
 	battle._on_result_display_finished()
+	await _wait_swap()
+	# story-006:營火 -> 牌組編輯 -> 確認才進下一場(管理者 2026-11-20 第 2 題)。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
+	(get_tree().current_scene as DeckEditShellScreen).confirmed.emit()
 	await _wait_swap()
 
 	assert_bool(get_tree().current_scene is SupportConversationScreen).is_false()
@@ -214,6 +230,9 @@ func test_story007_ac4_mission_2_victory_plays_sc02() -> void:
 	_win(battle)
 	battle._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).append_failure_message("第 2 場勝利應切到對話畫面,實得 %s" % _scene_name()).is_not_null()
 	assert_array(screen.conversation_ids).is_equal(["SC-02"])
@@ -226,6 +245,9 @@ func test_story007_ac4_mission_3_victory_plays_sc03() -> void:
 	var battle: BattleScreen = await _enter_fixture_battle(_ROSTER_FOUR_ALLIES_PATH)
 	_win(battle)
 	battle._on_result_display_finished()
+	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
 	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).append_failure_message("第 3 場勝利應切到對話畫面,實得 %s" % _scene_name()).is_not_null()
@@ -265,6 +287,9 @@ func test_sensitivity_proof_unfiltered_skipped_mutant_would_show_conversation_in
 	_win(battle)
 
 	battle._on_result_display_finished()
+	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
 	await _wait_swap()
 
 	# AC3 要求不出現對話畫面;不濾 SKIPPED 的變種會出現 -> AC3 的斷言會抓到

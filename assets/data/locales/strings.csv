@@ -317,3 +317,7 @@ shell.title.new_game_confirm_title,要重新開始嗎?
 shell.title.new_game_confirm_body,這次遊戲累積的角色關係與牌組都會清掉，無法復原。
 shell.title.new_game_confirm_cancel,取消
 shell.title.new_game_confirm_restart,重新開始
+shell.campfire_wip.title,營火（製作中）
+shell.campfire_wip.continue,繼續
+shell.deck_edit_wip.title,編牌組（製作中）
+shell.deck_edit_wip.continue,繼續

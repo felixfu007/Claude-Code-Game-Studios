@@ -15,6 +15,9 @@ const TITLE_SCENE_PATH: String = "res://src/ui/shell/TitleScreen.tscn"
 const BATTLE_SCENE_PATH: String = "res://src/ui/battle/BattleScreen.tscn"
 const SETTINGS_SCENE_PATH: String = "res://src/ui/shell/SettingsScreen.tscn"
 const SUPPORT_CONVERSATION_SCENE_PATH: String = "res://src/ui/shell/SupportConversationScreen.tscn"
+## campfire story-006:最小殼層(真畫面由 story-007 / 008 取代)。
+const CAMPFIRE_SCENE_PATH: String = "res://src/ui/shell/CampfireShellScreen.tscn"
+const DECK_EDIT_SCENE_PATH: String = "res://src/ui/shell/DeckEditShellScreen.tscn"
 
 
 ## 載入並切換到指定場景。
@@ -63,11 +66,15 @@ static func enter_tutorial_battle(tree: SceneTree) -> Node:
 ## conversation_id -> Array[SupportConversationBufferedWritePort.Entry](勝利當下由
 ## BattleScreen 暫存);每段對話發出 [signal SupportConversationScreen.conversation_completed]
 ## 時,才經 [SupportConversationLedgerWritePort] 寫進 [param ledger]。畫面本身維持唯讀。
+##
+## campfire story-006:[param then_deck_edit] 為 true(戰役營火流程)時,播畢後進【牌組編輯】而非直接下一場;
+## 預設 false 維持原行為。
 static func go_to_support_conversation(
 	tree: SceneTree,
 	conversation_ids: Array[String],
 	pending_writes: Dictionary = {},
-	ledger: CampaignAffinityLedger = null
+	ledger: CampaignAffinityLedger = null,
+	then_deck_edit: bool = false
 ) -> Node:
 	var configure: Callable = func(instance: Node) -> void:
 		var screen: SupportConversationScreen = instance as SupportConversationScreen
@@ -76,7 +83,10 @@ static func go_to_support_conversation(
 			return
 		screen.conversation_ids = conversation_ids.duplicate()
 		screen.conversation_completed.connect(_write_pending_for_conversation.bind(pending_writes, ledger))
-		screen.all_conversations_finished.connect(_enter_battle_after_conversations.bind(tree))
+		if then_deck_edit:
+			screen.all_conversations_finished.connect(_enter_deck_edit_after_conversations.bind(tree))
+		else:
+			screen.all_conversations_finished.connect(_enter_battle_after_conversations.bind(tree))
 	return switch_to(tree, SUPPORT_CONVERSATION_SCENE_PATH, configure)
 
 
@@ -92,6 +102,56 @@ static func _write_pending_for_conversation(
 
 
 static func _enter_battle_after_conversations(tree: SceneTree) -> void:
+	enter_battle(tree)
+
+
+static func _enter_deck_edit_after_conversations(tree: SceneTree) -> void:
+	go_to_deck_edit(tree)
+
+
+## campfire story-006:進營火(結果顯示之後)。順序:營火 -> 支援對話(若有)-> 牌組編輯 -> 下一場。
+## 玩家離開營火後:有 [param conversation_ids] 就進對話(播畢進牌組編輯,寫入沿用 story-013 的
+## 「播完才寫」路徑),沒有就直接進牌組編輯。
+static func go_to_campfire(
+	tree: SceneTree,
+	conversation_ids: Array[String],
+	pending_writes: Dictionary = {},
+	ledger: CampaignAffinityLedger = null
+) -> Node:
+	var ids: Array[String] = conversation_ids.duplicate()
+	var configure: Callable = func(instance: Node) -> void:
+		var screen: CampfireShellScreen = instance as CampfireShellScreen
+		if screen == null:
+			push_error("SceneRouter: go_to_campfire target is not a CampfireShellScreen")
+			return
+		screen.left_campfire.connect(_leave_campfire.bind(tree, ids, pending_writes, ledger), CONNECT_ONE_SHOT)
+	return switch_to(tree, CAMPFIRE_SCENE_PATH, configure)
+
+
+static func _leave_campfire(
+	tree: SceneTree, ids: Array[String], pending_writes: Dictionary, ledger: CampaignAffinityLedger
+) -> void:
+	if ids.is_empty():
+		go_to_deck_edit(tree)
+	else:
+		go_to_support_conversation(tree, ids, pending_writes, ledger, true)
+
+
+## campfire story-006:進牌組編輯(強制)。確認牌組([signal DeckEditShellScreen.confirmed])是唯一出口,
+## 確認後直接進下一場(不再追問)。[param pre_configure] 為測試注入點(進樹前、先於本方法接線)。
+static func go_to_deck_edit(tree: SceneTree, pre_configure: Callable = Callable()) -> Node:
+	var configure: Callable = func(instance: Node) -> void:
+		if pre_configure.is_valid():
+			pre_configure.call(instance)
+		var screen: DeckEditShellScreen = instance as DeckEditShellScreen
+		if screen == null:
+			push_error("SceneRouter: go_to_deck_edit target is not a DeckEditShellScreen")
+			return
+		screen.confirmed.connect(_enter_battle_after_deck_confirmed.bind(tree), CONNECT_ONE_SHOT)
+	return switch_to(tree, DECK_EDIT_SCENE_PATH, configure)
+
+
+static func _enter_battle_after_deck_confirmed(tree: SceneTree) -> void:
 	enter_battle(tree)
 
 

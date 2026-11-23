@@ -302,13 +302,14 @@ func test_strings_csv_parses_to_known_data_row_count_with_two_columns() -> void:
 	# tests/integration/ui/battle_screen_tile_info_test.gd 另行驗證。
 	# 2026-11-20 story-021:關係圖詳情「目前效果」加 3 列(battle.relation.effect.pos/neg/none),293 → 296;與 020d(→300)合併後 303(協調者 2026-11-20 手算)。
 	# 2026-11-23 campfire story-014:標題「繼續/新遊戲」與確認框加 7 列(shell.title.continue* / new_game*),303 → 310(協調者 2026-11-23 手算)。
+	# 2026-11-23 campfire story-006 殼層暫時文字 +4,310 → 314
 	# story-046:新增 11 列(battle.objective.* 5、battle.result.* 6),211 → 222 → 224(選單加「目標」「圖例」兩列)。
 	# 兩處測試的數字此後預期會持續分道，不應再被當成需要互相同步的同一個數字。
 	assert_int(data_rows.size()).append_failure_message(
-		"strings.csv 資料列數應為 310（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
+		"strings.csv 資料列數應為 314（CSV 目前實際列數——與 i18n_migrated_strings_test.gd 的 " +
 		"test_total_migrated_key_count_is_forty_five 是兩個刻意不再同步的不同數字，見上方註解），" +
 		"實得 %d" % data_rows.size()
-	).is_equal(310)
+	).is_equal(314)
 
 	for row: PackedStringArray in data_rows:
 		assert_int(row.size()).append_failure_message(

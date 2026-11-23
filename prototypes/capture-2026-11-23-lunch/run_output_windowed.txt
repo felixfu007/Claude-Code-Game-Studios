@@ -1,0 +1,60 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.325 - Forward+ - Using Device #0: Intel - Intel(R) Graphics
+
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=1_confirm_panel res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) confirming=true
+SAVED res://prototypes/capture-2026-11-23-lunch/out/1_confirm_panel_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=2_relation_map_detail res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) minimap_visible=true detail_rows=11
+SAVED res://prototypes/capture-2026-11-23-lunch/out/2_relation_map_detail_960x540.png img=(960, 540)
+SET_TARGET result=0 cell=(0, 2)
+DIAG cursor_cell=(0, 2) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|徐培恩（我方）|HP：26/26|狀態：皆未用|武器射程：1–2|MP：5|減傷：2' relrows=1 sel=1 panel_h=142.800003051758 auth=0 host_target=26 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=3_infocard_relation res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) rows=[{ "kind": 0, "text": "與藍亭萱：好感" }]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/3_infocard_relation_960x540.png img=(960, 540)
+SET_TARGET result=0 cell=(0, 5)
+DIAG cursor_cell=(0, 5) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|麥子健（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|額外受傷：1' relrows=1 sel=-1 panel_h=142.800003051758 auth=0 host_target=65 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=4_infocard_straddle res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) rows=[{ "kind": 3, "text": "騎牆：有效" }]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/4_infocard_straddle_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：2/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text=''
+HOSTCHAIN scn=5_hand_unplayable_reason res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) card22_found=true want=cap_hp hand=2 reason='藍亭萱血量不足'
+SAVED res://prototypes/capture-2026-11-23-lunch/out/5_hand_unplayable_reason_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：2/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text='董振豪×秦亦柔|交叉火力|董振豪與秦亦柔各對同一敵人造成 6 點固定傷害；須兩人都打得到'
+HOSTCHAIN scn=6_hand_card22_long_face res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) card22_found=true want=card_22 hand=2 reason='射程內沒有敵人'
+SAVED res://prototypes/capture-2026-11-23-lunch/out/6_hand_card22_long_face_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=7_hand_collapsed_four_shapes res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) picked=5 hand=5 expanded=false [card_22:cat=COMBO_DAMAGE:kind=DAMAGE:shape=TRIANGLE ; card_14:cat=HEAL:kind=HEAL:shape=CROSS ; card_07:cat=PERMANENT_AFFINITY_WRITE:kind=PERMANENT_WRITE:shape=DIAMOND ; card_15:cat=TEMPORARY_STAT_MODIFIER:kind=TEMPORARY_MODIFIER:shape=SQUARE ; card_11:cat=DIRECT_DAMAGE:kind=DAMAGE:shape=TRIANGLE]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/7_hand_collapsed_four_shapes_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=129.600006103516 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text='董振豪×秦亦柔|交叉火力|董振豪與秦亦柔各對同一敵人造成 6 點固定傷害；須兩人都打得到'
+HOSTCHAIN scn=8_hand_expanded_four_shapes res=(960, 540) window=(960, 540) WVC.pos=(0.0, 0.0) WVC.size=(960.0, 540.0) stretch_shrink=2 WV.size=(480, 270) picked=5 hand=5 expanded=true [card_11:cat=DIRECT_DAMAGE:kind=DAMAGE:shape=TRIANGLE ; card_07:cat=PERMANENT_AFFINITY_WRITE:kind=PERMANENT_WRITE:shape=DIAMOND ; card_14:cat=HEAL:kind=HEAL:shape=CROSS ; card_15:cat=TEMPORARY_STAT_MODIFIER:kind=TEMPORARY_MODIFIER:shape=SQUARE ; card_22:cat=COMBO_DAMAGE:kind=DAMAGE:shape=TRIANGLE]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/8_hand_expanded_four_shapes_960x540.png img=(960, 540)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=1_confirm_panel res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) confirming=true
+SAVED res://prototypes/capture-2026-11-23-lunch/out/1_confirm_panel_1920x1080.png img=(1920, 1080)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=2_relation_map_detail res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) minimap_visible=true detail_rows=11
+SAVED res://prototypes/capture-2026-11-23-lunch/out/2_relation_map_detail_1920x1080.png img=(1920, 1080)
+SET_TARGET result=0 cell=(0, 2)
+DIAG cursor_cell=(0, 2) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|徐培恩（我方）|HP：26/26|狀態：皆未用|武器射程：1–2|MP：5|減傷：2' relrows=1 sel=1 panel_h=428.400024414063 auth=0 host_target=26 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=3_infocard_relation res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) rows=[{ "kind": 0, "text": "與藍亭萱：好感" }]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/3_infocard_relation_1920x1080.png img=(1920, 1080)
+SET_TARGET result=0 cell=(0, 5)
+DIAG cursor_cell=(0, 5) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|麥子健（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|額外受傷：1' relrows=1 sel=-1 panel_h=428.400024414063 auth=0 host_target=65 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=4_infocard_straddle res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) rows=[{ "kind": 3, "text": "騎牆：有效" }]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/4_infocard_straddle_1920x1080.png img=(1920, 1080)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：2/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text=''
+HOSTCHAIN scn=5_hand_unplayable_reason res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) card22_found=true want=cap_hp hand=2 reason='藍亭萱血量不足'
+SAVED res://prototypes/capture-2026-11-23-lunch/out/5_hand_unplayable_reason_1920x1080.png img=(1920, 1080)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：2/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text='董振豪×秦亦柔|交叉火力|董振豪與秦亦柔各對同一敵人造成 6 點固定傷害；須兩人都打得到'
+HOSTCHAIN scn=6_hand_card22_long_face res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) card22_found=true want=card_22 hand=2 reason='射程內沒有敵人'
+SAVED res://prototypes/capture-2026-11-23-lunch/out/6_hand_card22_long_face_1920x1080.png img=(1920, 1080)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=false prog=0.0 z3_vis=false z3_text=''
+HOSTCHAIN scn=7_hand_collapsed_four_shapes res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) picked=5 hand=5 expanded=false [card_22:cat=COMBO_DAMAGE:kind=DAMAGE:shape=TRIANGLE ; card_14:cat=HEAL:kind=HEAL:shape=CROSS ; card_11:cat=DIRECT_DAMAGE:kind=DAMAGE:shape=TRIANGLE ; card_07:cat=PERMANENT_AFFINITY_WRITE:kind=PERMANENT_WRITE:shape=DIAMOND ; card_15:cat=TEMPORARY_STAT_MODIFIER:kind=TEMPORARY_MODIFIER:shape=SQUARE]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/7_hand_collapsed_four_shapes_1920x1080.png img=(1920, 1080)
+DIAG cursor_cell=(0, 1) active=true valid=true tile_panel_vis=true label='地形：開闊地|移動成本：1|擋視線：否|藍亭萱（我方）|HP：30/30|狀態：皆未用|武器射程：1–1|MP：6|減傷：2' relrows=0 sel=-1 panel_h=388.799987792969 auth=0 host_target=13 hand_expanded=true prog=1.0 z3_vis=true z3_text='董振豪×秦亦柔|交叉火力|董振豪與秦亦柔各對同一敵人造成 6 點固定傷害；須兩人都打得到'
+HOSTCHAIN scn=8_hand_expanded_four_shapes res=(1920, 1080) window=(1920, 1080) WVC.pos=(0.0, 0.0) WVC.size=(1920.0, 1080.0) stretch_shrink=4 WV.size=(480, 270) picked=5 hand=5 expanded=true [card_15:cat=TEMPORARY_STAT_MODIFIER:kind=TEMPORARY_MODIFIER:shape=SQUARE ; card_22:cat=COMBO_DAMAGE:kind=DAMAGE:shape=TRIANGLE ; card_07:cat=PERMANENT_AFFINITY_WRITE:kind=PERMANENT_WRITE:shape=DIAMOND ; card_14:cat=HEAL:kind=HEAL:shape=CROSS ; card_11:cat=DIRECT_DAMAGE:kind=DAMAGE:shape=TRIANGLE]
+SAVED res://prototypes/capture-2026-11-23-lunch/out/8_hand_expanded_four_shapes_1920x1080.png img=(1920, 1080)
+DONE (headless=false)
+WARNING: 357 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 22 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

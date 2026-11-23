@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://prototypes/capture-2026-11-23-lunch/capture_driver.gd" id="1"]
+
+[node name="CaptureDriver" type="Node"]
+script = ExtResource("1")

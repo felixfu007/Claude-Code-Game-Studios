@@ -6201,12 +6201,16 @@ func _on_result_display_finished() -> void:
 	if not _proceed_to_next_mission:
 		return_to_title_screen()
 		return
-	if _completed_support_conversation_ids.is_empty():
-		SceneRouter.enter_battle(get_tree())
-	else:
-		SceneRouter.go_to_support_conversation(
-			get_tree(), _completed_support_conversation_ids, _pending_support_writes, campaign_ledger_override
-		)
+	_proceed_after_victory()
+
+
+## campfire story-006:勝利且非最後一場、結果顯示完畢後的去向 —— 一律先進營火,
+## 之後由 [SceneRouter] 依序接支援對話(若有)-> 牌組編輯 -> 下一場。
+## 對話的好感度寫入仍由 story-013 的待寫入表在「播完才寫」(營火不碰它)。
+func _proceed_after_victory() -> void:
+	SceneRouter.go_to_campfire(
+		get_tree(), _completed_support_conversation_ids, _pending_support_writes, campaign_ledger_override
+	)
 
 
 ## AC5 的切換入口 —— 測試直接呼叫本方法即可驅動「回到標題畫面」,不必等待

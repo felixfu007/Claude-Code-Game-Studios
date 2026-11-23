@@ -130,6 +130,9 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	# Act 2 — 結果顯示結束 -> 支援對話畫面(真實 SceneRouter);舊戰鬥隨之離樹
 	battle1._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題,docs/reviews/campfire-rulings-2026-11-20.md),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).append_failure_message("勝利且有觸發對話,應切到對話畫面").is_not_null()
 
@@ -154,6 +157,9 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 		assert_int(records[seed_count].pair).is_equal(AffinityTypes.Pair.C1_C2)
 
 	# 播完 -> router 自動進下一場戰鬥(真實 enter_battle)
+	await _wait_swap()
+	# story-006:對話之後先進牌組編輯,確認牌組才進下一場。
+	(get_tree().current_scene as DeckEditShellScreen).confirmed.emit()
 	await _wait_swap()
 	var battle2: BattleScreen = get_tree().current_scene as BattleScreen
 

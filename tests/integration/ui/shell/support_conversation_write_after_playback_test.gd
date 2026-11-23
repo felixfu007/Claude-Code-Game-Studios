@@ -140,6 +140,9 @@ func test_write_after_playback_ac1_nothing_at_victory_ac2_written_after_playback
 
 	battle._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).is_not_null()
 	assert_int(_support_entries(ledger).size()).append_failure_message(
@@ -204,6 +207,9 @@ func test_write_after_playback_ac4_selection_fixed_at_victory_even_if_roster_cha
 	assert_bool(battle._state.unit_by_id(2).is_alive()).append_failure_message("前置:乙應已陣亡").is_false()
 	battle._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).append_failure_message("挑段應維持勝利當下結果 -> 仍進對話畫面").is_not_null()
 	if screen != null:
@@ -227,6 +233,9 @@ func test_write_after_playback_ac5_next_battle_replays_the_written_entry() -> vo
 	_win(battle1)
 	battle1._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).is_not_null()
 
@@ -238,6 +247,9 @@ func test_write_after_playback_ac5_next_battle_replays_the_written_entry() -> vo
 	control.free()
 
 	_play_through(screen)
+	await _wait_swap()
+	# story-006:對話之後先進牌組編輯,確認牌組才進下一場。
+	(get_tree().current_scene as DeckEditShellScreen).confirmed.emit()
 	await _wait_swap()
 	var battle2: BattleScreen = get_tree().current_scene as BattleScreen
 	assert_object(battle2).is_not_null()
@@ -265,6 +277,9 @@ func test_sensitivity_proof_no_write_on_playback_mutant_fails_ac2() -> void:
 	_win(battle)
 	battle._on_result_display_finished()
 	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
+	await _wait_swap()
 	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
 	assert_object(screen).is_not_null()
 	_play_through(screen)
@@ -280,6 +295,9 @@ func test_sensitivity_proof_reselect_at_playback_mutant_fails_ac4() -> void:
 	_win(battle)
 	battle._state.unit_by_id(2).take_damage(999999)
 	battle._on_result_display_finished()
+	await _wait_swap()
+	# story-006:結果顯示後先進營火(管理者 2026-11-20 第 2 題),離開營火才進對話。
+	(get_tree().current_scene as CampfireShellScreen).left_campfire.emit()
 	await _wait_swap()
 	# 播放當下重挑:乙陣亡 -> 不進對話畫面 —— AC4 要求仍進(ids == ["SC-01"]),變種會被抓到
 	assert_bool(get_tree().current_scene is SupportConversationScreen).is_false()
