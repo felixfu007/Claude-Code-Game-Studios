@@ -1,0 +1,18 @@
+# campfire_card_template -- fixed format: key,value (one per line; '#' lines and blanks ignored)
+# Spec: production/epics/campfire/story-003-campfire-card-generation.md (template table)
+# Load path REQUIRES all keys; unknown or duplicate keys are a parse failure.
+#
+# WARNING: PLACEHOLDER VALUES -- DO NOT SHIP AS-IS ("不得直接上線").
+# Calibration owner: systems-designer. Magnitude vs real pool values is UNVERIFIED
+# (competitive E max = base_value + max_bonus = 6; current card table's biggest buff is 3).
+#
+# E = base_value + min(max_bonus, floor(max(0, v_signed - k) / pool_step))
+#   v_signed = +v for 關心 (cooperative), -v for 質問 (competitive); k = AffinityTuning.neutral_band()
+base_value,2
+max_bonus,4
+pool_step,2
+duration_rounds,2
+cost_amount,1
+target_range,2
+# competitive card: delta_atk = +E, delta_def = this fixed (negative) value
+competitive_delta_def,-2

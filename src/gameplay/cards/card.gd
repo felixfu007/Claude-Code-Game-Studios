@@ -224,6 +224,53 @@ static func new_permanent_affinity_write(
 	return card
 
 
+## campfire story-003: builds a 營火產出的 PAIR 卡 (甲類, [constant CostType.PAIR],
+## [constant Source.CAMP]). [param p_payer_unit_id] -> [member named_unit_id] (the first
+## chosen unit; [member named_mode] is meaningless for a PAIR card),
+## [param p_partner_unit_id] -> [member partner_unit_id]. [param p_effect_value] is the
+## strength snapshot (record/display only; the battle reads [param p_delta_atk] /
+## [param p_delta_def]).
+##
+## Returns [code]null[/code] after [method push_error] on an invalid argument (never
+## [code]assert()[/code]: see coding-standards, it would yield a valid-looking card).
+## Checks mirror [method _parse_cost_suffix]: cost_amount >= 0, partner >= 1; plus
+## payer >= 1 and effect_value >= 0. Deliberately NOT checked: payer != partner (no written
+## rule found in campfire-rules-gd-2026-11-20.md; the caller chooses two distinct units).
+static func new_camp_pair_card(
+	p_id: String,
+	p_delta_atk: int,
+	p_delta_def: int,
+	p_duration_rounds: int,
+	p_payer_unit_id: int,
+	p_partner_unit_id: int,
+	p_cost_amount: int,
+	p_target_range: int,
+	p_effect_value: int
+) -> Card:
+	if p_cost_amount < 0:
+		push_error("Card.new_camp_pair_card: cost_amount must be >= 0, got %d" % p_cost_amount)
+		return null
+	if p_partner_unit_id < 1:
+		push_error("Card.new_camp_pair_card: partner_unit_id must be >= 1, got %d" % p_partner_unit_id)
+		return null
+	if p_payer_unit_id < 1:
+		push_error("Card.new_camp_pair_card: payer_unit_id must be >= 1, got %d" % p_payer_unit_id)
+		return null
+	if p_effect_value < 0:
+		push_error("Card.new_camp_pair_card: effect_value must be >= 0, got %d" % p_effect_value)
+		return null
+	var card: Card = new_temporary_stat_modifier(
+		p_id, p_delta_atk, p_delta_def, p_duration_rounds, p_payer_unit_id, NamedMode.ONLY
+	)
+	card.cost_type = CostType.PAIR
+	card.cost_amount = p_cost_amount
+	card.effect_value = p_effect_value
+	card.partner_unit_id = p_partner_unit_id
+	card.target_range = p_target_range
+	card.source = Source.CAMP
+	return card
+
+
 ## Parses a single card-table line into a [Card], or returns [code]null[/code]
 ## if [param line]'s [code]category[/code] field is not a recognized [enum
 ## Category] name. Field order is fixed: [code]id,category,delta_atk,
