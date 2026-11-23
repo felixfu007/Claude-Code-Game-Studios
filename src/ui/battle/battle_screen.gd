@@ -6204,7 +6204,9 @@ func _on_result_display_finished() -> void:
 	if _completed_support_conversation_ids.is_empty():
 		SceneRouter.enter_battle(get_tree())
 	else:
-		SceneRouter.go_to_support_conversation(get_tree(), _completed_support_conversation_ids)
+		SceneRouter.go_to_support_conversation(
+			get_tree(), _completed_support_conversation_ids, _pending_support_writes, campaign_ledger_override
+		)
 
 
 ## AC5 的切換入口 —— 測試直接呼叫本方法即可驅動「回到標題畫面」,不必等待
@@ -6269,22 +6271,29 @@ func _trigger_support_conversations_for_finished_mission() -> void:
 	var is_alive: Callable = func(roster_id: int) -> bool:
 		var unit: Unit = state.unit_by_id(roster_id)
 		return unit != null and unit.is_alive()
-	var triggered: Array[SupportConversationRecord] = (
-		SupportConversationTransition.trigger_for_mission_transition(
-			CampaignProgress.current_mission(),
-			records,
-			is_alive,
-			SupportConversationLedgerWritePort.new(campaign_ledger_override)
+	# campfire story-013:挑段與存活判斷仍在勝利當下(上面的 state),但好感度寫入量只暫存,
+	# 帶到對話畫面、該段播完才寫進累積記錄(管理者 2026-11-23 裁決)。
+	# 逐筆記錄各呼叫一次 trigger_for_mission_transition,才能把暫存量歸給正確的對話 id。
+	var buffer: SupportConversationBufferedWritePort = SupportConversationBufferedWritePort.new()
+	var slot: int = CampaignProgress.current_mission()
+	for record: SupportConversationRecord in records:
+		var single: Array[SupportConversationRecord] = [record]
+		var triggered: Array[SupportConversationRecord] = (
+			SupportConversationTransition.trigger_for_mission_transition(slot, single, is_alive, buffer)
 		)
-	)
-	# story-004:回傳陣列含 SKIPPED(參與者陣亡),只有 COMPLETED 才播。
-	for record: SupportConversationRecord in triggered:
-		if record.state == SupportConversationRecord.TriggerState.COMPLETED:
-			_completed_support_conversation_ids.append(record.conversation_id)
+		var buffered: Array[SupportConversationBufferedWritePort.Entry] = buffer.drain()
+		# story-004:回傳陣列含 SKIPPED(參與者陣亡),只有 COMPLETED 才播。
+		if triggered.is_empty() or record.state != SupportConversationRecord.TriggerState.COMPLETED:
+			continue
+		_completed_support_conversation_ids.append(record.conversation_id)
+		if not buffered.is_empty():
+			_pending_support_writes[record.conversation_id] = buffered
 
 
 ## story-004:本場勝利後實際觸發(COMPLETED)的支援對話 id,供結果顯示後分流。
 var _completed_support_conversation_ids: Array[String] = []
+## campfire story-013:各段對話待寫入的好感度變化(conversation_id -> Array[Entry]),對話播完才寫入。
+var _pending_support_writes: Dictionary = {}
 ## story-004:勝利且非最後一場時為 true(結果顯示後接下一場而非回標題)。
 var _proceed_to_next_mission: bool = false
 ## story-056:戰役戰敗時為 true(結果顯示後重打同一場而非回標題)。與 [member _proceed_to_next_mission] 並列、互斥。

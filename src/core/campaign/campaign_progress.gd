@@ -60,11 +60,20 @@ enum AdvanceResult { ADVANCED, CAMPAIGN_COMPLETE }
 
 static var _current_mission: int = FIRST_MISSION_INDEX
 
+## campfire story-014:本次遊玩是否進過任一戰役場次(標題「繼續」的判斷依據)。
+## 只存在記憶體;教學場不算(教學不經 [method start_mission_affinity_ledger])。
+static var _has_entered_campaign_mission: bool = false
+
 ## 戰役層「到目前為止累積的好感度變化」——見本類別文件註解「第三輪接線」段。
 ## 腳本載入時就建構好一個空的 [CampaignAffinityLedger] 實例,終生只有這一個,
 ## 不會被重新指派([method reset_for_test] 呼叫的是它的
 ## [method CampaignAffinityLedger.clear],不是把這個變數換一個新實例)。
 static var _affinity_ledger: CampaignAffinityLedger = CampaignAffinityLedger.new()
+
+
+## 本次遊玩是否已進入過任一戰役場次([method reset_campaign] 後為 false)。
+static func has_progress() -> bool:
+	return _has_entered_campaign_mission
 
 
 ## 目前第幾場(1 起算)。
@@ -79,6 +88,7 @@ static func current_mission() -> int:
 ## 一場戰鬥時都呼叫本方法取得要注入的 ledger,不得自行持有另一條取得
 ## [CampaignAffinityLedger] 參照的管道。
 static func start_mission_affinity_ledger() -> CampaignAffinityLedger:
+	_has_entered_campaign_mission = true
 	_affinity_ledger.begin_mission()
 	return _affinity_ledger
 
@@ -121,4 +131,5 @@ static func reset_for_test() -> void:
 ## 這是正式公開方法;[method reset_for_test] 呼叫它,單一出處。
 static func reset_campaign() -> void:
 	_current_mission = FIRST_MISSION_INDEX
+	_has_entered_campaign_mission = false
 	_affinity_ledger.clear()

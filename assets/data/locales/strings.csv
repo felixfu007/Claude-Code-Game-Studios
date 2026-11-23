@@ -310,3 +310,10 @@ battle.relation.straddle.will_lose_format,%s將失去騎牆
 battle.card_confirm.effective_pair_row_format,%s　合併後：ATK %d／DEF %d
 battle.card_confirm.heal_preview_format,回復：HP %d → %d
 battle.card_confirm.heal_preview_capped_format,回復：HP %d → %d (已達上限)
+shell.title.continue,繼續
+shell.title.continue_no_progress,繼續(尚無進度)
+shell.title.new_game,新遊戲
+shell.title.new_game_confirm_title,要重新開始嗎?
+shell.title.new_game_confirm_body,這次遊戲累積的角色關係與牌組都會清掉，無法復原。
+shell.title.new_game_confirm_cancel,取消
+shell.title.new_game_confirm_restart,重新開始

@@ -58,15 +58,37 @@ static func enter_tutorial_battle(tree: SceneTree) -> Node:
 ## 進入支援對話畫面(support-conversation-ui story-004)。
 ## 新實例進樹前注入 [param conversation_ids] 並接上 all_conversations_finished,
 ## 播畢後進下一場戰鬥([method enter_battle])。
-static func go_to_support_conversation(tree: SceneTree, conversation_ids: Array[String]) -> Node:
+##
+## campfire story-013:好感度寫入改在「對話播完」才執行。[param pending_writes] 為
+## conversation_id -> Array[SupportConversationBufferedWritePort.Entry](勝利當下由
+## BattleScreen 暫存);每段對話發出 [signal SupportConversationScreen.conversation_completed]
+## 時,才經 [SupportConversationLedgerWritePort] 寫進 [param ledger]。畫面本身維持唯讀。
+static func go_to_support_conversation(
+	tree: SceneTree,
+	conversation_ids: Array[String],
+	pending_writes: Dictionary = {},
+	ledger: CampaignAffinityLedger = null
+) -> Node:
 	var configure: Callable = func(instance: Node) -> void:
 		var screen: SupportConversationScreen = instance as SupportConversationScreen
 		if screen == null:
 			push_error("SceneRouter: go_to_support_conversation target is not a SupportConversationScreen")
 			return
 		screen.conversation_ids = conversation_ids.duplicate()
+		screen.conversation_completed.connect(_write_pending_for_conversation.bind(pending_writes, ledger))
 		screen.all_conversations_finished.connect(_enter_battle_after_conversations.bind(tree))
 	return switch_to(tree, SUPPORT_CONVERSATION_SCENE_PATH, configure)
+
+
+## 一段對話播完:把該段暫存的寫入依序寫進累積記錄。沒有暫存(中性 / 無寫入)就什麼都不做。
+static func _write_pending_for_conversation(
+	conversation_id: String, pending_writes: Dictionary, ledger: CampaignAffinityLedger
+) -> void:
+	if not pending_writes.has(conversation_id):
+		return
+	var port: SupportConversationLedgerWritePort = SupportConversationLedgerWritePort.new(ledger)
+	for entry: SupportConversationBufferedWritePort.Entry in pending_writes[conversation_id]:
+		port.append_record(entry.pair, entry.m, entry.source)
 
 
 static func _enter_battle_after_conversations(tree: SceneTree) -> void:

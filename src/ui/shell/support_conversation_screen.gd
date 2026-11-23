@@ -17,6 +17,11 @@ extends Control
 ## 所有指定的對話段都播完後發出,只發一次(正常讀完與跳過確認後走同一條路徑)。
 signal all_conversations_finished
 
+## 一段對話播完(含跳過確認後)時發出,依 [member conversation_ids] 順序、每個 id 只發一次。
+## 找不到台詞而被略過的 id 也會在輪到它的順序點發出(寫入量不因台詞缺失而消失)。
+## 本畫面維持唯讀:好感度寫入由接線端(SceneRouter)聽此訊號執行(campfire story-013)。
+signal conversation_completed(conversation_id: String)
+
 const LINES_PATH: String = "res://assets/data/narrative/support_conversation_lines.txt"
 const CONVERSATIONS_PATH: String = "res://assets/data/narrative/support_conversations.txt"
 const FONT_PATH: String = "res://assets/fonts/LXGWWenKaiTC-Regular.ttf"
@@ -61,6 +66,8 @@ var _font: Font = null
 var _review_index: int = NOT_REVIEWING
 var _skip_panel_open: bool = false
 var _surface_registered: bool = false
+## 已發出 conversation_completed 的 id 個數(conversation_ids 的前綴長度)。
+var _completed_count: int = 0
 
 var _backdrop: ColorRect
 var _name_label: Label
@@ -191,6 +198,7 @@ func request_advance() -> void:
 		_line_index += 1
 		_show_line()
 		return
+	_complete_through(_convo_index)
 	if not _begin_conversation(_convo_index + 1):
 		_finish()
 
@@ -394,7 +402,16 @@ func _finish() -> void:
 	if _finished:
 		return
 	_finished = true
+	_complete_through(conversation_ids.size() - 1)
 	all_conversations_finished.emit()
+
+
+## 依序發出 [signal conversation_completed],直到 [param last_index](含)。
+func _complete_through(last_index: int) -> void:
+	while _completed_count <= last_index and _completed_count < conversation_ids.size():
+		var finished_id: String = conversation_ids[_completed_count]
+		_completed_count += 1
+		conversation_completed.emit(finished_id)
 
 
 ## 開始第 [param index] 段(跳過找不到的 id)。無可播的段落回傳 false。

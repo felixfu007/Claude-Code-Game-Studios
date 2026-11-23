@@ -118,45 +118,62 @@ func test_victory_support_conversation_is_written_to_ledger_and_replayed_next_ba
 	assert_int(CampaignProgress.current_mission()).append_failure_message(
 		"第 1 場勝利後應推進到第 2 場(campaign_sequence.txt 有 2 列)"
 	).is_equal(2)
-	# Assert — 累積記錄 = 2 筆起始關係 + 恰有一筆 SC-01(甲乙 = C1_C2,來源為支援對話)
-	var records: Array[CampaignAffinityLedger.Entry] = ledger.records()
+	# 🔴 campfire story-013(管理者 2026-11-23 裁決「改成對話播完才寫入」,
+	# docs/reviews/campfire-rulings-2026-11-23.md 第 2 題)改寫:原斷言「勝利當下累積記錄已有 1 筆 SC-01」
+	# 保護的正是被裁決改掉的舊行為。現在勝利當下為 0 筆;對話播完才寫入;下一場開局仍讀得到那一筆
+	# (「播完 -> 寫入 -> 下一場反映」整條覆蓋保留,不是刪測試)。
 	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
-		"勝利後累積記錄應恰有 1 筆 SC-01,實得 %d(總筆數 %d)" % [_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION), records.size()]
-	).is_equal(1)
-	assert_int(records.size()).is_equal(seed_count + 1)
-	assert_int(records[seed_count].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
-	assert_int(records[seed_count].pair).is_equal(AffinityTypes.Pair.C1_C2)
+		"story-013:勝利當下累積記錄不得已有支援對話筆數,實得 %d" % _count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)
+	).is_equal(0)
+	assert_int(ledger.records().size()).is_equal(seed_count)
 
-	# Act 2 — 釋放第一場,經 production 入口進入下一場
-	await _release(battle1, original)
+	# Act 2 — 結果顯示結束 -> 支援對話畫面(真實 SceneRouter);舊戰鬥隨之離樹
+	battle1._on_result_display_finished()
+	await _wait_swap()
+	var screen: SupportConversationScreen = get_tree().current_scene as SupportConversationScreen
+	assert_object(screen).append_failure_message("勝利且有觸發對話,應切到對話畫面").is_not_null()
 
-	# 對照基準:同樣是第 2 場、但【不注入】累積記錄的開局(第 1 場已釋放後才建,
-	# 避免它離樹時的 BOARD_TILE 解除註冊波及第 1 場)。
-	# 🔴 2026-10-27 協調者覆核更正:原本拿第 1 場開局當基準,而 vs01/vs02 的甲乙初始關係
-	# 逐字相同(各 1 筆 POSITIVE),所以「比第 1 場多 1」是兩份資料碰巧一致才成立 ——
-	# 日後任一份改了,本測試會為錯的理由變紅或變綠。改成同場次對照。
+	# 對照基準:同樣是第 2 場、但【不注入】累積記錄的開局(此刻舊戰鬥已離樹,
+	# 不會有 BOARD_TILE 衝突)。🔴 2026-10-27 協調者覆核更正:原本拿第 1 場開局當基準,而 vs01/vs02 的
+	# 甲乙初始關係逐字相同,「比第 1 場多 1」是兩份資料碰巧一致才成立;改成同場次對照。
 	var control: BattleScreen = load("res://src/ui/battle/BattleScreen.tscn").instantiate()
 	add_child(control)
 	var baseline: int = _c1_c2_count(control)
 	remove_child(control)
 	control.free()
 
-	var stand_in: Node = load(_TITLE_SCENE_PATH).instantiate()
-	get_tree().root.call_deferred("add_child", stand_in)
-	await _wait_swap()
-	get_tree().current_scene = stand_in
-	SceneRouter.enter_battle(get_tree())
+	# 播完對話 -> 才寫入:累積記錄 = 起始關係 + 恰有一筆 SC-01(甲乙 = C1_C2,來源為支援對話)
+	_play_through(screen)
+	var records: Array[CampaignAffinityLedger.Entry] = ledger.records()
+	assert_int(_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION)).append_failure_message(
+		"播完後累積記錄應恰有 1 筆 SC-01,實得 %d(總筆數 %d)" % [_count_source(ledger, AffinityTypes.Source.SUPPORT_CONVERSATION), records.size()]
+	).is_equal(1)
+	assert_int(records.size()).is_equal(seed_count + 1)
+	if records.size() > seed_count:
+		assert_int(records[seed_count].source).is_equal(AffinityTypes.Source.SUPPORT_CONVERSATION)
+		assert_int(records[seed_count].pair).is_equal(AffinityTypes.Pair.C1_C2)
+
+	# 播完 -> router 自動進下一場戰鬥(真實 enter_battle)
 	await _wait_swap()
 	var battle2: BattleScreen = get_tree().current_scene as BattleScreen
 
-	# Assert — 第二場開局的好感度池看得到那一筆(C1_C2 比第一場開局多 1 筆)
+	# Assert — 第二場開局的好感度池看得到那一筆(C1_C2 比同場次基準多 1 筆)
 	assert_object(battle2).is_not_null()
 	assert_int(_c1_c2_count(battle2)).append_failure_message(
-		"第二場開局 C1_C2 的 n_pair 應比第一場開局(%d)多 1 筆" % baseline
+		"第二場開局 C1_C2 的 n_pair 應比同場次基準(%d)多 1 筆" % baseline
 	).is_equal(baseline + 1)
 
 	# Cleanup
 	await _release(battle2, original)
+
+
+## story-013:用真實畫面的 request_advance() 把對話播到結束。
+func _play_through(screen: SupportConversationScreen) -> void:
+	var steps: int = 0
+	while not screen.diagnostic_is_finished() and steps < 600:
+		screen.request_advance()
+		steps += 1
+	assert_bool(screen.diagnostic_is_finished()).is_true()
 
 
 # ── (b) 戰敗:不觸發支援對話 ────────────────────────────────────────────────

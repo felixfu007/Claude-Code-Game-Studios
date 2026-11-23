@@ -39,6 +39,15 @@ const TEXT_SKIP_TUTORIAL: StringName = &"shell.title.skip_tutorial"
 const TEXT_SETTINGS: StringName = &"shell.title.settings"
 const TEXT_QUIT: StringName = &"shell.title.quit"
 
+## campfire story-014:「繼續」/「新遊戲」與確認框文字 key。
+const TEXT_CONTINUE: StringName = &"shell.title.continue"
+const TEXT_CONTINUE_NO_PROGRESS: StringName = &"shell.title.continue_no_progress"
+const TEXT_NEW_GAME: StringName = &"shell.title.new_game"
+const TEXT_CONFIRM_TITLE: StringName = &"shell.title.new_game_confirm_title"
+const TEXT_CONFIRM_BODY: StringName = &"shell.title.new_game_confirm_body"
+const TEXT_CONFIRM_CANCEL: StringName = &"shell.title.new_game_confirm_cancel"
+const TEXT_CONFIRM_RESTART: StringName = &"shell.title.new_game_confirm_restart"
+
 ## 場景路徑的單一出處是 [SceneRouter](story-005),本檔不再持有任何場景路徑常數。
 
 ## Story-004(`production/epics/game-shell/` ——
@@ -86,10 +95,20 @@ const AUTO_START_BATTLE_FLAG: String = "--capture-battle"
 const TEXT_GAME_NAME: StringName = &"shell.title.game_name"
 
 @onready var _game_name_label: Label = $Panel/ContentMargin/Rows/GameNameLabel
+@onready var _continue_row: Button = $Panel/ContentMargin/Rows/ContinueRow
+## 節點名沿用 StartBattleRow(既有測試依名稱取用),文字與語意為「新遊戲」。
 @onready var _start_battle_row: Button = $Panel/ContentMargin/Rows/StartBattleRow
 @onready var _skip_tutorial_row: Button = $Panel/ContentMargin/Rows/SkipTutorialRow
 @onready var _settings_row: Button = $Panel/ContentMargin/Rows/SettingsRow
 @onready var _quit_row: Button = $Panel/ContentMargin/Rows/QuitRow
+@onready var _confirm_overlay: Control = $ConfirmOverlay
+@onready var _confirm_title_label: Label = $ConfirmOverlay/Panel/ContentMargin/Content/TitleLabel
+@onready var _confirm_body_label: Label = $ConfirmOverlay/Panel/ContentMargin/Content/BodyLabel
+@onready var _confirm_cancel: Button = $ConfirmOverlay/Panel/ContentMargin/Content/CancelButton
+@onready var _confirm_restart: Button = $ConfirmOverlay/Panel/ContentMargin/Content/RestartButton
+
+## 確認框開啟時,確認後要走的動作(新遊戲 / 略過教學)。
+var _pending_restart: Callable = Callable()
 
 
 func _ready() -> void:
@@ -109,7 +128,7 @@ func _ready() -> void:
 	_apply_game_name_font_size()
 	get_viewport().size_changed.connect(_apply_game_name_font_size)
 
-	_start_battle_row.text = Loc.localize(TEXT_START_BATTLE)
+	_start_battle_row.text = Loc.localize(TEXT_NEW_GAME)
 	_skip_tutorial_row.text = Loc.localize(TEXT_SKIP_TUTORIAL)
 	_settings_row.text = Loc.localize(TEXT_SETTINGS)
 	_quit_row.text = Loc.localize(TEXT_QUIT)
@@ -120,26 +139,27 @@ func _ready() -> void:
 
 	# AC5(本 story)/ AC7(story-001)—— 比照 battle_menu.gd:FOCUS_ALL + 手動
 	# focus_neighbor,做出有界(不環繞)的三項清單。
-	_start_battle_row.focus_mode = Control.FOCUS_ALL
-	_skip_tutorial_row.focus_mode = Control.FOCUS_ALL
-	_settings_row.focus_mode = Control.FOCUS_ALL
-	_quit_row.focus_mode = Control.FOCUS_ALL
-	_start_battle_row.focus_neighbor_top = _start_battle_row.get_path_to(_start_battle_row)
-	_start_battle_row.focus_neighbor_bottom = _start_battle_row.get_path_to(_skip_tutorial_row)
-	_skip_tutorial_row.focus_neighbor_top = _skip_tutorial_row.get_path_to(_start_battle_row)
-	_skip_tutorial_row.focus_neighbor_bottom = _skip_tutorial_row.get_path_to(_settings_row)
-	_settings_row.focus_neighbor_top = _settings_row.get_path_to(_skip_tutorial_row)
-	_settings_row.focus_neighbor_bottom = _settings_row.get_path_to(_quit_row)
-	_quit_row.focus_neighbor_top = _quit_row.get_path_to(_settings_row)
-	_quit_row.focus_neighbor_bottom = _quit_row.get_path_to(_quit_row)
+	_confirm_title_label.text = Loc.localize(TEXT_CONFIRM_TITLE)
+	_confirm_body_label.text = Loc.localize(TEXT_CONFIRM_BODY)
+	_confirm_cancel.text = Loc.localize(TEXT_CONFIRM_CANCEL)
+	_confirm_restart.text = Loc.localize(TEXT_CONFIRM_RESTART)
+	_confirm_cancel.focus_neighbor_top = _confirm_cancel.get_path_to(_confirm_cancel)
+	_confirm_cancel.focus_neighbor_bottom = _confirm_cancel.get_path_to(_confirm_restart)
+	_confirm_restart.focus_neighbor_top = _confirm_restart.get_path_to(_confirm_cancel)
+	_confirm_restart.focus_neighbor_bottom = _confirm_restart.get_path_to(_confirm_restart)
+	_confirm_cancel.focus_mode = Control.FOCUS_ALL
+	_confirm_restart.focus_mode = Control.FOCUS_ALL
+
+	refresh_progress_state()
 
 	# story-008:「開始」-> 教學第 1 場;「略過教學」-> 戰役第 1 場(即原本「開始」的行為)。
-	_start_battle_row.pressed.connect(start_tutorial)
-	_skip_tutorial_row.pressed.connect(start_battle)
+	_continue_row.pressed.connect(continue_game)
+	_start_battle_row.pressed.connect(new_game)
+	_skip_tutorial_row.pressed.connect(skip_tutorial)
+	_confirm_cancel.pressed.connect(cancel_confirm)
+	_confirm_restart.pressed.connect(confirm_restart)
 	_settings_row.pressed.connect(open_settings)
 	_quit_row.pressed.connect(_on_quit_pressed)
-
-	_start_battle_row.grab_focus()
 
 	# Story-004 —— 見 [constant AUTO_START_BATTLE_FLAG] 的 doc comment。放在
 	# _ready() 的最後面,讓本畫面先完成一次正常初始化(文字、focus 接線)再決定
@@ -148,8 +168,44 @@ func _ready() -> void:
 		start_battle()
 
 
+## campfire story-014:依「本次遊玩是否有進度」設定「繼續」狀態、焦點接線與預設焦點。
+## 兩顆鈕位置固定(不隱藏);無進度時「繼續」停用、不可聚焦,上下鄰居接線一律不指向它。
+func refresh_progress_state() -> void:
+	var progress: bool = _has_progress()
+	_apply_continue_availability(progress)
+	var items: Array[Button] = []
+	if progress:
+		items.append(_continue_row)
+	items.append_array([_start_battle_row, _skip_tutorial_row, _settings_row, _quit_row])
+	for i: int in items.size():
+		var row: Button = items[i]
+		row.focus_mode = Control.FOCUS_ALL
+		var up: Button = items[maxi(i - 1, 0)]
+		var down: Button = items[mini(i + 1, items.size() - 1)]
+		row.focus_neighbor_top = row.get_path_to(up)
+		row.focus_neighbor_bottom = row.get_path_to(down)
+	items[0].grab_focus()
+
+
+## 可被覆寫(測試變種):是否有進度。
+func _has_progress() -> bool:
+	return CampaignProgress.has_progress()
+
+
+## 可被覆寫(測試變種):依進度設定「繼續」的停用與文字。
+func _apply_continue_availability(has_progress: bool) -> void:
+	_continue_row.visible = true
+	_continue_row.disabled = not has_progress
+	_continue_row.text = Loc.localize(TEXT_CONTINUE if has_progress else TEXT_CONTINUE_NO_PROGRESS)
+	if not has_progress:
+		_continue_row.focus_mode = Control.FOCUS_NONE
+
+
 ## story-010 —— 依目前視窗尺寸重設名稱字級。
 func _apply_game_name_font_size() -> void:
+	# 已離樹(場景切換後尚未被釋放)時 viewport 為 null;size_changed 連線仍會觸發。
+	if not is_inside_tree():
+		return
 	var window_size: Vector2i = Vector2i(get_viewport().get_visible_rect().size)
 	_game_name_label.add_theme_font_size_override(&"font_size", HudLayout.font_size(window_size))
 
@@ -171,6 +227,67 @@ static func should_auto_start_battle(args: PackedStringArray) -> bool:
 ## 交換延後到空閒時執行,所以在 [method Node._ready] 期間呼叫(--capture-battle 路徑)也安全。
 func start_battle() -> void:
 	SceneRouter.enter_battle(get_tree())
+
+
+## 「繼續」:回到目前場次(累積記錄與牌組保留)。無進度時無作用。
+func continue_game() -> void:
+	if not _has_progress():
+		return
+	SceneRouter.enter_battle(get_tree())
+
+
+## 「新遊戲」:有進度先跳確認框,無進度直接開始。
+func new_game() -> void:
+	_request_restart(_start_fresh_campaign)
+
+
+## 「略過教學」:同樣會清掉本次進度,所以有進度時同樣先確認。
+func skip_tutorial() -> void:
+	_request_restart(_start_fresh_campaign_skipping_tutorial)
+
+
+func is_confirm_open() -> bool:
+	return _confirm_overlay.visible
+
+
+func cancel_confirm() -> void:
+	_confirm_overlay.hide()
+	_pending_restart = Callable()
+	_start_battle_row.grab_focus()
+
+
+func confirm_restart() -> void:
+	var action: Callable = _pending_restart
+	_confirm_overlay.hide()
+	_pending_restart = Callable()
+	if action.is_valid():
+		action.call()
+
+
+func _request_restart(action: Callable) -> void:
+	if not _has_progress():
+		action.call()
+		return
+	_pending_restart = action
+	_confirm_overlay.show()
+	_confirm_cancel.grab_focus()
+
+
+## 可被覆寫(測試變種):清掉本次進度並從教學開始。
+func _start_fresh_campaign() -> void:
+	CampaignProgress.reset_campaign()
+	start_tutorial()
+
+
+func _start_fresh_campaign_skipping_tutorial() -> void:
+	CampaignProgress.reset_campaign()
+	start_battle()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if is_confirm_open() and event.is_action_pressed(&"ui_cancel"):
+		cancel_confirm()
+		get_viewport().set_input_as_handled()
 
 
 ## story-008 AC1:「開始」—— 從教學第 1 場開始。

@@ -153,14 +153,18 @@ func test_victory_advances_campaign_progress_and_keeps_new_entries() -> void:
 	# 2026-10-27 game-shell story-005:原斷言恰 1 筆。勝利現在會在同一個 ledger 觸發
 	# 第 1 場之後的支援對話(SC-01 甲乙,vs01 全員存活),所以是本測試那筆 + SC-01 共 2 筆。
 	# 改成「本測試那筆仍在」而不是只比總數,總數另外斷言。
+	# 🔴 campfire story-013(管理者 2026-11-23 裁決,docs/reviews/campfire-rulings-2026-11-23.md 第 2 題)
+	# 改寫:SC-01 的好感度要等對話播完才寫入,本測試直接呼叫 _on_battle_ended 不播對話,
+	# 所以勝利當下只剩本測試那筆(總數 seed_count + 1);「播完才寫入」由
+	# support_conversation_write_after_playback_test.gd 覆蓋。
 	var pairs: Array = ledger.records().map(func(e: CampaignAffinityLedger.Entry) -> int: return e.pair)
 	assert_bool(pairs.has(AffinityTypes.Pair.C2_C5)).append_failure_message(
 		"VICTORY 不應呼叫 rollback_current_mission() —— 本場新增的記錄應該保留" +
 		"(AC3:併入累積)"
 	).is_true()
 	assert_int(ledger.records().size()).append_failure_message(
-		"預期 %d 筆(開局起始關係 + 本測試的 C2_C5 + 勝利觸發的 SC-01),實得 %d 筆" % [seed_count + 2, ledger.records().size()]
-	).is_equal(seed_count + 2)
+		"預期 %d 筆(開局起始關係 + 本測試的 C2_C5;SC-01 待對話播完才寫),實得 %d 筆" % [seed_count + 1, ledger.records().size()]
+	).is_equal(seed_count + 1)
 
 	# Assert —— AC3:場次推進判斷。2026-10-27 起 campaign_sequence.txt 有 2 列,
 	# 第 1 場勝利推進到第 2 場(原斷言:停在 1,因當時只有 1 列)
