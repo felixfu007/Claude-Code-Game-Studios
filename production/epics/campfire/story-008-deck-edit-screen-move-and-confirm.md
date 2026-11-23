@@ -1,7 +1,8 @@
 # Story 008:牌組編輯畫面①—— 移入移出與確認
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Blocked —— 依賴 **story-004**(未 Done)。UX 規格已交(`design/ux/deck-edit-screen.md`,草稿),其第 7 節與本單有關的題已全部由管理者裁決解除;**規格本文的最小視窗尚未依裁決改**,見 EPIC「須另請示的文件改動」—— 本單以裁決為準。
+> **Status**: Ready(2026-11-23 依賴 004 已提交)
+> (2026-11-23 收工前狀態:Blocked —— 依賴 **story-004**(未 Done)。UX 規格已交(`design/ux/deck-edit-screen.md`,草稿),其第 7 節與本單有關的題已全部由管理者裁決解除;**規格本文的最小視窗尚未依裁決改**,見 EPIC「須另請示的文件改動」—— 本單以裁決為準。)
 > (原狀態:Blocked —— 卡在 `ux-designer`:**牌組編輯畫面規格不存在**(2026-11-20 實查);依賴 story-004。)
 > **Type**: UI
 > **Estimate**: M(1.5~2 估計天,粗估未驗證;排程 F8 原估 3~4,超過單張 3 天上限,拆成 008/009)

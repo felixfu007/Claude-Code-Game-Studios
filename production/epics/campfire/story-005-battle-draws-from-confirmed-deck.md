@@ -1,7 +1,8 @@
 # Story 005:戰鬥改從確認後的牌組洗牌
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Blocked —— 依賴 **story-004**(未 Done)。本單自身無待決(第 1 場定位已由管理者 11-23 裁決釐清)。
+> **Status**: Ready(2026-11-23 依賴 004 已提交)—— ⚠️ 開工即撞「營火卡 id → Card 解析」缺口,待 lead 方案與管理者授權範圍;worktree `agent-af5d4806ac3f3a759` `b4e8e8c` 只有空測試骨架
+> (2026-11-23 收工前狀態:Blocked —— 依賴 **story-004**(未 Done)。本單自身無待決(第 1 場定位已由管理者 11-23 裁決釐清)。)
 > (原狀態:Blocked —— 依賴 story-004(牌組放哪尚待 `lead-programmer`)。本單自身無額外待決。)
 > **Type**: Integration
 > **Estimate**: M(1~1.5 估計天,粗估未驗證;**受影響的既有測試數未量,可能偏高**)

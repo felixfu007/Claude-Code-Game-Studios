@@ -1,7 +1,8 @@
 # Story 014:標題畫面「繼續」與「新遊戲」
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Ready(2026-11-23 三小題已定,見「派工前須先決定」末)—— 不依賴其他營火工單;與 006/015 同碰標題/殼層時注意派工順序。
+> **Status**: Done(2026-11-23 `fbf38c4`;協調者全套 2607 綠)
+> (2026-11-23 收工前狀態:Ready(2026-11-23 三小題已定,見「派工前須先決定」末)—— 不依賴其他營火工單;與 006/015 同碰標題/殼層時注意派工順序。)
 > (原狀態:Blocked —— 卡在三個小題(`game-designer` / `ux-designer`);管理者題已全部裁決。)
 > **Type**: UI + Integration
 > **Estimate**: M(0.5~1 估計天,`lead-programmer` 估「做法 A」,**未驗證**)

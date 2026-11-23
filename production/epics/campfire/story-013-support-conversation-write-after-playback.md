@@ -1,7 +1,8 @@
 # Story 013:支援對話的好感度改在「對話播完」才寫入
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Ready(2026-11-23 `producer` 新增;管理者題已裁決,無設計待決)—— ⚠️ **派工順序:story-001 提交後再派**(兩張都改 `src/ui/battle/battle_screen.gd`,避免同檔並行)。開工第一步有一道查證閘,見「派工前須先決定」。
+> **Status**: Done(2026-11-23 `50906f4`;協調者全套 2607 綠)
+> (2026-11-23 收工前狀態:Ready(2026-11-23 `producer` 新增;管理者題已裁決,無設計待決)—— ⚠️ **派工順序:story-001 提交後再派**(兩張都改 `src/ui/battle/battle_screen.gd`,避免同檔並行)。開工第一步有一道查證閘,見「派工前須先決定」。)
 > **Type**: Integration
 > **Estimate**: M(0.5~1 估計天,`lead-programmer` 估,**未驗證**)
 > **依據**:管理者 2026-11-23 裁決第 2 題「改成對話播完才寫入(推薦)」(`docs/reviews/campfire-rulings-2026-11-23.md`);技術依據 `docs/reviews/campfire-open-tech-2026-11-23.md` 題 2。

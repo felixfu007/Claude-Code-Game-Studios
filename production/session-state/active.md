@@ -1,6 +1,10 @@
 # Active Session State
 
 <!-- STATUS -->
+Epic: **第一百零六批(2026-11-23,公司)收工。** 營火程式 7 張:001 `8dfb48c`、013 `50906f4`、014 `fbf38c4`、002 `1b81e67`、006 `b6c4d82`、003 `2635b74`、004 `b043a1c`;午休截圖缺陷修正 `06c0a99`;測試 2576 → **2691**(全綠)。文件:營火工單依裁決修訂 `413316c`/`892c9ea`/`ccf89f3`、6 張過時狀態、11 張營火狀態同步。
+Feature: 🔴 今日裁決(逐字見第一百零六批節與 `docs/reviews/campfire-rulings-2026-11-23.md`):預設 12 張拿 card_19/21、對話播完才寫入、繼續只限本次遊玩且無進度灰掉、回營火完整重走+牌組退回次數重給、014/015 畫面照 UX、殼層加暫時文字、略過教學走新遊戲邏輯、card.gd 營火工廠、資訊卡變高、[R] 壓血量先不管(非推薦)、營火短句 40 句。
+Task: 🔴 **下次第一件:git pull + CI;第二件:讀 `docs/reviews/campfire-deck-card-resolution-2026-11-23.md`(營火卡 id → Card 解析,lead 方案)→ 問管理者授權範圍 → 續做 005(worktree `agent-af5d4806ac3f3a759` 只有空骨架);第三件:午休重拍(驅動先 hide_objective、加 030 暗化態、看 Z3 往上長是否蓋敵兵)→ 021/029/030 人眼 + 十字/正方。之後 007/008/015;010 入庫(草稿 `docs/reviews/campfire-text-draft-2026-11-23.md`,pair 鍵對照待 lead 核)。** 全程台灣繁體中文;對管理者用角色姓名;午休外不開窗。
+以下為第一百零五批原狀態列。
 Epic: **第一百零五批(2026-11-20,公司)收工。** 程式 8 提交:020d `8a1b2c9`、付款人一致性 `0bd4ac4`、021 第二輪 `aa126ca`、029 `501cd75`、詳情字級 `227c3d4`、030 `f15094a`、024 `f406e6f`;測試 2518 → **2576**(全綠)。營火 EPIC 草稿 12 張 `2ef4288` + 專家三份 + UX 兩份。
 Feature: 🔴 今日裁決(逐字見第一百零五批節與 `docs/reviews/campfire-rulings-2026-11-20.md`):騎牆預告暫緩、8 張舊卡改人名、關係圖高度上限+詳情右側浮出、手牌四形、確認面板驗收通過、025 暫緩等營火、文件同步四項、營火 9 項(打輸兩種都做/勝利>營火>對話>編牌組/每輪 3 次採設計師/預設 12 上限 14/標題「繼續」「新遊戲」/不變加一句/最小 1280×720/其餘照專家)。
 Task: 🔴 **下次第一件:git pull + CI;第二件:依 `campfire-rulings-2026-11-20.md` 改營火 EPIC/工單(既有文件,先請示)→ 派 campfire story-001(Ready);第三件:午休重拍 `prototypes/capture-2026-11-20-lunch/`(驅動已修)→ 021/029/030 人眼。** 全程台灣繁體中文;對管理者用角色姓名;午休外不開窗。
@@ -112,8 +116,24 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ✅ 午休開窗 12:18:15~12:18:43(先 `--headless --import`),16 張 `prototypes/capture-2026-11-23-lunch/out/` 視窗尺寸皆符。協調者看 + ux `docs/reviews/lunch-capture-review-2026-11-23.md`:🔴 029 Z3 疊字/溢出 + 傷害卡顯示 ATK/DEF 行;🔴 資訊卡關係行壓減傷行;收合縮圖有「敵意」小字(規格不放);「關係圖 [R]」壓血量字;態 2 被開場目標橫幅蓋(驅動時序,8 秒自動隱藏)。030 960 十字/正方「勉強分得開」→ 待管理者人眼;AC4 缺暗化那張。
 - 🔴 裁決(約 13:30):006 空白殼層「加暫時文字再合入（推薦）」;「略過教學」改法「維持實作者的改法（推薦）」。
 - ✅ **006+002 協調者全套 `ENGINE EXIT = 0` / `2640 … 0 failures` / `(252/252)`**;006 三支既有測試改動為純插入(numstat 刪除 0)→ 接受。協調者 mutant 002(質問寫正值)→ 紅已還原。**002 提交 `1b81e67` 已推送**,worktree 已清。
-- ⏳ 006 加暫時文字(原實作者續做,strings +4 → 314,log `C:/tmp/run_cf006c.log`)→ 提交。
+- ✅ 006 見下。
 - ⏳ 疊字修正(worktree,log `C:/tmp/run_overlapfix.log`)。修完需下次午休重拍(驅動先 hide_objective 或等 8 秒、補 030 暗化態)。
+- ✅ **006 提交 `b6c4d82` 已推送**(殼層暫時文字 strings 310 → 314;協調者全套 `ENGINE EXIT = 0` / `2641 … 0 failures` / `(252/252)`;mutant 勝利後跳過營火 → 6+ 條紅已還原)。
+- ✅ lead `docs/reviews/campfire-003-card-construction-2026-11-23.md`:建議 card.gd 加營火工廠。🔴 裁決(約 14:10):「加專用入口，並更新工單（推薦）」→ `ccf89f3`(003 轉 Ready、023 加註)。
+- 🟡 003 交件(主目錄未提交):`card.gd` +`new_camp_pair_card`、`campfire_card_generator.gd`/`campfire_card_template.gd` + `assets/data/campfire/campfire_card_template.txt`;實作者全套 `2666 … 0 failures` / `(254/254)`。協調者 mutant(工廠拿掉夥伴 ≥1 檢查)→ 紅已還原。⏳ 協調者全套 `C:/tmp/run_003_coord.log` → 提交。📌 實作者提醒(交 systems-designer):池值衰減下營火每次只寫 m=0.5,加成門檻 k+2 很難觸發(量到連寫 +1.0 的 v:1.0/1.94/2.82/3.65/4.43/5.17)。「付款人≠夥伴」無明文,未加。
+- 🟡 疊字修正 worktree `61fd9b3`(`aff6c48` 測試、`acdd369` 第 1+2 項 hand_bar、`61fd9b3` 第 3 項 battle_screen `_tile_info_line_height`);5 條新測試單檔綠;第 1 項退回紅燈有原始行,其餘 4 條退回紅燈**未證明**(同檔中止)。全套 `C:/tmp/run_overlapfix.log` 跑中。patch `C:/tmp/overlapfix.patch`,待 003 提交後合入。
+- 🔴 裁決(約 14:43):「關係圖 [R]」壓血量字 →「**先不管**」(非推薦項)。
+- ✅ **003 提交 `2635b74` 已推送**(協調者全套 `ENGINE EXIT = 0` / `2666 … 0 failures` / `(254/254)`)。
+- 🟡 004 交件(主目錄未提交):`CampaignDeck`(只存 id,編輯暫存、confirm 才寫入)、`campaign_deck_defaults_loader.gd`、`assets/data/campfire/default_deck.txt`(12 張 + 收藏 card_19/21,上下限 8/14 占位)、`CampaignProgress.deck()`;實作者全套 `2686 … 0 failures` / `(255/255)`。協調者 mutant(confirm 不檢查張數)→ 紅已還原。⏳ 協調者全套 `C:/tmp/run_004_coord.log`。
+- ✅ **004 提交 `b043a1c` 已推送**(協調者全套 `ENGINE EXIT = 0` / `2686 … 0 failures` / `(255/255)`)。
+- 🟡 疊字修正(worktree `676536b`,實作者全套 `2635 … 0 failures`,改了 2 條既有測試期望值 —— 協調者核准、實際行高在測試內獨立算)已套入主目錄;協調者補兩個未證明的 mutant:加成行對所有類別顯示 → `test_z3_damage_and_heal_cards_have_no_bonus_line` 紅;收合也顯示關係徽記 → `test_collapsed_thumbnail_has_no_relation_marks_expanded_does` 紅;皆已還原。⏳ 協調者全套 `C:/tmp/run_overlap_coord.log` → 提交。⚠️ Z3 面板會往上長,可能蓋敵兵(靜態矩形測試抓不到)→ 下次午休人眼。
+- ✅ **疊字修正提交 `06c0a99` 已推送**(協調者全套 `ENGINE EXIT = 0` / `2691 … 0 failures` / `(256/256)`)。worktree `agent-a3e69bbfe6fbab38c` 被鎖(agent pid 29992)未清。
+- ✅ narrative 營火文案草稿 `docs/reviews/campfire-text-draft-2026-11-23.md`(40 句 + 007 三句;卡名推薦模板「{a}與{b}・默契/較勁」待 game-designer;pair 鍵用 jia_yi 等,對照未逐檔核 → 入庫前 lead 核;麥子健聲線 C 級)。🔴 裁決(約 16:05):「每組每動作 2 句，共 40 句（推薦）」;11 張營火狀態同步「可以，11 張都改（推薦）」→ 已改(未改 EPIC 表)。
+- 🔴 005 實作者停下(正確):004 只存 id,營火卡是執行期 Card、無處登記;`add_new_card` 無呼叫端;card_07/08 在多份牌表重複。三案 A(CampaignDeck 登記區)/B(CampaignProgress)/C(005 只做檔案卡)。⏳ lead 方案 `docs/reviews/campfire-deck-card-resolution-2026-11-23.md` → 需管理者授權擴範圍(campaign_deck.gd 不在 005 範圍)。覆核收穫:004 設計缺口(交件時沒人發現,下一張才撞到)。
+- 覆核收穫今日:①003 mutant 換來源無讀者(非缺陷,登記)②006 空白殼層會讓試玩看到空畫面(管理者裁決加暫時文字)③截圖 4 項疊字(人眼)④資訊卡行高規格公式本身錯(假設錯)⑤004 只存 id 撐不起營火卡(假設錯)→ 連續零收穫 = 0。
+- 協調者疏失:`git status --cached` 打錯(無害);EPIC 工單表狀態未同步(未在核准範圍)。
+- 📌 下次請示:EPIC 表狀態同步;`design/ux/campfire-screen.md` 等「須另請示的文件改動」10 項(producer 列在 EPIC);030 十字/正方 960 人眼;Z3 往上長是否蓋敵兵。
+- 🟡 疊字修正:全套 2 條既有紅(資訊卡高度公式 116.4 → 146.8)→ 🔴 裁決(約 15:12)「**卡片變高，照字型實際高度（推薦）**」→ 已請實作者改兩條測試(實際行高須在測試內獨立算,不得呼叫 production 函式),log `C:/tmp/run_overlapfix2.log`;協調者已在 `docs/reviews/highlight-and-info-panel-art-spec-2026-11-12.md` 面板公式下加註已取代。
 
 ## 🔴 第一百零五批(2026-11-20,公司,08:28 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00 收工;專業派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。🔴 午休 12:00~13:00 以外不開窗。

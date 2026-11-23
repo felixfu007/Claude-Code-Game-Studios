@@ -1,7 +1,8 @@
 # Story 002:營火寫入口 —— 任選兩人,關心 `+m`/質問 `−m`
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Blocked —— 只剩依賴 **story-001**(In Progress,未 Done)。專家與管理者題已全部解除(2026-11-23 producer 依裁決更新,見下表)。
+> **Status**: Done(2026-11-23 `1b81e67`;協調者全套 2640 綠)
+> (2026-11-23 收工前狀態:Blocked —— 只剩依賴 **story-001**(In Progress,未 Done)。專家與管理者題已全部解除(2026-11-23 producer 依裁決更新,見下表)。)
 > (原狀態:Blocked —— 卡在 ①`lead-programmer`(好感度擁有者):營火寫入的許可路線與用哪個來源值(v1.0 10B 第 1 項);②`game-designer`:每輪可寫幾次。)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 估計天,粗估未驗證;排程 F3 原估 1.5~2.5,v1.0 改寫共用池後約 −0.5)

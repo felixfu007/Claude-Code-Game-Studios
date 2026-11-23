@@ -1,7 +1,8 @@
 # Story 004:收藏區與牌組 —— 只在本次開著遊戲時記得
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Blocked —— 依賴 **story-003**(營火卡物件,未 Done)。專家與管理者題已解除;剩一個**不擋開工**的資料題(收藏區初始內容,第 3 題)。「回營火時牌組要不要回滾」已移到 story-015。
+> **Status**: Done(2026-11-23 `b043a1c`;協調者全套 2686 綠)⚠️ 只存卡 id,營火卡 id → Card 解析未定(story-005 實作者發現,見 `docs/reviews/campfire-deck-card-resolution-2026-11-23.md`)
+> (2026-11-23 收工前狀態:Blocked —— 依賴 **story-003**(營火卡物件,未 Done)。專家與管理者題已解除;剩一個**不擋開工**的資料題(收藏區初始內容,第 3 題)。「回營火時牌組要不要回滾」已移到 story-015。)
 > (原狀態:Blocked —— 卡在 ①`lead-programmer`:牌組寫在哪個執行期物件、戰敗重打保留牌組是否可行(v1.0 10B 第 4、5 項);②**管理者**:打輸後回到哪裡(見 story-006 第 1 題,決定戰敗時牌組要不要回滾)。)
 > **Type**: Logic
 > **Estimate**: M(1~1.5 估計天,粗估未驗證)

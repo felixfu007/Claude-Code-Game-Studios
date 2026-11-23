@@ -1,7 +1,8 @@
 # Story 006:營火接進戰役流程
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Ready(2026-11-23 依管理者裁決解除;營火/編輯畫面用最小殼層場景先接線)—— ⚠️ **派工順序:story-001 提交後再派**(兩張都改 `src/ui/battle/battle_screen.gd`,避免同檔並行);建議 story-013 先完成或同批(見下)。
+> **Status**: Done(2026-11-23 `b6c4d82`;殼層含暫時文字;協調者全套 2641 綠)
+> (2026-11-23 收工前狀態:Ready(2026-11-23 依管理者裁決解除;營火/編輯畫面用最小殼層場景先接線)—— ⚠️ **派工順序:story-001 提交後再派**(兩張都改 `src/ui/battle/battle_screen.gd`,避免同檔並行);建議 story-013 先完成或同批(見下)。)
 > (原狀態:Blocked —— 卡在 ①**管理者**:打輸後回到哪裡(第 1 題);②`game-designer`:營火與支援對話誰先(第 2 題)。)
 > **Type**: Integration
 > **Estimate**: M(1~1.5 估計天,粗估未驗證;`scene_router.gd` 有支援對話插入範本可照抄)

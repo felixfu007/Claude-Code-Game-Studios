@@ -1,7 +1,8 @@
 # Story 001:累積記錄重建好感度池,從戰鬥畫面抽成共用
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Ready(2026-11-20 producer 草擬;無管理者題、無設計待決)
+> **Status**: Done(2026-11-23 `8dfb48c`;協調者全套 2581 綠)
+> (2026-11-23 收工前狀態:Ready(2026-11-20 producer 草擬;無管理者題、無設計待決))
 > **Type**: Logic(重構,零行為變更)
 > **Estimate**: S~M(約 1 估計天,粗估未驗證)
 > **依據**:v1.0 規格 4.3「寫入立即生效,下一場戰鬥即反映」、4.4「先寫池、再依寫入後的 `v` 產卡」、6.3 (1)「寫入前顯示該配對當前 S 與寫入後的預期 S」;登記表契約 `affinity_relation_state_single_judgment`(`docs/registry/architecture.yaml`,「ONE JUDGMENT, ONE PLACE」)。

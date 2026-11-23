@@ -1,7 +1,8 @@
 # Story 007:營火畫面 —— 選兩人、關心/質問、寫入前看見後果
 
 > **Epic**: `production/epics/campfire/EPIC.md`
-> **Status**: Blocked —— 依賴 **story-001、002、003**(皆未 Done)。UX 規格已交(`design/ux/campfire-screen.md`,草稿),其第 7 節七題已全部由管理者裁決解除;**但規格本文尚未依裁決改**(最小視窗、同組重複),見 EPIC「須另請示的文件改動」—— 本單以裁決為準。
+> **Status**: Ready(2026-11-23 依賴 001/002/003 已提交)
+> (2026-11-23 收工前狀態:Blocked —— 依賴 **story-001、002、003**(皆未 Done)。UX 規格已交(`design/ux/campfire-screen.md`,草稿),其第 7 節七題已全部由管理者裁決解除;**但規格本文尚未依裁決改**(最小視窗、同組重複),見 EPIC「須另請示的文件改動」—— 本單以裁決為準。)
 > (原狀態:Blocked —— 卡在 `ux-designer`:**營火畫面規格不存在**(2026-11-20 `ls design/ux/` 實查無此檔)。)
 > **Type**: UI
 > **Estimate**: M(1.5~2 估計天,粗估未驗證;排程 F2 1.5~2 + N6 0.5~1 合併後應有重疊)
