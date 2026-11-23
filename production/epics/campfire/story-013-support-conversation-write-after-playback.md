@@ -26,6 +26,8 @@
 
 📌 **白話**:本單不是新規則,而是讓程式追上 UX 規格原本的寫法 —— 規格一直寫「播完才寫」,現行程式卻是勝利當下就寫(lead 2026-11-23 讀碼)。
 
+> ✅ **2026-11-23 結案(協調者依 game-designer 查證)**:「跳過整段算播完」已有裁決 —— 管理者 2026-10-28「可以略過,要先確認」(`production/epics/support-conversation-ui/EPIC.md` 裁決表第 1 題);`src/ui/shell/support_conversation_screen.gd` 檔頭已寫「正常讀完與跳過確認後走同一條路徑」。故**跳過確認後 = 播完 = 寫入**。實作者第一步仍要 grep 確認程式現況與此一致,不符就停下回報。依據 `docs/reviews/campfire-014-015-gd-2026-11-23.md`。
+
 ## 規則摘要
 
 - 挑段與存活判斷**仍在勝利當下**(用勝利當下的 `_state`),把「要寫哪幾筆」帶到對話畫面;**寫入**改在該段對話播完時執行。
@@ -46,7 +48,7 @@
 ## Affected Files
 
 - `src/ui/battle/battle_screen.gd`(勝利分支不再寫入,改帶待寫內容)
-- `src/ui/narrative/` 下的 `support_conversation_screen.gd`(播完時寫入;實際路徑實作者 grep 確認)
+- `src/ui/shell/support_conversation_screen.gd`(播完時寫入;2026-11-23 協調者更正路徑,原寫 `src/ui/narrative/`)
 - `src/ui/shell/scene_router.gd`(若待寫內容要經路由注入)
 - 新/改測試:`tests/integration/`
 - ⚠️ 以上檔案屬支援對話系統,**本單是營火裁決帶出的跨系統改動**;若既有支援對話測試的斷言需要改(例如斷言「勝利當下已寫入」),**停下回報**,不得自行改斷言。
