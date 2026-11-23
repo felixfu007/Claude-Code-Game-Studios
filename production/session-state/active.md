@@ -96,7 +96,24 @@ Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_w
 - ⏳ campfire story-001(godot-gdscript-specialist,主目錄,log `C:/tmp/run_cf001.log`)。
 - ✅ 專家:game-designer `docs/reviews/campfire-default-deck-12-2026-11-23.md`(第 1 場只有 8 張,協調者 grep 驗);lead `docs/reviews/campfire-open-tech-2026-11-23.md`(來源值 SUPPORT_CONVERSATION (A) 探針已驗原始行;對話挑段勝利當下綁死;回營火動 4 檔;關遊戲只存設定)。
 - 🔴 裁決(約 08:50):營火工單依裁決改「可以，依裁決改（推薦）」;6 張過時狀態「可以，改成已完成（推薦）」。(約 08:58)4 項全推薦 → `docs/reviews/campfire-rulings-2026-11-23.md`(第 2~5 場拿 card_19/21、對話播完才寫入、繼續只限本次遊玩、無進度灰掉)。
-- ⏳ producer 改營火 EPIC/002~012 + 6 張狀態同步(未提交,交件後協調者看 diff 再給管理者摘要)。
+- ✅ **營火工單提交 `413316c` 並推送**(管理者「可以提交（推薦）」;producer 拒動既有檔 → 協調者依管理者直接核准自行複製暫存版)。新增 013(對話播完才寫入,Ready)、014(繼續/新遊戲)、015(打輸重打或回營火)。
+- ✅ game-designer `docs/reviews/campfire-014-015-gd-2026-11-23.md`、ux `docs/reviews/campfire-014-015-ux-2026-11-23.md`。gd 查到「跳過算播完」已於 10-28 裁決(`production/epics/support-conversation-ui/EPIC.md` 裁決表第 1 題)→ 013 查證閘可關;013 路徑寫錯(實為 `src/ui/shell/support_conversation_screen.gd`)。
+- 🔴 裁決(約 09:45,全推薦):015 回營火「完整重走，對話再播一次（推薦）」;「牌組退回、次數重給（推薦）」;014/015 畫面「照 UX 建議（推薦）」(新遊戲確認框預設取消、「繼續(尚無進度)」、戰役戰敗兩鈕無倒數、第 1 場單鈕、教學仍倒數)。gd 推薦且不需裁決:014 新遊戲仍先進教學;「有進度」= 本次遊玩進過任一戰役場次。⏳ 待把這些寫進 013/014/015(既有文件,須請示)。
+- 🟡 story-001 交件(主目錄未提交):新 `CampaignAffinityPoolRebuilder.rebuild()`、battle_screen 改呼叫、5 條測試;實作者全套 `2581 … 0 failures` / `(247/247)` / EXIT 0,mutant ①② 各紅已還原。協調者覆核:2164~2258 之間戰役模式池子確為空、無人持有參照 → 換池等價 ✓。⏳ 協調者全套 `C:/tmp/run_cf001_coord.log` → 自己的 mutant → 提交。
+- ✅ **story-001 提交 `8dfb48c` 並推送**(協調者全套 `ENGINE EXIT = 0` / `2581 … 0 failures` / `(247/247)`)。協調者 mutant(重建時來源一律改 COMBAT_CARD)→ campaign 單元 + integration 1107 條全綠;查因:來源只影響池內 narrative_depth,**目前池外無任何讀者** → 今天無可觀測效果,非缺陷;📌 未來若有系統讀 narrative_depth(第 4 階段依關係挑對話?),重建保留來源這件事沒有測試護著。
+- 🔴 裁決(約 09:50):013~015 寫入裁決「可以（推薦）」→ `892c9ea`(014 轉 Ready;015 只剩依賴 002/004/006;013 路徑更正、跳過=播完已結案)。
+- ⏳ 平行:013(主目錄,log `C:/tmp/run_cf013.log`);014(worktree,log `C:/tmp/run_cf014.log`)。006 等 013 提交後派(同碰勝利流程)。之後 002(依 001,可派)。
+- ✅ 午休驅動 `prototypes/capture-2026-11-23-lunch/`(16 態 = 8 × 960/1920,headless EXIT 0;態 7 四形收合、態 8 展開 card_22 Z3)。🔴 開窗前先 `--headless --import`(新 class_name 會讓驅動載不進)。缺:030 AC4 暗化那張、AC4 要 C 類局部圖(需事後用 `HandBar.slot_bar_rect()` 裁)。⚠️ 驅動作者留一個可能空轉的 headless 引擎(parse error 未 quit);taskkill 與協調者查行程皆被分類器擋 → 已告知管理者自行看工作管理員。
+- 🟡 013 交件(主目錄):暫存寫入埠 + router 聽 `conversation_completed` 才寫;實作者 `2589 … 0 failures` / EXIT 0。協調者核准改 2 支既有斷言(舊斷言保護被裁決改掉的「勝利當下寫入」,新寫法保留播完→寫入→下一場覆蓋)。協調者 mutant(router 寫入函式開頭 return)→ 3 條紅(含 `battle_abandon_rollback_test`),已還原。
+- 🟡 014 交件(worktree `agent-a45f393c2694fdf38` `db8bd60`):`CampaignProgress.has_progress()`(記憶體旗標)、ContinueRow + 確認框、strings +7;焦點實測:引擎**不會**跳過被明指為鄰居的停用鈕 → 無進度時「繼續」FOCUS_NONE 並排除接線。📌 超出工單:「略過教學」有進度時改走同新遊戲(確認→重置→第 1 場)→ 午休批次問管理者。舊鍵 `shell.title.start_battle` 未刪。已套入主目錄,列數 303 → 310(協調者手算改 locale_data_integrity_test)。
+- ✅ **013 提交 `50906f4`、014 提交 `fbf38c4`,已推送**(協調者全套 `ENGINE EXIT = 0` / `2607 … 0 failures` / `(249/249)`)。014 worktree 已清。
+- ⏳ 002(worktree `agent-a232399b0489b7d8c`,撞上限一次已續做,log `C:/tmp/run_cf002.log`)。
+- ⏳ 006(主目錄,log `C:/tmp/run_cf006.log`)。
+- ✅ 午休開窗 12:18:15~12:18:43(先 `--headless --import`),16 張 `prototypes/capture-2026-11-23-lunch/out/` 視窗尺寸皆符。協調者看 + ux `docs/reviews/lunch-capture-review-2026-11-23.md`:🔴 029 Z3 疊字/溢出 + 傷害卡顯示 ATK/DEF 行;🔴 資訊卡關係行壓減傷行;收合縮圖有「敵意」小字(規格不放);「關係圖 [R]」壓血量字;態 2 被開場目標橫幅蓋(驅動時序,8 秒自動隱藏)。030 960 十字/正方「勉強分得開」→ 待管理者人眼;AC4 缺暗化那張。
+- 🔴 裁決(約 13:30):006 空白殼層「加暫時文字再合入（推薦）」;「略過教學」改法「維持實作者的改法（推薦）」。
+- ✅ **006+002 協調者全套 `ENGINE EXIT = 0` / `2640 … 0 failures` / `(252/252)`**;006 三支既有測試改動為純插入(numstat 刪除 0)→ 接受。協調者 mutant 002(質問寫正值)→ 紅已還原。**002 提交 `1b81e67` 已推送**,worktree 已清。
+- ⏳ 006 加暫時文字(原實作者續做,strings +4 → 314,log `C:/tmp/run_cf006c.log`)→ 提交。
+- ⏳ 疊字修正(worktree,log `C:/tmp/run_overlapfix.log`)。修完需下次午休重拍(驅動先 hide_objective 或等 8 秒、補 030 暗化態)。
 
 ## 🔴 第一百零五批(2026-11-20,公司,08:28 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00 收工;專業派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。🔴 午休 12:00~13:00 以外不開窗。

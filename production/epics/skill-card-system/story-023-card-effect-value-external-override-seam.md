@@ -2,6 +2,7 @@
 
 > **Epic**: `production/epics/skill-card-system/EPIC.md`
 > **Status**: Deferred(管理者 2026-11-17:本批不做;依據答案檔題 12)—— 011 的 `effect_value` 維持由建構者/載入器傳入、不寫死,營火批再追加覆寫入口(追加式小改)。原:依賴 011;且範圍待確認:規格 v1.0 第 4.4/4.5 節的營火卡強度公式屬營火部分,不在本批;本單只保留「讓外部給一張卡覆寫 `effect_value`」的 seam。
+> 📌 2026-11-23:營火卡的建構入口由 campfire story-003 在 `card.gd` 新增(管理者核准);本單仍 Deferred,恢復時先讀該工廠,避免兩處各做一次。
 > **Type**: Logic
 > **Estimate**: S(0.5~1 天,粗估未驗證;data-format S8)
 > **依據**:`docs/reviews/card-rework-data-format-2026-11-12.md` S8(「規格 6-5 效果值外部覆寫的載入端 seam」,規格 v0.3 第 6 節,本單撰寫者未讀);規格 v1.0 第 4.4(營火產卡快照、`source=CAMP`)。
