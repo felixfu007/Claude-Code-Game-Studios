@@ -613,6 +613,13 @@ var _card_cost_tuning: CardCostTuning = CardCostTuning.defaults()
 ## [method _ready] 只讀取一次。
 var campaign_ledger_override: CampaignAffinityLedger = null
 
+## campfire story-005:戰役第 2 場起由 [method SceneRouter.enter_battle] 注入的「確認牌組」
+## (已解析的 [Card],依牌組順序)。【空陣列 = 未注入】,此時牌庫照舊讀序列表的固定牌表
+## (教學場、第 1 場、非戰役路徑皆如此)。非空時取代固定牌表當作牌庫來源;
+## 牌面文字仍讀當場關卡的 card_text 檔。
+## Timing contract 同 [member terrain_path_override]:instantiate() 之後、add_child() 之前設定。
+var confirmed_deck_override: Array[Card] = []
+
 var _state: BattleState
 ## 開局時的我方單位 id(含之後倒下者),供戰敗文字枚舉(story-022)。
 var _player_roster_ids: Array[int] = []
@@ -2295,6 +2302,9 @@ func _ready() -> void:
 	# substitute. _affinity_pool is this battle's single instance (ADR-0002
 	# mechanism one — see that member's own doc comment for why it is owned
 	# here).
+	# campfire story-005:戰役注入的確認牌組取代固定牌表(空 = 未注入,行為不變)。
+	if not confirmed_deck_override.is_empty():
+		cards = confirmed_deck_override.duplicate()
 	var card_deck: CardDeck = _build_card_deck(cards, null, _deck_tuning)
 	var write_port: AffinityPoolWritePort = AffinityPoolWritePort.new(_affinity_pool)
 

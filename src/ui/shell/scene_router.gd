@@ -171,6 +171,14 @@ static func _inject_campaign_ledger(instance: Node) -> void:
 		push_error("SceneRouter: enter_battle target is not a BattleScreen")
 		return
 	battle.campaign_ledger_override = CampaignProgress.start_mission_affinity_ledger()
+	# campfire story-005:第 2 場起注入已解析的確認牌組(第 1 場回空陣列 = 不注入)。
+	# 解析失敗(null,resolver 已 push_error)不注入,戰鬥退回固定牌表。
+	var resolved: Variant = CampaignCardResolver.new().cards_for_battle(
+		CampaignProgress.current_mission(), CampaignProgress.deck()
+	)
+	if resolved != null:
+		var cards: Array[Card] = resolved
+		battle.confirmed_deck_override = cards
 
 
 ## 交換順序刻意為「先同步移除舊、再加新」:BattleScreen 在 tree_exited 上註銷游標表面,

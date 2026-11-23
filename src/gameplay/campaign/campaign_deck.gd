@@ -9,8 +9,9 @@
 ## 編輯是暫存的:[method move_to_deck] / [method move_to_collection] 只動「編輯中」
 ## 的牌組,[method confirm] 通過張數檢查才成為「已確認牌組」;戰鬥端與 AC5
 ## (戰敗直接重打保留牌組)只認 [method confirmed_deck_ids]。
-## 卡以 id 字串表示,id -> Card 的解析由後續工單(005)負責;營火產出的卡
-## 也只在此登記 id。
+## 卡以 id 字串表示;檔案型卡的 id -> Card 解析由 [CampaignCardResolver] 負責,
+## 營火產出的執行期卡由 [method add_new_card] 同時登記在本物件的登記區
+## ([method registered_card]),與牌組/收藏區同一份快照([method snapshot])。
 ##
 ## 🔴 收藏區初始內容與 8/14 上下限皆為占位,見 default_deck.txt 檔頭。
 class_name CampaignDeck
@@ -33,6 +34,9 @@ var _collection: Array[String] = []
 var _confirmed_deck: Array[String] = []
 var _confirmed_collection: Array[String] = []
 var _new_marks: Dictionary = {}
+## 營火產出(執行期)卡的登記區:id -> Card。只增不減(孤兒條目無害:id 不在牌組就不會被戰鬥讀到)。
+## 檔案型卡不登記在此,由 [CampaignCardResolver] 從牌表解析。
+var _registry: Dictionary = {}
 
 
 func deck_min() -> int:
@@ -70,6 +74,7 @@ func clear() -> void:
 	_confirmed_deck = _default_deck.duplicate()
 	_confirmed_collection = _default_collection.duplicate()
 	_new_marks.clear()
+	_registry.clear()
 
 
 ## 放棄未確認的編輯,回到已確認狀態。
@@ -107,16 +112,58 @@ func confirm() -> ConfirmResult:
 
 
 ## 新營火卡入帳:先丟棄未確認編輯;已確認牌組未滿上限 → 自動入組並標「新」,
-## 已滿 → 留收藏區。id 已擁有(牌組或收藏區)回 false、不動任何狀態。
-func add_new_card(card_id: String) -> bool:
+## 已滿 → 留收藏區。id 已擁有(牌組或收藏區)回 false、不動任何狀態(含登記區,不覆蓋)。
+## [param card] 非 null 時入帳成功後登記為該 id 的執行期卡(重回營火再產同 id 時,
+## 因 id 未擁有而再度入帳,登記區覆蓋為新產生的 Card)。
+func add_new_card(card_id: String, card: Card = null) -> bool:
 	if _confirmed_deck.has(card_id) or _confirmed_collection.has(card_id):
 		return false
+	if card != null:
+		_registry[card_id] = card
 	cancel_edit()
 	if _confirmed_deck.size() < _max:
 		_confirmed_deck.append(card_id)
 		_new_marks[card_id] = true
 	else:
 		_confirmed_collection.append(card_id)
+	cancel_edit()
+	return true
+
+
+## 登記區裡該 id 的執行期卡;沒有回 null(檔案型卡一律回 null)。
+func registered_card(card_id: String) -> Card:
+	return _registry.get(card_id, null) as Card
+
+
+## 登記區的淺拷貝(id -> Card)。Card 在戰鬥中不被改動,可共用參照。
+func registry_copy() -> Dictionary:
+	return _registry.duplicate()
+
+
+## 已確認狀態的快照(story-015 退回營火前用)。只存「已確認」那組 + 「新」標記 + 登記區;
+## 編輯中副本不存,[method restore] 後與已確認狀態相同。
+func snapshot() -> Dictionary:
+	return {
+		"confirmed_deck": _confirmed_deck.duplicate(),
+		"confirmed_collection": _confirmed_collection.duplicate(),
+		"new_marks": _new_marks.duplicate(),
+		"registry": _registry.duplicate(),
+	}
+
+
+## 還原 [method snapshot];同時重設編輯中副本。形狀不符回 false、不動任何狀態。
+func restore(snap: Dictionary) -> bool:
+	var d: Variant = snap.get("confirmed_deck", null)
+	var c: Variant = snap.get("confirmed_collection", null)
+	var m: Variant = snap.get("new_marks", null)
+	var r: Variant = snap.get("registry", null)
+	if not (d is Array) or not (c is Array) or not (m is Dictionary) or not (r is Dictionary):
+		push_error("CampaignDeck.restore: malformed snapshot")
+		return false
+	_confirmed_deck.assign(d)
+	_confirmed_collection.assign(c)
+	_new_marks = (m as Dictionary).duplicate()
+	_registry = (r as Dictionary).duplicate()
 	cancel_edit()
 	return true
 
