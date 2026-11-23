@@ -2258,14 +2258,13 @@ func _ready() -> void:
 	# 本輪只負責「餵進來之後怎麼灌」,接線本身是下一輪的事。
 	# [member campaign_ledger_override] 預設 null;null 時這段整個不執行,
 	# production 行為與本輪改動之前逐字相同。
+	#
+	# campfire story-001:重播改由共用純函式 CampaignAffinityPoolRebuilder 負責
+	# (營火畫面也讀同一份)。戰役模式下上方 links 灌入已改走 ledger(第 1 場)或
+	# 不寫(第 2 場以後),故此刻 _affinity_pool 仍是空池,整個換成重建的池
+	# 與逐筆灌進同一個池等價。
 	if campaign_ledger_override != null:
-		for entry: CampaignAffinityLedger.Entry in campaign_ledger_override.records():
-			_apply_opening_affinity_record(
-				entry.pair,
-				entry.m,
-				entry.source,
-				"campaign ledger replay record (pair ordinal %d)" % [entry.pair]
-			)
+		_affinity_pool = CampaignAffinityPoolRebuilder.rebuild(campaign_ledger_override)
 
 	# _phi is stored as a member (see its own doc comment on why a local here
 	# would be a bug) so BattleController's bound Callable stays valid for the
