@@ -1,7 +1,7 @@
 # Story 001:AudioBus 結構、音量與靜音設定、設定檔持久化(含既有 EGM 與隱藏好感度兩開關)
 
 > **Epic**: `production/epics/audio-foundation/EPIC.md`
-> **Status**: Ready(2026-11-06 管理者裁決「做一個小設定檔,音量與既有兩個開關都記住」,解除原 Blocked)
+> **Status**: Done(提交 `3623d98`)(原狀態:Ready(2026-11-06 管理者裁決「做一個小設定檔,音量與既有兩個開關都記住」,解除原 Blocked))
 > ✅ **2026-11-10 加註(管理者核准整批加註):已完成,提交 `3623d98`(2026-11-06)。** 本狀態欄當時未同步;以此為準。
 > **Type**: Logic(headless 只驗「決策」與純函式;見 AC 說明)
 > **需求來源**: `docs/reviews/minimal-audio-scope-draft-2026-11-06.md` 第四節需求 1、2、3;管理者 2026-11-06 裁決

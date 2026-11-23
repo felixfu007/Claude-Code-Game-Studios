@@ -1,0 +1,53 @@
+# Story 014:標題畫面「繼續」與「新遊戲」
+
+> **Epic**: `production/epics/campfire/EPIC.md`
+> **Status**: Blocked —— 卡在三個小題(`game-designer` / `ux-designer`,見「派工前須先決定」);管理者題已全部裁決。不依賴其他營火工單。
+> **Type**: UI + Integration
+> **Estimate**: M(0.5~1 估計天,`lead-programmer` 估「做法 A」,**未驗證**)
+> **依據**:管理者 2026-11-20 裁決第 5 題「標題畫面一個「繼續」一個「新遊戲」」(`docs/reviews/campfire-rulings-2026-11-20.md`);2026-11-23 裁決第 3 題「只在這次開著遊戲時有效(推薦)」、第 4 題「灰掉不能按(推薦)」(`docs/reviews/campfire-rulings-2026-11-23.md`);技術依據 `docs/reviews/campfire-open-tech-2026-11-23.md` 題 4「做法 A」。
+
+## 背景(引自 `lead-programmer` 2026-11-23 讀碼,證據等級 (B))
+
+- 現行標題只有「開始」,接 `start_tutorial`(`src/ui/shell/title_screen.gd`),先進教學場。
+- `reset_campaign()` 的正式呼叫端**只有一處**:打贏最後一場(`src/ui/battle/battle_screen.gd`)。所以現在同一次執行內回標題再按「開始」,會**接續**舊場次與舊累積記錄(中間多一段教學場)。本單順便修掉這個行為。
+- 關掉遊戲後只存音量等設定(`user://settings.cfg`);戰役進度、累積記錄、牌組都不存。本單**不新增存檔**。
+
+## 派工前須先決定
+
+| # | 題目 | 誰決定 | 備註 |
+|---|---|---|---|
+| 1 | 「新遊戲」是否仍先進教學場(沿用現行「開始」的行為),還是直接進第 1 場 | `game-designer` | 協調者/producer 不代判 |
+| 2 | 「有進度」的定義(「繼續」何時亮起):例如「已進入過任一戰役場次」或「累積記錄非空」;教學場打到一半算不算 | `game-designer` | |
+| 3 | 有進度時按「新遊戲」要不要確認框(會清掉本次的關係與牌組) | `ux-designer` | |
+
+## 規則摘要(已裁決部分)
+
+- 標題兩個按鈕「繼續」「新遊戲」,**位置固定**;無進度時「繼續」**灰掉不能按**(不隱藏),手把游標不必處理按鈕數量變化(11-23 第 4 題)。
+- 「繼續」:回到目前場次,保留累積記錄與牌組;**只在本次開著遊戲時有效**,關掉再開一律無進度(11-23 第 3 題)。
+- 「新遊戲」:呼叫 `CampaignProgress.reset_campaign()`,清掉戰役進度、累積記錄、牌組(牌組由 story-004 掛在 `CampaignProgress` 底下,隨 `reset_campaign()` 一起清,本單不另寫清牌組)。
+- 不新增任何 `user://` 檔案、不呼叫 `FileAccess`。
+- 灰掉的按鈕除顏色外須有可辨識的停用表現(不得只靠顏色;依既有停用鈕樣式)。
+
+## Acceptance Criteria
+
+- [ ] **AC1** 剛啟動:「繼續」灰掉、按了無作用(滑鼠點擊、手把確認兩種都驗);「新遊戲」可按。
+- [ ] **AC2** 打到第 N 場中途回標題 → 「繼續」亮起 → 按下回到第 N 場,累積記錄筆數與回標題前相同。
+- [ ] **AC3** 有進度時按「新遊戲」(依第 3 題通過或不經確認框)→ 場次回到起點、累積記錄為空。
+- [ ] **AC4** 本單新增碼不呼叫 `FileAccess`、不碰 `user://`(grep 證明,指令須寫成不會命中自己的形式,見 coding-standards)。
+- [ ] **AC5** 按鈕位置固定:有/無進度兩種狀態下,兩顆按鈕的矩形相同(以真實標題場景檔載入)。
+- [ ] **AC6** 敏感度證明(常駐 `test_sensitivity_proof_*`,一個 mutant 一次獨立執行):①「新遊戲」不呼叫重置 → AC3 紅 ②「繼續」永遠可按 → AC1 紅 ③無進度時把「繼續」隱藏而非灰掉 → AC5 紅。交付前掃殘留注入標記。
+- [ ] 交付前全套 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`,回報貼 `ENGINE EXIT` 與 `Overall Summary` 原始三行。
+
+## Affected Files
+
+- `src/ui/shell/title_screen.gd`、標題場景檔(`src/ui/shell/` 下,實作者 grep 確認)
+- `src/core/campaign/campaign_progress.gd`(若需新增「有沒有進度」的查詢;**既有檔,列入本單範圍**)
+- `assets/data/locales/strings.csv`(只追加「繼續」「新遊戲」等鍵;合入時手算列數)
+- 新測試
+- ⚠️ game-shell 既有標題測試若斷言「只有一顆開始鈕」而需要改,**停下回報**。
+- 超出先問。
+
+## 與其他工單的順序
+
+- 不依賴營火其他工單。004 完成後,「新遊戲」清牌組的行為由 004 的 `reset_campaign()` 接線自動涵蓋,011 驗整條。
+- 會改變 v1.0 規格 4.6「一輪」的邊界(原文「回標題即結束一輪」→ 現在回標題可「繼續」)—— 規格文字改動列在 EPIC「須另請示的文件改動」。

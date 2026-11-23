@@ -1,7 +1,7 @@
 # Story 006:設定持久化的「測試期」判斷改看啟動指令(修 CI 紅燈 + CI 測試期不碰 user://)
 
 > **Epic**: `production/epics/audio-foundation/EPIC.md`(story-001 的設定檔持久化)
-> **Status**: Ready(2026-11-11 協調者起草)
+> **Status**: Done(提交 `2f5efc3`)(原狀態:Ready(2026-11-11 協調者起草))
 > **Type**: Logic
 > **指派**: `godot-gdscript-specialist`
 

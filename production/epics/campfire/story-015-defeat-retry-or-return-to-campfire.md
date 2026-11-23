@@ -1,0 +1,57 @@
+# Story 015:打輸後兩條路 —— 直接重打,或回營火調整再打
+
+> **Epic**: `production/epics/campfire/EPIC.md`
+> **Status**: Blocked —— ①待決三題(見下;第 1、2 題是 11-23 裁決檔明列的「仍未決」,第 3 題是 producer 2026-11-23 新發現);②戰敗結果畫面的選擇按鈕**沒有 UX 規格**(`ux-designer`);③依賴 story-002、004、006。
+> **Type**: Integration + UI
+> **Estimate**: M~L(1.5~2 估計天,**未驗證**;`lead-programmer` 估基準點機制 +0.5~1,牌組快照若要做再 +0.5,戰敗結果畫面按鈕與文案另計)
+> **依據**:管理者 2026-11-20 裁決第 1 題(逐字)「兩種都做, 可以直接重打，也可以回到營火做調整之後再打」(`docs/reviews/campfire-rulings-2026-11-20.md`);技術依據 `docs/reviews/campfire-open-tech-2026-11-23.md` 題 3、`docs/reviews/campfire-technical-answers-2026-11-20.md` ③;仍未決項 `docs/reviews/campfire-rulings-2026-11-23.md`「仍未決」節。
+
+## 背景(引自 `lead-programmer` 讀碼,證據等級 (B),行號會漂)
+
+- 累積記錄只有**一個**基準點 `_mission_start_count`,每次 `enter_battle` → `start_mission_affinity_ledger()` → `begin_mission()` 重設。
+- 戰敗:`rollback_on_defeat()` 截回基準點並設 `_retry_same_mission = true`;結果顯示後自動 `enter_battle`。**目前沒有玩家選擇。**
+- 「直接重打」是現行機制自然結果:營火寫入在下一場基準點之前,不被回滾;牌組不被 `rollback_on_defeat()` 碰到,自然保留。
+- 「回營火」需要新增「營火基準點」,動 `campaign_affinity_ledger.gd`、`campaign_progress.gd`、`battle_screen.gd`、`scene_router.gd` 四個既有檔。
+- 檔頭已警告的陷阱:基準點「忘了標就過度回滾」—— 新基準點同樣要有結構性防線。
+
+## 派工前須先決定
+
+| # | 題目 | 誰決定 | 白話 |
+|---|---|---|---|
+| 1 | 回營火時,牌組要不要回到「營火之前」 | `game-designer`(若涉及體驗取捨 → 管理者) | 不回滾:玩家可反覆回營火刷更好的卡;回滾:牌組要自己的快照,約 +0.5 估計天(未驗證) |
+| 2 | 回營火時,營火使用次數是否歸零 | `game-designer` | lead 指出:不歸零的話回營火時次數已被扣光,等於不能重選 |
+| 3 | 🔴 **回營火後,該場勝利後的支援對話要不要重播、好感度要不要重寫一次** | `game-designer` + `lead-programmer` | producer 新發現:story-013 把對話寫入移到營火**之後**。若營火基準點標在營火開始時,回營火會一併回滾對話寫入;接下來若不重播對話,那段對話的好感度就消失了;若重播,玩家要再看一次同一段對話。11-23 裁決檔與 lead 的表格(「含對話寫入,因為對話在營火前已寫」)都是在 013 之前的前提下寫的,**前提已變** |
+| 4 | 戰敗結果畫面:兩顆按鈕(直接重打 / 回營火)的版面、預設焦點、文案 | `ux-designer` | 現在是計時自動重打,要改成玩家選 |
+
+## 規則摘要(已裁決部分)
+
+- 戰敗後玩家選:**直接重打**(累積記錄回到該場開打前、營火結果與牌組保留)或**回營火**(累積記錄回到營火基準點,營火可重選)。
+- **第 1 場戰敗**:之前沒有營火,「回營火」**不顯示**(不是壞掉;依 lead 建議,11-23 裁決檔「第 1 場戰敗無營火可回」)。
+- 教學場戰敗:不涉及營火,沿用現狀。
+- 回營火後的流程:營火 → (第 3 題)→ 編牌組 → 重打同一場;編牌組頁仍不能退回營火(11-20 第 8 題)。
+- 營火基準點的標記點由實作者提案、協調者覆核;必須讓「忘了標」結構上不會發生或會被測試抓到。
+
+## Acceptance Criteria
+
+- [ ] **AC1** 第 N 場(N ≥ 2)戰敗 → 選「直接重打」→ 累積記錄 = 該場開打前;營火寫入與牌組保留(以真實場景檔載入、走真實 `SceneRouter`)。
+- [ ] **AC2** 第 N 場戰敗 → 選「回營火」→ 累積記錄 = 營火開始前;重選不同配對後重打,下一場讀到的是新選擇、不含舊選擇。
+- [ ] **AC3** 第 1 場戰敗:結果畫面沒有「回營火」;教學場戰敗行為與改動前相同。
+- [ ] **AC4** 依第 1、2、3 題裁決:牌組、營火次數、對話寫入在回營火後的狀態符合裁決。
+- [ ] **AC5** 兩條路都可只用手把完成、只用滑鼠完成。
+- [ ] **AC6** 敏感度證明(常駐 `test_sensitivity_proof_*`,一個 mutant 一次獨立執行):①回營火時改回呼叫現有 `rollback_on_defeat()` → AC2 紅 ②營火基準點不標 → AC2 紅(證明防線有效)③第 1 場也顯示回營火 → AC3 紅。交付前掃殘留注入標記。
+- [ ] 交付前全套 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`,回報貼 `ENGINE EXIT` 與 `Overall Summary` 原始三行。
+
+## Affected Files
+
+- `src/gameplay/campaign/campaign_affinity_ledger.gd`(新增營火基準點與回滾;`clear()` 一併歸零)
+- `src/core/campaign/campaign_progress.gd`(新增對應包裝;`rollback_on_defeat()` 語意不改)
+- `src/ui/battle/battle_screen.gd`(`_retry_same_mission` 改三態、戰敗結果改玩家選)
+- `src/ui/shell/scene_router.gd`(從戰敗回到營火的入口)
+- 若第 1 題選「回滾」:story-004 的牌組物件(新增快照)
+- `assets/data/locales/strings.csv`(只追加)、新測試
+- ⚠️ 好感度累積記錄是已驗收機制;既有回滾測試的斷言需要改時,**停下回報**。
+- 超出先問。
+
+## 與其他工單的順序
+
+- 依賴 002(營火寫入)、004(牌組)、006(營火在流程中的位置);與 013 互相影響(第 3 題)。011 驗整條。

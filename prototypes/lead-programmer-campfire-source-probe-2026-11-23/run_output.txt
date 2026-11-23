@@ -1,0 +1,13 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+PROBE src=SUPPORT_CONVERSATION m=3.0 narrative_depth=3.0 combat_strength=3.0 n_pair=1 rej=0
+PROBE src=SUPPORT_CONVERSATION m=-3.0 narrative_depth=-3.0 combat_strength=-3.0 n_pair=1 rej=0
+PROBE src=STORY_EVENT m=3.0 narrative_depth=3.0 combat_strength=3.0 n_pair=1 rej=0
+PROBE src=STORY_EVENT m=-3.0 narrative_depth=-3.0 combat_strength=-3.0 n_pair=1 rej=0
+PROBE src=COMBAT_CARD m=3.0 narrative_depth=0.825 combat_strength=3.0 n_pair=1 rej=0
+PROBE src=COMBAT_CARD m=-3.0 narrative_depth=-0.825 combat_strength=-3.0 n_pair=1 rej=0
+PROBE order=[2.0, 3.0] narrative_depth=4.88
+PROBE order=[3.0, 2.0] narrative_depth=4.82
+PROBE order=[3.0, -1.0] narrative_depth=1.82
+PROBE order=[-1.0, 3.0] narrative_depth=2.06
+PROBE fresh pool t_death(C1_C2)=<null>

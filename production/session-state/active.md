@@ -90,6 +90,14 @@ Feature: 🔴 **遊戲第一次有「戰鬥以外」這個狀態。** 三個卡�
 Task: 🔴 **本機測試一律 `GODOT_BIN=<路徑> bash tools/build/run_tests_with_import.sh`。** 🔴 **推送 AI_IMG 前讀 `docs/ai-art-pipeline/company-end-push-postmortem-2026-10-16.md`**(本批已照做,2 added / 0 removed)。🔴 **明天第一件:查家用端有沒有裝好 Cheyenne 並產出 4 張探針圖。** 🔴 **第二件:`game-shell story-005`(場景切換改手動 + 離開戰鬥回主選單),它會動到今天已驗收的兩張工作單。**
 <!-- /STATUS -->
 
+## 🔴 第一百零六批(2026-11-23,公司,08:47 開工)—— 進行中,位階高於下方
+管理者指示同前(推進到 17:00 收工;專業派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。🔴 午休 12:00~13:00 以外不開窗。
+- 開工:本庫 `c532b15` 已最新;CI 最近 4 支綠。
+- ⏳ campfire story-001(godot-gdscript-specialist,主目錄,log `C:/tmp/run_cf001.log`)。
+- ✅ 專家:game-designer `docs/reviews/campfire-default-deck-12-2026-11-23.md`(第 1 場只有 8 張,協調者 grep 驗);lead `docs/reviews/campfire-open-tech-2026-11-23.md`(來源值 SUPPORT_CONVERSATION (A) 探針已驗原始行;對話挑段勝利當下綁死;回營火動 4 檔;關遊戲只存設定)。
+- 🔴 裁決(約 08:50):營火工單依裁決改「可以，依裁決改（推薦）」;6 張過時狀態「可以，改成已完成（推薦）」。(約 08:58)4 項全推薦 → `docs/reviews/campfire-rulings-2026-11-23.md`(第 2~5 場拿 card_19/21、對話播完才寫入、繼續只限本次遊玩、無進度灰掉)。
+- ⏳ producer 改營火 EPIC/002~012 + 6 張狀態同步(未提交,交件後協調者看 diff 再給管理者摘要)。
+
 ## 🔴 第一百零五批(2026-11-20,公司,08:28 開工)—— 進行中,位階高於下方
 管理者指示同前(推進到 17:00 收工;專業派專家、協調者監督;卡住出選項列優缺點;每小時看時間;context 多就落檔 compact 後讀本節續做)。🔴 午休 12:00~13:00 以外不開窗。
 - 開工:兩庫最新(本庫 `341249f`、AI_IMG `6cf0d5f`,外包無新交件);CI 最近 4 支綠。

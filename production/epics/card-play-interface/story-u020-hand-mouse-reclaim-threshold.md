@@ -1,7 +1,7 @@
 # Story U-020:手牌加滑鼠奪權門檻(手把/鍵盤選牌時滑鼠微動不得搶焦點)
 
 > **Epic**: `production/epics/card-play-interface/`(手牌列 `hand_bar.gd` 屬本 epic)
-> **Status**: Ready(2026-11-11 協調者起草)
+> **Status**: Done(提交 `187e669`)(原狀態:Ready(2026-11-11 協調者起草))
 > **Type**: Logic + Integration
 > **指派**: `godot-gdscript-specialist`
 

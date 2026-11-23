@@ -1,7 +1,7 @@
 # Story 005:好感度「扣分」另配一個音(affinity_down)
 
 > **Epic**: `production/epics/audio-foundation/EPIC.md`
-> **Status**: Ready(2026-11-10 協調者起草;管理者裁決見下)
+> **Status**: Done(提交 `09336bd`)(原狀態:Ready(2026-11-10 協調者起草;管理者裁決見下))
 > ✅ **2026-11-11 加註(管理者核准狀態欄加註):已完成,提交 `09336bd`(2026-11-10)。** 聽感待家中試聽。原句保留。
 > **Type**: Logic + Integration
 > **指派**: `godot-gdscript-specialist`
